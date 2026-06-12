@@ -7,43 +7,74 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0071C74699B0A84CC909CFD3 /* UIColor+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAE5621E54540B2FC59399D6 /* UIColor+Theme.swift */; };
 		023299BEDDBAE0D022B08E7B /* DALProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DFD924CDD4A764ABF604FB /* DALProtocol.swift */; };
+		025C10EC8F627054C2A3590E /* MetricCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD348113E8A52DDF2499E52 /* MetricCardCell.swift */; };
 		05433145BBE114CF0C1DC08A /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B291D76D4C819D8DB33D00 /* DatabaseManager.swift */; };
-		05BD8C8A1D8DCA6E907F1937 /* MyRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CC5F06D635097AC88FC8A53 /* MyRoutes.swift */; };
 		06A2D497B7EB28F9F53F1CCA /* UIColor+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 432CCF9A3A379DE71F66A395 /* UIColor+Hex.swift */; };
+		06A56AC66A4F4CDA7E0261D0 /* UIColor+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F658342CD338BC1FE36A3A3 /* UIColor+Theme.swift */; };
+		0A509A5F93C44346FA943249 /* EcgViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CFE1614483ECDDFB1F6BF7 /* EcgViewController.swift */; };
 		0D9CCCF8E6DF5482A9FACDF0 /* APIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27CE239FA8FD35C6FAB8017C /* APIManager.swift */; };
 		0DF3EEBD3CBD7D3B5436CB24 /* PolicyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081BA2DBDE01D1406E30170D /* PolicyViewController.swift */; };
 		0EDC5622BF3A0A37E849F288 /* SectionTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9C2E856DFAEC8757D284064 /* SectionTitleView.swift */; };
 		0EE2E6B7960C05819866D0E1 /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CE8E0C75DF62E92DC4A2681 /* BluetoothManager.swift */; };
+		10AC41CB66D21BE7EC06FCE3 /* UIColor+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B511EBE0908F352DD771EB /* UIColor+Theme.swift */; };
+		10EDF1EF9D6E0E004960E6F5 /* UIColor+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A68D2F5E0471784338C0AC0C /* UIColor+Theme.swift */; };
 		1406F12781B85941BC234E2B /* OAuthAuthenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68DC37BCDD618E2DCE9A9D02 /* OAuthAuthenticator.swift */; };
 		149CF005BF28CF286F37B0C7 /* UIColor+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EDE51E340BF0B259CD5256E /* UIColor+Theme.swift */; };
 		1573E68259A66AD868AFD131 /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7EDC9DBA2C15DAEC992461C /* ChatViewController.swift */; };
 		1694DDA9C65C92BEE8B3AA7B /* Conversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3743DC311DF3858D78351828 /* Conversation.swift */; };
-		1D6656156D978531A5AD7B32 /* Target_My.swift in Sources */ = {isa = PBXBuildFile; fileRef = 037524CCF4A34D1042FF478D /* Target_My.swift */; };
+		1698798C29CF69A7E72C914F /* PlaceholderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 529A0372CB27D48DFCC4FC0F /* PlaceholderViewController.swift */; };
+		173DABFA2078972DEC8AA9ED /* PlaceholderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BDCEBC6A5F857FB2694E1DD /* PlaceholderViewController.swift */; };
+		18D3326B892C5A93550FB627 /* MetricCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 957B84B430D2267FC6A87404 /* MetricCardCell.swift */; };
+		1AF89CE8E94B1AE99FBCAFA2 /* DGCharts+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7A7C292A061E700B4EAD00 /* DGCharts+Theme.swift */; };
+		1C3807ABE1D0E5F8912B820F /* PlaceholderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6AE703A4BA590EB2DBEF0E7 /* PlaceholderViewController.swift */; };
 		1EE2121358C8F93652FC103C /* PaymentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2F26CCFF4734186BF04A39 /* PaymentViewController.swift */; };
+		1EEB4AACADC54E2856BCE749 /* PlaceholderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50B0DAFB0366CEB513A54516 /* PlaceholderViewController.swift */; };
+		1EFFD9EE4F69090334427958 /* UIView+Shadow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13E8B4D72E17972E683BE4FF /* UIView+Shadow.swift */; };
+		27260D21123BF37DC03CD18F /* MetricRulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDFA6D00CF0E1707D0957144 /* MetricRulerView.swift */; };
+		29DF7811126DBF2D88CA7B0B /* HomeRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B6D6C639BBEFFD47E6349E4 /* HomeRoutes.swift */; };
 		2AB37F19E9E9BA0DCE4E2FF9 /* PaymentProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33F829631DE3DD09B5C6FF3 /* PaymentProtocol.swift */; };
+		2C058BD3498889EE24CE30E1 /* UIView+Shadow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75100171662400D39ED2E063 /* UIView+Shadow.swift */; };
 		31C52A8BD36FA64D4C32B098 /* UserDefaultsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D333C32A8805FAD51C4D2820 /* UserDefaultsManager.swift */; };
 		33DDECBC677E7E50B96C3779 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C3F2FAE5619994A3AA7A46 /* SettingsViewController.swift */; };
+		342788F37504E84D0A004D5E /* SleepViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD50DDCF0289450DE8869D0 /* SleepViewController.swift */; };
+		419C5C51AEFC0BB483AC12EA /* MetricCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D47D284B9579B8522F72F53 /* MetricCardCell.swift */; };
+		41FAD3DC18F10D6E929E4C57 /* UIColor+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C09D244C06708E3D805A6EB /* UIColor+Theme.swift */; };
 		43464FED90F9F0DFF7F7CADB /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2C9738A2B82C009F94EDFE7 /* APIError.swift */; };
+		43C5F45A072255486286723A /* UIButton+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ECCCDFBA10AEE73B626DBF1 /* UIButton+Funde.swift */; };
+		447DC4BA3A37B5A73213F4B0 /* PlaceholderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC610B572CBF77A009A69E1 /* PlaceholderViewController.swift */; };
+		47ECCEB3A722CE2BCB2DDC8E /* UIColor+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 068CCDCC58167813273040FC /* UIColor+Theme.swift */; };
 		4A75427BA911A7B10D4DDE6E /* MonitoringPlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B498405ABB27F6D8377D6064 /* MonitoringPlanViewController.swift */; };
 		4D3B9FC870DC051DB24DD8F6 /* HealthReportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 619369377609556A6596BEFF /* HealthReportViewController.swift */; };
 		4F7369070CC43FA996104A94 /* LoginFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D7AD8DF0E1609567B12918C /* LoginFieldView.swift */; };
-		4FD88C7CBF14138B1C0C128B /* Target_RegisterLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E3C9283A035775971F02757 /* Target_RegisterLogin.swift */; };
+		59A70F6078414403FFE31C4B /* RouteSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 700507D193530C458BAB94C6 /* RouteSetup.swift */; };
 		59AB481874792A6D2327D4DB /* PLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840D488A2D621EED67F49634 /* PLProtocol.swift */; };
+		59B862811A9C0D15256C370B /* UIView+Shadow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 978136B3E38C599C142AAA37 /* UIView+Shadow.swift */; };
+		5CCDD160091D0577C7BFE522 /* DGCharts+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CE26E3144A5B5A499CAA512 /* DGCharts+Theme.swift */; };
 		5E7531B1805BDFC74CD1F8CB /* BluetoothModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6373F937CC9DA144A80873C /* BluetoothModels.swift */; };
 		625D4BF5B8323C4730A5B48E /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8DE397CDF8225D92B0353A0 /* SceneDelegate.swift */; };
+		62628470BAE98A14205557DD /* MetricAddViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F0BFA51617B47B9D5DA86D /* MetricAddViewController.swift */; };
+		6410C5C9DBC586E680C78DA2 /* UIColor+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0A88B73D04EDA19FD96D1ED /* UIColor+Theme.swift */; };
 		678D746E713E617DA4218CF8 /* BaseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FFA483EDF37CE2D4BEAFA2C /* BaseViewController.swift */; };
+		6BDEFAB088337011117A9DB0 /* UIView+Shadow.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECE31BDBEC219B5D2CFC5487 /* UIView+Shadow.swift */; };
+		7568562CC69E30C273DCAF3A /* SpO2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7054846090DC999E8A4AA089 /* SpO2ViewController.swift */; };
 		7851DD1A96CE8CD9107551CF /* UIViewController+Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = D023CF2932A3EB39ECC71228 /* UIViewController+Alert.swift */; };
+		7B24A35FB18BA5459E8041A7 /* UIColor+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E72853BB1BE033768E34FED /* UIColor+Theme.swift */; };
 		7B46EF5C3CB00C67C3413246 /* AppointmentsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27EE4ECD3E9C86C039F31E29 /* AppointmentsViewController.swift */; };
+		7D41690F6DDCDC6D8EBD9F6C /* PlaceholderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E5B1E20D5CB4CB82C30EEB4 /* PlaceholderViewController.swift */; };
+		7DDA52DB97475F7DDD215410 /* DGCharts+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F7A8F91BEE13593784610E /* DGCharts+Theme.swift */; };
 		7FD06195AE16D4FD3861568B /* BaseNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE076FFD3B924E308E3D26E9 /* BaseNavigationController.swift */; };
+		802D959B31D9B0388126BE3D /* PlaceholderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E9E858C174F8DBD089F2BEC /* PlaceholderViewController.swift */; };
 		8449BE1294FC1603412521D4 /* HealthEvaluationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 024BB0505F52EBA8BBB0F6A6 /* HealthEvaluationsViewController.swift */; };
 		85D1EAC623198A9F60F786E0 /* PeripheralCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA15F07EE00BE72C38F6C89 /* PeripheralCell.swift */; };
 		880D3EEECACFBB9A6791AB14 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7AE47164C661037814AB024 /* Message.swift */; };
 		8B8C09E1713C1F6FC5A641CA /* ProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2DE7CB0CC0F0792F08218E9 /* ProfileViewController.swift */; };
+		8D933B6432D5BE6DF43489A0 /* PlaceholderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 431FAFCE0E7367CB5B8016E0 /* PlaceholderViewController.swift */; };
 		8DC19885FA8CBC4AD853552E /* PaymentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31DDB71613DB8E688C4122B3 /* PaymentService.swift */; };
 		8E749A7845EBA8C07946E821 /* Router.swift in Sources */ = {isa = PBXBuildFile; fileRef = 595A3F9A5793396375B1815B /* Router.swift */; };
-		925924E687E3F8EF5665E177 /* MyRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DF2A8BF2FAF334DB2A2DBB8 /* MyRoutes.swift */; };
 		9368F265929231706C754720 /* UIView+Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57BA8309063E481C5AE95D3E /* UIView+Layout.swift */; };
+		992930C10A4C4BD50E881855 /* UIColor+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 811F047944DBBCFEDCCC3E35 /* UIColor+Theme.swift */; };
 		9F5D324E0D90EB682A0A77B4 /* OAuthCredential.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */; };
 		A3AADC4D6DF2A11DC4DA077F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7A38C4AFEC723E4B6C12D675 /* LaunchScreen.storyboard */; };
 		A57D2EFC2FDBBE00002E43BA /* MyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2EF82FDBBE00002E43BA /* MyViewController.swift */; };
@@ -52,75 +83,128 @@
 		A57D2F022FDBBE75002E43BA /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F002FDBBE75002E43BA /* HomeViewController.swift */; };
 		A57D2F042FDBBEB7002E43BA /* ServiceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F032FDBBEB7002E43BA /* ServiceViewController.swift */; };
 		A57D2F062FDBBEC8002E43BA /* MessageListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F052FDBBEC8002E43BA /* MessageListViewController.swift */; };
+		A57D2F162FDBFF13002E43BA /* BloodPressureViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F112FDBFF13002E43BA /* BloodPressureViewController.swift */; };
+		A57D2F172FDBFF13002E43BA /* HeartRateViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F132FDBFF13002E43BA /* HeartRateViewController.swift */; };
+		A57D2F182FDBFF13002E43BA /* BloodSugarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F122FDBFF13002E43BA /* BloodSugarViewController.swift */; };
+		A57D2F192FDBFF13002E43BA /* WeightViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F142FDBFF13002E43BA /* WeightViewController.swift */; };
+		A57D2F1A2FDBFF13002E43BA /* MetricCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F102FDBFF13002E43BA /* MetricCardCell.swift */; };
+		A57D2F1E2FDC0647002E43BA /* MyRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F1B2FDC0647002E43BA /* MyRoutes.swift */; };
+		A57D2F1F2FDC0647002E43BA /* Target_My.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F1C2FDC0647002E43BA /* Target_My.swift */; };
+		A57D2F232FDC0661002E43BA /* Target_RegisterLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F212FDC0661002E43BA /* Target_RegisterLogin.swift */; };
+		A57D2F242FDC0661002E43BA /* RegisterLoginRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F202FDC0661002E43BA /* RegisterLoginRoutes.swift */; };
 		A952E20047557E6F1D7EE0AF /* Pods_lhjk_client_new.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */; };
 		A97FF7EF73364502F99C2EC4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FACC28499C23F3853EBBF10 /* AppDelegate.swift */; };
 		ACA7212EA2D822D980A84BB0 /* UIColor+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD3C258D92473B4A2B55FE08 /* UIColor+Theme.swift */; };
+		B001BD35C5A77D9706ED1E5C /* MetricCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3CC412EAF524034EB509743 /* MetricCardCell.swift */; };
 		B071816CF85673E86ECBF759 /* DevicesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE6B98583B23B6831E89C159 /* DevicesViewController.swift */; };
 		B0BC602D83CB797AB66DFE1F /* WechatPayChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 395140C046B00859321C4B05 /* WechatPayChannel.swift */; };
 		B270B847530087B6D64A4B03 /* DietPlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F95D4E27E21CB917BA8D97C8 /* DietPlanViewController.swift */; };
 		B2D6B218F3BB303CD7571664 /* BluetoothService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0727F1AEE4F87CC1D8471BF /* BluetoothService.swift */; };
+		B367ED04F850DDC2BE90EA06 /* DGCharts+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107F895AF938A1DDA4D945AD /* DGCharts+Theme.swift */; };
 		B3900106696EDAEC01403D9D /* RongCloudManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE938ED267A4A5BD94207F6E /* RongCloudManager.swift */; };
+		B6A535692040D72526C52F50 /* UIButton+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D2BEE46B1A334FFCB4A056 /* UIButton+Funde.swift */; };
 		B92F96EB8F6DADF4562EA642 /* RongCloudMessageDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF09D89100EBE0ABD42544FD /* RongCloudMessageDelegate.swift */; };
 		B9EFCF3E657E0B1117AEF7E2 /* ConversationListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4DACDBFFDBFF750E34307AC /* ConversationListViewController.swift */; };
-		BC655D51197FD71450E6F74B /* RegisterLoginRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E07C227434D594434815C02 /* RegisterLoginRoutes.swift */; };
-		BE59E0CF4C2AEA2D83B2064A /* RegisterLoginRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA908613406C3EE9C886A666 /* RegisterLoginRoutes.swift */; };
+		BB7DEF26F4B9703D4AF29861 /* DigestiveViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 418F40E80C8DD064F73A6FFE /* DigestiveViewController.swift */; };
+		BC5424EE5B2CB1F270FD1B10 /* UIButton+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE5F5288FCEB9D13562C2113 /* UIButton+Funde.swift */; };
+		BC8E50EA38DA6C103036B729 /* HealthRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2368A1DA7927EB0B1D65A969 /* HealthRoutes.swift */; };
 		C7908897087E6472C5021E0F /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB2F07AA65B496162BCA2DB3 /* Foundation.framework */; };
 		C792ECC776158346DF03D2A4 /* UIColor+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D8782E4557A89884F8B27CE /* UIColor+Theme.swift */; };
 		C8C2F63AA4929D219BE2AE0C /* RootTabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D99515A34B08FA9203F7DFB /* RootTabBarController.swift */; };
+		C932BC27E401154ECDACB642 /* DGCharts+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1687DE6C525F5D669A6F44 /* DGCharts+Theme.swift */; };
 		CC5AFA75E6FC57E098F3107B /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2864D2DFAE001AA678A08E54 /* NetworkMonitor.swift */; };
+		CEEABF467766F03CAC681802 /* UIButton+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62FD3DA1E45B78D3AA703D13 /* UIButton+Funde.swift */; };
 		D0C0F9A29B4ED9D6FB4A6C01 /* AlipayChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9969E87449F15762387486 /* AlipayChannel.swift */; };
 		D0DF85E8760C6773E9B32743 /* RouteSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 218FE8AE56EDAABAC5B6AA72 /* RouteSetup.swift */; };
 		D37E9CD6CE58F539A8D8DBFB /* FuncRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D87802E5D53C4815174A814D /* FuncRowView.swift */; };
 		D4D3CF9A74172D4C53A40241 /* PlaceholderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4C406B883EDA36A6FBC5C86 /* PlaceholderViewController.swift */; };
 		D5A7A19BFB9910F4E8AD2FCD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DCE57F7A320AD8DA12CD7236 /* Assets.xcassets */; };
+		D5EE97E298CBE02BE052845B /* PlaceholderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89A61DFDC987D762A037597C /* PlaceholderViewController.swift */; };
 		D97D86F91B5A3A4D1C22DDC3 /* PaymentOrder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1064F73BA7453F81F619546E /* PaymentOrder.swift */; };
+		DA0FC023460D3BD196E8DE73 /* FundusViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 746F03316488E8B043EE38F1 /* FundusViewController.swift */; };
+		DA1B185C5977251931F5FFDD /* DGCharts+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51635840A9E5992E8382D762 /* DGCharts+Theme.swift */; };
+		DDA45896FBF77ED51B0853BB /* UIButton+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = 206F3CD48DE94E8AC7392E82 /* UIButton+Funde.swift */; };
+		E11C466E9195539DC2B9C064 /* ExerciseFoodViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78F343524CCA393486B22E8E /* ExerciseFoodViewController.swift */; };
+		E7E5276C54E35414EB42377A /* HealthRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C585503B59B93311DEC6A839 /* HealthRoutes.swift */; };
 		E9F251651FF71AEBC2DF03F3 /* BLLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 625430E3BA9BF6D9CA97AAE8 /* BLLProtocol.swift */; };
 		EF81F5EA5B41E6A3D6AD7317 /* IMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 929B2C07064774594EB5F7EC /* IMService.swift */; };
-		F35386E2D4BCEAE7ED6D0AB0 /* RouteSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA4807A4DE5A54C76E46C8D2 /* RouteSetup.swift */; };
 		FC144619EF2E5B9C0F8CAC47 /* BrandHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A664F4EB7478EC69CC8B7C6 /* BrandHeaderView.swift */; };
+		FD5BEFDB89C84190C9244A04 /* UIView+Shadow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D62DF26DC0821639179D62 /* UIView+Shadow.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		024BB0505F52EBA8BBB0F6A6 /* HealthEvaluationsViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HealthEvaluationsViewController.swift; sourceTree = "<group>"; };
-		037524CCF4A34D1042FF478D /* Target_My.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Target_My.swift; path = ../BLL/My/Target_My.swift; sourceTree = "<group>"; };
+		068CCDCC58167813273040FC /* UIColor+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIColor+Theme.swift"; path = "Other/Common/Extensions/UIColor+Theme.swift"; sourceTree = "<group>"; };
 		081BA2DBDE01D1406E30170D /* PolicyViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PolicyViewController.swift; sourceTree = "<group>"; };
 		08DA859284D97B48B4305368 /* Pods-lhjk-client-new.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-lhjk-client-new.release.xcconfig"; path = "Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new.release.xcconfig"; sourceTree = "<group>"; };
+		0AD348113E8A52DDF2499E52 /* MetricCardCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MetricCardCell.swift; path = PL/Health/MetricCardCell.swift; sourceTree = "<group>"; };
 		1064F73BA7453F81F619546E /* PaymentOrder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PaymentOrder.swift; path = DAL/Payment/PaymentOrder.swift; sourceTree = "<group>"; };
-		1CC5F06D635097AC88FC8A53 /* MyRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MyRoutes.swift; path = ../BLL/My/MyRoutes.swift; sourceTree = "<group>"; };
+		107F895AF938A1DDA4D945AD /* DGCharts+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "DGCharts+Theme.swift"; path = "Other/Common/Extensions/DGCharts+Theme.swift"; sourceTree = "<group>"; };
+		13CFE1614483ECDDFB1F6BF7 /* EcgViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EcgViewController.swift; sourceTree = "<group>"; };
+		13E8B4D72E17972E683BE4FF /* UIView+Shadow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIView+Shadow.swift"; path = "Other/Common/Extensions/UIView+Shadow.swift"; sourceTree = "<group>"; };
+		206F3CD48DE94E8AC7392E82 /* UIButton+Funde.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIButton+Funde.swift"; path = "Other/Common/Extensions/UIButton+Funde.swift"; sourceTree = "<group>"; };
 		218FE8AE56EDAABAC5B6AA72 /* RouteSetup.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RouteSetup.swift; path = DAL/Router/RouteSetup.swift; sourceTree = "<group>"; };
+		2368A1DA7927EB0B1D65A969 /* HealthRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HealthRoutes.swift; path = BLL/Health/HealthRoutes.swift; sourceTree = "<group>"; };
 		2726931B7C65F7052CD3282C /* Pods-lhjk-client-new.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-lhjk-client-new.debug.xcconfig"; path = "Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new.debug.xcconfig"; sourceTree = "<group>"; };
 		27CE239FA8FD35C6FAB8017C /* APIManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = APIManager.swift; path = DAL/Networking/APIManager.swift; sourceTree = "<group>"; };
 		27EE4ECD3E9C86C039F31E29 /* AppointmentsViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppointmentsViewController.swift; sourceTree = "<group>"; };
 		2864D2DFAE001AA678A08E54 /* NetworkMonitor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = NetworkMonitor.swift; path = DAL/Networking/NetworkMonitor.swift; sourceTree = "<group>"; };
-		2DF2A8BF2FAF334DB2A2DBB8 /* MyRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MyRoutes.swift; path = ../BLL/My/MyRoutes.swift; sourceTree = "<group>"; };
-		2E07C227434D594434815C02 /* RegisterLoginRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RegisterLoginRoutes.swift; path = ../BLL/RegisterLogin/RegisterLoginRoutes.swift; sourceTree = "<group>"; };
+		2BDCEBC6A5F857FB2694E1DD /* PlaceholderViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PlaceholderViewController.swift; path = Other/Common/Base/PlaceholderViewController.swift; sourceTree = "<group>"; };
 		31DDB71613DB8E688C4122B3 /* PaymentService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PaymentService.swift; path = BLL/Service/PaymentService.swift; sourceTree = "<group>"; };
 		3743DC311DF3858D78351828 /* Conversation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Conversation.swift; path = DAL/IM/Conversation.swift; sourceTree = "<group>"; };
 		395140C046B00859321C4B05 /* WechatPayChannel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WechatPayChannel.swift; path = DAL/Payment/WechatPayChannel.swift; sourceTree = "<group>"; };
+		418F40E80C8DD064F73A6FFE /* DigestiveViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DigestiveViewController.swift; sourceTree = "<group>"; };
+		431FAFCE0E7367CB5B8016E0 /* PlaceholderViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PlaceholderViewController.swift; path = Other/Common/Base/PlaceholderViewController.swift; sourceTree = "<group>"; };
 		432CCF9A3A379DE71F66A395 /* UIColor+Hex.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIColor+Hex.swift"; path = "Other/Common/Extensions/UIColor+Hex.swift"; sourceTree = "<group>"; };
+		48F0BFA51617B47B9D5DA86D /* MetricAddViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MetricAddViewController.swift; sourceTree = "<group>"; };
+		4BD50DDCF0289450DE8869D0 /* SleepViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SleepViewController.swift; sourceTree = "<group>"; };
 		4D99515A34B08FA9203F7DFB /* RootTabBarController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RootTabBarController.swift; path = Other/RootTabBarController.swift; sourceTree = "<group>"; };
-		4E3C9283A035775971F02757 /* Target_RegisterLogin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Target_RegisterLogin.swift; path = ../BLL/RegisterLogin/Target_RegisterLogin.swift; sourceTree = "<group>"; };
+		50B0DAFB0366CEB513A54516 /* PlaceholderViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PlaceholderViewController.swift; path = Other/Common/Base/PlaceholderViewController.swift; sourceTree = "<group>"; };
+		51635840A9E5992E8382D762 /* DGCharts+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "DGCharts+Theme.swift"; path = "Other/Common/Extensions/DGCharts+Theme.swift"; sourceTree = "<group>"; };
+		529A0372CB27D48DFCC4FC0F /* PlaceholderViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PlaceholderViewController.swift; path = Other/Common/Base/PlaceholderViewController.swift; sourceTree = "<group>"; };
 		57BA8309063E481C5AE95D3E /* UIView+Layout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIView+Layout.swift"; path = "Other/Common/Extensions/UIView+Layout.swift"; sourceTree = "<group>"; };
 		595A3F9A5793396375B1815B /* Router.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Router.swift; path = DAL/Router/Router.swift; sourceTree = "<group>"; };
 		5A664F4EB7478EC69CC8B7C6 /* BrandHeaderView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BrandHeaderView.swift; sourceTree = "<group>"; };
 		5CE8E0C75DF62E92DC4A2681 /* BluetoothManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BluetoothManager.swift; path = DAL/Bluetooth/BluetoothManager.swift; sourceTree = "<group>"; };
+		5E9E858C174F8DBD089F2BEC /* PlaceholderViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PlaceholderViewController.swift; path = Other/Common/Base/PlaceholderViewController.swift; sourceTree = "<group>"; };
 		5FACC28499C23F3853EBBF10 /* AppDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Other/AppDelegate.swift; sourceTree = "<group>"; };
 		619369377609556A6596BEFF /* HealthReportViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HealthReportViewController.swift; sourceTree = "<group>"; };
 		625430E3BA9BF6D9CA97AAE8 /* BLLProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BLLProtocol.swift; path = Other/Common/Protocols/BLLProtocol.swift; sourceTree = "<group>"; };
 		62E9EC642D4693434806DE88 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = Info.plist; path = Other/Resources/Info.plist; sourceTree = "<group>"; };
+		62FD3DA1E45B78D3AA703D13 /* UIButton+Funde.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIButton+Funde.swift"; path = "Other/Common/Extensions/UIButton+Funde.swift"; sourceTree = "<group>"; };
 		68DC37BCDD618E2DCE9A9D02 /* OAuthAuthenticator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OAuthAuthenticator.swift; path = DAL/Networking/OAuthAuthenticator.swift; sourceTree = "<group>"; };
 		6E9969E87449F15762387486 /* AlipayChannel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AlipayChannel.swift; path = DAL/Payment/AlipayChannel.swift; sourceTree = "<group>"; };
+		6ECCCDFBA10AEE73B626DBF1 /* UIButton+Funde.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIButton+Funde.swift"; path = "Other/Common/Extensions/UIButton+Funde.swift"; sourceTree = "<group>"; };
+		6F658342CD338BC1FE36A3A3 /* UIColor+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIColor+Theme.swift"; path = "Other/Common/Extensions/UIColor+Theme.swift"; sourceTree = "<group>"; };
+		700507D193530C458BAB94C6 /* RouteSetup.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RouteSetup.swift; path = DAL/Router/RouteSetup.swift; sourceTree = "<group>"; };
+		7054846090DC999E8A4AA089 /* SpO2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpO2ViewController.swift; sourceTree = "<group>"; };
+		746F03316488E8B043EE38F1 /* FundusViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FundusViewController.swift; sourceTree = "<group>"; };
+		75100171662400D39ED2E063 /* UIView+Shadow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIView+Shadow.swift"; path = "Other/Common/Extensions/UIView+Shadow.swift"; sourceTree = "<group>"; };
+		78D2BEE46B1A334FFCB4A056 /* UIButton+Funde.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIButton+Funde.swift"; path = "Other/Common/Extensions/UIButton+Funde.swift"; sourceTree = "<group>"; };
+		78F343524CCA393486B22E8E /* ExerciseFoodViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExerciseFoodViewController.swift; sourceTree = "<group>"; };
+		79D62DF26DC0821639179D62 /* UIView+Shadow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIView+Shadow.swift"; path = "Other/Common/Extensions/UIView+Shadow.swift"; sourceTree = "<group>"; };
 		7A38C4AFEC723E4B6C12D675 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Other/Resources/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		7A5837FBBD32E9C00A8CDC8A /* Target_My.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Target_My.swift; path = ../BLL/My/Target_My.swift; sourceTree = "<group>"; };
+		7B1687DE6C525F5D669A6F44 /* DGCharts+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "DGCharts+Theme.swift"; path = "Other/Common/Extensions/DGCharts+Theme.swift"; sourceTree = "<group>"; };
 		7B2F26CCFF4734186BF04A39 /* PaymentViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PaymentViewController.swift; path = PL/Service/PaymentViewController.swift; sourceTree = "<group>"; };
+		7B6D6C639BBEFFD47E6349E4 /* HomeRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HomeRoutes.swift; path = ../BLL/Home/HomeRoutes.swift; sourceTree = "<group>"; };
 		7BA15F07EE00BE72C38F6C89 /* PeripheralCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PeripheralCell.swift; path = PL/Health/PeripheralCell.swift; sourceTree = "<group>"; };
+		7D47D284B9579B8522F72F53 /* MetricCardCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MetricCardCell.swift; path = PL/Health/MetricCardCell.swift; sourceTree = "<group>"; };
 		7D7AD8DF0E1609567B12918C /* LoginFieldView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoginFieldView.swift; sourceTree = "<group>"; };
 		7D8782E4557A89884F8B27CE /* UIColor+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIColor+Theme.swift"; path = "Other/Common/Extensions/UIColor+Theme.swift"; sourceTree = "<group>"; };
 		7EDE51E340BF0B259CD5256E /* UIColor+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIColor+Theme.swift"; path = "Other/Common/Extensions/UIColor+Theme.swift"; sourceTree = "<group>"; };
 		7FFA483EDF37CE2D4BEAFA2C /* BaseViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BaseViewController.swift; path = Other/Common/Base/BaseViewController.swift; sourceTree = "<group>"; };
+		811F047944DBBCFEDCCC3E35 /* UIColor+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIColor+Theme.swift"; path = "Other/Common/Extensions/UIColor+Theme.swift"; sourceTree = "<group>"; };
 		840D488A2D621EED67F49634 /* PLProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PLProtocol.swift; path = Other/Common/Protocols/PLProtocol.swift; sourceTree = "<group>"; };
+		89A61DFDC987D762A037597C /* PlaceholderViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PlaceholderViewController.swift; path = Other/Common/Base/PlaceholderViewController.swift; sourceTree = "<group>"; };
+		8C09D244C06708E3D805A6EB /* UIColor+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIColor+Theme.swift"; path = "Other/Common/Extensions/UIColor+Theme.swift"; sourceTree = "<group>"; };
+		8CE26E3144A5B5A499CAA512 /* DGCharts+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "DGCharts+Theme.swift"; path = "Other/Common/Extensions/DGCharts+Theme.swift"; sourceTree = "<group>"; };
 		929B2C07064774594EB5F7EC /* IMService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = IMService.swift; path = BLL/Message/IMService.swift; sourceTree = "<group>"; };
+		957B84B430D2267FC6A87404 /* MetricCardCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MetricCardCell.swift; path = PL/Health/MetricCardCell.swift; sourceTree = "<group>"; };
+		978136B3E38C599C142AAA37 /* UIView+Shadow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIView+Shadow.swift"; path = "Other/Common/Extensions/UIView+Shadow.swift"; sourceTree = "<group>"; };
+		9E5B1E20D5CB4CB82C30EEB4 /* PlaceholderViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PlaceholderViewController.swift; path = Other/Common/Base/PlaceholderViewController.swift; sourceTree = "<group>"; };
+		9E72853BB1BE033768E34FED /* UIColor+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIColor+Theme.swift"; path = "Other/Common/Extensions/UIColor+Theme.swift"; sourceTree = "<group>"; };
 		A2DE7CB0CC0F0792F08218E9 /* ProfileViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProfileViewController.swift; sourceTree = "<group>"; };
+		A3CC412EAF524034EB509743 /* MetricCardCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MetricCardCell.swift; path = PL/Health/MetricCardCell.swift; sourceTree = "<group>"; };
 		A4DACDBFFDBFF750E34307AC /* ConversationListViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ConversationListViewController.swift; path = PL/Message/ConversationListViewController.swift; sourceTree = "<group>"; };
 		A57D2EF82FDBBE00002E43BA /* MyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyViewController.swift; sourceTree = "<group>"; };
 		A57D2EFA2FDBBE00002E43BA /* LoginViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
@@ -128,32 +212,50 @@
 		A57D2F002FDBBE75002E43BA /* HomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
 		A57D2F032FDBBEB7002E43BA /* ServiceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ServiceViewController.swift; path = PL/Service/ServiceViewController.swift; sourceTree = "<group>"; };
 		A57D2F052FDBBEC8002E43BA /* MessageListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MessageListViewController.swift; path = PL/Message/MessageListViewController.swift; sourceTree = "<group>"; };
+		A57D2F102FDBFF13002E43BA /* MetricCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MetricCardCell.swift; path = PL/Health/MetricCardCell.swift; sourceTree = "<group>"; };
+		A57D2F112FDBFF13002E43BA /* BloodPressureViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BloodPressureViewController.swift; sourceTree = "<group>"; };
+		A57D2F122FDBFF13002E43BA /* BloodSugarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BloodSugarViewController.swift; sourceTree = "<group>"; };
+		A57D2F132FDBFF13002E43BA /* HeartRateViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeartRateViewController.swift; sourceTree = "<group>"; };
+		A57D2F142FDBFF13002E43BA /* WeightViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightViewController.swift; sourceTree = "<group>"; };
+		A57D2F1B2FDC0647002E43BA /* MyRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyRoutes.swift; sourceTree = "<group>"; };
+		A57D2F1C2FDC0647002E43BA /* Target_My.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Target_My.swift; sourceTree = "<group>"; };
+		A57D2F202FDC0661002E43BA /* RegisterLoginRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterLoginRoutes.swift; sourceTree = "<group>"; };
+		A57D2F212FDC0661002E43BA /* Target_RegisterLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Target_RegisterLogin.swift; sourceTree = "<group>"; };
+		A68D2F5E0471784338C0AC0C /* UIColor+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIColor+Theme.swift"; path = "Other/Common/Extensions/UIColor+Theme.swift"; sourceTree = "<group>"; };
 		A7EDC9DBA2C15DAEC992461C /* ChatViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChatViewController.swift; path = PL/Message/ChatViewController.swift; sourceTree = "<group>"; };
-		AA4807A4DE5A54C76E46C8D2 /* RouteSetup.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RouteSetup.swift; path = DAL/Router/RouteSetup.swift; sourceTree = "<group>"; };
+		A8F7A8F91BEE13593784610E /* DGCharts+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "DGCharts+Theme.swift"; path = "Other/Common/Extensions/DGCharts+Theme.swift"; sourceTree = "<group>"; };
+		AC7A7C292A061E700B4EAD00 /* DGCharts+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "DGCharts+Theme.swift"; path = "Other/Common/Extensions/DGCharts+Theme.swift"; sourceTree = "<group>"; };
 		AD5F08A0277BFF4EBF5B9324 /* UIColor+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIColor+Theme.swift"; path = "Other/Common/Extensions/UIColor+Theme.swift"; sourceTree = "<group>"; };
+		AE5F5288FCEB9D13562C2113 /* UIButton+Funde.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIButton+Funde.swift"; path = "Other/Common/Extensions/UIButton+Funde.swift"; sourceTree = "<group>"; };
 		AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OAuthCredential.swift; path = DAL/Networking/OAuthCredential.swift; sourceTree = "<group>"; };
 		B1B291D76D4C819D8DB33D00 /* DatabaseManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DatabaseManager.swift; path = DAL/Storage/DatabaseManager.swift; sourceTree = "<group>"; };
 		B498405ABB27F6D8377D6064 /* MonitoringPlanViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MonitoringPlanViewController.swift; sourceTree = "<group>"; };
 		B6373F937CC9DA144A80873C /* BluetoothModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BluetoothModels.swift; path = DAL/Bluetooth/BluetoothModels.swift; sourceTree = "<group>"; };
 		B7AE47164C661037814AB024 /* Message.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Message.swift; path = DAL/IM/Message.swift; sourceTree = "<group>"; };
 		B8DE397CDF8225D92B0353A0 /* SceneDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SceneDelegate.swift; path = Other/SceneDelegate.swift; sourceTree = "<group>"; };
+		BDFA6D00CF0E1707D0957144 /* MetricRulerView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MetricRulerView.swift; sourceTree = "<group>"; };
 		C0DFD924CDD4A764ABF604FB /* DALProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DALProtocol.swift; path = Other/Common/Protocols/DALProtocol.swift; sourceTree = "<group>"; };
-		C5DE2517282D9531B8DD28F4 /* Target_RegisterLogin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Target_RegisterLogin.swift; path = ../BLL/RegisterLogin/Target_RegisterLogin.swift; sourceTree = "<group>"; };
+		C585503B59B93311DEC6A839 /* HealthRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HealthRoutes.swift; path = BLL/Health/HealthRoutes.swift; sourceTree = "<group>"; };
+		CAE5621E54540B2FC59399D6 /* UIColor+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIColor+Theme.swift"; path = "Other/Common/Extensions/UIColor+Theme.swift"; sourceTree = "<group>"; };
 		CF09D89100EBE0ABD42544FD /* RongCloudMessageDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RongCloudMessageDelegate.swift; path = DAL/IM/RongCloudMessageDelegate.swift; sourceTree = "<group>"; };
+		CFC610B572CBF77A009A69E1 /* PlaceholderViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PlaceholderViewController.swift; path = Other/Common/Base/PlaceholderViewController.swift; sourceTree = "<group>"; };
 		CFFDA4B68A5A8E056326B5DF /* lhjk-client-new.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "lhjk-client-new.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D023CF2932A3EB39ECC71228 /* UIViewController+Alert.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIViewController+Alert.swift"; path = "Other/Common/Extensions/UIViewController+Alert.swift"; sourceTree = "<group>"; };
 		D0727F1AEE4F87CC1D8471BF /* BluetoothService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BluetoothService.swift; path = BLL/Health/BluetoothService.swift; sourceTree = "<group>"; };
 		D333C32A8805FAD51C4D2820 /* UserDefaultsManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = UserDefaultsManager.swift; path = DAL/Storage/UserDefaultsManager.swift; sourceTree = "<group>"; };
+		D7B511EBE0908F352DD771EB /* UIColor+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIColor+Theme.swift"; path = "Other/Common/Extensions/UIColor+Theme.swift"; sourceTree = "<group>"; };
 		D7C3F2FAE5619994A3AA7A46 /* SettingsViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		D87802E5D53C4815174A814D /* FuncRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FuncRowView.swift; sourceTree = "<group>"; };
-		DA908613406C3EE9C886A666 /* RegisterLoginRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RegisterLoginRoutes.swift; path = ../BLL/RegisterLogin/RegisterLoginRoutes.swift; sourceTree = "<group>"; };
 		DB2F07AA65B496162BCA2DB3 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		DCE57F7A320AD8DA12CD7236 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Other/Resources/Assets.xcassets; sourceTree = "<group>"; };
+		E0A88B73D04EDA19FD96D1ED /* UIColor+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIColor+Theme.swift"; path = "Other/Common/Extensions/UIColor+Theme.swift"; sourceTree = "<group>"; };
 		E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_lhjk_client_new.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2C9738A2B82C009F94EDFE7 /* APIError.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = APIError.swift; path = DAL/Networking/APIError.swift; sourceTree = "<group>"; };
 		E4C406B883EDA36A6FBC5C86 /* PlaceholderViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PlaceholderViewController.swift; path = Other/Common/Base/PlaceholderViewController.swift; sourceTree = "<group>"; };
+		E6AE703A4BA590EB2DBEF0E7 /* PlaceholderViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PlaceholderViewController.swift; path = Other/Common/Base/PlaceholderViewController.swift; sourceTree = "<group>"; };
 		E9C2E856DFAEC8757D284064 /* SectionTitleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SectionTitleView.swift; sourceTree = "<group>"; };
 		EA4B7BA23114060E23C1E0FD /* UIColor+Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIColor+Theme.swift"; path = "Other/Common/Extensions/UIColor+Theme.swift"; sourceTree = "<group>"; };
+		ECE31BDBEC219B5D2CFC5487 /* UIView+Shadow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIView+Shadow.swift"; path = "Other/Common/Extensions/UIView+Shadow.swift"; sourceTree = "<group>"; };
 		EE076FFD3B924E308E3D26E9 /* BaseNavigationController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BaseNavigationController.swift; path = Other/Common/Base/BaseNavigationController.swift; sourceTree = "<group>"; };
 		EE6B98583B23B6831E89C159 /* DevicesViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DevicesViewController.swift; sourceTree = "<group>"; };
 		F33F829631DE3DD09B5C6FF3 /* PaymentProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PaymentProtocol.swift; path = DAL/Payment/PaymentProtocol.swift; sourceTree = "<group>"; };
@@ -204,33 +306,26 @@
 			name = Bluetooth;
 			sourceTree = "<group>";
 		};
-		4EFECA901203FEB229D42A30 /* RegisterLogin */ = {
-			isa = PBXGroup;
-			children = (
-				C5DE2517282D9531B8DD28F4 /* Target_RegisterLogin.swift */,
-				DA908613406C3EE9C886A666 /* RegisterLoginRoutes.swift */,
-				4E3C9283A035775971F02757 /* Target_RegisterLogin.swift */,
-				2E07C227434D594434815C02 /* RegisterLoginRoutes.swift */,
-			);
-			name = RegisterLogin;
-			path = RegisterLogin;
-			sourceTree = "<group>";
-		};
 		4FBDEA25F6088496CD29930C /* Components */ = {
 			isa = PBXGroup;
 			children = (
 				D87802E5D53C4815174A814D /* FuncRowView.swift */,
 				E9C2E856DFAEC8757D284064 /* SectionTitleView.swift */,
 			);
-			name = Components;
 			path = Components;
 			sourceTree = "<group>";
 		};
 		5BBC7A0F6F458645EB658DDB /* Health */ = {
 			isa = PBXGroup;
 			children = (
+				A57D2F102FDBFF13002E43BA /* MetricCardCell.swift */,
+				A57D2F152FDBFF13002E43BA /* Metrics */,
 				A57D2EFE2FDBBE3B002E43BA /* HealthViewController.swift */,
 				7BA15F07EE00BE72C38F6C89 /* PeripheralCell.swift */,
+				0AD348113E8A52DDF2499E52 /* MetricCardCell.swift */,
+				957B84B430D2267FC6A87404 /* MetricCardCell.swift */,
+				A3CC412EAF524034EB509743 /* MetricCardCell.swift */,
+				7D47D284B9579B8522F72F53 /* MetricCardCell.swift */,
 			);
 			name = Health;
 			sourceTree = "<group>";
@@ -257,18 +352,6 @@
 			name = Other;
 			sourceTree = "<group>";
 		};
-		7BCA4899EFEEF178D328EB96 /* My */ = {
-			isa = PBXGroup;
-			children = (
-				7A5837FBBD32E9C00A8CDC8A /* Target_My.swift */,
-				1CC5F06D635097AC88FC8A53 /* MyRoutes.swift */,
-				037524CCF4A34D1042FF478D /* Target_My.swift */,
-				2DF2A8BF2FAF334DB2A2DBB8 /* MyRoutes.swift */,
-			);
-			name = My;
-			path = My;
-			sourceTree = "<group>";
-		};
 		80323DB75D4CB2E15619DDBB /* DAL */ = {
 			isa = PBXGroup;
 			children = (
@@ -293,6 +376,31 @@
 				EA4B7BA23114060E23C1E0FD /* UIColor+Theme.swift */,
 				7D8782E4557A89884F8B27CE /* UIColor+Theme.swift */,
 				FD3C258D92473B4A2B55FE08 /* UIColor+Theme.swift */,
+				8C09D244C06708E3D805A6EB /* UIColor+Theme.swift */,
+				811F047944DBBCFEDCCC3E35 /* UIColor+Theme.swift */,
+				A68D2F5E0471784338C0AC0C /* UIColor+Theme.swift */,
+				D7B511EBE0908F352DD771EB /* UIColor+Theme.swift */,
+				107F895AF938A1DDA4D945AD /* DGCharts+Theme.swift */,
+				068CCDCC58167813273040FC /* UIColor+Theme.swift */,
+				7B1687DE6C525F5D669A6F44 /* DGCharts+Theme.swift */,
+				79D62DF26DC0821639179D62 /* UIView+Shadow.swift */,
+				6ECCCDFBA10AEE73B626DBF1 /* UIButton+Funde.swift */,
+				E0A88B73D04EDA19FD96D1ED /* UIColor+Theme.swift */,
+				A8F7A8F91BEE13593784610E /* DGCharts+Theme.swift */,
+				13E8B4D72E17972E683BE4FF /* UIView+Shadow.swift */,
+				206F3CD48DE94E8AC7392E82 /* UIButton+Funde.swift */,
+				CAE5621E54540B2FC59399D6 /* UIColor+Theme.swift */,
+				8CE26E3144A5B5A499CAA512 /* DGCharts+Theme.swift */,
+				75100171662400D39ED2E063 /* UIView+Shadow.swift */,
+				62FD3DA1E45B78D3AA703D13 /* UIButton+Funde.swift */,
+				9E72853BB1BE033768E34FED /* UIColor+Theme.swift */,
+				51635840A9E5992E8382D762 /* DGCharts+Theme.swift */,
+				ECE31BDBEC219B5D2CFC5487 /* UIView+Shadow.swift */,
+				AE5F5288FCEB9D13562C2113 /* UIButton+Funde.swift */,
+				6F658342CD338BC1FE36A3A3 /* UIColor+Theme.swift */,
+				AC7A7C292A061E700B4EAD00 /* DGCharts+Theme.swift */,
+				978136B3E38C599C142AAA37 /* UIView+Shadow.swift */,
+				78D2BEE46B1A334FFCB4A056 /* UIButton+Funde.swift */,
 			);
 			name = Extensions;
 			sourceTree = "<group>";
@@ -344,6 +452,46 @@
 			path = PL/Home;
 			sourceTree = "<group>";
 		};
+		A57D2F152FDBFF13002E43BA /* Metrics */ = {
+			isa = PBXGroup;
+			children = (
+				A57D2F112FDBFF13002E43BA /* BloodPressureViewController.swift */,
+				A57D2F122FDBFF13002E43BA /* BloodSugarViewController.swift */,
+				A57D2F132FDBFF13002E43BA /* HeartRateViewController.swift */,
+				A57D2F142FDBFF13002E43BA /* WeightViewController.swift */,
+				BDFA6D00CF0E1707D0957144 /* MetricRulerView.swift */,
+				48F0BFA51617B47B9D5DA86D /* MetricAddViewController.swift */,
+				4BD50DDCF0289450DE8869D0 /* SleepViewController.swift */,
+				7054846090DC999E8A4AA089 /* SpO2ViewController.swift */,
+				13CFE1614483ECDDFB1F6BF7 /* EcgViewController.swift */,
+				746F03316488E8B043EE38F1 /* FundusViewController.swift */,
+				418F40E80C8DD064F73A6FFE /* DigestiveViewController.swift */,
+				78F343524CCA393486B22E8E /* ExerciseFoodViewController.swift */,
+			);
+			name = Metrics;
+			path = PL/Health/Metrics;
+			sourceTree = "<group>";
+		};
+		A57D2F1D2FDC0647002E43BA /* My */ = {
+			isa = PBXGroup;
+			children = (
+				A57D2F1B2FDC0647002E43BA /* MyRoutes.swift */,
+				A57D2F1C2FDC0647002E43BA /* Target_My.swift */,
+			);
+			name = My;
+			path = BLL/My;
+			sourceTree = "<group>";
+		};
+		A57D2F222FDC0661002E43BA /* RegisterLogin */ = {
+			isa = PBXGroup;
+			children = (
+				A57D2F202FDC0661002E43BA /* RegisterLoginRoutes.swift */,
+				A57D2F212FDC0661002E43BA /* Target_RegisterLogin.swift */,
+			);
+			name = RegisterLogin;
+			path = BLL/RegisterLogin;
+			sourceTree = "<group>";
+		};
 		A987952ACD55240446C185ED /* lhjk-client-new */ = {
 			isa = PBXGroup;
 			children = (
@@ -377,8 +525,19 @@
 			isa = PBXGroup;
 			children = (
 				D0727F1AEE4F87CC1D8471BF /* BluetoothService.swift */,
+				C585503B59B93311DEC6A839 /* HealthRoutes.swift */,
+				2368A1DA7927EB0B1D65A969 /* HealthRoutes.swift */,
 			);
 			name = Health;
+			sourceTree = "<group>";
+		};
+		BC86F32ACF006C796E29F0D7 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				7B6D6C639BBEFFD47E6349E4 /* HomeRoutes.swift */,
+			);
+			name = Home;
+			path = Home;
 			sourceTree = "<group>";
 		};
 		BD1C29DE9A6C4C86A8F963DE /* Products */ = {
@@ -436,6 +595,15 @@
 				EE076FFD3B924E308E3D26E9 /* BaseNavigationController.swift */,
 				7FFA483EDF37CE2D4BEAFA2C /* BaseViewController.swift */,
 				E4C406B883EDA36A6FBC5C86 /* PlaceholderViewController.swift */,
+				50B0DAFB0366CEB513A54516 /* PlaceholderViewController.swift */,
+				431FAFCE0E7367CB5B8016E0 /* PlaceholderViewController.swift */,
+				89A61DFDC987D762A037597C /* PlaceholderViewController.swift */,
+				9E5B1E20D5CB4CB82C30EEB4 /* PlaceholderViewController.swift */,
+				2BDCEBC6A5F857FB2694E1DD /* PlaceholderViewController.swift */,
+				5E9E858C174F8DBD089F2BEC /* PlaceholderViewController.swift */,
+				E6AE703A4BA590EB2DBEF0E7 /* PlaceholderViewController.swift */,
+				CFC610B572CBF77A009A69E1 /* PlaceholderViewController.swift */,
+				529A0372CB27D48DFCC4FC0F /* PlaceholderViewController.swift */,
 			);
 			name = Base;
 			sourceTree = "<group>";
@@ -474,7 +642,7 @@
 			children = (
 				595A3F9A5793396375B1815B /* Router.swift */,
 				218FE8AE56EDAABAC5B6AA72 /* RouteSetup.swift */,
-				AA4807A4DE5A54C76E46C8D2 /* RouteSetup.swift */,
+				700507D193530C458BAB94C6 /* RouteSetup.swift */,
 			);
 			name = Router;
 			sourceTree = "<group>";
@@ -503,11 +671,12 @@
 		F652125E9A5F2721ADE9B5ED /* BLL */ = {
 			isa = PBXGroup;
 			children = (
+				A57D2F222FDC0661002E43BA /* RegisterLogin */,
+				A57D2F1D2FDC0647002E43BA /* My */,
 				B64D5D28AFB9110FDD54A8D6 /* Health */,
 				E6B9AD914CC7A60A01A67483 /* Message */,
 				C4193BC7FCD37A9D67D93F74 /* Service */,
-				7BCA4899EFEEF178D328EB96 /* My */,
-				4EFECA901203FEB229D42A30 /* RegisterLogin */,
+				BC86F32ACF006C796E29F0D7 /* Home */,
 			);
 			name = BLL;
 			sourceTree = "<group>";
@@ -528,7 +697,6 @@
 				5A664F4EB7478EC69CC8B7C6 /* BrandHeaderView.swift */,
 				7D7AD8DF0E1609567B12918C /* LoginFieldView.swift */,
 			);
-			name = Components;
 			path = Components;
 			sourceTree = "<group>";
 		};
@@ -640,6 +808,7 @@
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/Alamofire/Alamofire.framework",
+				"${BUILT_PRODUCTS_DIR}/DGCharts/DGCharts.framework",
 				"${BUILT_PRODUCTS_DIR}/FMDB/FMDB.framework",
 				"${BUILT_PRODUCTS_DIR}/Kingfisher/Kingfisher.framework",
 				"${BUILT_PRODUCTS_DIR}/SnapKit/SnapKit.framework",
@@ -659,6 +828,7 @@
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Alamofire.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/DGCharts.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FMDB.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Kingfisher.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SnapKit.framework",
@@ -740,6 +910,8 @@
 				A57D2F062FDBBEC8002E43BA /* MessageListViewController.swift in Sources */,
 				E9F251651FF71AEBC2DF03F3 /* BLLProtocol.swift in Sources */,
 				023299BEDDBAE0D022B08E7B /* DALProtocol.swift in Sources */,
+				A57D2F232FDC0661002E43BA /* Target_RegisterLogin.swift in Sources */,
+				A57D2F242FDC0661002E43BA /* RegisterLoginRoutes.swift in Sources */,
 				A57D2EFC2FDBBE00002E43BA /* MyViewController.swift in Sources */,
 				A57D2EFD2FDBBE00002E43BA /* LoginViewController.swift in Sources */,
 				59AB481874792A6D2327D4DB /* PLProtocol.swift in Sources */,
@@ -766,16 +938,66 @@
 				4A75427BA911A7B10D4DDE6E /* MonitoringPlanViewController.swift in Sources */,
 				8449BE1294FC1603412521D4 /* HealthEvaluationsViewController.swift in Sources */,
 				C792ECC776158346DF03D2A4 /* UIColor+Theme.swift in Sources */,
-				05BD8C8A1D8DCA6E907F1937 /* MyRoutes.swift in Sources */,
 				D0DF85E8760C6773E9B32743 /* RouteSetup.swift in Sources */,
-				BE59E0CF4C2AEA2D83B2064A /* RegisterLoginRoutes.swift in Sources */,
 				ACA7212EA2D822D980A84BB0 /* UIColor+Theme.swift in Sources */,
-				1D6656156D978531A5AD7B32 /* Target_My.swift in Sources */,
-				925924E687E3F8EF5665E177 /* MyRoutes.swift in Sources */,
-				F35386E2D4BCEAE7ED6D0AB0 /* RouteSetup.swift in Sources */,
-				4FD88C7CBF14138B1C0C128B /* Target_RegisterLogin.swift in Sources */,
-				BC655D51197FD71450E6F74B /* RegisterLoginRoutes.swift in Sources */,
+				A57D2F162FDBFF13002E43BA /* BloodPressureViewController.swift in Sources */,
+				A57D2F172FDBFF13002E43BA /* HeartRateViewController.swift in Sources */,
+				A57D2F182FDBFF13002E43BA /* BloodSugarViewController.swift in Sources */,
+				A57D2F192FDBFF13002E43BA /* WeightViewController.swift in Sources */,
+				A57D2F1A2FDBFF13002E43BA /* MetricCardCell.swift in Sources */,
 				D4D3CF9A74172D4C53A40241 /* PlaceholderViewController.swift in Sources */,
+				41FAD3DC18F10D6E929E4C57 /* UIColor+Theme.swift in Sources */,
+				1EEB4AACADC54E2856BCE749 /* PlaceholderViewController.swift in Sources */,
+				E7E5276C54E35414EB42377A /* HealthRoutes.swift in Sources */,
+				992930C10A4C4BD50E881855 /* UIColor+Theme.swift in Sources */,
+				8D933B6432D5BE6DF43489A0 /* PlaceholderViewController.swift in Sources */,
+				10EDF1EF9D6E0E004960E6F5 /* UIColor+Theme.swift in Sources */,
+				D5EE97E298CBE02BE052845B /* PlaceholderViewController.swift in Sources */,
+				10AC41CB66D21BE7EC06FCE3 /* UIColor+Theme.swift in Sources */,
+				7D41690F6DDCDC6D8EBD9F6C /* PlaceholderViewController.swift in Sources */,
+				B367ED04F850DDC2BE90EA06 /* DGCharts+Theme.swift in Sources */,
+				47ECCEB3A722CE2BCB2DDC8E /* UIColor+Theme.swift in Sources */,
+				173DABFA2078972DEC8AA9ED /* PlaceholderViewController.swift in Sources */,
+				C932BC27E401154ECDACB642 /* DGCharts+Theme.swift in Sources */,
+				FD5BEFDB89C84190C9244A04 /* UIView+Shadow.swift in Sources */,
+				43C5F45A072255486286723A /* UIButton+Funde.swift in Sources */,
+				6410C5C9DBC586E680C78DA2 /* UIColor+Theme.swift in Sources */,
+				802D959B31D9B0388126BE3D /* PlaceholderViewController.swift in Sources */,
+				025C10EC8F627054C2A3590E /* MetricCardCell.swift in Sources */,
+				27260D21123BF37DC03CD18F /* MetricRulerView.swift in Sources */,
+				62628470BAE98A14205557DD /* MetricAddViewController.swift in Sources */,
+				7DDA52DB97475F7DDD215410 /* DGCharts+Theme.swift in Sources */,
+				1EFFD9EE4F69090334427958 /* UIView+Shadow.swift in Sources */,
+				DDA45896FBF77ED51B0853BB /* UIButton+Funde.swift in Sources */,
+				0071C74699B0A84CC909CFD3 /* UIColor+Theme.swift in Sources */,
+				1C3807ABE1D0E5F8912B820F /* PlaceholderViewController.swift in Sources */,
+				18D3326B892C5A93550FB627 /* MetricCardCell.swift in Sources */,
+				342788F37504E84D0A004D5E /* SleepViewController.swift in Sources */,
+				5CCDD160091D0577C7BFE522 /* DGCharts+Theme.swift in Sources */,
+				2C058BD3498889EE24CE30E1 /* UIView+Shadow.swift in Sources */,
+				CEEABF467766F03CAC681802 /* UIButton+Funde.swift in Sources */,
+				7B24A35FB18BA5459E8041A7 /* UIColor+Theme.swift in Sources */,
+				447DC4BA3A37B5A73213F4B0 /* PlaceholderViewController.swift in Sources */,
+				B001BD35C5A77D9706ED1E5C /* MetricCardCell.swift in Sources */,
+				7568562CC69E30C273DCAF3A /* SpO2ViewController.swift in Sources */,
+				0A509A5F93C44346FA943249 /* EcgViewController.swift in Sources */,
+				DA0FC023460D3BD196E8DE73 /* FundusViewController.swift in Sources */,
+				BB7DEF26F4B9703D4AF29861 /* DigestiveViewController.swift in Sources */,
+				E11C466E9195539DC2B9C064 /* ExerciseFoodViewController.swift in Sources */,
+				A57D2F1E2FDC0647002E43BA /* MyRoutes.swift in Sources */,
+				A57D2F1F2FDC0647002E43BA /* Target_My.swift in Sources */,
+				DA1B185C5977251931F5FFDD /* DGCharts+Theme.swift in Sources */,
+				6BDEFAB088337011117A9DB0 /* UIView+Shadow.swift in Sources */,
+				BC5424EE5B2CB1F270FD1B10 /* UIButton+Funde.swift in Sources */,
+				06A56AC66A4F4CDA7E0261D0 /* UIColor+Theme.swift in Sources */,
+				59A70F6078414403FFE31C4B /* RouteSetup.swift in Sources */,
+				29DF7811126DBF2D88CA7B0B /* HomeRoutes.swift in Sources */,
+				1698798C29CF69A7E72C914F /* PlaceholderViewController.swift in Sources */,
+				BC8E50EA38DA6C103036B729 /* HealthRoutes.swift in Sources */,
+				419C5C51AEFC0BB483AC12EA /* MetricCardCell.swift in Sources */,
+				1AF89CE8E94B1AE99FBCAFA2 /* DGCharts+Theme.swift in Sources */,
+				59B862811A9C0D15256C370B /* UIView+Shadow.swift in Sources */,
+				B6A535692040D72526C52F50 /* UIButton+Funde.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

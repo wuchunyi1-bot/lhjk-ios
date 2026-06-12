@@ -13,6 +13,8 @@ enum RouteSetup {
         isRegistered = true
 
         RegisterLoginRoutes.register()
+        HomeRoutes.register()
         MyRoutes.register()
+        HealthRoutes.register()
     }
 }
