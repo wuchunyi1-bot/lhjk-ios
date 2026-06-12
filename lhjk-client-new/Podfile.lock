@@ -1,5 +1,8 @@
 PODS:
   - Alamofire (5.11.2)
+  - DGCharts (5.1.0):
+    - DGCharts/Core (= 5.1.0)
+  - DGCharts/Core (5.1.0)
   - FMDB (2.7.12):
     - FMDB/standard (= 2.7.12)
   - FMDB/Core (2.7.12)
@@ -51,6 +54,7 @@ PODS:
 
 DEPENDENCIES:
   - Alamofire (~> 5.9)
+  - DGCharts
   - FMDB (~> 2.7)
   - Kingfisher (~> 7.0)
   - RongCloudIM (~> 5.0)
@@ -59,6 +63,7 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - Alamofire
+    - DGCharts
     - FMDB
     - Kingfisher
     - RongCloudIM
@@ -66,11 +71,12 @@ SPEC REPOS:
 
 SPEC CHECKSUMS:
   Alamofire: 400275dd1c6d87d95a041861d2a59da4b520a203
+  DGCharts: 1c6daf585b6cfc78807af44ea690d357c410627f
   FMDB: 728731dd336af3936ce00f91d9d8495f5718a0e6
   Kingfisher: 53a10ea35051a436b5fb626ca2dd8f3144d755e9
   RongCloudIM: c9ce09fd954aa63cf443fb0c55823f0d6f40dca6
   SnapKit: d612e99e678a2d3b95bf60b0705ed0a35c03484a
 
-PODFILE CHECKSUM: c7ddb21268c218ea89ae0ff9d64407ffc9c4a0bb
+PODFILE CHECKSUM: 1fb3717fa65a9c8f81590dd6e45a8cfb9f623fe8
 
 COCOAPODS: 1.16.2

@@ -34,8 +34,32 @@ NEW_FILES = [
   'DAL/Router/RouteSetup.swift',
   # BLL/RegisterLogin 路由
   'BLL/RegisterLogin/RegisterLoginRoutes.swift',
+  # BLL/Home 路由
+  'BLL/Home/HomeRoutes.swift',
   # Placeholder
   'Other/Common/Base/PlaceholderViewController.swift',
+  # BLL/Health 路由
+  'BLL/Health/HealthRoutes.swift',
+  # Health Cell
+  'PL/Health/MetricCardCell.swift',
+  # Health Metrics
+  'PL/Health/Metrics/BloodPressureViewController.swift',
+  'PL/Health/Metrics/BloodSugarViewController.swift',
+  'PL/Health/Metrics/WeightViewController.swift',
+  'PL/Health/Metrics/HeartRateViewController.swift',
+  'PL/Health/Metrics/MetricRulerView.swift',
+  'PL/Health/Metrics/MetricAddViewController.swift',
+  'PL/Health/Metrics/SleepViewController.swift',
+  'PL/Health/Metrics/SpO2ViewController.swift',
+  'PL/Health/Metrics/EcgViewController.swift',
+  'PL/Health/Metrics/FundusViewController.swift',
+  'PL/Health/Metrics/DigestiveViewController.swift',
+  'PL/Health/Metrics/ExerciseFoodViewController.swift',
+  # DGCharts Theme
+  'Other/Common/Extensions/DGCharts+Theme.swift',
+  # Common extensions
+  'Other/Common/Extensions/UIView+Shadow.swift',
+  'Other/Common/Extensions/UIButton+Funde.swift',
 ]
 
 puts "📂 Opening project: #{PROJECT_PATH}"

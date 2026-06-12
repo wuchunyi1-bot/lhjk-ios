@@ -22,4 +22,7 @@ target 'lhjk-client-new' do
   # ── Database ──
   pod 'FMDB', '~> 2.7'
 
+  # —— 折线图 ——
+  pod 'DGCharts'
+  
 end
