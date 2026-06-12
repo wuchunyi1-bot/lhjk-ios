@@ -2,11 +2,10 @@
 
 - [ ] 1.1 创建 `Other/Common/Extensions/UIColor+Theme.swift`，定义所有 `UIColor.fd*` Token（来源 funde-client tokens.css）
 - [ ] 1.2 创建 `Other/Common/Extensions/UIFont+Theme.swift`，定义 `UIFont.fd*` 字号映射
-- [ ] 1.3 创建 `Other/Common/Base/GradientView.swift`（CAGradientLayer 封装），用于 Logo Mark 渐变背景
 
 ## 2. 可复用组件（PL 层）
 
-- [ ] 2.1 创建 `PL/RegisterLogin/Components/BrandHeaderView.swift` — Logo Mark（72×72 渐变方块）+ 名称 + Slogan
+- [ ] 2.1 创建 `PL/RegisterLogin/Components/BrandHeaderView.swift` — Logo Mark（72×72 品牌色方块）+ 名称 + Slogan
 - [ ] 2.2 创建 `PL/RegisterLogin/Components/LoginFieldView.swift` — label + icon + textField 组合控件，支持 focus/unfocus 边框色切换
 - [ ] 2.3 创建 `PL/RegisterLogin/Components/VerifyCodeButton.swift` — 60s 倒计时按钮
 - [ ] 2.4 创建 `PL/RegisterLogin/Components/WechatLoginButton.swift` — 52×52 圆形浮动按钮
@@ -19,7 +18,6 @@
 - [ ] 3.3 集成 Keyboard 管理（`IQKeyboardManager` 或手动监听 `UIKeyboardWillShow/Hide`）确保输入框不被遮挡
 - [ ] 3.4 实现输入验证（手机号格式、非空校验）+ Toast 提示
 - [ ] 3.5 实现协议链接点击（通过 Router 打开 WebView）
-- [ ] 3.6 实现老年模式联动（监听 `UIContentSizeCategory` 变化，更新字号和触摸区域）
 
 ## 4. 业务逻辑层（BLL）
 

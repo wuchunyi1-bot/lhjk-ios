@@ -4,7 +4,9 @@
 
 定义注册/登录页面的 UI 布局、交互行为和适配规则。参考 funde-client（富德健康）`LoginView.vue` + `design-system.md` 的设计规范，通过 UIKit + SnapKit 将其适配到 iOS 项目。
 
-页面提供**验证码登录**（默认）和**密码登录**两种方式，支持微信第三方登录入口，并适配老年模式（大字号）。
+页面提供**验证码登录**（默认）和**密码登录**两种方式，支持微信第三方登录入口。
+
+> **Deferred**: 老年模式适配（Dynamic Type 联动）和 Logo Mark 渐变背景（CAGradientLayer）暂不在本次实现，先使用纯色品牌色方块代替渐变。
 
 > **Reference**: funde-client `/prototype/src/views/auth/LoginView.vue`、`/prototype/src/styles/tokens.css`、`/docs/design/design-system.md`
 
@@ -20,7 +22,7 @@
 │  ┌──────────────────────────────────────┐│
 │  │         BrandHeaderView              ││
 │  │  ┌──────┐  Logo Mark (72×72)        ││
-│  │  │ 品牌 │  渐变色方块 + 白色文字       ││
+│  │  │ 品牌 │  品牌色方块 + 白色文字       ││
 │  │  └──────┘                            ││
 │  │  富德健康      (appName, 22pt bold)   ││
 │  │  全生命周期... (tagline, 13pt muted)  ││
@@ -90,7 +92,8 @@
 
 #### Scenario: Logo Mark
 - **WHEN** 页面渲染品牌区
-- **THEN** 展示 72×72pt 的 Logo Mark（圆角 22pt），背景使用品牌渐变（`#FFB48A` → `#FF7A50` → `#F25E36`），居中显示品牌简称文字（白色、22pt、bold）
+- **THEN** 展示 72×72pt 的 Logo Mark（圆角 22pt），背景使用品牌色 `UIColor.fdPrimary`（`#FF7A50`），居中显示品牌简称文字（白色、22pt、bold）
+- **NOTE**: 渐变背景（`#FFB48A` → `#FF7A50` → `#F25E36`）延迟到后续迭代实现，本次使用纯色 `#FF7A50`
 
 #### Scenario: App Name
 - **WHEN** 页面渲染品牌区
@@ -313,7 +316,10 @@
 
 ---
 
-### Requirement: Senior Mode Adaptation
+### Requirement: Senior Mode Adaptation **[DEFERRED]**
+> **状态**: 延迟到后续迭代实现。本次所有字号使用固定 pt，不做 Dynamic Type 联动。老年模式需求保留以备后续规划。
+
+<!--
 登录页 SHALL 支持老年模式，所有字号随系统「辅助功能→更大字体」设置自动放大，可点击区域最小 44pt。
 
 #### Scenario: 字号自动放大
@@ -327,6 +333,7 @@
 #### Scenario: 布局不破
 - **WHEN** 字号放大后
 - **THEN** 布局不溢出、不截断，UIScrollView 支持垂直滚动以容纳放大的内容
+-->
 
 ---
 
@@ -388,7 +395,6 @@ protocol LoginServiceProtocol {
 | **加载中** | 提交按钮 disabled、loading 文案 |
 | **密码模式** | 账号 + 密码输入框可见、验证码相关隐藏 |
 | **微信弹层** | WechatAuthSheet present |
-| **老年模式** | 全局字号放大 1.2–1.3x、最小 44pt 触摸区域 |
 | **错误** | toast 提示具体错误信息 |
 
 ---
@@ -396,7 +402,7 @@ protocol LoginServiceProtocol {
 ## Acceptance Checklist
 
 - [ ] 登录页全屏展示，无 Tab Bar
-- [ ] 品牌区 Logo Mark 渐变背景正确渲染
+- [ ] 品牌区 Logo Mark 纯色品牌色方块（`#FF7A50`）+ 白色文字正确渲染
 - [ ] 验证码模式：手机号 + 验证码 + 获取验证码按钮并排
 - [ ] 密码模式：账号 + 密码（可显隐切换）
 - [ ] 双模式切换动画流畅
@@ -407,7 +413,6 @@ protocol LoginServiceProtocol {
 - [ ] 微信授权弹层内容正确
 - [ ] 协议文字可点击跳转
 - [ ] 键盘弹起时输入框不被遮挡
-- [ ] 老年模式字号放大、布局不破、最小触摸区域 44pt
 - [ ] 登录中 loading 态、防止重复提交
 - [ ] 所有颜色通过 `UIColor.fd*` Token 引用
 - [ ] 登录成功 dismiss → 进入主 Tab 页
