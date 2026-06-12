@@ -1,0 +1,25 @@
+# Uncomment the next line to define a global platform for your project
+platform :ios, '15.0'
+
+project 'lhjk-client-new/lhjk-client-new.xcodeproj'
+
+target 'lhjk-client-new' do
+  # Comment the next line if you don't want to use dynamic frameworks
+  use_frameworks!
+
+  # ── Networking ──
+  pod 'Alamofire', '~> 5.9'
+
+  # ── UI Layout ──
+  pod 'SnapKit', '~> 5.7'
+
+  # ── Image Loading ──
+  pod 'Kingfisher', '~> 7.0'
+
+  # ── IM ──
+  pod 'RongCloudIM', '~> 5.0'
+
+  # ── Database ──
+  pod 'FMDB', '~> 2.7'
+
+end

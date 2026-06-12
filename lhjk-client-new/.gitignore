@@ -1,0 +1,37 @@
+# Xcode
+*.xcworkspace
+xcuserdata/
+DerivedData/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+build/
+*.xccheckout
+
+# CocoaPods
+Pods/
+
+# Swift
+*.swiftpm/
+
+# IDE
+.idea/
+*.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+
+# macOS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.bak
+*.orig

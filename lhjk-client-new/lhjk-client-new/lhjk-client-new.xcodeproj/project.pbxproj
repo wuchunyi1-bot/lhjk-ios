@@ -1,0 +1,822 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		023299BEDDBAE0D022B08E7B /* DALProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DFD924CDD4A764ABF604FB /* DALProtocol.swift */; };
+		05433145BBE114CF0C1DC08A /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B291D76D4C819D8DB33D00 /* DatabaseManager.swift */; };
+		06A2D497B7EB28F9F53F1CCA /* UIColor+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 432CCF9A3A379DE71F66A395 /* UIColor+Hex.swift */; };
+		0D9CCCF8E6DF5482A9FACDF0 /* APIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27CE239FA8FD35C6FAB8017C /* APIManager.swift */; };
+		0EE2E6B7960C05819866D0E1 /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CE8E0C75DF62E92DC4A2681 /* BluetoothManager.swift */; };
+		1406F12781B85941BC234E2B /* OAuthAuthenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68DC37BCDD618E2DCE9A9D02 /* OAuthAuthenticator.swift */; };
+		1573E68259A66AD868AFD131 /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7EDC9DBA2C15DAEC992461C /* ChatViewController.swift */; };
+		1694DDA9C65C92BEE8B3AA7B /* Conversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3743DC311DF3858D78351828 /* Conversation.swift */; };
+		1EE2121358C8F93652FC103C /* PaymentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2F26CCFF4734186BF04A39 /* PaymentViewController.swift */; };
+		2AB37F19E9E9BA0DCE4E2FF9 /* PaymentProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33F829631DE3DD09B5C6FF3 /* PaymentProtocol.swift */; };
+		31C52A8BD36FA64D4C32B098 /* UserDefaultsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D333C32A8805FAD51C4D2820 /* UserDefaultsManager.swift */; };
+		43464FED90F9F0DFF7F7CADB /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2C9738A2B82C009F94EDFE7 /* APIError.swift */; };
+		59AB481874792A6D2327D4DB /* PLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840D488A2D621EED67F49634 /* PLProtocol.swift */; };
+		5E7531B1805BDFC74CD1F8CB /* BluetoothModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6373F937CC9DA144A80873C /* BluetoothModels.swift */; };
+		625D4BF5B8323C4730A5B48E /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8DE397CDF8225D92B0353A0 /* SceneDelegate.swift */; };
+		678D746E713E617DA4218CF8 /* BaseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FFA483EDF37CE2D4BEAFA2C /* BaseViewController.swift */; };
+		7851DD1A96CE8CD9107551CF /* UIViewController+Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = D023CF2932A3EB39ECC71228 /* UIViewController+Alert.swift */; };
+		7FD06195AE16D4FD3861568B /* BaseNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE076FFD3B924E308E3D26E9 /* BaseNavigationController.swift */; };
+		85D1EAC623198A9F60F786E0 /* PeripheralCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA15F07EE00BE72C38F6C89 /* PeripheralCell.swift */; };
+		880D3EEECACFBB9A6791AB14 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7AE47164C661037814AB024 /* Message.swift */; };
+		8DC19885FA8CBC4AD853552E /* PaymentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31DDB71613DB8E688C4122B3 /* PaymentService.swift */; };
+		8E749A7845EBA8C07946E821 /* Router.swift in Sources */ = {isa = PBXBuildFile; fileRef = 595A3F9A5793396375B1815B /* Router.swift */; };
+		9368F265929231706C754720 /* UIView+Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57BA8309063E481C5AE95D3E /* UIView+Layout.swift */; };
+		9F5D324E0D90EB682A0A77B4 /* OAuthCredential.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */; };
+		A3AADC4D6DF2A11DC4DA077F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7A38C4AFEC723E4B6C12D675 /* LaunchScreen.storyboard */; };
+		A57D2EFC2FDBBE00002E43BA /* MyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2EF82FDBBE00002E43BA /* MyViewController.swift */; };
+		A57D2EFD2FDBBE00002E43BA /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2EFA2FDBBE00002E43BA /* LoginViewController.swift */; };
+		A57D2EFF2FDBBE3B002E43BA /* HealthViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2EFE2FDBBE3B002E43BA /* HealthViewController.swift */; };
+		A57D2F022FDBBE75002E43BA /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F002FDBBE75002E43BA /* HomeViewController.swift */; };
+		A57D2F042FDBBEB7002E43BA /* ServiceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F032FDBBEB7002E43BA /* ServiceViewController.swift */; };
+		A57D2F062FDBBEC8002E43BA /* MessageListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F052FDBBEC8002E43BA /* MessageListViewController.swift */; };
+		A952E20047557E6F1D7EE0AF /* Pods_lhjk_client_new.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */; };
+		A97FF7EF73364502F99C2EC4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FACC28499C23F3853EBBF10 /* AppDelegate.swift */; };
+		B0BC602D83CB797AB66DFE1F /* WechatPayChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 395140C046B00859321C4B05 /* WechatPayChannel.swift */; };
+		B2D6B218F3BB303CD7571664 /* BluetoothService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0727F1AEE4F87CC1D8471BF /* BluetoothService.swift */; };
+		B3900106696EDAEC01403D9D /* RongCloudManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE938ED267A4A5BD94207F6E /* RongCloudManager.swift */; };
+		B92F96EB8F6DADF4562EA642 /* RongCloudMessageDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF09D89100EBE0ABD42544FD /* RongCloudMessageDelegate.swift */; };
+		B9EFCF3E657E0B1117AEF7E2 /* ConversationListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4DACDBFFDBFF750E34307AC /* ConversationListViewController.swift */; };
+		C7908897087E6472C5021E0F /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB2F07AA65B496162BCA2DB3 /* Foundation.framework */; };
+		C8C2F63AA4929D219BE2AE0C /* RootTabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D99515A34B08FA9203F7DFB /* RootTabBarController.swift */; };
+		CC5AFA75E6FC57E098F3107B /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2864D2DFAE001AA678A08E54 /* NetworkMonitor.swift */; };
+		D0C0F9A29B4ED9D6FB4A6C01 /* AlipayChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9969E87449F15762387486 /* AlipayChannel.swift */; };
+		D5A7A19BFB9910F4E8AD2FCD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DCE57F7A320AD8DA12CD7236 /* Assets.xcassets */; };
+		D97D86F91B5A3A4D1C22DDC3 /* PaymentOrder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1064F73BA7453F81F619546E /* PaymentOrder.swift */; };
+		E9F251651FF71AEBC2DF03F3 /* BLLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 625430E3BA9BF6D9CA97AAE8 /* BLLProtocol.swift */; };
+		EF81F5EA5B41E6A3D6AD7317 /* IMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 929B2C07064774594EB5F7EC /* IMService.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		08DA859284D97B48B4305368 /* Pods-lhjk-client-new.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-lhjk-client-new.release.xcconfig"; path = "Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new.release.xcconfig"; sourceTree = "<group>"; };
+		1064F73BA7453F81F619546E /* PaymentOrder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PaymentOrder.swift; path = DAL/Payment/PaymentOrder.swift; sourceTree = "<group>"; };
+		2726931B7C65F7052CD3282C /* Pods-lhjk-client-new.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-lhjk-client-new.debug.xcconfig"; path = "Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new.debug.xcconfig"; sourceTree = "<group>"; };
+		27CE239FA8FD35C6FAB8017C /* APIManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = APIManager.swift; path = DAL/Networking/APIManager.swift; sourceTree = "<group>"; };
+		2864D2DFAE001AA678A08E54 /* NetworkMonitor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = NetworkMonitor.swift; path = DAL/Networking/NetworkMonitor.swift; sourceTree = "<group>"; };
+		31DDB71613DB8E688C4122B3 /* PaymentService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PaymentService.swift; path = BLL/Service/PaymentService.swift; sourceTree = "<group>"; };
+		3743DC311DF3858D78351828 /* Conversation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Conversation.swift; path = DAL/IM/Conversation.swift; sourceTree = "<group>"; };
+		395140C046B00859321C4B05 /* WechatPayChannel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WechatPayChannel.swift; path = DAL/Payment/WechatPayChannel.swift; sourceTree = "<group>"; };
+		432CCF9A3A379DE71F66A395 /* UIColor+Hex.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIColor+Hex.swift"; path = "Other/Common/Extensions/UIColor+Hex.swift"; sourceTree = "<group>"; };
+		4D99515A34B08FA9203F7DFB /* RootTabBarController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RootTabBarController.swift; path = Other/RootTabBarController.swift; sourceTree = "<group>"; };
+		57BA8309063E481C5AE95D3E /* UIView+Layout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIView+Layout.swift"; path = "Other/Common/Extensions/UIView+Layout.swift"; sourceTree = "<group>"; };
+		595A3F9A5793396375B1815B /* Router.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Router.swift; path = DAL/Router/Router.swift; sourceTree = "<group>"; };
+		5CE8E0C75DF62E92DC4A2681 /* BluetoothManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BluetoothManager.swift; path = DAL/Bluetooth/BluetoothManager.swift; sourceTree = "<group>"; };
+		5FACC28499C23F3853EBBF10 /* AppDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Other/AppDelegate.swift; sourceTree = "<group>"; };
+		625430E3BA9BF6D9CA97AAE8 /* BLLProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BLLProtocol.swift; path = Other/Common/Protocols/BLLProtocol.swift; sourceTree = "<group>"; };
+		62E9EC642D4693434806DE88 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = Info.plist; path = Other/Resources/Info.plist; sourceTree = "<group>"; };
+		68DC37BCDD618E2DCE9A9D02 /* OAuthAuthenticator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OAuthAuthenticator.swift; path = DAL/Networking/OAuthAuthenticator.swift; sourceTree = "<group>"; };
+		6E9969E87449F15762387486 /* AlipayChannel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AlipayChannel.swift; path = DAL/Payment/AlipayChannel.swift; sourceTree = "<group>"; };
+		7A38C4AFEC723E4B6C12D675 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Other/Resources/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		7B2F26CCFF4734186BF04A39 /* PaymentViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PaymentViewController.swift; path = PL/Service/PaymentViewController.swift; sourceTree = "<group>"; };
+		7BA15F07EE00BE72C38F6C89 /* PeripheralCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PeripheralCell.swift; path = PL/Health/PeripheralCell.swift; sourceTree = "<group>"; };
+		7FFA483EDF37CE2D4BEAFA2C /* BaseViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BaseViewController.swift; path = Other/Common/Base/BaseViewController.swift; sourceTree = "<group>"; };
+		840D488A2D621EED67F49634 /* PLProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PLProtocol.swift; path = Other/Common/Protocols/PLProtocol.swift; sourceTree = "<group>"; };
+		929B2C07064774594EB5F7EC /* IMService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = IMService.swift; path = BLL/Message/IMService.swift; sourceTree = "<group>"; };
+		A4DACDBFFDBFF750E34307AC /* ConversationListViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ConversationListViewController.swift; path = PL/Message/ConversationListViewController.swift; sourceTree = "<group>"; };
+		A57D2EF82FDBBE00002E43BA /* MyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyViewController.swift; sourceTree = "<group>"; };
+		A57D2EFA2FDBBE00002E43BA /* LoginViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
+		A57D2EFE2FDBBE3B002E43BA /* HealthViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HealthViewController.swift; path = PL/Health/HealthViewController.swift; sourceTree = "<group>"; };
+		A57D2F002FDBBE75002E43BA /* HomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
+		A57D2F032FDBBEB7002E43BA /* ServiceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ServiceViewController.swift; path = PL/Service/ServiceViewController.swift; sourceTree = "<group>"; };
+		A57D2F052FDBBEC8002E43BA /* MessageListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MessageListViewController.swift; path = PL/Message/MessageListViewController.swift; sourceTree = "<group>"; };
+		A7EDC9DBA2C15DAEC992461C /* ChatViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChatViewController.swift; path = PL/Message/ChatViewController.swift; sourceTree = "<group>"; };
+		AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OAuthCredential.swift; path = DAL/Networking/OAuthCredential.swift; sourceTree = "<group>"; };
+		B1B291D76D4C819D8DB33D00 /* DatabaseManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DatabaseManager.swift; path = DAL/Storage/DatabaseManager.swift; sourceTree = "<group>"; };
+		B6373F937CC9DA144A80873C /* BluetoothModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BluetoothModels.swift; path = DAL/Bluetooth/BluetoothModels.swift; sourceTree = "<group>"; };
+		B7AE47164C661037814AB024 /* Message.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Message.swift; path = DAL/IM/Message.swift; sourceTree = "<group>"; };
+		B8DE397CDF8225D92B0353A0 /* SceneDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SceneDelegate.swift; path = Other/SceneDelegate.swift; sourceTree = "<group>"; };
+		C0DFD924CDD4A764ABF604FB /* DALProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DALProtocol.swift; path = Other/Common/Protocols/DALProtocol.swift; sourceTree = "<group>"; };
+		CF09D89100EBE0ABD42544FD /* RongCloudMessageDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RongCloudMessageDelegate.swift; path = DAL/IM/RongCloudMessageDelegate.swift; sourceTree = "<group>"; };
+		CFFDA4B68A5A8E056326B5DF /* lhjk-client-new.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "lhjk-client-new.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D023CF2932A3EB39ECC71228 /* UIViewController+Alert.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "UIViewController+Alert.swift"; path = "Other/Common/Extensions/UIViewController+Alert.swift"; sourceTree = "<group>"; };
+		D0727F1AEE4F87CC1D8471BF /* BluetoothService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BluetoothService.swift; path = BLL/Health/BluetoothService.swift; sourceTree = "<group>"; };
+		D333C32A8805FAD51C4D2820 /* UserDefaultsManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = UserDefaultsManager.swift; path = DAL/Storage/UserDefaultsManager.swift; sourceTree = "<group>"; };
+		DB2F07AA65B496162BCA2DB3 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		DCE57F7A320AD8DA12CD7236 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Other/Resources/Assets.xcassets; sourceTree = "<group>"; };
+		E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_lhjk_client_new.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2C9738A2B82C009F94EDFE7 /* APIError.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = APIError.swift; path = DAL/Networking/APIError.swift; sourceTree = "<group>"; };
+		EE076FFD3B924E308E3D26E9 /* BaseNavigationController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BaseNavigationController.swift; path = Other/Common/Base/BaseNavigationController.swift; sourceTree = "<group>"; };
+		F33F829631DE3DD09B5C6FF3 /* PaymentProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PaymentProtocol.swift; path = DAL/Payment/PaymentProtocol.swift; sourceTree = "<group>"; };
+		FE938ED267A4A5BD94207F6E /* RongCloudManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RongCloudManager.swift; path = DAL/IM/RongCloudManager.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B40898BC193B17F06D4D7238 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C7908897087E6472C5021E0F /* Foundation.framework in Frameworks */,
+				A952E20047557E6F1D7EE0AF /* Pods_lhjk_client_new.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		209982680F814E7623CEE52C /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				E2C9738A2B82C009F94EDFE7 /* APIError.swift */,
+				27CE239FA8FD35C6FAB8017C /* APIManager.swift */,
+				2864D2DFAE001AA678A08E54 /* NetworkMonitor.swift */,
+				68DC37BCDD618E2DCE9A9D02 /* OAuthAuthenticator.swift */,
+				AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */,
+			);
+			name = Networking;
+			sourceTree = "<group>";
+		};
+		310B761F90CB750F32FE3703 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				DB2F07AA65B496162BCA2DB3 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		33AD0B9BEA61617FD7371544 /* Bluetooth */ = {
+			isa = PBXGroup;
+			children = (
+				5CE8E0C75DF62E92DC4A2681 /* BluetoothManager.swift */,
+				B6373F937CC9DA144A80873C /* BluetoothModels.swift */,
+			);
+			name = Bluetooth;
+			sourceTree = "<group>";
+		};
+		5BBC7A0F6F458645EB658DDB /* Health */ = {
+			isa = PBXGroup;
+			children = (
+				A57D2EFE2FDBBE3B002E43BA /* HealthViewController.swift */,
+				7BA15F07EE00BE72C38F6C89 /* PeripheralCell.swift */,
+			);
+			name = Health;
+			sourceTree = "<group>";
+		};
+		75BC1DDC53A99376450DD2BB /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				DDAC87E5F5CC6A6552A1C7E0 /* Base */,
+				8E0C2B729E834449594ADCCC /* Extensions */,
+				F75B1FC9856E71F9A7357649 /* Protocols */,
+			);
+			name = Common;
+			sourceTree = "<group>";
+		};
+		7ADE6D91D4D97089B9DCA5E5 /* Other */ = {
+			isa = PBXGroup;
+			children = (
+				F32EE9EBD11D7BD9453BE332 /* Resources */,
+				5FACC28499C23F3853EBBF10 /* AppDelegate.swift */,
+				75BC1DDC53A99376450DD2BB /* Common */,
+				4D99515A34B08FA9203F7DFB /* RootTabBarController.swift */,
+				B8DE397CDF8225D92B0353A0 /* SceneDelegate.swift */,
+			);
+			name = Other;
+			sourceTree = "<group>";
+		};
+		80323DB75D4CB2E15619DDBB /* DAL */ = {
+			isa = PBXGroup;
+			children = (
+				33AD0B9BEA61617FD7371544 /* Bluetooth */,
+				ECD3693CC57BA01CDA4D232D /* IM */,
+				209982680F814E7623CEE52C /* Networking */,
+				E5E1602E9BA5702EDCA68A58 /* Payment */,
+				EC87C779E7C4829BF736DA19 /* Router */,
+				AB60E1C085B7E95FF0E7A20A /* Storage */,
+			);
+			name = DAL;
+			sourceTree = "<group>";
+		};
+		8E0C2B729E834449594ADCCC /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				432CCF9A3A379DE71F66A395 /* UIColor+Hex.swift */,
+				57BA8309063E481C5AE95D3E /* UIView+Layout.swift */,
+				D023CF2932A3EB39ECC71228 /* UIViewController+Alert.swift */,
+			);
+			name = Extensions;
+			sourceTree = "<group>";
+		};
+		94707E2D82559898666399B3 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				310B761F90CB750F32FE3703 /* iOS */,
+				E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A57D2EF92FDBBE00002E43BA /* My */ = {
+			isa = PBXGroup;
+			children = (
+				A57D2EF82FDBBE00002E43BA /* MyViewController.swift */,
+			);
+			name = My;
+			path = PL/My;
+			sourceTree = "<group>";
+		};
+		A57D2EFB2FDBBE00002E43BA /* RegisterLogin */ = {
+			isa = PBXGroup;
+			children = (
+				A57D2EFA2FDBBE00002E43BA /* LoginViewController.swift */,
+			);
+			name = RegisterLogin;
+			path = PL/RegisterLogin;
+			sourceTree = "<group>";
+		};
+		A57D2F012FDBBE75002E43BA /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				A57D2F002FDBBE75002E43BA /* HomeViewController.swift */,
+			);
+			name = Home;
+			path = PL/Home;
+			sourceTree = "<group>";
+		};
+		A987952ACD55240446C185ED /* lhjk-client-new */ = {
+			isa = PBXGroup;
+			children = (
+				7ADE6D91D4D97089B9DCA5E5 /* Other */,
+				F652125E9A5F2721ADE9B5ED /* BLL */,
+				80323DB75D4CB2E15619DDBB /* DAL */,
+				C9BEC10038955A42DC8E640C /* PL */,
+			);
+			name = "lhjk-client-new";
+			sourceTree = "<group>";
+		};
+		AB60E1C085B7E95FF0E7A20A /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				B1B291D76D4C819D8DB33D00 /* DatabaseManager.swift */,
+				D333C32A8805FAD51C4D2820 /* UserDefaultsManager.swift */,
+			);
+			name = Storage;
+			sourceTree = "<group>";
+		};
+		AFCB59D26ECFBEF3993DAC61 /* Service */ = {
+			isa = PBXGroup;
+			children = (
+				A57D2F032FDBBEB7002E43BA /* ServiceViewController.swift */,
+				7B2F26CCFF4734186BF04A39 /* PaymentViewController.swift */,
+			);
+			name = Service;
+			sourceTree = "<group>";
+		};
+		B64D5D28AFB9110FDD54A8D6 /* Health */ = {
+			isa = PBXGroup;
+			children = (
+				D0727F1AEE4F87CC1D8471BF /* BluetoothService.swift */,
+			);
+			name = Health;
+			sourceTree = "<group>";
+		};
+		BD1C29DE9A6C4C86A8F963DE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CFFDA4B68A5A8E056326B5DF /* lhjk-client-new.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C3DC88D2B364A6FBD99F1863 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				08DA859284D97B48B4305368 /* Pods-lhjk-client-new.release.xcconfig */,
+				2726931B7C65F7052CD3282C /* Pods-lhjk-client-new.debug.xcconfig */,
+			);
+			name = Pods;
+			path = ../Pods;
+			sourceTree = "<group>";
+		};
+		C4193BC7FCD37A9D67D93F74 /* Service */ = {
+			isa = PBXGroup;
+			children = (
+				31DDB71613DB8E688C4122B3 /* PaymentService.swift */,
+			);
+			name = Service;
+			sourceTree = "<group>";
+		};
+		C827DD6945CC87211F64D8BD /* Message */ = {
+			isa = PBXGroup;
+			children = (
+				A57D2F052FDBBEC8002E43BA /* MessageListViewController.swift */,
+				A7EDC9DBA2C15DAEC992461C /* ChatViewController.swift */,
+				A4DACDBFFDBFF750E34307AC /* ConversationListViewController.swift */,
+			);
+			name = Message;
+			sourceTree = "<group>";
+		};
+		C9BEC10038955A42DC8E640C /* PL */ = {
+			isa = PBXGroup;
+			children = (
+				A57D2F012FDBBE75002E43BA /* Home */,
+				A57D2EF92FDBBE00002E43BA /* My */,
+				A57D2EFB2FDBBE00002E43BA /* RegisterLogin */,
+				5BBC7A0F6F458645EB658DDB /* Health */,
+				C827DD6945CC87211F64D8BD /* Message */,
+				AFCB59D26ECFBEF3993DAC61 /* Service */,
+			);
+			name = PL;
+			sourceTree = "<group>";
+		};
+		DDAC87E5F5CC6A6552A1C7E0 /* Base */ = {
+			isa = PBXGroup;
+			children = (
+				EE076FFD3B924E308E3D26E9 /* BaseNavigationController.swift */,
+				7FFA483EDF37CE2D4BEAFA2C /* BaseViewController.swift */,
+			);
+			name = Base;
+			sourceTree = "<group>";
+		};
+		E0A9898F5075235D049F4D38 = {
+			isa = PBXGroup;
+			children = (
+				BD1C29DE9A6C4C86A8F963DE /* Products */,
+				94707E2D82559898666399B3 /* Frameworks */,
+				A987952ACD55240446C185ED /* lhjk-client-new */,
+				C3DC88D2B364A6FBD99F1863 /* Pods */,
+			);
+			sourceTree = "<group>";
+		};
+		E5E1602E9BA5702EDCA68A58 /* Payment */ = {
+			isa = PBXGroup;
+			children = (
+				6E9969E87449F15762387486 /* AlipayChannel.swift */,
+				1064F73BA7453F81F619546E /* PaymentOrder.swift */,
+				F33F829631DE3DD09B5C6FF3 /* PaymentProtocol.swift */,
+				395140C046B00859321C4B05 /* WechatPayChannel.swift */,
+			);
+			name = Payment;
+			sourceTree = "<group>";
+		};
+		E6B9AD914CC7A60A01A67483 /* Message */ = {
+			isa = PBXGroup;
+			children = (
+				929B2C07064774594EB5F7EC /* IMService.swift */,
+			);
+			name = Message;
+			sourceTree = "<group>";
+		};
+		EC87C779E7C4829BF736DA19 /* Router */ = {
+			isa = PBXGroup;
+			children = (
+				595A3F9A5793396375B1815B /* Router.swift */,
+			);
+			name = Router;
+			sourceTree = "<group>";
+		};
+		ECD3693CC57BA01CDA4D232D /* IM */ = {
+			isa = PBXGroup;
+			children = (
+				3743DC311DF3858D78351828 /* Conversation.swift */,
+				B7AE47164C661037814AB024 /* Message.swift */,
+				FE938ED267A4A5BD94207F6E /* RongCloudManager.swift */,
+				CF09D89100EBE0ABD42544FD /* RongCloudMessageDelegate.swift */,
+			);
+			name = IM;
+			sourceTree = "<group>";
+		};
+		F32EE9EBD11D7BD9453BE332 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				62E9EC642D4693434806DE88 /* Info.plist */,
+				7A38C4AFEC723E4B6C12D675 /* LaunchScreen.storyboard */,
+				DCE57F7A320AD8DA12CD7236 /* Assets.xcassets */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		F652125E9A5F2721ADE9B5ED /* BLL */ = {
+			isa = PBXGroup;
+			children = (
+				B64D5D28AFB9110FDD54A8D6 /* Health */,
+				E6B9AD914CC7A60A01A67483 /* Message */,
+				C4193BC7FCD37A9D67D93F74 /* Service */,
+			);
+			name = BLL;
+			sourceTree = "<group>";
+		};
+		F75B1FC9856E71F9A7357649 /* Protocols */ = {
+			isa = PBXGroup;
+			children = (
+				625430E3BA9BF6D9CA97AAE8 /* BLLProtocol.swift */,
+				C0DFD924CDD4A764ABF604FB /* DALProtocol.swift */,
+				840D488A2D621EED67F49634 /* PLProtocol.swift */,
+			);
+			name = Protocols;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		2886FCA988A17B6375F85A64 /* lhjk-client-new */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3BAC57AFAAC5045F42F718F3 /* Build configuration list for PBXNativeTarget "lhjk-client-new" */;
+			buildPhases = (
+				F55478F0DA8F4367E801C506 /* [CP] Check Pods Manifest.lock */,
+				87E7148BBFE47DF0C0E3C4AF /* Sources */,
+				B40898BC193B17F06D4D7238 /* Frameworks */,
+				2974982679BFCF549F5FFC85 /* Resources */,
+				86AAD0ABF411C9CC8B5AA507 /* [CP] Embed Pods Frameworks */,
+				4FF9C782B676F1DE62EABBD4 /* [CP] Copy Pods Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "lhjk-client-new";
+			productName = "lhjk-client-new";
+			productReference = CFFDA4B68A5A8E056326B5DF /* lhjk-client-new.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		3AA8AE83460C4488C01D0297 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					2886FCA988A17B6375F85A64 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 9FC2C23B1BFF795E2B7C527B /* Build configuration list for PBXProject "lhjk-client-new" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = E0A9898F5075235D049F4D38;
+			productRefGroup = BD1C29DE9A6C4C86A8F963DE /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				2886FCA988A17B6375F85A64 /* lhjk-client-new */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		2974982679BFCF549F5FFC85 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A3AADC4D6DF2A11DC4DA077F /* LaunchScreen.storyboard in Resources */,
+				D5A7A19BFB9910F4E8AD2FCD /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		4FF9C782B676F1DE62EABBD4 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new-resources.sh",
+				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RongCloud.bundle",
+				"${PODS_ROOT}/RongCloudIM/RongCloudIM/en.lproj",
+				"${PODS_ROOT}/RongCloudIM/RongCloudIM/zh-Hans.lproj",
+				"${PODS_ROOT}/RongCloudIM/RongCloudIM/ar.lproj",
+				"${PODS_ROOT}/RongCloudIM/RongCloudIM/Emoji.plist",
+				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RCColor.plist",
+				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RCConfig.plist",
+				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RongSticker.bundle",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RongCloud.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/en.lproj",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/zh-Hans.lproj",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ar.lproj",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/Emoji.plist",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RCColor.plist",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RCConfig.plist",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RongSticker.bundle",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		86AAD0ABF411C9CC8B5AA507 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new-frameworks.sh",
+				"${BUILT_PRODUCTS_DIR}/Alamofire/Alamofire.framework",
+				"${BUILT_PRODUCTS_DIR}/FMDB/FMDB.framework",
+				"${BUILT_PRODUCTS_DIR}/Kingfisher/Kingfisher.framework",
+				"${BUILT_PRODUCTS_DIR}/SnapKit/SnapKit.framework",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/ChatRoom/RongChatRoom.framework/RongChatRoom",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/ContactCard/RongContactCard.framework/RongContactCard",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/CustomerService/RongCustomerService.framework/RongCustomerService",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/Discussion/RongDiscussion.framework/RongDiscussion",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/IMKit/RongIMKit.framework/RongIMKit",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/IMLib/RongIMLib.framework/RongIMLib",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/IMLibCore/RongIMLibCore.framework/RongIMLibCore",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/Location/RongLocation.framework/RongLocation",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/LocationKit/RongLocationKit.framework/RongLocationKit",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/PublicService/RongPublicService.framework/RongPublicService",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/RongSticker/RongSticker.framework/RongSticker",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/Sight/RongSight.framework/RongSight",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Alamofire.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FMDB.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Kingfisher.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SnapKit.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongChatRoom.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongContactCard.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongCustomerService.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongDiscussion.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongIMKit.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongIMLib.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongIMLibCore.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongLocation.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongLocationKit.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongPublicService.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongSticker.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongSight.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		F55478F0DA8F4367E801C506 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-lhjk-client-new-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		87E7148BBFE47DF0C0E3C4AF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B2D6B218F3BB303CD7571664 /* BluetoothService.swift in Sources */,
+				EF81F5EA5B41E6A3D6AD7317 /* IMService.swift in Sources */,
+				8DC19885FA8CBC4AD853552E /* PaymentService.swift in Sources */,
+				0EE2E6B7960C05819866D0E1 /* BluetoothManager.swift in Sources */,
+				5E7531B1805BDFC74CD1F8CB /* BluetoothModels.swift in Sources */,
+				1694DDA9C65C92BEE8B3AA7B /* Conversation.swift in Sources */,
+				880D3EEECACFBB9A6791AB14 /* Message.swift in Sources */,
+				B3900106696EDAEC01403D9D /* RongCloudManager.swift in Sources */,
+				B92F96EB8F6DADF4562EA642 /* RongCloudMessageDelegate.swift in Sources */,
+				43464FED90F9F0DFF7F7CADB /* APIError.swift in Sources */,
+				0D9CCCF8E6DF5482A9FACDF0 /* APIManager.swift in Sources */,
+				CC5AFA75E6FC57E098F3107B /* NetworkMonitor.swift in Sources */,
+				1406F12781B85941BC234E2B /* OAuthAuthenticator.swift in Sources */,
+				9F5D324E0D90EB682A0A77B4 /* OAuthCredential.swift in Sources */,
+				D0C0F9A29B4ED9D6FB4A6C01 /* AlipayChannel.swift in Sources */,
+				D97D86F91B5A3A4D1C22DDC3 /* PaymentOrder.swift in Sources */,
+				2AB37F19E9E9BA0DCE4E2FF9 /* PaymentProtocol.swift in Sources */,
+				B0BC602D83CB797AB66DFE1F /* WechatPayChannel.swift in Sources */,
+				A57D2F042FDBBEB7002E43BA /* ServiceViewController.swift in Sources */,
+				8E749A7845EBA8C07946E821 /* Router.swift in Sources */,
+				05433145BBE114CF0C1DC08A /* DatabaseManager.swift in Sources */,
+				31C52A8BD36FA64D4C32B098 /* UserDefaultsManager.swift in Sources */,
+				A97FF7EF73364502F99C2EC4 /* AppDelegate.swift in Sources */,
+				7FD06195AE16D4FD3861568B /* BaseNavigationController.swift in Sources */,
+				678D746E713E617DA4218CF8 /* BaseViewController.swift in Sources */,
+				06A2D497B7EB28F9F53F1CCA /* UIColor+Hex.swift in Sources */,
+				9368F265929231706C754720 /* UIView+Layout.swift in Sources */,
+				7851DD1A96CE8CD9107551CF /* UIViewController+Alert.swift in Sources */,
+				A57D2F062FDBBEC8002E43BA /* MessageListViewController.swift in Sources */,
+				E9F251651FF71AEBC2DF03F3 /* BLLProtocol.swift in Sources */,
+				023299BEDDBAE0D022B08E7B /* DALProtocol.swift in Sources */,
+				A57D2EFC2FDBBE00002E43BA /* MyViewController.swift in Sources */,
+				A57D2EFD2FDBBE00002E43BA /* LoginViewController.swift in Sources */,
+				59AB481874792A6D2327D4DB /* PLProtocol.swift in Sources */,
+				C8C2F63AA4929D219BE2AE0C /* RootTabBarController.swift in Sources */,
+				625D4BF5B8323C4730A5B48E /* SceneDelegate.swift in Sources */,
+				85D1EAC623198A9F60F786E0 /* PeripheralCell.swift in Sources */,
+				A57D2F022FDBBE75002E43BA /* HomeViewController.swift in Sources */,
+				1573E68259A66AD868AFD131 /* ChatViewController.swift in Sources */,
+				B9EFCF3E657E0B1117AEF7E2 /* ConversationListViewController.swift in Sources */,
+				A57D2EFF2FDBBE3B002E43BA /* HealthViewController.swift in Sources */,
+				1EE2121358C8F93652FC103C /* PaymentViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		30C32F168E07E66A6DF9E746 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		3C25C642BB4724DC14038F01 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		5CF9197E0D00704899D05663 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 08DA859284D97B48B4305368 /* Pods-lhjk-client-new.release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Other/Resources/Info.plist;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.lhjk.client.new;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		F7D0AA312A4174540720398A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2726931B7C65F7052CD3282C /* Pods-lhjk-client-new.debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Other/Resources/Info.plist;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.lhjk.client.new;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3BAC57AFAAC5045F42F718F3 /* Build configuration list for PBXNativeTarget "lhjk-client-new" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5CF9197E0D00704899D05663 /* Release */,
+				F7D0AA312A4174540720398A /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9FC2C23B1BFF795E2B7C527B /* Build configuration list for PBXProject "lhjk-client-new" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				30C32F168E07E66A6DF9E746 /* Debug */,
+				3C25C642BB4724DC14038F01 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 3AA8AE83460C4488C01D0297 /* Project object */;
+}
