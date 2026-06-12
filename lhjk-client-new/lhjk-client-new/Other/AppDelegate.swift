@@ -13,6 +13,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         configurePushNotification(application)
         configureDatabase()
         configureThirdPartySDKs()
+        configureRoutes()
 
         return true
     }
@@ -79,5 +80,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         // TODO: 融云 SDK 初始化
         // TODO: 微信 SDK 注册
         // TODO: 支付宝 SDK 注册
+    }
+
+    private func configureRoutes() {
+        RouteSetup.registerAll()
     }
 }

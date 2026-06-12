@@ -72,9 +72,9 @@ enum RouteTransition {
 /// 单条路由注册信息
 private struct RouteEntry {
     let path: String
-    let moduleName: String
-    let actionName: String
     let requiresAuth: Bool
+    /// 工厂闭包，根据参数生成目标 ViewController
+    let factory: ([String: Any]) -> UIViewController?
 }
 
 // MARK: - Router (DAL)
@@ -135,20 +135,17 @@ final class Router {
     /// 注册路由
     /// - Parameters:
     ///   - path: URL 路径（如 "/health/detail"）
-    ///   - moduleName: 目标模块名（对应 Target_{moduleName} 类）
-    ///   - actionName: Action 方法名（不含 "Action_" 前缀和 ":" 后缀）
     ///   - requiresAuth: 是否需要登录
+    ///   - factory: 工厂闭包，接收参数字典，返回目标 ViewController
     func register(
         path: String,
-        moduleName: String,
-        actionName: String,
-        requiresAuth: Bool = false
+        requiresAuth: Bool = false,
+        factory: @escaping ([String: Any]) -> UIViewController?
     ) {
         let entry = RouteEntry(
             path: path,
-            moduleName: moduleName,
-            actionName: actionName,
-            requiresAuth: requiresAuth
+            requiresAuth: requiresAuth,
+            factory: factory
         )
 
         if routes[path] != nil {
@@ -286,27 +283,8 @@ final class Router {
         }
     }
 
-    /// 执行 Target-Action
+    /// 调用工厂闭包创建 ViewController 并执行跳转
     private func performAction(entry: RouteEntry, context: RouteContext) {
-        let targetClassName = "lhjk_client.Target_\(entry.moduleName)"
-        let actionSelector = NSSelectorFromString("Action_\(entry.actionName):")
-
-        guard let targetClass = NSClassFromString(targetClassName) as? NSObject.Type else {
-            #if DEBUG
-            print("[Router] ⚠️ Target class '\(targetClassName)' not found")
-            #endif
-            return
-        }
-
-        let target = targetClass.init()
-
-        guard target.responds(to: actionSelector) else {
-            #if DEBUG
-            print("[Router] ⚠️ Target '\(targetClassName)' doesn't respond to 'Action_\(entry.actionName):'")
-            #endif
-            return
-        }
-
         // 合并参数
         var mergedParams: [String: Any] = context.queryParameters.reduce(into: [:]) {
             $0[$1.key] = $1.value
@@ -315,27 +293,13 @@ final class Router {
             mergedParams[key] = value
         }
 
-        // 包装参数传递给 Action
-        let wrappedParams: [String: Any] = [
-            "params": mergedParams,
-            "from": context.fromViewController as Any,
-            "transition": context.transition,
-        ]
+        guard let vc = entry.factory(mergedParams) else { return }
 
-        // 通过 performSelector 调用 Action 方法（消除警告）
-        let selector = actionSelector
-        if target.responds(to: selector) {
-            typealias ActionFunction = @convention(c) (NSObject, Selector, NSDictionary) -> UIViewController?
-            let imp = target.method(for: selector)
-            let function = unsafeBitCast(imp, to: ActionFunction.self)
-            let viewController = function(target, selector, wrappedParams as NSDictionary)
+        // 子页面默认隐藏 tab bar
+        vc.hidesBottomBarWhenPushed = (context.transition == .push)
 
-            if let vc = viewController {
-                navigate(to: vc, transition: context.transition, from: context.fromViewController)
-            }
-
-            context.completion?([:])
-        }
+        navigate(to: vc, transition: context.transition, from: context.fromViewController)
+        context.completion?([:])
     }
 
     /// 实际执行 UI 跳转
