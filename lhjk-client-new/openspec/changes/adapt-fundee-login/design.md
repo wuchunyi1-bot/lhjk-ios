@@ -1,8 +1,34 @@
 ## Context
 
-funde-client（富德健康）是一个 Vue.js 移动端原型项目，已完成完整的设计系统（tokens.css + mobile.css）和注册登录页面（LoginView.vue）。当前 iOS 项目（lhjk-client）仅有最简 `LoginViewController.swift` 骨架，缺少品牌传递和完整登录体验。本设计文档分析如何将 funde-client 的注册登录布局适配到 iOS UIKit + SnapKit 项目。
+funde-client（富德健康）是一个 Vue.js 移动端原型项目，已完成完整的设计系统（tokens.css + mobile.css）和注册登录 PRD（`用户注册与登录_v1.0.md`）。当前 iOS 项目（lhjk-client）仅有最简 `LoginViewController.swift` 骨架，缺少隐私授权、本机号识别、拼图验证、忘记密码、通知权限引导、登录态管理等完整登录体验。本设计文档分析如何将 funde-client 的注册登录完整链路适配到 iOS UIKit + SnapKit 项目。
 
 ## Reference Source Analysis
+
+### funde-client PRD 核心流程
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     注册登录完整链路                           │
+│                                                              │
+│  打开 App ─→ 隐私弹窗 ─→ 登录页                                │
+│                            │                                 │
+│              ┌─────────────┼─────────────┐                   │
+│              ▼             ▼             ▼                   │
+│         验证码登录      密码登录      微信登录                   │
+│              │             │             │                   │
+│         本机号识别      手机号+密码    微信授权                  │
+│              │             │             │                   │
+│         拼图验证        协议勾选      绑定手机号?               │
+│              │             │             │                   │
+│         发送验证码      提交登录      冲突处理                  │
+│              │             │             │                   │
+│         验证码校验       ──┴──          ──┴──                  │
+│              │                                               │
+│         登录成功 ──→ 通知权限预引导 ──→ redirect?/home         │
+│                                                              │
+│  分支流程: 忘记密码、登录过期、账号冻结、注销中                    │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ### funde-client LoginView.vue 布局结构
 
@@ -20,17 +46,20 @@ funde-client（富德健康）是一个 Vue.js 移动端原型项目，已完成
 │  ┌──────────────────────────────────────┐│
 │  │  Form 区                              ││
 │  │  ┌──────────────────────────────┐    ││
-│  │  │ 手机号 / 账号                   │    ││
-│  │  │ 📱 +86  | 请输入手机号         │    ││
+│  │  │ 脱敏本机号: 156****8923       │    ││
+│  │  │ [使用其他手机号]              │    ││
 │  │  └──────────────────────────────┘    ││
 │  │  ┌──────────────────┬───────────┐    ││
-│  │  │ 🛡 验证码 / 密码    │ 获取验证码  │    ││
+│  │  │ 🛡 验证码         │ 获取验证码  │    ││
 │  │  └──────────────────┴───────────┘    ││
+│  │  ┌──────────────────────────────┐    ││
+│  │  │ ☐ 同意《用户协议》与《隐私政策》 │    ││
+│  │  └──────────────────────────────┘    ││
 │  │  ┌──────────────────────────────┐    ││
 │  │  │      登录 / 注册              │    ││
 │  │  └──────────────────────────────┘    ││
 │  │  使用账号密码登录 / 返回验证码登录      ││
-│  │  登录即代表同意《用户协议》与《隐私政策》  ││
+│  │  忘记密码                             ││
 │  └──────────────────────────────────────┘│
 │  ┌──────────────────────────────────────┐│
 │  │  WeChat 区                            ││
@@ -70,13 +99,16 @@ funde-client（富德健康）是一个 Vue.js 移动端原型项目，已完成
 | funde-client 元素 | iOS 适配方案 | 置信度 |
 |-------------------|-------------|--------|
 | 全屏布局 (无 tabbar) | `LoginViewController` 以 modal 或 root 方式 present，无需 `fd-screen` 的 tabbar 高度计算 | 高 |
-| Brand 区（Logo + 名称 + Slogan） | 垂直 UIStackView → SnapKit 约束，直接用 UILable + UIView 实现渐变方块 | 高 |
+| Brand 区（Logo + 名称 + Slogan） | 垂直 UIStackView → SnapKit 约束，直接用 UILable + UIView 实现品牌色方块 | 高 |
 | 输入框结构（label + icon + input） | 自定义 `LoginFieldView`（UIView 子类），内含 icon UIImageView + UITextField | 高 |
 | 验证码按钮（60s 倒计时） | UIButton + Timer，可用 `.primary-soft` 背景色 | 高 |
-| 双模式切换 | UISegmentedControl 或自定义 toggle（参考 fd-segment 样式），控制两个 form stack 的 `isHidden` | 高 |
+| 双模式切换 | 自定义 toggle（参考 fd-segment 样式），控制两个 form stack 的 `isHidden` | 高 |
 | 登录按钮（全宽、圆角、阴影） | UIButton + SnapKit，设置 backgroundColor / cornerRadius / shadow | 高 |
-| 协议提示文字 | UILabel, attributedText 带链接（UITapGestureRecognizer） | 高 |
-| 微信登录入口 + 授权弹层 | UIButton (floating) + UIAlertController / 自定义 Modal | 高 |
+| 协议勾选框 + 链接文字 | UIView 包裹 UIButton(checkbox) + UILabel(attributedText 带链接) | 高 |
+| 微信登录入口 + 授权弹层 | UIButton (floating) + 自定义 Modal VC | 高 |
+| 隐私保护提示弹窗 | 自定义 Modal VC，含协议链接和双按钮 | 高 |
+| 通知权限预引导弹窗 | 自定义 Modal VC，含引导文案和双按钮 | 高 |
+| 忘记密码页面 | 独立 VC / 在登录页内切换，含手机号 → 拼图 → 验证码 → 新密码流程 | 高 |
 
 ### 需要改造的部分 ⚠️
 
@@ -86,10 +118,13 @@ funde-client（富德健康）是一个 Vue.js 移动端原型项目，已完成
 | CSS `:focus-within` 边框变色 | iOS 无 focus 伪类 | 使用 `UITextFieldDelegate` 的 `textFieldDidBeginEditing` 切换边框色 |
 | `padding-top: 80px` 硬编码 | iOS 需适配刘海屏 | Brand 区 top 约束到 `view.safeAreaLayoutGuide.topAnchor` + 适当 offset |
 | `van-icon` 图标 | iOS 无 Vant 组件库 | 使用 SF Symbols（系统）或 icon font / 自定义 icon 图片 |
-| `van-action-sheet` (WeChat 弹层) | iOS 无 Vant UI | 自定义 Modal ViewController 或 UIAlertController |
+| `van-action-sheet` (WeChat 弹层) | iOS 无 Vant UI | 自定义 Modal ViewController |
+| `van-dialog` (隐私弹窗) | iOS 无 Vant UI | 自定义 Modal ViewController 或 UIAlertController |
 | CSS box-shadow 多层阴影 | iOS layer.shadow 不支持多层 | 简化为单层阴影，保持视觉接近即可 |
-| `var(--fd-*)` CSS 变量自动切换 | iOS 无法运行时切换全局 token | 通过 `TraitCollection` 或自定义 `AppearanceManager` 管理，监听 `UIContentSizeCategory` 变化联动老年模式 |
+| `var(--fd-*)` CSS 变量自动切换 | iOS 无法运行时切换全局 token | 通过 `TraitCollection` 或自定义 `AppearanceManager` 管理 |
 | 微信 SDK 集成 | funde-client 是 mock 演示 | iOS 需集成微信 OpenSDK，在 BLL 层封装 |
+| 运营商本机号获取 | funde-client 是 mock 演示 | V1.0 使用 mock，V1.1 接入真实运营商 SDK |
+| 拼图验证服务 | funde-client 是 mock 演示 | V1.0 使用 mock captcha_token，V1.1 接入真实服务 |
 
 ### 不可直接适配的部分 ❌
 
@@ -99,12 +134,13 @@ funde-client（富德健康）是一个 Vue.js 移动端原型项目，已完成
 | `linear-gradient` 渐变背景 (Brand mark) | iOS 需用 CAGradientLayer | 创建 `GradientView` 自定义 UIView |
 | `scrollbar-width: none` | iOS UIScrollView 原生隐藏滚动条（默认不显示） | 无需处理 |
 | Vue `v-if` 条件渲染 | iOS 用 `isHidden` / `removeFromSuperview` | 直接对应 |
+| 后端接口契约 | PRD 中接口名称为自动生成 | 忽略 PRD 中的接口名称，iOS BLL 层自行定义协议，后续对接真实后端接口 |
 
 ## Decisions
 
 ### 1. 布局方案：UIScrollView + UIStackView
 
-**选择**: 使用 `UIScrollView` 作为根容器，内含垂直 `UIStackView` 分三段（Brand / Form / WeChat）。
+**选择**: 使用 `UIScrollView` 作为根容器，内含垂直 `UIStackView` 分多段（Privacy / Brand / Form / WeChat / Notification）。
 
 **理由**: 键盘弹出时需要内容可滚动避免遮挡；StackView 自动处理子视图间距，减少手动约束代码。
 
@@ -131,13 +167,19 @@ extension UIColor {
 ### 4. 组件化拆分
 
 **选择**: 页面拆分为以下可复用组件（PL 层）：
+- `PrivacyPromptView`: 隐私保护提示弹窗（新增）
 - `BrandHeaderView`: Logo mark + 名称 + Slogan
 - `LoginFieldView`: label + icon + textField（可配置为密码模式）
 - `VerifyCodeButton`: 倒计时按钮
+- `CaptchaVerifyView`: 拼图滑块验证弹窗（新增）
+- `AgreementCheckboxView`: 协议勾选框 + 富文本链接（新增）
+- `ForgotPasswordView`: 忘记密码页（新增）
+- `NotificationGuideView`: 通知权限预引导弹窗（新增）
+- `PhoneBindingView`: 微信手机号绑定弹层（新增）
 - `WechatLoginButton`: 微信登录浮动按钮
 - `WechatAuthSheetView`: 微信授权底部弹层
 
-**理由**: 模块化组件便于后续复用（如注册页复用 BrandHeaderView），也便于单独测试。
+**理由**: 模块化组件便于后续复用，也便于单独测试。
 
 ### 5. 图标方案：SF Symbols
 
@@ -154,14 +196,57 @@ extension UIColor {
 
 **理由**: SF Symbols 随系统安装，无需额外依赖；支持 Dynamic Type 字号自适应。
 
+### 6. 隐私授权流程
+
+**选择**: 登录页展示前先检查本地隐私协议版本号，与后端最新版本比较。未同意或版本过期则展示隐私弹窗，不同意则展示不可用状态页。
+
+**理由**: 合规要求（《个人信息保护法》），必须在收集手机号前取得用户对隐私政策的明确同意。
+
+### 7. 本机号识别策略
+
+**选择**: V1.0 使用 mock 本机号数据（预设测试手机号）；V1.1 接入真实运营商 SDK。本机号获取失败时静默降级为手动输入模式，不阻塞登录流程。
+
+**理由**: 运营商 SDK 有覆盖率限制（无 SIM、双卡、网络异常等），需要优雅降级。Mock 模式确保原型可完整演示。
+
+### 8. 拼图验证集成
+
+**选择**: 发送验证码前弹出拼图滑块验证，通过后获取一次性 `captcha_token` 随验证码请求发送后端二次校验。
+
+**理由**: 防止短信接口被恶意滥用，降低短信成本。`captcha_token` 一次性消费、有效期 2 分钟。
+
+### 9. 协议勾选改为主动勾选
+
+**选择**: PRD 要求协议勾选为主动复选框（而非文案中隐含同意），所有登录/绑定提交前校验勾选状态。
+
+**理由**: 合规要求，用户需主动明示同意。PRD 中明确未勾选协议不能获取验证码或提交任何登录。
+
+### 10. 通知权限预引导
+
+**选择**: 登录成功后先展示 App 内预引导弹窗（说明通知价值），用户点击「去开启」后再调用系统权限弹窗；「暂不开启」则跳过。允许/拒绝均不阻塞进入首页。
+
+**理由**: iOS 系统权限弹窗只弹一次，预引导可显著提高通知允许率（PRD 目标 ≥ 50%）。不阻塞首页是 PRD 明确要求。
+
+### 11. 登录后 redirect/deeplink 处理
+
+**选择**: 登录成功后检查 redirect/deeplink 参数，仅允许 App 内白名单路径。非法目标回退 `/home`。登录过期时自动携带当前页面路径为 redirect。
+
+**理由**: PRD 明确要求支持推送/短信深链跳转和登录过期回跳。白名单机制防止 open redirect 安全漏洞。
+
 ## Risks / Trade-offs
 
 - **微信 SDK 依赖**: funde-client 是 mock 演示，实际 iOS 微信登录需集成微信 OpenSDK（需开发者在 Podfile 中添加 `WechatOpenSDK`）→ 本 spec 仅定义 UI 层，微信 SDK 集成在后续变更中处理
+- **运营商 SDK 依赖**: 本机号获取需运营商能力，V1.0 使用 mock → V1.1 接入真实 SDK 时需评估覆盖率
+- **拼图验证服务依赖**: V1.0 使用 mock captcha_token → V1.1 接入真实验证服务
 - **老年模式与 Dynamic Type**: iOS Dynamic Type 的放大系数与 funde-client 的 `data-senior` 放大比例不完全一致 → 可以接受微小差异，优先使用 iOS 原生方案
 - **渐变 Logo Mark**: CAGradientLayer 需代码绘制，不能像 CSS 直接用 `linear-gradient` → 使用 `GradientView` 封装，复杂度可控
+- **多设备登录**: V1.0 允许多设备不踢出，可能增加客服咨询量（账号共享）→ 后续版本可增加设备管理和踢出策略
+- **接口契约**: PRD 中的接口名称为自动生成，不可直接使用。iOS BLL 层自行定义协议，与后端协商后确定真实接口
 
 ## Open Questions
 
-- 是否需要在登录页增加「注册」入口独立页面？funde-client 当前设计是「登录即注册」（验证码登录自动创建账号），iOS 是否保持一致？
-- 微信登录是否需要「首次绑定手机号」流程？（funde-client 流程中有实名认证环节）
-- 是否需要 Apple Sign In (Sign in with Apple) 作为额外登录方式？
+- 是否需要在登录页增加「注册」入口独立页面？funde-client PRD 设计是「登录即注册」（验证码登录自动创建账号），iOS 保持一致
+- 微信登录是否需要「首次绑定手机号」流程？PRD 中有完整绑定 + 换绑冲突处理流程
+- 是否需要 Apple Sign In (Sign in with Apple) 作为额外登录方式？PRD 未提及，可后续评估
+- 登录态有效期和"长时间未登录"的具体天数？PRD 标注 [待确认]，由后端安全策略定义
+- 账号冻结/注销中是否需要展示客服入口或申诉入口？PRD 标注 [待确认]
+- 新设备登录提醒的推送通道？PRD 标注 [待确认：提醒通道]

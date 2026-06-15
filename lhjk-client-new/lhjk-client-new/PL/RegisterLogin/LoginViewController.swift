@@ -1,11 +1,15 @@
 import UIKit
 import SnapKit
+import UserNotifications
 
 /// 注册/登录页面
-/// 参考 funde-client: prototype/src/views/auth/LoginView.vue
+/// 参考 funde-client PRD 用户注册与登录_v1.0.md + LoginView.vue
 ///
-/// 布局结构:
-///   BrandHeaderView → Form (SMS / Password dual mode) → WeChat entry → Auth sheet
+/// 完整流程:
+///   隐私弹窗 → 本机号识别 → 登录页 (验证码/密码/微信)
+///   → 通知权限预引导 → redirect/deeplink → /home
+///
+/// 分支流程: 忘记密码、登录过期、账号冻结/注销中
 final class LoginViewController: BaseViewController {
 
     // MARK: - Mode
@@ -18,6 +22,18 @@ final class LoginViewController: BaseViewController {
     // MARK: - Constants
 
     private let horizontalPadding: CGFloat = 24
+
+    // MARK: - Redirect
+
+    /// 登录成功后目标页路径（App 内白名单路径）
+    var redirectPath: String?
+    /// 深链目标
+    var deeplink: String?
+
+    /// App 内合法目标页白名单前缀
+    private let allowedRedirectPrefixes: [String] = [
+        "/home", "/health", "/me", "/payment", "/im"
+    ]
 
     // MARK: - UI
 
@@ -33,6 +49,14 @@ final class LoginViewController: BaseViewController {
     // Brand
     private let brandHeader = BrandHeaderView()
 
+    // Privacy prompt (shown before login form)
+    private var privacyPromptView: PrivacyPromptView?
+
+    // Local phone display
+    private var localPhoneLabel: UILabel?
+    private var switchPhoneButton: UIButton?
+    private var isUsingLocalPhone = false
+
     // SMS fields
     private lazy var phoneField = LoginFieldView(
         title: "手机号",
@@ -46,37 +70,35 @@ final class LoginViewController: BaseViewController {
         sfSymbol: "shield"
     )
 
-    /// 验证码输入框右侧的 "获取验证码" 按钮
-    private lazy var codeButton: UIButton = {
-        let btn = UIButton(type: .system)
-        btn.setTitle("获取验证码", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
-        btn.setTitleColor(.fdPrimary, for: .normal)
-        btn.setTitleColor(.fdMuted, for: .disabled)
-        btn.backgroundColor = .fdPrimarySoft
-        btn.layer.cornerRadius = 12
-        btn.contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
-        btn.addTarget(self, action: #selector(sendCode), for: .touchUpInside)
+    /// 验证码倒计时按钮
+    private lazy var codeButton: VerifyCodeButton = {
+        let btn = VerifyCodeButton()
+        btn.onRequestCode = { [weak self] in
+            self?.handleRequestCode()
+        }
         return btn
     }()
 
     /// 验证码行容器（输入框 + 按钮）
     private lazy var codeRowView: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [codeFieldContainer, codeButton])
+        let container = UIView()
+        container.addSubview(codeField)
+        codeField.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.bottom.equalToSuperview()
+        }
+        let stack = UIStackView(arrangedSubviews: [container, codeButton])
         stack.axis = .horizontal
         stack.alignment = .bottom
         stack.spacing = 10
         return stack
     }()
 
-    /// 验证码输入框容器（用于和 codeButton 并排时 flex 分配）
-    private let codeFieldContainer = UIView()
-
     // Password fields
-    private lazy var usernameField = LoginFieldView(
-        title: "账号",
-        placeholder: "请输入账号",
-        sfSymbol: "person.crop.circle"
+    private lazy var passwordPhoneField = LoginFieldView(
+        title: "手机号",
+        placeholder: "请输入手机号",
+        sfSymbol: "phone"
     )
 
     private lazy var passwordField = LoginFieldView(
@@ -85,6 +107,16 @@ final class LoginViewController: BaseViewController {
         sfSymbol: "lock",
         rightButton: .secureToggle
     )
+
+    // Forgot password link
+    private lazy var forgotPasswordButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.setTitle("忘记密码", for: .normal)
+        btn.titleLabel?.font = .systemFont(ofSize: 13)
+        btn.setTitleColor(.fdPrimary, for: .normal)
+        btn.addTarget(self, action: #selector(showForgotPassword), for: .touchUpInside)
+        return btn
+    }()
 
     // Form stack
     private let formStack: UIStackView = {
@@ -99,6 +131,28 @@ final class LoginViewController: BaseViewController {
 
     // Password field wrapper
     private let passwordFieldsContainer = UIView()
+
+    // Local phone area wrapper
+    private let localPhoneContainer = UIView()
+
+    /// SMS form inner stack (local phone + phone field + code row)
+    private let smsInnerStack: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 20
+        return stack
+    }()
+
+    /// Password form inner stack
+    private let passwordInnerStack: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 20
+        return stack
+    }()
+
+    // Agreement checkbox
+    private let agreementCheckbox = AgreementCheckboxView()
 
     // Submit button
     private lazy var submitButton: UIButton = {
@@ -126,19 +180,6 @@ final class LoginViewController: BaseViewController {
         return btn
     }()
 
-    // Agreement hint
-    private lazy var agreementLabel: UILabel = {
-        let label = UILabel()
-        label.text = "登录即代表同意《用户协议》与《隐私政策》"
-        label.font = .systemFont(ofSize: 11)
-        label.textColor = .fdMuted
-        label.textAlignment = .center
-        label.isUserInteractionEnabled = true
-        let tap = UITapGestureRecognizer(target: self, action: #selector(handleAgreementTap(_:)))
-        label.addGestureRecognizer(tap)
-        return label
-    }()
-
     // WeChat entry
     private lazy var wechatButton: UIButton = {
         let btn = UIButton(type: .system)
@@ -156,24 +197,29 @@ final class LoginViewController: BaseViewController {
         return btn
     }()
 
-    /// 微信授权弹层背景
-    private lazy var overlayView: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.4)
-        view.alpha = 0
-        view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(dismissWechatSheet)))
-        return view
-    }()
+    // Overlays
+    private var overlayView: UIView?
+    private var wechatSheetView: UIView?
+    private var captchaVerifyView: CaptchaVerifyView?
+    private var notificationGuideView: NotificationGuideView?
+    private var phoneBindingView: PhoneBindingView?
 
-    /// 微信授权弹层
-    private let wechatSheetView = UIView()
+    // MARK: - Services
+
+    private let loginService = LoginService.shared
 
     // MARK: - State
 
     private var loginMode: LoginMode = .sms
-    private var countdown = 0
-    private var countdownTimer: Timer?
     private var isLoggingIn = false
+    private var smsRequestId: String?
+
+    /// 是否需要展示隐私弹窗
+    private var needsPrivacyConsent = true
+
+    // MARK: - Session expired banner
+
+    private var sessionExpiredBanner: UIView?
 
     // MARK: - Lifecycle
 
@@ -191,11 +237,178 @@ final class LoginViewController: BaseViewController {
             name: UIResponder.keyboardWillHideNotification,
             object: nil
         )
+
+        // Check privacy consent first
+        checkPrivacyConsent()
+
+        // Check if came from session expiry
+        if redirectPath != nil {
+            showSessionExpiredBanner()
+        }
     }
 
     deinit {
-        countdownTimer?.invalidate()
         NotificationCenter.default.removeObserver(self)
+    }
+
+    // MARK: - Privacy Consent
+
+    private func checkPrivacyConsent() {
+        // V1.0 mock: always need consent on first launch
+        let localVersion = UserDefaults.standard.integer(forKey: "agreed_privacy_version")
+
+        Task {
+            do {
+                let info = try await loginService.getPrivacyVersion()
+                if info.latestPrivacyVersion > localVersion {
+                    await MainActor.run { showPrivacyPrompt(version: info) }
+                } else {
+                    needsPrivacyConsent = false
+                    await MainActor.run { detectLocalPhone() }
+                }
+            } catch {
+                // Network error — still show privacy check based on local cache
+                if localVersion == 0 {
+                    await MainActor.run {
+                        showPrivacyPrompt(version: PrivacyVersionInfo(
+                            latestPrivacyVersion: 1,
+                            userAgreementURL: "",
+                            privacyPolicyURL: ""
+                        ))
+                    }
+                } else {
+                    needsPrivacyConsent = false
+                }
+            }
+        }
+    }
+
+    private func showPrivacyPrompt(version: PrivacyVersionInfo) {
+        let prompt = PrivacyPromptView()
+        prompt.onAgree = { [weak self] in
+            self?.handlePrivacyAgree(version: version.latestPrivacyVersion)
+        }
+        prompt.onDisagree = { [weak self] in
+            // Already handled in PrivacyPromptView UI
+        }
+        prompt.onRetry = { [weak self] in
+            // Return to consent view
+        }
+        prompt.onExitApp = {
+            exit(0)
+        }
+        prompt.onUserAgreementTap = { [weak self] in
+            self?.openURL(version.userAgreementURL, title: "用户协议")
+        }
+        prompt.onPrivacyPolicyTap = { [weak self] in
+            self?.openURL(version.privacyPolicyURL, title: "隐私政策")
+        }
+
+        view.addSubview(prompt)
+        prompt.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        privacyPromptView = prompt
+    }
+
+    private func handlePrivacyAgree(version: Int) {
+        Task {
+            try? await loginService.agreePrivacy(version: version)
+            UserDefaults.standard.set(version, forKey: "agreed_privacy_version")
+            await MainActor.run { [weak self] in
+                self?.dismissPrivacyPrompt()
+                self?.needsPrivacyConsent = false
+                self?.detectLocalPhone()
+            }
+        }
+    }
+
+    private func dismissPrivacyPrompt() {
+        UIView.animate(withDuration: 0.25) {
+            self.privacyPromptView?.alpha = 0
+        } completion: { _ in
+            self.privacyPromptView?.removeFromSuperview()
+            self.privacyPromptView = nil
+        }
+    }
+
+    // MARK: - Local Phone Detection
+
+    private func detectLocalPhone() {
+        Task {
+            do {
+                let phone = try await loginService.getLocalPhoneNumber()
+                await MainActor.run {
+                    if let phone = phone {
+                        showLocalPhone(phone)
+                    } else {
+                        showManualPhoneInput()
+                    }
+                }
+            } catch {
+                await MainActor.run { showManualPhoneInput() }
+            }
+        }
+    }
+
+    private func showLocalPhone(_ phone: String) {
+        isUsingLocalPhone = true
+        let masked = maskPhone(phone)
+
+        // Remove old local phone views
+        localPhoneContainer.subviews.forEach { $0.removeFromSuperview() }
+        localPhoneContainer.isHidden = false
+
+        let label = UILabel()
+        label.text = masked
+        label.font = .systemFont(ofSize: 22, weight: .medium)
+        label.textColor = .fdText
+        label.textAlignment = .center
+        localPhoneLabel = label
+
+        let button = UIButton(type: .system)
+        button.setTitle("使用其他手机号", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 13)
+        button.setTitleColor(.fdPrimary, for: .normal)
+        button.addTarget(self, action: #selector(switchToManualPhone), for: .touchUpInside)
+        switchPhoneButton = button
+
+        localPhoneContainer.addSubview(label)
+        localPhoneContainer.addSubview(button)
+
+        label.snp.makeConstraints { make in
+            make.top.centerX.equalToSuperview()
+        }
+        button.snp.makeConstraints { make in
+            make.top.equalTo(label.snp.bottom).offset(6)
+            make.centerX.equalToSuperview()
+            make.bottom.equalToSuperview()
+        }
+
+        // Hide manual phone field
+        phoneField.isHidden = true
+    }
+
+    private func showManualPhoneInput() {
+        isUsingLocalPhone = false
+        localPhoneContainer.isHidden = true
+        phoneField.isHidden = false
+        showToast("暂未获取到本机号码，请输入手机号登录")
+    }
+
+    @objc private func switchToManualPhone() {
+        // Copy local phone to manual field
+        if let localText = localPhoneLabel?.text {
+            phoneField.textField.text = localText.replacingOccurrences(of: "*", with: "")
+        }
+        showManualPhoneInput()
+    }
+
+    private func maskPhone(_ phone: String) -> String {
+        guard phone.count == 11 else { return phone }
+        let start = phone.prefix(3)
+        let end = phone.suffix(4)
+        return "\(start)****\(end)"
     }
 
     // MARK: - Setup UI
@@ -221,47 +434,30 @@ final class LoginViewController: BaseViewController {
             make.centerX.equalToSuperview()
         }
 
-        // Form
-        contentView.addSubview(formStack)
+        // Local phone area
+        localPhoneContainer.isHidden = true
+        smsInnerStack.addArrangedSubview(localPhoneContainer)
 
         // SMS fields
-        smsFieldsContainer.addSubview(phoneField)
-        codeFieldContainer.addSubview(codeField)
-        smsFieldsContainer.addSubview(codeRowView)
+        smsInnerStack.addArrangedSubview(phoneField)
+        smsInnerStack.addArrangedSubview(codeRowView)
 
-        phoneField.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
-        }
-
-        codeField.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
-            make.bottom.equalToSuperview()
-        }
-
-        codeRowView.snp.makeConstraints { make in
-            make.top.equalTo(phoneField.snp.bottom).offset(20)
-            make.leading.trailing.equalToSuperview()
-            make.bottom.equalToSuperview()
-        }
-
-        codeButton.snp.makeConstraints { make in
-            make.height.equalTo(48)
+        smsFieldsContainer.addSubview(smsInnerStack)
+        smsInnerStack.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
         }
 
         // Password fields
-        passwordFieldsContainer.addSubview(usernameField)
-        passwordFieldsContainer.addSubview(passwordField)
+        passwordInnerStack.addArrangedSubview(passwordPhoneField)
+        passwordInnerStack.addArrangedSubview(passwordField)
 
-        usernameField.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
+        passwordFieldsContainer.addSubview(passwordInnerStack)
+        passwordInnerStack.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
         }
 
-        passwordField.snp.makeConstraints { make in
-            make.top.equalTo(usernameField.snp.bottom).offset(20)
-            make.leading.trailing.equalToSuperview()
-            make.bottom.equalToSuperview()
-        }
-
+        // Form stack
+        contentView.addSubview(formStack)
         formStack.addArrangedSubview(smsFieldsContainer)
         formStack.addArrangedSubview(passwordFieldsContainer)
 
@@ -270,10 +466,31 @@ final class LoginViewController: BaseViewController {
             make.leading.trailing.equalToSuperview().inset(horizontalPadding)
         }
 
+        // Forgot password (password mode only)
+        contentView.addSubview(forgotPasswordButton)
+        forgotPasswordButton.snp.makeConstraints { make in
+            make.top.equalTo(formStack.snp.bottom).offset(10)
+            make.trailing.equalTo(formStack)
+        }
+        forgotPasswordButton.isHidden = true
+
+        // Agreement checkbox
+        contentView.addSubview(agreementCheckbox)
+        agreementCheckbox.snp.makeConstraints { make in
+            make.top.equalTo(forgotPasswordButton.snp.bottom).offset(14)
+            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+        }
+        agreementCheckbox.onUserAgreementTap = { [weak self] in
+            self?.openURL("https://example.com/agreement", title: "用户协议")
+        }
+        agreementCheckbox.onPrivacyPolicyTap = { [weak self] in
+            self?.openURL("https://example.com/privacy", title: "隐私政策")
+        }
+
         // Submit button
         contentView.addSubview(submitButton)
         submitButton.snp.makeConstraints { make in
-            make.top.equalTo(formStack.snp.bottom).offset(28)
+            make.top.equalTo(agreementCheckbox.snp.bottom).offset(16)
             make.leading.trailing.equalToSuperview().inset(horizontalPadding)
             make.height.equalTo(52)
         }
@@ -285,49 +502,46 @@ final class LoginViewController: BaseViewController {
             make.trailing.equalTo(submitButton)
         }
 
-        // Agreement
-        contentView.addSubview(agreementLabel)
-        agreementLabel.snp.makeConstraints { make in
-            make.top.equalTo(modeSwitchButton.snp.bottom).offset(14)
-            make.centerX.equalToSuperview()
-            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
-        }
-
         // WeChat entry
         contentView.addSubview(wechatButton)
         wechatButton.snp.makeConstraints { make in
-            make.top.equalTo(agreementLabel.snp.bottom).offset(28)
+            make.top.equalTo(modeSwitchButton.snp.bottom).offset(28)
             make.centerX.equalToSuperview()
             make.size.equalTo(52)
             make.bottom.equalToSuperview().offset(-32)
         }
 
-        // WeChat sheet overlay
+        // Setup overlays
         setupWechatSheet()
 
         // Default mode
         updateModeUI(animated: false)
     }
 
-    /// 底部微信授权弹层
+    // MARK: - WeChat Sheet
+
     private func setupWechatSheet() {
-        view.addSubview(overlayView)
-        overlayView.snp.makeConstraints { make in
+        let overlay = UIView()
+        overlay.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+        overlay.alpha = 0
+        overlay.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(dismissWechatSheet)))
+        view.addSubview(overlay)
+        overlay.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
+        self.overlayView = overlay
 
-        wechatSheetView.backgroundColor = .white
-        wechatSheetView.layer.cornerRadius = 24
-        wechatSheetView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        // 默认藏在屏幕底部以下
-        wechatSheetView.transform = CGAffineTransform(translationX: 0, y: UIScreen.main.bounds.height)
-        view.addSubview(wechatSheetView)
+        let sheet = UIView()
+        sheet.backgroundColor = .white
+        sheet.layer.cornerRadius = 24
+        sheet.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        view.addSubview(sheet)
 
         // Sheet content
         let iconBg = UIView()
         iconBg.backgroundColor = UIColor.fdWechatGreen.withAlphaComponent(0.12)
         iconBg.layer.cornerRadius = 18
-        wechatSheetView.addSubview(iconBg)
+        sheet.addSubview(iconBg)
 
         let icon = UIImageView(image: UIImage(systemName: "message.circle.fill")?
             .withTintColor(.fdWechatGreen, renderingMode: .alwaysOriginal)
@@ -339,7 +553,7 @@ final class LoginViewController: BaseViewController {
         title.font = .systemFont(ofSize: 18, weight: .bold)
         title.textColor = .fdText
         title.textAlignment = .center
-        wechatSheetView.addSubview(title)
+        sheet.addSubview(title)
 
         let desc = UILabel()
         desc.text = "将通过微信授权登录富德健康。继续即表示同意《用户协议》与《隐私政策》。"
@@ -347,7 +561,7 @@ final class LoginViewController: BaseViewController {
         desc.textColor = .fdSubtext
         desc.textAlignment = .center
         desc.numberOfLines = 0
-        wechatSheetView.addSubview(desc)
+        sheet.addSubview(desc)
 
         let authBtn = UIButton(type: .system)
         authBtn.setTitle("微信登录", for: .normal)
@@ -356,14 +570,14 @@ final class LoginViewController: BaseViewController {
         authBtn.backgroundColor = .fdWechatGreen
         authBtn.layer.cornerRadius = 14
         authBtn.addTarget(self, action: #selector(wechatLogin), for: .touchUpInside)
-        wechatSheetView.addSubview(authBtn)
+        sheet.addSubview(authBtn)
 
         let closeBtn = UIButton(type: .system)
         closeBtn.setTitle("取消", for: .normal)
         closeBtn.titleLabel?.font = .systemFont(ofSize: 14)
         closeBtn.setTitleColor(.fdSubtext, for: .normal)
         closeBtn.addTarget(self, action: #selector(dismissWechatSheet), for: .touchUpInside)
-        wechatSheetView.addSubview(closeBtn)
+        sheet.addSubview(closeBtn)
 
         iconBg.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(28)
@@ -392,21 +606,19 @@ final class LoginViewController: BaseViewController {
             make.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).offset(-28)
         }
 
-        // 强制布局以获取 sheet 高度
-        wechatSheetView.layoutIfNeeded()
-        let sheetHeight = wechatSheetView.systemLayoutSizeFitting(
+        sheet.layoutIfNeeded()
+        let sheetHeight = sheet.systemLayoutSizeFitting(
             CGSize(width: view.bounds.width, height: UIView.layoutFittingCompressedSize.height),
             withHorizontalFittingPriority: .required,
             verticalFittingPriority: .fittingSizeLevel
         ).height
 
-        // Pin to bottom & set initial off-screen transform
-        wechatSheetView.snp.makeConstraints { make in
+        sheet.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview()
             make.bottom.equalTo(view.snp.bottom)
         }
-        // Re-apply transform after constraints
-        wechatSheetView.transform = CGAffineTransform(translationX: 0, y: sheetHeight)
+        sheet.transform = CGAffineTransform(translationX: 0, y: sheetHeight)
+        self.wechatSheetView = sheet
     }
 
     // MARK: - Mode Switching
@@ -417,6 +629,7 @@ final class LoginViewController: BaseViewController {
         let changes = {
             self.smsFieldsContainer.isHidden = !isSMS
             self.passwordFieldsContainer.isHidden = isSMS
+            self.forgotPasswordButton.isHidden = isSMS
 
             let submitTitle = isSMS ? "登录 / 注册" : "密码登录"
             self.submitButton.setTitle(submitTitle, for: .normal)
@@ -434,18 +647,102 @@ final class LoginViewController: BaseViewController {
 
     @objc private func toggleMode() {
         loginMode = (loginMode == .sms) ? .password : .sms
+
+        // Preserve phone number between modes
+        if loginMode == .password {
+            let currentPhone = getCurrentPhone()
+            if !currentPhone.isEmpty {
+                passwordPhoneField.textField.text = currentPhone
+            }
+        } else {
+            let pwdPhone = passwordPhoneField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+            if !pwdPhone.isEmpty && !isUsingLocalPhone {
+                phoneField.textField.text = pwdPhone
+            }
+        }
+
         updateModeUI(animated: true)
     }
 
-    // MARK: - Verification Code
+    private func getCurrentPhone() -> String {
+        if isUsingLocalPhone {
+            let text = localPhoneLabel?.text ?? ""
+            return text.replacingOccurrences(of: "*", with: "")
+        }
+        return phoneField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+    }
 
-    @objc private func sendCode() {
-        let phone = phoneField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+    // MARK: - Verification Code Request
+
+    private func handleRequestCode() {
+        guard agreementCheckbox.isChecked else {
+            showToast("请先阅读并同意用户协议与隐私政策")
+            return
+        }
+
+        let phone = getCurrentPhone()
+        guard !phone.isEmpty else {
+            showToast("请输入手机号")
+            return
+        }
         guard validatePhone(phone) else { return }
 
-        startCountdown()
-        showToast("验证码已发送（演示：123456）")
+        // Show captcha verification
+        showCaptchaVerify { [weak self] token in
+            self?.sendCode(phone: phone, captchaToken: token)
+        }
     }
+
+    private func showCaptchaVerify(completion: @escaping (String) -> Void) {
+        let captcha = CaptchaVerifyView()
+        captcha.onVerifySuccess = { [weak self] token in
+            self?.dismissCaptcha()
+            completion(token)
+        }
+        captcha.onDismiss = { [weak self] in
+            self?.dismissCaptcha()
+        }
+        captcha.reset()
+
+        view.addSubview(captcha)
+        captcha.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        captcha.alpha = 0
+        captchaVerifyView = captcha
+
+        UIView.animate(withDuration: 0.25) {
+            captcha.alpha = 1
+        }
+    }
+
+    private func dismissCaptcha() {
+        UIView.animate(withDuration: 0.25) {
+            self.captchaVerifyView?.alpha = 0
+        } completion: { _ in
+            self.captchaVerifyView?.removeFromSuperview()
+            self.captchaVerifyView = nil
+        }
+    }
+
+    private func sendCode(phone: String, captchaToken: String) {
+        Task {
+            do {
+                let response = try await loginService.sendVerificationCode(to: phone, captchaToken: captchaToken)
+                smsRequestId = response.smsRequestId
+                await MainActor.run {
+                    codeButton.startCountdown()
+                    showToast("验证码已发送")
+                }
+            } catch {
+                await MainActor.run {
+                    showToast(error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    // MARK: - Validation
 
     private func validatePhone(_ phone: String) -> Bool {
         let pattern = "^1[3-9]\\d{9}$"
@@ -457,37 +754,16 @@ final class LoginViewController: BaseViewController {
         return true
     }
 
-    private func startCountdown() {
-        countdown = 60
-        updateCodeButtonState()
-        countdownTimer?.invalidate()
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            self.countdown -= 1
-            if self.countdown <= 0 {
-                self.countdownTimer?.invalidate()
-                self.countdownTimer = nil
-            }
-            self.updateCodeButtonState()
-        }
-    }
-
-    private func updateCodeButtonState() {
-        if countdown > 0 {
-            codeButton.isEnabled = false
-            codeButton.backgroundColor = .fdBg2
-            codeButton.setTitle("\(countdown)s 后重试", for: .disabled)
-        } else {
-            codeButton.isEnabled = true
-            codeButton.backgroundColor = .fdPrimarySoft
-            codeButton.setTitle("获取验证码", for: .normal)
-        }
-    }
-
     // MARK: - Submit
 
     @objc private func handleSubmit() {
         guard !isLoggingIn else { return }
+
+        // Check agreement
+        guard agreementCheckbox.isChecked else {
+            showToast("请先阅读并同意用户协议与隐私政策")
+            return
+        }
 
         if loginMode == .sms {
             submitBySMS()
@@ -497,50 +773,161 @@ final class LoginViewController: BaseViewController {
     }
 
     private func submitBySMS() {
-        let phone = phoneField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let phone = getCurrentPhone()
         let code = codeField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
 
         guard !phone.isEmpty else { showToast("请输入手机号"); return }
+        guard validatePhone(phone) else { return }
         guard !code.isEmpty else { showToast("请输入验证码"); return }
+        guard code.count == 6 else { showToast("请输入 6 位验证码"); return }
 
         setLoggingIn(true)
-        // 演示：模拟登录延迟
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
-            self?.setLoggingIn(false)
-            self?.completeLogin()
+
+        let requestId = smsRequestId ?? ""
+        Task {
+            do {
+                let result = try await loginService.loginByPhone(phone, code: code, smsRequestId: requestId)
+                await MainActor.run {
+                    setLoggingIn(false)
+                    loginService.saveToken(result.accessToken, refreshToken: result.refreshToken)
+                    handleLoginSuccess(isNewUser: result.isNewUser)
+                }
+            } catch {
+                await MainActor.run {
+                    setLoggingIn(false)
+                    showToast(error.localizedDescription)
+                }
+            }
         }
     }
 
     private func submitByPassword() {
-        let username = usernameField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let phone = passwordPhoneField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
         let password = passwordField.textField.text ?? ""
 
-        guard !username.isEmpty else { showToast("请输入账号"); return }
+        guard !phone.isEmpty else { showToast("请输入手机号"); return }
+        guard validatePhone(phone) else { return }
         guard !password.isEmpty else { showToast("请输入密码"); return }
+        guard password.count >= 6 else { showToast("密码至少 6 位"); return }
 
         setLoggingIn(true)
-        // 演示：模拟登录延迟
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
-            self?.setLoggingIn(false)
-            self?.completeLogin()
+
+        Task {
+            do {
+                let result = try await loginService.loginByPassword(phone, password: password)
+                await MainActor.run {
+                    setLoggingIn(false)
+                    loginService.saveToken(result.accessToken, refreshToken: result.refreshToken)
+                    handleLoginSuccess(isNewUser: false)
+                }
+            } catch {
+                await MainActor.run {
+                    setLoggingIn(false)
+                    showToast(error.localizedDescription)
+                }
+            }
         }
     }
 
-    private func setLoggingIn(_ loggingIn: Bool) {
-        isLoggingIn = loggingIn
-        submitButton.isEnabled = !loggingIn
-        submitButton.alpha = loggingIn ? 0.72 : 1.0
+    // MARK: - Login Success
 
-        if loggingIn {
-            submitButton.setTitle("登录中…", for: .disabled)
+    private func handleLoginSuccess(isNewUser: Bool) {
+        // Show notification permission guide
+        showNotificationGuide { [weak self] in
+            self?.navigateAfterLogin()
+        }
+    }
+
+    // MARK: - Notification Permission
+
+    private func showNotificationGuide(completion: @escaping () -> Void) {
+        let guide = NotificationGuideView()
+        guide.onEnable = { [weak self] in
+            self?.requestNotificationPermission { _ in
+                self?.dismissNotificationGuide()
+                completion()
+            }
+        }
+        guide.onSkip = { [weak self] in
+            self?.dismissNotificationGuide()
+            completion()
+        }
+
+        view.addSubview(guide)
+        guide.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        guide.alpha = 0
+        notificationGuideView = guide
+
+        UIView.animate(withDuration: 0.25) {
+            guide.alpha = 1
+        }
+    }
+
+    private func dismissNotificationGuide() {
+        UIView.animate(withDuration: 0.25) {
+            self.notificationGuideView?.alpha = 0
+        } completion: { _ in
+            self.notificationGuideView?.removeFromSuperview()
+            self.notificationGuideView = nil
+        }
+    }
+
+    private func requestNotificationPermission(completion: @escaping (NotificationPermissionStatus) -> Void) {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
+            let status: NotificationPermissionStatus = granted ? .allowed : .denied
+            Task {
+                try? await self.loginService.reportNotificationPermission(status: status)
+            }
+            DispatchQueue.main.async {
+                if !granted {
+                    self.showToast("已暂不接收通知，可在设置中重新开启")
+                }
+                completion(status)
+            }
+        }
+    }
+
+    // MARK: - Post-Login Navigation
+
+    private func navigateAfterLogin() {
+        // Check for valid redirect/deeplink
+        if let deeplink = deeplink, isValidRedirect(deeplink) {
+            navigateToPath(deeplink)
+        } else if let redirect = redirectPath, isValidRedirect(redirect) {
+            navigateToPath(redirect)
         } else {
-            let title = loginMode == .sms ? "登录 / 注册" : "密码登录"
-            submitButton.setTitle(title, for: .normal)
+            // Default: dismiss → home
+            dismiss(animated: true)
         }
     }
 
-    private func completeLogin() {
-        dismiss(animated: true)
+    private func isValidRedirect(_ path: String) -> Bool {
+        for prefix in allowedRedirectPrefixes {
+            if path.hasPrefix(prefix) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private func navigateToPath(_ path: String) {
+        dismiss(animated: true) {
+            Router.shared.push(path)
+        }
+    }
+
+    // MARK: - Forgot Password
+
+    @objc private func showForgotPassword() {
+        let forgotVC = ForgotPasswordViewController()
+        forgotVC.onResetSuccess = { [weak self] phone in
+            self?.passwordPhoneField.textField.text = phone
+            self?.loginMode = .password
+            self?.updateModeUI(animated: false)
+        }
+        navigationController?.pushViewController(forgotVC, animated: true)
     }
 
     // MARK: - WeChat
@@ -549,70 +936,184 @@ final class LoginViewController: BaseViewController {
         view.endEditing(true)
 
         UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
-            self.overlayView.alpha = 1
-            self.wechatSheetView.transform = .identity
+            self.overlayView?.alpha = 1
+            self.wechatSheetView?.transform = .identity
         }
     }
 
     @objc private func dismissWechatSheet() {
-        let sheetHeight = wechatSheetView.bounds.height
+        let sheetHeight = wechatSheetView?.bounds.height ?? 0
 
         UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseIn) {
-            self.overlayView.alpha = 0
-            self.wechatSheetView.transform = CGAffineTransform(translationX: 0, y: sheetHeight)
+            self.overlayView?.alpha = 0
+            self.wechatSheetView?.transform = CGAffineTransform(translationX: 0, y: sheetHeight)
         }
     }
 
     @objc private func wechatLogin() {
-        // 演示：模拟微信授权
         dismissWechatSheet()
+
         setLoggingIn(true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
-            self?.setLoggingIn(false)
-            self?.completeLogin()
+        let mockAuthCode = "mock_openid_bound"
+
+        Task {
+            do {
+                let result = try await loginService.wechatAuth(authCode: mockAuthCode)
+
+                await MainActor.run {
+                    setLoggingIn(false)
+
+                    switch result.bindStatus {
+                    case .bound:
+                        // Directly login
+                        loginService.saveToken("token_wechat_\(UUID().uuidString.prefix(8))", refreshToken: "refresh_wechat")
+                        handleLoginSuccess(isNewUser: false)
+
+                    case .unbound:
+                        // Show phone binding
+                        guard let tempToken = result.wechatTempToken else { return }
+                        showPhoneBinding(wechatToken: tempToken)
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    setLoggingIn(false)
+                    showToast(error.localizedDescription)
+                }
+            }
         }
     }
 
-    // MARK: - Agreement
+    private func showPhoneBinding(wechatToken: String) {
+        let binding = PhoneBindingView(mode: .bind)
+        binding.onSubmit = { [weak self] phone, code in
+            self?.handleWechatBinding(wechatToken: wechatToken, phone: phone, code: code, confirmRebind: false)
+        }
+        binding.onDismiss = { [weak self] in
+            self?.dismissPhoneBinding()
+        }
 
-    @objc private func handleAgreementTap(_ gesture: UITapGestureRecognizer) {
-        guard let label = gesture.view as? UILabel else { return }
-        let point = gesture.location(in: label)
+        view.addSubview(binding)
+        binding.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        binding.alpha = 0
+        phoneBindingView = binding
 
-        let layoutManager = NSLayoutManager()
-        let textContainer = NSTextContainer(size: .zero)
-        let textStorage = NSTextStorage(attributedString: label.attributedText ?? NSAttributedString(string: label.text ?? ""))
+        UIView.animate(withDuration: 0.25) {
+            binding.alpha = 1
+        }
+    }
 
-        layoutManager.addTextContainer(textContainer)
-        textStorage.addLayoutManager(layoutManager)
+    private func handleWechatBinding(wechatToken: String, phone: String, code: String, confirmRebind: Bool) {
+        setLoggingIn(true)
 
-        textContainer.lineFragmentPadding = 0
-        textContainer.lineBreakMode = label.lineBreakMode
-        textContainer.maximumNumberOfLines = label.numberOfLines
-        textContainer.size = label.bounds.size
-
-        let boundingBox = layoutManager.usedRect(for: textContainer)
-        let textOffset = CGPoint(
-            x: (label.bounds.width - boundingBox.width) * 0.5 - boundingBox.minX,
-            y: (label.bounds.height - boundingBox.height) * 0.5 - boundingBox.minY
-        )
-        let textPoint = CGPoint(x: point.x - textOffset.x, y: point.y - textOffset.y)
-        let glyphIndex = layoutManager.glyphIndex(for: textPoint, in: textContainer)
-
-        if glyphIndex != NSNotFound {
-            let charRange = layoutManager.characterRange(forGlyphRange: NSRange(location: glyphIndex, length: 1), actualGlyphRange: nil)
-            let text = (label.text ?? "") as NSString
-
-            let userAgreementRange = text.range(of: "《用户协议》")
-            let privacyPolicyRange = text.range(of: "《隐私政策》")
-
-            if userAgreementRange.location != NSNotFound,
-               NSIntersectionRange(charRange, userAgreementRange).length > 0 {
-                showToast("打开《用户协议》")
-            } else if privacyPolicyRange.location != NSNotFound,
-                      NSIntersectionRange(charRange, privacyPolicyRange).length > 0 {
-                showToast("打开《隐私政策》")
+        Task {
+            do {
+                let result = try await loginService.wechatBindPhone(
+                    wechatToken: wechatToken,
+                    phone: phone,
+                    code: code,
+                    confirmRebind: confirmRebind
+                )
+                await MainActor.run {
+                    setLoggingIn(false)
+                    dismissPhoneBinding()
+                    loginService.saveToken(result.accessToken, refreshToken: result.refreshToken)
+                    handleLoginSuccess(isNewUser: false)
+                }
+            } catch LoginError.phoneBoundOtherWechat {
+                await MainActor.run {
+                    setLoggingIn(false)
+                    // Show rebind confirmation
+                    let masked = maskPhone(phone)
+                    showPhoneBindingRebind(wechatToken: wechatToken, maskedPhone: masked, phone: phone)
+                }
+            } catch {
+                await MainActor.run {
+                    setLoggingIn(false)
+                    showToast(error.localizedDescription)
+                }
             }
+        }
+    }
+
+    private func showPhoneBindingRebind(wechatToken: String, maskedPhone: String, phone: String) {
+        dismissPhoneBinding()
+
+        let binding = PhoneBindingView(mode: .rebind(maskedPhone: maskedPhone))
+        binding.onSubmit = { [weak self] _, code in
+            self?.handleWechatBinding(wechatToken: wechatToken, phone: phone, code: code, confirmRebind: true)
+        }
+        binding.onDismiss = { [weak self] in
+            self?.dismissPhoneBinding()
+        }
+
+        view.addSubview(binding)
+        binding.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        binding.alpha = 0
+        phoneBindingView = binding
+
+        UIView.animate(withDuration: 0.25) {
+            binding.alpha = 1
+        }
+    }
+
+    private func dismissPhoneBinding() {
+        UIView.animate(withDuration: 0.25) {
+            self.phoneBindingView?.alpha = 0
+        } completion: { _ in
+            self.phoneBindingView?.removeFromSuperview()
+            self.phoneBindingView = nil
+        }
+    }
+
+    // MARK: - Session Expired Banner
+
+    private func showSessionExpiredBanner() {
+        let banner = UIView()
+        banner.backgroundColor = .fdWarningSoft
+
+        let label = UILabel()
+        label.text = "为保护您的健康数据安全，登录状态已过期，请重新登录"
+        label.font = .systemFont(ofSize: 12)
+        label.textColor = .fdWarning
+        label.numberOfLines = 0
+        label.textAlignment = .center
+        banner.addSubview(label)
+        label.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 16, bottom: 10, right: 16))
+        }
+
+        view.addSubview(banner)
+        banner.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+            make.leading.trailing.equalToSuperview()
+        }
+        sessionExpiredBanner = banner
+
+        // Adjust brand header top
+        brandHeader.snp.remakeConstraints { make in
+            make.top.equalTo(banner.snp.bottom).offset(16)
+            make.centerX.equalToSuperview()
+        }
+    }
+
+    // MARK: - Loading State
+
+    private func setLoggingIn(_ loggingIn: Bool) {
+        isLoggingIn = loggingIn
+        submitButton.isEnabled = !loggingIn
+        submitButton.alpha = loggingIn ? 0.72 : 1.0
+
+        if loggingIn {
+            let title = loginMode == .sms ? "登录中…" : "登录中…"
+            submitButton.setTitle(title, for: .disabled)
+        } else {
+            let title = loginMode == .sms ? "登录 / 注册" : "密码登录"
+            submitButton.setTitle(title, for: .normal)
         }
     }
 
@@ -631,7 +1132,21 @@ final class LoginViewController: BaseViewController {
         scrollView.verticalScrollIndicatorInsets.bottom = 0
     }
 
+    // MARK: - URL Opening
+
+    private func openURL(_ urlString: String, title: String) {
+        guard !urlString.isEmpty, let url = URL(string: urlString) else {
+            showToast("\(title)暂不可用")
+            return
+        }
+        // Present WebView using existing WebViewController
+        let webVC = WebViewController(urlString: url.absoluteString, title: title)
+        present(UINavigationController(rootViewController: webVC), animated: true)
+    }
+
     // MARK: - Toast
+
+    private var toastWindow: UIWindow?
 
     private func showToast(_ message: String) {
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
