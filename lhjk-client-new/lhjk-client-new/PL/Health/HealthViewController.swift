@@ -3,7 +3,14 @@ import SnapKit
 
 /// 健康模块 Hub 页
 /// 参考 funde-client: HealthView.vue
-final class HealthViewController: BaseViewController, UICollectionViewDataSource, UICollectionViewDelegate {
+///
+/// 布局: UITableView 4 sections
+///   Section 0: HealthScoreCardCell
+///   Section 1: HealthArchiveCardCell
+///   Section 2: HealthVitalMetricsCell (内嵌 UICollectionView)
+///   Section 3: HealthQuickEntriesCell
+///   tableHeaderView: 自定义 Topbar
+final class HealthViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate {
 
     // MARK: - Mock Data
 
@@ -11,7 +18,9 @@ final class HealthViewController: BaseViewController, UICollectionViewDataSource
     private let riskLevel = "中风险"
     private let archiveProgress = 72
 
-    private let metrics: [(key: String, label: String, value: String, unit: String, status: String, statusType: String, icon: String, time: String, trend: String)] = [
+    typealias MetricItem = (key: String, label: String, value: String, unit: String, status: String, statusType: String, icon: String, time: String, trend: String)
+
+    private let metrics: [MetricItem] = [
         ("blood-pressure", "血压", "138/88", "mmHg", "偏高", "warning", "drop", "今天 07:32", "up"),
         ("blood-sugar", "血糖", "5.8", "mmol/L", "正常", "success", "capsule", "昨天 08:10", "flat"),
         ("weight", "体重", "68.5", "kg", "正常", "success", "scalemass", "3 天前", "down"),
@@ -24,22 +33,35 @@ final class HealthViewController: BaseViewController, UICollectionViewDataSource
         ("digestive", "消化道", "无异常", "", "无异常", "success", "stethoscope", "3 个月前", "flat"),
     ]
 
-    private let quickEntries: [(key: String, label: String, icon: String, bgColor: UIColor, fgColor: UIColor, route: String)] = [
-        ("record", "健康档案", "doc.text", UIColor(hexString: "#FFF3DC"), UIColor(hexString: "#B47300"), "/health/record"),
-        ("metrics", "体征监测", "heart.text.square", UIColor(hexString: "#FFE9DF"), UIColor.fdPrimary, "/health/metrics"),
-        ("assess", "六维评测", "clipboard", UIColor(hexString: "#E6F7EF"), UIColor(hexString: "#1F9A6B"), "/health/assessment/six-dim"),
-        ("report", "我的报告", "chart.bar", UIColor(hexString: "#F3EFFC"), UIColor(hexString: "#7B5E9F"), "/health/assessment/report"),
+    struct QuickEntry {
+        let key: String; let label: String; let icon: String
+        let bgColor: UIColor; let fgColor: UIColor; let route: String
+    }
+
+    private let quickEntries: [QuickEntry] = [
+        QuickEntry(key: "record", label: "健康档案", icon: "doc.text", bgColor: UIColor(hexString: "#FFF3DC"), fgColor: UIColor(hexString: "#B47300"), route: "/health/record"),
+        QuickEntry(key: "metrics", label: "体征监测", icon: "heart.text.square", bgColor: UIColor(hexString: "#FFE9DF"), fgColor: UIColor.fdPrimary, route: "/health/metrics"),
+        QuickEntry(key: "assess", label: "六维评测", icon: "clipboard", bgColor: UIColor(hexString: "#E6F7EF"), fgColor: UIColor(hexString: "#1F9A6B"), route: "/health/assessment/six-dim"),
+        QuickEntry(key: "report", label: "我的报告", icon: "chart.bar", bgColor: UIColor(hexString: "#F3EFFC"), fgColor: UIColor(hexString: "#7B5E9F"), route: "/health/assessment/report"),
     ]
 
     // MARK: - UI
 
-    private let scrollView: UIScrollView = {
-        let sv = UIScrollView()
-        sv.showsVerticalScrollIndicator = false
-        return sv
+    private lazy var tableView: UITableView = {
+        let tv = UITableView(frame: .zero, style: .plain)
+        tv.backgroundColor = .fdBg
+        tv.separatorStyle = .none
+        tv.showsVerticalScrollIndicator = false
+        tv.dataSource = self
+        tv.delegate = self
+        tv.register(HealthScoreCardCell.self, forCellReuseIdentifier: HealthScoreCardCell.reuseIdentifier)
+        tv.register(HealthArchiveCardCell.self, forCellReuseIdentifier: HealthArchiveCardCell.reuseIdentifier)
+        tv.register(HealthVitalMetricsCell.self, forCellReuseIdentifier: HealthVitalMetricsCell.reuseIdentifier)
+        tv.register(HealthQuickEntriesCell.self, forCellReuseIdentifier: HealthQuickEntriesCell.reuseIdentifier)
+        tv.tableHeaderView = buildTableHeader()
+        tv.contentInsetAdjustmentBehavior = .never
+        return tv
     }()
-
-    private let contentView = UIView()
 
     // MARK: - Lifecycle
 
@@ -55,58 +77,18 @@ final class HealthViewController: BaseViewController, UICollectionViewDataSource
 
     override func setupUI() {
         view.backgroundColor = .fdBg
-        view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
-        scrollView.snp.makeConstraints { $0.edges.equalToSuperview() }
-        contentView.snp.makeConstraints { $0.edges.width.equalToSuperview() }
-
-        let sectionPad: CGFloat = 16
-
-        // 1. Topbar
-        let topbar = buildTopbar()
-        contentView.addSubview(topbar)
-        topbar.snp.makeConstraints { make in
+        view.addSubview(tableView)
+        tableView.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview()
-        }
-
-        // 2. Score card
-        let scoreCard = buildScoreCard()
-        contentView.addSubview(scoreCard)
-        scoreCard.snp.makeConstraints { make in
-            make.top.equalTo(topbar.snp.bottom).offset(8)
-            make.leading.trailing.equalToSuperview().inset(sectionPad)
-        }
-
-        // 3. Archive card
-        let archiveCard = buildArchiveCard()
-        contentView.addSubview(archiveCard)
-        archiveCard.snp.makeConstraints { make in
-            make.top.equalTo(scoreCard.snp.bottom).offset(20)
-            make.leading.trailing.equalToSuperview().inset(sectionPad)
-        }
-
-        // 4. Metrics grid
-        let metricsSection = buildMetricsSection()
-        contentView.addSubview(metricsSection)
-        metricsSection.snp.makeConstraints { make in
-            make.top.equalTo(archiveCard.snp.bottom).offset(20)
-            make.leading.trailing.equalToSuperview().inset(sectionPad)
-        }
-
-        // 5. Quick entries
-        let quickSection = buildQuickSection()
-        contentView.addSubview(quickSection)
-        quickSection.snp.makeConstraints { make in
-            make.top.equalTo(metricsSection.snp.bottom).offset(20)
-            make.leading.trailing.equalToSuperview().inset(sectionPad)
-            make.bottom.equalToSuperview().offset(-20)
+            make.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom)
         }
     }
 
-    // MARK: - Topbar
+    // MARK: - Table Header (Topbar)
 
-    private func buildTopbar() -> UIView {
-        let bar = UIView()
+    private func buildTableHeader() -> UIView {
+        let header = UIView()
+        header.backgroundColor = .fdBg
 
         let titleLbl = UILabel()
         titleLbl.text = "我的健康"
@@ -118,9 +100,8 @@ final class HealthViewController: BaseViewController, UICollectionViewDataSource
         subtitleLbl.font = .systemFont(ofSize: 12)
         subtitleLbl.textColor = .fdSubtext
 
-        bar.addSubview(titleLbl)
-        bar.addSubview(subtitleLbl)
-
+        header.addSubview(titleLbl)
+        header.addSubview(subtitleLbl)
         titleLbl.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(54)
             make.leading.equalToSuperview().offset(18)
@@ -131,408 +112,93 @@ final class HealthViewController: BaseViewController, UICollectionViewDataSource
             make.bottom.equalToSuperview().offset(-8)
         }
 
-        return bar
+        // Size the header
+        let size = header.systemLayoutSizeFitting(CGSize(width: view.bounds.width, height: UIView.layoutFittingCompressedSize.height), withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel)
+        header.frame.size = size
+        return header
     }
 
-    // MARK: - Score Card
+    // MARK: - UITableViewDataSource
 
-    private func buildScoreCard() -> UIView {
-        let card = UIView()
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 18
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 6
-        card.layer.shadowOpacity = 0.03
+    func numberOfSections(in tableView: UITableView) -> Int { 4 }
 
-        // Score circle (simplified from SVG radial gauge)
-        let scoreCircle = UIView()
-        scoreCircle.layer.borderWidth = 7
-        scoreCircle.layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.3).cgColor
-        scoreCircle.layer.cornerRadius = 39
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { 1 }
 
-        let scoreLabel = UILabel()
-        scoreLabel.text = "\(riskScore)"
-        scoreLabel.font = .systemFont(ofSize: 22, weight: .bold)
-        scoreLabel.textColor = .fdText
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        switch indexPath.section {
+        case 0:
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: HealthScoreCardCell.reuseIdentifier, for: indexPath) as? HealthScoreCardCell else {
+                return UITableViewCell()
+            }
+            cell.configure(riskScore: riskScore, riskLevel: riskLevel)
+            return cell
 
-        let scoreMicro = UILabel()
-        scoreMicro.text = "SCORE"
-        scoreMicro.font = .systemFont(ofSize: 10)
-        scoreMicro.textColor = .fdMuted
+        case 1:
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: HealthArchiveCardCell.reuseIdentifier, for: indexPath) as? HealthArchiveCardCell else {
+                return UITableViewCell()
+            }
+            cell.configure(archiveProgress: archiveProgress)
+            cell.onCompleteTap = { [weak self] in self?.goToRecord() }
+            return cell
 
-        let trendLabel = UILabel()
-        trendLabel.text = "↓ 3 周前 65"
-        trendLabel.font = .systemFont(ofSize: 10)
-        trendLabel.textColor = .fdWarning
+        case 2:
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: HealthVitalMetricsCell.reuseIdentifier, for: indexPath) as? HealthVitalMetricsCell else {
+                return UITableViewCell()
+            }
+            cell.configure(metrics: metrics)
+            cell.onMetricTap = { key in Router.shared.push("/health/metrics/\(key)") }
+            return cell
 
-        scoreCircle.addSubview(scoreLabel)
-        scoreCircle.addSubview(scoreMicro)
-        scoreCircle.addSubview(trendLabel)
-        scoreLabel.snp.makeConstraints { $0.centerX.equalToSuperview(); $0.centerY.equalToSuperview().offset(-8) }
-        scoreMicro.snp.makeConstraints { $0.centerX.equalToSuperview(); $0.bottom.equalTo(scoreLabel.snp.top).offset(-2) }
-        trendLabel.snp.makeConstraints { $0.centerX.equalToSuperview(); $0.top.equalTo(scoreLabel.snp.bottom).offset(2) }
+        case 3:
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: HealthQuickEntriesCell.reuseIdentifier, for: indexPath) as? HealthQuickEntriesCell else {
+                return UITableViewCell()
+            }
+            cell.configure(entries: quickEntries.map {
+                HealthQuickEntriesCell.Entry(key: $0.key, label: $0.label, icon: $0.icon, bgColor: $0.bgColor, fgColor: $0.fgColor, route: $0.route)
+            })
+            cell.onEntryTap = { route in Router.shared.push(route) }
+            return cell
 
-        // Right side
-        let sublabel = UILabel()
-        sublabel.text = "综合健康评分"
-        sublabel.font = .systemFont(ofSize: 12)
-        sublabel.textColor = .fdSubtext
-
-        let numLabel = UILabel()
-        numLabel.text = "\(riskScore)"
-        numLabel.font = .systemFont(ofSize: 40, weight: .bold)
-        numLabel.textColor = .fdText
-
-        let badge = buildBadge(riskLevel, bg: .fdWarningSoft, fg: UIColor(hexString: "#B47300"))
-
-        let hintLabel = UILabel()
-        hintLabel.text = "血压偏高拉低了评分。改善晨起测量习惯可在 4 周内提升约 8 分。"
-        hintLabel.font = .systemFont(ofSize: 12)
-        hintLabel.textColor = .fdText2
-        hintLabel.numberOfLines = 0
-
-        let rightCol = UIStackView(arrangedSubviews: [sublabel, numLabel])
-        rightCol.axis = .vertical
-        rightCol.spacing = 2
-
-        let numRow = UIStackView(arrangedSubviews: [numLabel, badge, UIView()])
-        numRow.axis = .horizontal
-        numRow.spacing = 8
-        numRow.alignment = .center
-
-        let mainRow = UIStackView(arrangedSubviews: [scoreCircle, rightCol])
-        mainRow.axis = .horizontal
-        mainRow.spacing = 16
-        mainRow.alignment = .center
-
-        card.addSubview(mainRow)
-        mainRow.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview().inset(18)
+        default:
+            return UITableViewCell()
         }
-        scoreCircle.snp.makeConstraints { $0.size.equalTo(78) }
-
-        // Fix right col: replace
-        rightCol.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        rightCol.addArrangedSubview(sublabel)
-        rightCol.addArrangedSubview(numRow)
-        rightCol.addArrangedSubview(hintLabel)
-
-        // Advisor note
-        let note = buildAdvisorNote()
-        card.addSubview(note)
-        note.snp.makeConstraints { make in
-            make.top.equalTo(mainRow.snp.bottom).offset(14)
-            make.leading.trailing.equalToSuperview().inset(14)
-            make.bottom.equalToSuperview().offset(-14)
-        }
-
-        return card
     }
 
-    private func buildAdvisorNote() -> UIView {
-        let note = UIView()
-        note.backgroundColor = .fdPrimarySoft
-        note.layer.cornerRadius = 12
+    // MARK: - UITableViewDelegate
 
-        let avatar = UIView()
-        avatar.backgroundColor = UIColor(hexString: "#FFEFE6")
-        avatar.layer.cornerRadius = 14
-        let avatarLbl = UILabel()
-        avatarLbl.text = "王"
-        avatarLbl.font = .systemFont(ofSize: 12, weight: .semibold)
-        avatarLbl.textColor = UIColor(hexString: "#D6602B")
-        avatar.addSubview(avatarLbl)
-        avatarLbl.snp.makeConstraints { $0.center.equalToSuperview() }
-
-        let textLbl = UILabel()
-        textLbl.numberOfLines = 0
-        let attr = NSMutableAttributedString()
-        attr.append(NSAttributedString(string: "王顾问 · 健管师批注：\n", attributes: [.font: UIFont.systemFont(ofSize: 12, weight: .bold), .foregroundColor: UIColor.fdText]))
-        attr.append(NSAttributedString(string: "您的血压周均值连续 7 天 > 135，需重点关注。我已为您预约下周一三甲随访。", attributes: [.font: UIFont.systemFont(ofSize: 12), .foregroundColor: UIColor.fdText2]))
-        textLbl.attributedText = attr
-
-        note.addSubview(avatar)
-        note.addSubview(textLbl)
-        avatar.snp.makeConstraints { make in
-            make.top.leading.equalToSuperview().inset(12)
-            make.size.equalTo(28)
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        switch indexPath.section {
+        case 2: return HealthVitalMetricsCell.height(for: metrics.count)
+        default: return UITableView.automaticDimension
         }
-        textLbl.snp.makeConstraints { make in
-            make.top.equalToSuperview().inset(12)
-            make.leading.equalTo(avatar.snp.trailing).offset(10)
-            make.trailing.bottom.equalToSuperview().inset(12)
-        }
-        return note
     }
 
-    // MARK: - Archive Card
-
-    private func buildArchiveCard() -> UIView {
-        let card = UIView()
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 18
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 6
-        card.layer.shadowOpacity = 0.03
-
-        let titleLbl = UILabel()
-        titleLbl.text = "健康档案完整度"
-        titleLbl.font = .systemFont(ofSize: 14, weight: .semibold)
-        titleLbl.textColor = .fdText
-
-        let hintLbl = UILabel()
-        hintLbl.text = "缺：心电图 / 家族病史"
-        hintLbl.font = .systemFont(ofSize: 11)
-        hintLbl.textColor = .fdSubtext
-
-        let pctLabel = UILabel()
-        pctLabel.text = "\(archiveProgress)"
-        pctLabel.font = .systemFont(ofSize: 22, weight: .bold)
-        pctLabel.textColor = .fdPrimary
-
-        let pctUnit = UILabel()
-        pctUnit.text = "%"
-        pctUnit.font = .systemFont(ofSize: 12)
-        pctUnit.textColor = .fdSubtext
-
-        let progressBg = UIView()
-        progressBg.backgroundColor = UIColor.fdPrimary.withAlphaComponent(0.14)
-        progressBg.layer.cornerRadius = 4
-        let progressFill = UIView()
-        progressFill.backgroundColor = .fdPrimary
-        progressFill.layer.cornerRadius = 4
-        progressBg.addSubview(progressFill)
-
-        let footerLbl = UILabel()
-        footerLbl.text = "补全后 +20 健康分 · 解锁家族风险图谱"
-        footerLbl.font = .systemFont(ofSize: 11)
-        footerLbl.textColor = .fdMuted
-
-        let completeBtn = UIButton(type: .system)
-        completeBtn.setTitle("去补全", for: .normal)
-        completeBtn.titleLabel?.font = .systemFont(ofSize: 12, weight: .semibold)
-        completeBtn.setTitleColor(.fdPrimary, for: .normal)
-        completeBtn.backgroundColor = .fdPrimarySoft
-        completeBtn.layer.cornerRadius = 999
-        completeBtn.contentEdgeInsets = UIEdgeInsets(top: 6, left: 14, bottom: 6, right: 14)
-        completeBtn.addTarget(self, action: #selector(goToRecord), for: .touchUpInside)
-
-        card.addSubview(titleLbl)
-        card.addSubview(hintLbl)
-        card.addSubview(pctLabel)
-        card.addSubview(pctUnit)
-        card.addSubview(progressBg)
-        card.addSubview(footerLbl)
-        card.addSubview(completeBtn)
-
-        titleLbl.snp.makeConstraints { make in
-            make.top.leading.equalToSuperview().inset(16)
-        }
-        hintLbl.snp.makeConstraints { make in
-            make.top.equalTo(titleLbl.snp.bottom).offset(2)
-            make.leading.equalToSuperview().inset(16)
-        }
-        pctLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().inset(16)
-            make.trailing.equalTo(pctUnit.snp.leading).offset(-2)
-        }
-        pctUnit.snp.makeConstraints { make in
-            make.lastBaseline.equalTo(pctLabel)
-            make.trailing.equalToSuperview().offset(-16)
-        }
-        progressBg.snp.makeConstraints { make in
-            make.top.equalTo(hintLbl.snp.bottom).offset(10)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.height.equalTo(8)
-        }
-        progressFill.snp.makeConstraints { make in
-            make.leading.top.bottom.equalToSuperview()
-            make.width.equalToSuperview().multipliedBy(CGFloat(archiveProgress) / 100.0)
-        }
-        footerLbl.snp.makeConstraints { make in
-            make.top.equalTo(progressBg.snp.bottom).offset(12)
-            make.leading.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-16)
-        }
-        completeBtn.snp.makeConstraints { make in
-            make.centerY.equalTo(footerLbl)
-            make.trailing.equalToSuperview().offset(-16)
-        }
-
-        return card
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        guard section == 2 else { return nil }
+        let header = SectionTitleView(title: "体征监测", more: "编辑卡片 ›")
+        header.onMoreTapped = { Router.shared.push("/health/metrics") }
+        let container = UIView()
+        container.backgroundColor = .fdBg
+        container.addSubview(header)
+        header.snp.makeConstraints { $0.leading.trailing.equalToSuperview().inset(16); $0.centerY.equalToSuperview() }
+        return container
     }
+
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return section == 2 ? 36 : 8
+    }
+
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        return 8
+    }
+
+    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        return UIView()
+    }
+
+    // MARK: - Actions
 
     @objc private func goToRecord() {
         Router.shared.push("/health/record")
-    }
-
-    // MARK: - Metrics Grid
-
-    /// 懒加载 collectionView（在 buildMetricsSection 中配置 layout）
-    private lazy var metricsCollectionView: UICollectionView = {
-        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.5), heightDimension: .estimated(140))
-        let item = NSCollectionLayoutItem(layoutSize: itemSize)
-        item.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 5, bottom: 0, trailing: 5)
-
-        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(140))
-        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
-
-        let section = NSCollectionLayoutSection(group: group)
-        section.interGroupSpacing = 10
-
-        let layout = UICollectionViewCompositionalLayout(section: section)
-        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        cv.backgroundColor = .clear
-        cv.isScrollEnabled = false
-        cv.dataSource = self
-        cv.delegate = self
-        cv.register(MetricCardCell.self, forCellWithReuseIdentifier: MetricCardCell.reuseIdentifier)
-        return cv
-    }()
-
-    private func buildMetricsSection() -> UIView {
-        let section = UIView()
-
-        let titleRow = SectionTitleView(title: "体征监测", more: "编辑卡片 ›")
-        titleRow.onMoreTapped = { Router.shared.push("/health/metrics") }
-        section.addSubview(titleRow)
-        titleRow.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
-        }
-
-        section.addSubview(metricsCollectionView)
-        metricsCollectionView.snp.makeConstraints { make in
-            make.top.equalTo(titleRow.snp.bottom).offset(12)
-            make.leading.trailing.equalToSuperview()
-            make.height.equalTo(metricsCollectionViewHeight)
-            make.bottom.equalToSuperview()
-        }
-
-        return section
-    }
-
-    /// 动态计算 CollectionView 高度（每行 2 个，向上取整）
-    private var metricsCollectionViewHeight: CGFloat {
-        let rows = (metrics.count + 1) / 2
-        return CGFloat(rows) * 140 + CGFloat(rows - 1) * 10
-    }
-
-    // MARK: - UICollectionViewDataSource
-
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        metrics.count
-    }
-
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MetricCardCell.reuseIdentifier, for: indexPath) as? MetricCardCell else {
-            return UICollectionViewCell()
-        }
-        let m = metrics[indexPath.item]
-        cell.configure(metricKey: m.key, icon: m.icon, status: m.status, statusType: m.statusType, label: m.label, value: m.value, unit: m.unit, trend: m.trend, time: m.time)
-        return cell
-    }
-
-    // MARK: - UICollectionViewDelegate
-
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let key = metrics[indexPath.item].key
-        Router.shared.push("/health/metrics/\(key)")
-    }
-
-    // MARK: - Quick Entries
-
-    private func buildQuickSection() -> UIView {
-        let section = UIView()
-
-        let titleRow = SectionTitleView(title: "快速入口")
-        section.addSubview(titleRow)
-        titleRow.snp.makeConstraints { make in make.top.leading.trailing.equalToSuperview() }
-
-        let card = UIView()
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 18
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 6
-        card.layer.shadowOpacity = 0.03
-        section.addSubview(card)
-        card.snp.makeConstraints { make in
-            make.top.equalTo(titleRow.snp.bottom).offset(12)
-            make.leading.trailing.bottom.equalToSuperview()
-        }
-
-        let row = UIStackView()
-        row.distribution = .fillEqually
-        card.addSubview(row)
-        row.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 18, left: 8, bottom: 18, right: 8)) }
-
-        for entry in quickEntries {
-            let item = buildQuickEntry(entry)
-            row.addArrangedSubview(item)
-        }
-
-        return section
-    }
-
-    private func buildQuickEntry(_ e: (key: String, label: String, icon: String, bgColor: UIColor, fgColor: UIColor, route: String)) -> UIView {
-        let item = UIView()
-
-        let iconBg = UIView()
-        iconBg.backgroundColor = e.bgColor
-        iconBg.layer.cornerRadius = 16
-        let icon = UIImageView(image: UIImage(systemName: e.icon))
-        icon.tintColor = e.fgColor
-        icon.contentMode = .scaleAspectFit
-        iconBg.addSubview(icon)
-
-        let label = UILabel()
-        label.text = e.label
-        label.font = .systemFont(ofSize: 12, weight: .medium)
-        label.textColor = .fdText2
-        label.textAlignment = .center
-
-        item.addSubview(iconBg)
-        item.addSubview(label)
-        iconBg.snp.makeConstraints { make in
-            make.top.centerX.equalToSuperview()
-            make.size.equalTo(48)
-        }
-        icon.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.size.equalTo(24)
-        }
-        label.snp.makeConstraints { make in
-            make.top.equalTo(iconBg.snp.bottom).offset(6)
-            make.centerX.equalToSuperview()
-            make.bottom.equalToSuperview()
-        }
-
-        let tap = UITapGestureRecognizer(target: self, action: #selector(quickEntryTapped(_:)))
-        item.addGestureRecognizer(tap)
-        item.accessibilityIdentifier = e.route
-
-        return item
-    }
-
-    @objc private func quickEntryTapped(_ gesture: UITapGestureRecognizer) {
-        guard let route = gesture.view?.accessibilityIdentifier else { return }
-        Router.shared.push(route)
-    }
-
-    // MARK: - Helpers
-
-    private func buildBadge(_ text: String, bg: UIColor, fg: UIColor) -> UIView {
-        let v = UIView()
-        v.backgroundColor = bg
-        v.layer.cornerRadius = 999
-        let l = UILabel()
-        l.text = text
-        l.font = .systemFont(ofSize: 10, weight: .semibold)
-        l.textColor = fg
-        v.addSubview(l)
-        l.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }
-        return v
     }
 }

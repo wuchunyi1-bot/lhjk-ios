@@ -38,44 +38,42 @@
 
 ## Layout Architecture (Hub)
 
+**实现方案**: `UITableView` (plain style)，利用 section 分割不同卡片区块，自动支持滚动和复用。
+
 ```
 ┌──────────────────────────────────────────┐
-│  Topbar: "我的健康"                        │
-│  档案完整度 72% · 中风险                   │
-├──────────────────────────────────────────┤
-│  Score Card                               │
-│  ┌──────┐  综合健康评分                    │
-│  │ SCORE│  62  中风险                      │
-│  │  62  │  血压偏高...改善可在4周提升8分    │
-│  │↓3周前│                                  │
-│  └──────┘                                  │
+│  UITableView (fdBg background)            │
 │  ┌──────────────────────────────────────┐ │
-│  │ 王顾问 · 健管师批注：血压... >135...   │ │
+│  │ tableHeaderView: Custom Topbar       │ │
+│  │  "我的健康" · 档案完整度 72% · 中风险  │ │
+│  ├──────────────────────────────────────┤ │
+│  │ Section 0: Score Card (1 row)        │ │
+│  │ HealthScoreCardCell                  │ │
+│  ├──────────────────────────────────────┤ │
+│  │ Section 1: Archive Card (1 row)      │ │
+│  │ HealthArchiveCardCell                │ │
+│  ├──────────────────────────────────────┤ │
+│  │ Section 2: Vital Metrics (1 row)     │ │
+│  │ sectionHeader: "体征监测    编辑卡片 ›"│ │
+│  │ HealthVitalMetricsCell               │ │
+│  │   └── UICollectionView (2×N grid)    │ │
+│  │       ├ MetricCardCell               │ │
+│  │       ├ MetricCardCell               │ │
+│  │       └ ... (10 items)               │ │
+│  ├──────────────────────────────────────┤ │
+│  │ Section 3: Quick Entries (1 row)     │ │
+│  │ HealthQuickEntriesCell               │ │
 │  └──────────────────────────────────────┘ │
-├──────────────────────────────────────────┤
-│  Archive Card                             │
-│  健康档案完整度                    72%     │
-│  ████████████░░░░░                        │
-│  补全后 +20 健康分          [去补全]       │
-├──────────────────────────────────────────┤
-│  体征监测              编辑卡片 ›          │
-│  ┌──────────┐ ┌──────────┐                │
-│  │ 💧  偏高  │ │ 💊  正常  │                │
-│  │ 血压      │ │ 血糖      │                │
-│  │ 138/88 ↑ │ │ 5.8   →  │                │
-│  │ 今天07:32 │ │ 昨天08:10 │                │
-│  ├──────────┤ ├──────────┤                │
-│  │    ...   │ │   ...    │  (10 cards)    │
-│  └──────────┘ └──────────┘                │
-├──────────────────────────────────────────┤
-│  快速入口                                 │
-│  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐        │
-│  │📄   │ │💓   │ │📋   │ │📊   │        │
-│  │健康  │ │体征  │ │六维  │ │我的  │        │
-│  │档案  │ │监测  │ │评测  │ │报告  │        │
-│  └─────┘ └─────┘ └─────┘ └─────┘        │
 └──────────────────────────────────────────┘
 ```
+
+**Cell 注册**:
+| Cell Class | Reuse ID | Section |
+|-----------|----------|---------|
+| `HealthScoreCardCell` | `HealthScoreCardCell` | 0 |
+| `HealthArchiveCardCell` | `HealthArchiveCardCell` | 1 |
+| `HealthVitalMetricsCell` | `HealthVitalMetricsCell` | 2 |
+| `HealthQuickEntriesCell` | `HealthQuickEntriesCell` | 3 |
 
 ---
 
@@ -153,11 +151,12 @@ SHALL 展示健康档案完整度卡片。
 ### Requirement: Vital Metrics Grid
 SHALL 以 2×N 网格展示体征监测指标卡片（来源 `health.json` metrics 数组，共 10 项）。
 
-**实现方案**: `UICollectionView` + `UICollectionViewCompositionalLayout`（非手动布局）
-- Cell: `MetricCardCell`，注册 reuse identifier `MetricCardCell`
-- Layout: `.fractionalWidth(0.5)` × `.estimated(140)`, inter-group spacing 10pt
-- CollectionView `isScrollEnabled = false`，高度动态计算 = rows × 140 + gaps
-- **理由**: cell 复用减少内存、CompositionalLayout 处理 2 列网格更简洁、后续指标数量增加无需改布局代码
+**实现方案**: `HealthVitalMetricsCell`（UITableViewCell 子类）内嵌 `UICollectionView` + `UICollectionViewCompositionalLayout`
+- Cell 注册为 `HealthVitalMetricsCell`，内部持有独立的 UICollectionView
+- CollectionView Cell: `MetricCardCell`，注册 reuse identifier `MetricCardCell`
+- CollectionView Layout: `.fractionalWidth(0.5)` × `.estimated(140)`, inter-group spacing 10pt
+- CollectionView `isScrollEnabled = false`，Cell 高度动态计算 = rows × 140 + gaps，通过 `tableView(_:heightForRowAt:)` 返回
+- **理由**: cell 复用减少内存、CompositionalLayout 处理 2 列网格更简洁、后续指标数量增加无需改布局代码；将 CollectionView 嵌入 TableViewCell 解耦度量网格与页面其他区块
 
 #### Scenario: 区块标题
 - **WHEN** 区块渲染
@@ -420,23 +419,35 @@ SHALL 展示 4 个快速入口。
 
 ---
 
+## Component Inventory
+
+| Component | Type | funde ref | 说明 |
+|-----------|------|-----------|------|
+| `HealthScoreCardCell` | UITableViewCell | score-card | 综合健康评分卡片 |
+| `HealthArchiveCardCell` | UITableViewCell | archive-card | 健康档案完整度卡片 |
+| `HealthVitalMetricsCell` | UITableViewCell | metrics-grid | 体征监测 — 内嵌 UICollectionView |
+| `HealthQuickEntriesCell` | UITableViewCell | quick-entries | 快速入口 4 列 |
+| `MetricCardCell` | UICollectionViewCell | metric-card | 体征指标卡片（复用） |
+| `SectionTitleView` | UIView | fd-section-title | 区块标题行（复用） |
+
 ## States
 
 | State | 表现 |
 |-------|------|
-| **默认** | Mock 数据渲染完整 Hub |
+| **默认** | Mock 数据渲染完整 Hub，UITableView 4 sections |
 | **指标点击** | push 到对应指标详情（占位页） |
 | **快速入口点击** | push 到对应页面（占位页） |
 
 ## Acceptance Checklist
 
 - [ ] Tab 栏第二个 "健康" Tab 正确展示
-- [ ] 自定义 topbar "我的健康" + 档案完整度副标题
+- [ ] UITableView 4 sections 结构渲染完整
+- [ ] tableHeaderView: 自定义 topbar "我的健康" + 档案完整度副标题
 - [ ] 导航栏首页隐藏，push 子页面显示
-- [ ] 评分卡：圆环 + 数字 + badge + 提示 + 健管师批注
-- [ ] 档案卡：进度条 + 百分比 + "去补全"按钮
-- [ ] 体征监测 10 个 2×N 卡片（icon + badge + value + trend + time）
+- [ ] Section 0 — 评分卡：圆环 + 数字 + badge + 提示 + 健管师批注
+- [ ] Section 1 — 档案卡：进度条 + 百分比 + "去补全"按钮
+- [ ] Section 2 — 体征监测：section header 标题 + HealthVitalMetricsCell 内嵌 CollectionView 展示 10 个 2×N 卡片
 - [ ] 异常指标卡片有边框高亮
-- [ ] 快速入口 4 个（icon 方块 + label）
+- [ ] Section 3 — 快速入口 4 个（icon 方块 + label）
 - [ ] 10 个指标 + 4 个快速入口 click → 正确路由 push
 - [ ] 所有颜色通过 `UIColor.fd*` Token 引用

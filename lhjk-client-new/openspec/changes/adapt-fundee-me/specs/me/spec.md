@@ -12,43 +12,51 @@
 
 ## Layout Architecture
 
+**实现方案**: `UITableView` (grouped style / plain)，利用 section 分割不同区块，tableHeaderView 承载 Hero，tableFooterView 承载退出登录。
+
 ```
 ┌──────────────────────────────────────────────┐
-│  UIScrollView (fdBg background)              │
-│  ┌────────────────────────────────────────────┐
-│  │  Hero Section                             │
-│  │  ┌──────┐  用户名          [⚙ settings]   │
-│  │  │ 头像 │  [编辑资料]  [健康档案]           │
-│  │  └──────┘                                 │
-│  ├────────────────────────────────────────────┤
-│  │  Membership Card                          │
-│  │  会员中心 · 等级                   查看更多 ›│
-│  ├────────────────────────────────────────────┤
-│  │  Stats Strip (4 equally-spaced columns)    │
-│  │  892  |  4   |  2   |  Lv.3              │
-│  │  健康积分|家庭成员|我的保单|健康等级          │
-│  ├────────────────────────────────────────────┤
-│  │  Section: 服务履约                         │
-│  │  [待使用] [使用中] [已完成] [待评价]        │
-│  │  ┌ ServiceRow (icon + name + badge + ›)┐  │
-│  │  └ ServiceRow ...                      ┘  │
-│  ├────────────────────────────────────────────┤
-│  │  Section: 健康管理                         │
-│  │  ┌ FuncRow (icon + label + detail + ›) ┐  │
-│  │  └ FuncRow ... (7 items)               ┘  │
-│  ├────────────────────────────────────────────┤
-│  │  Section: 账号与设置                       │
-│  │  ┌ FuncRow (icon + label + detail + ›) ┐  │
-│  │  └ FuncRow ... (4 items)               ┘  │
-│  ├────────────────────────────────────────────┤
-│  │  Section: 关于                             │
-│  │  ┌ FuncRow (icon + label + detail + ›) ┐  │
-│  │  └ FuncRow ... (3 items)               ┘  │
-│  ├────────────────────────────────────────────┤
-│  │  [退出登录] (card style, red text)         │
-│  └────────────────────────────────────────────┘
+│  UITableView (fdBg background)               │
+│  ┌──────────────────────────────────────────┐ │
+│  │ tableHeaderView: Hero Section           │ │
+│  │  ┌──────┐  用户名          [⚙ settings] │ │
+│  │  │ 头像 │  [编辑资料]  [健康档案]        │ │
+│  │  └──────┘                               │ │
+│  ├──────────────────────────────────────────┤ │
+│  │ Section 0: Membership Card (1 row)      │ │
+│  │ MeMembershipCardCell                    │ │
+│  ├──────────────────────────────────────────┤ │
+│  │ Section 1: Stats Strip (1 row)          │ │
+│  │ MeStatsStripCell                        │ │
+│  ├──────────────────────────────────────────┤ │
+│  │ Section 2: Service Fulfillment (1 row)  │ │
+│  │ sectionHeader: "服务履约    全部订单 ›"   │ │
+│  │ MeServiceFulfillmentCell                │ │
+│  ├──────────────────────────────────────────┤ │
+│  │ Section 3: Health Management (7 rows)   │ │
+│  │ sectionHeader: "健康管理"                │ │
+│  │ MeFuncRowCell × 7                       │ │
+│  ├──────────────────────────────────────────┤ │
+│  │ Section 4: Account & Settings (4 rows)  │ │
+│  │ sectionHeader: "账号与设置"              │ │
+│  │ MeFuncRowCell × 4                       │ │
+│  ├──────────────────────────────────────────┤ │
+│  │ Section 5: About (3 rows)               │ │
+│  │ sectionHeader: "关于"                    │ │
+│  │ MeFuncRowCell × 3                       │ │
+│  ├──────────────────────────────────────────┤ │
+│  │ tableFooterView: Logout Button          │ │
+│  └──────────────────────────────────────────┘ │
 └──────────────────────────────────────────────┘
 ```
+
+**Cell 注册**:
+| Cell Class | Reuse ID | Section(s) |
+|-----------|----------|------------|
+| `MeMembershipCardCell` | `MeMembershipCardCell` | 0 |
+| `MeStatsStripCell` | `MeStatsStripCell` | 1 |
+| `MeServiceFulfillmentCell` | `MeServiceFulfillmentCell` | 2 |
+| `MeFuncRowCell` | `MeFuncRowCell` | 3, 4, 5 |
 
 ---
 
@@ -231,12 +239,12 @@ Hero 区下方 SHALL 展示会员卡入口卡片。
 
 | Component | Type | funde ref | 说明 |
 |-----------|------|-----------|------|
-| `MeHeroView` | UIView | `me-hero` + `me-hero__profile` | Hero 区（头像 + 名称 + 按钮行） |
-| `MembershipCardView` | UIView | `membership-card` | 会员卡入口 |
-| `MeStatsView` | UIView | `me-stats` | 4 列统计条 |
-| `FuncRowView` | UIView | `fd-func-row` | 通用功能行（icon + label + detail + arrow） |
-| `ServiceRowView` | UIView | `me-svc-row` | 服务履约行 |
-| `SectionTitleView` | UIView | `fd-section-title` | 区块标题行 |
+| `MeHeroView` | UIView | `me-hero` | Hero 区（头像 + 名称 + 按钮行）→ 作为 tableHeaderView |
+| `MeMembershipCardCell` | UITableViewCell | `membership-card` | 会员卡入口 |
+| `MeStatsStripCell` | UITableViewCell | `me-stats` | 4 列统计条 |
+| `MeServiceFulfillmentCell` | UITableViewCell | me-svc-section | 服务履约区块 |
+| `MeFuncRowCell` | UITableViewCell | `fd-func-row` | 通用功能行（icon + label + detail + arrow） |
+| `SectionTitleView` | UIView | `fd-section-title` | 区块标题行（复用，作为 section header） |
 
 ---
 
@@ -277,21 +285,22 @@ Hero 区下方 SHALL 展示会员卡入口卡片。
 
 | State | 表现 |
 |-------|------|
-| **默认** | Mock 数据渲染完整 Hub |
+| **默认** | Mock 数据渲染完整 Hub，UITableView 6 sections + tableHeaderView/FooterView |
 | **空态** | 无（Hub 页不涉及数据加载空态） |
 | **加载** | 暂不需要（纯 mock） |
 
 ## Acceptance Checklist
 
 - [ ] Tab 栏第五个「我的」Tab 正确展示
+- [ ] UITableView 6 sections + tableHeaderView/FooterView 结构渲染完整
 - [ ] 首页导航栏隐藏，子页面导航栏显示（push 进入显示、pop 返回隐藏）
-- [ ] Hero 区头像、用户名、设置按钮、编辑资料/健康档案按钮
-- [ ] 会员卡入口卡片（品牌色描边、等级显示）
-- [ ] 4 列统计条（积分/家庭/保单/等级）等宽 + 分割线
-- [ ] 服务履约区：4 数字统计 + 服务行（icon + badge + arrow）
-- [ ] 健康管理分组 7 行功能列表
-- [ ] 账号与设置分组 4 行功能列表
-- [ ] 关于分组 3 行功能列表
-- [ ] 退出登录按钮 + 确认弹窗
+- [ ] tableHeaderView — Hero 区头像、用户名、设置按钮、编辑资料/健康档案按钮
+- [ ] Section 0 — 会员卡入口卡片（品牌色描边、等级显示）
+- [ ] Section 1 — 4 列统计条（积分/家庭/保单/等级）等宽 + 分割线
+- [ ] Section 2 — 服务履约区：4 数字统计 + 服务行（icon + badge + arrow）
+- [ ] Section 3 — 健康管理分组 7 行（MeFuncRowCell）
+- [ ] Section 4 — 账号与设置分组 4 行
+- [ ] Section 5 — 关于分组 3 行
+- [ ] tableFooterView — 退出登录按钮 + 确认弹窗
 - [ ] 所有颜色通过 `UIColor.fd*` Token 引用
-- [ ] 可点击行 push 到对应子页面（保单/报告/预约/设备/方案/评估 + toast 占位）
+- [ ] 可点击行 push 到对应子页面

@@ -122,7 +122,7 @@ final class APIManager {
         parameters: [String: Any]? = nil,
         responseType: T.Type
     ) -> AnyPublisher<T, APIError> {
-        request(method: .get, path: path, parameters: parameters, responseType: responseType)
+        return request(method: .get, path: path, parameters: parameters, responseType: responseType)
     }
 
     // MARK: - POST
@@ -133,7 +133,7 @@ final class APIManager {
         parameters: [String: Any]? = nil,
         responseType: T.Type
     ) -> AnyPublisher<T, APIError> {
-        request(method: .post, path: path, parameters: parameters, responseType: responseType)
+        return request(method: .post, path: path, parameters: parameters, responseType: responseType)
     }
 
     // MARK: - PUT
@@ -144,7 +144,7 @@ final class APIManager {
         parameters: [String: Any]? = nil,
         responseType: T.Type
     ) -> AnyPublisher<T, APIError> {
-        request(method: .put, path: path, parameters: parameters, responseType: responseType)
+        return request(method: .put, path: path, parameters: parameters, responseType: responseType)
     }
 
     // MARK: - DELETE
@@ -155,7 +155,7 @@ final class APIManager {
         parameters: [String: Any]? = nil,
         responseType: T.Type
     ) -> AnyPublisher<T, APIError> {
-        request(method: .delete, path: path, parameters: parameters, responseType: responseType)
+        return request(method: .delete, path: path, parameters: parameters, responseType: responseType)
     }
 
     // MARK: - PATCH
@@ -166,7 +166,7 @@ final class APIManager {
         parameters: [String: Any]? = nil,
         responseType: T.Type
     ) -> AnyPublisher<T, APIError> {
-        request(method: .patch, path: path, parameters: parameters, responseType: responseType)
+        return request(method: .patch, path: path, parameters: parameters, responseType: responseType)
     }
 
     // MARK: - Upload (Multipart)

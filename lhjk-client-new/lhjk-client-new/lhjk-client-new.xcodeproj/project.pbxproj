@@ -80,6 +80,14 @@
 		A5917D212FDFD7FE00878961 /* LoginModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D1D2FDFD7FE00878961 /* LoginModels.swift */; };
 		A5917D222FDFD7FE00878961 /* LoginServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */; };
 		A5917D242FDFD96D00878961 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D232FDFD96D00878961 /* WebViewController.swift */; };
+		A5917D2A2FDFDD7F00878961 /* HealthQuickEntriesCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D262FDFDD7F00878961 /* HealthQuickEntriesCell.swift */; };
+		A5917D2B2FDFDD7F00878961 /* HealthArchiveCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D252FDFDD7F00878961 /* HealthArchiveCardCell.swift */; };
+		A5917D2C2FDFDD7F00878961 /* HealthScoreCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D272FDFDD7F00878961 /* HealthScoreCardCell.swift */; };
+		A5917D2D2FDFDD7F00878961 /* HealthVitalMetricsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D282FDFDD7F00878961 /* HealthVitalMetricsCell.swift */; };
+		A5917D332FDFDD9800878961 /* MeServiceFulfillmentCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D302FDFDD9800878961 /* MeServiceFulfillmentCell.swift */; };
+		A5917D342FDFDD9800878961 /* MeFuncRowCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D2E2FDFDD9800878961 /* MeFuncRowCell.swift */; };
+		A5917D352FDFDD9800878961 /* MeStatsStripCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D312FDFDD9800878961 /* MeStatsStripCell.swift */; };
+		A5917D362FDFDD9800878961 /* MeMembershipCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D2F2FDFDD9800878961 /* MeMembershipCardCell.swift */; };
 		A952E20047557E6F1D7EE0AF /* Pods_lhjk_client_new.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */; };
 		A97FF7EF73364502F99C2EC4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FACC28499C23F3853EBBF10 /* AppDelegate.swift */; };
 		B071816CF85673E86ECBF759 /* DevicesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE6B98583B23B6831E89C159 /* DevicesViewController.swift */; };
@@ -188,6 +196,14 @@
 		A5917D1E2FDFD7FE00878961 /* LoginService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginService.swift; sourceTree = "<group>"; };
 		A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginServiceProtocol.swift; sourceTree = "<group>"; };
 		A5917D232FDFD96D00878961 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WebViewController.swift; path = Other/Common/Base/WebViewController.swift; sourceTree = "<group>"; };
+		A5917D252FDFDD7F00878961 /* HealthArchiveCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthArchiveCardCell.swift; sourceTree = "<group>"; };
+		A5917D262FDFDD7F00878961 /* HealthQuickEntriesCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthQuickEntriesCell.swift; sourceTree = "<group>"; };
+		A5917D272FDFDD7F00878961 /* HealthScoreCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthScoreCardCell.swift; sourceTree = "<group>"; };
+		A5917D282FDFDD7F00878961 /* HealthVitalMetricsCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthVitalMetricsCell.swift; sourceTree = "<group>"; };
+		A5917D2E2FDFDD9800878961 /* MeFuncRowCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeFuncRowCell.swift; sourceTree = "<group>"; };
+		A5917D2F2FDFDD9800878961 /* MeMembershipCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeMembershipCardCell.swift; sourceTree = "<group>"; };
+		A5917D302FDFDD9800878961 /* MeServiceFulfillmentCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeServiceFulfillmentCell.swift; sourceTree = "<group>"; };
+		A5917D312FDFDD9800878961 /* MeStatsStripCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeStatsStripCell.swift; sourceTree = "<group>"; };
 		A7EDC9DBA2C15DAEC992461C /* ChatViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChatViewController.swift; path = PL/Message/ChatViewController.swift; sourceTree = "<group>"; };
 		A8B0D2D90AC6467582FAAE9C /* MessageRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MessageRoutes.swift; path = BLL/Message/MessageRoutes.swift; sourceTree = "<group>"; };
 		AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OAuthCredential.swift; path = DAL/Networking/OAuthCredential.swift; sourceTree = "<group>"; };
@@ -289,6 +305,7 @@
 		5BBC7A0F6F458645EB658DDB /* Health */ = {
 			isa = PBXGroup;
 			children = (
+				A5917D292FDFDD7F00878961 /* Cells */,
 				A57D2F102FDBFF13002E43BA /* MetricCardCell.swift */,
 				A57D2F152FDBFF13002E43BA /* Metrics */,
 				A57D2EFE2FDBBE3B002E43BA /* HealthViewController.swift */,
@@ -344,6 +361,7 @@
 		A57D2EF92FDBBE00002E43BA /* My */ = {
 			isa = PBXGroup;
 			children = (
+				A5917D322FDFDD9800878961 /* Cells */,
 				A57D2EF82FDBBE00002E43BA /* MyViewController.swift */,
 				4FBDEA25F6088496CD29930C /* Components */,
 				D7C3F2FAE5619994A3AA7A46 /* SettingsViewController.swift */,
@@ -487,6 +505,29 @@
 			);
 			name = Extensions;
 			path = Other/Common/Extensions;
+			sourceTree = "<group>";
+		};
+		A5917D292FDFDD7F00878961 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A5917D252FDFDD7F00878961 /* HealthArchiveCardCell.swift */,
+				A5917D262FDFDD7F00878961 /* HealthQuickEntriesCell.swift */,
+				A5917D272FDFDD7F00878961 /* HealthScoreCardCell.swift */,
+				A5917D282FDFDD7F00878961 /* HealthVitalMetricsCell.swift */,
+			);
+			name = Cells;
+			path = PL/Health/Cells;
+			sourceTree = "<group>";
+		};
+		A5917D322FDFDD9800878961 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A5917D2E2FDFDD9800878961 /* MeFuncRowCell.swift */,
+				A5917D2F2FDFDD9800878961 /* MeMembershipCardCell.swift */,
+				A5917D302FDFDD9800878961 /* MeServiceFulfillmentCell.swift */,
+				A5917D312FDFDD9800878961 /* MeStatsStripCell.swift */,
+			);
+			path = Cells;
 			sourceTree = "<group>";
 		};
 		A987952ACD55240446C185ED /* lhjk-client-new */ = {
@@ -888,6 +929,10 @@
 				B0BC602D83CB797AB66DFE1F /* WechatPayChannel.swift in Sources */,
 				A57D2F042FDBBEB7002E43BA /* ServiceViewController.swift in Sources */,
 				8E749A7845EBA8C07946E821 /* Router.swift in Sources */,
+				A5917D2A2FDFDD7F00878961 /* HealthQuickEntriesCell.swift in Sources */,
+				A5917D2B2FDFDD7F00878961 /* HealthArchiveCardCell.swift in Sources */,
+				A5917D2C2FDFDD7F00878961 /* HealthScoreCardCell.swift in Sources */,
+				A5917D2D2FDFDD7F00878961 /* HealthVitalMetricsCell.swift in Sources */,
 				05433145BBE114CF0C1DC08A /* DatabaseManager.swift in Sources */,
 				31C52A8BD36FA64D4C32B098 /* UserDefaultsManager.swift in Sources */,
 				A97FF7EF73364502F99C2EC4 /* AppDelegate.swift in Sources */,
@@ -895,6 +940,10 @@
 				A5917D062FDFC8EF00878961 /* UIColor+Hex.swift in Sources */,
 				A5917D072FDFC8EF00878961 /* UIViewController+Alert.swift in Sources */,
 				A5917D082FDFC8EF00878961 /* UIView+Shadow.swift in Sources */,
+				A5917D332FDFDD9800878961 /* MeServiceFulfillmentCell.swift in Sources */,
+				A5917D342FDFDD9800878961 /* MeFuncRowCell.swift in Sources */,
+				A5917D352FDFDD9800878961 /* MeStatsStripCell.swift in Sources */,
+				A5917D362FDFDD9800878961 /* MeMembershipCardCell.swift in Sources */,
 				A5917D092FDFC8EF00878961 /* UIView+Layout.swift in Sources */,
 				A5917D0A2FDFC8EF00878961 /* UIColor+Theme.swift in Sources */,
 				A5917D0B2FDFC8EF00878961 /* UIButton+Funde.swift in Sources */,
