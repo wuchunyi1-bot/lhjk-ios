@@ -35,6 +35,5 @@ enum MyRoutes {
 
         // 跨模块路由
         r.register(path: "/orders")          { _ in PlaceholderViewController(title: "全部订单") }
-        r.register(path: "/health/record")   { _ in PlaceholderViewController(title: "健康档案") }
     }
 }

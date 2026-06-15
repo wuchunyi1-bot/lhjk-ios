@@ -88,6 +88,8 @@
 		A5917D342FDFDD9800878961 /* MeFuncRowCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D2E2FDFDD9800878961 /* MeFuncRowCell.swift */; };
 		A5917D352FDFDD9800878961 /* MeStatsStripCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D312FDFDD9800878961 /* MeStatsStripCell.swift */; };
 		A5917D362FDFDD9800878961 /* MeMembershipCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D2F2FDFDD9800878961 /* MeMembershipCardCell.swift */; };
+		A5917D3A2FDFFAC300878961 /* MessageBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D372FDFFAC300878961 /* MessageBubbleCell.swift */; };
+		A5917D3B2FDFFAC300878961 /* ConversationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D392FDFFAC300878961 /* ConversationCell.swift */; };
 		A952E20047557E6F1D7EE0AF /* Pods_lhjk_client_new.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */; };
 		A97FF7EF73364502F99C2EC4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FACC28499C23F3853EBBF10 /* AppDelegate.swift */; };
 		B071816CF85673E86ECBF759 /* DevicesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE6B98583B23B6831E89C159 /* DevicesViewController.swift */; };
@@ -204,6 +206,8 @@
 		A5917D2F2FDFDD9800878961 /* MeMembershipCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeMembershipCardCell.swift; sourceTree = "<group>"; };
 		A5917D302FDFDD9800878961 /* MeServiceFulfillmentCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeServiceFulfillmentCell.swift; sourceTree = "<group>"; };
 		A5917D312FDFDD9800878961 /* MeStatsStripCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeStatsStripCell.swift; sourceTree = "<group>"; };
+		A5917D372FDFFAC300878961 /* MessageBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageBubbleCell.swift; sourceTree = "<group>"; };
+		A5917D392FDFFAC300878961 /* ConversationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ConversationCell.swift; path = PL/Message/ConversationCell.swift; sourceTree = "<group>"; };
 		A7EDC9DBA2C15DAEC992461C /* ChatViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChatViewController.swift; path = PL/Message/ChatViewController.swift; sourceTree = "<group>"; };
 		A8B0D2D90AC6467582FAAE9C /* MessageRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MessageRoutes.swift; path = BLL/Message/MessageRoutes.swift; sourceTree = "<group>"; };
 		AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OAuthCredential.swift; path = DAL/Networking/OAuthCredential.swift; sourceTree = "<group>"; };
@@ -530,6 +534,15 @@
 			path = Cells;
 			sourceTree = "<group>";
 		};
+		A5917D382FDFFAC300878961 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A5917D372FDFFAC300878961 /* MessageBubbleCell.swift */,
+			);
+			name = Cells;
+			path = PL/Message/Cells;
+			sourceTree = "<group>";
+		};
 		A987952ACD55240446C185ED /* lhjk-client-new */ = {
 			isa = PBXGroup;
 			children = (
@@ -597,6 +610,8 @@
 		C827DD6945CC87211F64D8BD /* Message */ = {
 			isa = PBXGroup;
 			children = (
+				A5917D382FDFFAC300878961 /* Cells */,
+				A5917D392FDFFAC300878961 /* ConversationCell.swift */,
 				A57D2F052FDBBEC8002E43BA /* MessageListViewController.swift */,
 				A7EDC9DBA2C15DAEC992461C /* ChatViewController.swift */,
 				A4DACDBFFDBFF750E34307AC /* ConversationListViewController.swift */,
@@ -916,6 +931,8 @@
 				5E7531B1805BDFC74CD1F8CB /* BluetoothModels.swift in Sources */,
 				1694DDA9C65C92BEE8B3AA7B /* Conversation.swift in Sources */,
 				880D3EEECACFBB9A6791AB14 /* Message.swift in Sources */,
+				A5917D3A2FDFFAC300878961 /* MessageBubbleCell.swift in Sources */,
+				A5917D3B2FDFFAC300878961 /* ConversationCell.swift in Sources */,
 				B3900106696EDAEC01403D9D /* RongCloudManager.swift in Sources */,
 				B92F96EB8F6DADF4562EA642 /* RongCloudMessageDelegate.swift in Sources */,
 				43464FED90F9F0DFF7F7CADB /* APIError.swift in Sources */,

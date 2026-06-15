@@ -1,82 +1,63 @@
 import Foundation
-import Combine
 
-/// IM 业务服务 — 消息收发协调、会话管理
+/// IM 业务服务 — 会话管理 / 消息收发
+/// V1.0 mock 实现，数据来源 funde-im prototype/src/mock/
 final class IMService {
-
-    // MARK: - Singleton
 
     static let shared = IMService()
 
-    // MARK: - Dependencies
+    private var conversations: [Conversation] = Conversation.mockData()
+    private var messagesStore: [String: [Message]] = [:]
 
-    private let rongCloudManager = RongCloudManager.shared
-    private let messageDelegate = RongCloudMessageDelegate.shared
+    private init() {}
 
-    // MARK: - Publishers
+    // MARK: - Conversations
 
-    /// 新消息
-    var newMessagePublisher: AnyPublisher<Message, Never> {
-        rongCloudManager.messageReceivedPublisher.eraseToAnyPublisher()
+    func getConversations(filterBy tag: ConversationTag? = nil) -> [Conversation] {
+        let filtered = tag.map { t in conversations.filter { $0.tags.contains(t) } } ?? conversations
+        return filtered.sorted { $0.lastMessageAt > $1.lastMessageAt }
     }
 
-    /// 连接状态
-    var connectionStatusPublisher: AnyPublisher<RCConnectionStatus, Never> {
-        rongCloudManager.connectionStatusPublisher.eraseToAnyPublisher()
-    }
-
-    // MARK: - Initialization
-
-    private init() {
-        setupMessageHandler()
-    }
-
-    // MARK: - Public Methods
-
-    /// 初始化并连接融云
-    func connect(appKey: String, token: String) {
-        rongCloudManager.initialize(appKey: appKey)
-        rongCloudManager.connect(with: token)
-    }
-
-    /// 断开连接
-    func disconnect() {
-        rongCloudManager.disconnect()
-    }
-
-    /// 获取会话列表
-    func getConversations() -> [Conversation] {
-        return rongCloudManager.getConversationList()
-    }
-
-    /// 获取消息列表
-    func getMessages(conversationId: String, before messageId: String? = nil) -> [Message] {
-        return rongCloudManager.getMessages(
-            conversationId: conversationId,
-            beforeMessageId: messageId
-        )
-    }
-
-    /// 标记会话已读
     func markAsRead(_ conversationId: String) {
-        rongCloudManager.clearUnreadCount(for: conversationId)
-    }
-
-    /// 删除会话
-    func deleteConversation(_ conversationId: String) {
-        rongCloudManager.deleteConversation(conversationId)
-    }
-
-    // MARK: - Private
-
-    private func setupMessageHandler() {
-        messageDelegate.onMessageReceived = { [weak self] message in
-            self?.handleIncomingMessage(message)
+        if let idx = conversations.firstIndex(where: { $0.id == conversationId }) {
+            conversations[idx].unreadCount = 0
         }
     }
 
-    private func handleIncomingMessage(_ message: Message) {
-        // 处理收到的消息：更新未读计数、触发本地通知等
-        print("[IM] Received message from \(message.senderId): \(message.content.prefix(30))")
+    func deleteConversation(_ conversationId: String) {
+        conversations.removeAll { $0.id == conversationId }
+    }
+
+    // MARK: - Messages
+
+    func getMessages(conversationId: String) -> [Message] {
+        if messagesStore[conversationId] == nil {
+            messagesStore[conversationId] = Message.mockMessages(for: conversationId)
+        }
+        return messagesStore[conversationId] ?? []
+    }
+
+    func sendMessage(_ text: String, conversationId: String) -> Message {
+        let msg = Message(
+            id: "MSG_SEND_\(UUID().uuidString.prefix(8))",
+            conversationId: conversationId,
+            type: .text,
+            sender: .patient,
+            senderName: nil, senderRole: nil, avatarText: nil,
+            content: text,
+            payload: nil,
+            createdAt: Date(),
+            recalled: false,
+            status: .sending
+        )
+        messagesStore[conversationId, default: []].append(msg)
+
+        // Simulate delivery
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            if let idx = self?.messagesStore[conversationId]?.firstIndex(where: { $0.id == msg.id }) {
+                self?.messagesStore[conversationId]?[idx].status = .sent
+            }
+        }
+        return msg
     }
 }
