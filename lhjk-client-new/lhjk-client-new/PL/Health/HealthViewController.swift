@@ -430,7 +430,7 @@ final class HealthViewController: BaseViewController, UICollectionViewDataSource
             return UICollectionViewCell()
         }
         let m = metrics[indexPath.item]
-        cell.configure(icon: m.icon, status: m.status, statusType: m.statusType, label: m.label, value: m.value, unit: m.unit, trend: m.trend, time: m.time)
+        cell.configure(metricKey: m.key, icon: m.icon, status: m.status, statusType: m.statusType, label: m.label, value: m.value, unit: m.unit, trend: m.trend, time: m.time)
         return cell
     }
 

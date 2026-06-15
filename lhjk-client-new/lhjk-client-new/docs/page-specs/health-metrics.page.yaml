@@ -1,0 +1,115 @@
+spec_version: 1
+project: lhjk-client
+route: /health/metrics
+page_key: health-metrics
+page_kind: detail
+
+intent: >
+  展示所有体征监测指标卡片的 2 列网格，用户可点击任意卡片进入对应指标详情页录入或查看历史趋势。
+  是从健康模块 Hub 页"编辑卡片"入口跳转的目标页。
+
+prd:
+  problem: >
+    用户在 HealthViewController 体征监测区块只能看到首页展示的少数指标卡片，
+    需要一个集中页面浏览全部 10 项体征指标并快速跳转到各指标的详情/录入页。
+  goal: >
+    提供体征监测指标的全览视图，让用户一眼看到所有可记录/查看的健康指标，
+    并通过点击卡片快速进入对应指标的详情页进行数据录入或趋势查看。
+  success_metrics:
+    - 用户可从健康 Hub 页点击"编辑卡片 ›"进入本页
+    - 10 项体征指标全部以 2 列网格展示
+    - 点击任意卡片正确跳转到对应指标详情页（如血压 → /health/metrics/blood-pressure）
+  scenarios:
+    - 用户在 HealthViewController 看到"体征监测"区块，点击"编辑卡片 ›"
+    - 进入本页浏览全部指标，发现血压偏高（warning 样式），点击进入血压详情页查看趋势图
+  scope:
+    in:
+      - 展示全部 10 项体征指标卡片（2 列网格）
+      - 每张卡片展示：指标名、当前值、单位、状态徽章、趋势箭头、时间
+      - 每张卡片含装饰性背景色（各指标不同色系）
+      - 点击卡片跳转至对应指标详情页
+      - 顶部导航栏含返回按钮
+      - 底部蓝牙设备管理入口
+    out:
+      - 卡片拖拽排序
+      - 卡片显隐筛选
+      - 批量操作
+  non_goals:
+    - 不在此页面支持卡片自定义排序
+    - 不在此页面提供数据录入功能（由各指标详情页承担）
+  business_rules:
+    - 指标状态为 warning 时卡片显示橙色边框 + 渐变底色
+    - 所有卡片点击区域 ≥ 44px 触摸目标
+  dependencies:
+    - 依赖 health.json mock 数据中的 metrics 数组
+    - 依赖各指标详情页路由已注册（/health/metrics/:key）
+    - 依赖 MetricCardCell 组件
+  constraints:
+    - 使用 UICollectionViewCompositionalLayout 实现 2 列网格
+    - 装饰背景使用 CAShapeLayer 绘制（无需外部图片资源）
+    - 遵循 fd-mobile-kit 设计规范（圆角 18px、阴影、颜色 token）
+
+tab_context: health
+has_tabbar: false
+
+layout:
+  type: topbar-scroll
+  topbar:
+    title: 体征监测
+    back: true
+    actions: []
+
+regions:
+  - key: metrics-grid
+    title: null
+    component: fd-card
+    layout: grid-2
+    data_key: health.metrics
+    interactions:
+      - trigger: tap
+        target: /health/metrics/:key
+    notes: >
+      2 列网格展示全部指标卡片。每张卡片含 MetricCardVisual 装饰背景、
+      fd-badge 状态徽章、趋势箭头。warning 状态卡片有橙色边框。
+
+  - key: bluetooth-hint
+    title: null
+    component: fd-card
+    layout: banner
+    data_key: null
+    interactions:
+      - trigger: tap
+        target: /me/devices
+    notes: 蓝色底色卡片，左侧蓝牙图标 + "管理蓝牙设备 · X 台在线"文字
+
+components_used:
+  - fd-topbar
+  - fd-screen
+  - fd-card
+  - fd-badge-success
+  - fd-badge-warning
+
+states:
+  loading: SkeletonCard × 6（骨架屏 2 列网格）
+  empty: null
+
+senior_mode:
+  font_scale: auto
+  tap_target_min: 44px
+  notes: 卡片字号使用系统字体，老年模式下自动放大；卡片间距保持不变
+
+acceptance:
+  - 从 HealthViewController 点击"编辑卡片 ›"正确跳转到本页
+  - Topbar 显示"体征监测"标题 + 返回按钮，点击返回可回到上一页
+  - 2 列网格展示 10 张指标卡片，无卡片变形或错位
+  - 每张卡片有独特的装饰背景色，血压卡片显示 warning 样式（橙色边框）
+  - 点击卡片跳转到对应指标详情页
+  - 底部蓝牙管理卡片可点击，跳转到设备管理页
+  - 所有可点击区域 ≥ 44px 触摸目标
+
+mock_data:
+  source: prototype/src/mock/health.json
+  fields:
+    - path: health.metrics
+      sample: >
+        [{"key":"blood-pressure","label":"血压","value":"138/88","unit":"mmHg","status":"偏高","statusType":"warning","icon":"drop","time":"今天 07:32","trend":"up"}]

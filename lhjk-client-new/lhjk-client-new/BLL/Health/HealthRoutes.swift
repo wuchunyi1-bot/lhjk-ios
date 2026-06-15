@@ -11,7 +11,7 @@ enum HealthRoutes {
 
         // Sub pages
         r.register(path: "/health/record") { _ in PlaceholderViewController(title: "健康档案") }
-        r.register(path: "/health/metrics") { _ in PlaceholderViewController(title: "体征监测") }
+        r.register(path: "/health/metrics") { _ in MetricsViewController() }
         r.register(path: "/health/assessment/six-dim") { _ in PlaceholderViewController(title: "六维评测") }
         r.register(path: "/health/assessment/report") { _ in PlaceholderViewController(title: "我的报告") }
         r.register(path: "/health/assessment/risk") { _ in PlaceholderViewController(title: "风险评估") }

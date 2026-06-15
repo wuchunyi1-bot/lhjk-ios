@@ -16,7 +16,14 @@ enum RouteSetup {
         HomeRoutes.register()
         MyRoutes.register()
         HealthRoutes.register()
-        
-        
+        MessageRoutes.register()
+
+        // WebView 页面
+        Router.shared.register(path: "/web/appointments") { _ in
+            WebViewController(urlString: "https://www.funde-life.com/appointments/exams", title: "预约体检")
+        }
+        Router.shared.register(path: "/web/membership") { _ in
+            WebViewController(urlString: "https://www.funde-life.com/me/membership", title: "查看权益")
+        }
     }
 }
