@@ -16,6 +16,8 @@ NEW_FILES = [
   'Other/Common/Extensions/UIColor+Theme.swift',
   'PL/RegisterLogin/Components/BrandHeaderView.swift',
   'PL/RegisterLogin/Components/LoginFieldView.swift',
+  'PL/RegisterLogin/Components/OptionChipView.swift',
+  'PL/RegisterLogin/OnboardingViewController.swift',
   # My 模块
   'PL/My/Components/FuncRowView.swift',
   'PL/My/Components/SectionTitleView.swift',

@@ -4,7 +4,10 @@
 
 定义注册/登录完整流程的 UI 布局、交互行为、异常处理和适配规则。参考 funde-client（富德健康）PRD `用户注册与登录_v1.0.md` 及 `LoginView.vue` + `design-system.md` 的设计规范，通过 UIKit + SnapKit 将其适配到 iOS 项目。
 
-页面覆盖完整的用户注册与登录链路：**隐私授权 → 本机号识别 → 验证码/密码登录 → 微信授权绑定 → 通知权限 → 登录后目标页还原**，以及**登录过期、账号状态异常、忘记密码**等分支流程。
+页面覆盖完整的用户注册与登录链路：**隐私授权 → 本机号识别 → 验证码/密码登录 → 微信授权绑定 → 通知权限 → 新用户引导（Onboarding）→ 登录后目标页还原**，以及**登录过期、账号状态异常、忘记密码**等分支流程。
+
+> **新增 (2026-06-16)**: 根据 funde-client `OnboardingView.vue`，新增 4 步新用户引导流程（基本信息 → 健康史 → 生活习惯 → 认识团队）。
+> **Reference**: funde-client `/prototype/src/views/onboarding/OnboardingView.vue`、`/prototype/src/mock/onboarding.json`
 
 > **Deferred**: 老年模式适配（Dynamic Type 联动）和 Logo Mark 渐变背景（CAGradientLayer）暂不在本次实现，先使用纯色品牌色方块代替渐变。
 
@@ -464,7 +467,7 @@
 
 #### Scenario: 无 redirect/deeplink
 - **WHEN** 登录成功且无 redirect/deeplink 参数
-- **THEN** 进入 `/home` 首页
+- **THEN** 检查 `fd_onboarded` 标记：已完成引导 → 进入 `/home`；未完成 → 进入 `/onboarding`（新用户引导）
 
 #### Scenario: 有合法 redirect
 - **WHEN** 登录成功且有合法 `redirect` 参数（App 内白名单路径）
@@ -481,6 +484,78 @@
 #### Scenario: 登录过期回跳
 - **WHEN** 因 token 失效跳转登录页时
 - **THEN** 携带当前白名单路径为 `redirect`，重新登录成功后回到原页面
+
+---
+
+### Requirement: New User Onboarding Flow
+登录成功后，新用户 SHALL 通过 4 步引导流程完成健康档案初始建立。已完成的用户跳过引导直接进入首页。
+
+参考 funde-client `OnboardingView.vue`：4 个步骤 + 进度条 + 底部导航按钮。
+
+#### Scenario: 引导触发条件
+- **WHEN** 登录成功后
+- **THEN** 检查本地存储中 `fd_onboarded` 标记
+- **WHEN** 标记为 `true` → 跳过引导，直接进入 `/home`
+- **WHEN** 标记为 `false` 或不存在 → 进入引导流程
+
+#### Scenario: 引导流程布局
+- **WHEN** OnboardingViewController 渲染
+- **THEN** 全屏展示（无 Tab Bar，无系统导航栏），包含：
+  - 顶部进度条（4pt 高，fdPrimary 填充，fdBorder 底色，宽度按 `currentStep / totalSteps` 百分比过渡动画 0.4s）
+  - 步骤标签「{N} / 4」（12pt fdMuted）
+  - 标题（24pt bold fdText）
+  - 描述文字（13pt fdSubtext）
+  - 主体内容区（flex: 1，溢出滚动）
+  - 底部操作区：「返回」按钮 + 「下一步」/「开始我的健康之旅」按钮
+
+#### Scenario: Step 1 — 基本信息
+- **WHEN** 当前步骤为 1
+- **THEN** 展示 3 个字段：
+  - 「您的姓名」— 文本输入框（placeholder "请输入真实姓名"，maxLength 20）
+  - 「性别」— 男/女 chip 按钮（2 列并排，选中态 primarySoft 背景 + primary 文字 + primary 边框，默认态 surface 背景 + subtext 文字 + border 边框）
+  - 「出生年份」— 数字输入框（placeholder "例如：1980"，maxLength 4）
+- **AND** 「下一步」按钮在 name 非空 + gender 已选时启用
+
+#### Scenario: Step 2 — 健康史
+- **WHEN** 当前步骤为 2
+- **THEN** 展示「既往病史（可多选）」chip 组：
+  - 选项：高血压 / 糖尿病 / 血脂异常 / 高尿酸 / 冠心病 / 甲状腺疾病 / 骨质疏松 / 无
+  - 多选逻辑：选「无」清除其他项，选其他项自动清除「无」
+  - Chip 样式：圆角 20pt，高 38pt，padding horizontal 18pt
+- **AND** 「下一步」按钮在至少选中 1 项时启用
+
+#### Scenario: Step 3 — 生活习惯
+- **WHEN** 当前步骤为 3
+- **THEN** 展示 2 组 chip：
+  - 「吸烟情况」— 单选（不吸烟 / 偶尔吸 / 每天吸）
+  - 「运动频率（每周）」— 单选（几乎不运动 / 每周1-2次 / 每周3-4次 / 每周5次以上）
+- **AND** 「下一步」按钮在两组均选中时启用
+
+#### Scenario: Step 4 — 认识专属团队
+- **WHEN** 当前步骤为 4
+- **THEN** 展示团队卡片列表（3 张卡片，依次淡入动画）：
+  - 每个卡片：渐变色圆形头像（52pt）+ 姓名（16pt bold）+ 职称（12pt fdPrimary）+ 专长（12pt fdSubtext）
+  - 卡片：fdSurface 背景、圆角 18pt、阴影
+  - 动画：opacity 0→1 + translateY 16→0，每张卡片间隔 ~350ms 入场
+- **AND** 底部按钮变为「开始我的健康之旅」（全宽，无返回按钮）
+
+#### Scenario: 引导完成
+- **WHEN** 用户在 Step 4 点击「开始我的健康之旅」
+- **THEN** 保存 `fd_onboarded = true` 和 `fd_archive_progress = 38` 到本地存储
+- **AND** `dismiss(animated: true)` 返回已有 TabBar 主界面（Onboarding 是覆盖在 TabBar 之上的 fullScreen modal）
+
+#### Scenario: 步骤间导航
+- **WHEN** 用户在 Step 2-4 点击「返回」
+- **THEN** 当前步骤 -1，保留已填数据
+- **WHEN** 用户在 Step 1-3 点击「下一步」
+- **THEN** 当前步骤 +1
+
+#### Scenario: Chip 组件复用
+- **THEN** 所有 chip（性别、病史、吸烟、运动）使用统一的 `OptionChipView` 组件
+- **AND** 支持 `isMultiSelect` 模式（多选/单选切换）
+
+#### Scenario: 输入框复用
+- **THEN** Step 1 的输入框复用 `LoginFieldView`（无 icon 模式）或直接使用 UITextField + 统一样式
 
 ---
 
@@ -669,6 +744,9 @@ V1.0 SHALL 允许多设备同时登录，不踢出旧设备；新设备登录时
 | `ForgotPasswordView` | UIView/VC | 忘记密码页 | Custom VC | 新增 |
 | `NotificationGuideView` | UIView/VC | 通知预引导弹窗 | Custom Modal VC | 新增 |
 | `ModeSwitchButton` | UIButton | `login-switch__link` | UIButton (文字链接) | 已有 |
+| `OnboardingViewController` | UIViewController | `ob-screen` | 4 步引导主页面 | 新增 |
+| `OptionChipView` | UIView | `ob-chip` | 可选中 chip 按钮（单选/多选） | 新增 |
+| `TeamCardView` | UIView | `ob-team-card` | 团队成员卡片（头像 + 信息） | 新增 |
 
 ---
 
@@ -849,7 +927,19 @@ enum NotificationPermissionStatus {
 - [ ] 提交按钮全宽、品牌色、圆角、阴影
 - [ ] 键盘弹起时输入框不被遮挡
 - [ ] 登录中 loading 态、防止重复提交
-- [ ] 错误提示均按触发规则展示（30 条文案全覆盖）
+- [ ] 错误提示均按触发规则展示
 - [ ] 所有颜色通过 `UIColor.fd*` Token 引用
 - [ ] 所有可交互元素触控区域 ≥ 44×44pt
 - [ ] 登录成功 dismiss → 进入主 Tab 页或目标页
+
+### 新用户引导 (Onboarding)
+- [ ] 登录成功且 `fd_onboarded` 为 false 时进入引导
+- [ ] 顶部进度条动画过渡 4 步
+- [ ] Step 1: 姓名 + 性别 chip + 出生年份，校验通过才可下一步
+- [ ] Step 2: 既往病史多选 chip（8 项），「无」与其他互斥
+- [ ] Step 3: 吸烟单选 + 运动频率单选
+- [ ] Step 4: 团队卡片依次淡入动画（3 张）
+- [ ] Chip 选中/未选中样式正确（primarySoft vs surface）
+- [ ] 「返回」按钮在 Step 2-4 可用，数据保留
+- [ ] 完成后保存 `fd_onboarded=true`，replace 到 `/home`
+- [ ] 已完成的用户再次登录直接到 `/home`

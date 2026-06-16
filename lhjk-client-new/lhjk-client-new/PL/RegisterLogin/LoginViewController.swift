@@ -898,8 +898,13 @@ final class LoginViewController: BaseViewController {
         } else if let redirect = redirectPath, isValidRedirect(redirect) {
             navigateToPath(redirect)
         } else {
-            // Default: dismiss → home
-            dismiss(animated: true)
+            // Default: check onboarding → home or onboarding
+            let onboarded = UserDefaults.standard.bool(forKey: "fd_onboarded")
+            dismiss(animated: true) {
+                if !onboarded {
+                    Router.shared.present("/onboarding")
+                }
+            }
         }
     }
 

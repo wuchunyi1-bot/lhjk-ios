@@ -250,3 +250,29 @@ extension UIColor {
 - 登录态有效期和"长时间未登录"的具体天数？PRD 标注 [待确认]，由后端安全策略定义
 - 账号冻结/注销中是否需要展示客服入口或申诉入口？PRD 标注 [待确认]
 - 新设备登录提醒的推送通道？PRD 标注 [待确认：提醒通道]
+
+## Onboarding (新增 2026-06-16)
+
+### 12. Onboarding 架构：单 ViewController + 步骤状态机
+
+**选择**: 使用单个 `OnboardingViewController`，内部通过 `currentStep` 状态变量控制 4 个步骤的 UI 切换。子内容通过 show/hide 管理（非独立 VC 切换）。
+
+**理由**: 4 个步骤共享顶部进度条和底部操作区，单 VC 避免 NavigationController push/pop 的开销；步骤间过渡更流畅（fade in/out），且步骤间数据自然共享。
+
+### 13. Chip 组件：OptionChipView
+
+**选择**: 创建 `OptionChipView` 自定义 UIView，封装选中/未选中样式和 tap 手势。支持 `allowMultipleSelection` 控制单选/多选模式。
+
+**理由**: 4 个步骤中共有 4 组 chip（性别、病史、吸烟、运动），共享相同的交互模式（border 切换 + 背景色切换），统一组件减少重复代码。
+
+### 14. 团队卡片入场动画
+
+**选择**: Step 4 的团队卡片使用 `UIView.animate` 依次淡入（opacity 0→1 + translateY 16→0），每张卡片间隔 350ms。
+
+**理由**: 直接复刻 funde-client 的 `ob-team-card--visible` CSS transition 效果，无需引入第三方动画库。
+
+### 15. Onboarding 完成后的导航
+
+**选择**: Onboarding 完成后 `dismiss(animated: true)`，回到已有的 TabBarController。
+
+**理由**: OnboardingViewController 是 fullScreen present 在 TabBar 之上的。引导完成后 dismiss，用户自然回到已有 TabBar 的主页 Tab。不需要也不应该替换 root VC，否则会销毁 TabBar 结构。这与 funde-client SPA 中的 `router.replace('/home')` 语义不同——在 iOS 中，TabBar 框架始终存在，引导只是一个覆盖层。

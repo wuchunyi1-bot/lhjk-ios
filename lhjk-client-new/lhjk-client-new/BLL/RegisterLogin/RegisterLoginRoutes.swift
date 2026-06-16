@@ -17,5 +17,12 @@ enum RegisterLoginRoutes {
             }
             return vc
         }
+
+        // Onboarding (new user guide)
+        Router.shared.register(path: "/onboarding", requiresAuth: false) { _ in
+            let vc = OnboardingViewController()
+            vc.modalPresentationStyle = .fullScreen
+            return vc
+        }
     }
 }
