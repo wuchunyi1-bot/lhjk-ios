@@ -932,7 +932,9 @@ final class LoginViewController: BaseViewController {
             self?.loginMode = .password
             self?.updateModeUI(animated: false)
         }
-        navigationController?.pushViewController(forgotVC, animated: true)
+        let nav = UINavigationController(rootViewController: forgotVC)
+        nav.modalPresentationStyle = .fullScreen
+        present(nav, animated: true)
     }
 
     // MARK: - WeChat

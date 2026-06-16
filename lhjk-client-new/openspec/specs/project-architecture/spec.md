@@ -161,3 +161,25 @@ lhjk-client/
 #### Scenario: PL 与 BLL 的模块对应
 - **WHEN** PL 层某业务模块需要调用业务逻辑
 - **THEN** 该模块调用 BLL 层同名业务模块下的 Service，确保 PL 与 BLL 的业务模块一一对应
+
+---
+
+### Requirement: Debugging — Log First, Don't Guess
+对反复修改仍无法解决的 UI 布局 / 渲染问题，SHALL 优先加 log 定位根因，不得凭猜测反复修改。
+
+#### Scenario: UI 布局异常排查流程
+- **WHEN** UI 布局/渲染出现异常且尝试 ≥ 2 次修改仍无效
+- **THEN** 在以下关键节点加 `print` 日志定位问题，把日志传给开发者分析：
+  - `layoutSubviews` — frame / bounds / contentSize / intrinsicContentSize
+  - 自定义 `UICollectionViewLayout.layoutAttributesForElements(in:)` — rect / attrs.count / 每个 item frame
+  - Cell `configure` / `cellForItemAt` — 数据内容 / frame
+  - 数据源方法 `numberOfItems` / `sizeForItemAt` — 返回值
+  - `UIStackView` 布局 — arrangedSubviews 的 frame / intrinsicContentSize
+
+#### Scenario: 日志格式
+- **WHEN** 添加排查日志
+- **THEN** 统一使用 `[模块-层级]` 前缀（如 `[BENEFITS-CV]`、`[CELL-DATASOURCE]`），便于过滤和定位
+
+#### Scenario: 排查完成后
+- **WHEN** 根因定位并修复
+- **THEN** 移除排查日志，将根因和修复方案记录进对应 spec 文件的踩坑章节

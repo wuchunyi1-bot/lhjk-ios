@@ -106,6 +106,13 @@ final class ForgotPasswordViewController: BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         navigationItem.title = "忘记密码"
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            title: "取消", style: .plain, target: self, action: #selector(dismissSelf)
+        )
+    }
+
+    @objc private func dismissSelf() {
+        dismiss(animated: true)
     }
 
     // MARK: - Setup
@@ -216,7 +223,7 @@ final class ForgotPasswordViewController: BaseViewController {
 
             self.showToast("密码已重置，请重新登录") {
                 self.onResetSuccess?(phone)
-                self.navigationController?.popViewController(animated: true)
+                self.dismiss(animated: true)
             }
         }
     }

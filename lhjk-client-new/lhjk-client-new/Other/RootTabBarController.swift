@@ -33,9 +33,14 @@ final class RootTabBarController: UITabBarController {
         let serviceNav = BaseNavigationController(rootViewController: serviceVC)
         serviceNav.tabBarItem = UITabBarItem(
             title: "服务",
-            image: UIImage(systemName: "square.grid.2x2"),
-            selectedImage: UIImage(systemName: "square.grid.2x2.fill")
+            image: UIImage(systemName: "shield"),
+            selectedImage: UIImage(systemName: "shield.fill")
         )
+        // 待使用服务数量角标
+        let pendingCount = 2  // Mock: services.json orders.pending
+        if pendingCount > 0 {
+            serviceNav.tabBarItem.badgeValue = "\(pendingCount)"
+        }
 
         // 消息
         let messageVC = MessageListViewController()

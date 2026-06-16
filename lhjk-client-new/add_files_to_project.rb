@@ -74,6 +74,17 @@ NEW_FILES = [
   # Health Report — 双 TableView Cell
   'PL/My/Report/WeeklyReportCell.swift',
   'PL/My/Report/StageReportCell.swift',
+  # Order List
+  'PL/My/Order/OrderCardCell.swift',
+  'PL/My/Order/OrderListViewController.swift',
+  # Service module routes
+  'BLL/Service/ServiceRoutes.swift',
+  'PL/Service/ServiceListViewController.swift',
+  'PL/Service/HealthMallViewController.swift',
+  # Me subpages — Membership / Points / Family
+  'PL/My/MembershipViewController.swift',
+  'PL/My/PointsViewController.swift',
+  'PL/My/FamilyViewController.swift',
   # Common extensions
   'Other/Common/Extensions/UIView+Shadow.swift',
   'Other/Common/Extensions/UIButton+Funde.swift',

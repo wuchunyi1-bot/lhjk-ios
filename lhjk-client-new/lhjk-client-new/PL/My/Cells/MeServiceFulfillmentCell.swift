@@ -12,6 +12,7 @@ final class MeServiceFulfillmentCell: UITableViewCell {
     private var stats: [StatItem] = []
     private var services: [ServiceItem] = []
     var onServiceTap: (() -> Void)?
+    var onStatTap: ((Int) -> Void)?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -43,14 +44,18 @@ final class MeServiceFulfillmentCell: UITableViewCell {
         card.addSubview(statsStack)
         statsStack.snp.makeConstraints { $0.top.leading.trailing.equalToSuperview().inset(14) }
 
-        for (value, label, accent) in stats {
+        for (i, (value, label, accent)) in stats.enumerated() {
             let col = UIView()
             let valLbl = UILabel(); valLbl.text = value; valLbl.textColor = accent ? .fdPrimary : .fdText
-            valLbl.font = .systemFont(ofSize: 22, weight: .bold); valLbl.textAlignment = .center
+            valLbl.font = .monospacedSystemFont(ofSize: 22, weight: .bold); valLbl.textAlignment = .center
             let lblLbl = UILabel(); lblLbl.text = label; lblLbl.font = .systemFont(ofSize: 11); lblLbl.textColor = .fdSubtext; lblLbl.textAlignment = .center
             col.addSubview(valLbl); col.addSubview(lblLbl)
             valLbl.snp.makeConstraints { $0.top.centerX.equalToSuperview() }
             lblLbl.snp.makeConstraints { $0.top.equalTo(valLbl.snp.bottom).offset(2); $0.centerX.bottom.equalToSuperview() }
+            // Tap on stat to filter orders
+            col.isUserInteractionEnabled = true
+            col.tag = i
+            col.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(statTapped(_:))))
             statsStack.addArrangedSubview(col)
         }
 
@@ -115,4 +120,9 @@ final class MeServiceFulfillmentCell: UITableViewCell {
     }
 
     @objc private func serviceTapped() { onServiceTap?() }
+
+    @objc private func statTapped(_ gesture: UITapGestureRecognizer) {
+        guard let idx = gesture.view?.tag else { return }
+        onStatTap?(idx)
+    }
 }

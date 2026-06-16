@@ -105,7 +105,14 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
 
     private func buildTableHeader() -> UIView {
         let header = UIView()
-        header.backgroundColor = .fdBg
+
+        // Warm gradient matching funde-client var(--fd-gradient-hero)
+        let gradient = CAGradientLayer()
+        gradient.colors = [UIColor(hexString: "#FFF7F1").cgColor, UIColor(hexString: "#FFE9DC").cgColor]
+        gradient.startPoint = CGPoint(x: 0, y: 0)
+        gradient.endPoint = CGPoint(x: 1, y: 1)
+        gradient.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: 200)
+        header.layer.insertSublayer(gradient, at: 0)
 
         let avatarView: UIView = {
             let v = UIView()
@@ -151,6 +158,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             b.titleLabel?.font = .systemFont(ofSize: 11, weight: .semibold)
             b.backgroundColor = .fdPrimary; b.layer.cornerRadius = 999
             b.contentEdgeInsets = UIEdgeInsets(top: 4, left: 12, bottom: 4, right: 12)
+            b.addTarget(self, action: #selector(pushHealthRecord), for: .touchUpInside)
             return b
         }()
 
@@ -231,6 +239,11 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
                 return UITableViewCell()
             }
             cell.configure(stats: fulfillmentStats, services: services)
+            cell.onStatTap = { [weak self] idx in
+                let tabs = ["pending_use", "in_progress", "completed", "pending_review"]
+                guard idx < tabs.count else { return }
+                Router.shared.push("/orders", params: ["tab": tabs[idx]])
+            }
             cell.onServiceTap = { Router.shared.push("/orders") }
             return cell
 
@@ -267,7 +280,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         guard let title = titles[section] else { return nil }
         let container = UIView(); container.backgroundColor = .fdBg
         let titleView = SectionTitleView(title: title, more: section == 2 ? "全部订单 ›" : nil)
-        titleView.onMoreTapped = { [weak self] in self?.showToast("全部订单") }
+        titleView.onMoreTapped = { Router.shared.push("/orders") }
         container.addSubview(titleView)
         titleView.snp.makeConstraints { $0.leading.trailing.equalToSuperview().inset(16); $0.centerY.equalToSuperview() }
         return container
@@ -286,6 +299,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
     @objc private func pushSettings() { Router.shared.push("/me/settings") }
     @objc private func pushProfile() { Router.shared.push("/me/profile") }
     @objc private func pushMembership() { Router.shared.push("/me/membership") }
+    @objc private func pushHealthRecord() { Router.shared.push("/health/record") }
 
     @objc private func handleLogout() {
         let alert = UIAlertController(title: nil, message: "确定要退出登录吗？", preferredStyle: .alert)

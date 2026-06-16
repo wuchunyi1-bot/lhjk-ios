@@ -21,9 +21,9 @@ enum MyRoutes {
         r.register(path: "/me/health-evaluations") { _ in HealthEvaluationsViewController() }
 
         // 占位页面（后续迭代实现）
-        r.register(path: "/me/membership")  { _ in PlaceholderViewController(title: "会员中心") }
-        r.register(path: "/me/points")      { _ in PlaceholderViewController(title: "积分明细") }
-        r.register(path: "/me/family")      { _ in PlaceholderViewController(title: "家庭成员") }
+        r.register(path: "/me/membership")  { _ in MembershipViewController() }
+        r.register(path: "/me/points")      { _ in PointsViewController() }
+        r.register(path: "/me/family")      { _ in FamilyViewController() }
         r.register(path: "/me/medical-reports") { _ in PlaceholderViewController(title: "体检报告单") }
 
         // Settings 子页面
@@ -34,6 +34,10 @@ enum MyRoutes {
         r.register(path: "/me/settings/about")          { _ in PlaceholderViewController(title: "关于富德健康") }
 
         // 跨模块路由
-        r.register(path: "/orders")          { _ in PlaceholderViewController(title: "全部订单") }
+        r.register(path: "/orders")          { params in
+            let tab = params["tab"] as? String
+            return OrderListViewController(initialTab: tab)
+        }
+        r.register(path: "/orders/detail")  { params in PlaceholderViewController(title: "订单详情: \(params["id"] as? String ?? "")") }
     }
 }
