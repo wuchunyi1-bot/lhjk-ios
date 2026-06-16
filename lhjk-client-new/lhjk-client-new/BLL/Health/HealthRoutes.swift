@@ -10,10 +10,16 @@ enum HealthRoutes {
         r.register(path: "/health") { _ in HealthViewController() }
 
         // Sub pages
-        r.register(path: "/health/record") { _ in PlaceholderViewController(title: "健康档案") }
+        r.register(path: "/health/record") { _ in HealthRecordViewController() }
+
+        // Health record sub-pages (deferred — placeholder)
+        r.register(path: "/health/record/profile") { _ in PlaceholderViewController(title: "基础信息") }
+        r.register(path: "/health/record/history") { _ in PlaceholderViewController(title: "健康史") }
+        r.register(path: "/health/record/lifestyle") { _ in PlaceholderViewController(title: "生活习惯") }
+        r.register(path: "/health/record/condition") { _ in PlaceholderViewController(title: "慢病标签") }
         r.register(path: "/health/metrics") { _ in MetricsViewController() }
         r.register(path: "/health/assessment/six-dim") { _ in PlaceholderViewController(title: "六维评测") }
-        r.register(path: "/health/assessment/report") { _ in PlaceholderViewController(title: "我的报告") }
+        r.register(path: "/health/assessment/report") { _ in HealthReportViewController() }
         r.register(path: "/health/assessment/risk") { _ in PlaceholderViewController(title: "风险评估") }
 
         // 已实现的指标详情页（含 DGCharts）

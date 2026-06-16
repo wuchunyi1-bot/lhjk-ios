@@ -57,6 +57,21 @@ NEW_FILES = [
   'PL/Health/Metrics/ExerciseFoodViewController.swift',
   # DGCharts Theme
   'Other/Common/Extensions/DGCharts+Theme.swift',
+  # Health Record 模块
+  'PL/Health/Record/HealthRecordModels.swift',
+  'PL/Health/Record/BodyFigureView.swift',
+  'PL/Health/Record/RiskBarView.swift',
+  'PL/Health/Record/HealthRecordUserInfoCell.swift',
+  'PL/Health/Record/HealthRecordBodyCardCell.swift',
+  'PL/Health/Record/HealthRecordMetricRowCell.swift',
+  'PL/Health/Record/HealthRecordLifestyleCell.swift',
+  'PL/Health/Record/HealthRecordHistoryCell.swift',
+  'PL/Health/Record/HealthRecordViewController.swift',
+  # Health Report — 量化改善指标组件
+  'PL/My/Components/StageMetricsCardView.swift',
+  # Health Report — 双 TableView Cell
+  'PL/My/Report/WeeklyReportCell.swift',
+  'PL/My/Report/StageReportCell.swift',
   # Common extensions
   'Other/Common/Extensions/UIView+Shadow.swift',
   'Other/Common/Extensions/UIButton+Funde.swift',
