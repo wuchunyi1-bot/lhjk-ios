@@ -12,36 +12,39 @@
 
 ## Layout Architecture
 
-**实现方案**: `UITableView` (grouped style / plain)，利用 section 分割不同区块，tableHeaderView 承载 Hero，tableFooterView 承载退出登录。
+**实现方案**: `UITableView` (grouped style / plain)，利用 section 分割不同区块，tableHeaderView 承载完整的 Hero 区（用户信息 + 会员卡 + 统计条），tableFooterView 承载退出登录。
+
+> **变更 (2026-06-17)**: 将 `MeMembershipCardCell` 和 `MeStatsStripCell` 的内容合并进 `tableHeaderView`，移除这两个 Cell 对应的 section。减少 section 数量，简化布局层级。
 
 ```
 ┌──────────────────────────────────────────────┐
 │  UITableView (fdBg background)               │
 │  ┌──────────────────────────────────────────┐ │
-│  │ tableHeaderView: Hero Section           │ │
-│  │  ┌──────┐  用户名          [⚙ settings] │ │
+│  │ tableHeaderView: Hero + Card + Stats    │ │
+│  │                              [⚙ 设置]   │ │
+│  │  ┌──────┐  用户名                        │ │
 │  │  │ 头像 │  [编辑资料]  [健康档案]        │ │
 │  │  └──────┘                               │ │
+│  │  ┌──────────────────────────────────┐   │ │
+│  │  │ 会员卡入口 (原 MeMembershipCard)    │   │ │
+│  │  └──────────────────────────────────┘   │ │
+│  │  ┌──────────────────────────────────┐   │ │
+│  │  │ 统计条 (原 MeStatsStrip)          │   │ │
+│  │  └──────────────────────────────────┘   │ │
 │  ├──────────────────────────────────────────┤ │
-│  │ Section 0: Membership Card (1 row)      │ │
-│  │ MeMembershipCardCell                    │ │
-│  ├──────────────────────────────────────────┤ │
-│  │ Section 1: Stats Strip (1 row)          │ │
-│  │ MeStatsStripCell                        │ │
-│  ├──────────────────────────────────────────┤ │
-│  │ Section 2: Service Fulfillment (1 row)  │ │
+│  │ Section 0: Service Fulfillment (1 row)  │ │
 │  │ sectionHeader: "服务履约    全部订单 ›"   │ │
 │  │ MeServiceFulfillmentCell                │ │
 │  ├──────────────────────────────────────────┤ │
-│  │ Section 3: Health Management (7 rows)   │ │
+│  │ Section 1: Health Management (7 rows)   │ │
 │  │ sectionHeader: "健康管理"                │ │
 │  │ MeFuncRowCell × 7                       │ │
 │  ├──────────────────────────────────────────┤ │
-│  │ Section 4: Account & Settings (4 rows)  │ │
+│  │ Section 2: Account & Settings (4 rows)  │ │
 │  │ sectionHeader: "账号与设置"              │ │
 │  │ MeFuncRowCell × 4                       │ │
 │  ├──────────────────────────────────────────┤ │
-│  │ Section 5: About (3 rows)               │ │
+│  │ Section 3: About (3 rows)               │ │
 │  │ sectionHeader: "关于"                    │ │
 │  │ MeFuncRowCell × 3                       │ │
 │  ├──────────────────────────────────────────┤ │
@@ -53,10 +56,10 @@
 **Cell 注册**:
 | Cell Class | Reuse ID | Section(s) |
 |-----------|----------|------------|
-| `MeMembershipCardCell` | `MeMembershipCardCell` | 0 |
-| `MeStatsStripCell` | `MeStatsStripCell` | 1 |
-| `MeServiceFulfillmentCell` | `MeServiceFulfillmentCell` | 2 |
-| `MeFuncRowCell` | `MeFuncRowCell` | 3, 4, 5 |
+| `MeServiceFulfillmentCell` | `MeServiceFulfillmentCell` | 0 |
+| `MeFuncRowCell` | `MeFuncRowCell` | 1, 2, 3 |
+
+> `MeMembershipCardCell` 和 `MeStatsStripCell` 不再作为独立 Cell 使用，其内容合并到 tableHeaderView 中。
 
 ---
 
@@ -92,16 +95,22 @@
 
 ---
 
-### Requirement: Hero Section
-顶部 SHALL 展示用户头像、昵称、设置按钮和快捷操作入口。
+### Requirement: Hero Section (tableHeaderView)
+顶部 tableHeaderView SHALL 包含完整的用户信息区、会员卡入口和统计条，作为统一的 Hero 区域。右上角 SHALL 展示设置入口按钮。
+
+#### Scenario: 设置按钮（右上角）
+- **WHEN** 页面渲染 Hero 区
+- **THEN** 右上角展示设置齿轮按钮：32×32pt 圆形、半透明白底 `rgba(255,255,255,0.6)`、SF Symbol `gearshape`、tintColor `.fdText`
+- **AND** 按钮触控区域 ≥ 44×44pt
+- **AND** 按钮位于安全区域顶部下方，与头像区域顶部对齐
 
 #### Scenario: 头像
 - **WHEN** 页面渲染 Hero 区
 - **THEN** 左侧展示 64×64pt 圆形头像，背景色 `#F4ECE3`，文字色 `#7B5E40`，显示用户名首字（22pt bold）
 
-#### Scenario: 用户名 + 设置按钮
+#### Scenario: 用户名
 - **WHEN** 页面渲染 Hero 区
-- **THEN** 头像右侧展示用户名（20pt bold `UIColor.fdText`），右侧展示设置齿轮按钮（32×32pt 圆形，半透明白底，SF Symbol `gearshape` 18pt）
+- **THEN** 头像右侧展示用户名（20pt bold `UIColor.fdText`）
 
 #### Scenario: 快捷操作按钮
 - **WHEN** 页面渲染 Hero 区
@@ -113,14 +122,19 @@
 - **WHEN** 页面渲染
 - **THEN** Hero profile 区顶部与 safe area top 间距约 52pt（预留状态栏）
 
+#### Scenario: 渐变背景
+- **WHEN** 页面渲染 Hero 区
+- **THEN** 整个 tableHeaderView 使用暖色渐变背景：`#FFF7F1` → `#FFE9DC`，135° 对角方向（CAGradientLayer）
+
 ---
 
-### Requirement: Membership Card
-Hero 区下方 SHALL 展示会员卡入口卡片。
+### Requirement: Membership Card (in tableHeaderView)
+Hero 区下方 SHALL 在 tableHeaderView 内展示会员卡入口卡片。
 
 #### Scenario: 卡片样式
 - **WHEN** 页面渲染
-- **THEN** 展示圆角卡片（`fd-radius-md`），暖色渐变背景（`#FFF7F1` → `#FFE9DC`，暂用纯色 `#FFF7F1`），1pt 品牌色 20% 透明度描边
+- **THEN** 展示圆角卡片（`fd-radius-md`），暖色背景（`#FFF7F1`），1pt 品牌色 20% 透明度描边
+- **AND** 卡片左右间距 16pt，与上方用户信息区间距 16pt
 
 #### Scenario: 卡片内容
 - **WHEN** 会员卡渲染
@@ -132,12 +146,13 @@ Hero 区下方 SHALL 展示会员卡入口卡片。
 
 ---
 
-### Requirement: Stats Strip
-会员卡下方 SHALL 展示 4 列统计数据。
+### Requirement: Stats Strip (in tableHeaderView)
+会员卡下方 SHALL 在 tableHeaderView 内展示 4 列统计数据。
 
 #### Scenario: 统计列
 - **WHEN** 页面渲染统计条
-- **THEN** 4 列等宽显示：健康积分（892，品牌色突出）、家庭成员（4）、我的保单（2）、健康等级（Lv.3）。数值使用 monospace 字体 22pt bold，标签 11pt subtext。列间用 1pt 分割线
+- **THEN** 4 列等宽显示：健康积分（892，品牌色突出）、家庭成员（4）、我的保单（2）、健康等级（Lv.3）。数值使用系统字体 22pt bold，标签 11pt subtext。列间用 1pt 分割线
+- **AND** 卡片左右间距 16pt，与上方会员卡间距 12pt
 
 #### Scenario: 点击跳转
 - **WHEN** 用户点击某统计列
@@ -239,12 +254,12 @@ Hero 区下方 SHALL 展示会员卡入口卡片。
 
 | Component | Type | funde ref | 说明 |
 |-----------|------|-----------|------|
-| `MeHeroView` | UIView | `me-hero` | Hero 区（头像 + 名称 + 按钮行）→ 作为 tableHeaderView |
-| `MeMembershipCardCell` | UITableViewCell | `membership-card` | 会员卡入口 |
-| `MeStatsStripCell` | UITableViewCell | `me-stats` | 4 列统计条 |
+| `tableHeaderView` | UIView | `me-hero` + membership-card + me-stats | Hero 区 + 会员卡 + 统计条（合并为一个 header view） |
 | `MeServiceFulfillmentCell` | UITableViewCell | me-svc-section | 服务履约区块 |
 | `MeFuncRowCell` | UITableViewCell | `fd-func-row` | 通用功能行（icon + label + detail + arrow） |
 | `SectionTitleView` | UIView | `fd-section-title` | 区块标题行（复用，作为 section header） |
+
+> `MeMembershipCardCell` 和 `MeStatsStripCell` 不再作为独立 Cell 使用，保留文件以备后续需要。
 
 ---
 
@@ -285,22 +300,22 @@ Hero 区下方 SHALL 展示会员卡入口卡片。
 
 | State | 表现 |
 |-------|------|
-| **默认** | Mock 数据渲染完整 Hub，UITableView 6 sections + tableHeaderView/FooterView |
+| **默认** | Mock 数据渲染完整 Hub，UITableView 4 sections + tableHeaderView（含会员卡+统计条）/FooterView |
 | **空态** | 无（Hub 页不涉及数据加载空态） |
 | **加载** | 暂不需要（纯 mock） |
 
 ## Acceptance Checklist
 
 - [ ] Tab 栏第五个「我的」Tab 正确展示
-- [ ] UITableView 6 sections + tableHeaderView/FooterView 结构渲染完整
+- [ ] UITableView 4 sections + tableHeaderView/FooterView 结构渲染完整
 - [ ] 首页导航栏隐藏，子页面导航栏显示（push 进入显示、pop 返回隐藏）
-- [ ] tableHeaderView — Hero 区头像、用户名、设置按钮、编辑资料/健康档案按钮
-- [ ] Section 0 — 会员卡入口卡片（品牌色描边、等级显示）
-- [ ] Section 1 — 4 列统计条（积分/家庭/保单/等级）等宽 + 分割线
-- [ ] Section 2 — 服务履约区：4 数字统计 + 服务行（icon + badge + arrow）
-- [ ] Section 3 — 健康管理分组 7 行（MeFuncRowCell）
-- [ ] Section 4 — 账号与设置分组 4 行
-- [ ] Section 5 — 关于分组 3 行
+- [ ] tableHeaderView — Hero 区暖色渐变背景、头像、用户名、右上角设置按钮、编辑资料/健康档案按钮
+- [ ] tableHeaderView — 会员卡入口卡片（品牌色描边、等级显示、点击跳转）
+- [ ] tableHeaderView — 4 列统计条（积分/家庭/保单/等级）等宽 + 分割线 + 可点击跳转
+- [ ] Section 0 — 服务履约区：4 数字统计 + 服务行（icon + badge + arrow）
+- [ ] Section 1 — 健康管理分组 7 行（MeFuncRowCell）
+- [ ] Section 2 — 账号与设置分组 4 行
+- [ ] Section 3 — 关于分组 3 行
 - [ ] tableFooterView — 退出登录按钮 + 确认弹窗
 - [ ] 所有颜色通过 `UIColor.fd*` Token 引用
 - [ ] 可点击行 push 到对应子页面
