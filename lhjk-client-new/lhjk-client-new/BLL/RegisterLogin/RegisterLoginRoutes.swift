@@ -4,17 +4,9 @@ import Foundation
 enum RegisterLoginRoutes {
     static func register() {
         // Login page
-        Router.shared.register(path: "/login", requiresAuth: false) { params in
+        Router.shared.register(path: "/login", requiresAuth: false) { _ in
             let vc = LoginViewController()
             vc.modalPresentationStyle = .fullScreen
-
-            // Pass redirect/deeplink parameters
-            if let redirect = params["redirect"] as? String {
-                vc.redirectPath = redirect
-            }
-            if let deeplink = params["deeplink"] as? String {
-                vc.deeplink = deeplink
-            }
             return vc
         }
 

@@ -4,7 +4,7 @@
 
 定义注册/登录完整流程的 UI 布局、交互行为、异常处理和适配规则。参考 funde-client（富德健康）PRD `用户注册与登录_v1.0.md` 及 `LoginView.vue` + `design-system.md` 的设计规范，通过 UIKit + SnapKit 将其适配到 iOS 项目。
 
-页面覆盖完整的用户注册与登录链路：**隐私授权 → 本机号识别 → 验证码/密码登录 → 微信授权绑定 → 通知权限 → 新用户引导（Onboarding）→ 登录后目标页还原**，以及**登录过期、账号状态异常、忘记密码**等分支流程。
+页面覆盖完整的用户注册与登录链路：**隐私授权 → 验证码/密码登录 → 通知权限 → 新用户引导（Onboarding）→ 进入首页**，以及**登录过期、账号状态异常、忘记密码**等分支流程。
 
 > **新增 (2026-06-16)**: 根据 funde-client `OnboardingView.vue`，新增 4 步新用户引导流程（基本信息 → 健康史 → 生活习惯 → 认识团队）。
 > **Reference**: funde-client `/prototype/src/views/onboarding/OnboardingView.vue`、`/prototype/src/mock/onboarding.json`
@@ -32,7 +32,8 @@
 │  └──────────────────────────────────────┘│
 │  ┌──────────────────────────────────────┐│
 │  │  ┌──────────────────────────────┐    ││
-│  │  │ 脱敏本机号展示 / 手动手机号输入  │    ││
+│  │  │ 手机号输入框                   │    ││
+│  │  │ placeholder: 请输入手机号       │    ││
 │  │  └──────────────────────────────┘    ││
 │  │  ┌──────────────────┬───────────┐    ││
 │  │  │ 验证码输入框       │ 获取验证码  │    ││
@@ -55,11 +56,8 @@
 │  │  忘记密码                             ││
 │  └──────────────────────────────────────┘│
 │  ┌──────────────────────────────────────┐│
-│  │        WeChat Area                   ││
-│  │        ┌────┐                        ││
-│  │        │ 💬 │  (52×52 浮动圆形按钮)    ││
-│  │        └────┘                        ││
-│  │  → tap 弹出 WechatAuthSheet          ││
+│  │        WeChat Area **[DEFERRED]**     ││
+│  │        (暂不启用，后续迭代实现)          ││
 │  └──────────────────────────────────────┘│
 └──────────────────────────────────────────┘
 ```
@@ -136,22 +134,26 @@
 
 ---
 
-### Requirement: Local Phone Number Detection
-登录页 SHALL 默认尝试获取本机手机号，展示脱敏号码；获取失败时自动切换为手动手机号输入。
+### Requirement: Local Phone Number Detection **[DEFERRED]**
+> **状态**: 延迟到后续迭代实现。当前版本暂不启用本机号自动识别功能，统一使用手动手机号输入。
 
-#### Scenario: 本机号获取成功
+#### Scenario: 当前行为
+- **WHEN** 用户进入登录页
+- **THEN** 直接展示手动手机号输入框，placeholder 为「请输入手机号」，不尝试获取本机号
+
+#### Scenario: 本机号获取成功（预留）
 - **WHEN** 运营商能力成功返回本机手机号
 - **THEN** 展示脱敏手机号（格式如 `156****8923`，保留前 3 后 4），下方提供「使用其他手机号」链接
 
-#### Scenario: 本机号获取失败
+#### Scenario: 本机号获取失败（预留）
 - **WHEN** 运营商不支持、无 SIM 卡、双卡异常、网络异常或用户拒绝授权
 - **THEN** 自动切换为手动手机号输入框，toast 提示「暂未获取到本机号码，请输入手机号登录」
 
-#### Scenario: 使用其他手机号
+#### Scenario: 使用其他手机号（预留）
 - **WHEN** 用户点击「使用其他手机号」
 - **THEN** 脱敏本机号展示切换为手动手机号输入框，保留已输入的验证码（如有）
 
-#### Scenario: 本机号 mock 模式
+#### Scenario: 本机号 mock 模式（预留）
 - **WHEN** V1.0 原型阶段未接入真实运营商 SDK
 - **THEN** 使用 mock 本机号数据，并在代码中标注 TODO 标记，待 V1.1 接入真实 SDK
 
@@ -185,11 +187,11 @@
 ---
 
 ### Requirement: Phone Number Field
-验证码模式和密码模式下 SHALL 均展示手机号输入框。
+验证码模式和密码模式下 SHALL 均展示手机号输入框，用户手动输入。默认不启用本机号自动识别。
 
 #### Scenario: 输入框结构
-- **WHEN** 手动输入模式激活
-- **THEN** 展示 `LoginFieldView`，label 为「手机号」、左侧 icon 为 SF Symbol `phone`、placeholder 为「请输入手机号」、keyboardType 为 `.phonePad`、maxLength 为 11
+- **WHEN** 进入登录页
+- **THEN** 直接展示 `LoginFieldView`，label 为「手机号」、左侧 icon 为 SF Symbol `phone`、placeholder 为「请输入手机号」、keyboardType 为 `.phonePad`、maxLength 为 11
 
 #### Scenario: 输入框样式
 - **WHEN** 输入框处于默认状态
@@ -375,61 +377,11 @@
 
 ---
 
-### Requirement: WeChat Login Entry
-登录页 SHALL 提供微信第三方登录入口。
+### Requirement: WeChat Login Entry **[DEFERRED]**
+> **状态**: 延迟到后续迭代实现。当前版本暂不展示微信登录入口。
 
-#### Scenario: 微信按钮样式
-- **WHEN** 页面渲染
-- **THEN** 在页面底部居中展示微信登录按钮：52×52pt 圆形、白色背景、带阴影（`shadow-pop`）、内嵌微信 icon（绿色 `#07C160`、28pt、自定义图标）
-
-#### Scenario: 微信未安装
-- **WHEN** 设备未安装微信或环境不支持
-- **THEN** 保留手机号登录入口，toast 提示「当前设备未安装微信，请使用手机号登录」，可隐藏微信按钮或置灰
-
-#### Scenario: 微信 SDK 加载超时
-- **WHEN** 微信 SDK 5 秒未就绪
-- **THEN** 隐藏微信入口，仅保留手机号登录
-
----
-
-### Requirement: WeChat Authorization & Phone Binding
-微信登录 SHALL 通过底部弹层展示授权确认界面，授权后根据绑定状态决定是否需要手机号验证码绑定。
-
-#### Scenario: 微信授权弹层内容
-- **WHEN** WechatAuthSheet 展示
-- **THEN** 弹层包含：
-  - 微信 icon（56×56pt、圆角 18pt、浅绿背景 `rgba(7, 193, 96, 0.12)`）
-  - 标题「微信快捷登录」（18pt bold）
-  - 说明文字「将通过微信授权登录富德健康。继续即表示同意《用户协议》与《隐私政策》。」（13pt `UIColor.fdSubtext`）
-  - 微信登录按钮「微信登录」（全宽、48pt 高、圆角 14pt、绿色背景 `#07C160`、白色文字 15pt semibold）
-
-#### Scenario: 用户取消微信授权
-- **WHEN** 微信授权页点击取消
-- **THEN** 返回登录页，toast 提示「已取消微信授权」
-
-#### Scenario: 微信授权失败
-- **WHEN** 微信 SDK 返回失败
-- **THEN** 返回登录页，toast 提示「微信授权失败，请稍后重试」，允许重试
-
-#### Scenario: 微信已绑定手机号 → 直接登录
-- **WHEN** 微信授权成功且已有手机号绑定关系
-- **THEN** 直接登录，进入通知权限流程
-
-#### Scenario: 微信未绑定手机号 → 绑定流程
-- **WHEN** 微信授权成功但无绑定手机号
-- **THEN** 打开手机号绑定弹层，提示「请绑定手机号后继续使用」，用户需输入手机号 + 验证码完成绑定
-
-#### Scenario: 手机号已绑定其他微信（换绑冲突）
-- **WHEN** 绑定手机号时校验发现该手机号已绑定其他微信号
-- **THEN** toast 提示「该手机号已绑定其他微信号，请更换手机号，或联系客服解绑后重试」；用户坚持换绑时需二次确认，通过原手机号验证码校验后换绑当前微信，记录安全日志
-
-#### Scenario: 微信已绑定其他手机号
-- **WHEN** 当前微信已有其他手机号绑定关系
-- **THEN** 阻止自动覆盖，toast 提示「当前微信已绑定其他手机号，请联系客服处理」
-
-#### Scenario: 关闭弹层
-- **WHEN** 用户点击弹层外部区域或下拉关闭
-- **THEN** 弹层 dismiss，回到登录页
+### Requirement: WeChat Authorization & Phone Binding **[DEFERRED]**
+> **状态**: 延迟到后续迭代实现。当前版本暂不支持微信授权与绑定。
 
 ---
 
@@ -462,28 +414,15 @@
 
 ---
 
-### Requirement: Post-Login Redirect / DeepLink
-登录成功后 SHALL 根据是否有合法 `redirect` 或 `deeplink` 参数决定目标页面。合法则进入目标页，否则进入 `/home`。
+### Requirement: Post-Login Navigation
+登录成功后 SHALL 直接进入新用户引导流程（未完成）或首页（已完成引导）。当前版本不包含 redirect/deeplink 目标页还原。
 
-#### Scenario: 无 redirect/deeplink
-- **WHEN** 登录成功且无 redirect/deeplink 参数
+#### Scenario: 登录成功
+- **WHEN** 登录成功后
 - **THEN** 检查 `fd_onboarded` 标记：已完成引导 → 进入 `/home`；未完成 → 进入 `/onboarding`（新用户引导）
 
-#### Scenario: 有合法 redirect
-- **WHEN** 登录成功且有合法 `redirect` 参数（App 内白名单路径）
-- **THEN** 进入 `redirect` 指向的 App 内目标页
-
-#### Scenario: 有合法 deeplink
-- **WHEN** 登录成功且有合法 `deeplink` 参数
-- **THEN** 解析 deeplink 并进入对应 App 内白名单路径
-
-#### Scenario: 非法目标页
-- **WHEN** redirect/deeplink 指向外部 URL、未注册路由、越权页面或解析失败
-- **THEN** 统一回退进入 `/home`，可 toast「登录成功」
-
-#### Scenario: 登录过期回跳
-- **WHEN** 因 token 失效跳转登录页时
-- **THEN** 携带当前白名单路径为 `redirect`，重新登录成功后回到原页面
+#### Scenario: redirect/deeplink **[DEFERRED]**
+> **状态**: 延迟到后续迭代。登录过期回跳等场景暂不实现 redirect 参数携带。
 
 ---
 
@@ -564,7 +503,7 @@
 
 #### Scenario: 登录过期（token 失效）
 - **WHEN** 接口返回 token 失效或长期未登录
-- **THEN** 清理本地登录态，跳转登录页，展示提示「为保护您的健康数据安全，登录状态已过期，请重新登录」，携带当前白名单路径为 `redirect`
+- **THEN** 清理本地登录态，跳转登录页，展示提示「为保护您的健康数据安全，登录状态已过期，请重新登录」
 
 #### Scenario: 密码变更导致失效
 - **WHEN** 其他端修改密码导致当前 token 失效
@@ -738,9 +677,9 @@ V1.0 SHALL 允许多设备同时登录，不踢出旧设备；新设备登录时
 | `CaptchaVerifyView` | UIView/VC | 拼图验证弹窗 | Custom Modal VC | 新增 |
 | `SubmitButton` | UIButton | `login-submit-btn` | UIButton + SnapKit (全宽) | 已有 |
 | `AgreementCheckboxView` | UIView | 协议勾选 | UIView (checkbox + attributed label) | 新增 |
-| `WechatLoginButton` | UIButton | `login-wechat__entry` | UIButton (圆形浮动) | 已有 |
-| `WechatAuthSheetView` | UIView/VC | `wechat-sheet` | Custom Modal VC | 已有 |
-| `PhoneBindingView` | UIView/VC | 微信绑定手机号 | Custom Modal VC | 新增 |
+| `WechatLoginButton` | UIButton | `login-wechat__entry` | UIButton (圆形浮动) | **[DEFERRED]** |
+| `WechatAuthSheetView` | UIView/VC | `wechat-sheet` | Custom Modal VC | **[DEFERRED]** |
+| `PhoneBindingView` | UIView/VC | 微信绑定手机号 | Custom Modal VC | **[DEFERRED]** |
 | `ForgotPasswordView` | UIView/VC | 忘记密码页 | Custom VC | 新增 |
 | `NotificationGuideView` | UIView/VC | 通知预引导弹窗 | Custom Modal VC | 新增 |
 | `ModeSwitchButton` | UIButton | `login-switch__link` | UIButton (文字链接) | 已有 |
@@ -761,9 +700,6 @@ protocol LoginServiceProtocol {
     /// 记录用户同意隐私协议
     func agreePrivacy(version: Int) async throws
 
-    /// 获取本机手机号（运营商 SDK）
-    func getLocalPhoneNumber() async throws -> String?
-
     /// 发送短信验证码
     func sendVerificationCode(to phone: String, captchaToken: String) async throws -> SMSResponse
     /// 验证码登录（新用户自动注册）
@@ -783,6 +719,17 @@ protocol LoginServiceProtocol {
     func getSessionStatus() async throws -> SessionStatus
     /// 记录通知授权结果
     func reportNotificationPermission(status: NotificationPermissionStatus) async throws
+
+    // MARK: - Token Storage
+
+    /// 保存 token 到 Keychain
+    func saveToken(_ token: String, refreshToken: String)
+
+    /// 从 Keychain 读取 token
+    func getToken() -> String?
+
+    /// 清除本地登录态
+    func clearSession()
 }
 
 // MARK: - Data Types
@@ -797,7 +744,6 @@ struct LoginResult {
     let accessToken: String
     let refreshToken: String
     let isNewUser: Bool
-    let redirectAllowed: String?
 }
 
 struct SMSResponse {
@@ -845,15 +791,15 @@ enum NotificationPermissionStatus {
 |-------|------|
 | **隐私未授权** | 隐私弹窗覆盖，登录页不可见 |
 | **隐私已拒绝** | 不可用状态页，「重新查看并同意」+「退出 App」 |
-| **默认（验证码模式）** | 本机号脱敏展示（成功）/ 手机号输入框（失败）、验证码输入框、获取验证码按钮 |
+| **默认（验证码模式）** | 手机号输入框（placeholder: 请输入手机号）、验证码输入框、获取验证码按钮 |
 | **聚焦** | 当前输入框边框高亮为品牌色 |
 | **倒计时** | 验证码按钮灰色、倒计时文字「{N}s 后重发」 |
 | **拼图验证中** | 拼图弹窗覆盖，滑块交互 |
 | **加载中** | 提交按钮 disabled、loading 文案（「登录中…」「授权中…」） |
 | **密码模式** | 手机号 + 密码输入框可见、忘记密码链接、验证码相关隐藏 |
 | **忘记密码** | 忘记密码页（手机号 → 拼图 → 验证码 → 新密码） |
-| **微信弹层** | WechatAuthSheet present |
-| **微信绑定手机号** | 手机号绑定弹层（手机号 + 验证码 + 提交） |
+| **微信弹层** | **[DEFERRED]** |
+| **微信绑定手机号** | **[DEFERRED]** |
 | **通知预引导** | 通知引导弹窗（「去开启」/「暂不开启」） |
 | **错误** | toast 提示具体错误信息，按钮恢复 |
 | **登录过期** | 登录页 + 过期提示条 |
@@ -870,10 +816,10 @@ enum NotificationPermissionStatus {
 - [ ] 不同意展示不可用状态页，支持重新查看并同意或退出 App
 - [ ] 协议链接可点击查看，加载失败有重试提示
 
-### 本机号识别
-- [ ] 默认展示脱敏本机手机号（格式 `156****8923`）
-- [ ] 本机号获取失败自动切换手动输入，展示提示文案
-- [ ] 「使用其他手机号」可切换手动输入
+### 本机号识别 **[DEFERRED]**
+- [ ] ~~默认展示脱敏本机手机号（格式 `156****8923`）~~ — 延迟实现
+- [ ] ~~本机号获取失败自动切换手动输入~~ — 延迟实现
+- [ ] ~~「使用其他手机号」可切换手动输入~~ — 延迟实现
 
 ### 验证码登录
 - [ ] 手机号 + 验证码 + 获取验证码按钮并排
@@ -897,13 +843,11 @@ enum NotificationPermissionStatus {
 - [ ] 未勾选时阻止获取验证码和任何登录/绑定提交
 - [ ] 协议链接可点击跳转 WebView
 
-### 微信登录
-- [ ] 微信按钮圆形悬浮、白色背景、绿色 icon
-- [ ] 微信未安装时 toast 提示并提供手机号登录
-- [ ] 微信授权弹层内容正确
-- [ ] 微信已绑定手机号直接登录
-- [ ] 微信未绑定手机号进入绑定流程
-- [ ] 手机号绑定冲突有明确换绑/解绑路径
+### 微信登录 **[DEFERRED]**
+- [ ] ~~微信按钮圆形悬浮、白色背景、绿色 icon~~ — 延迟实现
+- [ ] ~~微信未安装时 toast 提示~~ — 延迟实现
+- [ ] ~~微信授权弹层~~ — 延迟实现
+- [ ] ~~微信绑定与换绑流程~~ — 延迟实现
 
 ### 通知权限
 - [ ] 登录成功后展示通知预引导弹窗
@@ -912,9 +856,8 @@ enum NotificationPermissionStatus {
 - [ ] 系统不再弹窗时展示设置引导
 
 ### 登录后导航
-- [ ] 无 redirect/deeplink 进入 `/home`
-- [ ] 合法 redirect/deeplink 进入目标页
-- [ ] 非法目标回退 `/home`
+- [ ] 登录成功检查 `fd_onboarded` → 已完成则进入 `/home`，未完成进入 `/onboarding`
+- [ ] ~~redirect/deeplink 目标页还原~~ — 延迟实现
 
 ### 登录态与账号状态
 - [ ] 登录过期清理登录态并提示

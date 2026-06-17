@@ -28,7 +28,6 @@ struct LoginResult {
     let accessToken: String
     let refreshToken: String
     let isNewUser: Bool
-    let redirectAllowed: String?
 }
 
 /// 微信授权结果

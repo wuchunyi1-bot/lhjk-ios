@@ -36,15 +36,6 @@ final class LoginService: LoginServiceProtocol {
         agreedPrivacyVersion = version
     }
 
-    // MARK: - Local Phone
-
-    func getLocalPhoneNumber() async throws -> String? {
-        // V1.0 mock: simulate carrier return
-        try await Task.sleep(nanoseconds: 300_000_000)
-        // Return mock phone number (simulates successful carrier detection)
-        return "15612348923"
-    }
-
     // MARK: - SMS
 
     func sendVerificationCode(to phone: String, captchaToken: String) async throws -> SMSResponse {
@@ -83,8 +74,7 @@ final class LoginService: LoginServiceProtocol {
         return LoginResult(
             accessToken: "token_\(UUID().uuidString.prefix(12))",
             refreshToken: "refresh_\(UUID().uuidString.prefix(12))",
-            isNewUser: isNewUser,
-            redirectAllowed: nil
+            isNewUser: isNewUser
         )
     }
 
@@ -99,8 +89,7 @@ final class LoginService: LoginServiceProtocol {
         return LoginResult(
             accessToken: "token_\(UUID().uuidString.prefix(12))",
             refreshToken: "refresh_\(UUID().uuidString.prefix(12))",
-            isNewUser: false,
-            redirectAllowed: nil
+            isNewUser: false
         )
     }
 
@@ -132,8 +121,7 @@ final class LoginService: LoginServiceProtocol {
         return LoginResult(
             accessToken: "token_\(UUID().uuidString.prefix(12))",
             refreshToken: "refresh_\(UUID().uuidString.prefix(12))",
-            isNewUser: false,
-            redirectAllowed: nil
+            isNewUser: false
         )
     }
 

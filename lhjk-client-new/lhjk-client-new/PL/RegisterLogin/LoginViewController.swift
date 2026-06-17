@@ -6,8 +6,8 @@ import UserNotifications
 /// 参考 funde-client PRD 用户注册与登录_v1.0.md + LoginView.vue
 ///
 /// 完整流程:
-///   隐私弹窗 → 本机号识别 → 登录页 (验证码/密码/微信)
-///   → 通知权限预引导 → redirect/deeplink → /home
+///   隐私弹窗 → 登录页 (验证码/密码/微信)
+///   → 通知权限预引导 → /home 或 /onboarding
 ///
 /// 分支流程: 忘记密码、登录过期、账号冻结/注销中
 final class LoginViewController: BaseViewController {
@@ -22,18 +22,6 @@ final class LoginViewController: BaseViewController {
     // MARK: - Constants
 
     private let horizontalPadding: CGFloat = 24
-
-    // MARK: - Redirect
-
-    /// 登录成功后目标页路径（App 内白名单路径）
-    var redirectPath: String?
-    /// 深链目标
-    var deeplink: String?
-
-    /// App 内合法目标页白名单前缀
-    private let allowedRedirectPrefixes: [String] = [
-        "/home", "/health", "/me", "/payment", "/im"
-    ]
 
     // MARK: - UI
 
@@ -51,11 +39,6 @@ final class LoginViewController: BaseViewController {
 
     // Privacy prompt (shown before login form)
     private var privacyPromptView: PrivacyPromptView?
-
-    // Local phone display
-    private var localPhoneLabel: UILabel?
-    private var switchPhoneButton: UIButton?
-    private var isUsingLocalPhone = false
 
     // SMS fields
     private lazy var phoneField = LoginFieldView(
@@ -132,10 +115,7 @@ final class LoginViewController: BaseViewController {
     // Password field wrapper
     private let passwordFieldsContainer = UIView()
 
-    // Local phone area wrapper
-    private let localPhoneContainer = UIView()
-
-    /// SMS form inner stack (local phone + phone field + code row)
+    /// SMS form inner stack (phone field + code row)
     private let smsInnerStack: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
@@ -240,11 +220,6 @@ final class LoginViewController: BaseViewController {
 
         // Check privacy consent first
         checkPrivacyConsent()
-
-        // Check if came from session expiry
-        if redirectPath != nil {
-            showSessionExpiredBanner()
-        }
     }
 
     deinit {
@@ -264,7 +239,7 @@ final class LoginViewController: BaseViewController {
                     await MainActor.run { showPrivacyPrompt(version: info) }
                 } else {
                     needsPrivacyConsent = false
-                    await MainActor.run { detectLocalPhone() }
+                    await MainActor.run { setupUI() }
                 }
             } catch {
                 // Network error — still show privacy check based on local cache
@@ -318,7 +293,7 @@ final class LoginViewController: BaseViewController {
             await MainActor.run { [weak self] in
                 self?.dismissPrivacyPrompt()
                 self?.needsPrivacyConsent = false
-                self?.detectLocalPhone()
+                self?.setupUI()
             }
         }
     }
@@ -330,85 +305,6 @@ final class LoginViewController: BaseViewController {
             self.privacyPromptView?.removeFromSuperview()
             self.privacyPromptView = nil
         }
-    }
-
-    // MARK: - Local Phone Detection
-
-    private func detectLocalPhone() {
-        Task {
-            do {
-                let phone = try await loginService.getLocalPhoneNumber()
-                await MainActor.run {
-                    if let phone = phone {
-                        showLocalPhone(phone)
-                    } else {
-                        showManualPhoneInput()
-                    }
-                }
-            } catch {
-                await MainActor.run { showManualPhoneInput() }
-            }
-        }
-    }
-
-    private func showLocalPhone(_ phone: String) {
-        isUsingLocalPhone = true
-        let masked = maskPhone(phone)
-
-        // Remove old local phone views
-        localPhoneContainer.subviews.forEach { $0.removeFromSuperview() }
-        localPhoneContainer.isHidden = false
-
-        let label = UILabel()
-        label.text = masked
-        label.font = .systemFont(ofSize: 22, weight: .medium)
-        label.textColor = .fdText
-        label.textAlignment = .center
-        localPhoneLabel = label
-
-        let button = UIButton(type: .system)
-        button.setTitle("使用其他手机号", for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 13)
-        button.setTitleColor(.fdPrimary, for: .normal)
-        button.addTarget(self, action: #selector(switchToManualPhone), for: .touchUpInside)
-        switchPhoneButton = button
-
-        localPhoneContainer.addSubview(label)
-        localPhoneContainer.addSubview(button)
-
-        label.snp.makeConstraints { make in
-            make.top.centerX.equalToSuperview()
-        }
-        button.snp.makeConstraints { make in
-            make.top.equalTo(label.snp.bottom).offset(6)
-            make.centerX.equalToSuperview()
-            make.bottom.equalToSuperview()
-        }
-
-        // Hide manual phone field
-        phoneField.isHidden = true
-    }
-
-    private func showManualPhoneInput() {
-        isUsingLocalPhone = false
-        localPhoneContainer.isHidden = true
-        phoneField.isHidden = false
-        showToast("暂未获取到本机号码，请输入手机号登录")
-    }
-
-    @objc private func switchToManualPhone() {
-        // Copy local phone to manual field
-        if let localText = localPhoneLabel?.text {
-            phoneField.textField.text = localText.replacingOccurrences(of: "*", with: "")
-        }
-        showManualPhoneInput()
-    }
-
-    private func maskPhone(_ phone: String) -> String {
-        guard phone.count == 11 else { return phone }
-        let start = phone.prefix(3)
-        let end = phone.suffix(4)
-        return "\(start)****\(end)"
     }
 
     // MARK: - Setup UI
@@ -433,10 +329,6 @@ final class LoginViewController: BaseViewController {
             make.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(36)
             make.centerX.equalToSuperview()
         }
-
-        // Local phone area
-        localPhoneContainer.isHidden = true
-        smsInnerStack.addArrangedSubview(localPhoneContainer)
 
         // SMS fields
         smsInnerStack.addArrangedSubview(phoneField)
@@ -502,17 +394,22 @@ final class LoginViewController: BaseViewController {
             make.trailing.equalTo(submitButton)
         }
 
-        // WeChat entry
-        contentView.addSubview(wechatButton)
-        wechatButton.snp.makeConstraints { make in
-            make.top.equalTo(modeSwitchButton.snp.bottom).offset(28)
-            make.centerX.equalToSuperview()
-            make.size.equalTo(52)
+        // WeChat entry — [DEFERRED] 暂不启用
+        // contentView.addSubview(wechatButton)
+        // wechatButton.snp.makeConstraints { make in
+        //     make.top.equalTo(modeSwitchButton.snp.bottom).offset(28)
+        //     make.centerX.equalToSuperview()
+        //     make.size.equalTo(52)
+        //     make.bottom.equalToSuperview().offset(-32)
+        // }
+
+        // Bottom anchor — mode switch button anchors to content bottom
+        modeSwitchButton.snp.makeConstraints { make in
             make.bottom.equalToSuperview().offset(-32)
         }
 
-        // Setup overlays
-        setupWechatSheet()
+        // WeChat sheet — [DEFERRED] 暂不启用
+        // setupWechatSheet()
 
         // Default mode
         updateModeUI(animated: false)
@@ -656,7 +553,7 @@ final class LoginViewController: BaseViewController {
             }
         } else {
             let pwdPhone = passwordPhoneField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
-            if !pwdPhone.isEmpty && !isUsingLocalPhone {
+            if !pwdPhone.isEmpty {
                 phoneField.textField.text = pwdPhone
             }
         }
@@ -665,10 +562,6 @@ final class LoginViewController: BaseViewController {
     }
 
     private func getCurrentPhone() -> String {
-        if isUsingLocalPhone {
-            let text = localPhoneLabel?.text ?? ""
-            return text.replacingOccurrences(of: "*", with: "")
-        }
         return phoneField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
     }
 
@@ -892,34 +785,12 @@ final class LoginViewController: BaseViewController {
     // MARK: - Post-Login Navigation
 
     private func navigateAfterLogin() {
-        // Check for valid redirect/deeplink
-        if let deeplink = deeplink, isValidRedirect(deeplink) {
-            navigateToPath(deeplink)
-        } else if let redirect = redirectPath, isValidRedirect(redirect) {
-            navigateToPath(redirect)
-        } else {
-            // Default: check onboarding → home or onboarding
-            let onboarded = UserDefaults.standard.bool(forKey: "fd_onboarded")
-            dismiss(animated: true) {
-                if !onboarded {
-                    Router.shared.present("/onboarding")
-                }
-            }
-        }
-    }
-
-    private func isValidRedirect(_ path: String) -> Bool {
-        for prefix in allowedRedirectPrefixes {
-            if path.hasPrefix(prefix) {
-                return true
-            }
-        }
-        return false
-    }
-
-    private func navigateToPath(_ path: String) {
+        // Check onboarding status → home or onboarding
+        let onboarded = UserDefaults.standard.bool(forKey: "fd_onboarded")
         dismiss(animated: true) {
-            Router.shared.push(path)
+            if !onboarded {
+                Router.shared.present("/onboarding")
+            }
         }
     }
 
@@ -1033,7 +904,7 @@ final class LoginViewController: BaseViewController {
                 await MainActor.run {
                     setLoggingIn(false)
                     // Show rebind confirmation
-                    let masked = maskPhone(phone)
+                    let masked = Self.maskPhoneNumber(phone)
                     showPhoneBindingRebind(wechatToken: wechatToken, maskedPhone: masked, phone: phone)
                 }
             } catch {
@@ -1149,6 +1020,16 @@ final class LoginViewController: BaseViewController {
         // Present WebView using existing WebViewController
         let webVC = WebViewController(urlString: url.absoluteString, title: title)
         present(UINavigationController(rootViewController: webVC), animated: true)
+    }
+
+    // MARK: - Utilities
+
+    /// 手机号脱敏：保留前3后4
+    static func maskPhoneNumber(_ phone: String) -> String {
+        guard phone.count == 11 else { return phone }
+        let start = phone.prefix(3)
+        let end = phone.suffix(4)
+        return "\(start)****\(end)"
     }
 
     // MARK: - Toast

@@ -12,12 +12,6 @@ protocol LoginServiceProtocol {
     /// 记录用户同意隐私协议
     func agreePrivacy(version: Int) async throws
 
-    // MARK: - Local Phone
-
-    /// 获取本机手机号（运营商 SDK）
-    /// V1.0 返回 mock 数据，V1.1 接入真实运营商 SDK
-    func getLocalPhoneNumber() async throws -> String?
-
     // MARK: - SMS
 
     /// 发送短信验证码
