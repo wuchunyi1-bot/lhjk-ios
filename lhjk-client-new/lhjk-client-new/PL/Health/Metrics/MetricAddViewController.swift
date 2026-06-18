@@ -245,7 +245,7 @@ final class MetricAddViewController: BaseViewController {
             let ruler = MetricRulerView(min: field.min, max: field.max, step: field.step, defaultValue: field.defaultValue, labelEvery: field.labelEvery, unit: field.unit)
             ruler.onValueChanged = { [weak self, id = field.id] newVal in
                 self?.values[id] = newVal
-                if let vl = self?.view.viewWithTag(0) as? UILabel {} // placeholder
+                if self?.view.viewWithTag(0) is UILabel {} // placeholder
                 // Update value label
                 for sv in self?.view.subviews ?? [] {
                     for case let lbl as UILabel in sv.subviews {

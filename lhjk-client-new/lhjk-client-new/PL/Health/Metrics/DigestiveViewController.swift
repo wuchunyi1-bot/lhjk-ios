@@ -56,7 +56,7 @@ final class DigestiveViewController: BaseViewController {
         c.addSubview(tipsCard)
         tipsCard.snp.makeConstraints { $0.top.equalTo(tipsSection.snp.bottom).offset(12); $0.leading.trailing.equalToSuperview().inset(p) }
         var prevTip: UIView?
-        for (i, tip) in tips.enumerated() {
+        for (_, tip) in tips.enumerated() {
             let row = UIStackView(); row.axis = .horizontal; row.spacing = 8; row.alignment = .top
             let check = UILabel(); check.text = "✓"; check.font = .fdBodyBold; check.textColor = .fdSuccess
             let lbl = UILabel(); lbl.text = tip; lbl.font = .fdBody; lbl.textColor = .fdText2; lbl.numberOfLines = 0

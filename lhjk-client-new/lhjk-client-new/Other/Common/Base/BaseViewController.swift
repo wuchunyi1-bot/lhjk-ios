@@ -3,13 +3,12 @@ import UIKit
 /// 基础视图控制器 — 提供通用 UI 配置入口 + 老年模式自动刷新
 class BaseViewController: UIViewController {
 
-    /// 记录上次渲染时的 seniorModeVersion，viewWillAppear 对比判断是否需刷新字体
-    private var lastSeniorVersion: Int = 0
+    /// 记录上次渲染时的 seniorModeVersion，初始 -1 保证首次 viewWillAppear 一定触发检查
+    private var lastSeniorVersion: Int = -1
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
-        lastSeniorVersion = UIFont.seniorModeVersion
         setupUI()
         bindViewModel()
     }
@@ -17,7 +16,7 @@ class BaseViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        // 老年模式在离开期间变更 → 自动刷新当前页字体
+        // 老年模式变更（含冷启动恢复）→ 自动刷新当前页字体
         if UIFont.seniorModeVersion != lastSeniorVersion {
             lastSeniorVersion = UIFont.seniorModeVersion
             refreshForSeniorMode()
@@ -36,8 +35,9 @@ class BaseViewController: UIViewController {
     ///   2. 失效 table/collection view 布局，触发行高重算（不重建 cell，只调 heightForRow）
     /// 子类可重写以添加自定义刷新逻辑（如重建 table header）
     func refreshForSeniorMode() {
-        view.refreshAllLabelFonts()
+        // 先失效布局让 cell 重建（token 字体自动拿正确值），再映射非 token 字号
         view.invalidateTableAndCollectionLayouts()
+        view.refreshAllLabelFonts()
     }
 }
 

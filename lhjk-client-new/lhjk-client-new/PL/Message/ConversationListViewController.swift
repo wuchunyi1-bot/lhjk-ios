@@ -86,7 +86,7 @@ final class ConversationListViewController: BaseViewController, UITableViewDataS
     }
 
     @objc private func chipTapped(_ sender: UIButton) {
-        for (i, c) in filterChips.enumerated() {
+        for (_, c) in filterChips.enumerated() {
             let sel = c == sender
             c.setTitleColor(sel ? .white : .fdSubtext, for: .normal)
             c.backgroundColor = sel ? .fdPrimary : .fdBg2

@@ -237,16 +237,23 @@ fileprivate final class MatrixGridCell: UITableViewCell {
 }
 private var kMatrixKey: UInt8 = 0
 
-/// 富德优选 2×N grid Cell
+/// 富德优选 2×N grid Cell — 网格容器固定，仅卡片按需重建
 fileprivate final class MallGridCell: UITableViewCell {
     static let reuseID = "MallGridCell"
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) { super.init(style: style, reuseIdentifier: reuseIdentifier); selectionStyle = .none; backgroundColor = .clear }
+
+    private let grid = UIStackView()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        selectionStyle = .none; backgroundColor = .clear
+        grid.axis = .vertical; grid.spacing = 10
+        contentView.addSubview(grid)
+        grid.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
+    }
     required init?(coder: NSCoder) { fatalError() }
 
     func configure(_ products: [SvcMallProduct]) {
-        contentView.subviews.forEach { $0.removeFromSuperview() }
-        let grid = UIStackView(); grid.axis = .vertical; grid.spacing = 10
-        contentView.addSubview(grid); grid.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
+        grid.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for r in stride(from: 0, to: products.count, by: 2) {
             let row = UIStackView(); row.distribution = .fillEqually; row.spacing = 10
             for c in r..<min(r+2, products.count) { row.addArrangedSubview(buildMallCard(products[c])) }
@@ -266,10 +273,10 @@ fileprivate final class MallGridCell: UITableViewCell {
         let pl = UILabel(); pl.text = "商品封面"; pl.font = .fdMicro; pl.textColor = .fdMuted; pl.textAlignment = .center
         img.addSubview(pl); pl.snp.makeConstraints { $0.center.equalToSuperview() }
 
-        let name = lbl(p.name, size: 13, weight: .semibold, color: .fdText); name.numberOfLines = 1
-        let desc = lbl(p.desc, size: 11, color: .fdSubtext); desc.numberOfLines = 1
-        let price = lbl(p.price, size: 15, weight: .bold, color: p.accent, mono: true)
-        let unit = lbl(p.unit, size: 10, color: .fdSubtext)
+        let name = UILabel(); name.text = p.name; name.font = .fdCaptionSemibold; name.textColor = .fdText; name.numberOfLines = 1
+        let desc = UILabel(); desc.text = p.desc; desc.font = .fdMicro; desc.textColor = .fdSubtext; desc.numberOfLines = 1
+        let price = UILabel(); price.text = p.price; price.font = .fdBodyBold; price.textColor = p.accent
+        let unit = UILabel(); unit.text = p.unit; unit.font = .fdMicro; unit.textColor = .fdSubtext
         let body = UIStackView(arrangedSubviews: [name, desc])
         body.axis = .vertical; body.spacing = 3
         let stack = UIStackView(arrangedSubviews: [img, body, price, unit])
@@ -285,9 +292,6 @@ fileprivate final class MallGridCell: UITableViewCell {
     }
     @objc private func mallTapped(_ sender: UIButton) {
         if let id = objc_getAssociatedObject(sender, &kMallKey) as? String { Router.shared.push("/mall/detail", params: ["id": id]) }
-    }
-    private func lbl(_ t: String, size: CGFloat, weight: UIFont.Weight = .regular, color: UIColor, mono: Bool = false) -> UILabel {
-        let l = UILabel(); l.text = t; l.textColor = color; l.font = mono ? .fdMonoFont(ofSize: size, weight: weight) : .fdFont(ofSize: size, weight: weight); return l
     }
 }
 private var kMallKey: UInt8 = 0

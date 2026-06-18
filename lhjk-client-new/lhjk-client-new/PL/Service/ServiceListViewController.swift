@@ -173,7 +173,7 @@ fileprivate final class PackageCardCell: UITableViewCell {
         contentView.addSubview(card); card.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 5, left: 12, bottom: 5, right: 12)) }
 
         let name = lbl(p.name, size: 15, weight: .bold, color: .fdText)
-        var header: UIStackView = UIStackView(arrangedSubviews: [name])
+        let header: UIStackView = UIStackView(arrangedSubviews: [name])
         if !p.tag.isEmpty {
             let tag = UIView(); tag.backgroundColor = accent.withAlphaComponent(0.09); tag.layer.cornerRadius = 999
             let tl = lbl(p.tag, size: 10, weight: .semibold, color: accent); tag.addSubview(tl)
