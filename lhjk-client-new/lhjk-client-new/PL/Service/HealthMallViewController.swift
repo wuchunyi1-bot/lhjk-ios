@@ -39,24 +39,24 @@ fileprivate final class MallProductCell: UICollectionViewCell {
         imgArea.snp.makeConstraints { $0.top.leading.trailing.equalToSuperview(); $0.height.equalTo(90) }
 
         let placeholder = UILabel()
-        placeholder.text = "商品封面"; placeholder.font = .systemFont(ofSize: 11); placeholder.textColor = .fdMuted; placeholder.textAlignment = .center
+        placeholder.text = "商品封面"; placeholder.font = .fdMicro; placeholder.textColor = .fdMuted; placeholder.textAlignment = .center
         imgArea.addSubview(placeholder)
         placeholder.snp.makeConstraints { $0.center.equalToSuperview() }
 
         // Tag badge
-        tagLabel.font = .systemFont(ofSize: 9, weight: .semibold); tagLabel.textColor = .white
+        tagLabel.font = .fdMicroSemibold; tagLabel.textColor = .white
         tagLabel.backgroundColor = .fdPrimary; tagLabel.layer.cornerRadius = 4; tagLabel.clipsToBounds = true
         tagLabel.textAlignment = .center; tagLabel.isHidden = true
         imgArea.addSubview(tagLabel)
         tagLabel.snp.makeConstraints { $0.top.trailing.equalToSuperview().inset(6); $0.height.equalTo(16) }
 
         // Info
-        nameLabel.font = .systemFont(ofSize: 13, weight: .semibold); nameLabel.textColor = .fdText; nameLabel.numberOfLines = 2
-        descLabel.font = .systemFont(ofSize: 11); descLabel.textColor = .fdSubtext; descLabel.numberOfLines = 1
-        unitLabel.font = .systemFont(ofSize: 10); unitLabel.textColor = .fdMuted
-        priceLabel.font = .monospacedSystemFont(ofSize: 16, weight: .bold)
+        nameLabel.font = .fdCaptionSemibold; nameLabel.textColor = .fdText; nameLabel.numberOfLines = 2
+        descLabel.font = .fdMicro; descLabel.textColor = .fdSubtext; descLabel.numberOfLines = 1
+        unitLabel.font = .fdMicro; unitLabel.textColor = .fdMuted
+        priceLabel.font = .fdMonoFont(ofSize: 16, weight: .bold)
 
-        buyBtn.titleLabel?.font = .systemFont(ofSize: 11, weight: .semibold)
+        buyBtn.titleLabel?.font = .fdMicroSemibold
         buyBtn.setTitle("购买", for: .normal)
         buyBtn.setTitleColor(.white, for: .normal); buyBtn.layer.cornerRadius = 999
 
@@ -115,8 +115,8 @@ final class HealthMallViewController: BaseViewController {
         let seg = UISegmentedControl(items: categories)
         seg.selectedSegmentIndex = 0
         seg.selectedSegmentTintColor = .fdPrimary
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.systemFont(ofSize: 12, weight: .semibold)], for: .selected)
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.systemFont(ofSize: 12)], for: .normal)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.fdCaptionSemibold], for: .selected)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.fdCaption], for: .normal)
         seg.backgroundColor = .fdBg2
         seg.addTarget(self, action: #selector(categoryChanged), for: .valueChanged)
         return seg
@@ -139,7 +139,7 @@ final class HealthMallViewController: BaseViewController {
     private lazy var footerLabel: UILabel = {
         let l = UILabel()
         l.text = "🛡 正品保障 · 德好健康监制 · 7天无忧退换"
-        l.font = .systemFont(ofSize: 11); l.textColor = .fdMuted; l.textAlignment = .center
+        l.font = .fdMicro; l.textColor = .fdMuted; l.textAlignment = .center
         return l
     }()
 

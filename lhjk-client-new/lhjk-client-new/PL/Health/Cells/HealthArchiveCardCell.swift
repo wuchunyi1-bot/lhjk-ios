@@ -45,7 +45,7 @@ final class HealthArchiveCardCell: UITableViewCell {
         let footerLbl = label("补全后 +20 健康分 · 解锁家族风险图谱", size: 11, weight: .regular, color: .fdMuted)
         let completeBtn = UIButton(type: .system)
         completeBtn.setTitle("去补全", for: .normal)
-        completeBtn.titleLabel?.font = .systemFont(ofSize: 12, weight: .semibold)
+        completeBtn.titleLabel?.font = .fdCaptionSemibold
         completeBtn.setTitleColor(.fdPrimary, for: .normal)
         completeBtn.backgroundColor = .fdPrimarySoft
         completeBtn.layer.cornerRadius = 999
@@ -70,7 +70,7 @@ final class HealthArchiveCardCell: UITableViewCell {
     @objc private func didTapComplete() { onCompleteTap?() }
 
     private func label(_ text: String, size: CGFloat, weight: UIFont.Weight, color: UIColor) -> UILabel {
-        let l = UILabel(); l.text = text; l.font = .systemFont(ofSize: size, weight: weight); l.textColor = color
+        let l = UILabel(); l.text = text; l.font = .fdFont(ofSize: size, weight: weight); l.textColor = color
         return l
     }
 }

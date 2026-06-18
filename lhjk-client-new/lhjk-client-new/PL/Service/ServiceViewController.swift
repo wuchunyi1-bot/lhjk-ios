@@ -39,7 +39,7 @@ fileprivate final class FeaturedCardCell: UITableViewCell {
         // Code block
         let codeBg = UIView(); codeBg.layer.cornerRadius = 14
         codeBg.backgroundColor = p.highlight ? .fdPrimary : .fdBg2
-        let codeLbl = UILabel(); codeLbl.text = p.code; codeLbl.font = .systemFont(ofSize: 18, weight: .bold)
+        let codeLbl = UILabel(); codeLbl.text = p.code; codeLbl.font = .fdH2
         codeLbl.textColor = p.highlight ? .white : .fdText2; codeLbl.textAlignment = .center
         codeBg.addSubview(codeLbl); codeLbl.snp.makeConstraints { $0.center.equalToSuperview() }
         codeBg.snp.makeConstraints { $0.size.equalTo(48) }
@@ -72,7 +72,7 @@ fileprivate final class FeaturedCardCell: UITableViewCell {
         let price = lbl(p.price, size: 22, weight: .bold, color: .fdPrimary, mono: true)
         let unit = lbl(p.priceUnit, size: 12, color: .fdSubtext)
         let btn = UIButton(type: .system); btn.setTitle(p.current ? "查看进度" : "了解详情", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+        btn.titleLabel?.font = .fdCaptionSemibold
         if p.highlight { btn.setTitleColor(.white, for: .normal); btn.backgroundColor = .fdPrimary }
         else { btn.setTitleColor(.fdPrimary, for: .normal); btn.backgroundColor = .fdPrimarySoft }
         btn.layer.cornerRadius = 999; btn.snp.makeConstraints { $0.height.equalTo(36); $0.width.greaterThanOrEqualTo(72) }
@@ -88,7 +88,7 @@ fileprivate final class FeaturedCardCell: UITableViewCell {
     }
 
     private func lbl(_ t: String, size: CGFloat, weight: UIFont.Weight = .regular, color: UIColor, mono: Bool = false) -> UILabel {
-        let l = UILabel(); l.text = t; l.textColor = color; l.font = mono ? .monospacedSystemFont(ofSize: size, weight: weight) : .systemFont(ofSize: size, weight: weight); return l
+        let l = UILabel(); l.text = t; l.textColor = color; l.font = mono ? .fdMonoFont(ofSize: size, weight: weight) : .fdFont(ofSize: size, weight: weight); return l
     }
 }
 private var kRouteKey: UInt8 = 0
@@ -106,7 +106,7 @@ fileprivate final class MedicalAssistCell: UITableViewCell {
         card.layer.shadowColor = UIColor.black.cgColor; card.layer.shadowOffset = CGSize(width: 0, height: 1); card.layer.shadowRadius = 6; card.layer.shadowOpacity = 0.03
         contentView.addSubview(card); card.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
 
-        let icon = UILabel(); icon.text = "🏥"; icon.font = .systemFont(ofSize: 28)
+        let icon = UILabel(); icon.text = "🏥"; icon.font = .fdH1
         let title = lbl("就医协助服务", size: 15, weight: .bold, color: .fdText)
         let desc = lbl("三甲医院挂号协助 · 专业陪诊 · 绿色通道转诊", size: 12, color: .fdSubtext)
         let tags = UIStackView(); tags.spacing = 6
@@ -119,7 +119,7 @@ fileprivate final class MedicalAssistCell: UITableViewCell {
         let row = UIStackView(arrangedSubviews: [icon, content]); row.spacing = 12; row.alignment = .top
         card.addSubview(row); row.snp.makeConstraints { $0.top.leading.equalToSuperview().inset(16) }
 
-        let btn = UIButton(type: .system); btn.setTitle("申请", for: .normal); btn.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+        let btn = UIButton(type: .system); btn.setTitle("申请", for: .normal); btn.titleLabel?.font = .fdCaptionSemibold
         btn.setTitleColor(.white, for: .normal); btn.backgroundColor = .fdPrimary; btn.layer.cornerRadius = 999
         btn.snp.makeConstraints { $0.height.equalTo(32); $0.width.greaterThanOrEqualTo(64) }
         btn.addTarget(self, action: #selector(tap), for: .touchUpInside)
@@ -128,7 +128,7 @@ fileprivate final class MedicalAssistCell: UITableViewCell {
     }
 
     @objc private func tap() { Router.shared.push("/services") }
-    private func lbl(_ t: String, size: CGFloat, weight: UIFont.Weight = .regular, color: UIColor) -> UILabel { let l = UILabel(); l.text = t; l.font = .systemFont(ofSize: size, weight: weight); l.textColor = color; return l }
+    private func lbl(_ t: String, size: CGFloat, weight: UIFont.Weight = .regular, color: UIColor) -> UILabel { let l = UILabel(); l.text = t; l.font = .fdFont(ofSize: size, weight: weight); l.textColor = color; return l }
 }
 
 /// 产品矩阵 3×3 grid Cell
@@ -157,16 +157,16 @@ fileprivate final class MatrixGridCell: UITableViewCell {
     private func buildTile(_ m: SvcMatrixItem) -> UIView {
         let tile = UIButton(type: .system); tile.backgroundColor = .clear; tile.layer.cornerRadius = 12
         let icon = UIView(); icon.layer.cornerRadius = 12; icon.backgroundColor = m.accent.withAlphaComponent(0.13); icon.layer.borderWidth = 1; icon.layer.borderColor = m.accent.withAlphaComponent(0.2).cgColor
-        let il = UILabel(); il.text = m.code; il.font = .systemFont(ofSize: 16, weight: .bold); il.textColor = m.accent; il.textAlignment = .center
+        let il = UILabel(); il.text = m.code; il.font = .fdBodyBold; il.textColor = m.accent; il.textAlignment = .center
         icon.addSubview(il); il.snp.makeConstraints { $0.center.equalToSuperview() }; icon.snp.makeConstraints { $0.size.equalTo(44) }
-        let name = UILabel(); name.text = m.name; name.font = .systemFont(ofSize: 13, weight: .semibold); name.textColor = .fdText; name.textAlignment = .center
-        let desc = UILabel(); desc.text = m.desc; desc.font = .systemFont(ofSize: 10); desc.textColor = .fdSubtext; desc.textAlignment = .center
-        let tier = UILabel(); tier.text = m.tier; tier.font = .systemFont(ofSize: 9, weight: .semibold); tier.textColor = m.accent; tier.textAlignment = .center
+        let name = UILabel(); name.text = m.name; name.font = .fdCaptionSemibold; name.textColor = .fdText; name.textAlignment = .center
+        let desc = UILabel(); desc.text = m.desc; desc.font = .fdMicro; desc.textColor = .fdSubtext; desc.textAlignment = .center
+        let tier = UILabel(); tier.text = m.tier; tier.font = .fdMicroSemibold; tier.textColor = m.accent; tier.textAlignment = .center
         let stack = UIStackView(arrangedSubviews: [icon, name, desc, tier]); stack.axis = .vertical; stack.alignment = .center; stack.spacing = 4
         stack.isUserInteractionEnabled = false; tile.addSubview(stack)
         stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 14, left: 4, bottom: 14, right: 4)) }
         if m.current {
-            let badge = UILabel(); badge.text = "使用中"; badge.font = .systemFont(ofSize: 9, weight: .semibold); badge.textColor = .white; badge.backgroundColor = .fdPrimary; badge.layer.cornerRadius = 4; badge.textAlignment = .center; badge.clipsToBounds = true
+            let badge = UILabel(); badge.text = "使用中"; badge.font = .fdMicroSemibold; badge.textColor = .white; badge.backgroundColor = .fdPrimary; badge.layer.cornerRadius = 4; badge.textAlignment = .center; badge.clipsToBounds = true
             tile.addSubview(badge); badge.snp.makeConstraints { $0.top.trailing.equalToSuperview().inset(4); $0.height.equalTo(16); $0.width.equalTo(44) }
         }
         tile.addTarget(self, action: #selector(tileTapped(_:)), for: .touchUpInside)
@@ -202,10 +202,10 @@ fileprivate final class MallGridCell: UITableViewCell {
 
         let img = UIView(); img.backgroundColor = .fdBg2
         if !p.tag.isEmpty {
-            let tag = UILabel(); tag.text = p.tag; tag.font = .systemFont(ofSize: 9, weight: .semibold); tag.textColor = .white; tag.backgroundColor = .fdPrimary; tag.layer.cornerRadius = 4; tag.textAlignment = .center; tag.clipsToBounds = true
+            let tag = UILabel(); tag.text = p.tag; tag.font = .fdMicroSemibold; tag.textColor = .white; tag.backgroundColor = .fdPrimary; tag.layer.cornerRadius = 4; tag.textAlignment = .center; tag.clipsToBounds = true
             img.addSubview(tag); tag.snp.makeConstraints { $0.top.trailing.equalToSuperview().inset(6); $0.height.equalTo(16); $0.width.greaterThanOrEqualTo(30) }
         }
-        let pl = UILabel(); pl.text = "商品封面"; pl.font = .systemFont(ofSize: 11); pl.textColor = .fdMuted; pl.textAlignment = .center
+        let pl = UILabel(); pl.text = "商品封面"; pl.font = .fdMicro; pl.textColor = .fdMuted; pl.textAlignment = .center
         img.addSubview(pl); pl.snp.makeConstraints { $0.center.equalToSuperview() }
 
         let name = lbl(p.name, size: 13, weight: .semibold, color: .fdText); name.numberOfLines = 1
@@ -229,7 +229,7 @@ fileprivate final class MallGridCell: UITableViewCell {
         if let id = objc_getAssociatedObject(sender, &kMallKey) as? String { Router.shared.push("/mall/detail", params: ["id": id]) }
     }
     private func lbl(_ t: String, size: CGFloat, weight: UIFont.Weight = .regular, color: UIColor, mono: Bool = false) -> UILabel {
-        let l = UILabel(); l.text = t; l.textColor = color; l.font = mono ? .monospacedSystemFont(ofSize: size, weight: weight) : .systemFont(ofSize: size, weight: weight); return l
+        let l = UILabel(); l.text = t; l.textColor = color; l.font = mono ? .fdMonoFont(ofSize: size, weight: weight) : .fdFont(ofSize: size, weight: weight); return l
     }
 }
 private var kMallKey: UInt8 = 0
@@ -304,8 +304,8 @@ final class ServiceViewController: BaseViewController {
 
     private func buildTopbar() -> UIView {
         let header = UIView(); header.backgroundColor = .fdBg
-        let title = UILabel(); title.text = "健康服务"; title.font = .systemFont(ofSize: 22, weight: .bold); title.textColor = .fdText
-        let sub = UILabel(); sub.text = "德系健康管理 · 9 大产品线"; sub.font = .systemFont(ofSize: 12); sub.textColor = .fdSubtext
+        let title = UILabel(); title.text = "健康服务"; title.font = .fdH2; title.textColor = .fdText
+        let sub = UILabel(); sub.text = "德系健康管理 · 9 大产品线"; sub.font = .fdCaption; sub.textColor = .fdSubtext
         [title, sub].forEach(header.addSubview)
         title.snp.makeConstraints { $0.top.equalToSuperview().offset(54); $0.leading.equalToSuperview().offset(18) }
         sub.snp.makeConstraints { $0.top.equalTo(title.snp.bottom).offset(2); $0.leading.equalToSuperview().offset(18); $0.bottom.equalToSuperview().offset(-8) }

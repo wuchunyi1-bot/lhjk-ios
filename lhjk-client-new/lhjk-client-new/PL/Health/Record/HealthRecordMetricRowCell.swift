@@ -60,14 +60,14 @@ final class HealthRecordMetricRowCell: UITableViewCell {
         // Label
         let label = UILabel()
         label.text = metric.label
-        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.font = .fdBody
         label.textColor = .fdText
         row.addArrangedSubview(label)
 
         // Time (flex fill)
         let timeLabel = UILabel()
         timeLabel.text = metric.time
-        timeLabel.font = .systemFont(ofSize: 11)
+        timeLabel.font = .fdMicro
         timeLabel.textColor = .fdMuted
         timeLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
         row.addArrangedSubview(timeLabel)
@@ -78,7 +78,7 @@ final class HealthRecordMetricRowCell: UITableViewCell {
 
         // Value + Unit
         let valueLabel = UILabel()
-        valueLabel.font = .monospacedSystemFont(ofSize: 16, weight: .bold)
+        valueLabel.font = .fdMonoFont(ofSize: 16, weight: .bold)
         valueLabel.textColor = .fdText
         valueLabel.text = metric.value
         row.addArrangedSubview(valueLabel)
@@ -86,7 +86,7 @@ final class HealthRecordMetricRowCell: UITableViewCell {
         if !metric.unit.isEmpty {
             let unitLabel = UILabel()
             unitLabel.text = metric.unit
-            unitLabel.font = .systemFont(ofSize: 11)
+            unitLabel.font = .fdMicro
             unitLabel.textColor = .fdSubtext
             row.addArrangedSubview(unitLabel)
         }
@@ -98,7 +98,7 @@ final class HealthRecordMetricRowCell: UITableViewCell {
         let container = UIView()
         let label = UILabel()
         label.text = status
-        label.font = .systemFont(ofSize: 10, weight: .semibold)
+        label.font = .fdMicroSemibold
         label.textAlignment = .center
 
         switch type {

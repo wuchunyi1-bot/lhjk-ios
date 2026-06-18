@@ -147,7 +147,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             v.clipsToBounds = true
             let label = UILabel()
             label.text = avatarChar
-            label.font = .systemFont(ofSize: 22, weight: .semibold)
+            label.font = .fdH2
             label.textColor = UIColor(hexString: "#7B5E40")
             v.addSubview(label)
             label.snp.makeConstraints { $0.center.equalToSuperview() }
@@ -157,7 +157,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         let nameLabel: UILabel = {
             let l = UILabel()
             l.text = userName
-            l.font = .systemFont(ofSize: 20, weight: .bold)
+            l.font = .fdH2
             l.textColor = .fdText
             return l
         }()
@@ -180,7 +180,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             b.setImage(UIImage(systemName: "chevron.right")?.withRenderingMode(.alwaysTemplate), for: .normal)
             b.tintColor = .fdText2
             b.setTitleColor(.fdText2, for: .normal)
-            b.titleLabel?.font = .systemFont(ofSize: 11)
+            b.titleLabel?.font = .fdMicro
             b.backgroundColor = UIColor.white.withAlphaComponent(0.65)
             b.layer.cornerRadius = 999
             b.layer.borderWidth = 1
@@ -197,7 +197,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             b.setImage(UIImage(systemName: "heart")?.withRenderingMode(.alwaysTemplate), for: .normal)
             b.tintColor = .white
             b.setTitleColor(.white, for: .normal)
-            b.titleLabel?.font = .systemFont(ofSize: 11, weight: .semibold)
+            b.titleLabel?.font = .fdMicroSemibold
             b.backgroundColor = .fdPrimary
             b.layer.cornerRadius = 999
             b.contentEdgeInsets = UIEdgeInsets(top: 4, left: 12, bottom: 4, right: 12)
@@ -243,17 +243,17 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
 
             let titleLbl = UILabel()
             titleLbl.text = "会员中心"
-            titleLbl.font = .systemFont(ofSize: 12, weight: .medium)
+            titleLbl.font = .fdCaption
             titleLbl.textColor = .fdSubtext
 
             let levelLbl = UILabel()
             levelLbl.text = membershipLevel
-            levelLbl.font = .systemFont(ofSize: 13, weight: .bold)
+            levelLbl.font = .fdCaptionSemibold
             levelLbl.textColor = .fdPrimary
 
             let moreLbl = UILabel()
             moreLbl.text = "查看更多 ›"
-            moreLbl.font = .systemFont(ofSize: 12, weight: .regular)
+            moreLbl.font = .fdCaption
             moreLbl.textColor = .fdSubtext
 
             [titleLbl, levelLbl, moreLbl].forEach(card.addSubview)
@@ -297,12 +297,12 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
                 let valLbl = UILabel()
                 valLbl.text = value
                 valLbl.textColor = accent ? .fdPrimary : .fdText
-                valLbl.font = .systemFont(ofSize: 22, weight: .bold)
+                valLbl.font = .fdH2
                 valLbl.textAlignment = .center
 
                 let lblLbl = UILabel()
                 lblLbl.text = label
-                lblLbl.font = .systemFont(ofSize: 11)
+                lblLbl.font = .fdMicro
                 lblLbl.textColor = .fdSubtext
                 lblLbl.textAlignment = .center
 
@@ -351,7 +351,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         let footer = UIView()
         let btn = UIButton(type: .system)
         btn.setTitle("退出登录", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+        btn.titleLabel?.font = .fdBody
         btn.setTitleColor(.fdDanger, for: .normal)
         btn.backgroundColor = .fdSurface
         btn.layer.cornerRadius = 18

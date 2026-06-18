@@ -52,8 +52,8 @@ final class HealthReportViewController: BaseViewController {
         let seg = UISegmentedControl(items: ["周报", "阶段小结"])
         seg.selectedSegmentIndex = 0
         seg.selectedSegmentTintColor = .fdPrimary
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.systemFont(ofSize: 13, weight: .semibold)], for: .selected)
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.systemFont(ofSize: 13)], for: .normal)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.fdCaptionSemibold], for: .selected)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.fdCaption], for: .normal)
         seg.backgroundColor = .fdBg2
         seg.addTarget(self, action: #selector(segmentChanged(_:)), for: .valueChanged)
         return seg

@@ -9,14 +9,14 @@ final class SectionTitleView: UIView {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 14, weight: .semibold)
+        label.font = .fdBodySemibold
         label.textColor = .fdSubtext
         return label
     }()
 
     private let moreButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.titleLabel?.font = .systemFont(ofSize: 13)
+        btn.titleLabel?.font = .fdCaption
         btn.setTitleColor(.fdSubtext, for: .normal)
         return btn
     }()

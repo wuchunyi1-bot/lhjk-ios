@@ -41,7 +41,7 @@ final class VerifyCodeButton: UIButton {
     // MARK: - Style
 
     private func setupStyle() {
-        titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+        titleLabel?.font = .fdCaptionSemibold
         layer.cornerRadius = 12
         contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
         updateToDefaultState()

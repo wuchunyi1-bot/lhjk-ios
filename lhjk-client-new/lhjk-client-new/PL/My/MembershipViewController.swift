@@ -63,7 +63,7 @@ fileprivate final class BenefitListCell: UITableViewCell {
     }
 
     private func lbl(_ t: String, size: CGFloat, weight: UIFont.Weight = .regular, color: UIColor) -> UILabel {
-        let l = UILabel(); l.text = t; l.font = .systemFont(ofSize: size, weight: weight); l.textColor = color; return l
+        let l = UILabel(); l.text = t; l.font = .fdFont(ofSize: size, weight: weight); l.textColor = color; return l
     }
 }
 
@@ -93,7 +93,7 @@ fileprivate final class UpgradePlanCell: UITableViewCell {
         let info = UIStackView(arrangedSubviews: [name, tag]); info.axis = .vertical; info.spacing = 6
         card.addSubview(info); info.snp.makeConstraints { $0.leading.equalToSuperview().inset(16); $0.centerY.equalToSuperview() }
 
-        let btn = UIButton(type: .system); btn.setTitle("了解", for: .normal); btn.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+        let btn = UIButton(type: .system); btn.setTitle("了解", for: .normal); btn.titleLabel?.font = .fdCaptionSemibold
         btn.setTitleColor(.white, for: .normal); btn.backgroundColor = p.accent; btn.layer.cornerRadius = 999
         btn.snp.makeConstraints { $0.width.equalTo(52); $0.height.equalTo(28) }
         let priceRow = UIStackView(arrangedSubviews: [lbl(p.price, size: 18, weight: .bold, color: .fdPrimary, mono: true), lbl(p.unit, size: 12, color: .fdSubtext), btn])
@@ -102,7 +102,7 @@ fileprivate final class UpgradePlanCell: UITableViewCell {
     }
 
     private func lbl(_ t: String, size: CGFloat, weight: UIFont.Weight = .regular, color: UIColor, mono: Bool = false) -> UILabel {
-        let l = UILabel(); l.text = t; l.textColor = color; l.font = mono ? .monospacedSystemFont(ofSize: size, weight: weight) : .systemFont(ofSize: size, weight: weight); return l
+        let l = UILabel(); l.text = t; l.textColor = color; l.font = mono ? .fdMonoFont(ofSize: size, weight: weight) : .fdFont(ofSize: size, weight: weight); return l
     }
 }
 
@@ -156,7 +156,7 @@ final class MembershipViewController: BaseViewController {
         card.addSubview(blob); blob.snp.makeConstraints { $0.top.trailing.equalToSuperview().inset(-30); $0.size.equalTo(120) }
 
         func hlbl(_ t: String, s: CGFloat, w: UIFont.Weight = .regular, c: UIColor = .white) -> UILabel {
-            let l = UILabel(); l.text = t; l.font = .systemFont(ofSize: s, weight: w); l.textColor = c; return l
+            let l = UILabel(); l.text = t; l.font = .fdFont(ofSize: s, weight: w); l.textColor = c; return l
         }
         let label = hlbl("当前等级", s: 12, c: UIColor.white.withAlphaComponent(0.85))
         let level = hlbl("健康大会员", s: 26, w: .bold)

@@ -56,7 +56,7 @@ final class HealthRecordLifestyleCell: UITableViewCell {
 
         let label = UILabel()
         label.text = item.label
-        label.font = .systemFont(ofSize: 13, weight: .semibold)
+        label.font = .fdCaptionSemibold
         label.textColor = .fdText
         header.addArrangedSubview(label)
 
@@ -68,7 +68,7 @@ final class HealthRecordLifestyleCell: UITableViewCell {
         // Body: summary
         let body = UILabel()
         body.text = item.summary
-        body.font = .systemFont(ofSize: 12)
+        body.font = .fdCaption
         body.textColor = .fdText2
         body.numberOfLines = 0
 

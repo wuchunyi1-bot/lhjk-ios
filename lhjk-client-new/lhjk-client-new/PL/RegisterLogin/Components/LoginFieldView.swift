@@ -19,7 +19,7 @@ final class LoginFieldView: UIView {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 13, weight: .semibold)
+        label.font = .fdCaptionSemibold
         label.textColor = .fdSubtext
         return label
     }()
@@ -35,7 +35,7 @@ final class LoginFieldView: UIView {
 
     let textField: UITextField = {
         let tf = UITextField()
-        tf.font = .systemFont(ofSize: 15)
+        tf.font = .fdBody
         tf.textColor = .fdText
         tf.borderStyle = .none
         return tf

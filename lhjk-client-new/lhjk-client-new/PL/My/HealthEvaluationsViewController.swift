@@ -40,7 +40,7 @@ final class HealthEvaluationsViewController: BaseViewController {
 
             let label = UILabel()
             label.text = "📋 还有 \(pendingCount) 项评估待完成"
-            label.font = .systemFont(ofSize: 14, weight: .medium)
+            label.font = .fdBody
             label.textColor = .fdPrimary
             bar.addSubview(label)
             label.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 14, bottom: 10, right: 14)) }
@@ -69,19 +69,19 @@ final class HealthEvaluationsViewController: BaseViewController {
 
         let iconLbl = UILabel()
         iconLbl.text = eval.emoji
-        iconLbl.font = .systemFont(ofSize: 22)
+        iconLbl.font = .fdH2
         iconView.addSubview(iconLbl)
         iconLbl.snp.makeConstraints { $0.center.equalToSuperview() }
 
         // Main info
         let titleLbl = UILabel()
         titleLbl.text = eval.title
-        titleLbl.font = .systemFont(ofSize: 15, weight: .bold)
+        titleLbl.font = .fdBodyBold
         titleLbl.textColor = .fdText
 
         let metaLbl = UILabel()
         metaLbl.text = "\(eval.initiator) · \(eval.due)"
-        metaLbl.font = .systemFont(ofSize: 12)
+        metaLbl.font = .fdCaption
         metaLbl.textColor = .fdSubtext
 
         // Right side
@@ -98,7 +98,7 @@ final class HealthEvaluationsViewController: BaseViewController {
         if eval.status == "pending" {
             let startLbl = UILabel()
             startLbl.text = "开始 ›"
-            startLbl.font = .systemFont(ofSize: 13, weight: .semibold)
+            startLbl.font = .fdCaptionSemibold
             startLbl.textColor = .fdPrimary
             rightCol.addArrangedSubview(startLbl)
         }
@@ -136,7 +136,7 @@ final class HealthEvaluationsViewController: BaseViewController {
         v.layer.cornerRadius = 999
         let l = UILabel()
         l.text = text
-        l.font = .systemFont(ofSize: 10, weight: .semibold)
+        l.font = .fdMicroSemibold
         l.textColor = fg
         v.addSubview(l)
         l.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }

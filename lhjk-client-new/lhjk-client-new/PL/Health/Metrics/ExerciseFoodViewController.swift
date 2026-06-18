@@ -13,10 +13,10 @@ final class ExerciseFoodViewController: BaseViewController {
 
         // Calorie summary card
         let calCard = UIView(); calCard.backgroundColor = UIColor(hexString: "#FF7A50"); calCard.layer.cornerRadius = 24
-        let calTitle = UILabel(); calTitle.text = "今日热量"; calTitle.font = .systemFont(ofSize: 13); calTitle.textColor = UIColor.white.withAlphaComponent(0.8)
-        let calVal = UILabel(); calVal.text = "1,530"; calVal.font = .systemFont(ofSize: 42, weight: .bold); calVal.textColor = .white
-        let calUnit = UILabel(); calUnit.text = "/ 2,130 kcal"; calUnit.font = .systemFont(ofSize: 15); calUnit.textColor = UIColor.white.withAlphaComponent(0.7)
-        let remain = UILabel(); remain.text = "还可摄入 600 kcal"; remain.font = .systemFont(ofSize: 13); remain.textColor = UIColor.white.withAlphaComponent(0.85)
+        let calTitle = UILabel(); calTitle.text = "今日热量"; calTitle.font = .fdCaption; calTitle.textColor = UIColor.white.withAlphaComponent(0.8)
+        let calVal = UILabel(); calVal.text = "1,530"; calVal.font = .fdFont(ofSize: 42, weight: .bold); calVal.textColor = .white
+        let calUnit = UILabel(); calUnit.text = "/ 2,130 kcal"; calUnit.font = .fdBody; calUnit.textColor = UIColor.white.withAlphaComponent(0.7)
+        let remain = UILabel(); remain.text = "还可摄入 600 kcal"; remain.font = .fdCaption; remain.textColor = UIColor.white.withAlphaComponent(0.85)
         calCard.addSubview(calTitle); calCard.addSubview(calVal); calCard.addSubview(calUnit); calCard.addSubview(remain)
         c.addSubview(calCard)
         calCard.snp.makeConstraints { $0.top.equalToSuperview().offset(12); $0.leading.trailing.equalToSuperview().inset(pad) }
@@ -27,7 +27,7 @@ final class ExerciseFoodViewController: BaseViewController {
 
         // Nutrition card
         let nutCard = UIView(); nutCard.backgroundColor = .fdSurface; nutCard.layer.cornerRadius = 18; nutCard.addFundeShadow()
-        let nutTitle = UILabel(); nutTitle.text = "营养摄入"; nutTitle.font = .systemFont(ofSize: 14, weight: .semibold); nutTitle.textColor = .fdText
+        let nutTitle = UILabel(); nutTitle.text = "营养摄入"; nutTitle.font = .fdBodySemibold; nutTitle.textColor = .fdText
         nutCard.addSubview(nutTitle); nutTitle.snp.makeConstraints { $0.top.leading.equalToSuperview().inset(16) }
 
         let nutrients: [(String, Int, Int, UIColor)] = [
@@ -38,11 +38,11 @@ final class ExerciseFoodViewController: BaseViewController {
         var prevNut: UIView = nutTitle
         for (label, cur, tgt, color) in nutrients {
             let row = UIView()
-            let l = UILabel(); l.text = label; l.font = .systemFont(ofSize: 13); l.textColor = .fdSubtext; l.snp.makeConstraints { $0.width.equalTo(72) }
+            let l = UILabel(); l.text = label; l.font = .fdCaption; l.textColor = .fdSubtext; l.snp.makeConstraints { $0.width.equalTo(72) }
             let barBg = UIView(); barBg.backgroundColor = .fdBorder; barBg.layer.cornerRadius = 3
             let barFill = UIView(); barFill.backgroundColor = color; barFill.layer.cornerRadius = 3
             barBg.addSubview(barFill)
-            let pct = UILabel(); pct.text = "\(cur) / \(tgt) g"; pct.font = .systemFont(ofSize: 12); pct.textColor = .fdMuted; pct.textAlignment = .right; pct.snp.makeConstraints { $0.width.equalTo(80) }
+            let pct = UILabel(); pct.text = "\(cur) / \(tgt) g"; pct.font = .fdCaption; pct.textColor = .fdMuted; pct.textAlignment = .right; pct.snp.makeConstraints { $0.width.equalTo(80) }
             row.addSubview(l); row.addSubview(barBg); row.addSubview(pct)
             barBg.snp.makeConstraints { $0.centerY.equalToSuperview(); $0.height.equalTo(6) }
             barFill.snp.makeConstraints { $0.leading.top.bottom.equalToSuperview(); $0.width.equalTo(barBg).multipliedBy(min(CGFloat(cur) / CGFloat(tgt), 1.0)) }
@@ -64,9 +64,9 @@ final class ExerciseFoodViewController: BaseViewController {
 
         // Exercise card
         let exCard = UIView(); exCard.backgroundColor = .fdSurface; exCard.layer.cornerRadius = 18; exCard.addFundeShadow()
-        let exTitle = UILabel(); exTitle.text = "今日运动"; exTitle.font = .systemFont(ofSize: 14, weight: .semibold); exTitle.textColor = .fdText
-        let stepsLbl = UILabel(); stepsLbl.text = "6,230 步"; stepsLbl.font = .systemFont(ofSize: 28, weight: .bold); stepsLbl.textColor = .fdText
-        let stepsHint = UILabel(); stepsHint.text = "消耗约 280 kcal · 目标 8,000 步"; stepsHint.font = .systemFont(ofSize: 13); stepsHint.textColor = .fdSubtext
+        let exTitle = UILabel(); exTitle.text = "今日运动"; exTitle.font = .fdBodySemibold; exTitle.textColor = .fdText
+        let stepsLbl = UILabel(); stepsLbl.text = "6,230 步"; stepsLbl.font = .fdH1; stepsLbl.textColor = .fdText
+        let stepsHint = UILabel(); stepsHint.text = "消耗约 280 kcal · 目标 8,000 步"; stepsHint.font = .fdCaption; stepsHint.textColor = .fdSubtext
         exCard.addSubview(exTitle); exCard.addSubview(stepsLbl); exCard.addSubview(stepsHint)
         c.addSubview(exCard)
         exCard.snp.makeConstraints { $0.top.equalTo(nutCard.snp.bottom).offset(12); $0.leading.trailing.equalToSuperview().inset(pad) }
@@ -77,7 +77,7 @@ final class ExerciseFoodViewController: BaseViewController {
         // AI food button
         let aiBtn = UIButton(type: .system)
         aiBtn.setTitle("📸 AI 拍照识别食物", for: .normal)
-        aiBtn.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold); aiBtn.setTitleColor(.fdPrimary, for: .normal)
+        aiBtn.titleLabel?.font = .fdBodySemibold; aiBtn.setTitleColor(.fdPrimary, for: .normal)
         aiBtn.backgroundColor = .fdPrimarySoft; aiBtn.layer.cornerRadius = 14
         c.addSubview(aiBtn); aiBtn.snp.makeConstraints { $0.top.equalTo(exCard.snp.bottom).offset(16); $0.leading.trailing.equalToSuperview().inset(pad); $0.height.equalTo(50); $0.bottom.equalToSuperview().offset(-20) }
     }

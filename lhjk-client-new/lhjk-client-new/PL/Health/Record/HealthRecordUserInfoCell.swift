@@ -106,7 +106,7 @@ final class HealthRecordUserInfoCell: UITableViewCell {
 
         let label = UILabel()
         label.text = text
-        label.font = .systemFont(ofSize: 18, weight: .semibold)
+        label.font = .fdH3
         label.textColor = UIColor(hexString: "#7B5E40")
         label.textAlignment = .center
         container.addSubview(label)
@@ -123,7 +123,7 @@ final class HealthRecordUserInfoCell: UITableViewCell {
 
         let nameLbl = UILabel()
         nameLbl.text = name
-        nameLbl.font = .systemFont(ofSize: 17, weight: .bold)
+        nameLbl.font = .fdH2
         nameLbl.textColor = .fdText
         row.addArrangedSubview(nameLbl)
 
@@ -141,7 +141,7 @@ final class HealthRecordUserInfoCell: UITableViewCell {
 
         let label = UILabel()
         label.text = text
-        label.font = .systemFont(ofSize: 10, weight: .semibold)
+        label.font = .fdMicroSemibold
         label.textColor = .fdPrimary
         container.addSubview(label)
         label.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 1, left: 6, bottom: 1, right: 6)) }
@@ -157,13 +157,13 @@ final class HealthRecordUserInfoCell: UITableViewCell {
 
         let label = UILabel()
         label.text = "档案完整度"
-        label.font = .systemFont(ofSize: 11)
+        label.font = .fdMicro
         label.textColor = .fdSubtext
         row.addArrangedSubview(label)
 
         let pctLabel = UILabel()
         pctLabel.text = "\(percentage)%"
-        pctLabel.font = .monospacedSystemFont(ofSize: 14, weight: .bold)
+        pctLabel.font = .fdMonoFont(ofSize: 14, weight: .bold)
         pctLabel.textColor = .fdPrimary
         row.addArrangedSubview(pctLabel)
 
@@ -191,7 +191,7 @@ final class HealthRecordUserInfoCell: UITableViewCell {
     private func buildSixDimButton() -> UIButton {
         let btn = UIButton(type: .system)
         btn.setTitle("六维评测 ›", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 12, weight: .semibold)
+        btn.titleLabel?.font = .fdCaptionSemibold
         btn.setTitleColor(.white, for: .normal)
         btn.backgroundColor = .fdPrimary
         btn.layer.cornerRadius = 20

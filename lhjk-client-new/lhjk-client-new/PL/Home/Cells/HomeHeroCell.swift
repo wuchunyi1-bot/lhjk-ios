@@ -42,7 +42,7 @@ final class HomeHeroCell: UITableViewCell {
     // Top bar
     private let nameLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 22, weight: .semibold)
+        l.font = .fdH2
         l.textColor = .white
         return l
     }()
@@ -68,14 +68,14 @@ final class HomeHeroCell: UITableViewCell {
     }()
     private let scoreNumLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 38, weight: .bold)
+        l.font = .fdFont(ofSize: 38, weight: .bold)
         l.textColor = .white
         return l
     }()
     private let scoreLabel: UILabel = {
         let l = UILabel()
         l.text = "SCORE"
-        l.font = .systemFont(ofSize: 9)
+        l.font = .fdMicro
         l.textColor = UIColor.white.withAlphaComponent(0.85)
         return l
     }()
@@ -95,14 +95,14 @@ final class HomeHeroCell: UITableViewCell {
     }()
     private let riskLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 11, weight: .semibold)
+        l.font = .fdMicroSemibold
         l.textColor = UIColor(hexString: "#7A3F00")
         return l
     }()
 
     private let hintLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 14, weight: .medium)
+        l.font = .fdBody
         l.textColor = .white
         l.numberOfLines = 0
         return l
@@ -144,7 +144,7 @@ final class HomeHeroCell: UITableViewCell {
         brandIcon.layer.cornerRadius = 8
         let brandLbl = UILabel()
         brandLbl.text = "富德健康"
-        brandLbl.font = .systemFont(ofSize: 15, weight: .bold)
+        brandLbl.font = .fdBodyBold
         brandLbl.textColor = .white
         brandPill.addSubview(brandIcon)
         brandPill.addSubview(brandLbl)
@@ -263,21 +263,21 @@ final class HomeHeroCell: UITableViewCell {
         let attr = NSMutableAttributedString(
             string: "健管师 · \(advisor)  |  服务剩 ",
             attributes: [
-                .font: UIFont.systemFont(ofSize: 12),
+                .font: UIFont.fdCaption,
                 .foregroundColor: UIColor.white.withAlphaComponent(0.85)
             ]
         )
         attr.append(NSAttributedString(
             string: "\(daysLeft)",
             attributes: [
-                .font: UIFont.systemFont(ofSize: 12, weight: .bold),
+                .font: UIFont.fdCaptionSemibold,
                 .foregroundColor: UIColor.white
             ]
         ))
         attr.append(NSAttributedString(
             string: " 天",
             attributes: [
-                .font: UIFont.systemFont(ofSize: 12),
+                .font: UIFont.fdCaption,
                 .foregroundColor: UIColor.white.withAlphaComponent(0.85)
             ]
         ))
@@ -309,7 +309,7 @@ final class HomeHeroCell: UITableViewCell {
 
         let nameLbl = UILabel()
         nameLbl.text = m.name
-        nameLbl.font = .systemFont(ofSize: 11)
+        nameLbl.font = .fdMicro
         nameLbl.textColor = UIColor.white.withAlphaComponent(0.78)
 
         let tag = UIView()
@@ -319,7 +319,7 @@ final class HomeHeroCell: UITableViewCell {
         tag.layer.cornerRadius = 4
         let tagLbl = UILabel()
         tagLbl.text = m.status
-        tagLbl.font = .systemFont(ofSize: 9, weight: .semibold)
+        tagLbl.font = .fdMicroSemibold
         tagLbl.textColor = isWarning
             ? UIColor(hexString: "#7A3F00")
             : .white
@@ -335,11 +335,11 @@ final class HomeHeroCell: UITableViewCell {
         valRow.spacing = 2
         let valLbl = UILabel()
         valLbl.text = m.value
-        valLbl.font = .systemFont(ofSize: 18, weight: .semibold)
+        valLbl.font = .fdH3
         valLbl.textColor = .white
         let unitLbl = UILabel()
         unitLbl.text = m.unit
-        unitLbl.font = .systemFont(ofSize: 9)
+        unitLbl.font = .fdMicro
         unitLbl.textColor = UIColor.white.withAlphaComponent(0.7)
         valRow.addArrangedSubview(valLbl)
         valRow.addArrangedSubview(unitLbl)

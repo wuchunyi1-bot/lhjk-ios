@@ -13,7 +13,7 @@ final class PaymentViewController: BaseViewController {
 
     private let productLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 18, weight: .medium)
+        label.font = .fdH3Regular
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -21,7 +21,7 @@ final class PaymentViewController: BaseViewController {
 
     private let amountLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 28, weight: .bold)
+        label.font = .fdH1
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -91,7 +91,7 @@ final class PaymentViewController: BaseViewController {
     private func createChannelButton(for channel: PaymentChannel) -> UIButton {
         let button = UIButton(type: .system)
         button.setTitle(channel.displayName, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+        button.titleLabel?.font = .fdBody
         button.backgroundColor = .systemBackground
         button.layer.cornerRadius = 10
         button.layer.borderWidth = 1

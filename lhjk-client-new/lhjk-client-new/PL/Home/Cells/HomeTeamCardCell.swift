@@ -36,7 +36,7 @@ final class HomeTeamCardCell: UITableViewCell {
 
     private let avatarLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 17, weight: .semibold)
+        l.font = .fdH3
         return l
     }()
 
@@ -51,21 +51,21 @@ final class HomeTeamCardCell: UITableViewCell {
 
     private let nameLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 15, weight: .semibold)
+        l.font = .fdBodySemibold
         l.textColor = .fdText
         return l
     }()
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 11)
+        l.font = .fdMicro
         l.textColor = .fdSubtext
         return l
     }()
 
     private let tagLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 11)
+        l.font = .fdMicro
         l.textColor = .fdText2
         l.backgroundColor = .fdBg2
         l.layer.cornerRadius = 6
@@ -82,14 +82,14 @@ final class HomeTeamCardCell: UITableViewCell {
 
     private let statusLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 11, weight: .semibold)
+        l.font = .fdMicroSemibold
         return l
     }()
 
     private let messageButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("发消息", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 12, weight: .semibold)
+        btn.titleLabel?.font = .fdCaptionSemibold
         btn.setTitleColor(.fdPrimary, for: .normal)
         btn.backgroundColor = .fdPrimarySoft
         btn.layer.cornerRadius = 999

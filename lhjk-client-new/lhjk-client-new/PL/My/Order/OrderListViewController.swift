@@ -81,8 +81,8 @@ final class OrderListViewController: BaseViewController {
         let seg = UISegmentedControl(items: tabs)
         seg.selectedSegmentIndex = 0
         seg.selectedSegmentTintColor = .fdPrimary
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.systemFont(ofSize: 12, weight: .semibold)], for: .selected)
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.systemFont(ofSize: 12)], for: .normal)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.fdCaptionSemibold], for: .selected)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.fdCaption], for: .normal)
         seg.backgroundColor = .fdBg2
         seg.addTarget(self, action: #selector(tabChanged(_:)), for: .valueChanged)
         return seg
@@ -113,7 +113,7 @@ final class OrderListViewController: BaseViewController {
         }
         let label = UILabel()
         label.text = "暂无订单"
-        label.font = .systemFont(ofSize: 13)
+        label.font = .fdCaption
         label.textColor = .fdMuted
         label.textAlignment = .center
         v.addSubview(label)

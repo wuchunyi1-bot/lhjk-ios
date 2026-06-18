@@ -19,13 +19,13 @@ final class EcgViewController: BaseViewController {
         // Latest result card (dark green bg)
         let resultCard = UIView(); resultCard.backgroundColor = UIColor(hexString: "#1B5E3B"); resultCard.layer.cornerRadius = 24
         let badge = tag("最新报告", bg: UIColor.white.withAlphaComponent(0.2), fg: .white)
-        let time = UILabel(); time.text = "本月 12 日"; time.font = .systemFont(ofSize: 12); time.textColor = UIColor.white.withAlphaComponent(0.7)
-        let conclusion = UILabel(); conclusion.text = "窦性心律 · 正常心电图"; conclusion.font = .systemFont(ofSize: 20, weight: .bold); conclusion.textColor = .white
-        let hr = UILabel(); hr.text = "心率：76 bpm"; hr.font = .systemFont(ofSize: 14); hr.textColor = UIColor.white.withAlphaComponent(0.85)
+        let time = UILabel(); time.text = "本月 12 日"; time.font = .fdCaption; time.textColor = UIColor.white.withAlphaComponent(0.7)
+        let conclusion = UILabel(); conclusion.text = "窦性心律 · 正常心电图"; conclusion.font = .fdH2; conclusion.textColor = .white
+        let hr = UILabel(); hr.text = "心率：76 bpm"; hr.font = .fdBody; hr.textColor = UIColor.white.withAlphaComponent(0.85)
 
         // Waveform placeholder
         let waveBox = UIView(); waveBox.backgroundColor = UIColor.white.withAlphaComponent(0.08); waveBox.layer.cornerRadius = 12
-        let waveHint = UILabel(); waveHint.text = "📈 ECG 波形图"; waveHint.font = .systemFont(ofSize: 14); waveHint.textColor = UIColor.white.withAlphaComponent(0.5); waveHint.textAlignment = .center
+        let waveHint = UILabel(); waveHint.text = "📈 ECG 波形图"; waveHint.font = .fdBody; waveHint.textColor = UIColor.white.withAlphaComponent(0.5); waveHint.textAlignment = .center
         waveBox.addSubview(waveHint); waveHint.snp.makeConstraints { $0.center.equalToSuperview() }
 
         resultCard.addSubview(badge); resultCard.addSubview(time); resultCard.addSubview(conclusion); resultCard.addSubview(hr); resultCard.addSubview(waveBox)
@@ -43,18 +43,18 @@ final class EcgViewController: BaseViewController {
 
         // HR trend bars
         let trendCard = UIView(); trendCard.backgroundColor = .fdSurface; trendCard.layer.cornerRadius = 18; trendCard.addFundeShadow()
-        let trendTitle = UILabel(); trendTitle.text = "历次测量心率趋势"; trendTitle.font = .systemFont(ofSize: 13, weight: .semibold); trendTitle.textColor = .fdSubtext
+        let trendTitle = UILabel(); trendTitle.text = "历次测量心率趋势"; trendTitle.font = .fdCaptionSemibold; trendTitle.textColor = .fdSubtext
         trendCard.addSubview(trendTitle)
         trendTitle.snp.makeConstraints { $0.top.leading.trailing.equalToSuperview().inset(16) }
 
         var prevBar: UIView = trendTitle
         for (i, item) in ecgHistory.enumerated() {
             let row = UIView()
-            let dateLbl = UILabel(); dateLbl.text = item.date; dateLbl.font = .systemFont(ofSize: 12); dateLbl.textColor = .fdSubtext; dateLbl.textAlignment = .right
+            let dateLbl = UILabel(); dateLbl.text = item.date; dateLbl.font = .fdCaption; dateLbl.textColor = .fdSubtext; dateLbl.textAlignment = .right
             let barBg = UIView(); barBg.backgroundColor = .fdBg2; barBg.layer.cornerRadius = 4
             let barFill = UIView(); barFill.backgroundColor = UIColor(hexString: "#52B96A"); barFill.layer.cornerRadius = 4
             barBg.addSubview(barFill)
-            let valLbl = UILabel(); valLbl.text = "\(item.hr) bpm"; valLbl.font = .systemFont(ofSize: 13, weight: .semibold); valLbl.textColor = .fdText
+            let valLbl = UILabel(); valLbl.text = "\(item.hr) bpm"; valLbl.font = .fdCaptionSemibold; valLbl.textColor = .fdText
             let tagView = tag(item.conclusion, bg: .fdSuccessSoft, fg: .fdSuccess)
             row.addSubview(dateLbl); row.addSubview(barBg); row.addSubview(valLbl); row.addSubview(tagView)
             dateLbl.snp.makeConstraints { $0.leading.equalToSuperview(); $0.centerY.equalToSuperview(); $0.width.equalTo(40) }
@@ -93,24 +93,24 @@ final class EcgViewController: BaseViewController {
     private func makeSeg(_ items: [String]) -> UISegmentedControl {
         let s = UISegmentedControl(items: items); s.selectedSegmentIndex = 2
         s.selectedSegmentTintColor = .fdPrimary; s.backgroundColor = .fdBg2
-        s.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.systemFont(ofSize: 13, weight: .semibold)], for: .selected)
-        s.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.systemFont(ofSize: 13)], for: .normal); return s
+        s.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.fdCaptionSemibold], for: .selected)
+        s.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.fdCaption], for: .normal); return s
     }
     private func tag(_ text: String, bg: UIColor, fg: UIColor) -> UIView {
         let v = UIView(); v.backgroundColor = bg; v.layer.cornerRadius = 999
-        let l = UILabel(); l.text = text; l.font = .systemFont(ofSize: 11); l.textColor = fg
+        let l = UILabel(); l.text = text; l.font = .fdMicro; l.textColor = fg
         v.addSubview(l); l.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }; return v
     }
     private func buildRecords(_ items: [(String, String, String)]) -> UIView {
         let ctr = UIView()
-        let t = UILabel(); t.text = "近期记录"; t.font = .systemFont(ofSize: 14, weight: .semibold); t.textColor = .fdSubtext
+        let t = UILabel(); t.text = "近期记录"; t.font = .fdBodySemibold; t.textColor = .fdSubtext
         ctr.addSubview(t); t.snp.makeConstraints { $0.top.leading.equalToSuperview() }
         let card = UIView(); card.backgroundColor = .fdSurface; card.layer.cornerRadius = 18; card.addFundeShadow()
         ctr.addSubview(card); card.snp.makeConstraints { $0.top.equalTo(t.snp.bottom).offset(12); $0.leading.trailing.equalToSuperview() }
         var prev: UIView?
         for (i, (time, val, src)) in items.enumerated() {
-            let row = UIView(); let tl = UILabel(); tl.text = time; tl.font = .systemFont(ofSize: 13); tl.textColor = .fdText
-            let vl = UILabel(); vl.text = val; vl.font = .systemFont(ofSize: 14, weight: .semibold); vl.textColor = .fdText
+            let row = UIView(); let tl = UILabel(); tl.text = time; tl.font = .fdCaption; tl.textColor = .fdText
+            let vl = UILabel(); vl.text = val; vl.font = .fdBodySemibold; vl.textColor = .fdText
             let icon = UIImageView(image: UIImage(systemName: src == "bluetooth" ? "bluetooth" : "hand.point.up.fill")); icon.tintColor = .fdMuted
             row.addSubview(tl); row.addSubview(vl); row.addSubview(icon)
             tl.snp.makeConstraints { $0.top.equalToSuperview().offset(12); $0.leading.equalToSuperview() }

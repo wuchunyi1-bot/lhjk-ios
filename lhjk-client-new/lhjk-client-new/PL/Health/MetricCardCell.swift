@@ -32,27 +32,27 @@ final class MetricCardCell: UICollectionViewCell {
     private let badgeView = UIView()
     private let badgeLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 10, weight: .semibold)
+        l.font = .fdMicroSemibold
         return l
     }()
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 13)
+        l.font = .fdCaption
         l.textColor = .fdSubtext
         return l
     }()
 
     private let valueLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 24, weight: .bold)
+        l.font = .fdH2
         l.textColor = .fdText
         return l
     }()
 
     private let unitLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 11)
+        l.font = .fdMicro
         l.textColor = .fdSubtext
         return l
     }()
@@ -65,7 +65,7 @@ final class MetricCardCell: UICollectionViewCell {
 
     private let timeLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 11)
+        l.font = .fdMicro
         l.textColor = UIColor(hexString: "#1a1a1a")
         l.backgroundColor = UIColor.white.withAlphaComponent(0.95)
         l.layer.cornerRadius = 6

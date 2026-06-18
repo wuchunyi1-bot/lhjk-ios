@@ -26,8 +26,8 @@ final class AppointmentsViewController: BaseViewController {
         let seg = UISegmentedControl(items: ["即将到来", "历史记录"])
         seg.selectedSegmentIndex = 0
         seg.selectedSegmentTintColor = .fdPrimary
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.systemFont(ofSize: 13, weight: .semibold)], for: .selected)
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.systemFont(ofSize: 13)], for: .normal)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.fdCaptionSemibold], for: .selected)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.fdCaption], for: .normal)
         seg.backgroundColor = .fdBg2
         seg.addTarget(self, action: #selector(segmentChanged(_:)), for: .valueChanged)
         view.addSubview(seg)
@@ -90,12 +90,12 @@ final class AppointmentsViewController: BaseViewController {
 
         let daysLabel = UILabel()
         daysLabel.text = "距今还有 \(item.daysLeft) 天"
-        daysLabel.font = .systemFont(ofSize: 13, weight: .bold)
+        daysLabel.font = .fdCaptionSemibold
         daysLabel.textColor = .fdPrimary
 
         let timeLabel = UILabel()
         timeLabel.text = item.time
-        timeLabel.font = .systemFont(ofSize: 12)
+        timeLabel.font = .fdCaption
         timeLabel.textColor = .fdSubtext
 
         timeRow.addArrangedSubview(daysLabel)
@@ -104,13 +104,13 @@ final class AppointmentsViewController: BaseViewController {
         // Title
         let titleLbl = UILabel()
         titleLbl.text = item.title
-        titleLbl.font = .systemFont(ofSize: 18, weight: .bold)
+        titleLbl.font = .fdH2
         titleLbl.textColor = .fdText
 
         // Type + place
         let metaLbl = UILabel()
         metaLbl.text = "\(item.type) · \(item.place)"
-        metaLbl.font = .systemFont(ofSize: 13)
+        metaLbl.font = .fdCaption
         metaLbl.textColor = .fdSubtext
 
         // Footer
@@ -172,17 +172,17 @@ final class AppointmentsViewController: BaseViewController {
 
         let titleLbl = UILabel()
         titleLbl.text = item.title
-        titleLbl.font = .systemFont(ofSize: 16, weight: .bold)
+        titleLbl.font = .fdBodyBold
         titleLbl.textColor = .fdText
 
         let metaLbl = UILabel()
         metaLbl.text = "\(item.type) · \(item.time)"
-        metaLbl.font = .systemFont(ofSize: 13)
+        metaLbl.font = .fdCaption
         metaLbl.textColor = .fdSubtext
 
         let placeLbl = UILabel()
         placeLbl.text = item.place
-        placeLbl.font = .systemFont(ofSize: 13)
+        placeLbl.font = .fdCaption
         placeLbl.textColor = .fdSubtext
 
         let footer = UIStackView()
@@ -221,7 +221,7 @@ final class AppointmentsViewController: BaseViewController {
         v.layer.cornerRadius = 999
         let l = UILabel()
         l.text = text
-        l.font = .systemFont(ofSize: 10, weight: .semibold)
+        l.font = .fdMicroSemibold
         l.textColor = fg
         v.addSubview(l)
         l.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }
@@ -231,7 +231,7 @@ final class AppointmentsViewController: BaseViewController {
     private func buildActionBtn(_ title: String, color: UIColor) -> UIButton {
         let btn = UIButton(type: .system)
         btn.setTitle(title, for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 12, weight: .medium)
+        btn.titleLabel?.font = .fdCaption
         btn.setTitleColor(color, for: .normal)
         btn.layer.borderColor = color.cgColor
         btn.layer.borderWidth = 1

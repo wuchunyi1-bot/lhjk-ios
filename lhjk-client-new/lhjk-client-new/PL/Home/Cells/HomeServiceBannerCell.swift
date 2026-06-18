@@ -19,7 +19,7 @@ final class HomeServiceBannerCell: UITableViewCell {
     private let tagLabel: UILabel = {
         let l = UILabel()
         l.text = "进行中"
-        l.font = .systemFont(ofSize: 10, weight: .semibold)
+        l.font = .fdMicroSemibold
         l.textColor = .white
         l.backgroundColor = .fdPrimary
         l.layer.cornerRadius = 4
@@ -31,14 +31,14 @@ final class HomeServiceBannerCell: UITableViewCell {
     private let nameLabel: UILabel = {
         let l = UILabel()
         l.text = "德好 · 慢病逆转管理"
-        l.font = .systemFont(ofSize: 17, weight: .bold)
+        l.font = .fdH2
         l.textColor = .fdText
         return l
     }()
 
     private let descLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 12)
+        l.font = .fdCaption
         l.textColor = .fdText2
         return l
     }()
@@ -146,21 +146,21 @@ final class HomeServiceBannerCell: UITableViewCell {
         let attr = NSMutableAttributedString(
             string: "剩 ",
             attributes: [
-                .font: UIFont.systemFont(ofSize: 11),
+                .font: UIFont.fdMicro,
                 .foregroundColor: UIColor.fdText2
             ]
         )
         attr.append(NSAttributedString(
             string: "\(daysLeft)",
             attributes: [
-                .font: UIFont.systemFont(ofSize: 14, weight: .bold),
+                .font: UIFont.fdBodyBold,
                 .foregroundColor: UIColor.fdPrimary
             ]
         ))
         attr.append(NSAttributedString(
             string: " 天",
             attributes: [
-                .font: UIFont.systemFont(ofSize: 11),
+                .font: UIFont.fdMicro,
                 .foregroundColor: UIColor.fdText2
             ]
         ))

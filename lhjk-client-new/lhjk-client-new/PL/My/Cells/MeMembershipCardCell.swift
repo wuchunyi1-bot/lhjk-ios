@@ -42,7 +42,7 @@ final class MeMembershipCardCell: UITableViewCell {
     @objc private func didTap() { onTap?() }
 
     private func label(_ t: String, size: CGFloat, weight: UIFont.Weight, color: UIColor) -> UILabel {
-        let l = UILabel(); l.text = t; l.font = .systemFont(ofSize: size, weight: weight); l.textColor = color
+        let l = UILabel(); l.text = t; l.font = .fdFont(ofSize: size, weight: weight); l.textColor = color
         return l
     }
 }

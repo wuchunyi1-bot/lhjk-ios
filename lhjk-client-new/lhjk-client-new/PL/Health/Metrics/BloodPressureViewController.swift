@@ -47,8 +47,8 @@ final class BloodPressureViewController: BaseViewController {
         let seg = UISegmentedControl(items: periods)
         seg.selectedSegmentIndex = period
         seg.selectedSegmentTintColor = .fdPrimary
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.systemFont(ofSize: 13, weight: .semibold)], for: .selected)
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.systemFont(ofSize: 13)], for: .normal)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.fdCaptionSemibold], for: .selected)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.fdCaption], for: .normal)
         seg.backgroundColor = .fdBg2
         seg.addTarget(self, action: #selector(periodChanged(_:)), for: .valueChanged)
         content.addSubview(seg)
@@ -102,7 +102,7 @@ final class BloodPressureViewController: BaseViewController {
 
         let title = UILabel()
         title.text = "血压趋势"
-        title.font = .systemFont(ofSize: 14, weight: .semibold)
+        title.font = .fdBodySemibold
         title.textColor = .fdText
 
         // Legend
@@ -111,7 +111,7 @@ final class BloodPressureViewController: BaseViewController {
         legendStack.spacing = 16
         for (color, label) in [(UIColor(hexString: "#FF7A50"), "收缩压"), (UIColor(hexString: "#6B9FE4"), "舒张压")] {
             let dot = UIView(); dot.backgroundColor = color; dot.layer.cornerRadius = 4
-            let lbl = UILabel(); lbl.text = label; lbl.font = .systemFont(ofSize: 12); lbl.textColor = .fdSubtext
+            let lbl = UILabel(); lbl.text = label; lbl.font = .fdCaption; lbl.textColor = .fdSubtext
             legendStack.addArrangedSubview(dot); dot.snp.makeConstraints { $0.size.equalTo(8) }
             legendStack.addArrangedSubview(lbl)
         }
@@ -178,9 +178,9 @@ final class BloodPressureViewController: BaseViewController {
             card.layer.shadowRadius = 4
             card.layer.shadowOpacity = 0.02
 
-            let v = UILabel(); v.text = value; v.font = .systemFont(ofSize: 22, weight: .bold); v.textColor = .fdText
-            let u = UILabel(); u.text = unit; u.font = .systemFont(ofSize: 11); u.textColor = .fdSubtext
-            let l = UILabel(); l.text = label; l.font = .systemFont(ofSize: 12); l.textColor = .fdSubtext
+            let v = UILabel(); v.text = value; v.font = .fdH2; v.textColor = .fdText
+            let u = UILabel(); u.text = unit; u.font = .fdMicro; u.textColor = .fdSubtext
+            let l = UILabel(); l.text = label; l.font = .fdCaption; l.textColor = .fdSubtext
 
             card.addSubview(v); card.addSubview(u); card.addSubview(l)
             v.snp.makeConstraints { make in make.top.equalToSuperview().offset(14); make.leading.equalToSuperview().offset(12) }
@@ -195,7 +195,7 @@ final class BloodPressureViewController: BaseViewController {
 
     private func buildRecordsCard() -> UIView {
         let container = UIView()
-        let title = UILabel(); title.text = "近期记录"; title.font = .systemFont(ofSize: 14, weight: .semibold); title.textColor = .fdSubtext
+        let title = UILabel(); title.text = "近期记录"; title.font = .fdBodySemibold; title.textColor = .fdSubtext
         container.addSubview(title)
         title.snp.makeConstraints { make in make.top.leading.equalToSuperview() }
 
@@ -226,7 +226,7 @@ final class BloodPressureViewController: BaseViewController {
 
         let addBtn = UIButton(type: .system)
         addBtn.setTitle("+ 录入数据", for: .normal)
-        addBtn.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+        addBtn.titleLabel?.font = .fdBodySemibold
         addBtn.setTitleColor(.fdPrimary, for: .normal)
         addBtn.backgroundColor = .fdPrimarySoft; addBtn.layer.cornerRadius = 12
         addBtn.addTarget(self, action: #selector(addRecord), for: .touchUpInside)
@@ -240,8 +240,8 @@ final class BloodPressureViewController: BaseViewController {
 
     private func buildRecordRow(time: String, value: String, source: String, showDivider: Bool) -> UIView {
         let row = UIView()
-        let t = UILabel(); t.text = time; t.font = .systemFont(ofSize: 13); t.textColor = .fdText
-        let v = UILabel(); v.text = value; v.font = .systemFont(ofSize: 14, weight: .semibold); v.textColor = .fdText
+        let t = UILabel(); t.text = time; t.font = .fdCaption; t.textColor = .fdText
+        let v = UILabel(); v.text = value; v.font = .fdBodySemibold; v.textColor = .fdText
         let icon = UIImageView(image: UIImage(systemName: source == "bluetooth" ? "bluetooth" : "hand.point.up.fill"))
         icon.tintColor = .fdMuted; icon.contentMode = .scaleAspectFit
         row.addSubview(t); row.addSubview(v); row.addSubview(icon)

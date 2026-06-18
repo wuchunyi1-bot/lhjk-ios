@@ -52,21 +52,21 @@ final class StageReportCell: UITableViewCell {
         // Tag
         tagContainer.backgroundColor = .fdPrimarySoft
         tagContainer.layer.cornerRadius = 999
-        tagLabel.font = .systemFont(ofSize: 10, weight: .semibold)
+        tagLabel.font = .fdMicroSemibold
         tagLabel.textColor = .fdPrimary
         tagContainer.addSubview(tagLabel)
         tagLabel.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }
 
         // Title
-        titleLabel.font = .systemFont(ofSize: 16, weight: .bold)
+        titleLabel.font = .fdBodyBold
         titleLabel.textColor = .fdText
 
         // Date
-        dateLabel.font = .systemFont(ofSize: 12)
+        dateLabel.font = .fdCaption
         dateLabel.textColor = .fdSubtext
 
         // Summary
-        summaryLabel.font = .systemFont(ofSize: 14)
+        summaryLabel.font = .fdBody
         summaryLabel.textColor = .fdText2
         summaryLabel.numberOfLines = 0
 
@@ -75,7 +75,7 @@ final class StageReportCell: UITableViewCell {
 
         // Button
         detailButton.setTitle("查看报告详情", for: .normal)
-        detailButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+        detailButton.titleLabel?.font = .fdBodySemibold
         detailButton.setTitleColor(.fdPrimary, for: .normal)
         detailButton.backgroundColor = .fdPrimarySoft
         detailButton.layer.cornerRadius = 12

@@ -69,13 +69,13 @@ final class WeightViewController: BaseViewController {
 
     private func buildProgressCard(current: Double, target: Double, remaining: Double) -> UIView {
         let card = UIView(); card.backgroundColor = .fdSurface; card.layer.cornerRadius = 18; card.addFundeShadow()
-        let title = UILabel(); title.text = "距离目标还有 \(String(format: "%.1f", remaining)) kg"; title.font = .systemFont(ofSize: 14, weight: .semibold); title.textColor = .fdText
+        let title = UILabel(); title.text = "距离目标还有 \(String(format: "%.1f", remaining)) kg"; title.font = .fdBodySemibold; title.textColor = .fdText
         let progressBg = UIView(); progressBg.backgroundColor = UIColor.fdPrimary.withAlphaComponent(0.14); progressBg.layer.cornerRadius = 4
         let fill = UIView(); fill.backgroundColor = .fdPrimary; fill.layer.cornerRadius = 4
         let start = records.first?.weight ?? target + 5
         let pct = min(max((start - current) / (start - target), 0), 1)
         progressBg.addSubview(fill)
-        let pctLbl = UILabel(); pctLbl.text = "\(Int(pct * 100))%"; pctLbl.font = .systemFont(ofSize: 13, weight: .bold); pctLbl.textColor = .fdPrimary
+        let pctLbl = UILabel(); pctLbl.text = "\(Int(pct * 100))%"; pctLbl.font = .fdCaptionSemibold; pctLbl.textColor = .fdPrimary
         card.addSubview(title); card.addSubview(progressBg); card.addSubview(pctLbl)
         title.snp.makeConstraints { $0.top.leading.equalToSuperview().inset(16) }
         pctLbl.snp.makeConstraints { $0.centerY.equalTo(title); $0.trailing.equalToSuperview().offset(-16) }
@@ -86,13 +86,13 @@ final class WeightViewController: BaseViewController {
 
     private func buildChartCard() -> UIView {
         let card = UIView(); card.backgroundColor = .fdSurface; card.layer.cornerRadius = 18; card.addFundeShadow()
-        let t = UILabel(); t.text = "体重趋势"; t.font = .systemFont(ofSize: 14, weight: .semibold); t.textColor = .fdText
+        let t = UILabel(); t.text = "体重趋势"; t.font = .fdBodySemibold; t.textColor = .fdText
         let dot = UIView(); dot.backgroundColor = UIColor(hexString: "#FF7A50"); dot.layer.cornerRadius = 4
         let targetDot = UIView(); targetDot.backgroundColor = UIColor(hexString: "#6B9FE4"); targetDot.layer.cornerRadius = 4
         let legend = UIStackView(); legend.axis = .horizontal; legend.spacing = 16
         for (d, lbl) in [(dot, "体重"), (targetDot, "目标")] {
             legend.addArrangedSubview(d); d.snp.makeConstraints { $0.size.equalTo(8) }
-            let l = UILabel(); l.text = lbl; l.font = .systemFont(ofSize: 12); l.textColor = .fdSubtext; legend.addArrangedSubview(l)
+            let l = UILabel(); l.text = lbl; l.font = .fdCaption; l.textColor = .fdSubtext; legend.addArrangedSubview(l)
         }
         chartView.applyFundeStyle(); chartView.legend.enabled = false
         card.addSubview(t); card.addSubview(legend); card.addSubview(chartView)
@@ -115,7 +115,7 @@ final class WeightViewController: BaseViewController {
         targetLine.lineColor = UIColor(hexString: "#6B9FE4"); targetLine.lineWidth = 1.5
         targetLine.lineDashLengths = [6, 4]
         targetLine.labelPosition = .rightTop
-        targetLine.valueFont = .systemFont(ofSize: 10)
+        targetLine.valueFont = .fdMicro
         targetLine.valueTextColor = UIColor(hexString: "#6B9FE4")
         chartView.leftAxis.addLimitLine(targetLine)
 
@@ -129,9 +129,9 @@ final class WeightViewController: BaseViewController {
             let row = UIStackView(); row.distribution = .fillEqually; row.spacing = 10
             for (label, value, unit) in rowItems {
                 let card = UIView(); card.backgroundColor = .fdSurface; card.layer.cornerRadius = 14; card.addFundeShadow(radius: 4)
-                let v = UILabel(); v.text = value; v.font = .systemFont(ofSize: 22, weight: .bold); v.textColor = .fdText
-                let u = UILabel(); u.text = unit; u.font = .systemFont(ofSize: 11); u.textColor = .fdSubtext
-                let l = UILabel(); l.text = label; l.font = .systemFont(ofSize: 12); l.textColor = .fdSubtext
+                let v = UILabel(); v.text = value; v.font = .fdH2; v.textColor = .fdText
+                let u = UILabel(); u.text = unit; u.font = .fdMicro; u.textColor = .fdSubtext
+                let l = UILabel(); l.text = label; l.font = .fdCaption; l.textColor = .fdSubtext
                 card.addSubview(v); card.addSubview(u); card.addSubview(l)
                 v.snp.makeConstraints { $0.top.equalToSuperview().offset(14); $0.leading.equalToSuperview().offset(12) }
                 u.snp.makeConstraints { $0.lastBaseline.equalTo(v); $0.leading.equalTo(v.snp.trailing).offset(2) }
@@ -145,14 +145,14 @@ final class WeightViewController: BaseViewController {
 
     private func buildRecords(_ items: [(String, String, String)]) -> UIView {
         let container = UIView()
-        let title = UILabel(); title.text = "近期记录"; title.font = .systemFont(ofSize: 14, weight: .semibold); title.textColor = .fdSubtext
+        let title = UILabel(); title.text = "近期记录"; title.font = .fdBodySemibold; title.textColor = .fdSubtext
         container.addSubview(title); title.snp.makeConstraints { $0.top.leading.equalToSuperview() }
         let card = UIView(); card.backgroundColor = .fdSurface; card.layer.cornerRadius = 18; card.addFundeShadow()
         container.addSubview(card); card.snp.makeConstraints { $0.top.equalTo(title.snp.bottom).offset(12); $0.leading.trailing.equalToSuperview() }
         var prev: UIView?
         for (i, (time, val, src)) in items.enumerated() {
-            let row = UIView(); let t = UILabel(); t.text = time; t.font = .systemFont(ofSize: 13); t.textColor = .fdText
-            let v = UILabel(); v.text = val; v.font = .systemFont(ofSize: 14, weight: .semibold); v.textColor = .fdText
+            let row = UIView(); let t = UILabel(); t.text = time; t.font = .fdCaption; t.textColor = .fdText
+            let v = UILabel(); v.text = val; v.font = .fdBodySemibold; v.textColor = .fdText
             let icon = UIImageView(image: UIImage(systemName: src == "bluetooth" ? "bluetooth" : "hand.point.up.fill")); icon.tintColor = .fdMuted
             row.addSubview(t); row.addSubview(v); row.addSubview(icon)
             t.snp.makeConstraints { $0.top.equalToSuperview().offset(12); $0.leading.equalToSuperview() }
@@ -176,8 +176,8 @@ final class WeightViewController: BaseViewController {
         let seg = UISegmentedControl(items: ["周", "月", "年"])
         seg.selectedSegmentIndex = 1
         seg.selectedSegmentTintColor = .fdPrimary
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.systemFont(ofSize: 13, weight: .semibold)], for: .selected)
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.systemFont(ofSize: 13)], for: .normal)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.fdCaptionSemibold], for: .selected)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.fdCaption], for: .normal)
         seg.backgroundColor = .fdBg2
         return seg
     }

@@ -81,7 +81,7 @@ final class SleepViewController: BaseViewController {
         // 8. Add button
         let btn = UIButton(type: .system)
         btn.setTitle("手动录入睡眠", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 16, weight: .bold)
+        btn.titleLabel?.font = .fdBodyBold
         btn.setTitleColor(.white, for: .normal)
         btn.backgroundColor = .fdPrimary; btn.layer.cornerRadius = 14
         btn.addTarget(self, action: #selector(addRecord), for: .touchUpInside)
@@ -106,10 +106,10 @@ final class SleepViewController: BaseViewController {
         card.backgroundColor = UIColor(hexString: "#2D4A8A")
         card.layer.cornerRadius = 24
 
-        let label = UILabel(); label.text = "昨晚"; label.font = .systemFont(ofSize: 12); label.textColor = UIColor.white.withAlphaComponent(0.8)
-        let total = UILabel(); total.text = "\(latest.total)"; total.font = .systemFont(ofSize: 38, weight: .bold); total.textColor = .white
-        let unit = UILabel(); unit.text = "小时"; unit.font = .systemFont(ofSize: 14); unit.textColor = UIColor.white.withAlphaComponent(0.85)
-        let time = UILabel(); time.text = "\(latest.bedtime) – \(latest.wakeup)"; time.font = .systemFont(ofSize: 12); time.textColor = UIColor.white.withAlphaComponent(0.75)
+        let label = UILabel(); label.text = "昨晚"; label.font = .fdCaption; label.textColor = UIColor.white.withAlphaComponent(0.8)
+        let total = UILabel(); total.text = "\(latest.total)"; total.font = .fdFont(ofSize: 38, weight: .bold); total.textColor = .white
+        let unit = UILabel(); unit.text = "小时"; unit.font = .fdBody; unit.textColor = UIColor.white.withAlphaComponent(0.85)
+        let time = UILabel(); time.text = "\(latest.bedtime) – \(latest.wakeup)"; time.font = .fdCaption; time.textColor = UIColor.white.withAlphaComponent(0.75)
 
         // Score ring
         let ring = UIView()
@@ -117,8 +117,8 @@ final class SleepViewController: BaseViewController {
         ring.layer.borderColor = scoreColor(latest.score).cgColor
         ring.backgroundColor = UIColor.white.withAlphaComponent(0.12)
 
-        let scoreLbl = UILabel(); scoreLbl.text = "\(latest.score)"; scoreLbl.font = .systemFont(ofSize: 22, weight: .bold); scoreLbl.textColor = scoreColor(latest.score)
-        let sub = UILabel(); sub.text = "睡眠分"; sub.font = .systemFont(ofSize: 11); sub.textColor = UIColor.white.withAlphaComponent(0.85)
+        let scoreLbl = UILabel(); scoreLbl.text = "\(latest.score)"; scoreLbl.font = .fdH2; scoreLbl.textColor = scoreColor(latest.score)
+        let sub = UILabel(); sub.text = "睡眠分"; sub.font = .fdMicro; sub.textColor = UIColor.white.withAlphaComponent(0.85)
         ring.addSubview(scoreLbl); ring.addSubview(sub)
         scoreLbl.snp.makeConstraints { make in make.centerX.equalToSuperview(); make.centerY.equalToSuperview().offset(-6) }
         sub.snp.makeConstraints { make in make.centerX.equalToSuperview(); make.top.equalTo(scoreLbl.snp.bottom) }
@@ -138,7 +138,7 @@ final class SleepViewController: BaseViewController {
     private func buildStagesCard() -> UIView {
         let card = UIView(); card.backgroundColor = .fdSurface; card.layer.cornerRadius = 18; card.addFundeShadow()
 
-        let title = UILabel(); title.text = "睡眠结构"; title.font = .systemFont(ofSize: 13, weight: .semibold); title.textColor = .fdSubtext
+        let title = UILabel(); title.text = "睡眠结构"; title.font = .fdCaptionSemibold; title.textColor = .fdSubtext
 
         // Stage bar
         let totalHours = latest.deep + latest.light + latest.rem + latest.awake
@@ -156,7 +156,7 @@ final class SleepViewController: BaseViewController {
         let items = [("深睡", latest.deep, stageColors.deep), ("浅睡", latest.light, stageColors.light), ("REM", latest.rem, stageColors.rem), ("清醒", latest.awake, stageColors.awake)]
         for (name, hours, color) in items {
             let dot = UIView(); dot.backgroundColor = color; dot.layer.cornerRadius = 3
-            let lbl = UILabel(); lbl.text = "\(name) \(hours)h"; lbl.font = .systemFont(ofSize: 12); lbl.textColor = .fdSubtext
+            let lbl = UILabel(); lbl.text = "\(name) \(hours)h"; lbl.font = .fdCaption; lbl.textColor = .fdSubtext
             legend.addArrangedSubview(dot); dot.snp.makeConstraints { $0.size.equalTo(10) }
             legend.addArrangedSubview(lbl)
         }
@@ -174,7 +174,7 @@ final class SleepViewController: BaseViewController {
     private func buildChartCard() -> UIView {
         let card = UIView(); card.backgroundColor = .fdSurface; card.layer.cornerRadius = 18; card.addFundeShadow()
 
-        let title = UILabel(); title.text = "睡眠评分趋势（≥80 优秀）"; title.font = .systemFont(ofSize: 13); title.textColor = .fdSubtext
+        let title = UILabel(); title.text = "睡眠评分趋势（≥80 优秀）"; title.font = .fdCaption; title.textColor = .fdSubtext
 
         barChartView.applyFundeStyle()
         barChartView.legend.enabled = false
@@ -196,7 +196,7 @@ final class SleepViewController: BaseViewController {
 
         let ds = BarChartDataSet(entries: entries, label: "睡眠分")
         ds.drawValuesEnabled = true
-        ds.valueFont = .systemFont(ofSize: 9)
+        ds.valueFont = .fdMicro
         ds.valueTextColor = .fdSubtext
         ds.highlightEnabled = false
 
@@ -214,7 +214,7 @@ final class SleepViewController: BaseViewController {
         refLine.lineColor = UIColor(hexString: "#52B96A").withAlphaComponent(0.3)
         refLine.lineWidth = 1
         refLine.lineDashLengths = [4, 3]
-        refLine.valueFont = .systemFont(ofSize: 10)
+        refLine.valueFont = .fdMicro
         refLine.valueTextColor = UIColor(hexString: "#52B96A")
         barChartView.leftAxis.addLimitLine(refLine)
 
@@ -234,8 +234,8 @@ final class SleepViewController: BaseViewController {
         ]
         for (val, label, color) in items {
             let col = UIStackView(); col.axis = .vertical; col.alignment = .center; col.spacing = 4
-            let v = UILabel(); v.text = val; v.font = .systemFont(ofSize: 22, weight: .bold); v.textColor = color
-            let l = UILabel(); l.text = label; l.font = .systemFont(ofSize: 12); l.textColor = .fdSubtext; l.textAlignment = .center; l.numberOfLines = 0
+            let v = UILabel(); v.text = val; v.font = .fdH2; v.textColor = color
+            let l = UILabel(); l.text = label; l.font = .fdCaption; l.textColor = .fdSubtext; l.textAlignment = .center; l.numberOfLines = 0
             col.addArrangedSubview(v); col.addArrangedSubview(l)
             row.addArrangedSubview(col)
         }
@@ -247,7 +247,7 @@ final class SleepViewController: BaseViewController {
     private func buildRecordsCard() -> UIView {
         let container = UIView()
         let bar = UIView(); bar.backgroundColor = .fdPrimary; bar.layer.cornerRadius = 2
-        let title = UILabel(); title.text = "睡眠记录"; title.font = .systemFont(ofSize: 15, weight: .bold); title.textColor = .fdText
+        let title = UILabel(); title.text = "睡眠记录"; title.font = .fdBodyBold; title.textColor = .fdText
         container.addSubview(bar); container.addSubview(title)
         bar.snp.makeConstraints { make in make.top.leading.equalToSuperview(); make.width.equalTo(3); make.height.equalTo(16) }
         title.snp.makeConstraints { make in make.centerY.equalTo(bar); make.leading.equalTo(bar.snp.trailing).offset(8) }
@@ -264,8 +264,8 @@ final class SleepViewController: BaseViewController {
         var prev: UIView?
         for (i, (time, val, src)) in mockRecords.enumerated() {
             let row = UIView()
-            let t = UILabel(); t.text = time; t.font = .systemFont(ofSize: 13); t.textColor = .fdText
-            let v = UILabel(); v.text = val; v.font = .systemFont(ofSize: 13); v.textColor = .fdSubtext
+            let t = UILabel(); t.text = time; t.font = .fdCaption; t.textColor = .fdText
+            let v = UILabel(); v.text = val; v.font = .fdCaption; v.textColor = .fdSubtext
             let tag = buildTag(src == "bluetooth" ? "蓝牙记录" : "手动记录", isBT: src == "bluetooth")
             row.addSubview(t); row.addSubview(v); row.addSubview(tag)
             t.snp.makeConstraints { $0.top.equalToSuperview().offset(12); $0.leading.equalToSuperview() }
@@ -296,14 +296,14 @@ final class SleepViewController: BaseViewController {
         leftBorder.snp.makeConstraints { make in make.leading.equalToSuperview().offset(16); make.top.bottom.equalToSuperview().inset(14); make.width.equalTo(3) }
 
         let avatar = UIView(); avatar.backgroundColor = UIColor(hexString: "#2D4A8A"); avatar.layer.cornerRadius = 8
-        let avatarLbl = UILabel(); avatarLbl.text = "王"; avatarLbl.font = .systemFont(ofSize: 13, weight: .bold); avatarLbl.textColor = .white
+        let avatarLbl = UILabel(); avatarLbl.text = "王"; avatarLbl.font = .fdCaptionSemibold; avatarLbl.textColor = .white
         avatar.addSubview(avatarLbl); avatarLbl.snp.makeConstraints { $0.center.equalToSuperview() }
 
-        let name = UILabel(); name.text = "王健管师 · 批注"; name.font = .systemFont(ofSize: 14, weight: .semibold); name.textColor = .fdText
+        let name = UILabel(); name.text = "王健管师 · 批注"; name.font = .fdBodySemibold; name.textColor = .fdText
 
         let content = UILabel()
         content.text = "昨晚睡眠质量良好，深度睡眠时长达标。建议保持规律作息，睡前一小时避免使用手机，有助于提升 REM 睡眠比例。"
-        content.font = .systemFont(ofSize: 13); content.textColor = .fdSubtext; content.numberOfLines = 0
+        content.font = .fdCaption; content.textColor = .fdSubtext; content.numberOfLines = 0
 
         card.addSubview(avatar); card.addSubview(name); card.addSubview(content)
         avatar.snp.makeConstraints { make in make.top.equalToSuperview().offset(14); make.leading.equalTo(leftBorder.snp.trailing).offset(12); make.size.equalTo(32) }
@@ -315,7 +315,7 @@ final class SleepViewController: BaseViewController {
 
     private func buildTag(_ text: String, isBT: Bool) -> UIView {
         let v = UIView(); v.backgroundColor = isBT ? UIColor(hexString: "#E8F4FD") : UIColor(hexString: "#F5F5F5"); v.layer.cornerRadius = 999
-        let l = UILabel(); l.text = text; l.font = .systemFont(ofSize: 11); l.textColor = isBT ? UIColor(hexString: "#3D6FB8") : UIColor(hexString: "#999999")
+        let l = UILabel(); l.text = text; l.font = .fdMicro; l.textColor = isBT ? UIColor(hexString: "#3D6FB8") : UIColor(hexString: "#999999")
         v.addSubview(l); l.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }
         return v
     }
@@ -324,8 +324,8 @@ final class SleepViewController: BaseViewController {
         let seg = UISegmentedControl(items: ["日", "周", "月"])
         seg.selectedSegmentIndex = 1
         seg.selectedSegmentTintColor = .fdPrimary
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.systemFont(ofSize: 13, weight: .semibold)], for: .selected)
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.systemFont(ofSize: 13)], for: .normal)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.fdCaptionSemibold], for: .selected)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.fdCaption], for: .normal)
         seg.backgroundColor = .fdBg2
         return seg
     }

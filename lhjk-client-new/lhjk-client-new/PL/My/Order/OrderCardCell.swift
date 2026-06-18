@@ -58,12 +58,12 @@ final class OrderCardCell: UITableViewCell {
 
         // Status badge
         statusContainer.layer.cornerRadius = 999
-        statusLabel.font = .systemFont(ofSize: 10, weight: .semibold)
+        statusLabel.font = .fdMicroSemibold
         statusContainer.addSubview(statusLabel)
         statusLabel.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }
 
         // Header row: name + status
-        nameLabel.font = .systemFont(ofSize: 16, weight: .bold)
+        nameLabel.font = .fdBodyBold
         nameLabel.textColor = .fdText
 
         cardView.addSubview(nameLabel)
@@ -79,7 +79,7 @@ final class OrderCardCell: UITableViewCell {
         }
 
         // Service tag
-        tagLabel.font = .systemFont(ofSize: 12)
+        tagLabel.font = .fdCaption
         tagLabel.textColor = .fdSubtext
         cardView.addSubview(tagLabel)
         tagLabel.snp.makeConstraints { make in
@@ -88,7 +88,7 @@ final class OrderCardCell: UITableViewCell {
         }
 
         // Date
-        dateLabel.font = .systemFont(ofSize: 13)
+        dateLabel.font = .fdCaption
         dateLabel.textColor = .fdSubtext
         cardView.addSubview(dateLabel)
         dateLabel.snp.makeConstraints { make in
@@ -97,7 +97,7 @@ final class OrderCardCell: UITableViewCell {
         }
 
         // Price
-        priceLabel.font = .systemFont(ofSize: 16, weight: .bold)
+        priceLabel.font = .fdBodyBold
         priceLabel.textColor = .fdPrimary
         cardView.addSubview(priceLabel)
         priceLabel.snp.makeConstraints { make in
@@ -115,7 +115,7 @@ final class OrderCardCell: UITableViewCell {
             make.size.equalTo(14)
         }
 
-        daysLabel.font = .systemFont(ofSize: 13)
+        daysLabel.font = .fdCaption
         daysLabel.textColor = .fdPrimary
         daysRow.addSubview(daysLabel)
         daysLabel.snp.makeConstraints { make in

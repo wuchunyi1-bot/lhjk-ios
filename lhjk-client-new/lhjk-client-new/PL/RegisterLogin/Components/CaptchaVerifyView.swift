@@ -25,7 +25,7 @@ final class CaptchaVerifyView: UIView {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.text = "安全验证"
-        label.font = .systemFont(ofSize: 16, weight: .semibold)
+        label.font = .fdBodySemibold
         label.textColor = .fdText
         label.textAlignment = .center
         return label
@@ -50,7 +50,7 @@ final class CaptchaVerifyView: UIView {
     private let puzzleHintLabel: UILabel = {
         let label = UILabel()
         label.text = "请拖动滑块完成验证"
-        label.font = .systemFont(ofSize: 13)
+        label.font = .fdCaption
         label.textColor = .fdSubtext
         label.textAlignment = .center
         return label
@@ -82,7 +82,7 @@ final class CaptchaVerifyView: UIView {
     private let sliderHintLabel: UILabel = {
         let label = UILabel()
         label.text = "拖动滑块完成拼图"
-        label.font = .systemFont(ofSize: 12)
+        label.font = .fdCaption
         label.textColor = .fdMuted
         label.textAlignment = .center
         return label

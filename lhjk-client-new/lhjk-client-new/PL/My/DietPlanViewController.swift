@@ -53,17 +53,17 @@ final class DietPlanViewController: BaseViewController {
 
         let label = UILabel()
         label.text = "推荐热量"
-        label.font = .systemFont(ofSize: 13)
+        label.font = .fdCaption
         label.textColor = .fdSubtext
 
         let value = UILabel()
         value.text = "1550 kcal / 日"
-        value.font = .systemFont(ofSize: 20, weight: .bold)
+        value.font = .fdH2
         value.textColor = .fdText
 
         let btn = UIButton(type: .system)
         btn.setTitle("生成方案", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
+        btn.titleLabel?.font = .fdBodyBold
         btn.setTitleColor(.white, for: .normal)
         btn.backgroundColor = .fdPrimary
         btn.layer.cornerRadius = 12
@@ -100,7 +100,7 @@ final class DietPlanViewController: BaseViewController {
 
         let title = UILabel()
         title.text = "营养占比"
-        title.font = .systemFont(ofSize: 16, weight: .bold)
+        title.font = .fdBodyBold
         title.textColor = .fdText
         card.addSubview(title)
         title.snp.makeConstraints { make in
@@ -131,7 +131,7 @@ final class DietPlanViewController: BaseViewController {
 
         let nameLbl = UILabel()
         nameLbl.text = label
-        nameLbl.font = .systemFont(ofSize: 14)
+        nameLbl.font = .fdBody
         nameLbl.textColor = .fdText2
 
         let barBg = UIView()
@@ -145,7 +145,7 @@ final class DietPlanViewController: BaseViewController {
 
         let pctLbl = UILabel()
         pctLbl.text = "\(pct)%"
-        pctLbl.font = .systemFont(ofSize: 14, weight: .bold)
+        pctLbl.font = .fdBodyBold
         pctLbl.textColor = .fdText
         pctLbl.textAlignment = .right
 
@@ -190,24 +190,24 @@ final class DietPlanViewController: BaseViewController {
         imgBg.layer.cornerRadius = 14
         let imgLbl = UILabel()
         imgLbl.text = meal.3
-        imgLbl.font = .systemFont(ofSize: 14, weight: .bold)
+        imgLbl.font = .fdBodyBold
         imgLbl.textColor = UIColor(hexString: "#1F9A6B")
         imgBg.addSubview(imgLbl)
         imgLbl.snp.makeConstraints { $0.center.equalToSuperview() }
 
         let timeLbl = UILabel()
         timeLbl.text = meal.0
-        timeLbl.font = .systemFont(ofSize: 12)
+        timeLbl.font = .fdCaption
         timeLbl.textColor = .fdSubtext
 
         let nameLbl = UILabel()
         nameLbl.text = meal.1
-        nameLbl.font = .systemFont(ofSize: 15, weight: .bold)
+        nameLbl.font = .fdBodyBold
         nameLbl.textColor = .fdText
 
         let kcalLbl = UILabel()
         kcalLbl.text = "\(meal.2) kcal"
-        kcalLbl.font = .systemFont(ofSize: 13, weight: .bold)
+        kcalLbl.font = .fdCaptionSemibold
         kcalLbl.textColor = .fdPrimary
 
         card.addSubview(imgBg)

@@ -92,12 +92,12 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
 
         let titleLbl = UILabel()
         titleLbl.text = "我的健康"
-        titleLbl.font = .systemFont(ofSize: 22, weight: .bold)
+        titleLbl.font = .fdH2
         titleLbl.textColor = .fdText
 
         let subtitleLbl = UILabel()
         subtitleLbl.text = "档案完整度 \(archiveProgress)% · \(riskLevel)"
-        subtitleLbl.font = .systemFont(ofSize: 12)
+        subtitleLbl.font = .fdCaption
         subtitleLbl.textColor = .fdSubtext
 
         header.addSubview(titleLbl)

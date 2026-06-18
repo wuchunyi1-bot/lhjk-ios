@@ -22,7 +22,7 @@ final class BrandHeaderView: UIView {
     private let logoLabel: UILabel = {
         let label = UILabel()
         label.text = "富德"
-        label.font = .systemFont(ofSize: 22, weight: .heavy)
+        label.font = .fdH2
         label.textColor = .white
         label.textAlignment = .center
         return label
@@ -32,7 +32,7 @@ final class BrandHeaderView: UIView {
     private let appNameLabel: UILabel = {
         let label = UILabel()
         label.text = "富德健康"
-        label.font = .systemFont(ofSize: 22, weight: .bold)
+        label.font = .fdH2
         label.textColor = .fdText
         label.textAlignment = .center
         return label
@@ -42,7 +42,7 @@ final class BrandHeaderView: UIView {
     private let taglineLabel: UILabel = {
         let label = UILabel()
         label.text = "全生命周期健康守护数智化平台"
-        label.font = .systemFont(ofSize: 13)
+        label.font = .fdCaption
         label.textColor = .fdSubtext
         label.textAlignment = .center
         return label

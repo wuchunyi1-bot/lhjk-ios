@@ -16,7 +16,7 @@ final class MessageBubbleCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
         backgroundColor = .clear
-        contentLabel.numberOfLines = 0; contentLabel.font = .systemFont(ofSize: 15)
+        contentLabel.numberOfLines = 0; contentLabel.font = .fdBody
 
         bubbleView.layer.cornerRadius = 16
         contentView.addSubview(bubbleView)
@@ -57,7 +57,7 @@ final class MessageBubbleCell: UITableViewCell {
         }
 
         if let time = showTime {
-            let timeLbl = contentView.viewWithTag(999) as? UILabel ?? { let l = UILabel(); l.tag = 999; l.font = .systemFont(ofSize: 11); l.textColor = .fdMuted; l.textAlignment = .center; contentView.addSubview(l); return l }()
+            let timeLbl = contentView.viewWithTag(999) as? UILabel ?? { let l = UILabel(); l.tag = 999; l.font = .fdMicro; l.textColor = .fdMuted; l.textAlignment = .center; contentView.addSubview(l); return l }()
             timeLbl.text = time
             timeLbl.snp.remakeConstraints { make in
                 make.top.equalToSuperview().offset(6); make.centerX.equalToSuperview()
@@ -87,7 +87,7 @@ final class NotificationCardCell: UITableViewCell {
         let topOffset: CGFloat = showTime != nil ? 32 : 12
 
         if let time = showTime {
-            let tl = UILabel(); tl.text = time; tl.font = .systemFont(ofSize: 11); tl.textColor = .fdMuted; tl.textAlignment = .center
+            let tl = UILabel(); tl.text = time; tl.font = .fdMicro; tl.textColor = .fdMuted; tl.textAlignment = .center
             contentView.addSubview(tl)
             tl.snp.makeConstraints { $0.top.equalToSuperview().offset(6); $0.centerX.equalToSuperview() }
         }
@@ -116,7 +116,7 @@ final class NotificationCardCell: UITableViewCell {
         // Footnote
         if let note = p.footnote {
             let noteBox = UIView(); noteBox.backgroundColor = .fdBg2; noteBox.layer.cornerRadius = 8
-            let nl = UILabel(); nl.text = note; nl.font = .systemFont(ofSize: 12); nl.textColor = .fdSubtext; nl.numberOfLines = 0
+            let nl = UILabel(); nl.text = note; nl.font = .fdCaption; nl.textColor = .fdSubtext; nl.numberOfLines = 0
             noteBox.addSubview(nl)
             nl.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 10, bottom: 6, right: 10)) }
             contentStack.addArrangedSubview(noteBox)
@@ -136,7 +136,7 @@ final class NotificationCardCell: UITableViewCell {
         h.backgroundColor = UIColor(hexString: p.accent.softHex); h.layer.cornerRadius = 8
         let icon = UIImageView(image: UIImage(systemName: p.icon.sfSymbol))
         icon.tintColor = UIColor(hexString: p.accent.mainHex); icon.contentMode = .scaleAspectFit
-        let title = UILabel(); title.text = p.title; title.font = .systemFont(ofSize: 14, weight: .semibold); title.textColor = .fdText
+        let title = UILabel(); title.text = p.title; title.font = .fdBodySemibold; title.textColor = .fdText
         h.addSubview(icon); h.addSubview(title)
         icon.snp.makeConstraints { $0.leading.equalToSuperview().offset(10); $0.centerY.equalToSuperview(); $0.size.equalTo(20) }
         title.snp.makeConstraints { $0.leading.equalTo(icon.snp.trailing).offset(8); $0.centerY.equalToSuperview(); $0.trailing.equalToSuperview().offset(-10) }
@@ -145,8 +145,8 @@ final class NotificationCardCell: UITableViewCell {
 
     private func buildRow(_ row: NotificationRow) -> UIView {
         let r = UIView()
-        let label = UILabel(); label.text = row.label; label.font = .systemFont(ofSize: 12); label.textColor = .fdSubtext
-        let value = UILabel(); value.text = row.value; value.font = .systemFont(ofSize: 14, weight: .medium); value.textColor = .fdText; value.textAlignment = .right
+        let label = UILabel(); label.text = row.label; label.font = .fdCaption; label.textColor = .fdSubtext
+        let value = UILabel(); value.text = row.value; value.font = .fdBody; value.textColor = .fdText; value.textAlignment = .right
         r.addSubview(label); r.addSubview(value)
         label.snp.makeConstraints { $0.leading.top.bottom.equalToSuperview() }
         value.snp.makeConstraints { $0.trailing.equalToSuperview(); $0.centerY.equalToSuperview(); $0.leading.greaterThanOrEqualTo(label.snp.trailing).offset(12) }
@@ -158,7 +158,7 @@ final class NotificationCardCell: UITableViewCell {
             case .warning: badge.backgroundColor = .fdWarningSoft
             case .success: badge.backgroundColor = .fdSuccessSoft
             }
-            let bl = UILabel(); bl.text = text; bl.font = .systemFont(ofSize: 10, weight: .semibold)
+            let bl = UILabel(); bl.text = text; bl.font = .fdMicroSemibold
             switch tone {
             case .danger: bl.textColor = .fdDanger
             case .warning: bl.textColor = UIColor(hexString: "#B47300")
@@ -186,7 +186,7 @@ final class SystemMessageCell: UITableViewCell {
 
     func configure(_ msg: Message) {
         contentView.subviews.forEach { $0.removeFromSuperview() }
-        let l = UILabel(); l.text = msg.content; l.font = .systemFont(ofSize: 12); l.textColor = .fdMuted; l.textAlignment = .center
+        let l = UILabel(); l.text = msg.content; l.font = .fdCaption; l.textColor = .fdMuted; l.textAlignment = .center
         contentView.addSubview(l)
         l.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 40, bottom: 8, right: 40)) }
     }

@@ -42,12 +42,12 @@ final class MeStatsStripCell: UITableViewCell {
             let valLbl = UILabel()
             valLbl.text = item.value
             valLbl.textColor = item.accent ? .fdPrimary : .fdText
-            valLbl.font = .systemFont(ofSize: 22, weight: .bold)
+            valLbl.font = .fdH2
             valLbl.textAlignment = .center
 
             let lblLbl = UILabel()
             lblLbl.text = item.label
-            lblLbl.font = .systemFont(ofSize: 11)
+            lblLbl.font = .fdMicro
             lblLbl.textColor = .fdSubtext
             lblLbl.textAlignment = .center
 

@@ -26,7 +26,7 @@ final class ForgotPasswordViewController: BaseViewController {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.text = "重置密码"
-        label.font = .systemFont(ofSize: 22, weight: .bold)
+        label.font = .fdH2
         label.textColor = .fdText
         label.textAlignment = .center
         return label
@@ -35,7 +35,7 @@ final class ForgotPasswordViewController: BaseViewController {
     private let descriptionLabel: UILabel = {
         let label = UILabel()
         label.text = "请输入手机号，通过验证码设置新密码"
-        label.font = .systemFont(ofSize: 13)
+        label.font = .fdCaption
         label.textColor = .fdSubtext
         label.textAlignment = .center
         return label
@@ -85,7 +85,7 @@ final class ForgotPasswordViewController: BaseViewController {
     private lazy var submitButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("重置密码", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 16, weight: .bold)
+        btn.titleLabel?.font = .fdBodyBold
         btn.setTitleColor(.white, for: .normal)
         btn.backgroundColor = .fdPrimary
         btn.layer.cornerRadius = 18

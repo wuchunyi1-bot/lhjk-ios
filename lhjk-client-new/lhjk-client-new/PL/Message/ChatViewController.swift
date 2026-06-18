@@ -37,7 +37,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
 
     private lazy var textField: UITextField = {
         let tf = UITextField()
-        tf.placeholder = "输入消息..."; tf.font = .systemFont(ofSize: 15)
+        tf.placeholder = "输入消息..."; tf.font = .fdBody
         tf.backgroundColor = .fdBg2; tf.layer.cornerRadius = 18
         tf.returnKeyType = .send; tf.delegate = self
         tf.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 0))
@@ -47,7 +47,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
 
     private lazy var sendButton: UIButton = {
         let b = UIButton(type: .system)
-        b.setTitle("发送", for: .normal); b.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+        b.setTitle("发送", for: .normal); b.titleLabel?.font = .fdBodySemibold
         b.setTitleColor(.fdPrimary, for: .normal); b.setTitleColor(.fdMuted, for: .disabled)
         b.addTarget(self, action: #selector(sendMessage), for: .touchUpInside)
         b.isEnabled = false

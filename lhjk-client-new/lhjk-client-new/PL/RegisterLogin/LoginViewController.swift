@@ -95,7 +95,7 @@ final class LoginViewController: BaseViewController {
     private lazy var forgotPasswordButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("忘记密码", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 13)
+        btn.titleLabel?.font = .fdCaption
         btn.setTitleColor(.fdPrimary, for: .normal)
         btn.addTarget(self, action: #selector(showForgotPassword), for: .touchUpInside)
         return btn
@@ -138,7 +138,7 @@ final class LoginViewController: BaseViewController {
     private lazy var submitButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("登录 / 注册", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 16, weight: .bold)
+        btn.titleLabel?.font = .fdBodyBold
         btn.setTitleColor(.white, for: .normal)
         btn.backgroundColor = .fdPrimary
         btn.layer.cornerRadius = 18
@@ -154,7 +154,7 @@ final class LoginViewController: BaseViewController {
     private lazy var modeSwitchButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("使用账号密码登录", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 13)
+        btn.titleLabel?.font = .fdCaption
         btn.setTitleColor(.fdPrimary, for: .normal)
         btn.addTarget(self, action: #selector(toggleMode), for: .touchUpInside)
         return btn
@@ -447,14 +447,14 @@ final class LoginViewController: BaseViewController {
 
         let title = UILabel()
         title.text = "微信快捷登录"
-        title.font = .systemFont(ofSize: 18, weight: .bold)
+        title.font = .fdH2
         title.textColor = .fdText
         title.textAlignment = .center
         sheet.addSubview(title)
 
         let desc = UILabel()
         desc.text = "将通过微信授权登录富德健康。继续即表示同意《用户协议》与《隐私政策》。"
-        desc.font = .systemFont(ofSize: 13)
+        desc.font = .fdCaption
         desc.textColor = .fdSubtext
         desc.textAlignment = .center
         desc.numberOfLines = 0
@@ -462,7 +462,7 @@ final class LoginViewController: BaseViewController {
 
         let authBtn = UIButton(type: .system)
         authBtn.setTitle("微信登录", for: .normal)
-        authBtn.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+        authBtn.titleLabel?.font = .fdBodySemibold
         authBtn.setTitleColor(.white, for: .normal)
         authBtn.backgroundColor = .fdWechatGreen
         authBtn.layer.cornerRadius = 14
@@ -471,7 +471,7 @@ final class LoginViewController: BaseViewController {
 
         let closeBtn = UIButton(type: .system)
         closeBtn.setTitle("取消", for: .normal)
-        closeBtn.titleLabel?.font = .systemFont(ofSize: 14)
+        closeBtn.titleLabel?.font = .fdBody
         closeBtn.setTitleColor(.fdSubtext, for: .normal)
         closeBtn.addTarget(self, action: #selector(dismissWechatSheet), for: .touchUpInside)
         sheet.addSubview(closeBtn)
@@ -956,7 +956,7 @@ final class LoginViewController: BaseViewController {
 
         let label = UILabel()
         label.text = "为保护您的健康数据安全，登录状态已过期，请重新登录"
-        label.font = .systemFont(ofSize: 12)
+        label.font = .fdCaption
         label.textColor = .fdWarning
         label.numberOfLines = 0
         label.textAlignment = .center

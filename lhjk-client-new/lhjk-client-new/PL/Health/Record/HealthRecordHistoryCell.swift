@@ -71,7 +71,7 @@ final class HealthRecordHistoryCell: UITableViewCell {
 
         let label = UILabel()
         label.text = item.label
-        label.font = .systemFont(ofSize: 13, weight: .semibold)
+        label.font = .fdCaptionSemibold
         label.textColor = .fdText
         container.addSubview(label)
         label.snp.makeConstraints { make in
@@ -81,7 +81,7 @@ final class HealthRecordHistoryCell: UITableViewCell {
 
         let summary = UILabel()
         summary.text = item.summary
-        summary.font = .systemFont(ofSize: 12)
+        summary.font = .fdCaption
         summary.textColor = item.status == .empty ? .fdMuted : .fdText2
         summary.numberOfLines = 0
         container.addSubview(summary)

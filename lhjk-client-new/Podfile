@@ -25,4 +25,10 @@ target 'lhjk-client-new' do
   # —— 折线图 ——
   pod 'DGCharts'
   
+  #----微信登录 ---
+#  pod 'WechatOpenSDK', '>= 2.0.0'
+  
+  #----崩溃统计追踪----
+#  pod 'Bugly'
+  
 end

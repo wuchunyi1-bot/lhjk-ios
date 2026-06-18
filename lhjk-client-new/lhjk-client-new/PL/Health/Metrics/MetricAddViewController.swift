@@ -107,7 +107,7 @@ final class MetricAddViewController: BaseViewController {
         // 4. Save button
         let saveBtn = UIButton(type: .system)
         saveBtn.setTitle("保存", for: .normal)
-        saveBtn.titleLabel?.font = .systemFont(ofSize: 16, weight: .bold)
+        saveBtn.titleLabel?.font = .fdBodyBold
         saveBtn.setTitleColor(.white, for: .normal)
         saveBtn.backgroundColor = .fdPrimary
         saveBtn.layer.cornerRadius = 14
@@ -150,8 +150,8 @@ final class MetricAddViewController: BaseViewController {
 
     private func buildMetaRow(label: String, value: String) -> UIView {
         let row = UIView()
-        let l = UILabel(); l.text = label; l.font = .systemFont(ofSize: 15, weight: .semibold); l.textColor = .fdText
-        let v = UILabel(); v.text = value; v.font = .systemFont(ofSize: 15); v.textColor = .fdSubtext
+        let l = UILabel(); l.text = label; l.font = .fdBodySemibold; l.textColor = .fdText
+        let v = UILabel(); v.text = value; v.font = .fdBody; v.textColor = .fdSubtext
         row.addSubview(l); row.addSubview(v)
         l.snp.makeConstraints { make in make.top.bottom.equalToSuperview().inset(14); make.leading.equalToSuperview() }
         v.snp.makeConstraints { make in make.centerY.equalTo(l); make.trailing.equalToSuperview() }
@@ -165,7 +165,7 @@ final class MetricAddViewController: BaseViewController {
 
         var prevLabel: UIView?
         for extra in extras {
-            let label = UILabel(); label.text = extra.label; label.font = .systemFont(ofSize: 13); label.textColor = .fdSubtext
+            let label = UILabel(); label.text = extra.label; label.font = .fdCaption; label.textColor = .fdSubtext
             card.addSubview(label)
             label.snp.makeConstraints { make in
                 if let prev = prevLabel { make.top.equalTo(prev.snp.bottom).offset(16) } else { make.top.equalToSuperview().inset(14) }
@@ -180,7 +180,7 @@ final class MetricAddViewController: BaseViewController {
             }
             for opt in extra.options {
                 let pill = UIButton(type: .system)
-                pill.setTitle(opt, for: .normal); pill.titleLabel?.font = .systemFont(ofSize: 14)
+                pill.setTitle(opt, for: .normal); pill.titleLabel?.font = .fdBody
                 pill.setTitleColor(.fdText, for: .normal); pill.layer.borderWidth = 1.5; pill.layer.borderColor = UIColor.fdBorder.cgColor
                 pill.layer.cornerRadius = 999; pill.contentEdgeInsets = UIEdgeInsets(top: 7, left: 16, bottom: 7, right: 16)
                 pill.tag = extra.options.firstIndex(of: opt) ?? 0
@@ -227,7 +227,7 @@ final class MetricAddViewController: BaseViewController {
 
         // Title bar
         let bar = UIView(); bar.backgroundColor = .fdPrimary; bar.layer.cornerRadius = 2
-        let title = UILabel(); title.font = .systemFont(ofSize: 15, weight: .bold); title.textColor = .fdText
+        let title = UILabel(); title.font = .fdBodyBold; title.textColor = .fdText
         if let cfg = configs[metricKey] { title.text = cfg.title } else { title.text = "数据录入" }
         card.addSubview(bar); card.addSubview(title)
         bar.snp.makeConstraints { make in make.top.equalToSuperview().offset(18); make.leading.equalToSuperview().inset(16); make.width.equalTo(3); make.height.equalTo(16) }
@@ -236,10 +236,10 @@ final class MetricAddViewController: BaseViewController {
         var prevTitle: UIView = bar
         for field in fields {
             // Header: label + current value
-            let header = UILabel(); header.text = field.label; header.font = .systemFont(ofSize: 14, weight: .semibold); header.textColor = .fdText
-            let valLabel = UILabel(); valLabel.text = formatFieldValue(field); valLabel.font = .systemFont(ofSize: 24, weight: .bold); valLabel.textColor = .fdText
+            let header = UILabel(); header.text = field.label; header.font = .fdBodySemibold; header.textColor = .fdText
+            let valLabel = UILabel(); valLabel.text = formatFieldValue(field); valLabel.font = .fdH2; valLabel.textColor = .fdText
             valLabel.accessibilityIdentifier = "val_\(field.id)"
-            let unitLabel = UILabel(); unitLabel.text = field.unit; unitLabel.font = .systemFont(ofSize: 13); unitLabel.textColor = .fdSubtext
+            let unitLabel = UILabel(); unitLabel.text = field.unit; unitLabel.font = .fdCaption; unitLabel.textColor = .fdSubtext
 
             // Ruler
             let ruler = MetricRulerView(min: field.min, max: field.max, step: field.step, defaultValue: field.defaultValue, labelEvery: field.labelEvery, unit: field.unit)

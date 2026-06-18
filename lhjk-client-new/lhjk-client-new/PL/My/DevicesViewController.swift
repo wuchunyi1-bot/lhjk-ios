@@ -34,12 +34,12 @@ final class DevicesViewController: BaseViewController {
         titleRow.distribution = .equalSpacing
         let titleLbl = UILabel()
         titleLbl.text = "已配对设备"
-        titleLbl.font = .systemFont(ofSize: 14, weight: .semibold)
+        titleLbl.font = .fdBodySemibold
         titleLbl.textColor = .fdSubtext
         let countLbl = UILabel()
         let online = pairedDevices.filter(\.connected).count
         countLbl.text = "\(online) 台在线"
-        countLbl.font = .systemFont(ofSize: 12)
+        countLbl.font = .fdCaption
         countLbl.textColor = .fdSubtext
         titleRow.addArrangedSubview(titleLbl)
         titleRow.addArrangedSubview(countLbl)
@@ -53,7 +53,7 @@ final class DevicesViewController: BaseViewController {
         // Add device button
         let addBtn = UIButton(type: .system)
         addBtn.setTitle("添加新设备", for: .normal)
-        addBtn.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+        addBtn.titleLabel?.font = .fdBodySemibold
         addBtn.setTitleColor(.white, for: .normal)
         addBtn.backgroundColor = .fdPrimary
         addBtn.layer.cornerRadius = 14
@@ -81,28 +81,28 @@ final class DevicesViewController: BaseViewController {
         emojiBg.layer.cornerRadius = 12
         let emojiLbl = UILabel()
         emojiLbl.text = d.emoji
-        emojiLbl.font = .systemFont(ofSize: 28)
+        emojiLbl.font = .fdH1
         emojiBg.addSubview(emojiLbl)
         emojiLbl.snp.makeConstraints { $0.center.equalToSuperview() }
 
         let nameLbl = UILabel()
         nameLbl.text = d.name
-        nameLbl.font = .systemFont(ofSize: 14, weight: .bold)
+        nameLbl.font = .fdBodyBold
         nameLbl.textColor = .fdText
 
         let modelLbl = UILabel()
         modelLbl.text = "\(d.brand) · \(d.model)"
-        modelLbl.font = .systemFont(ofSize: 12)
+        modelLbl.font = .fdCaption
         modelLbl.textColor = .fdSubtext
 
         let syncLbl = UILabel()
         syncLbl.text = "上次同步：\(d.lastSync)"
-        syncLbl.font = .systemFont(ofSize: 11)
+        syncLbl.font = .fdMicro
         syncLbl.textColor = .fdSubtext
 
         let batteryLbl = UILabel()
         batteryLbl.text = "🔋 \(d.battery)%"
-        batteryLbl.font = .systemFont(ofSize: 11, weight: .semibold)
+        batteryLbl.font = .fdMicroSemibold
         batteryLbl.textColor = d.battery > 50 ? .fdSuccess : d.battery > 20 ? .fdWarning : .fdDanger
 
         // Status dot
@@ -112,12 +112,12 @@ final class DevicesViewController: BaseViewController {
 
         let statusLbl = UILabel()
         statusLbl.text = d.connected ? "已连接" : "未连接"
-        statusLbl.font = .systemFont(ofSize: 11)
+        statusLbl.font = .fdMicro
         statusLbl.textColor = .fdSubtext
 
         let unpairBtn = UIButton(type: .system)
         unpairBtn.setTitle("解绑", for: .normal)
-        unpairBtn.titleLabel?.font = .systemFont(ofSize: 11)
+        unpairBtn.titleLabel?.font = .fdMicro
         unpairBtn.setTitleColor(.fdSubtext, for: .normal)
         unpairBtn.layer.borderWidth = 1
         unpairBtn.layer.borderColor = UIColor.fdBorder.cgColor
@@ -182,7 +182,7 @@ final class DevicesViewController: BaseViewController {
 
         let title = UILabel()
         title.text = "连接说明"
-        title.font = .systemFont(ofSize: 13, weight: .semibold)
+        title.font = .fdCaptionSemibold
         title.textColor = .fdSubtext
 
         let steps = ["① 确保设备已开机并开启蓝牙", "② 手机蓝牙保持开启状态", "③ 将设备靠近手机 30cm 以内", "④ 点击「添加新设备」完成配对"]
@@ -204,7 +204,7 @@ final class DevicesViewController: BaseViewController {
         for step in steps {
             let l = UILabel()
             l.text = step
-            l.font = .systemFont(ofSize: 13)
+            l.font = .fdCaption
             l.textColor = .fdText2
             stack.addArrangedSubview(l)
         }

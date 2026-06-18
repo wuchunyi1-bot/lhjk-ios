@@ -80,8 +80,8 @@ final class HealthScoreCardCell: UITableViewCell {
         avatarLbl.snp.makeConstraints { $0.center.equalToSuperview() }
         let textLbl = UILabel(); textLbl.numberOfLines = 0
         let attr = NSMutableAttributedString()
-        attr.append(NSAttributedString(string: "王顾问 · 健管师批注：\n", attributes: [.font: UIFont.systemFont(ofSize: 12, weight: .bold), .foregroundColor: UIColor.fdText]))
-        attr.append(NSAttributedString(string: "您的血压周均值连续 7 天 > 135，需重点关注。我已为您预约下周一三甲随访。", attributes: [.font: UIFont.systemFont(ofSize: 12), .foregroundColor: UIColor.fdText2]))
+        attr.append(NSAttributedString(string: "王顾问 · 健管师批注：\n", attributes: [.font: UIFont.fdCaptionSemibold, .foregroundColor: UIColor.fdText]))
+        attr.append(NSAttributedString(string: "您的血压周均值连续 7 天 > 135，需重点关注。我已为您预约下周一三甲随访。", attributes: [.font: UIFont.fdCaption, .foregroundColor: UIColor.fdText2]))
         textLbl.attributedText = attr
         note.addSubview(avatar)
         note.addSubview(textLbl)
@@ -103,7 +103,7 @@ final class HealthScoreCardCell: UITableViewCell {
     }
 
     private func makeLabel(_ text: String, size: CGFloat, weight: UIFont.Weight, color: UIColor) -> UILabel {
-        let l = UILabel(); l.text = text; l.font = .systemFont(ofSize: size, weight: weight); l.textColor = color
+        let l = UILabel(); l.text = text; l.font = .fdFont(ofSize: size, weight: weight); l.textColor = color
         return l
     }
 }

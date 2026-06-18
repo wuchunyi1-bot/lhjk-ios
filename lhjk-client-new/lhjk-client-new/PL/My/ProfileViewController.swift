@@ -27,7 +27,7 @@ final class ProfileViewController: BaseViewController {
             v.layer.cornerRadius = 24
             let label = UILabel()
             label.text = "秀"
-            label.font = .systemFont(ofSize: 34, weight: .bold)
+            label.font = .fdFont(ofSize: 34, weight: .bold)
             label.textColor = .white
             v.addSubview(label)
             label.snp.makeConstraints { $0.center.equalToSuperview() }
@@ -35,7 +35,7 @@ final class ProfileViewController: BaseViewController {
         }()
         let hint = UILabel()
         hint.text = "点击更换头像"
-        hint.font = .systemFont(ofSize: 13)
+        hint.font = .fdCaption
         hint.textColor = .fdSubtext
         hint.textAlignment = .center
 

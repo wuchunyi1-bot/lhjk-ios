@@ -52,7 +52,7 @@ final class PolicyViewController: BaseViewController {
 
         let nameLbl = UILabel()
         nameLbl.text = name
-        nameLbl.font = .systemFont(ofSize: 16, weight: .bold)
+        nameLbl.font = .fdBodyBold
         nameLbl.textColor = .fdText
 
         let tag = buildTag("有效", bg: .fdSuccessSoft, textColor: .fdSuccess)
@@ -62,12 +62,12 @@ final class PolicyViewController: BaseViewController {
 
         let noLbl = UILabel()
         noLbl.text = "保单号：\(no)"
-        noLbl.font = .systemFont(ofSize: 12)
+        noLbl.font = .fdCaption
         noLbl.textColor = .fdSubtext
 
         let dateLbl = UILabel()
         dateLbl.text = "生效日期：\(date)"
-        dateLbl.font = .systemFont(ofSize: 12)
+        dateLbl.font = .fdCaption
         dateLbl.textColor = .fdSubtext
 
         card.addSubview(headerStack)
@@ -97,7 +97,7 @@ final class PolicyViewController: BaseViewController {
 
         let benefitsTitle = UILabel()
         benefitsTitle.text = "关联健康权益"
-        benefitsTitle.font = .systemFont(ofSize: 13, weight: .semibold)
+        benefitsTitle.font = .fdCaptionSemibold
         benefitsTitle.textColor = .fdText
         card.addSubview(benefitsTitle)
         benefitsTitle.snp.makeConstraints { make in
@@ -134,7 +134,7 @@ final class PolicyViewController: BaseViewController {
 
         let label = UILabel()
         label.text = text
-        label.font = .systemFont(ofSize: 13)
+        label.font = .fdCaption
         label.textColor = .fdSubtext
 
         row.addArrangedSubview(check)
@@ -148,7 +148,7 @@ final class PolicyViewController: BaseViewController {
         v.layer.cornerRadius = 999
         let l = UILabel()
         l.text = text
-        l.font = .systemFont(ofSize: 10, weight: .semibold)
+        l.font = .fdMicroSemibold
         l.textColor = textColor
         v.addSubview(l)
         l.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }

@@ -8,7 +8,7 @@ final class ConversationCell: UITableViewCell {
 
     private let avatarView: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 18, weight: .medium)
+        l.font = .fdH3Regular
         l.textColor = .white
         l.textAlignment = .center
         l.layer.cornerRadius = 22
@@ -17,28 +17,28 @@ final class ConversationCell: UITableViewCell {
     }()
 
     private let nameLabel: UILabel = {
-        let l = UILabel(); l.font = .systemFont(ofSize: 16, weight: .bold); l.textColor = .fdText
+        let l = UILabel(); l.font = .fdBodyBold; l.textColor = .fdText
         return l
     }()
 
     private let teamLabel: UILabel = {
-        let l = UILabel(); l.font = .systemFont(ofSize: 12); l.textColor = .fdSubtext
+        let l = UILabel(); l.font = .fdCaption; l.textColor = .fdSubtext
         return l
     }()
 
     private let timeLabel: UILabel = {
-        let l = UILabel(); l.font = .systemFont(ofSize: 12); l.textColor = .fdMuted; l.textAlignment = .right
+        let l = UILabel(); l.font = .fdCaption; l.textColor = .fdMuted; l.textAlignment = .right
         return l
     }()
 
     private let previewLabel: UILabel = {
-        let l = UILabel(); l.font = .systemFont(ofSize: 14); l.textColor = .fdSubtext; l.numberOfLines = 1
+        let l = UILabel(); l.font = .fdBody; l.textColor = .fdSubtext; l.numberOfLines = 1
         return l
     }()
 
     private let badgeView: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 11, weight: .bold); l.textColor = .white
+        l.font = .fdMicroBold; l.textColor = .white
         l.backgroundColor = .fdDanger; l.textAlignment = .center
         l.layer.cornerRadius = 10; l.clipsToBounds = true
         l.isHidden = true
@@ -94,7 +94,7 @@ final class ConversationCell: UITableViewCell {
     private func makeTagPill(_ tag: ConversationTag) -> UIView {
         let v = UIView()
         v.backgroundColor = UIColor(hexString: tag.bgColor); v.layer.cornerRadius = 999
-        let l = UILabel(); l.text = tag.label; l.font = .systemFont(ofSize: 10, weight: .semibold); l.textColor = UIColor(hexString: tag.textColor)
+        let l = UILabel(); l.text = tag.label; l.font = .fdMicroSemibold; l.textColor = UIColor(hexString: tag.textColor)
         v.addSubview(l)
         l.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }
         return v

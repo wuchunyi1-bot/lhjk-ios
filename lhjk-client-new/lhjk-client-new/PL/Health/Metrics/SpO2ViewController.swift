@@ -22,9 +22,9 @@ final class SpO2ViewController: BaseViewController {
 
         // Latest card
         let latestCard = applyCard(UIView(), bg: UIColor(hexString: "#38B2AC"))
-        let label = UILabel(); label.text = "最新测量 · 今天 07:32"; label.font = .systemFont(ofSize: 12); label.textColor = UIColor.white.withAlphaComponent(0.8)
-        let val = UILabel(); val.text = "98"; val.font = .systemFont(ofSize: 48, weight: .bold); val.textColor = .white
-        let unit = UILabel(); unit.text = "%"; unit.font = .systemFont(ofSize: 18); unit.textColor = UIColor.white.withAlphaComponent(0.85)
+        let label = UILabel(); label.text = "最新测量 · 今天 07:32"; label.font = .fdCaption; label.textColor = UIColor.white.withAlphaComponent(0.8)
+        let val = UILabel(); val.text = "98"; val.font = .fdFont(ofSize: 48, weight: .bold); val.textColor = .white
+        let unit = UILabel(); unit.text = "%"; unit.font = .fdH3Regular; unit.textColor = UIColor.white.withAlphaComponent(0.85)
         let statusBadge = tagView("正常", bg: UIColor.white.withAlphaComponent(0.3), fg: .white)
         c.addSubview(latestCard); latestCard.addSubview(label); latestCard.addSubview(val); latestCard.addSubview(unit); latestCard.addSubview(statusBadge)
         latestCard.snp.makeConstraints { $0.top.equalToSuperview().offset(12); $0.leading.trailing.equalToSuperview().inset(p) }
@@ -35,7 +35,7 @@ final class SpO2ViewController: BaseViewController {
 
         // Reference strip
         let ref = UIView(); ref.backgroundColor = .fdSurface; ref.layer.cornerRadius = 10; ref.addFundeShadow()
-        let refLbl = UILabel(); refLbl.text = "正常范围：95% ~ 100% · 低于 95% 请及时就医"; refLbl.font = .systemFont(ofSize: 12); refLbl.textColor = UIColor(hexString: "#38B2AC")
+        let refLbl = UILabel(); refLbl.text = "正常范围：95% ~ 100% · 低于 95% 请及时就医"; refLbl.font = .fdCaption; refLbl.textColor = UIColor(hexString: "#38B2AC")
         ref.addSubview(refLbl); refLbl.snp.makeConstraints { $0.edges.equalToSuperview().inset(12) }
         c.addSubview(ref); ref.snp.makeConstraints { $0.top.equalTo(latestCard.snp.bottom).offset(10); $0.leading.trailing.equalToSuperview().inset(p) }
 
@@ -79,7 +79,7 @@ final class SpO2ViewController: BaseViewController {
         // 95% reference line
         let refLine = ChartLimitLine(limit: 95, label: "95%")
         refLine.lineColor = UIColor.fdDanger.withAlphaComponent(0.4); refLine.lineWidth = 1.5; refLine.lineDashLengths = [5, 3]
-        refLine.valueFont = .systemFont(ofSize: 10); refLine.valueTextColor = .fdDanger
+        refLine.valueFont = .fdMicro; refLine.valueTextColor = .fdDanger
         chartView.leftAxis.addLimitLine(refLine)
     }
 
@@ -92,21 +92,21 @@ final class SpO2ViewController: BaseViewController {
     private func makeSeg(_ items: [String]) -> UISegmentedControl {
         let s = UISegmentedControl(items: items); s.selectedSegmentIndex = 1
         s.selectedSegmentTintColor = .fdPrimary; s.backgroundColor = .fdBg2
-        s.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.systemFont(ofSize: 13, weight: .semibold)], for: .selected)
-        s.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.systemFont(ofSize: 13)], for: .normal); return s
+        s.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.fdCaptionSemibold], for: .selected)
+        s.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.fdCaption], for: .normal); return s
     }
     private func tagView(_ text: String, bg: UIColor, fg: UIColor) -> UIView {
         let v = UIView(); v.backgroundColor = bg; v.layer.cornerRadius = 999
-        let l = UILabel(); l.text = text; l.font = .systemFont(ofSize: 12); l.textColor = fg
+        let l = UILabel(); l.text = text; l.font = .fdCaption; l.textColor = fg
         v.addSubview(l); l.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }; return v
     }
     private func tripleStat(_ a: (String, String, String), _ b: (String, String, String), _ c: (String, String, String)) -> UIView {
         let row = UIStackView(); row.distribution = .fillEqually; row.spacing = 10
         for (label, value, unit) in [a, b, c] {
             let card = applyCard(UIView(), radius: 14); card.addFundeShadow(radius: 4)
-            let v = UILabel(); v.text = value; v.font = .systemFont(ofSize: 22, weight: .bold); v.textColor = .fdText
-            let u = UILabel(); u.text = unit; u.font = .systemFont(ofSize: 11); u.textColor = .fdSubtext
-            let l = UILabel(); l.text = label; l.font = .systemFont(ofSize: 12); l.textColor = .fdSubtext
+            let v = UILabel(); v.text = value; v.font = .fdH2; v.textColor = .fdText
+            let u = UILabel(); u.text = unit; u.font = .fdMicro; u.textColor = .fdSubtext
+            let l = UILabel(); l.text = label; l.font = .fdCaption; l.textColor = .fdSubtext
             card.addSubview(v); card.addSubview(u); card.addSubview(l)
             v.snp.makeConstraints { $0.top.equalToSuperview().offset(14); $0.leading.equalToSuperview().offset(12) }
             u.snp.makeConstraints { $0.lastBaseline.equalTo(v); $0.leading.equalTo(v.snp.trailing).offset(2) }
@@ -116,14 +116,14 @@ final class SpO2ViewController: BaseViewController {
     }
     private func buildRecords(_ items: [(String, String, String)]) -> UIView {
         let ctr = UIView()
-        let t = UILabel(); t.text = "近期记录"; t.font = .systemFont(ofSize: 14, weight: .semibold); t.textColor = .fdSubtext
+        let t = UILabel(); t.text = "近期记录"; t.font = .fdBodySemibold; t.textColor = .fdSubtext
         ctr.addSubview(t); t.snp.makeConstraints { $0.top.leading.equalToSuperview() }
         let card = applyCard(UIView())
         ctr.addSubview(card); card.snp.makeConstraints { $0.top.equalTo(t.snp.bottom).offset(12); $0.leading.trailing.equalToSuperview() }
         var prev: UIView?
         for (i, (time, val, src)) in items.enumerated() {
-            let row = UIView(); let tl = UILabel(); tl.text = time; tl.font = .systemFont(ofSize: 13); tl.textColor = .fdText
-            let vl = UILabel(); vl.text = val; vl.font = .systemFont(ofSize: 14, weight: .semibold); vl.textColor = .fdText
+            let row = UIView(); let tl = UILabel(); tl.text = time; tl.font = .fdCaption; tl.textColor = .fdText
+            let vl = UILabel(); vl.text = val; vl.font = .fdBodySemibold; vl.textColor = .fdText
             let icon = UIImageView(image: UIImage(systemName: src == "bluetooth" ? "bluetooth" : "hand.point.up.fill")); icon.tintColor = .fdMuted
             row.addSubview(tl); row.addSubview(vl); row.addSubview(icon)
             tl.snp.makeConstraints { $0.top.equalToSuperview().offset(12); $0.leading.equalToSuperview() }

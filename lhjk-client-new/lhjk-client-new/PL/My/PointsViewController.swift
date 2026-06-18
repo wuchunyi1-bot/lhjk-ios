@@ -29,8 +29,8 @@ fileprivate final class BadgeGridCell: UITableViewCell {
                 let icon = UIImageView(image: UIImage(systemName: b.icon)); icon.tintColor = b.color; icon.contentMode = .scaleAspectFit
                 iconBg.addSubview(icon); icon.snp.makeConstraints { $0.center.equalToSuperview(); $0.size.equalTo(22) }
                 iconBg.snp.makeConstraints { $0.size.equalTo(52) }; item.addArrangedSubview(iconBg)
-                let nm = UILabel(); nm.text = b.name; nm.font = .systemFont(ofSize: 11, weight: .semibold); nm.textColor = .fdText; nm.textAlignment = .center; nm.numberOfLines = 2; item.addArrangedSubview(nm)
-                if let d = b.earnedAt { let dl = UILabel(); dl.text = d; dl.font = .systemFont(ofSize: 10); dl.textColor = .fdSubtext; dl.textAlignment = .center; item.addArrangedSubview(dl) }
+                let nm = UILabel(); nm.text = b.name; nm.font = .fdMicroSemibold; nm.textColor = .fdText; nm.textAlignment = .center; nm.numberOfLines = 2; item.addArrangedSubview(nm)
+                if let d = b.earnedAt { let dl = UILabel(); dl.text = d; dl.font = .fdMicro; dl.textColor = .fdSubtext; dl.textAlignment = .center; item.addArrangedSubview(dl) }
                 row.addArrangedSubview(item)
             }
             for _ in 0..<(3 - (min(r+3, badges.count) - r)) { row.addArrangedSubview(UIView()) }
@@ -59,14 +59,14 @@ fileprivate final class ProgressBadgeCell: UITableViewCell {
         iconBg.addSubview(icon); icon.snp.makeConstraints { $0.center.equalToSuperview(); $0.size.equalTo(18) }; row.addArrangedSubview(iconBg)
 
         let info = UIStackView(); info.axis = .vertical; info.spacing = 6
-        info.addArrangedSubview({ let l = UILabel(); l.text = b.name; l.font = .systemFont(ofSize: 14, weight: .semibold); l.textColor = .fdText; return l }())
+        info.addArrangedSubview({ let l = UILabel(); l.text = b.name; l.font = .fdBodySemibold; l.textColor = .fdText; return l }())
         let barWrap = UIStackView(); barWrap.spacing = 8; barWrap.alignment = .center
         let barBg = UIView(); barBg.backgroundColor = UIColor(hexString: "#F0ECE8"); barBg.layer.cornerRadius = 3; barBg.clipsToBounds = true
         let barFill = UIView(); barFill.backgroundColor = b.color; barFill.layer.cornerRadius = 3
         barBg.addSubview(barFill); let pct = CGFloat(b.progress ?? 0) / CGFloat(b.target ?? 1)
         barFill.snp.makeConstraints { $0.leading.top.bottom.equalToSuperview(); $0.width.equalToSuperview().multipliedBy(pct) }
         barBg.snp.makeConstraints { $0.height.equalTo(6) }; barWrap.addArrangedSubview(barBg)
-        let cnt = UILabel(); cnt.text = "\(b.progress ?? 0) / \(b.target ?? 1)"; cnt.font = .systemFont(ofSize: 11); cnt.textColor = .fdSubtext; cnt.setContentHuggingPriority(.required, for: .horizontal)
+        let cnt = UILabel(); cnt.text = "\(b.progress ?? 0) / \(b.target ?? 1)"; cnt.font = .fdMicro; cnt.textColor = .fdSubtext; cnt.setContentHuggingPriority(.required, for: .horizontal)
         barWrap.addArrangedSubview(cnt); info.addArrangedSubview(barWrap); row.addArrangedSubview(info)
     }
 }
@@ -87,10 +87,10 @@ fileprivate final class PointRecordCell: UITableViewCell {
         card.addSubview(row); row.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         let body = UIStackView(); body.axis = .vertical; body.spacing = 4
-        body.addArrangedSubview({ let l = UILabel(); l.text = r.title; l.font = .systemFont(ofSize: 15, weight: .bold); l.textColor = .fdText; return l }())
-        body.addArrangedSubview({ let l = UILabel(); l.text = r.date; l.font = .systemFont(ofSize: 12); l.textColor = .fdSubtext; return l }())
+        body.addArrangedSubview({ let l = UILabel(); l.text = r.title; l.font = .fdBodyBold; l.textColor = .fdText; return l }())
+        body.addArrangedSubview({ let l = UILabel(); l.text = r.date; l.font = .fdCaption; l.textColor = .fdSubtext; return l }())
         row.addArrangedSubview(body)
-        row.addArrangedSubview({ let l = UILabel(); l.text = r.points; l.font = .systemFont(ofSize: 18, weight: .heavy); l.textColor = r.isAdd ? .fdPrimary : .fdSubtext; return l }())
+        row.addArrangedSubview({ let l = UILabel(); l.text = r.points; l.font = .fdH2; l.textColor = r.isAdd ? .fdPrimary : .fdSubtext; return l }())
     }
 }
 
@@ -146,9 +146,9 @@ final class PointsViewController: BaseViewController {
         g.frame = CGRect(x: 0, y: 0, width: w - 32, height: 120)
         card.layer.insertSublayer(g, at: 0)
 
-        let label = UILabel(); label.text = "当前健康积分"; label.font = .systemFont(ofSize: 13); label.textColor = UIColor.white.withAlphaComponent(0.85)
-        let value = UILabel(); value.text = "892"; value.font = .monospacedSystemFont(ofSize: 42, weight: .heavy); value.textColor = .white
-        let desc = UILabel(); desc.text = "可用于兑换服务券、设备优惠和健康礼品"; desc.font = .systemFont(ofSize: 13); desc.textColor = UIColor.white.withAlphaComponent(0.9)
+        let label = UILabel(); label.text = "当前健康积分"; label.font = .fdCaption; label.textColor = UIColor.white.withAlphaComponent(0.85)
+        let value = UILabel(); value.text = "892"; value.font = .fdMonoFont(ofSize: 42, weight: .heavy); value.textColor = .white
+        let desc = UILabel(); desc.text = "可用于兑换服务券、设备优惠和健康礼品"; desc.font = .fdCaption; desc.textColor = UIColor.white.withAlphaComponent(0.9)
         [label, value, desc].forEach(card.addSubview)
         label.snp.makeConstraints { $0.top.leading.equalToSuperview().inset(20) }
         value.snp.makeConstraints { $0.top.equalTo(label.snp.bottom).offset(6); $0.leading.equalToSuperview().inset(20) }

@@ -61,7 +61,7 @@ final class HealthQuickEntriesCell: UITableViewCell {
         iconBg.addSubview(icon)
 
         let label = UILabel()
-        label.text = e.label; label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.text = e.label; label.font = .fdCaption
         label.textColor = .fdText2; label.textAlignment = .center
 
         item.addSubview(iconBg); item.addSubview(label)

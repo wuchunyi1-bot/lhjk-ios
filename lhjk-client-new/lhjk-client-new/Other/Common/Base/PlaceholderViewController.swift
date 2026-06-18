@@ -27,12 +27,12 @@ final class PlaceholderViewController: BaseViewController {
 
         let icon = UILabel()
         icon.text = "🚧"
-        icon.font = .systemFont(ofSize: 48)
+        icon.font = .fdFont(ofSize: 48) // decorative emoji
         stack.addArrangedSubview(icon)
 
         let label = UILabel()
         label.text = "\(pageTitle)\n即将上线"
-        label.font = .systemFont(ofSize: 16)
+        label.font = .fdBody
         label.textColor = .fdSubtext
         label.textAlignment = .center
         label.numberOfLines = 0

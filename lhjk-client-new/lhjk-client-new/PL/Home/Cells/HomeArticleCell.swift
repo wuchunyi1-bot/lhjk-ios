@@ -30,7 +30,7 @@ final class HomeArticleCell: UITableViewCell {
     private let thumbnailLabel: UILabel = {
         let l = UILabel()
         l.text = "文章\n封面"
-        l.font = .systemFont(ofSize: 11)
+        l.font = .fdMicro
         l.textColor = .fdMuted
         l.numberOfLines = 0
         l.textAlignment = .center
@@ -39,7 +39,7 @@ final class HomeArticleCell: UITableViewCell {
 
     private let tagLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 10, weight: .semibold)
+        l.font = .fdMicroSemibold
         l.layer.cornerRadius = 999
         l.clipsToBounds = true
         l.textAlignment = .center
@@ -48,7 +48,7 @@ final class HomeArticleCell: UITableViewCell {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 14, weight: .medium)
+        l.font = .fdBody
         l.textColor = .fdText
         l.numberOfLines = 2
         return l
@@ -56,7 +56,7 @@ final class HomeArticleCell: UITableViewCell {
 
     private let metaLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 11)
+        l.font = .fdMicro
         l.textColor = .fdMuted
         return l
     }()

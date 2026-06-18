@@ -28,7 +28,7 @@ final class PrivacyPromptView: UIView {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.text = "隐私保护提示"
-        label.font = .systemFont(ofSize: 18, weight: .bold)
+        label.font = .fdH2
         label.textColor = .fdText
         label.textAlignment = .center
         return label
@@ -37,7 +37,7 @@ final class PrivacyPromptView: UIView {
     private let descriptionLabel: UILabel = {
         let label = UILabel()
         label.text = "为了更好地为您提供健康管理服务，我们将按照《用户协议》与《隐私政策》收集和使用您的个人信息。"
-        label.font = .systemFont(ofSize: 14)
+        label.font = .fdBody
         label.textColor = .fdSubtext
         label.numberOfLines = 0
         label.textAlignment = .center
@@ -55,7 +55,7 @@ final class PrivacyPromptView: UIView {
     private lazy var userAgreementButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("《用户协议》", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 13)
+        btn.titleLabel?.font = .fdCaption
         btn.setTitleColor(.fdPrimary, for: .normal)
         btn.addTarget(self, action: #selector(tapUserAgreement), for: .touchUpInside)
         return btn
@@ -64,7 +64,7 @@ final class PrivacyPromptView: UIView {
     private lazy var privacyPolicyButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("《隐私政策》", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 13)
+        btn.titleLabel?.font = .fdCaption
         btn.setTitleColor(.fdPrimary, for: .normal)
         btn.addTarget(self, action: #selector(tapPrivacyPolicy), for: .touchUpInside)
         return btn
@@ -80,7 +80,7 @@ final class PrivacyPromptView: UIView {
     private lazy var agreeButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("同意", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 16, weight: .bold)
+        btn.titleLabel?.font = .fdBodyBold
         btn.setTitleColor(.white, for: .normal)
         btn.backgroundColor = .fdPrimary
         btn.layer.cornerRadius = 18
@@ -91,7 +91,7 @@ final class PrivacyPromptView: UIView {
     private lazy var disagreeButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("不同意", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 14)
+        btn.titleLabel?.font = .fdBody
         btn.setTitleColor(.fdSubtext, for: .normal)
         btn.addTarget(self, action: #selector(tapDisagree), for: .touchUpInside)
         return btn
@@ -115,7 +115,7 @@ final class PrivacyPromptView: UIView {
     private let unavailableLabel: UILabel = {
         let label = UILabel()
         label.text = "未同意隐私政策，暂无法使用富德健康"
-        label.font = .systemFont(ofSize: 15)
+        label.font = .fdBody
         label.textColor = .fdSubtext
         label.textAlignment = .center
         label.numberOfLines = 0
@@ -125,7 +125,7 @@ final class PrivacyPromptView: UIView {
     private lazy var retryButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("重新查看并同意", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+        btn.titleLabel?.font = .fdBodySemibold
         btn.setTitleColor(.white, for: .normal)
         btn.backgroundColor = .fdPrimary
         btn.layer.cornerRadius = 14
@@ -136,7 +136,7 @@ final class PrivacyPromptView: UIView {
     private lazy var exitButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("退出 App", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 14)
+        btn.titleLabel?.font = .fdBody
         btn.setTitleColor(.fdSubtext, for: .normal)
         btn.addTarget(self, action: #selector(tapExitApp), for: .touchUpInside)
         return btn

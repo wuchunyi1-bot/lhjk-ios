@@ -97,7 +97,7 @@ final class HomeTaskCardCell: UITableViewCell {
         }
 
         let titleLbl = UILabel()
-        titleLbl.font = .systemFont(ofSize: 14, weight: .semibold)
+        titleLbl.font = .fdBodySemibold
         if t.isDone {
             titleLbl.attributedText = NSAttributedString(
                 string: t.title,
@@ -113,14 +113,14 @@ final class HomeTaskCardCell: UITableViewCell {
 
         let descLbl = UILabel()
         descLbl.text = t.description
-        descLbl.font = .systemFont(ofSize: 11)
+        descLbl.font = .fdMicro
         descLbl.textColor = .fdSubtext
 
         let ptsBg = UIView()
         ptsBg.layer.cornerRadius = 999
         let ptsLbl = UILabel()
         ptsLbl.text = "+\(t.points)"
-        ptsLbl.font = .systemFont(ofSize: 12, weight: .bold)
+        ptsLbl.font = .fdCaptionSemibold
         if t.isDone {
             ptsBg.backgroundColor = .fdSuccessSoft
             ptsLbl.textColor = .fdSuccess

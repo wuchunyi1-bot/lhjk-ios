@@ -25,8 +25,8 @@ fileprivate final class CategoryNavCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none; backgroundColor = .clear
         dot.layer.cornerRadius = 1.5; dot.isHidden = true
-        codeLbl.font = .systemFont(ofSize: 13, weight: .bold); codeLbl.textAlignment = .center
-        nameLbl.font = .systemFont(ofSize: 10); nameLbl.textColor = .fdSubtext; nameLbl.textAlignment = .center
+        codeLbl.font = .fdCaptionSemibold; codeLbl.textAlignment = .center
+        nameLbl.font = .fdMicro; nameLbl.textColor = .fdSubtext; nameLbl.textAlignment = .center
         [dot, codeLbl, nameLbl].forEach(contentView.addSubview)
         dot.snp.makeConstraints { $0.leading.equalToSuperview(); $0.centerY.equalToSuperview(); $0.size.equalTo(CGSize(width: 3, height: 24)) }
         codeLbl.snp.makeConstraints { $0.top.equalToSuperview().offset(14); $0.centerX.equalToSuperview() }
@@ -50,7 +50,7 @@ fileprivate final class PackageHeaderCell: UITableViewCell {
         contentView.subviews.forEach { $0.removeFromSuperview() }
         let icon = UIView(); icon.layer.cornerRadius = 12; icon.layer.borderWidth = 1
         icon.backgroundColor = m.accent.withAlphaComponent(0.09); icon.layer.borderColor = m.accent.withAlphaComponent(0.2).cgColor
-        let il = UILabel(); il.text = m.code; il.font = .systemFont(ofSize: 15, weight: .bold); il.textColor = m.accent; il.textAlignment = .center
+        let il = UILabel(); il.text = m.code; il.font = .fdBodyBold; il.textColor = m.accent; il.textAlignment = .center
         icon.addSubview(il); il.snp.makeConstraints { $0.center.equalToSuperview() }; icon.snp.makeConstraints { $0.size.equalTo(44) }
 
         let name = lbl(m.name, size: 15, weight: .bold); let desc = lbl(m.desc, size: 11, color: .fdSubtext)
@@ -63,7 +63,7 @@ fileprivate final class PackageHeaderCell: UITableViewCell {
         contentView.addSubview(div); div.snp.makeConstraints { $0.leading.trailing.bottom.equalToSuperview(); $0.height.equalTo(1) }
     }
     private func lbl(_ t: String, size: CGFloat, weight: UIFont.Weight = .regular, color: UIColor = .fdText) -> UILabel {
-        let l = UILabel(); l.text = t; l.font = .systemFont(ofSize: size, weight: weight); l.textColor = color; return l
+        let l = UILabel(); l.text = t; l.font = .fdFont(ofSize: size, weight: weight); l.textColor = color; return l
     }
 }
 
@@ -114,7 +114,7 @@ fileprivate final class BenefitTagCell: UICollectionViewCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
         contentView.backgroundColor = .fdBg2
-        label.font = .systemFont(ofSize: 11)
+        label.font = .fdMicro
         label.textColor = .fdText2
         label.textAlignment = .center
         contentView.addSubview(label)
@@ -127,7 +127,7 @@ fileprivate final class BenefitTagCell: UICollectionViewCell {
         let rect = (text as NSString).boundingRect(
             with: CGSize(width: 300, height: 22),
             options: [.usesLineFragmentOrigin],
-            attributes: [.font: UIFont.systemFont(ofSize: 11)],
+            attributes: [.font: UIFont.fdMicro],
             context: nil
         )
         return CGSize(width: ceil(rect.width) + 16, height: 22)
@@ -205,7 +205,7 @@ fileprivate final class PackageCardCell: UITableViewCell {
 
         let price = lbl(p.price, size: 18, weight: .bold, color: .fdPrimary, mono: true)
         let unit = lbl(p.priceUnit, size: 11, color: .fdSubtext)
-        let btn = UIButton(type: .system); btn.setTitle("查看详情 ›", for: .normal); btn.titleLabel?.font = .systemFont(ofSize: 12, weight: .semibold)
+        let btn = UIButton(type: .system); btn.setTitle("查看详情 ›", for: .normal); btn.titleLabel?.font = .fdCaptionSemibold
         btn.setTitleColor(.fdPrimary, for: .normal); btn.backgroundColor = .fdPrimarySoft; btn.layer.cornerRadius = 10
         btn.snp.makeConstraints { $0.height.equalTo(32); $0.width.greaterThanOrEqualTo(80) }
         let footer = UIStackView(arrangedSubviews: [price, unit, UIView(), btn]); footer.spacing = 2; footer.alignment = .center
@@ -230,7 +230,7 @@ fileprivate final class PackageCardCell: UITableViewCell {
         if let id = objc_getAssociatedObject(self, &kPkgKey) as? String { Router.shared.push("/services/detail", params: ["id": id]) }
     }
     private func lbl(_ t: String, size: CGFloat, weight: UIFont.Weight = .regular, color: UIColor, mono: Bool = false) -> UILabel {
-        let l = UILabel(); l.text = t; l.textColor = color; l.font = mono ? .monospacedSystemFont(ofSize: size, weight: weight) : .systemFont(ofSize: size, weight: weight); return l
+        let l = UILabel(); l.text = t; l.textColor = color; l.font = mono ? .fdMonoFont(ofSize: size, weight: weight) : .fdFont(ofSize: size, weight: weight); return l
     }
 }
 
@@ -371,7 +371,7 @@ extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate 
         if packages.isEmpty {
             let cell = UITableViewCell()
             cell.selectionStyle = .none; cell.backgroundColor = .clear
-            let label = UILabel(); label.text = "🚧\n套餐即将开放\n敬请期待"; label.font = .systemFont(ofSize: 14); label.textColor = .fdSubtext
+            let label = UILabel(); label.text = "🚧\n套餐即将开放\n敬请期待"; label.font = .fdBody; label.textColor = .fdSubtext
             label.textAlignment = .center; label.numberOfLines = 0
             cell.contentView.addSubview(label); label.snp.makeConstraints { $0.center.equalToSuperview() }
             return cell

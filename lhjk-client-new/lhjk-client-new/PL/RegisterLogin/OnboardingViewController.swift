@@ -108,7 +108,7 @@ final class OnboardingViewController: BaseViewController {
     private lazy var backButton: UIButton = {
         let b = UIButton(type: .system)
         b.setTitle("返回", for: .normal)
-        b.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+        b.titleLabel?.font = .fdBodySemibold
         b.setTitleColor(.fdSubtext, for: .normal)
         b.backgroundColor = .fdSurface
         b.layer.cornerRadius = 18
@@ -121,7 +121,7 @@ final class OnboardingViewController: BaseViewController {
     private lazy var nextButton: UIButton = {
         let b = UIButton(type: .system)
         b.setTitle("下一步", for: .normal)
-        b.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+        b.titleLabel?.font = .fdBodySemibold
         b.setTitleColor(.white, for: .normal)
         b.backgroundColor = .fdPrimary
         b.layer.cornerRadius = 18
@@ -159,7 +159,7 @@ final class OnboardingViewController: BaseViewController {
         }
 
         // Header (step label + title + desc) — fixed at top
-        stepLabel.font = .systemFont(ofSize: 12)
+        stepLabel.font = .fdCaption
         stepLabel.textColor = .fdMuted
         view.addSubview(stepLabel)
         stepLabel.snp.makeConstraints { make in
@@ -167,7 +167,7 @@ final class OnboardingViewController: BaseViewController {
             make.leading.trailing.equalToSuperview().inset(24)
         }
 
-        titleLabel.font = .systemFont(ofSize: 24, weight: .bold)
+        titleLabel.font = .fdH2
         titleLabel.textColor = .fdText
         view.addSubview(titleLabel)
         titleLabel.snp.makeConstraints { make in
@@ -175,7 +175,7 @@ final class OnboardingViewController: BaseViewController {
             make.leading.trailing.equalToSuperview().inset(24)
         }
 
-        descLabel.font = .systemFont(ofSize: 13)
+        descLabel.font = .fdCaption
         descLabel.textColor = .fdSubtext
         view.addSubview(descLabel)
         descLabel.snp.makeConstraints { make in
@@ -248,7 +248,7 @@ final class OnboardingViewController: BaseViewController {
 
         let genderLabel = UILabel()
         genderLabel.text = "性别"
-        genderLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        genderLabel.font = .fdCaptionSemibold
         genderLabel.textColor = .fdSubtext
 
         let chipRow = UIStackView()
@@ -270,7 +270,7 @@ final class OnboardingViewController: BaseViewController {
     private func setupStep2() {
         let label = UILabel()
         label.text = "既往病史（可多选）"
-        label.font = .systemFont(ofSize: 13, weight: .semibold)
+        label.font = .fdCaptionSemibold
         label.textColor = .fdSubtext
 
         let historyOptions = ["高血压", "糖尿病", "血脂异常", "高尿酸", "冠心病", "甲状腺疾病", "骨质疏松", "无"]
@@ -306,7 +306,7 @@ final class OnboardingViewController: BaseViewController {
     private func setupStep3() {
         let smokingLabel = UILabel()
         smokingLabel.text = "吸烟情况"
-        smokingLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        smokingLabel.font = .fdCaptionSemibold
         smokingLabel.textColor = .fdSubtext
 
         smokingChips = ["不吸烟", "偶尔吸", "每天吸"].map { OptionChipView(label: $0) }
@@ -319,7 +319,7 @@ final class OnboardingViewController: BaseViewController {
 
         let exerciseLabel = UILabel()
         exerciseLabel.text = "运动频率（每周）"
-        exerciseLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        exerciseLabel.font = .fdCaptionSemibold
         exerciseLabel.textColor = .fdSubtext
 
         exerciseChips = ["几乎不运动", "每周1-2次", "每周3-4次", "每周5次以上"].map { OptionChipView(label: $0) }
@@ -388,7 +388,7 @@ final class OnboardingViewController: BaseViewController {
 
         let avatarLabel = UILabel()
         avatarLabel.text = member.avatar
-        avatarLabel.font = .systemFont(ofSize: 18, weight: .bold)
+        avatarLabel.font = .fdH2
         avatarLabel.textColor = .white
         avatarLabel.textAlignment = .center
         avatar.addSubview(avatarLabel)
@@ -405,17 +405,17 @@ final class OnboardingViewController: BaseViewController {
         // Info
         let nameLbl = UILabel()
         nameLbl.text = member.name
-        nameLbl.font = .systemFont(ofSize: 16, weight: .bold)
+        nameLbl.font = .fdBodyBold
         nameLbl.textColor = .fdText
 
         let titleLbl = UILabel()
         titleLbl.text = member.title
-        titleLbl.font = .systemFont(ofSize: 12)
+        titleLbl.font = .fdCaption
         titleLbl.textColor = .fdPrimary
 
         let specialtyLbl = UILabel()
         specialtyLbl.text = member.specialty
-        specialtyLbl.font = .systemFont(ofSize: 12)
+        specialtyLbl.font = .fdCaption
         specialtyLbl.textColor = .fdSubtext
 
         let infoStack = UIStackView(arrangedSubviews: [nameLbl, titleLbl, specialtyLbl])

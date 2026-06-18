@@ -47,8 +47,8 @@ final class MeServiceFulfillmentCell: UITableViewCell {
         for (i, (value, label, accent)) in stats.enumerated() {
             let col = UIView()
             let valLbl = UILabel(); valLbl.text = value; valLbl.textColor = accent ? .fdPrimary : .fdText
-            valLbl.font = .monospacedSystemFont(ofSize: 22, weight: .bold); valLbl.textAlignment = .center
-            let lblLbl = UILabel(); lblLbl.text = label; lblLbl.font = .systemFont(ofSize: 11); lblLbl.textColor = .fdSubtext; lblLbl.textAlignment = .center
+            valLbl.font = .fdMonoFont(ofSize: 22, weight: .bold); valLbl.textAlignment = .center
+            let lblLbl = UILabel(); lblLbl.text = label; lblLbl.font = .fdMicro; lblLbl.textColor = .fdSubtext; lblLbl.textAlignment = .center
             col.addSubview(valLbl); col.addSubview(lblLbl)
             valLbl.snp.makeConstraints { $0.top.centerX.equalToSuperview() }
             lblLbl.snp.makeConstraints { $0.top.equalTo(valLbl.snp.bottom).offset(2); $0.centerX.bottom.equalToSuperview() }
@@ -86,14 +86,14 @@ final class MeServiceFulfillmentCell: UITableViewCell {
         iconView.backgroundColor = UIColor(hexString: svc.iconBg)
         iconView.layer.cornerRadius = 11
         let iconLbl = UILabel()
-        iconLbl.text = svc.icon; iconLbl.font = .systemFont(ofSize: 13, weight: .bold)
+        iconLbl.text = svc.icon; iconLbl.font = .fdCaptionSemibold
         iconLbl.textColor = UIColor(hexString: svc.iconColorHex)
         iconView.addSubview(iconLbl)
         iconLbl.snp.makeConstraints { $0.center.equalToSuperview() }
 
-        let nameLbl = UILabel(); nameLbl.text = svc.name; nameLbl.font = .systemFont(ofSize: 13, weight: .semibold); nameLbl.textColor = .fdText
+        let nameLbl = UILabel(); nameLbl.text = svc.name; nameLbl.font = .fdCaptionSemibold; nameLbl.textColor = .fdText
         let badge = buildBadge(svc.status, type: svc.statusType)
-        let detailLbl = UILabel(); detailLbl.text = svc.detail; detailLbl.font = .systemFont(ofSize: 11); detailLbl.textColor = .fdSubtext
+        let detailLbl = UILabel(); detailLbl.text = svc.detail; detailLbl.font = .fdMicro; detailLbl.textColor = .fdSubtext
         let arrow = UIImageView(image: UIImage(systemName: "chevron.right")); arrow.tintColor = .fdMuted
 
         let topDiv = UIView(); topDiv.backgroundColor = .fdBorder
@@ -111,7 +111,7 @@ final class MeServiceFulfillmentCell: UITableViewCell {
 
     private func buildBadge(_ text: String, type: String) -> UIView {
         let badge = UIView(); badge.layer.cornerRadius = 999
-        let label = UILabel(); label.text = text; label.font = .systemFont(ofSize: 10, weight: .semibold)
+        let label = UILabel(); label.text = text; label.font = .fdMicroSemibold
         if type == "success" { badge.backgroundColor = .fdSuccessSoft; label.textColor = .fdSuccess }
         else { badge.backgroundColor = .fdWarningSoft; label.textColor = UIColor(hexString: "#B47300") }
         badge.addSubview(label)

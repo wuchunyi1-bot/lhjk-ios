@@ -65,11 +65,11 @@ final class HeartRateViewController: BaseViewController {
 
     private func buildChartCard() -> UIView {
         let card = UIView(); card.backgroundColor = .fdSurface; card.layer.cornerRadius = 18; card.addFundeShadow()
-        let t = UILabel(); t.text = "心率趋势"; t.font = .systemFont(ofSize: 14, weight: .semibold); t.textColor = .fdText
+        let t = UILabel(); t.text = "心率趋势"; t.font = .fdBodySemibold; t.textColor = .fdText
         let legend = UIStackView(); legend.axis = .horizontal; legend.spacing = 16
         for (color, lbl) in [(UIColor(hexString: "#FF7A50"), "运动时"), (UIColor(hexString: "#6B9FE4"), "静息时")] {
             let dot = UIView(); dot.backgroundColor = color; dot.layer.cornerRadius = 4
-            let l = UILabel(); l.text = lbl; l.font = .systemFont(ofSize: 12); l.textColor = .fdSubtext
+            let l = UILabel(); l.text = lbl; l.font = .fdCaption; l.textColor = .fdSubtext
             legend.addArrangedSubview(dot); dot.snp.makeConstraints { $0.size.equalTo(8) }; legend.addArrangedSubview(l)
         }
         chartView.applyFundeStyle(); chartView.legend.enabled = false
@@ -95,7 +95,7 @@ final class HeartRateViewController: BaseViewController {
 
     private func buildZonesCard() -> UIView {
         let card = UIView(); card.backgroundColor = .fdSurface; card.layer.cornerRadius = 18; card.addFundeShadow()
-        let title = UILabel(); title.text = "心率分区"; title.font = .systemFont(ofSize: 14, weight: .semibold); title.textColor = .fdText
+        let title = UILabel(); title.text = "心率分区"; title.font = .fdBodySemibold; title.textColor = .fdText
         card.addSubview(title); title.snp.makeConstraints { $0.top.leading.equalToSuperview().inset(16) }
 
         let zones: [(String, String, UIColor)] = [
@@ -111,8 +111,8 @@ final class HeartRateViewController: BaseViewController {
         for (label, range, color) in zones {
             let row = UIStackView(); row.axis = .horizontal; row.spacing = 8; row.alignment = .center
             let bar = UIView(); bar.backgroundColor = color; bar.layer.cornerRadius = 3
-            let l = UILabel(); l.text = label; l.font = .systemFont(ofSize: 14, weight: .medium); l.textColor = .fdText
-            let r = UILabel(); r.text = range; r.font = .systemFont(ofSize: 13); r.textColor = .fdSubtext
+            let l = UILabel(); l.text = label; l.font = .fdBody; l.textColor = .fdText
+            let r = UILabel(); r.text = range; r.font = .fdCaption; r.textColor = .fdSubtext
             row.addArrangedSubview(bar); bar.snp.makeConstraints { $0.width.equalTo(6); $0.height.equalTo(20) }
             row.addArrangedSubview(l)
             row.addArrangedSubview(UIView())
@@ -128,9 +128,9 @@ final class HeartRateViewController: BaseViewController {
         let row = UIStackView(); row.distribution = .fillEqually; row.spacing = 10
         for (label, value, unit) in [a, b, c] {
             let card = UIView(); card.backgroundColor = .fdSurface; card.layer.cornerRadius = 14; card.addFundeShadow(radius: 4)
-            let v = UILabel(); v.text = value; v.font = .systemFont(ofSize: 22, weight: .bold); v.textColor = .fdText
-            let u = UILabel(); u.text = unit; u.font = .systemFont(ofSize: 11); u.textColor = .fdSubtext
-            let l = UILabel(); l.text = label; l.font = .systemFont(ofSize: 12); l.textColor = .fdSubtext
+            let v = UILabel(); v.text = value; v.font = .fdH2; v.textColor = .fdText
+            let u = UILabel(); u.text = unit; u.font = .fdMicro; u.textColor = .fdSubtext
+            let l = UILabel(); l.text = label; l.font = .fdCaption; l.textColor = .fdSubtext
             card.addSubview(v); card.addSubview(u); card.addSubview(l)
             v.snp.makeConstraints { $0.top.equalToSuperview().offset(14); $0.leading.equalToSuperview().offset(12) }
             u.snp.makeConstraints { $0.lastBaseline.equalTo(v); $0.leading.equalTo(v.snp.trailing).offset(2) }
@@ -142,14 +142,14 @@ final class HeartRateViewController: BaseViewController {
 
     private func buildRecords(_ items: [(String, String, String)]) -> UIView {
         let container = UIView()
-        let title = UILabel(); title.text = "近期记录"; title.font = .systemFont(ofSize: 14, weight: .semibold); title.textColor = .fdSubtext
+        let title = UILabel(); title.text = "近期记录"; title.font = .fdBodySemibold; title.textColor = .fdSubtext
         container.addSubview(title); title.snp.makeConstraints { $0.top.leading.equalToSuperview() }
         let card = UIView(); card.backgroundColor = .fdSurface; card.layer.cornerRadius = 18; card.addFundeShadow()
         container.addSubview(card); card.snp.makeConstraints { $0.top.equalTo(title.snp.bottom).offset(12); $0.leading.trailing.equalToSuperview() }
         var prev: UIView?
         for (i, (time, val, src)) in items.enumerated() {
-            let row = UIView(); let t = UILabel(); t.text = time; t.font = .systemFont(ofSize: 13); t.textColor = .fdText
-            let v = UILabel(); v.text = val; v.font = .systemFont(ofSize: 14, weight: .semibold); v.textColor = .fdText
+            let row = UIView(); let t = UILabel(); t.text = time; t.font = .fdCaption; t.textColor = .fdText
+            let v = UILabel(); v.text = val; v.font = .fdBodySemibold; v.textColor = .fdText
             let icon = UIImageView(image: UIImage(systemName: src == "bluetooth" ? "bluetooth" : "hand.point.up.fill")); icon.tintColor = .fdMuted
             row.addSubview(t); row.addSubview(v); row.addSubview(icon)
             t.snp.makeConstraints { $0.top.equalToSuperview().offset(12); $0.leading.equalToSuperview() }
@@ -173,8 +173,8 @@ final class HeartRateViewController: BaseViewController {
         let seg = UISegmentedControl(items: ["日", "周", "月"])
         seg.selectedSegmentIndex = 1
         seg.selectedSegmentTintColor = .fdPrimary
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.systemFont(ofSize: 13, weight: .semibold)], for: .selected)
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.systemFont(ofSize: 13)], for: .normal)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.fdCaptionSemibold], for: .selected)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.fdCaption], for: .normal)
         seg.backgroundColor = .fdBg2
         return seg
     }

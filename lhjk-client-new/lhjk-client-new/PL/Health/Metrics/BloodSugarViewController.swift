@@ -85,11 +85,11 @@ final class BloodSugarViewController: BaseViewController {
 
     private func makeChartCard(title: String, legend: [(String, UIColor)]) -> UIView {
         let card = UIView(); card.backgroundColor = .fdSurface; card.layer.cornerRadius = 18; card.addFundeShadow()
-        let t = UILabel(); t.text = title; t.font = .systemFont(ofSize: 14, weight: .semibold); t.textColor = .fdText
+        let t = UILabel(); t.text = title; t.font = .fdBodySemibold; t.textColor = .fdText
         let legendStack = UIStackView(); legendStack.axis = .horizontal; legendStack.spacing = 16
         for (lbl, color) in legend {
             let dot = UIView(); dot.backgroundColor = color; dot.layer.cornerRadius = 4
-            let l = UILabel(); l.text = lbl; l.font = .systemFont(ofSize: 12); l.textColor = .fdSubtext
+            let l = UILabel(); l.text = lbl; l.font = .fdCaption; l.textColor = .fdSubtext
             legendStack.addArrangedSubview(dot); dot.snp.makeConstraints { $0.size.equalTo(8) }
             legendStack.addArrangedSubview(l)
         }
@@ -105,9 +105,9 @@ final class BloodSugarViewController: BaseViewController {
         let row = UIStackView(); row.distribution = .fillEqually; row.spacing = 10
         for (label, value, unit) in [a, b, c] {
             let card = UIView(); card.backgroundColor = .fdSurface; card.layer.cornerRadius = 14; card.addFundeShadow(radius: 4)
-            let v = UILabel(); v.text = value; v.font = .systemFont(ofSize: 22, weight: .bold); v.textColor = .fdText
-            let u = UILabel(); u.text = unit; u.font = .systemFont(ofSize: 11); u.textColor = .fdSubtext
-            let l = UILabel(); l.text = label; l.font = .systemFont(ofSize: 12); l.textColor = .fdSubtext
+            let v = UILabel(); v.text = value; v.font = .fdH2; v.textColor = .fdText
+            let u = UILabel(); u.text = unit; u.font = .fdMicro; u.textColor = .fdSubtext
+            let l = UILabel(); l.text = label; l.font = .fdCaption; l.textColor = .fdSubtext
             card.addSubview(v); card.addSubview(u); card.addSubview(l)
             v.snp.makeConstraints { $0.top.equalToSuperview().offset(14); $0.leading.equalToSuperview().offset(12) }
             u.snp.makeConstraints { $0.lastBaseline.equalTo(v); $0.leading.equalTo(v.snp.trailing).offset(2) }
@@ -119,7 +119,7 @@ final class BloodSugarViewController: BaseViewController {
 
     private func buildRecordsCard(records: [(String, String, String, String)]) -> UIView {
         let container = UIView()
-        let title = UILabel(); title.text = "近期记录"; title.font = .systemFont(ofSize: 14, weight: .semibold); title.textColor = .fdSubtext
+        let title = UILabel(); title.text = "近期记录"; title.font = .fdBodySemibold; title.textColor = .fdSubtext
         container.addSubview(title); title.snp.makeConstraints { $0.top.leading.equalToSuperview() }
         let card = UIView(); card.backgroundColor = .fdSurface; card.layer.cornerRadius = 18; card.addFundeShadow()
         container.addSubview(card)
@@ -127,8 +127,8 @@ final class BloodSugarViewController: BaseViewController {
         var prev: UIView?
         for (i, (time, val, src, type)) in records.enumerated() {
             let row = UIView()
-            let t = UILabel(); t.text = time; t.font = .systemFont(ofSize: 13); t.textColor = .fdText
-            let v = UILabel(); v.text = "\(val)  \(type)"; v.font = .systemFont(ofSize: 14, weight: .semibold); v.textColor = .fdText
+            let t = UILabel(); t.text = time; t.font = .fdCaption; t.textColor = .fdText
+            let v = UILabel(); v.text = "\(val)  \(type)"; v.font = .fdBodySemibold; v.textColor = .fdText
             let icon = UIImageView(image: UIImage(systemName: src == "bluetooth" ? "bluetooth" : "hand.point.up.fill")); icon.tintColor = .fdMuted
             row.addSubview(t); row.addSubview(v); row.addSubview(icon)
             t.snp.makeConstraints { make in make.top.equalToSuperview().offset(12); make.leading.equalToSuperview() }
@@ -151,8 +151,8 @@ final class BloodSugarViewController: BaseViewController {
 
     private func styleSeg(_ seg: UISegmentedControl) {
         seg.selectedSegmentTintColor = .fdPrimary
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.systemFont(ofSize: 13, weight: .semibold)], for: .selected)
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.systemFont(ofSize: 13)], for: .normal)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.fdCaptionSemibold], for: .selected)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.fdCaption], for: .normal)
         seg.backgroundColor = .fdBg2
     }
 

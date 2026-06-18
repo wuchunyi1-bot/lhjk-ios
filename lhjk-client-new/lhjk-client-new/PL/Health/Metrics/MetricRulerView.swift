@@ -129,7 +129,7 @@ final class MetricRulerView: UIView {
                 let text = formatValue(val)
                 let label = UILabel()
                 label.text = text
-                label.font = .systemFont(ofSize: 10)
+                label.font = .fdMicro
                 label.textColor = .fdSubtext
                 label.sizeToFit()
                 label.center = CGPoint(x: x, y: y + tickH + 10 + label.bounds.height / 2)

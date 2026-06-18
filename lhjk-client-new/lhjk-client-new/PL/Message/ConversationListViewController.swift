@@ -27,7 +27,7 @@ final class ConversationListViewController: BaseViewController, UITableViewDataS
     }()
 
     private let emptyLabel: UILabel = {
-        let l = UILabel(); l.text = "暂无消息"; l.font = .systemFont(ofSize: 15); l.textColor = .fdMuted; l.textAlignment = .center; l.isHidden = true
+        let l = UILabel(); l.text = "暂无消息"; l.font = .fdBody; l.textColor = .fdMuted; l.textAlignment = .center; l.isHidden = true
         return l
     }()
 
@@ -77,7 +77,7 @@ final class ConversationListViewController: BaseViewController, UITableViewDataS
 
     private func makeChip(_ text: String, selected: Bool) -> UIButton {
         let b = UIButton(type: .system)
-        b.setTitle(text, for: .normal); b.titleLabel?.font = .systemFont(ofSize: 12, weight: .medium)
+        b.setTitle(text, for: .normal); b.titleLabel?.font = .fdCaption
         b.setTitleColor(selected ? .white : .fdSubtext, for: .normal)
         b.backgroundColor = selected ? .fdPrimary : .fdBg2
         b.layer.cornerRadius = 14

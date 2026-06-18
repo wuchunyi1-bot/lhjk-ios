@@ -39,7 +39,7 @@ fileprivate final class FamilyMemberCell: UITableViewCell {
         ag.startPoint = CGPoint(x: 0, y: 0); ag.endPoint = CGPoint(x: 1, y: 1)
         ag.frame = CGRect(x: 0, y: 0, width: 44, height: 44)
         avatar.layer.insertSublayer(ag, at: 0)
-        let al = UILabel(); al.text = m.avatar; al.font = .systemFont(ofSize: 17, weight: .bold); al.textColor = .white; al.textAlignment = .center
+        let al = UILabel(); al.text = m.avatar; al.font = .fdH2; al.textColor = .white; al.textAlignment = .center
         avatar.addSubview(al); al.snp.makeConstraints { $0.center.equalToSuperview() }; avatar.snp.makeConstraints { $0.size.equalTo(44) }
 
         let name = flbl(m.name, s: 15, w: .semibold, c: .fdText)
@@ -50,8 +50,8 @@ fileprivate final class FamilyMemberCell: UITableViewCell {
 
         let nameRow = UIStackView(arrangedSubviews: [name, relation, phase, UIView(), arrow]); nameRow.spacing = 6; nameRow.alignment = .center
         let planLabel = UILabel()
-        let pt = NSMutableAttributedString(string: m.plan, attributes: [.font: UIFont.systemFont(ofSize: 13), .foregroundColor: UIColor.fdText])
-        pt.append(NSAttributedString(string: "  第 \(m.planWeek) 周 / 共 \(m.planTotal) 周", attributes: [.font: UIFont.systemFont(ofSize: 12), .foregroundColor: UIColor.fdSubtext]))
+        let pt = NSMutableAttributedString(string: m.plan, attributes: [.font: UIFont.fdCaption, .foregroundColor: UIColor.fdText])
+        pt.append(NSAttributedString(string: "  第 \(m.planWeek) 周 / 共 \(m.planTotal) 周", attributes: [.font: UIFont.fdCaption, .foregroundColor: UIColor.fdSubtext]))
         planLabel.attributedText = pt
         let infoStack = UIStackView(arrangedSubviews: [nameRow, planLabel]); infoStack.axis = .vertical; infoStack.spacing = 4
         let headerRow = UIStackView(arrangedSubviews: [avatar, infoStack]); headerRow.spacing = 10; headerRow.alignment = .top
@@ -101,11 +101,11 @@ fileprivate final class FamilyMemberCell: UITableViewCell {
     }
 
     private func flbl(_ t: String, s: CGFloat, w: UIFont.Weight = .regular, c: UIColor) -> UILabel {
-        let l = UILabel(); l.text = t; l.font = .systemFont(ofSize: s, weight: w); l.textColor = c; return l
+        let l = UILabel(); l.text = t; l.font = .fdFont(ofSize: s, weight: w); l.textColor = c; return l
     }
     private func ftag(_ t: String, bg: UIColor, text: UIColor) -> UIView {
         let v = UIView(); v.backgroundColor = bg; v.layer.cornerRadius = 4
-        let l = UILabel(); l.text = t; l.font = .systemFont(ofSize: 11, weight: .semibold); l.textColor = text
+        let l = UILabel(); l.text = t; l.font = .fdMicroSemibold; l.textColor = text
         v.addSubview(l); l.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 1, left: 6, bottom: 1, right: 6)) }; return v
     }
 }

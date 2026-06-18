@@ -20,9 +20,9 @@ final class FundusViewController: BaseViewController {
         // Latest card
         let card = UIView(); card.backgroundColor = UIColor(hexString: "#1A3A5C"); card.layer.cornerRadius = 24
         let badge = tag("最新检测结果", bg: UIColor.white.withAlphaComponent(0.2), fg: .white)
-        let icon = UILabel(); icon.text = "👁️"; icon.font = .systemFont(ofSize: 40); icon.textAlignment = .center
-        let conclusion = UILabel(); conclusion.text = reports[0].conclusion; conclusion.font = .systemFont(ofSize: 20, weight: .bold); conclusion.textColor = .white; conclusion.textAlignment = .center
-        let date = UILabel(); date.text = "\(reports[0].date) · \(reports[0].source)"; date.font = .systemFont(ofSize: 12); date.textColor = UIColor.white.withAlphaComponent(0.7); date.textAlignment = .center
+        let icon = UILabel(); icon.text = "👁️"; icon.font = .fdFont(ofSize: 40); icon.textAlignment = .center
+        let conclusion = UILabel(); conclusion.text = reports[0].conclusion; conclusion.font = .fdH2; conclusion.textColor = .white; conclusion.textAlignment = .center
+        let date = UILabel(); date.text = "\(reports[0].date) · \(reports[0].source)"; date.font = .fdCaption; date.textColor = UIColor.white.withAlphaComponent(0.7); date.textAlignment = .center
         card.addSubview(badge); card.addSubview(icon); card.addSubview(conclusion); card.addSubview(date)
         c.addSubview(card)
         card.snp.makeConstraints { $0.top.equalToSuperview().offset(12); $0.leading.trailing.equalToSuperview().inset(p) }
@@ -34,7 +34,7 @@ final class FundusViewController: BaseViewController {
         // Info note
         let note = UIView(); note.backgroundColor = .fdInfoSoft; note.layer.cornerRadius = 12
         let noteLbl = UILabel(); noteLbl.text = "ℹ️ 眼底检测需要专业设备，无法通过手机摄像头完成。如需安排检测，请联系您的健管师。"
-        noteLbl.font = .systemFont(ofSize: 13); noteLbl.textColor = .fdInfo; noteLbl.numberOfLines = 0
+        noteLbl.font = .fdCaption; noteLbl.textColor = .fdInfo; noteLbl.numberOfLines = 0
         note.addSubview(noteLbl); noteLbl.snp.makeConstraints { $0.edges.equalToSuperview().inset(14) }
         c.addSubview(note); note.snp.makeConstraints { $0.top.equalTo(card.snp.bottom).offset(12); $0.leading.trailing.equalToSuperview().inset(p) }
 
@@ -55,7 +55,7 @@ final class FundusViewController: BaseViewController {
 
         // CTA button
         let btn = UIButton(type: .system); btn.setTitle("联系健管师安排下次检测", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 15, weight: .bold); btn.setTitleColor(.white, for: .normal)
+        btn.titleLabel?.font = .fdBodyBold; btn.setTitleColor(.white, for: .normal)
         btn.backgroundColor = .fdPrimary; btn.layer.cornerRadius = 14
         c.addSubview(btn); btn.snp.makeConstraints { $0.top.equalTo(prevBar.snp.bottom).offset(16); $0.leading.trailing.equalToSuperview().inset(p); $0.height.equalTo(50); $0.bottom.equalToSuperview().offset(-28) }
     }
@@ -67,10 +67,10 @@ final class FundusViewController: BaseViewController {
         item.addSubview(dot); item.addSubview(line)
 
         let content = UIView()
-        let dateLbl = UILabel(); dateLbl.text = r.date; dateLbl.font = .systemFont(ofSize: 13, weight: .semibold); dateLbl.textColor = .fdText
-        let conclusionLbl = UILabel(); conclusionLbl.text = r.conclusion; conclusionLbl.font = .systemFont(ofSize: 15, weight: .bold); conclusionLbl.textColor = .fdText
-        let detailLbl = UILabel(); detailLbl.text = r.detail; detailLbl.font = .systemFont(ofSize: 13); detailLbl.textColor = .fdSubtext; detailLbl.numberOfLines = 0
-        let sourceLbl = UILabel(); sourceLbl.text = "📍 \(r.source)"; sourceLbl.font = .systemFont(ofSize: 12); sourceLbl.textColor = .fdMuted
+        let dateLbl = UILabel(); dateLbl.text = r.date; dateLbl.font = .fdCaptionSemibold; dateLbl.textColor = .fdText
+        let conclusionLbl = UILabel(); conclusionLbl.text = r.conclusion; conclusionLbl.font = .fdBodyBold; conclusionLbl.textColor = .fdText
+        let detailLbl = UILabel(); detailLbl.text = r.detail; detailLbl.font = .fdCaption; detailLbl.textColor = .fdSubtext; detailLbl.numberOfLines = 0
+        let sourceLbl = UILabel(); sourceLbl.text = "📍 \(r.source)"; sourceLbl.font = .fdCaption; sourceLbl.textColor = .fdMuted
         content.addSubview(dateLbl); content.addSubview(conclusionLbl); content.addSubview(detailLbl); content.addSubview(sourceLbl)
         dateLbl.snp.makeConstraints { $0.top.leading.trailing.equalToSuperview() }
         conclusionLbl.snp.makeConstraints { $0.top.equalTo(dateLbl.snp.bottom).offset(4); $0.leading.trailing.equalToSuperview() }
@@ -87,12 +87,12 @@ final class FundusViewController: BaseViewController {
 
     private func sectionTitle(_ text: String) -> UIView {
         let v = UIView()
-        let l = UILabel(); l.text = text; l.font = .systemFont(ofSize: 14, weight: .semibold); l.textColor = .fdSubtext
+        let l = UILabel(); l.text = text; l.font = .fdBodySemibold; l.textColor = .fdSubtext
         v.addSubview(l); l.snp.makeConstraints { $0.top.leading.bottom.equalToSuperview(); $0.height.equalTo(28) }; return v
     }
     private func tag(_ text: String, bg: UIColor, fg: UIColor) -> UIView {
         let v = UIView(); v.backgroundColor = bg; v.layer.cornerRadius = 999
-        let l = UILabel(); l.text = text; l.font = .systemFont(ofSize: 11); l.textColor = fg
+        let l = UILabel(); l.text = text; l.font = .fdMicro; l.textColor = fg
         v.addSubview(l); l.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }; return v
     }
 }

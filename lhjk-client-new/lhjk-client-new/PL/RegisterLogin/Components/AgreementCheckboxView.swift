@@ -18,7 +18,7 @@ final class AgreementCheckboxView: UIView {
 
     private let agreementLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 13)
+        label.font = .fdCaption
         label.textColor = .fdSubtext
         label.numberOfLines = 0
         label.isUserInteractionEnabled = true
@@ -79,7 +79,7 @@ final class AgreementCheckboxView: UIView {
 
         // Default style
         let defaultAttributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 13),
+            .font: UIFont.fdCaption,
             .foregroundColor: UIColor.fdSubtext
         ]
         attributed.setAttributes(defaultAttributes, range: NSRange(location: 0, length: fullText.count))

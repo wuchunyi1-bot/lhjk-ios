@@ -21,7 +21,7 @@ extension BarLineChartViewBase {
 
         // X 轴
         xAxis.labelPosition = .bottom
-        xAxis.labelFont = .systemFont(ofSize: 10)
+        xAxis.labelFont = .fdMicro
         xAxis.labelTextColor = .fdMuted
         xAxis.drawGridLinesEnabled = false
         xAxis.drawAxisLineEnabled = true
@@ -29,7 +29,7 @@ extension BarLineChartViewBase {
         xAxis.axisLineWidth = 1
 
         // 左 Y 轴
-        leftAxis.labelFont = .systemFont(ofSize: 10)
+        leftAxis.labelFont = .fdMicro
         leftAxis.labelTextColor = .fdMuted
         leftAxis.drawGridLinesEnabled = true
         leftAxis.gridColor = UIColor(hexString: "#E8E8E8")
@@ -41,7 +41,7 @@ extension BarLineChartViewBase {
         rightAxis.enabled = false
 
         // 图例
-        legend.font = .systemFont(ofSize: 12)
+        legend.font = .fdCaption
         legend.textColor = .fdSubtext
         legend.horizontalAlignment = .center
         legend.verticalAlignment = .top
@@ -51,7 +51,7 @@ extension BarLineChartViewBase {
         backgroundColor = .clear
         drawGridBackgroundEnabled = false
         noDataText = "暂无数据"
-        noDataFont = .systemFont(ofSize: 14)
+        noDataFont = .fdBody
         noDataTextColor = .fdMuted
     }
 
@@ -96,7 +96,7 @@ extension BarLineChartViewBase {
         line.lineWidth = 1
         line.lineDashLengths = dash ? [4, 4] : nil
         line.labelPosition = .rightTop
-        line.valueFont = .systemFont(ofSize: 10)
+        line.valueFont = .fdMicro
         line.valueTextColor = color
         leftAxis.addLimitLine(line)
     }

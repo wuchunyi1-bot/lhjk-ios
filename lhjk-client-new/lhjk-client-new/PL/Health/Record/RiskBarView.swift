@@ -38,12 +38,12 @@ final class RiskBarView: UIView {
 
         let label = UILabel()
         label.text = item.label
-        label.font = .systemFont(ofSize: 11)
+        label.font = .fdMicro
         label.textColor = .fdSubtext
 
         let countLabel = UILabel()
         countLabel.text = "\(item.count)"
-        countLabel.font = .monospacedSystemFont(ofSize: 26, weight: .bold)
+        countLabel.font = .fdMonoFont(ofSize: 26, weight: .bold)
         countLabel.textColor = item.color
 
         container.addSubview(label)

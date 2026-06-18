@@ -78,7 +78,7 @@ final class HealthRecordBodyCardCell: UITableViewCell {
 
         let label = UILabel()
         label.text = "无高风险\n疾病"
-        label.font = .systemFont(ofSize: 11, weight: .semibold)
+        label.font = .fdMicroSemibold
         label.textColor = UIColor(hexString: "#1F9A6B")
         label.textAlignment = .center
         label.numberOfLines = 0
@@ -107,11 +107,11 @@ final class HealthRecordBodyCardCell: UITableViewCell {
 
         let title = NSAttributedString(
             string: "王顾问 · 健管师批注",
-            attributes: [.font: UIFont.systemFont(ofSize: 12, weight: .bold), .foregroundColor: UIColor.fdText]
+            attributes: [.font: UIFont.fdCaptionSemibold, .foregroundColor: UIColor.fdText]
         )
         let content = NSAttributedString(
             string: "\n血压周均值连续 7 天 > 135，已为您预约下周三甲随访。",
-            attributes: [.font: UIFont.systemFont(ofSize: 12), .foregroundColor: UIColor.fdText2]
+            attributes: [.font: UIFont.fdCaption, .foregroundColor: UIColor.fdText2]
         )
 
         attributed.append(title)
@@ -142,7 +142,7 @@ final class HealthRecordBodyCardCell: UITableViewCell {
 
         let label = UILabel()
         label.text = text
-        label.font = .systemFont(ofSize: 13, weight: .semibold)
+        label.font = .fdCaptionSemibold
         label.textColor = .fdPrimary
         label.textAlignment = .center
         container.addSubview(label)

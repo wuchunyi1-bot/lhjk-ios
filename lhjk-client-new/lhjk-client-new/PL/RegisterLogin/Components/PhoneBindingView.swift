@@ -31,7 +31,7 @@ final class PhoneBindingView: UIView {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 17, weight: .semibold)
+        label.font = .fdH3
         label.textColor = .fdText
         label.textAlignment = .center
         return label
@@ -39,7 +39,7 @@ final class PhoneBindingView: UIView {
 
     private let descriptionLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 13)
+        label.font = .fdCaption
         label.textColor = .fdSubtext
         label.textAlignment = .center
         label.numberOfLines = 0
@@ -82,7 +82,7 @@ final class PhoneBindingView: UIView {
 
     private lazy var submitButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+        btn.titleLabel?.font = .fdBodySemibold
         btn.setTitleColor(.white, for: .normal)
         btn.backgroundColor = .fdPrimary
         btn.layer.cornerRadius = 14
@@ -93,7 +93,7 @@ final class PhoneBindingView: UIView {
     private lazy var cancelButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("取消", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 14)
+        btn.titleLabel?.font = .fdBody
         btn.setTitleColor(.fdSubtext, for: .normal)
         btn.addTarget(self, action: #selector(tapDismiss), for: .touchUpInside)
         return btn
@@ -102,7 +102,7 @@ final class PhoneBindingView: UIView {
     private lazy var contactSupportButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("联系客服解绑", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 13)
+        btn.titleLabel?.font = .fdCaption
         btn.setTitleColor(.fdPrimary, for: .normal)
         btn.addTarget(self, action: #selector(tapContactSupport), for: .touchUpInside)
         return btn

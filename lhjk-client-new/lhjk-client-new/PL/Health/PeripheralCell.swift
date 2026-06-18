@@ -9,14 +9,14 @@ final class PeripheralCell: UITableViewCell {
 
     private let nameLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .medium)
+        label.font = .fdBody
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
 
     private let rssiLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 12)
+        label.font = .fdCaption
         label.textColor = .secondaryLabel
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -24,7 +24,7 @@ final class PeripheralCell: UITableViewCell {
 
     private let statusLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.font = .fdCaption
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()

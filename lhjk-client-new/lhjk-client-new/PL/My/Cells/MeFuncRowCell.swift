@@ -38,7 +38,7 @@ final class MeFuncRowCell: UITableViewCell {
         iconContainer.addSubview(iconImg)
 
         let titleLbl = UILabel()
-        titleLbl.text = data.title; titleLbl.font = .systemFont(ofSize: 15); titleLbl.textColor = .fdText
+        titleLbl.text = data.title; titleLbl.font = .fdBody; titleLbl.textColor = .fdText
 
         let arrow = UIImageView(image: UIImage(systemName: "chevron.right"))
         arrow.tintColor = .fdMuted; arrow.contentMode = .scaleAspectFit
@@ -51,7 +51,7 @@ final class MeFuncRowCell: UITableViewCell {
 
         if let detail = data.detail {
             let detailLbl = UILabel()
-            detailLbl.text = detail; detailLbl.font = .systemFont(ofSize: 12); detailLbl.textColor = .fdMuted
+            detailLbl.text = detail; detailLbl.font = .fdCaption; detailLbl.textColor = .fdMuted
             card.addSubview(detailLbl)
             detailLbl.snp.makeConstraints { $0.trailing.equalTo(arrow.snp.leading).offset(-4); $0.centerY.equalToSuperview() }
             titleLbl.snp.remakeConstraints { $0.leading.equalTo(iconContainer.snp.trailing).offset(12); $0.centerY.equalToSuperview(); $0.trailing.lessThanOrEqualTo(detailLbl.snp.leading).offset(-8) }

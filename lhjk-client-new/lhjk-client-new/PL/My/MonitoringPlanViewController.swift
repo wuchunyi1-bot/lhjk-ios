@@ -54,7 +54,7 @@ final class MonitoringPlanViewController: BaseViewController {
             tipLbl.text = mode == 1
                 ? "已根据健康档案、近期指标和服务目标生成新版方案草稿。"
                 : "已选择「高血压合并血糖异常」模板，可提交给健管师确认。"
-            tipLbl.font = .systemFont(ofSize: 13)
+            tipLbl.font = .fdCaption
             tipLbl.textColor = UIColor(hexString: "#1F9A6B")
             tipLbl.numberOfLines = 0
             tip.addSubview(tipLbl)
@@ -75,17 +75,17 @@ final class MonitoringPlanViewController: BaseViewController {
 
         let label = UILabel()
         label.text = "当前生效方案"
-        label.font = .systemFont(ofSize: 12)
+        label.font = .fdCaption
         label.textColor = UIColor.white.withAlphaComponent(0.85)
 
         let title = UILabel()
         title.text = "慢病逆转 12 周监测方案"
-        title.font = .systemFont(ofSize: 20, weight: .bold)
+        title.font = .fdH2
         title.textColor = .white
 
         let desc = UILabel()
         desc.text = "第 5 周 / 共 12 周 · 健管师王顾问已确认"
-        desc.font = .systemFont(ofSize: 13)
+        desc.font = .fdCaption
         desc.textColor = UIColor.white.withAlphaComponent(0.9)
 
         v.addSubview(label)
@@ -110,7 +110,7 @@ final class MonitoringPlanViewController: BaseViewController {
     private func buildTabBtn(_ title: String, tag: Int, isActive: Bool) -> UIButton {
         let btn = UIButton(type: .system)
         btn.setTitle(title, for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
+        btn.titleLabel?.font = .fdBodyBold
         btn.setTitleColor(isActive ? .fdPrimary : .fdPrimary, for: .normal)
         btn.backgroundColor = isActive ? .fdPrimarySoft : .white
         btn.layer.cornerRadius = 12
@@ -140,17 +140,17 @@ final class MonitoringPlanViewController: BaseViewController {
 
         let name = UILabel()
         name.text = item.0
-        name.font = .systemFont(ofSize: 16, weight: .bold)
+        name.font = .fdBodyBold
         name.textColor = .fdText
 
         let freq = UILabel()
         freq.text = item.1
-        freq.font = .systemFont(ofSize: 14)
+        freq.font = .fdBody
         freq.textColor = .fdText2
 
         let target = UILabel()
         target.text = item.2
-        target.font = .systemFont(ofSize: 13)
+        target.font = .fdCaption
         target.textColor = .fdSubtext
 
         card.addSubview(name)

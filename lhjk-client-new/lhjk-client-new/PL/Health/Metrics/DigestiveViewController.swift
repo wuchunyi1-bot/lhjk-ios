@@ -28,10 +28,10 @@ final class DigestiveViewController: BaseViewController {
         // Latest result card
         let card = UIView(); card.backgroundColor = UIColor(hexString: "#5C4033"); card.layer.cornerRadius = 24
         let badge = tag("最新检测结果", bg: UIColor.white.withAlphaComponent(0.2), fg: .white)
-        let icon = UILabel(); icon.text = "🫁"; icon.font = .systemFont(ofSize: 40); icon.textAlignment = .center
-        let type = UILabel(); type.text = reports[0].type; type.font = .systemFont(ofSize: 14); type.textColor = UIColor.white.withAlphaComponent(0.8); type.textAlignment = .center
-        let conclusion = UILabel(); conclusion.text = reports[0].conclusion; conclusion.font = .systemFont(ofSize: 20, weight: .bold); conclusion.textColor = .white; conclusion.textAlignment = .center
-        let date = UILabel(); date.text = "\(reports[0].date) · \(reports[0].source)"; date.font = .systemFont(ofSize: 12); date.textColor = UIColor.white.withAlphaComponent(0.7); date.textAlignment = .center
+        let icon = UILabel(); icon.text = "🫁"; icon.font = .fdFont(ofSize: 40); icon.textAlignment = .center
+        let type = UILabel(); type.text = reports[0].type; type.font = .fdBody; type.textColor = UIColor.white.withAlphaComponent(0.8); type.textAlignment = .center
+        let conclusion = UILabel(); conclusion.text = reports[0].conclusion; conclusion.font = .fdH2; conclusion.textColor = .white; conclusion.textAlignment = .center
+        let date = UILabel(); date.text = "\(reports[0].date) · \(reports[0].source)"; date.font = .fdCaption; date.textColor = UIColor.white.withAlphaComponent(0.7); date.textAlignment = .center
         card.addSubview(badge); card.addSubview(icon); card.addSubview(type); card.addSubview(conclusion); card.addSubview(date)
         c.addSubview(card)
         card.snp.makeConstraints { $0.top.equalToSuperview().offset(12); $0.leading.trailing.equalToSuperview().inset(p) }
@@ -44,7 +44,7 @@ final class DigestiveViewController: BaseViewController {
         // Info note
         let note = UIView(); note.backgroundColor = .fdInfoSoft; note.layer.cornerRadius = 12
         let noteLbl = UILabel(); noteLbl.text = "ℹ️ 消化道检查需要专业医疗机构进行，无法自行录入。如需安排胃肠镜或呼气试验，请联系您的健管师协助预约。"
-        noteLbl.font = .systemFont(ofSize: 13); noteLbl.textColor = .fdInfo; noteLbl.numberOfLines = 0
+        noteLbl.font = .fdCaption; noteLbl.textColor = .fdInfo; noteLbl.numberOfLines = 0
         note.addSubview(noteLbl); noteLbl.snp.makeConstraints { $0.edges.equalToSuperview().inset(14) }
         c.addSubview(note); note.snp.makeConstraints { $0.top.equalTo(card.snp.bottom).offset(12); $0.leading.trailing.equalToSuperview().inset(p) }
 
@@ -58,8 +58,8 @@ final class DigestiveViewController: BaseViewController {
         var prevTip: UIView?
         for (i, tip) in tips.enumerated() {
             let row = UIStackView(); row.axis = .horizontal; row.spacing = 8; row.alignment = .top
-            let check = UILabel(); check.text = "✓"; check.font = .systemFont(ofSize: 14, weight: .bold); check.textColor = .fdSuccess
-            let lbl = UILabel(); lbl.text = tip; lbl.font = .systemFont(ofSize: 14); lbl.textColor = .fdText2; lbl.numberOfLines = 0
+            let check = UILabel(); check.text = "✓"; check.font = .fdBodyBold; check.textColor = .fdSuccess
+            let lbl = UILabel(); lbl.text = tip; lbl.font = .fdBody; lbl.textColor = .fdText2; lbl.numberOfLines = 0
             row.addArrangedSubview(check); row.addArrangedSubview(lbl)
             tipsCard.addSubview(row)
             row.snp.makeConstraints { make in
@@ -96,10 +96,10 @@ final class DigestiveViewController: BaseViewController {
         item.addSubview(dot); item.addSubview(line)
 
         let content = UIView()
-        let dateLbl = UILabel(); dateLbl.text = "\(r.date) · \(r.type)"; dateLbl.font = .systemFont(ofSize: 13, weight: .semibold); dateLbl.textColor = .fdText
-        let conclusionLbl = UILabel(); conclusionLbl.text = r.conclusion; conclusionLbl.font = .systemFont(ofSize: 15, weight: .bold); conclusionLbl.textColor = .fdText
-        let detailLbl = UILabel(); detailLbl.text = r.detail; detailLbl.font = .systemFont(ofSize: 13); detailLbl.textColor = .fdSubtext; detailLbl.numberOfLines = 0
-        let sourceLbl = UILabel(); sourceLbl.text = "📍 \(r.source)"; sourceLbl.font = .systemFont(ofSize: 12); sourceLbl.textColor = .fdMuted
+        let dateLbl = UILabel(); dateLbl.text = "\(r.date) · \(r.type)"; dateLbl.font = .fdCaptionSemibold; dateLbl.textColor = .fdText
+        let conclusionLbl = UILabel(); conclusionLbl.text = r.conclusion; conclusionLbl.font = .fdBodyBold; conclusionLbl.textColor = .fdText
+        let detailLbl = UILabel(); detailLbl.text = r.detail; detailLbl.font = .fdCaption; detailLbl.textColor = .fdSubtext; detailLbl.numberOfLines = 0
+        let sourceLbl = UILabel(); sourceLbl.text = "📍 \(r.source)"; sourceLbl.font = .fdCaption; sourceLbl.textColor = .fdMuted
         content.addSubview(dateLbl); content.addSubview(conclusionLbl); content.addSubview(detailLbl); content.addSubview(sourceLbl)
         dateLbl.snp.makeConstraints { $0.top.leading.trailing.equalToSuperview() }
         conclusionLbl.snp.makeConstraints { $0.top.equalTo(dateLbl.snp.bottom).offset(4); $0.leading.trailing.equalToSuperview() }
@@ -116,12 +116,12 @@ final class DigestiveViewController: BaseViewController {
 
     private func sectionTitle(_ text: String) -> UIView {
         let v = UIView()
-        let l = UILabel(); l.text = text; l.font = .systemFont(ofSize: 14, weight: .semibold); l.textColor = .fdSubtext
+        let l = UILabel(); l.text = text; l.font = .fdBodySemibold; l.textColor = .fdSubtext
         v.addSubview(l); l.snp.makeConstraints { $0.top.leading.bottom.equalToSuperview(); $0.height.equalTo(28) }; return v
     }
     private func tag(_ text: String, bg: UIColor, fg: UIColor) -> UIView {
         let v = UIView(); v.backgroundColor = bg; v.layer.cornerRadius = 999
-        let l = UILabel(); l.text = text; l.font = .systemFont(ofSize: 11); l.textColor = fg
+        let l = UILabel(); l.text = text; l.font = .fdMicro; l.textColor = fg
         v.addSubview(l); l.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }; return v
     }
 }
