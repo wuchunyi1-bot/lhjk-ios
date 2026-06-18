@@ -1,205 +1,100 @@
 import UIKit
 import SnapKit
 
-/// 用户信息卡片 Cell — 头像 + 姓名 + "本人" tag + 档案完整度进度条 + 六维评测按钮
-/// 参考 funde-client: hp-header-card
+/// 用户信息卡片 Cell — init 创建控件，configure 仅赋值
 final class HealthRecordUserInfoCell: UITableViewCell {
 
     static let reuseIdentifier = "HealthRecordUserInfoCell"
-
     var onSixDimTap: (() -> Void)?
+
+    // MARK: - Views
+    private let card = UIView()
+    private let avatarView = UIView()
+    private let avatarLabel = UILabel()
+    private let avatarGradient = CAGradientLayer()
+    private let nameLbl = UILabel()
+    private let tagView = UIView(); private let tagLabel = UILabel()
+    private let progressLabel = UILabel(); private let pctLabel = UILabel()
+    private let progressBg = UIView(); private let progressFill = UIView()
+    private let sixDimBtn = UIButton(type: .system)
+    private var fillWidthConstraint: Constraint?
+
+    // MARK: - Init
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        selectionStyle = .none
-        backgroundColor = .clear
+        selectionStyle = .none; backgroundColor = .clear
+        setupViews()
     }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    func configure(userName: String, avatarText: String, archiveProgress: Int) {
-        contentView.subviews.forEach { $0.removeFromSuperview() }
-
-        let card = buildCard()
-
-        // Left: avatar + name + progress
-        let leftStack = UIStackView()
-        leftStack.axis = .horizontal
-        leftStack.spacing = 12
-        leftStack.alignment = .center
+    private func setupViews() {
+        card.backgroundColor = .fdSurface; card.layer.cornerRadius = 18
+        card.layer.shadowColor = UIColor.black.cgColor; card.layer.shadowOffset = CGSize(width: 0, height: 1); card.layer.shadowRadius = 6; card.layer.shadowOpacity = 0.03
+        contentView.addSubview(card); card.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
 
         // Avatar
-        let avatarView = buildAvatar(text: avatarText)
-        leftStack.addArrangedSubview(avatarView)
-        avatarView.snp.makeConstraints { $0.size.equalTo(48) }
+        avatarView.layer.cornerRadius = 24; avatarView.clipsToBounds = true
+        avatarGradient.colors = [UIColor(hexString: "#F4ECE3").cgColor, UIColor(hexString: "#E8DAC8").cgColor]
+        avatarGradient.startPoint = CGPoint(x: 0, y: 0); avatarGradient.endPoint = CGPoint(x: 1, y: 1)
+        avatarView.layer.insertSublayer(avatarGradient, at: 0)
+        avatarView.layer.borderColor = UIColor.white.withAlphaComponent(0.8).cgColor; avatarView.layer.borderWidth = 2
+        avatarLabel.font = .fdH3; avatarLabel.textColor = UIColor(hexString: "#7B5E40"); avatarLabel.textAlignment = .center
+        avatarView.addSubview(avatarLabel); avatarLabel.snp.makeConstraints { $0.center.equalToSuperview() }
 
-        // Meta (name + tag + progress)
-        let metaStack = UIStackView()
-        metaStack.axis = .vertical
-        metaStack.spacing = 4
-        metaStack.alignment = .leading
+        // Name + tag
+        nameLbl.font = .fdH2; nameLbl.textColor = .fdText
+        tagView.backgroundColor = .fdPrimarySoft; tagView.layer.cornerRadius = 4
+        tagLabel.text = "本人"; tagLabel.font = .fdMicroSemibold; tagLabel.textColor = .fdPrimary
+        tagView.addSubview(tagLabel); tagLabel.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 1, left: 6, bottom: 1, right: 6)) }
+        let nameRow = UIStackView(arrangedSubviews: [nameLbl, tagView, UIView()]); nameRow.spacing = 6; nameRow.alignment = .center
 
-        let nameRow = buildNameRow(name: userName)
-        metaStack.addArrangedSubview(nameRow)
+        // Progress
+        progressLabel.text = "档案完整度"; progressLabel.font = .fdMicro; progressLabel.textColor = .fdSubtext
+        pctLabel.font = .fdMonoFont(ofSize: 14, weight: .bold); pctLabel.textColor = .fdPrimary
+        let progressTextRow = UIStackView(arrangedSubviews: [progressLabel, pctLabel]); progressTextRow.spacing = 4; progressTextRow.alignment = .firstBaseline
 
-        let progressRow = buildProgressRow(percentage: archiveProgress)
-        metaStack.addArrangedSubview(progressRow)
-
-        // Progress bar
-        let progressBar = buildProgressBar(percentage: archiveProgress)
-        metaStack.addArrangedSubview(progressBar)
-        progressBar.snp.makeConstraints { make in
-            make.width.equalTo(110)
-            make.height.equalTo(8)
-        }
-
-        leftStack.addArrangedSubview(metaStack)
-
-        card.addSubview(leftStack)
-        leftStack.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.centerY.equalToSuperview()
-        }
-
-        // Right: 六维评测 button
-        let sixDimBtn = buildSixDimButton()
-        card.addSubview(sixDimBtn)
-        sixDimBtn.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-16)
-            make.centerY.equalToSuperview()
-        }
-        sixDimBtn.addTarget(self, action: #selector(didTapSixDim), for: .touchUpInside)
-
-        contentView.addSubview(card)
-        card.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
-    }
-
-    // MARK: - Building Methods
-
-    private func buildCard() -> UIView {
-        let card = UIView()
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 18
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 6
-        card.layer.shadowOpacity = 0.03
-        return card
-    }
-
-    private func buildAvatar(text: String) -> UIView {
-        let container = UIView()
-        container.layer.cornerRadius = 24
-        container.clipsToBounds = true
-
-        let gradient = CAGradientLayer()
-        gradient.colors = [UIColor(hexString: "#F4ECE3").cgColor, UIColor(hexString: "#E8DAC8").cgColor]
-        gradient.startPoint = CGPoint(x: 0, y: 0)
-        gradient.endPoint = CGPoint(x: 1, y: 1)
-        gradient.frame = CGRect(x: 0, y: 0, width: 48, height: 48)
-        container.layer.insertSublayer(gradient, at: 0)
-
-        container.layer.borderColor = UIColor.white.withAlphaComponent(0.8).cgColor
-        container.layer.borderWidth = 2
-
-        let label = UILabel()
-        label.text = text
-        label.font = .fdH3
-        label.textColor = UIColor(hexString: "#7B5E40")
-        label.textAlignment = .center
-        container.addSubview(label)
-        label.snp.makeConstraints { $0.center.equalToSuperview() }
-
-        return container
-    }
-
-    private func buildNameRow(name: String) -> UIView {
-        let row = UIStackView()
-        row.axis = .horizontal
-        row.spacing = 6
-        row.alignment = .center
-
-        let nameLbl = UILabel()
-        nameLbl.text = name
-        nameLbl.font = .fdH2
-        nameLbl.textColor = .fdText
-        row.addArrangedSubview(nameLbl)
-
-        // "本人" tag
-        let tag = buildTag(text: "本人")
-        row.addArrangedSubview(tag)
-
-        return row
-    }
-
-    private func buildTag(text: String) -> UIView {
-        let container = UIView()
-        container.backgroundColor = .fdPrimarySoft
-        container.layer.cornerRadius = 4
-
-        let label = UILabel()
-        label.text = text
-        label.font = .fdMicroSemibold
-        label.textColor = .fdPrimary
-        container.addSubview(label)
-        label.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 1, left: 6, bottom: 1, right: 6)) }
-
-        return container
-    }
-
-    private func buildProgressRow(percentage: Int) -> UIView {
-        let row = UIStackView()
-        row.axis = .horizontal
-        row.spacing = 4
-        row.alignment = .firstBaseline
-
-        let label = UILabel()
-        label.text = "档案完整度"
-        label.font = .fdMicro
-        label.textColor = .fdSubtext
-        row.addArrangedSubview(label)
-
-        let pctLabel = UILabel()
-        pctLabel.text = "\(percentage)%"
-        pctLabel.font = .fdMonoFont(ofSize: 14, weight: .bold)
-        pctLabel.textColor = .fdPrimary
-        row.addArrangedSubview(pctLabel)
-
-        return row
-    }
-
-    private func buildProgressBar(percentage: Int) -> UIView {
-        let bg = UIView()
-        bg.backgroundColor = UIColor.fdPrimary.withAlphaComponent(0.14)
-        bg.layer.cornerRadius = 4
-        bg.clipsToBounds = true
-
-        let fill = UIView()
-        fill.backgroundColor = .fdPrimary
-        fill.layer.cornerRadius = 4
-        bg.addSubview(fill)
-        fill.snp.makeConstraints { make in
+        progressBg.backgroundColor = UIColor.fdPrimary.withAlphaComponent(0.14); progressBg.layer.cornerRadius = 4; progressBg.clipsToBounds = true
+        progressFill.backgroundColor = .fdPrimary; progressFill.layer.cornerRadius = 4
+        progressBg.addSubview(progressFill)
+        progressFill.snp.makeConstraints { make in
             make.leading.top.bottom.equalToSuperview()
-            make.width.equalToSuperview().multipliedBy(CGFloat(percentage) / 100.0)
+            fillWidthConstraint = make.width.equalTo(0).constraint
         }
 
-        return bg
+        let metaStack = UIStackView(arrangedSubviews: [nameRow, progressTextRow, progressBg]); metaStack.axis = .vertical; metaStack.spacing = 4; metaStack.alignment = .leading
+        progressBg.snp.makeConstraints { $0.width.equalTo(110); $0.height.equalTo(8) }
+
+        let leftStack = UIStackView(arrangedSubviews: [avatarView, metaStack]); leftStack.spacing = 12; leftStack.alignment = .center
+        card.addSubview(leftStack)
+        avatarView.snp.makeConstraints { $0.size.equalTo(48) }
+        leftStack.snp.makeConstraints { $0.leading.equalToSuperview().offset(16); $0.centerY.equalToSuperview() }
+
+        // Six-dim button
+        sixDimBtn.setTitle("六维评测 ›", for: .normal)
+        sixDimBtn.titleLabel?.font = .fdCaptionSemibold; sixDimBtn.setTitleColor(.white, for: .normal)
+        sixDimBtn.backgroundColor = .fdPrimary; sixDimBtn.layer.cornerRadius = 20
+        sixDimBtn.contentEdgeInsets = UIEdgeInsets(top: 7, left: 12, bottom: 7, right: 12)
+        sixDimBtn.addTarget(self, action: #selector(didTapSixDim), for: .touchUpInside)
+        card.addSubview(sixDimBtn)
+        sixDimBtn.snp.makeConstraints { $0.trailing.equalToSuperview().offset(-16); $0.centerY.equalToSuperview() }
+
+        card.snp.makeConstraints { $0.height.greaterThanOrEqualTo(80) }
     }
 
-    private func buildSixDimButton() -> UIButton {
-        let btn = UIButton(type: .system)
-        btn.setTitle("六维评测 ›", for: .normal)
-        btn.titleLabel?.font = .fdCaptionSemibold
-        btn.setTitleColor(.white, for: .normal)
-        btn.backgroundColor = .fdPrimary
-        btn.layer.cornerRadius = 20
-        btn.contentEdgeInsets = UIEdgeInsets(top: 7, left: 12, bottom: 7, right: 12)
-        return btn
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        avatarGradient.frame = avatarView.bounds
     }
 
-    @objc private func didTapSixDim() {
-        onSixDimTap?()
+    // MARK: - Configure
+
+    func configure(userName: String, avatarText: String, archiveProgress: Int) {
+        avatarLabel.text = avatarText
+        nameLbl.text = userName
+        pctLabel.text = "\(archiveProgress)%"
+        fillWidthConstraint?.update(offset: 110 * CGFloat(archiveProgress) / 100.0)
     }
+
+    @objc private func didTapSixDim() { onSixDimTap?() }
 }

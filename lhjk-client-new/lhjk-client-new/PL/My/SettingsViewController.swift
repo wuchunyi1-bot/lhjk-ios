@@ -1,44 +1,80 @@
 import UIKit
 
-/// 设置页面
-/// 参考 funde-client: SettingsView.vue
-final class SettingsViewController: BaseViewController {
+/// 设置主列表页
+/// 参考 funde-client: prototype/src/views/me/SettingsView.vue
+///
+/// 布局: UITableView 4 sections（grouped style）
+///   Section 0: 通知与提醒 → 消息通知设置
+///   Section 1: 显示与辅助 → 大字显示与简洁操作
+///   Section 2: 隐私与安全 → 隐私设置 / 账号安全
+///   Section 3: 其他 → 关于 / 退出登录
+///
+/// 使用 SectionTitleView 做 section header，MeFuncRowCell 做行组件
+final class SettingsViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate {
 
-    private let tableView = UITableView(frame: .zero, style: .insetGrouped)
+    // MARK: - Data
 
-    private let groups: [(title: String, items: [(label: String, route: String?)])] = [
+    private struct Item {
+        let label: String
+        let route: String?
+        let isDestructive: Bool
+    }
+
+    private let groups: [(title: String, items: [Item])] = [
         ("通知与提醒", [
-            ("消息通知设置", "/me/settings/notifications"),
+            Item(label: "消息通知设置", route: "/me/settings/notifications", isDestructive: false),
         ]),
         ("显示与辅助", [
-            ("大字显示与简洁操作", "/me/settings/accessibility"),
+            Item(label: "大字显示与简洁操作", route: "/me/settings/accessibility", isDestructive: false),
         ]),
         ("隐私与安全", [
-            ("隐私设置", "/me/settings/privacy"),
-            ("账号安全", "/me/settings/security"),
+            Item(label: "隐私设置", route: "/me/settings/privacy", isDestructive: false),
+            Item(label: "账号安全", route: "/me/settings/security", isDestructive: false),
         ]),
         ("其他", [
-            ("关于", "/me/settings/about"),
-            ("退出登录", nil),
+            Item(label: "关于", route: "/me/settings/about", isDestructive: false),
+            Item(label: "退出登录", route: nil, isDestructive: true),
         ]),
     ]
+
+    // MARK: - UI
+
+    private lazy var tableView: UITableView = {
+        let tv = UITableView(frame: .zero, style: .grouped)
+        tv.backgroundColor = .fdBg
+        tv.separatorStyle = .none
+        tv.showsVerticalScrollIndicator = false
+        tv.dataSource = self
+        tv.delegate = self
+        tv.register(MeFuncRowCell.self, forCellReuseIdentifier: MeFuncRowCell.reuseIdentifier)
+        if #available(iOS 15.0, *) { tv.sectionHeaderTopPadding = 0 }
+        return tv
+    }()
+
+    // MARK: - Lifecycle
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        // Re-hide nav bar when going back to Me (which has hidden nav bar)
+        if navigationController?.viewControllers.last is MyViewController {
+            navigationController?.setNavigationBarHidden(true, animated: animated)
+        }
+    }
 
     override func setupUI() {
         title = "设置"
         view.backgroundColor = .fdBg
-
-        tableView.delegate = self
-        tableView.dataSource = self
-        tableView.backgroundColor = .clear
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
         view.addSubview(tableView)
-        tableView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
+        tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
     }
-}
 
-extension SettingsViewController: UITableViewDataSource, UITableViewDelegate {
+    // MARK: - UITableViewDataSource
+
     func numberOfSections(in tableView: UITableView) -> Int {
         groups.count
     }
@@ -47,31 +83,57 @@ extension SettingsViewController: UITableViewDataSource, UITableViewDelegate {
         groups[section].items.count
     }
 
-    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        groups[section].title
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(
+            withIdentifier: MeFuncRowCell.reuseIdentifier, for: indexPath
+        ) as? MeFuncRowCell else { return UITableViewCell() }
+
+        let item = groups[indexPath.section].items[indexPath.row]
+        let isLast = indexPath.row == groups[indexPath.section].items.count - 1
+
+        cell.configure(data: .settingsRow(title: item.label, showDivider: !isLast, destructive: item.isDestructive))
+
+        cell.onTap = { [weak self] in
+            self?.handleTap(item)
+        }
+        return cell
     }
 
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        let item = groups[indexPath.section].items[indexPath.row]
-        cell.textLabel?.text = item.label
+    // MARK: - UITableViewDelegate
 
-        if item.route == nil && item.label == "退出登录" {
-            cell.textLabel?.textColor = .fdDanger
-            cell.accessoryType = .none
-        } else {
-            cell.textLabel?.textColor = .fdText
-            cell.accessoryType = .disclosureIndicator
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        48
+    }
+
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let container = UIView()
+        container.backgroundColor = .fdBg
+        let titleView = SectionTitleView(title: groups[section].title)
+        container.addSubview(titleView)
+        titleView.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalToSuperview().offset(-8)
         }
+        return container
+    }
 
-        return cell
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        44
+    }
+
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        0.01
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let item = groups[indexPath.section].items[indexPath.row]
+        handleTap(groups[indexPath.section].items[indexPath.row])
+    }
 
-        if item.label == "退出登录" {
+    // MARK: - Actions
+
+    private func handleTap(_ item: Item) {
+        if item.isDestructive {
             let alert = UIAlertController(title: nil, message: "确定要退出登录吗？", preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "取消", style: .cancel))
             alert.addAction(UIAlertAction(title: "退出", style: .destructive) { _ in
@@ -80,8 +142,6 @@ extension SettingsViewController: UITableViewDataSource, UITableViewDelegate {
             present(alert, animated: true)
             return
         }
-
-        // Route via Router
         if let route = item.route {
             Router.shared.push(route)
         }

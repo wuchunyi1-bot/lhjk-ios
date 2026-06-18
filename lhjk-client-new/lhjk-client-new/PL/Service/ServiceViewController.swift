@@ -19,116 +19,174 @@ fileprivate struct SvcMallProduct {
 
 // MARK: - Cells
 
-/// 推荐套餐卡片 Cell
+/// 推荐套餐卡片 Cell — init 创建控件，configure 仅赋值
 fileprivate final class FeaturedCardCell: UITableViewCell {
     static let reuseID = "FeaturedCardCell"
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) { super.init(style: style, reuseIdentifier: reuseIdentifier); selectionStyle = .none; backgroundColor = .clear }
+
+    // MARK: - Views (created once)
+    private let card = UIView()
+    private let highlightBlob = UIView()
+    private let codeBg = UIView(); private let codeLbl = UILabel()
+    private let nameLbl = UILabel(); private let badgeView = UIView(); private let badgeLbl = UILabel()
+    private let descLbl = UILabel(); private let tagRow = UIStackView()
+    private let divider = UIView()
+    private let priceLbl = UILabel(); private let unitLbl = UILabel(); private let actionBtn = UIButton(type: .system)
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        selectionStyle = .none; backgroundColor = .clear
+        setupViews()
+    }
     required init?(coder: NSCoder) { fatalError() }
 
-    func configure(_ p: SvcFeatured) {
-        contentView.subviews.forEach { $0.removeFromSuperview() }
-        let card = UIView(); card.layer.cornerRadius = 18; card.layer.borderWidth = 1; card.clipsToBounds = true
+    private func setupViews() {
+        card.layer.cornerRadius = 18; card.layer.borderWidth = 1; card.clipsToBounds = true
         card.layer.shadowColor = UIColor.black.cgColor; card.layer.shadowOffset = CGSize(width: 0, height: 1); card.layer.shadowRadius = 6; card.layer.shadowOpacity = 0.03
-        if p.highlight {
-            card.backgroundColor = UIColor(hexString: "#FFF7F1"); card.layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.25).cgColor
-            let blob = UIView(); blob.backgroundColor = UIColor.fdPrimary.withAlphaComponent(0.12); blob.layer.cornerRadius = 50
-            card.addSubview(blob); blob.snp.makeConstraints { $0.top.trailing.equalToSuperview().inset(-20); $0.size.equalTo(100) }
-        } else { card.backgroundColor = .fdSurface; card.layer.borderColor = UIColor.fdBorder.cgColor }
         contentView.addSubview(card); card.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
 
-        // Code block
-        let codeBg = UIView(); codeBg.layer.cornerRadius = 14
-        codeBg.backgroundColor = p.highlight ? .fdPrimary : .fdBg2
-        let codeLbl = UILabel(); codeLbl.text = p.code; codeLbl.font = .fdH2
-        codeLbl.textColor = p.highlight ? .white : .fdText2; codeLbl.textAlignment = .center
-        codeBg.addSubview(codeLbl); codeLbl.snp.makeConstraints { $0.center.equalToSuperview() }
+        highlightBlob.layer.cornerRadius = 50
+        card.addSubview(highlightBlob)
+        highlightBlob.snp.makeConstraints { $0.top.trailing.equalToSuperview().inset(-20); $0.size.equalTo(100) }
+
+        codeBg.layer.cornerRadius = 14; codeBg.addSubview(codeLbl)
+        codeLbl.font = .fdH2; codeLbl.textAlignment = .center
+        codeLbl.snp.makeConstraints { $0.center.equalToSuperview() }
         codeBg.snp.makeConstraints { $0.size.equalTo(48) }
 
-        let name = lbl(p.tag, size: 16, weight: .bold, color: .fdText)
-        let badge = UIView(); badge.layer.cornerRadius = 999
-        badge.backgroundColor = p.current ? UIColor(hexString: "#E6F7EF") : .fdPrimarySoft
-        let bl = lbl(p.current ? "● \(p.status)" : p.status, size: 10, weight: .semibold, color: p.current ? UIColor(hexString: "#1F9A6B") : .fdPrimary)
-        badge.addSubview(bl); bl.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }
-        let nameRow = UIStackView(arrangedSubviews: [name, badge, UIView()]); nameRow.spacing = 8; nameRow.alignment = .center
+        nameLbl.font = .fdBodyBold; nameLbl.textColor = .fdText
+        badgeView.layer.cornerRadius = 999
+        badgeView.addSubview(badgeLbl)
+        badgeLbl.font = .fdMicroSemibold
+        badgeLbl.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }
+        let nameRow = UIStackView(arrangedSubviews: [nameLbl, badgeView, UIView()]); nameRow.spacing = 8; nameRow.alignment = .center
 
-        let desc = lbl(p.desc, size: 12, color: .fdText2)
-        let meta = UIStackView(arrangedSubviews: [nameRow, desc]); meta.axis = .vertical; meta.spacing = 4
+        descLbl.font = .fdCaption; descLbl.textColor = .fdText2
+        let meta = UIStackView(arrangedSubviews: [nameRow, descLbl]); meta.axis = .vertical; meta.spacing = 4
         let header = UIStackView(arrangedSubviews: [codeBg, meta]); header.spacing = 12; header.alignment = .top
-        card.addSubview(header); header.snp.makeConstraints { $0.top.leading.trailing.equalToSuperview().inset(16) }
+        card.addSubview(header)
+        header.snp.makeConstraints { $0.top.leading.trailing.equalToSuperview().inset(16) }
 
-        // Benefit tags
-        let tagRow = UIStackView(); tagRow.spacing = 6
+        tagRow.spacing = 6
+        card.addSubview(tagRow)
+        tagRow.snp.makeConstraints { $0.top.equalTo(header.snp.bottom).offset(8); $0.leading.equalToSuperview().inset(16) }
+
+        divider.backgroundColor = UIColor.fdPrimary.withAlphaComponent(0.2)
+        card.addSubview(divider)
+        divider.snp.makeConstraints { $0.top.equalTo(tagRow.snp.bottom).offset(12); $0.leading.trailing.equalToSuperview().inset(16); $0.height.equalTo(1) }
+
+        priceLbl.font = .fdH2; priceLbl.textColor = .fdPrimary
+        unitLbl.font = .fdCaption; unitLbl.textColor = .fdSubtext
+        actionBtn.titleLabel?.font = .fdCaptionSemibold
+        actionBtn.layer.cornerRadius = 999
+        actionBtn.addTarget(self, action: #selector(tapDetail), for: .touchUpInside)
+        let footer = UIStackView(arrangedSubviews: [priceLbl, unitLbl, UIView(), actionBtn]); footer.spacing = 2; footer.alignment = .center
+        card.addSubview(footer)
+        footer.snp.makeConstraints { $0.top.equalTo(divider.snp.bottom).offset(12); $0.leading.trailing.equalToSuperview().inset(16); $0.bottom.equalToSuperview().offset(-16) }
+        actionBtn.snp.makeConstraints { $0.height.equalTo(36); $0.width.greaterThanOrEqualTo(72) }
+    }
+
+    // MARK: - Configure (赋值 only)
+
+    func configure(_ p: SvcFeatured) {
+        objc_setAssociatedObject(self, &kRouteKey, p.id, .OBJC_ASSOCIATION_COPY_NONATOMIC)
+
+        card.backgroundColor = p.highlight ? UIColor(hexString: "#FFF7F1") : .fdSurface
+        card.layer.borderColor = (p.highlight ? UIColor.fdPrimary.withAlphaComponent(0.25) : UIColor.fdBorder).cgColor
+        highlightBlob.backgroundColor = UIColor.fdPrimary.withAlphaComponent(0.12)
+        highlightBlob.isHidden = !p.highlight
+
+        codeBg.backgroundColor = p.highlight ? .fdPrimary : .fdBg2
+        codeLbl.text = p.code
+        codeLbl.textColor = p.highlight ? .white : .fdText2
+
+        nameLbl.text = p.tag
+        badgeView.backgroundColor = p.current ? UIColor(hexString: "#E6F7EF") : .fdPrimarySoft
+        badgeLbl.text = p.current ? "● \(p.status)" : p.status
+        badgeLbl.textColor = p.current ? UIColor(hexString: "#1F9A6B") : .fdPrimary
+
+        descLbl.text = p.desc
+
+        // Rebuild only the tag row (variable count)
+        tagRow.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for b in p.benefits {
             let t = UIView(); t.backgroundColor = p.highlight ? UIColor.white.withAlphaComponent(0.7) : .fdBg2; t.layer.cornerRadius = 999
-            let tl = lbl(b, size: 11, color: .fdText2); t.addSubview(tl); tl.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 8, bottom: 2, right: 8)) }
+            let tl = UILabel(); tl.text = b; tl.font = .fdMicro; tl.textColor = .fdText2
+            t.addSubview(tl); tl.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 8, bottom: 2, right: 8)) }
             tagRow.addArrangedSubview(t)
         }
-        card.addSubview(tagRow); tagRow.snp.makeConstraints { $0.top.equalTo(header.snp.bottom).offset(8); $0.leading.equalToSuperview().inset(16) }
 
-        // Footer
-        let div = UIView(); div.backgroundColor = UIColor.fdPrimary.withAlphaComponent(0.2)
-        card.addSubview(div); div.snp.makeConstraints { $0.top.equalTo(tagRow.snp.bottom).offset(12); $0.leading.trailing.equalToSuperview().inset(16); $0.height.equalTo(1) }
-
-        let price = lbl(p.price, size: 22, weight: .bold, color: .fdPrimary, mono: true)
-        let unit = lbl(p.priceUnit, size: 12, color: .fdSubtext)
-        let btn = UIButton(type: .system); btn.setTitle(p.current ? "查看进度" : "了解详情", for: .normal)
-        btn.titleLabel?.font = .fdCaptionSemibold
-        if p.highlight { btn.setTitleColor(.white, for: .normal); btn.backgroundColor = .fdPrimary }
-        else { btn.setTitleColor(.fdPrimary, for: .normal); btn.backgroundColor = .fdPrimarySoft }
-        btn.layer.cornerRadius = 999; btn.snp.makeConstraints { $0.height.equalTo(36); $0.width.greaterThanOrEqualTo(72) }
-        let footer = UIStackView(arrangedSubviews: [price, unit, UIView(), btn]); footer.spacing = 2; footer.alignment = .center
-        card.addSubview(footer); footer.snp.makeConstraints { $0.top.equalTo(div.snp.bottom).offset(12); $0.leading.trailing.equalToSuperview().inset(16); $0.bottom.equalToSuperview().offset(-16) }
-
-        btn.addTarget(self, action: #selector(tapDetail), for: .touchUpInside)
-        objc_setAssociatedObject(self, &kRouteKey, p.id, .OBJC_ASSOCIATION_COPY_NONATOMIC)
+        priceLbl.text = p.price
+        priceLbl.font = .fdH2
+        unitLbl.text = p.priceUnit
+        actionBtn.setTitle(p.current ? "查看进度" : "了解详情", for: .normal)
+        if p.highlight {
+            actionBtn.setTitleColor(.white, for: .normal); actionBtn.backgroundColor = .fdPrimary
+        } else {
+            actionBtn.setTitleColor(.fdPrimary, for: .normal); actionBtn.backgroundColor = .fdPrimarySoft
+        }
     }
 
     @objc private func tapDetail() {
         if let id = objc_getAssociatedObject(self, &kRouteKey) as? String { Router.shared.push("/services/detail", params: ["id": id]) }
     }
-
-    private func lbl(_ t: String, size: CGFloat, weight: UIFont.Weight = .regular, color: UIColor, mono: Bool = false) -> UILabel {
-        let l = UILabel(); l.text = t; l.textColor = color; l.font = mono ? .fdMonoFont(ofSize: size, weight: weight) : .fdFont(ofSize: size, weight: weight); return l
-    }
 }
 private var kRouteKey: UInt8 = 0
 
-/// 就医协助引导卡
+/// 就医协助引导卡 — init 创建控件，configure 仅赋值（fixed layout）
 fileprivate final class MedicalAssistCell: UITableViewCell {
     static let reuseID = "MedicalAssistCell"
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) { super.init(style: style, reuseIdentifier: reuseIdentifier); selectionStyle = .none; backgroundColor = .clear }
+
+    private let card = UIView()
+    private let icon = UILabel()
+    private let titleLbl = UILabel()
+    private let descLbl = UILabel()
+    private let tagStack = UIStackView()
+    private let applyBtn = UIButton(type: .system)
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        selectionStyle = .none; backgroundColor = .clear
+        setupViews()
+    }
     required init?(coder: NSCoder) { fatalError() }
 
-    func configure() {
-        contentView.subviews.forEach { $0.removeFromSuperview() }
-        let card = UIView(); card.backgroundColor = UIColor(hexString: "#FFF7F1"); card.layer.cornerRadius = 18
+    private func setupViews() {
+        card.backgroundColor = UIColor(hexString: "#FFF7F1"); card.layer.cornerRadius = 18
         card.layer.borderWidth = 1.5; card.layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.2).cgColor
         card.layer.shadowColor = UIColor.black.cgColor; card.layer.shadowOffset = CGSize(width: 0, height: 1); card.layer.shadowRadius = 6; card.layer.shadowOpacity = 0.03
         contentView.addSubview(card); card.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
 
-        let icon = UILabel(); icon.text = "🏥"; icon.font = .fdH1
-        let title = lbl("就医协助服务", size: 15, weight: .bold, color: .fdText)
-        let desc = lbl("三甲医院挂号协助 · 专业陪诊 · 绿色通道转诊", size: 12, color: .fdSubtext)
-        let tags = UIStackView(); tags.spacing = 6
-        for t in ["挂号协助", "陪诊服务", "绿通转诊"] {
-            let tag = UIView(); tag.backgroundColor = .fdPrimarySoft; tag.layer.cornerRadius = 999
-            let tl = lbl(t, size: 10, weight: .semibold, color: .fdPrimary); tag.addSubview(tl)
-            tl.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }; tags.addArrangedSubview(tag)
-        }
-        let content = UIStackView(arrangedSubviews: [title, desc, tags]); content.axis = .vertical; content.spacing = 4; content.setCustomSpacing(8, after: desc)
+        icon.text = "🏥"; icon.font = .fdH1
+        titleLbl.font = .fdBodyBold; titleLbl.textColor = .fdText
+        descLbl.font = .fdCaption; descLbl.textColor = .fdSubtext
+        tagStack.spacing = 6
+
+        let content = UIStackView(arrangedSubviews: [titleLbl, descLbl, tagStack]); content.axis = .vertical; content.spacing = 4; content.setCustomSpacing(8, after: descLbl)
         let row = UIStackView(arrangedSubviews: [icon, content]); row.spacing = 12; row.alignment = .top
         card.addSubview(row); row.snp.makeConstraints { $0.top.leading.equalToSuperview().inset(16) }
 
-        let btn = UIButton(type: .system); btn.setTitle("申请", for: .normal); btn.titleLabel?.font = .fdCaptionSemibold
-        btn.setTitleColor(.white, for: .normal); btn.backgroundColor = .fdPrimary; btn.layer.cornerRadius = 999
-        btn.snp.makeConstraints { $0.height.equalTo(32); $0.width.greaterThanOrEqualTo(64) }
-        btn.addTarget(self, action: #selector(tap), for: .touchUpInside)
-        card.addSubview(btn); btn.snp.makeConstraints { $0.trailing.equalToSuperview().offset(-16); $0.top.equalToSuperview().inset(16) }
+        applyBtn.setTitle("申请", for: .normal); applyBtn.titleLabel?.font = .fdCaptionSemibold
+        applyBtn.setTitleColor(.white, for: .normal); applyBtn.backgroundColor = .fdPrimary; applyBtn.layer.cornerRadius = 999
+        applyBtn.addTarget(self, action: #selector(tap), for: .touchUpInside)
+        card.addSubview(applyBtn)
+        applyBtn.snp.makeConstraints { $0.trailing.equalToSuperview().offset(-16); $0.top.equalToSuperview().inset(16); $0.height.equalTo(32); $0.width.greaterThanOrEqualTo(64) }
         card.snp.makeConstraints { $0.bottom.equalTo(row.snp.bottom).offset(16) }
+
+        // Fixed tags
+        for t in ["挂号协助", "陪诊服务", "绿通转诊"] {
+            let tag = UIView(); tag.backgroundColor = .fdPrimarySoft; tag.layer.cornerRadius = 999
+            let tl = UILabel(); tl.text = t; tl.font = .fdMicroSemibold; tl.textColor = .fdPrimary
+            tag.addSubview(tl); tl.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }
+            tagStack.addArrangedSubview(tag)
+        }
+    }
+
+    func configure() {
+        titleLbl.text = "就医协助服务"
+        descLbl.text = "三甲医院挂号协助 · 专业陪诊 · 绿色通道转诊"
     }
 
     @objc private func tap() { Router.shared.push("/services") }
-    private func lbl(_ t: String, size: CGFloat, weight: UIFont.Weight = .regular, color: UIColor) -> UILabel { let l = UILabel(); l.text = t; l.font = .fdFont(ofSize: size, weight: weight); l.textColor = color; return l }
 }
 
 /// 产品矩阵 3×3 grid Cell

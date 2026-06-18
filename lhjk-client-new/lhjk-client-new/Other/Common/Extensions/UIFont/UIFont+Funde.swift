@@ -25,16 +25,32 @@ extension UIFont {
 
     // MARK: - Senior Mode
 
+    /// 老年模式存储键
+    private static let seniorModeKey = "fd_senior_mode"
+
     /// 老年模式存储（兼容 Swift 5.0，避免 concurrency 限制）
     private struct SeniorMode {
-        static var enabled: Bool = false
+        static var enabled: Bool = UserDefaults.standard.bool(forKey: UIFont.seniorModeKey)
     }
+
+    /// 老年模式变更通知
+    static let seniorModeDidChangeNotification = Notification.Name("UIFontSeniorModeDidChange")
+
+    /// 老年模式版本号，每次变更 +1，VC 在 viewWillAppear 中对比判断是否需要刷新
+    static private(set) var seniorModeVersion: Int = 0
 
     /// 老年模式开关，对齐 funde-client `<div data-senior="true">`
     /// 开启后所有 fd* Token 字号自动放大
+    /// 状态持久化到 UserDefaults，变更时发送通知，递增版本号
     static var isSeniorMode: Bool {
         get { SeniorMode.enabled }
-        set { SeniorMode.enabled = newValue }
+        set {
+            guard SeniorMode.enabled != newValue else { return }
+            SeniorMode.enabled = newValue
+            seniorModeVersion += 1
+            UserDefaults.standard.set(newValue, forKey: seniorModeKey)
+            NotificationCenter.default.post(name: seniorModeDidChangeNotification, object: nil)
+        }
     }
 
     /// 是否在老年模式下（取全局开关）

@@ -27,11 +27,11 @@ enum MyRoutes {
         r.register(path: "/me/medical-reports") { _ in PlaceholderViewController(title: "体检报告单") }
 
         // Settings 子页面
-        r.register(path: "/me/settings/notifications")  { _ in PlaceholderViewController(title: "消息通知设置") }
-        r.register(path: "/me/settings/accessibility")  { _ in PlaceholderViewController(title: "大字显示与简洁操作") }
-        r.register(path: "/me/settings/privacy")        { _ in PlaceholderViewController(title: "隐私设置") }
-        r.register(path: "/me/settings/security")       { _ in PlaceholderViewController(title: "账号安全") }
-        r.register(path: "/me/settings/about")          { _ in PlaceholderViewController(title: "关于富德健康") }
+        r.register(path: "/me/settings/notifications")  { _ in NotificationSettingsViewController() }
+        r.register(path: "/me/settings/accessibility")  { _ in AccessibilitySettingsViewController() }
+        r.register(path: "/me/settings/privacy")        { _ in PrivacySettingsViewController() }
+        r.register(path: "/me/settings/security")       { _ in SecuritySettingsViewController() }
+        r.register(path: "/me/settings/about")          { _ in AboutSettingsViewController() }
 
         // 跨模块路由
         r.register(path: "/orders")          { params in

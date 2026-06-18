@@ -107,6 +107,12 @@
 		A5B99BC52FE148B800D92180 /* HealthRecordMetricRowCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B99BB82FE148B800D92180 /* HealthRecordMetricRowCell.swift */; };
 		A5B99BC62FE148B800D92180 /* HealthRecordViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B99BBB2FE148B800D92180 /* HealthRecordViewController.swift */; };
 		A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */; };
+		A5BFCB302FE3C15D008DA1DF /* AccessibilitySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCB2B2FE3C15D008DA1DF /* AccessibilitySettingsViewController.swift */; };
+		A5BFCB312FE3C15D008DA1DF /* AboutSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCB2A2FE3C15D008DA1DF /* AboutSettingsViewController.swift */; };
+		A5BFCB322FE3C15D008DA1DF /* PrivacySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCB2D2FE3C15D008DA1DF /* PrivacySettingsViewController.swift */; };
+		A5BFCB332FE3C15D008DA1DF /* SecuritySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCB2E2FE3C15D008DA1DF /* SecuritySettingsViewController.swift */; };
+		A5BFCB342FE3C15D008DA1DF /* NotificationSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCB2C2FE3C15D008DA1DF /* NotificationSettingsViewController.swift */; };
+		A5BFCB362FE3C18D008DA1DF /* SettingsToggleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCB352FE3C18D008DA1DF /* SettingsToggleCell.swift */; };
 		A952E20047557E6F1D7EE0AF /* Pods_lhjk_client_new.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */; };
 		A97FF7EF73364502F99C2EC4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FACC28499C23F3853EBBF10 /* AppDelegate.swift */; };
 		B071816CF85673E86ECBF759 /* DevicesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE6B98583B23B6831E89C159 /* DevicesViewController.swift */; };
@@ -249,6 +255,12 @@
 		A5B99BBB2FE148B800D92180 /* HealthRecordViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordViewController.swift; sourceTree = "<group>"; };
 		A5B99BBC2FE148B800D92180 /* RiskBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiskBarView.swift; sourceTree = "<group>"; };
 		A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIFont+Funde.swift"; sourceTree = "<group>"; };
+		A5BFCB2A2FE3C15D008DA1DF /* AboutSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSettingsViewController.swift; sourceTree = "<group>"; };
+		A5BFCB2B2FE3C15D008DA1DF /* AccessibilitySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySettingsViewController.swift; sourceTree = "<group>"; };
+		A5BFCB2C2FE3C15D008DA1DF /* NotificationSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsViewController.swift; sourceTree = "<group>"; };
+		A5BFCB2D2FE3C15D008DA1DF /* PrivacySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySettingsViewController.swift; sourceTree = "<group>"; };
+		A5BFCB2E2FE3C15D008DA1DF /* SecuritySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecuritySettingsViewController.swift; sourceTree = "<group>"; };
+		A5BFCB352FE3C18D008DA1DF /* SettingsToggleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsToggleCell.swift; sourceTree = "<group>"; };
 		A7EDC9DBA2C15DAEC992461C /* ChatViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChatViewController.swift; path = PL/Message/ChatViewController.swift; sourceTree = "<group>"; };
 		A8B0D2D90AC6467582FAAE9C /* MessageRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MessageRoutes.swift; path = BLL/Message/MessageRoutes.swift; sourceTree = "<group>"; };
 		AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OAuthCredential.swift; path = DAL/Networking/OAuthCredential.swift; sourceTree = "<group>"; };
@@ -421,6 +433,7 @@
 		A57D2EF92FDBBE00002E43BA /* My */ = {
 			isa = PBXGroup;
 			children = (
+				A5BFCB2F2FE3C15D008DA1DF /* Settings */,
 				A5917D322FDFDD9800878961 /* Cells */,
 				A57D2EF82FDBBE00002E43BA /* MyViewController.swift */,
 				4FBDEA25F6088496CD29930C /* Components */,
@@ -587,6 +600,7 @@
 		A5917D322FDFDD9800878961 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
+				A5BFCB352FE3C18D008DA1DF /* SettingsToggleCell.swift */,
 				A5917D2E2FDFDD9800878961 /* MeFuncRowCell.swift */,
 				A5917D2F2FDFDD9800878961 /* MeMembershipCardCell.swift */,
 				A5917D302FDFDD9800878961 /* MeServiceFulfillmentCell.swift */,
@@ -627,6 +641,18 @@
 				A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */,
 			);
 			path = UIFont;
+			sourceTree = "<group>";
+		};
+		A5BFCB2F2FE3C15D008DA1DF /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				A5BFCB2A2FE3C15D008DA1DF /* AboutSettingsViewController.swift */,
+				A5BFCB2B2FE3C15D008DA1DF /* AccessibilitySettingsViewController.swift */,
+				A5BFCB2C2FE3C15D008DA1DF /* NotificationSettingsViewController.swift */,
+				A5BFCB2D2FE3C15D008DA1DF /* PrivacySettingsViewController.swift */,
+				A5BFCB2E2FE3C15D008DA1DF /* SecuritySettingsViewController.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		A987952ACD55240446C185ED /* lhjk-client-new */ = {
@@ -1067,6 +1093,7 @@
 				A5917D082FDFC8EF00878961 /* UIView+Shadow.swift in Sources */,
 				A5917D332FDFDD9800878961 /* MeServiceFulfillmentCell.swift in Sources */,
 				A5917D342FDFDD9800878961 /* MeFuncRowCell.swift in Sources */,
+				A5BFCB362FE3C18D008DA1DF /* SettingsToggleCell.swift in Sources */,
 				A5917D352FDFDD9800878961 /* MeStatsStripCell.swift in Sources */,
 				A5917D362FDFDD9800878961 /* MeMembershipCardCell.swift in Sources */,
 				A5917D092FDFC8EF00878961 /* UIView+Layout.swift in Sources */,
@@ -1117,6 +1144,11 @@
 				D4D3CF9A74172D4C53A40241 /* PlaceholderViewController.swift in Sources */,
 				E7E5276C54E35414EB42377A /* HealthRoutes.swift in Sources */,
 				A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */,
+				A5BFCB302FE3C15D008DA1DF /* AccessibilitySettingsViewController.swift in Sources */,
+				A5BFCB312FE3C15D008DA1DF /* AboutSettingsViewController.swift in Sources */,
+				A5BFCB322FE3C15D008DA1DF /* PrivacySettingsViewController.swift in Sources */,
+				A5BFCB332FE3C15D008DA1DF /* SecuritySettingsViewController.swift in Sources */,
+				A5BFCB342FE3C15D008DA1DF /* NotificationSettingsViewController.swift in Sources */,
 				27260D21123BF37DC03CD18F /* MetricRulerView.swift in Sources */,
 				62628470BAE98A14205557DD /* MetricAddViewController.swift in Sources */,
 				BE14F14A358741BB99BE0FFA /* MetricsViewController.swift in Sources */,
