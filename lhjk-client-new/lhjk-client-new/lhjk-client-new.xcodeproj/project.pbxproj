@@ -55,6 +55,9 @@
 		9B3BD71652518F27624BD396 /* StageMetricsCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EAF498F5E583779ABA3E77A /* StageMetricsCardView.swift */; };
 		9F5D324E0D90EB682A0A77B4 /* OAuthCredential.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */; };
 		A3AADC4D6DF2A11DC4DA077F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7A38C4AFEC723E4B6C12D675 /* LaunchScreen.storyboard */; };
+		A576A2202FE8E22E004F6070 /* ECGSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21E2FE8E22E004F6070 /* ECGSimulator.swift */; };
+		A576A2212FE8E22E004F6070 /* ECGChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21C2FE8E22E004F6070 /* ECGChartView.swift */; };
+		A576A2222FE8E22E004F6070 /* ECGDataBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21D2FE8E22E004F6070 /* ECGDataBuffer.swift */; };
 		A57D2EFC2FDBBE00002E43BA /* MyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2EF82FDBBE00002E43BA /* MyViewController.swift */; };
 		A57D2EFD2FDBBE00002E43BA /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2EFA2FDBBE00002E43BA /* LoginViewController.swift */; };
 		A57D2EFF2FDBBE3B002E43BA /* HealthViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2EFE2FDBBE3B002E43BA /* HealthViewController.swift */; };
@@ -203,6 +206,9 @@
 		A0407478440907A929B00481 /* StageReportCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StageReportCell.swift; sourceTree = "<group>"; };
 		A2DE7CB0CC0F0792F08218E9 /* ProfileViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProfileViewController.swift; sourceTree = "<group>"; };
 		A4DACDBFFDBFF750E34307AC /* ConversationListViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ConversationListViewController.swift; path = PL/Message/ConversationListViewController.swift; sourceTree = "<group>"; };
+		A576A21C2FE8E22E004F6070 /* ECGChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGChartView.swift; sourceTree = "<group>"; };
+		A576A21D2FE8E22E004F6070 /* ECGDataBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGDataBuffer.swift; sourceTree = "<group>"; };
+		A576A21E2FE8E22E004F6070 /* ECGSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGSimulator.swift; sourceTree = "<group>"; };
 		A57D2EF82FDBBE00002E43BA /* MyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyViewController.swift; sourceTree = "<group>"; };
 		A57D2EFA2FDBBE00002E43BA /* LoginViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
 		A57D2EFE2FDBBE3B002E43BA /* HealthViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HealthViewController.swift; path = PL/Health/HealthViewController.swift; sourceTree = "<group>"; };
@@ -411,6 +417,7 @@
 		80323DB75D4CB2E15619DDBB /* DAL */ = {
 			isa = PBXGroup;
 			children = (
+				A576A21F2FE8E22E004F6070 /* ECG */,
 				33AD0B9BEA61617FD7371544 /* Bluetooth */,
 				ECD3693CC57BA01CDA4D232D /* IM */,
 				209982680F814E7623CEE52C /* Networking */,
@@ -428,6 +435,17 @@
 				E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A576A21F2FE8E22E004F6070 /* ECG */ = {
+			isa = PBXGroup;
+			children = (
+				A576A21C2FE8E22E004F6070 /* ECGChartView.swift */,
+				A576A21D2FE8E22E004F6070 /* ECGDataBuffer.swift */,
+				A576A21E2FE8E22E004F6070 /* ECGSimulator.swift */,
+			);
+			name = ECG;
+			path = DAL/ECG;
 			sourceTree = "<group>";
 		};
 		A57D2EF92FDBBE00002E43BA /* My */ = {
@@ -1151,6 +1169,9 @@
 				A5BFCB342FE3C15D008DA1DF /* NotificationSettingsViewController.swift in Sources */,
 				27260D21123BF37DC03CD18F /* MetricRulerView.swift in Sources */,
 				62628470BAE98A14205557DD /* MetricAddViewController.swift in Sources */,
+				A576A2202FE8E22E004F6070 /* ECGSimulator.swift in Sources */,
+				A576A2212FE8E22E004F6070 /* ECGChartView.swift in Sources */,
+				A576A2222FE8E22E004F6070 /* ECGDataBuffer.swift in Sources */,
 				BE14F14A358741BB99BE0FFA /* MetricsViewController.swift in Sources */,
 				342788F37504E84D0A004D5E /* SleepViewController.swift in Sources */,
 				7568562CC69E30C273DCAF3A /* SpO2ViewController.swift in Sources */,

@@ -88,6 +88,10 @@ NEW_FILES = [
   # Common extensions
   'Other/Common/Extensions/UIView+Shadow.swift',
   'Other/Common/Extensions/UIButton+Funde.swift',
+  # DAL/ECG — 实时心电图波形绘制
+  'DAL/ECG/ECGDataBuffer.swift',
+  'DAL/ECG/ECGChartView.swift',
+  'DAL/ECG/ECGSimulator.swift',
 ]
 
 puts "📂 Opening project: #{PROJECT_PATH}"
