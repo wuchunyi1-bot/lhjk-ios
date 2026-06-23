@@ -2,30 +2,26 @@ import UIKit
 
 /// 消息通知设置页
 /// 参考 funde-client: prototype/src/views/me/settings/NotificationSettingsView.vue
+/// PRD: 02_用户_我的设置_v1.0 §5.8 — 本期仅管理手机系统通知
 ///
-/// 4 个开关行包裹在一张 fd-card 内：
-///   服务进度提醒 / 健康任务提醒 / 预约提醒 / 活动与优惠
+/// 单一设置行：手机系统通知（已开启 / 去开启）
+/// 后续版本可扩展：服务通知、指标预警、随访提醒、免打扰时段
 final class NotificationSettingsViewController: BaseViewController {
 
     private let scrollView = UIScrollView()
     private let contentView = UIView()
 
-    private let storageKeys = (
-        service: "noti_service",
-        health: "noti_health",
-        appointment: "noti_appointment",
-        marketing: "noti_marketing"
-    )
-
-    private var toggles: [(String, String, String, SettingsToggleCell)] = []
+    private let storageKey = "fd_system_notification"
+    private var notifyEnabled = false
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        notifyEnabled = UserDefaults.standard.object(forKey: storageKey) as? Bool ?? true
     }
 
     override func setupUI() {
-        title = "消息通知设置"
+        title = "消息通知"
         view.backgroundColor = .fdBg
 
         scrollView.showsVerticalScrollIndicator = false
@@ -34,38 +30,54 @@ final class NotificationSettingsViewController: BaseViewController {
         scrollView.addSubview(contentView)
         contentView.snp.makeConstraints { $0.edges.width.equalToSuperview() }
 
-        let items: [(title: String, subtitle: String, key: String)] = [
-            ("服务进度提醒", "订单履约、健管师跟进、服务到期提醒", storageKeys.service),
-            ("健康任务提醒", "测量、评估、饮食记录等健康任务", storageKeys.health),
-            ("预约提醒", "体检、复诊、线上咨询开始前提醒", storageKeys.appointment),
-            ("活动与优惠", "权益兑换、商城优惠和服务活动", storageKeys.marketing),
-        ]
+        // Hint card
+        let hintCard: UIView = {
+            let v = UIView()
+            v.backgroundColor = UIColor(hexString: "#FFF3EE")
+            v.layer.cornerRadius = 24
 
+            let title = UILabel()
+            title.text = "及时收到健康提醒"
+            title.font = .fdFont(ofSize: 19, weight: .heavy)
+            title.textColor = .fdText
+
+            let desc = UILabel()
+            desc.text = "开启通知后，您将收到服务进度、健康任务、预约提醒等重要消息。"
+            desc.font = .fdBody
+            desc.textColor = .fdSubtext
+            desc.numberOfLines = 0
+
+            v.addSubview(title); v.addSubview(desc)
+            title.snp.makeConstraints { $0.top.leading.trailing.equalToSuperview().inset(18) }
+            desc.snp.makeConstraints { $0.top.equalTo(title.snp.bottom).offset(8); $0.leading.trailing.bottom.equalToSuperview().inset(18) }
+            return v
+        }()
+
+        contentView.addSubview(hintCard)
+        hintCard.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(16)
+            make.leading.trailing.equalToSuperview().inset(16)
+        }
+
+        // Card with notification row
         let card = buildCard()
         contentView.addSubview(card)
         card.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(16)
+            make.top.equalTo(hintCard.snp.bottom).offset(14)
             make.leading.trailing.equalToSuperview().inset(16)
             make.bottom.equalToSuperview().offset(-20)
         }
 
-        let stack = UIStackView()
-        stack.axis = .vertical
-        card.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.equalToSuperview() }
+        let stack = UIStackView(); stack.axis = .vertical
+        card.addSubview(stack); stack.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        for (i, item) in items.enumerated() {
-            let isOn = UserDefaults.standard.object(forKey: item.key) as? Bool ?? true
-            let toggle = SettingsToggleCell(
-                model: SettingsToggleCell.Model(title: item.title, subtitle: item.subtitle, isOn: isOn),
-                showDivider: i < items.count - 1
-            )
-            toggle.onToggle = { val in
-                UserDefaults.standard.set(val, forKey: item.key)
-            }
-            stack.addArrangedSubview(toggle)
-        }
+        // Row: 手机系统通知
+        let row = makeLinkRow(label: "手机系统通知", value: notifyEnabled ? "已开启" : "去开启", showDivider: false)
+        row.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleSystemNotifyTap)))
+        stack.addArrangedSubview(row)
     }
+
+    // MARK: - Builders
 
     private func buildCard() -> UIView {
         let card = UIView()
@@ -76,5 +88,56 @@ final class NotificationSettingsViewController: BaseViewController {
         card.layer.shadowRadius = 6
         card.layer.shadowOpacity = 0.03
         return card
+    }
+
+    private func makeLinkRow(label: String, value: String, showDivider: Bool) -> UIView {
+        let row = UIView(); row.isUserInteractionEnabled = true
+
+        let titleLbl = UILabel()
+        titleLbl.text = label
+        titleLbl.font = .fdBody
+        titleLbl.textColor = .fdText
+
+        let valueLbl = UILabel()
+        valueLbl.text = value
+        valueLbl.font = .fdCaption
+        valueLbl.textColor = .fdSubtext
+
+        let arrow = UIImageView(image: UIImage(systemName: "chevron.right"))
+        arrow.tintColor = .fdMuted; arrow.contentMode = .scaleAspectFit
+
+        [titleLbl, valueLbl, arrow].forEach(row.addSubview)
+        arrow.snp.makeConstraints { $0.trailing.equalToSuperview().offset(-16); $0.centerY.equalToSuperview(); $0.size.equalTo(16) }
+        valueLbl.snp.makeConstraints { $0.trailing.equalTo(arrow.snp.leading).offset(-4); $0.centerY.equalToSuperview() }
+        titleLbl.snp.makeConstraints { $0.leading.equalToSuperview().inset(16); $0.centerY.equalToSuperview(); $0.trailing.lessThanOrEqualTo(valueLbl.snp.leading).offset(-8) }
+
+        if showDivider {
+            let divider = UIView(); divider.backgroundColor = .fdBorder
+            row.addSubview(divider)
+            divider.snp.makeConstraints { $0.leading.equalTo(titleLbl); $0.trailing.bottom.equalToSuperview(); $0.height.equalTo(1) }
+        }
+        row.snp.makeConstraints { $0.height.equalTo(48) }
+        return row
+    }
+
+    // MARK: - Actions
+
+    @objc private func handleSystemNotifyTap() {
+        // In production, this would open system Settings app
+        // For prototype: toggle the mock state
+        notifyEnabled.toggle()
+        UserDefaults.standard.set(notifyEnabled, forKey: storageKey)
+        let msg = notifyEnabled
+            ? "请在系统设置中管理「富德健康」的通知权限"
+            : "请在系统设置中开启「富德健康」的通知权限"
+        showToast(msg)
+    }
+
+    private func showToast(_ message: String) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        present(alert, animated: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            alert.dismiss(animated: true)
+        }
     }
 }

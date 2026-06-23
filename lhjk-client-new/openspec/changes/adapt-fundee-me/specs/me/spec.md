@@ -4,7 +4,7 @@
 
 定义「我的」Tab 页面（Hub）的 UI 布局、交互行为。参考 funde-client `MeView.vue` + `me.json`，通过 UIKit + SnapKit 适配到 iOS 项目。
 
-页面是 App 第五个 Tab，使用 `hero-scroll` 布局，从上到下分为：Hero 区 → 会员卡 → 统计条 → 服务履约 → 功能列表分组 → 退出登录。
+页面是 App 第五个 Tab，使用 `hero-scroll` 布局，从上到下分为：Hero 区 → 会员卡 → 统计条 → 服务履约 → 功能列表（健康管理）。
 
 > **Reference**: funde-client `prototype/src/views/me/MeView.vue`、`prototype/src/mock/me.json`
 
@@ -12,9 +12,11 @@
 
 ## Layout Architecture
 
-**实现方案**: `UITableView` (grouped style / plain)，利用 section 分割不同区块，tableHeaderView 承载完整的 Hero 区（用户信息 + 会员卡 + 统计条），tableFooterView 承载退出登录。
+**实现方案**: `UITableView` (grouped style / plain)，利用 section 分割不同区块，tableHeaderView 承载完整的 Hero 区（用户信息 + 会员卡 + 统计条）。
 
 > **变更 (2026-06-17)**: 将 `MeMembershipCardCell` 和 `MeStatsStripCell` 的内容合并进 `tableHeaderView`，移除这两个 Cell 对应的 section。减少 section 数量，简化布局层级。
+>
+> **变更 (2026-06-23)**: "账号与设置"、"关于" 分组和退出登录按钮从首页移除，移至「设置」二级页面。首页仅保留服务履约 + 健康管理 2 个 section，匹配 funde-client 原型结构。
 
 ```
 ┌──────────────────────────────────────────────┐
@@ -33,22 +35,12 @@
 │  │  └──────────────────────────────────┘   │ │
 │  ├──────────────────────────────────────────┤ │
 │  │ Section 0: Service Fulfillment (1 row)  │ │
-│  │ sectionHeader: "服务履约    全部订单 ›"   │ │
+│  │ sectionHeader: "我的订单    全部订单 ›"   │ │
 │  │ MeServiceFulfillmentCell                │ │
 │  ├──────────────────────────────────────────┤ │
 │  │ Section 1: Health Management (7 rows)   │ │
 │  │ sectionHeader: "健康管理"                │ │
 │  │ MeFuncRowCell × 7                       │ │
-│  ├──────────────────────────────────────────┤ │
-│  │ Section 2: Account & Settings (4 rows)  │ │
-│  │ sectionHeader: "账号与设置"              │ │
-│  │ MeFuncRowCell × 4                       │ │
-│  ├──────────────────────────────────────────┤ │
-│  │ Section 3: About (3 rows)               │ │
-│  │ sectionHeader: "关于"                    │ │
-│  │ MeFuncRowCell × 3                       │ │
-│  ├──────────────────────────────────────────┤ │
-│  │ tableFooterView: Logout Button          │ │
 │  └──────────────────────────────────────────┘ │
 └──────────────────────────────────────────────┘
 ```
@@ -57,7 +49,7 @@
 | Cell Class | Reuse ID | Section(s) |
 |-----------|----------|------------|
 | `MeServiceFulfillmentCell` | `MeServiceFulfillmentCell` | 0 |
-| `MeFuncRowCell` | `MeFuncRowCell` | 1, 2, 3 |
+| `MeFuncRowCell` | `MeFuncRowCell` | 1 |
 
 > `MeMembershipCardCell` 和 `MeStatsStripCell` 不再作为独立 Cell 使用，其内容合并到 tableHeaderView 中。
 
@@ -161,11 +153,11 @@ Hero 区下方 SHALL 在 tableHeaderView 内展示会员卡入口卡片。
 ---
 
 ### Requirement: Service Fulfillment Section
-统计条下方 SHALL 展示「服务履约」区块。
+统计条下方 SHALL 展示「我的订单」区块。
 
 #### Scenario: 区块标题
 - **WHEN** 渲染服务履约区块
-- **THEN** 左侧标题「服务履约」（14pt subtext bold），右侧「全部订单 ›」（可点击 → push `/orders`）
+- **THEN** 左侧标题「我的订单」（14pt subtext bold），右侧「全部订单 ›」（可点击 → push `/orders`）
 
 #### Scenario: 数字统计
 - **WHEN** 渲染服务履约卡
@@ -181,12 +173,12 @@ Hero 区下方 SHALL 在 tableHeaderView 内展示会员卡入口卡片。
 
 ---
 
-### Requirement: Function Groups
-服务履约下方 SHALL 展示三个功能列表分组（健康管理、账号与设置、关于）。
+### Requirement: Health Management Function Group
+服务履约下方 SHALL 展示「健康管理」功能列表分组。
 
 #### Scenario: 分组标题
 - **WHEN** 渲染功能分组
-- **THEN** 每个分组上方有 `fd-section-title`：标题（14pt subtext bold）
+- **THEN** 分组上方有 `fd-section-title`：标题"健康管理"（14pt subtext bold）
 
 #### Scenario: 功能行
 - **WHEN** 渲染功能行
@@ -211,33 +203,40 @@ Hero 区下方 SHALL 在 tableHeaderView 内展示会员卡入口卡片。
 | `checklist` | 健康评估 | 2 项待完成 |
 | `clock` | 我的预约 | 1 个待到店 |
 
-#### Scenario: 账号与设置分组 (4 items)
-| icon (SF Symbol) | label | detail |
-|-----------------|-------|--------|
-| `bell` | 消息通知 | 已开启 |
-| `textformat.size` | 显示与辅助 | 大字 / 简洁操作 |
-| `hand.raised` | 隐私与权限 | — |
-| `lock.shield` | 账号安全 | — |
+---
 
-#### Scenario: 关于分组 (3 items)
-| icon (SF Symbol) | label | detail |
-|-----------------|-------|--------|
-| `headphones` | 帮助中心 · 7×24 客服 | — |
-| `info.circle` | 关于富德健康 | — |
-| `checkmark.circle` | 当前版本 | v 2.6.1 |
+### Requirement: Settings Entry
+「我的」首页 SHALL 通过 Hero 区右上角设置齿轮按钮进入「设置」页面。账号与设置相关功能（账号安全、隐私、通知、长辈版、缓存、合规清单、关于、退出登录）集中在设置二级页面中。
+
+#### Scenario: 进入设置
+- **WHEN** 用户点击 Hero 区右上角设置齿轮按钮
+- **THEN** push `/me/settings`（SettingsViewController）
 
 ---
 
-### Requirement: Logout Button
-页面底部 SHALL 展示退出登录按钮。
+## Settings Page Spec
 
-#### Scenario: 按钮样式
-- **WHEN** 页面渲染
-- **THEN** 全宽卡片式按钮：白色背景 + 圆角 18pt + 卡片阴影，红色文字「退出登录」（16pt medium），居中
+「设置」页面（`/me/settings`）SHALL 使用 UIScrollView + 卡片式布局，按以下分组展示：
 
-#### Scenario: 点击退出
-- **WHEN** 用户点击退出登录
-- **THEN** 弹出确认弹窗，确认后跳转登录页（`fullScreen` present `LoginViewController`）
+### Card 1: 账号与隐私
+- 「账号安全」行 → push `/me/settings/security`
+- 「隐私设置」行 → push `/me/settings/privacy`
+
+### Card 2: 通知与显示
+- 「消息通知」行 → push `/me/settings/notifications`
+- 「长辈版」行 — UISwitch toggle，切换全局适老化模式，开关状态持久化到 UserDefaults，切换时 Toast 提示
+- 「清理缓存」行 — 展示当前缓存大小，点击清理并 Toast 提示成功
+
+### Card 3: 合规清单
+- 「个人信息收集清单」行 → 弹出 dialog 展示清单内容
+- 「第三方信息共享清单」行 → 弹出 dialog 展示清单内容
+
+### Card 4: 关于
+- 「关于我们」行 → push `/me/settings/about`
+
+### Bottom: 退出登录
+- 红色描边 pill 按钮，全宽，点击后二次确认弹窗
+- 确认后清理登录态并跳转登录页
 
 ---
 
@@ -263,13 +262,18 @@ Hero 区下方 SHALL 在 tableHeaderView 内展示会员卡入口卡片。
 
 ---
 
-## Sub-Pages (本次实现)
+## Sub-Pages
 
 ### 已实现
 
 | Page | Route | 说明 |
 |------|-------|------|
-| `SettingsViewController` | `/me/settings` | 分组设置列表（通知/隐私/安全/关于/退出登录） |
+| `SettingsViewController` | `/me/settings` | 设置主页（卡片式布局：账号安全、隐私、通知、长辈版、缓存、清单、关于、退出登录） |
+| `NotificationSettingsViewController` | `/me/settings/notifications` | 消息通知设置（4 个开关行） |
+| `AccessibilitySettingsViewController` | `/me/settings/accessibility` | 大字显示与简洁操作（Hero 卡片 + 4 个开关行） |
+| `PrivacySettingsViewController` | `/me/settings/privacy` | 隐私设置（系统权限 + 业务授权开关） |
+| `SecuritySettingsViewController` | `/me/settings/security` | 账号安全（状态卡片 + 手机号/密码/认证/设备） |
+| `AboutSettingsViewController` | `/me/settings/about` | 关于（Logo + 版本 + 协议/客服/备案链接） |
 | `ProfileViewController` | `/me/profile` | 个人信息（avatar + 字段列表） |
 | `PolicyViewController` | `/me/policy` | 我的保单列表（卡片式、含关联权益） |
 | `HealthReportViewController` | `/me/health-report` | 健康报告（Tab 切换周报/阶段小结，含报告卡片） |
@@ -278,21 +282,19 @@ Hero 区下方 SHALL 在 tableHeaderView 内展示会员卡入口卡片。
 | `DietPlanViewController` | `/me/diet-plan` | 饮食方案（热量推荐 + 营养占比 + 三餐列表） |
 | `MonitoringPlanViewController` | `/me/monitoring-plan` | 监测方案（当前方案 + AI/模板切换 + 监测项列表） |
 | `HealthEvaluationsViewController` | `/me/health-evaluations` | 健康评估（待完成提示条 + 评估卡片列表） |
+| `FamilyViewController` | `/me/family` | 家庭成员列表 + 添加 |
+| `MembershipViewController` | `/me/membership` | 会员权益详情 + 升级套餐（占位） |
+| `PointsViewController` | `/me/points` | 积分明细列表（占位） |
 
 ### 延迟实现
 
 | Page | Route | funde 参考 |
 |------|-------|-----------|
-| FamilyView | `/me/family` | 家庭成员列表 + 添加 |
-| MembershipView | `/me/membership` | 会员权益详情 + 升级套餐 |
-| PointsView | `/me/points` | 积分明细列表 |
 | HealthProfileView | `/me/health-profile` | 健康档案详情（人体图 + 风险 + 指标 + 生活习惯） |
 | MedicalReportsView | `/me/medical-reports` | 体检报告单列表 |
-| NotificationSettingsView | `/me/settings/notifications` | 通知设置 |
-| PrivacySettingsView | `/me/settings/privacy` | 隐私设置 |
-| SecuritySettingsView | `/me/settings/security` | 账号安全 |
-| AboutSettingsView | `/me/settings/about` | 关于 |
-| AccessibilitySettingsView | `/me/settings/accessibility` | 大字显示（老年模式延迟） |
+| CancelAccountView | `/me/settings/cancel-account` | 注销账户流程 |
+| ChangePhoneView | `/me/change-phone` | 更换手机号流程 |
+| AddressListView | `/me/address` | 收货地址列表 + 编辑 |
 
 ---
 
@@ -300,22 +302,25 @@ Hero 区下方 SHALL 在 tableHeaderView 内展示会员卡入口卡片。
 
 | State | 表现 |
 |-------|------|
-| **默认** | Mock 数据渲染完整 Hub，UITableView 4 sections + tableHeaderView（含会员卡+统计条）/FooterView |
+| **默认** | Mock 数据渲染完整 Hub，UITableView 2 sections + tableHeaderView |
 | **空态** | 无（Hub 页不涉及数据加载空态） |
 | **加载** | 暂不需要（纯 mock） |
 
 ## Acceptance Checklist
 
 - [ ] Tab 栏第五个「我的」Tab 正确展示
-- [ ] UITableView 4 sections + tableHeaderView/FooterView 结构渲染完整
+- [ ] UITableView 2 sections + tableHeaderView 结构渲染完整
 - [ ] 首页导航栏隐藏，子页面导航栏显示（push 进入显示、pop 返回隐藏）
 - [ ] tableHeaderView — Hero 区暖色渐变背景、头像、用户名、右上角设置按钮、编辑资料/健康档案按钮
 - [ ] tableHeaderView — 会员卡入口卡片（品牌色描边、等级显示、点击跳转）
 - [ ] tableHeaderView — 4 列统计条（积分/家庭/保单/等级）等宽 + 分割线 + 可点击跳转
-- [ ] Section 0 — 服务履约区：4 数字统计 + 服务行（icon + badge + arrow）
+- [ ] Section 0 — 我的订单区：4 数字统计 + 服务行（icon + badge + arrow）
 - [ ] Section 1 — 健康管理分组 7 行（MeFuncRowCell）
-- [ ] Section 2 — 账号与设置分组 4 行
-- [ ] Section 3 — 关于分组 3 行
-- [ ] tableFooterView — 退出登录按钮 + 确认弹窗
+- [ ] 原"账号与设置"、"关于"分组和退出登录已移至设置页面
+- [ ] 设置页 — 4 张卡片布局：账号与隐私 / 通知与显示 / 合规清单 / 关于
+- [ ] 设置页 — 长辈版 toggle 可切换并 Toast 提示
+- [ ] 设置页 — 清理缓存可点击并 Toast 提示
+- [ ] 设置页 — 合规清单点击弹出 dialog
+- [ ] 设置页 — 退出登录按钮 + 二次确认弹窗
 - [ ] 所有颜色通过 `UIColor.fd*` Token 引用
 - [ ] 可点击行 push 到对应子页面

@@ -5,13 +5,11 @@ import Kingfisher
 /// 我的模块 Hub 页
 /// 参考 funde-client: prototype/src/views/me/MeView.vue
 ///
-/// 布局: UITableView 4 sections
+/// 布局: UITableView 2 sections
 ///   tableHeaderView: Hero 区 + 会员卡 + 统计条（合并 MeMembershipCardCell + MeStatsStripCell）
 ///   Section 0: MeServiceFulfillmentCell
 ///   Section 1: MeFuncRowCell × 7 (健康管理)
-///   Section 2: MeFuncRowCell × 4 (账号与设置)
-///   Section 3: MeFuncRowCell × 3 (关于)
-///   tableFooterView: 退出登录按钮
+/// 注: "账号与设置"、"关于" 分组和退出登录已移至 SettingsViewController（/me/settings）
 final class MyViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate {
 
     // MARK: - Mock Data
@@ -47,17 +45,6 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             ("checklist", UIColor(hexString: "#5C8DC9"), "健康评估", "2 项待完成", "/me/health-evaluations"),
             ("clock", UIColor(hexString: "#6B9FE4"), "我的预约", "1 个待到店", "/me/appointments"),
         ]),
-        ("账号与设置", [
-            ("bell", UIColor.fdPrimary, "消息通知", "已开启", "/me/settings"),
-            ("textformat.size", UIColor(hexString: "#D6602B"), "显示与辅助", "大字 / 简洁操作", "/me/settings/accessibility"),
-            ("hand.raised", UIColor(hexString: "#5C8DC9"), "隐私与权限", nil, "/me/settings/privacy"),
-            ("lock.shield", UIColor(hexString: "#6B7280"), "账号安全", nil, "/me/settings/security"),
-        ]),
-        ("关于", [
-            ("headphones", UIColor(hexString: "#1F9A6B"), "帮助中心 · 7×24 客服", nil, "/me/settings/about"),
-            ("info.circle", UIColor(hexString: "#3D6FB8"), "关于富德健康", nil, "/me/settings/about"),
-            ("checkmark.circle", UIColor(hexString: "#9AA0AC"), "当前版本", "v 2.6.1", ""),
-        ]),
     ]
 
     // MARK: - UI
@@ -84,7 +71,6 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.tableHeaderView = buildTableHeader()
-        tableView.tableFooterView = buildTableFooter()
     }
 
     override func viewDidLayoutSubviews() {
@@ -395,39 +381,15 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         return header
     }
 
-    // MARK: - Table Footer (Logout)
-
-    private func buildTableFooter() -> UIView {
-        let footer = UIView()
-        let btn = UIButton(type: .system)
-        btn.setTitle("退出登录", for: .normal)
-        btn.titleLabel?.font = .fdBody
-        btn.setTitleColor(.fdDanger, for: .normal)
-        btn.backgroundColor = .fdSurface
-        btn.layer.cornerRadius = 18
-        btn.layer.shadowColor = UIColor.black.cgColor
-        btn.layer.shadowOffset = CGSize(width: 0, height: 1)
-        btn.layer.shadowRadius = 6; btn.layer.shadowOpacity = 0.03
-        btn.addTarget(self, action: #selector(handleLogout), for: .touchUpInside)
-        footer.addSubview(btn)
-        btn.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 16, bottom: 20, right: 16)); $0.height.equalTo(52) }
-
-        let size = footer.systemLayoutSizeFitting(CGSize(width: view.bounds.width, height: UIView.layoutFittingCompressedSize.height), withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel)
-        footer.frame.size = CGSize(width: view.bounds.width, height: size.height)
-        return footer
-    }
-
     // MARK: - UITableViewDataSource
 
-    /// 4 sections: 0=ServiceFulfillment, 1=HealthMgt, 2=Account, 3=About
-    func numberOfSections(in tableView: UITableView) -> Int { 4 }
+    /// 2 sections: 0=ServiceFulfillment, 1=HealthMgt
+    func numberOfSections(in tableView: UITableView) -> Int { 2 }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch section {
         case 0: return 1
         case 1: return functionGroups[0].rows.count   // 7
-        case 2: return functionGroups[1].rows.count   // 4
-        case 3: return functionGroups[2].rows.count   // 3
         default: return 0
         }
     }
@@ -447,7 +409,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             cell.onServiceTap = { Router.shared.push("/orders") }
             return cell
 
-        case 1, 2, 3:
+        case 1:
             guard let cell = tableView.dequeueReusableCell(withIdentifier: MeFuncRowCell.reuseIdentifier, for: indexPath) as? MeFuncRowCell else {
                 return UITableViewCell()
             }
@@ -470,13 +432,13 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         switch indexPath.section {
-        case 1, 2, 3: return 48
+        case 1: return 48
         default: return UITableView.automaticDimension
         }
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        let titles = ["服务履约", "健康管理", "账号与设置", "关于"]
+        let titles = ["我的订单", "健康管理"]
         guard section < titles.count else { return nil }
         let title = titles[section]
         let container = UIView(); container.backgroundColor = .fdBg
@@ -507,12 +469,4 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         Router.shared.push(stats[idx].route)
     }
 
-    @objc private func handleLogout() {
-        let alert = UIAlertController(title: nil, message: "确定要退出登录吗？", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
-        alert.addAction(UIAlertAction(title: "退出", style: .destructive) { _ in
-            Router.shared.present("/login")
-        })
-        present(alert, animated: true)
-    }
 }
