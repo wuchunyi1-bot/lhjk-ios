@@ -9,73 +9,121 @@
 /* Begin PBXBuildFile section */
 		023299BEDDBAE0D022B08E7B /* DALProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DFD924CDD4A764ABF604FB /* DALProtocol.swift */; };
 		05433145BBE114CF0C1DC08A /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B291D76D4C819D8DB33D00 /* DatabaseManager.swift */; };
-		0A509A5F93C44346FA943249 /* EcgViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CFE1614483ECDDFB1F6BF7 /* EcgViewController.swift */; };
 		0D9CCCF8E6DF5482A9FACDF0 /* APIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27CE239FA8FD35C6FAB8017C /* APIManager.swift */; };
-		0DF3EEBD3CBD7D3B5436CB24 /* PolicyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081BA2DBDE01D1406E30170D /* PolicyViewController.swift */; };
-		0EDC5622BF3A0A37E849F288 /* SectionTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9C2E856DFAEC8757D284064 /* SectionTitleView.swift */; };
 		0EE2E6B7960C05819866D0E1 /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CE8E0C75DF62E92DC4A2681 /* BluetoothManager.swift */; };
 		1406F12781B85941BC234E2B /* OAuthAuthenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68DC37BCDD618E2DCE9A9D02 /* OAuthAuthenticator.swift */; };
-		1573E68259A66AD868AFD131 /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7EDC9DBA2C15DAEC992461C /* ChatViewController.swift */; };
 		1694DDA9C65C92BEE8B3AA7B /* Conversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3743DC311DF3858D78351828 /* Conversation.swift */; };
-		18D56CDA5128C0C654896D46 /* OptionChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B273E85E9AF9070DCE471A1 /* OptionChipView.swift */; };
-		1EE2121358C8F93652FC103C /* PaymentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2F26CCFF4734186BF04A39 /* PaymentViewController.swift */; };
-		1EE4690D0E179DD18C481D76 /* HomeTeamCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 545B6FD5E21C779F139D89E5 /* HomeTeamCardCell.swift */; };
-		27260D21123BF37DC03CD18F /* MetricRulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDFA6D00CF0E1707D0957144 /* MetricRulerView.swift */; };
 		2AB37F19E9E9BA0DCE4E2FF9 /* PaymentProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33F829631DE3DD09B5C6FF3 /* PaymentProtocol.swift */; };
-		2EA1671EACE2C23AF10A0DDF /* HomeHeroCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5CCFA53EAAFCBA929BF63B5 /* HomeHeroCell.swift */; };
 		31C52A8BD36FA64D4C32B098 /* UserDefaultsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D333C32A8805FAD51C4D2820 /* UserDefaultsManager.swift */; };
-		33DDECBC677E7E50B96C3779 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C3F2FAE5619994A3AA7A46 /* SettingsViewController.swift */; };
-		342788F37504E84D0A004D5E /* SleepViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD50DDCF0289450DE8869D0 /* SleepViewController.swift */; };
-		3E3A18231BB2871AEBFFBA7B /* WeeklyReportCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8056F0ABC51890F951CC058C /* WeeklyReportCell.swift */; };
 		3EA9A6D3AD0E682EFBCFADE3 /* APIManager+Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 649B848D3E577A97460BAB7C /* APIManager+Async.swift */; };
 		43464FED90F9F0DFF7F7CADB /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2C9738A2B82C009F94EDFE7 /* APIError.swift */; };
-		4A75427BA911A7B10D4DDE6E /* MonitoringPlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B498405ABB27F6D8377D6064 /* MonitoringPlanViewController.swift */; };
-		4D3B9FC870DC051DB24DD8F6 /* HealthReportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 619369377609556A6596BEFF /* HealthReportViewController.swift */; };
-		4F7369070CC43FA996104A94 /* LoginFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D7AD8DF0E1609567B12918C /* LoginFieldView.swift */; };
-		5648A1F17004E9968A7F96E4 /* StageReportCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0407478440907A929B00481 /* StageReportCell.swift */; };
 		59AB481874792A6D2327D4DB /* PLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840D488A2D621EED67F49634 /* PLProtocol.swift */; };
 		5E7531B1805BDFC74CD1F8CB /* BluetoothModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6373F937CC9DA144A80873C /* BluetoothModels.swift */; };
 		625D4BF5B8323C4730A5B48E /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8DE397CDF8225D92B0353A0 /* SceneDelegate.swift */; };
-		62628470BAE98A14205557DD /* MetricAddViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F0BFA51617B47B9D5DA86D /* MetricAddViewController.swift */; };
 		631F39830B0FACBBF98B6C6F /* ServiceRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 282C1F0671F2C969561DE1C7 /* ServiceRoutes.swift */; };
 		678D746E713E617DA4218CF8 /* BaseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FFA483EDF37CE2D4BEAFA2C /* BaseViewController.swift */; };
-		68F481056F1B78EE61CC78F8 /* HealthMallViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 629C18D65321C9E6BC32BA86 /* HealthMallViewController.swift */; };
-		7568562CC69E30C273DCAF3A /* SpO2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7054846090DC999E8A4AA089 /* SpO2ViewController.swift */; };
-		7A8B706AA025C5FAC1433DA9 /* ServiceListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 892001FB5FF7399E601EF9C4 /* ServiceListViewController.swift */; };
-		7B46EF5C3CB00C67C3413246 /* AppointmentsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27EE4ECD3E9C86C039F31E29 /* AppointmentsViewController.swift */; };
 		7FD06195AE16D4FD3861568B /* BaseNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE076FFD3B924E308E3D26E9 /* BaseNavigationController.swift */; };
-		8449BE1294FC1603412521D4 /* HealthEvaluationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 024BB0505F52EBA8BBB0F6A6 /* HealthEvaluationsViewController.swift */; };
-		85D1EAC623198A9F60F786E0 /* PeripheralCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA15F07EE00BE72C38F6C89 /* PeripheralCell.swift */; };
-		86A90CFE9F2E03462DACDD60 /* HomeTaskCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = F66310705999D8297D1FE4EF /* HomeTaskCardCell.swift */; };
 		880D3EEECACFBB9A6791AB14 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7AE47164C661037814AB024 /* Message.swift */; };
-		8B8C09E1713C1F6FC5A641CA /* ProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2DE7CB0CC0F0792F08218E9 /* ProfileViewController.swift */; };
-		8D68B8774B8EA704796D6F1A /* FamilyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 719AE3975B99859C1D663A23 /* FamilyViewController.swift */; };
 		8DC19885FA8CBC4AD853552E /* PaymentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31DDB71613DB8E688C4122B3 /* PaymentService.swift */; };
 		8E749A7845EBA8C07946E821 /* Router.swift in Sources */ = {isa = PBXBuildFile; fileRef = 595A3F9A5793396375B1815B /* Router.swift */; };
-		9A248986A42446AB3705EC31 /* OnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E2C1E52BF27D76D4C2DEAEA /* OnboardingViewController.swift */; };
-		9B3BD71652518F27624BD396 /* StageMetricsCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EAF498F5E583779ABA3E77A /* StageMetricsCardView.swift */; };
 		9F5D324E0D90EB682A0A77B4 /* OAuthCredential.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */; };
 		A3AADC4D6DF2A11DC4DA077F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7A38C4AFEC723E4B6C12D675 /* LaunchScreen.storyboard */; };
 		A576A2202FE8E22E004F6070 /* ECGSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21E2FE8E22E004F6070 /* ECGSimulator.swift */; };
 		A576A2212FE8E22E004F6070 /* ECGChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21C2FE8E22E004F6070 /* ECGChartView.swift */; };
 		A576A2222FE8E22E004F6070 /* ECGDataBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21D2FE8E22E004F6070 /* ECGDataBuffer.swift */; };
-		A57D2EFC2FDBBE00002E43BA /* MyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2EF82FDBBE00002E43BA /* MyViewController.swift */; };
-		A57D2EFD2FDBBE00002E43BA /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2EFA2FDBBE00002E43BA /* LoginViewController.swift */; };
-		A57D2EFF2FDBBE3B002E43BA /* HealthViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2EFE2FDBBE3B002E43BA /* HealthViewController.swift */; };
-		A57D2F022FDBBE75002E43BA /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F002FDBBE75002E43BA /* HomeViewController.swift */; };
-		A57D2F042FDBBEB7002E43BA /* ServiceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F032FDBBEB7002E43BA /* ServiceViewController.swift */; };
-		A57D2F062FDBBEC8002E43BA /* MessageListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F052FDBBEC8002E43BA /* MessageListViewController.swift */; };
-		A57D2F162FDBFF13002E43BA /* BloodPressureViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F112FDBFF13002E43BA /* BloodPressureViewController.swift */; };
-		A57D2F172FDBFF13002E43BA /* HeartRateViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F132FDBFF13002E43BA /* HeartRateViewController.swift */; };
-		A57D2F182FDBFF13002E43BA /* BloodSugarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F122FDBFF13002E43BA /* BloodSugarViewController.swift */; };
-		A57D2F192FDBFF13002E43BA /* WeightViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F142FDBFF13002E43BA /* WeightViewController.swift */; };
-		A57D2F1A2FDBFF13002E43BA /* MetricCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F102FDBFF13002E43BA /* MetricCardCell.swift */; };
 		A57D2F1E2FDC0647002E43BA /* MyRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F1B2FDC0647002E43BA /* MyRoutes.swift */; };
 		A57D2F242FDC0661002E43BA /* RegisterLoginRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F202FDC0661002E43BA /* RegisterLoginRoutes.swift */; };
 		A590FB1A2FEA2F6E0056EF52 /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB172FEA2F6E0056EF52 /* UserService.swift */; };
 		A590FB1B2FEA2F6E0056EF52 /* UserServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB182FEA2F6E0056EF52 /* UserServiceProtocol.swift */; };
 		A590FB1C2FEA2F6E0056EF52 /* UserModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB152FEA2F6E0056EF52 /* UserModels.swift */; };
 		A590FB1D2FEA2F6E0056EF52 /* UserRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB162FEA2F6E0056EF52 /* UserRoutes.swift */; };
+		A590FBC62FEA82980056EF52 /* AccessibilitySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB9C2FEA82980056EF52 /* AccessibilitySettingsViewController.swift */; };
+		A590FBC72FEA82980056EF52 /* BrandHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBA52FEA82980056EF52 /* BrandHeaderView.swift */; };
+		A590FBC82FEA82980056EF52 /* MeFuncRowCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB5D2FEA82980056EF52 /* MeFuncRowCell.swift */; };
+		A590FBC92FEA82980056EF52 /* PeripheralCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB232FEA82980056EF52 /* PeripheralCell.swift */; };
+		A590FBCA2FEA82980056EF52 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBB62FEA82980056EF52 /* LoginViewController.swift */; };
+		A590FBCB2FEA82980056EF52 /* HealthReportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB782FEA82980056EF52 /* HealthReportViewController.swift */; };
+		A590FBCC2FEA82980056EF52 /* HomeQuickActionsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB452FEA82980056EF52 /* HomeQuickActionsCell.swift */; };
+		A590FBCD2FEA82980056EF52 /* DigestiveViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB2A2FEA82980056EF52 /* DigestiveViewController.swift */; };
+		A590FBCE2FEA82980056EF52 /* LoginFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBA72FEA82980056EF52 /* LoginFieldView.swift */; };
+		A590FBCF2FEA82980056EF52 /* SpO2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB322FEA82980056EF52 /* SpO2ViewController.swift */; };
+		A590FBD02FEA82980056EF52 /* MessageBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB4D2FEA82980056EF52 /* MessageBubbleCell.swift */; };
+		A590FBD12FEA82980056EF52 /* OptionChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBA92FEA82980056EF52 /* OptionChipView.swift */; };
+		A590FBD22FEA82980056EF52 /* PolicyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB8D2FEA82980056EF52 /* PolicyViewController.swift */; };
+		A590FBD32FEA82980056EF52 /* SleepViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB312FEA82980056EF52 /* SleepViewController.swift */; };
+		A590FBD42FEA82980056EF52 /* HealthEvaluationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB742FEA82980056EF52 /* HealthEvaluationsViewController.swift */; };
+		A590FBD52FEA82980056EF52 /* NotificationSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB9D2FEA82980056EF52 /* NotificationSettingsViewController.swift */; };
+		A590FBD62FEA82980056EF52 /* BloodSugarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB292FEA82980056EF52 /* BloodSugarViewController.swift */; };
+		A590FBD72FEA82980056EF52 /* DietPlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB6C2FEA82980056EF52 /* DietPlanViewController.swift */; };
+		A590FBD82FEA82980056EF52 /* MeStatsStripCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB602FEA82980056EF52 /* MeStatsStripCell.swift */; };
+		A590FBD92FEA82980056EF52 /* HealthVitalMetricsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB212FEA82980056EF52 /* HealthVitalMetricsCell.swift */; };
+		A590FBDA2FEA82980056EF52 /* ServiceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBC42FEA82980056EF52 /* ServiceViewController.swift */; };
+		A590FBDB2FEA82980056EF52 /* AboutSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB9B2FEA82980056EF52 /* AboutSettingsViewController.swift */; };
+		A590FBDC2FEA82980056EF52 /* PrivacyPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBAB2FEA82980056EF52 /* PrivacyPromptView.swift */; };
+		A590FBDD2FEA82980056EF52 /* FuncRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB622FEA82980056EF52 /* FuncRowView.swift */; };
+		A590FBDE2FEA82980056EF52 /* AppointmentsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB5B2FEA82980056EF52 /* AppointmentsViewController.swift */; };
+		A590FBDF2FEA82980056EF52 /* HealthRecordHistoryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB362FEA82980056EF52 /* HealthRecordHistoryCell.swift */; };
+		A590FBE02FEA82980056EF52 /* BodyFigureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB3B2FEA82980056EF52 /* BodyFigureView.swift */; };
+		A590FBE12FEA82980056EF52 /* MetricCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB222FEA82980056EF52 /* MetricCardCell.swift */; };
+		A590FBE22FEA82980056EF52 /* HomeTaskCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB472FEA82980056EF52 /* HomeTaskCardCell.swift */; };
+		A590FBE32FEA82980056EF52 /* SettingsToggleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB982FEA82980056EF52 /* SettingsToggleCell.swift */; };
+		A590FBE42FEA82980056EF52 /* BloodPressureViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB282FEA82980056EF52 /* BloodPressureViewController.swift */; };
+		A590FBE52FEA82980056EF52 /* MeMembershipCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB5E2FEA82980056EF52 /* MeMembershipCardCell.swift */; };
+		A590FBE62FEA82980056EF52 /* HeartRateViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB2E2FEA82980056EF52 /* HeartRateViewController.swift */; };
+		A590FBE72FEA82980056EF52 /* MetricAddViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB2F2FEA82980056EF52 /* MetricAddViewController.swift */; };
+		A590FBE82FEA82980056EF52 /* OnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBB42FEA82980056EF52 /* OnboardingViewController.swift */; };
+		A590FBE92FEA82980056EF52 /* MembershipViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB7C2FEA82980056EF52 /* MembershipViewController.swift */; };
+		A590FBEA2FEA82980056EF52 /* HealthMallViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBBA2FEA82980056EF52 /* HealthMallViewController.swift */; };
+		A590FBEB2FEA82980056EF52 /* PrivacySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB9E2FEA82980056EF52 /* PrivacySettingsViewController.swift */; };
+		A590FBEC2FEA82980056EF52 /* MessageListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB552FEA82980056EF52 /* MessageListViewController.swift */; };
+		A590FBED2FEA82980056EF52 /* WeeklyReportCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB942FEA82980056EF52 /* WeeklyReportCell.swift */; };
+		A590FBEE2FEA82980056EF52 /* RiskBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB3C2FEA82980056EF52 /* RiskBarView.swift */; };
+		A590FBEF2FEA82980056EF52 /* EcgViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB2B2FEA82980056EF52 /* EcgViewController.swift */; };
+		A590FBF02FEA82980056EF52 /* ExerciseFoodViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB2C2FEA82980056EF52 /* ExerciseFoodViewController.swift */; };
+		A590FBF12FEA82980056EF52 /* HomeArticleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB432FEA82980056EF52 /* HomeArticleCell.swift */; };
+		A590FBF22FEA82980056EF52 /* WeightViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB332FEA82980056EF52 /* WeightViewController.swift */; };
+		A590FBF32FEA82980056EF52 /* FamilyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB702FEA82980056EF52 /* FamilyViewController.swift */; };
+		A590FBF42FEA82980056EF52 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBA02FEA82980056EF52 /* SettingsViewController.swift */; };
+		A590FBF52FEA82980056EF52 /* HealthRecordBodyCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB352FEA82980056EF52 /* HealthRecordBodyCardCell.swift */; };
+		A590FBF62FEA82980056EF52 /* SecuritySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB9F2FEA82980056EF52 /* SecuritySettingsViewController.swift */; };
+		A590FBF72FEA82980056EF52 /* MetricsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB302FEA82980056EF52 /* MetricsViewController.swift */; };
+		A590FBF82FEA82980056EF52 /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB512FEA82980056EF52 /* ChatViewController.swift */; };
+		A590FBF92FEA82980056EF52 /* HealthQuickEntriesCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB1F2FEA82980056EF52 /* HealthQuickEntriesCell.swift */; };
+		A590FBFA2FEA82980056EF52 /* OrderCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB822FEA82980056EF52 /* OrderCardCell.swift */; };
+		A590FBFB2FEA82980056EF52 /* HealthScoreCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB202FEA82980056EF52 /* HealthScoreCardCell.swift */; };
+		A590FBFC2FEA82980056EF52 /* AgreementCheckboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBA42FEA82980056EF52 /* AgreementCheckboxView.swift */; };
+		A590FBFD2FEA82980056EF52 /* HealthRecordLifestyleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB372FEA82980056EF52 /* HealthRecordLifestyleCell.swift */; };
+		A590FBFE2FEA82980056EF52 /* NotificationGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBA82FEA82980056EF52 /* NotificationGuideView.swift */; };
+		A590FBFF2FEA82980056EF52 /* VerifyCodeButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBAC2FEA82980056EF52 /* VerifyCodeButton.swift */; };
+		A590FC002FEA82980056EF52 /* ConversationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB4C2FEA82980056EF52 /* ConversationCell.swift */; };
+		A590FC012FEA82980056EF52 /* FundusViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB2D2FEA82980056EF52 /* FundusViewController.swift */; };
+		A590FC022FEA82980056EF52 /* OrderListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB852FEA82980056EF52 /* OrderListViewController.swift */; };
+		A590FC032FEA82980056EF52 /* HealthRecordModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB3E2FEA82980056EF52 /* HealthRecordModels.swift */; };
+		A590FC042FEA82980056EF52 /* HomeServiceBannerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB462FEA82980056EF52 /* HomeServiceBannerCell.swift */; };
+		A590FC052FEA82980056EF52 /* ServiceListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBC22FEA82980056EF52 /* ServiceListViewController.swift */; };
+		A590FC062FEA82980056EF52 /* ConversationListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB572FEA82980056EF52 /* ConversationListViewController.swift */; };
+		A590FC072FEA82980056EF52 /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB4A2FEA82980056EF52 /* HomeViewController.swift */; };
+		A590FC082FEA82980056EF52 /* SectionTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB632FEA82980056EF52 /* SectionTitleView.swift */; };
+		A590FC092FEA82980056EF52 /* PaymentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBBE2FEA82980056EF52 /* PaymentViewController.swift */; };
+		A590FC0A2FEA82980056EF52 /* HealthViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB412FEA82980056EF52 /* HealthViewController.swift */; };
+		A590FC0B2FEA82980056EF52 /* MeServiceFulfillmentCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB5F2FEA82980056EF52 /* MeServiceFulfillmentCell.swift */; };
+		A590FC0C2FEA82980056EF52 /* HomeTeamCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB482FEA82980056EF52 /* HomeTeamCardCell.swift */; };
+		A590FC0D2FEA82980056EF52 /* ProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB912FEA82980056EF52 /* ProfileViewController.swift */; };
+		A590FC0E2FEA82980056EF52 /* MyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBA22FEA82980056EF52 /* MyViewController.swift */; };
+		A590FC0F2FEA82980056EF52 /* CaptchaVerifyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBA62FEA82980056EF52 /* CaptchaVerifyView.swift */; };
+		A590FC102FEA82980056EF52 /* HealthRecordViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB3F2FEA82980056EF52 /* HealthRecordViewController.swift */; };
+		A590FC112FEA82980056EF52 /* HealthArchiveCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB1E2FEA82980056EF52 /* HealthArchiveCardCell.swift */; };
+		A590FC122FEA82980056EF52 /* MetricRulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB262FEA82980056EF52 /* MetricRulerView.swift */; };
+		A590FC132FEA82980056EF52 /* StageReportCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB932FEA82980056EF52 /* StageReportCell.swift */; };
+		A590FC142FEA82980056EF52 /* DevicesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB682FEA82980056EF52 /* DevicesViewController.swift */; };
+		A590FC152FEA82980056EF52 /* PhoneBindingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBAA2FEA82980056EF52 /* PhoneBindingView.swift */; };
+		A590FC162FEA82980056EF52 /* HealthRecordMetricRowCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB382FEA82980056EF52 /* HealthRecordMetricRowCell.swift */; };
+		A590FC172FEA82980056EF52 /* HealthRecordUserInfoCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB392FEA82980056EF52 /* HealthRecordUserInfoCell.swift */; };
+		A590FC182FEA82980056EF52 /* PointsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB892FEA82980056EF52 /* PointsViewController.swift */; };
+		A590FC192FEA82980056EF52 /* MonitoringPlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB802FEA82980056EF52 /* MonitoringPlanViewController.swift */; };
+		A590FC1A2FEA82980056EF52 /* StageMetricsCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB642FEA82980056EF52 /* StageMetricsCardView.swift */; };
+		A590FC1B2FEA82980056EF52 /* HomeHeroCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB442FEA82980056EF52 /* HomeHeroCell.swift */; };
+		A590FC1C2FEA82980056EF52 /* ForgotPasswordViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBB02FEA82980056EF52 /* ForgotPasswordViewController.swift */; };
 		A5917CE22FDFA7C000878961 /* HomeRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917CE02FDFA7C000878961 /* HomeRoutes.swift */; };
 		A5917D062FDFC8EF00878961 /* UIColor+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917CFD2FDFC8EF00878961 /* UIColor+Hex.swift */; };
 		A5917D072FDFC8EF00878961 /* UIViewController+Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D032FDFC8EF00878961 /* UIViewController+Alert.swift */; };
@@ -84,155 +132,152 @@
 		A5917D0A2FDFC8EF00878961 /* UIColor+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917CFE2FDFC8EF00878961 /* UIColor+Theme.swift */; };
 		A5917D0B2FDFC8EF00878961 /* UIButton+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917CFB2FDFC8EF00878961 /* UIButton+Funde.swift */; };
 		A5917D0C2FDFC8EF00878961 /* DGCharts+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917CF92FDFC8EF00878961 /* DGCharts+Theme.swift */; };
-		A5917D0E2FDFD7D000878961 /* ForgotPasswordViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D0D2FDFD7D000878961 /* ForgotPasswordViewController.swift */; };
-		A5917D162FDFD7E500878961 /* PrivacyPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D132FDFD7E500878961 /* PrivacyPromptView.swift */; };
-		A5917D182FDFD7E500878961 /* NotificationGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D112FDFD7E500878961 /* NotificationGuideView.swift */; };
-		A5917D192FDFD7E500878961 /* PhoneBindingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D122FDFD7E500878961 /* PhoneBindingView.swift */; };
-		A5917D1A2FDFD7E500878961 /* CaptchaVerifyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D102FDFD7E500878961 /* CaptchaVerifyView.swift */; };
-		A5917D1B2FDFD7E500878961 /* VerifyCodeButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D142FDFD7E500878961 /* VerifyCodeButton.swift */; };
-		A5917D1C2FDFD7E500878961 /* AgreementCheckboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D0F2FDFD7E500878961 /* AgreementCheckboxView.swift */; };
 		A5917D202FDFD7FE00878961 /* LoginService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D1E2FDFD7FE00878961 /* LoginService.swift */; };
 		A5917D212FDFD7FE00878961 /* LoginModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D1D2FDFD7FE00878961 /* LoginModels.swift */; };
 		A5917D222FDFD7FE00878961 /* LoginServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */; };
 		A5917D242FDFD96D00878961 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D232FDFD96D00878961 /* WebViewController.swift */; };
-		A5917D2A2FDFDD7F00878961 /* HealthQuickEntriesCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D262FDFDD7F00878961 /* HealthQuickEntriesCell.swift */; };
-		A5917D2B2FDFDD7F00878961 /* HealthArchiveCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D252FDFDD7F00878961 /* HealthArchiveCardCell.swift */; };
-		A5917D2C2FDFDD7F00878961 /* HealthScoreCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D272FDFDD7F00878961 /* HealthScoreCardCell.swift */; };
-		A5917D2D2FDFDD7F00878961 /* HealthVitalMetricsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D282FDFDD7F00878961 /* HealthVitalMetricsCell.swift */; };
-		A5917D332FDFDD9800878961 /* MeServiceFulfillmentCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D302FDFDD9800878961 /* MeServiceFulfillmentCell.swift */; };
-		A5917D342FDFDD9800878961 /* MeFuncRowCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D2E2FDFDD9800878961 /* MeFuncRowCell.swift */; };
-		A5917D352FDFDD9800878961 /* MeStatsStripCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D312FDFDD9800878961 /* MeStatsStripCell.swift */; };
-		A5917D362FDFDD9800878961 /* MeMembershipCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D2F2FDFDD9800878961 /* MeMembershipCardCell.swift */; };
-		A5917D3A2FDFFAC300878961 /* MessageBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D372FDFFAC300878961 /* MessageBubbleCell.swift */; };
-		A5917D3B2FDFFAC300878961 /* ConversationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D392FDFFAC300878961 /* ConversationCell.swift */; };
-		A5B99BBE2FE148B800D92180 /* HealthRecordModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B99BB92FE148B800D92180 /* HealthRecordModels.swift */; };
-		A5B99BBF2FE148B800D92180 /* BodyFigureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B99BB42FE148B800D92180 /* BodyFigureView.swift */; };
-		A5B99BC02FE148B800D92180 /* HealthRecordUserInfoCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B99BBA2FE148B800D92180 /* HealthRecordUserInfoCell.swift */; };
-		A5B99BC12FE148B800D92180 /* HealthRecordHistoryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B99BB62FE148B800D92180 /* HealthRecordHistoryCell.swift */; };
-		A5B99BC22FE148B800D92180 /* RiskBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B99BBC2FE148B800D92180 /* RiskBarView.swift */; };
-		A5B99BC32FE148B800D92180 /* HealthRecordBodyCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B99BB52FE148B800D92180 /* HealthRecordBodyCardCell.swift */; };
-		A5B99BC42FE148B800D92180 /* HealthRecordLifestyleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B99BB72FE148B800D92180 /* HealthRecordLifestyleCell.swift */; };
-		A5B99BC52FE148B800D92180 /* HealthRecordMetricRowCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B99BB82FE148B800D92180 /* HealthRecordMetricRowCell.swift */; };
-		A5B99BC62FE148B800D92180 /* HealthRecordViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B99BBB2FE148B800D92180 /* HealthRecordViewController.swift */; };
 		A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */; };
-		A5BFCB302FE3C15D008DA1DF /* AccessibilitySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCB2B2FE3C15D008DA1DF /* AccessibilitySettingsViewController.swift */; };
-		A5BFCB312FE3C15D008DA1DF /* AboutSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCB2A2FE3C15D008DA1DF /* AboutSettingsViewController.swift */; };
-		A5BFCB322FE3C15D008DA1DF /* PrivacySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCB2D2FE3C15D008DA1DF /* PrivacySettingsViewController.swift */; };
-		A5BFCB332FE3C15D008DA1DF /* SecuritySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCB2E2FE3C15D008DA1DF /* SecuritySettingsViewController.swift */; };
-		A5BFCB342FE3C15D008DA1DF /* NotificationSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCB2C2FE3C15D008DA1DF /* NotificationSettingsViewController.swift */; };
-		A5BFCB362FE3C18D008DA1DF /* SettingsToggleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCB352FE3C18D008DA1DF /* SettingsToggleCell.swift */; };
 		A952E20047557E6F1D7EE0AF /* Pods_lhjk_client_new.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */; };
 		A97FF7EF73364502F99C2EC4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FACC28499C23F3853EBBF10 /* AppDelegate.swift */; };
-		B071816CF85673E86ECBF759 /* DevicesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE6B98583B23B6831E89C159 /* DevicesViewController.swift */; };
 		B0BC602D83CB797AB66DFE1F /* WechatPayChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 395140C046B00859321C4B05 /* WechatPayChannel.swift */; };
-		B270B847530087B6D64A4B03 /* DietPlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F95D4E27E21CB917BA8D97C8 /* DietPlanViewController.swift */; };
 		B2D6B218F3BB303CD7571664 /* BluetoothService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0727F1AEE4F87CC1D8471BF /* BluetoothService.swift */; };
 		B3900106696EDAEC01403D9D /* RongCloudManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE938ED267A4A5BD94207F6E /* RongCloudManager.swift */; };
-		B4E6835B6A7B7B08AED3294E /* HomeQuickActionsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C363076AE63C6D8EBF4615DB /* HomeQuickActionsCell.swift */; };
 		B92F96EB8F6DADF4562EA642 /* RongCloudMessageDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF09D89100EBE0ABD42544FD /* RongCloudMessageDelegate.swift */; };
-		B9EFCF3E657E0B1117AEF7E2 /* ConversationListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4DACDBFFDBFF750E34307AC /* ConversationListViewController.swift */; };
-		BA0FFADEEC815606D73DFCBF /* OrderListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CC32FFF96970D13A3A394E7 /* OrderListViewController.swift */; };
-		BB1E36BDFE3D72E20FBEDCF0 /* HomeServiceBannerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F1F99A3F53E0201E0382896 /* HomeServiceBannerCell.swift */; };
-		BB7DEF26F4B9703D4AF29861 /* DigestiveViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 418F40E80C8DD064F73A6FFE /* DigestiveViewController.swift */; };
-		BE14F14A358741BB99BE0FFA /* MetricsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1061151A764123A448CC1C /* MetricsViewController.swift */; };
-		BF95CF00169880173A78BDF8 /* MetricCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = D50703581C623E4254C38209 /* MetricCardCell.swift */; };
 		C7908897087E6472C5021E0F /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB2F07AA65B496162BCA2DB3 /* Foundation.framework */; };
 		C8C2F63AA4929D219BE2AE0C /* RootTabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D99515A34B08FA9203F7DFB /* RootTabBarController.swift */; };
 		C93572D0D1BE419981086975 /* MessageRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8B0D2D90AC6467582FAAE9C /* MessageRoutes.swift */; };
-		CBDE3CB76555F2D48F79ADC9 /* OrderCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B6CEC5F1C6384EFD8D0C047 /* OrderCardCell.swift */; };
 		CC5AFA75E6FC57E098F3107B /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2864D2DFAE001AA678A08E54 /* NetworkMonitor.swift */; };
 		D0C0F9A29B4ED9D6FB4A6C01 /* AlipayChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9969E87449F15762387486 /* AlipayChannel.swift */; };
 		D0DF85E8760C6773E9B32743 /* RouteSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 218FE8AE56EDAABAC5B6AA72 /* RouteSetup.swift */; };
-		D37E9CD6CE58F539A8D8DBFB /* FuncRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D87802E5D53C4815174A814D /* FuncRowView.swift */; };
 		D4D3CF9A74172D4C53A40241 /* PlaceholderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4C406B883EDA36A6FBC5C86 /* PlaceholderViewController.swift */; };
 		D5A7A19BFB9910F4E8AD2FCD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DCE57F7A320AD8DA12CD7236 /* Assets.xcassets */; };
 		D97D86F91B5A3A4D1C22DDC3 /* PaymentOrder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1064F73BA7453F81F619546E /* PaymentOrder.swift */; };
-		DA0FC023460D3BD196E8DE73 /* FundusViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 746F03316488E8B043EE38F1 /* FundusViewController.swift */; };
-		E11C466E9195539DC2B9C064 /* ExerciseFoodViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78F343524CCA393486B22E8E /* ExerciseFoodViewController.swift */; };
-		E2B789D15CA89A4157DC0C35 /* MembershipViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD680380E870019FA45DC7C5 /* MembershipViewController.swift */; };
 		E7E5276C54E35414EB42377A /* HealthRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C585503B59B93311DEC6A839 /* HealthRoutes.swift */; };
 		E9F251651FF71AEBC2DF03F3 /* BLLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 625430E3BA9BF6D9CA97AAE8 /* BLLProtocol.swift */; };
 		EF703DBA6D3A64DB74961F32 /* APIResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9B669A52C4314F17B603D9 /* APIResponse.swift */; };
 		EF81F5EA5B41E6A3D6AD7317 /* IMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 929B2C07064774594EB5F7EC /* IMService.swift */; };
-		F1DE89B1375768770C1F498F /* HomeArticleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BA7A883A92F5B5D981EAD6C /* HomeArticleCell.swift */; };
-		FC144619EF2E5B9C0F8CAC47 /* BrandHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A664F4EB7478EC69CC8B7C6 /* BrandHeaderView.swift */; };
-		FC5E44818A63C1C164911BDB /* PointsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA2FD7801043AC641280FAA4 /* PointsViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		024BB0505F52EBA8BBB0F6A6 /* HealthEvaluationsViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HealthEvaluationsViewController.swift; sourceTree = "<group>"; };
-		081BA2DBDE01D1406E30170D /* PolicyViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PolicyViewController.swift; sourceTree = "<group>"; };
 		08DA859284D97B48B4305368 /* Pods-lhjk-client-new.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-lhjk-client-new.release.xcconfig"; path = "Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new.release.xcconfig"; sourceTree = "<group>"; };
-		0CC32FFF96970D13A3A394E7 /* OrderListViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderListViewController.swift; sourceTree = "<group>"; };
 		1064F73BA7453F81F619546E /* PaymentOrder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PaymentOrder.swift; path = DAL/Payment/PaymentOrder.swift; sourceTree = "<group>"; };
-		13CFE1614483ECDDFB1F6BF7 /* EcgViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EcgViewController.swift; sourceTree = "<group>"; };
-		1F1F99A3F53E0201E0382896 /* HomeServiceBannerCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeServiceBannerCell.swift; sourceTree = "<group>"; };
 		218FE8AE56EDAABAC5B6AA72 /* RouteSetup.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RouteSetup.swift; path = DAL/Router/RouteSetup.swift; sourceTree = "<group>"; };
 		2726931B7C65F7052CD3282C /* Pods-lhjk-client-new.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-lhjk-client-new.debug.xcconfig"; path = "Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new.debug.xcconfig"; sourceTree = "<group>"; };
 		27CE239FA8FD35C6FAB8017C /* APIManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = APIManager.swift; path = DAL/Networking/APIManager.swift; sourceTree = "<group>"; };
-		27EE4ECD3E9C86C039F31E29 /* AppointmentsViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppointmentsViewController.swift; sourceTree = "<group>"; };
 		282C1F0671F2C969561DE1C7 /* ServiceRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ServiceRoutes.swift; path = BLL/Service/ServiceRoutes.swift; sourceTree = "<group>"; };
 		2864D2DFAE001AA678A08E54 /* NetworkMonitor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = NetworkMonitor.swift; path = DAL/Networking/NetworkMonitor.swift; sourceTree = "<group>"; };
-		2BA7A883A92F5B5D981EAD6C /* HomeArticleCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeArticleCell.swift; sourceTree = "<group>"; };
 		31DDB71613DB8E688C4122B3 /* PaymentService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PaymentService.swift; path = BLL/Service/PaymentService.swift; sourceTree = "<group>"; };
 		3743DC311DF3858D78351828 /* Conversation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Conversation.swift; path = DAL/IM/Conversation.swift; sourceTree = "<group>"; };
 		395140C046B00859321C4B05 /* WechatPayChannel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WechatPayChannel.swift; path = DAL/Payment/WechatPayChannel.swift; sourceTree = "<group>"; };
-		3E2C1E52BF27D76D4C2DEAEA /* OnboardingViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingViewController.swift; sourceTree = "<group>"; };
-		418F40E80C8DD064F73A6FFE /* DigestiveViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DigestiveViewController.swift; sourceTree = "<group>"; };
-		48F0BFA51617B47B9D5DA86D /* MetricAddViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MetricAddViewController.swift; sourceTree = "<group>"; };
-		4BD50DDCF0289450DE8869D0 /* SleepViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SleepViewController.swift; sourceTree = "<group>"; };
 		4D99515A34B08FA9203F7DFB /* RootTabBarController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RootTabBarController.swift; path = Other/RootTabBarController.swift; sourceTree = "<group>"; };
-		545B6FD5E21C779F139D89E5 /* HomeTeamCardCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeTeamCardCell.swift; sourceTree = "<group>"; };
 		595A3F9A5793396375B1815B /* Router.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Router.swift; path = DAL/Router/Router.swift; sourceTree = "<group>"; };
-		5A664F4EB7478EC69CC8B7C6 /* BrandHeaderView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BrandHeaderView.swift; sourceTree = "<group>"; };
 		5CE8E0C75DF62E92DC4A2681 /* BluetoothManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BluetoothManager.swift; path = DAL/Bluetooth/BluetoothManager.swift; sourceTree = "<group>"; };
 		5FACC28499C23F3853EBBF10 /* AppDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Other/AppDelegate.swift; sourceTree = "<group>"; };
-		619369377609556A6596BEFF /* HealthReportViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HealthReportViewController.swift; sourceTree = "<group>"; };
 		625430E3BA9BF6D9CA97AAE8 /* BLLProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BLLProtocol.swift; path = Other/Common/Protocols/BLLProtocol.swift; sourceTree = "<group>"; };
-		629C18D65321C9E6BC32BA86 /* HealthMallViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HealthMallViewController.swift; path = PL/Service/HealthMallViewController.swift; sourceTree = "<group>"; };
 		62E9EC642D4693434806DE88 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = Info.plist; path = Other/Resources/Info.plist; sourceTree = "<group>"; };
 		649B848D3E577A97460BAB7C /* APIManager+Async.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "APIManager+Async.swift"; path = "DAL/Networking/APIManager+Async.swift"; sourceTree = "<group>"; };
 		68DC37BCDD618E2DCE9A9D02 /* OAuthAuthenticator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OAuthAuthenticator.swift; path = DAL/Networking/OAuthAuthenticator.swift; sourceTree = "<group>"; };
-		6B6CEC5F1C6384EFD8D0C047 /* OrderCardCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderCardCell.swift; sourceTree = "<group>"; };
 		6E9969E87449F15762387486 /* AlipayChannel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AlipayChannel.swift; path = DAL/Payment/AlipayChannel.swift; sourceTree = "<group>"; };
-		7054846090DC999E8A4AA089 /* SpO2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpO2ViewController.swift; sourceTree = "<group>"; };
-		719AE3975B99859C1D663A23 /* FamilyViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FamilyViewController.swift; sourceTree = "<group>"; };
-		746F03316488E8B043EE38F1 /* FundusViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FundusViewController.swift; sourceTree = "<group>"; };
-		78F343524CCA393486B22E8E /* ExerciseFoodViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExerciseFoodViewController.swift; sourceTree = "<group>"; };
 		7A38C4AFEC723E4B6C12D675 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Other/Resources/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		7B2F26CCFF4734186BF04A39 /* PaymentViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PaymentViewController.swift; path = PL/Service/PaymentViewController.swift; sourceTree = "<group>"; };
-		7BA15F07EE00BE72C38F6C89 /* PeripheralCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PeripheralCell.swift; path = PL/Health/PeripheralCell.swift; sourceTree = "<group>"; };
-		7D7AD8DF0E1609567B12918C /* LoginFieldView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoginFieldView.swift; sourceTree = "<group>"; };
-		7EAF498F5E583779ABA3E77A /* StageMetricsCardView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StageMetricsCardView.swift; sourceTree = "<group>"; };
 		7FFA483EDF37CE2D4BEAFA2C /* BaseViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BaseViewController.swift; path = Other/Common/Base/BaseViewController.swift; sourceTree = "<group>"; };
-		8056F0ABC51890F951CC058C /* WeeklyReportCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeeklyReportCell.swift; sourceTree = "<group>"; };
 		840D488A2D621EED67F49634 /* PLProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PLProtocol.swift; path = Other/Common/Protocols/PLProtocol.swift; sourceTree = "<group>"; };
-		892001FB5FF7399E601EF9C4 /* ServiceListViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ServiceListViewController.swift; path = PL/Service/ServiceListViewController.swift; sourceTree = "<group>"; };
-		8B273E85E9AF9070DCE471A1 /* OptionChipView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OptionChipView.swift; sourceTree = "<group>"; };
 		929B2C07064774594EB5F7EC /* IMService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = IMService.swift; path = BLL/Message/IMService.swift; sourceTree = "<group>"; };
-		A0407478440907A929B00481 /* StageReportCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StageReportCell.swift; sourceTree = "<group>"; };
-		A2DE7CB0CC0F0792F08218E9 /* ProfileViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProfileViewController.swift; sourceTree = "<group>"; };
-		A4DACDBFFDBFF750E34307AC /* ConversationListViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ConversationListViewController.swift; path = PL/Message/ConversationListViewController.swift; sourceTree = "<group>"; };
 		A576A21C2FE8E22E004F6070 /* ECGChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGChartView.swift; sourceTree = "<group>"; };
 		A576A21D2FE8E22E004F6070 /* ECGDataBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGDataBuffer.swift; sourceTree = "<group>"; };
 		A576A21E2FE8E22E004F6070 /* ECGSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGSimulator.swift; sourceTree = "<group>"; };
-		A57D2EF82FDBBE00002E43BA /* MyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyViewController.swift; sourceTree = "<group>"; };
-		A57D2EFA2FDBBE00002E43BA /* LoginViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
-		A57D2EFE2FDBBE3B002E43BA /* HealthViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HealthViewController.swift; path = PL/Health/HealthViewController.swift; sourceTree = "<group>"; };
-		A57D2F002FDBBE75002E43BA /* HomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
-		A57D2F032FDBBEB7002E43BA /* ServiceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ServiceViewController.swift; path = PL/Service/ServiceViewController.swift; sourceTree = "<group>"; };
-		A57D2F052FDBBEC8002E43BA /* MessageListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MessageListViewController.swift; path = PL/Message/MessageListViewController.swift; sourceTree = "<group>"; };
-		A57D2F102FDBFF13002E43BA /* MetricCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MetricCardCell.swift; path = PL/Health/MetricCardCell.swift; sourceTree = "<group>"; };
-		A57D2F112FDBFF13002E43BA /* BloodPressureViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BloodPressureViewController.swift; sourceTree = "<group>"; };
-		A57D2F122FDBFF13002E43BA /* BloodSugarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BloodSugarViewController.swift; sourceTree = "<group>"; };
-		A57D2F132FDBFF13002E43BA /* HeartRateViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeartRateViewController.swift; sourceTree = "<group>"; };
-		A57D2F142FDBFF13002E43BA /* WeightViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightViewController.swift; sourceTree = "<group>"; };
 		A57D2F1B2FDC0647002E43BA /* MyRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyRoutes.swift; sourceTree = "<group>"; };
 		A57D2F202FDC0661002E43BA /* RegisterLoginRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterLoginRoutes.swift; sourceTree = "<group>"; };
 		A590FB152FEA2F6E0056EF52 /* UserModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserModels.swift; sourceTree = "<group>"; };
 		A590FB162FEA2F6E0056EF52 /* UserRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRoutes.swift; sourceTree = "<group>"; };
 		A590FB172FEA2F6E0056EF52 /* UserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserService.swift; sourceTree = "<group>"; };
 		A590FB182FEA2F6E0056EF52 /* UserServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserServiceProtocol.swift; sourceTree = "<group>"; };
+		A590FB1E2FEA82980056EF52 /* HealthArchiveCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthArchiveCardCell.swift; sourceTree = "<group>"; };
+		A590FB1F2FEA82980056EF52 /* HealthQuickEntriesCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthQuickEntriesCell.swift; sourceTree = "<group>"; };
+		A590FB202FEA82980056EF52 /* HealthScoreCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthScoreCardCell.swift; sourceTree = "<group>"; };
+		A590FB212FEA82980056EF52 /* HealthVitalMetricsCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthVitalMetricsCell.swift; sourceTree = "<group>"; };
+		A590FB222FEA82980056EF52 /* MetricCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCardCell.swift; sourceTree = "<group>"; };
+		A590FB232FEA82980056EF52 /* PeripheralCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeripheralCell.swift; sourceTree = "<group>"; };
+		A590FB262FEA82980056EF52 /* MetricRulerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricRulerView.swift; sourceTree = "<group>"; };
+		A590FB282FEA82980056EF52 /* BloodPressureViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BloodPressureViewController.swift; sourceTree = "<group>"; };
+		A590FB292FEA82980056EF52 /* BloodSugarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BloodSugarViewController.swift; sourceTree = "<group>"; };
+		A590FB2A2FEA82980056EF52 /* DigestiveViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DigestiveViewController.swift; sourceTree = "<group>"; };
+		A590FB2B2FEA82980056EF52 /* EcgViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EcgViewController.swift; sourceTree = "<group>"; };
+		A590FB2C2FEA82980056EF52 /* ExerciseFoodViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseFoodViewController.swift; sourceTree = "<group>"; };
+		A590FB2D2FEA82980056EF52 /* FundusViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FundusViewController.swift; sourceTree = "<group>"; };
+		A590FB2E2FEA82980056EF52 /* HeartRateViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeartRateViewController.swift; sourceTree = "<group>"; };
+		A590FB2F2FEA82980056EF52 /* MetricAddViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricAddViewController.swift; sourceTree = "<group>"; };
+		A590FB302FEA82980056EF52 /* MetricsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricsViewController.swift; sourceTree = "<group>"; };
+		A590FB312FEA82980056EF52 /* SleepViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepViewController.swift; sourceTree = "<group>"; };
+		A590FB322FEA82980056EF52 /* SpO2ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpO2ViewController.swift; sourceTree = "<group>"; };
+		A590FB332FEA82980056EF52 /* WeightViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightViewController.swift; sourceTree = "<group>"; };
+		A590FB352FEA82980056EF52 /* HealthRecordBodyCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordBodyCardCell.swift; sourceTree = "<group>"; };
+		A590FB362FEA82980056EF52 /* HealthRecordHistoryCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordHistoryCell.swift; sourceTree = "<group>"; };
+		A590FB372FEA82980056EF52 /* HealthRecordLifestyleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordLifestyleCell.swift; sourceTree = "<group>"; };
+		A590FB382FEA82980056EF52 /* HealthRecordMetricRowCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordMetricRowCell.swift; sourceTree = "<group>"; };
+		A590FB392FEA82980056EF52 /* HealthRecordUserInfoCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordUserInfoCell.swift; sourceTree = "<group>"; };
+		A590FB3B2FEA82980056EF52 /* BodyFigureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyFigureView.swift; sourceTree = "<group>"; };
+		A590FB3C2FEA82980056EF52 /* RiskBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiskBarView.swift; sourceTree = "<group>"; };
+		A590FB3E2FEA82980056EF52 /* HealthRecordModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordModels.swift; sourceTree = "<group>"; };
+		A590FB3F2FEA82980056EF52 /* HealthRecordViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordViewController.swift; sourceTree = "<group>"; };
+		A590FB412FEA82980056EF52 /* HealthViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthViewController.swift; sourceTree = "<group>"; };
+		A590FB432FEA82980056EF52 /* HomeArticleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeArticleCell.swift; sourceTree = "<group>"; };
+		A590FB442FEA82980056EF52 /* HomeHeroCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHeroCell.swift; sourceTree = "<group>"; };
+		A590FB452FEA82980056EF52 /* HomeQuickActionsCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeQuickActionsCell.swift; sourceTree = "<group>"; };
+		A590FB462FEA82980056EF52 /* HomeServiceBannerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeServiceBannerCell.swift; sourceTree = "<group>"; };
+		A590FB472FEA82980056EF52 /* HomeTaskCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTaskCardCell.swift; sourceTree = "<group>"; };
+		A590FB482FEA82980056EF52 /* HomeTeamCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTeamCardCell.swift; sourceTree = "<group>"; };
+		A590FB4A2FEA82980056EF52 /* HomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
+		A590FB4C2FEA82980056EF52 /* ConversationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationCell.swift; sourceTree = "<group>"; };
+		A590FB4D2FEA82980056EF52 /* MessageBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageBubbleCell.swift; sourceTree = "<group>"; };
+		A590FB512FEA82980056EF52 /* ChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewController.swift; sourceTree = "<group>"; };
+		A590FB552FEA82980056EF52 /* MessageListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageListViewController.swift; sourceTree = "<group>"; };
+		A590FB572FEA82980056EF52 /* ConversationListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListViewController.swift; sourceTree = "<group>"; };
+		A590FB5B2FEA82980056EF52 /* AppointmentsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppointmentsViewController.swift; sourceTree = "<group>"; };
+		A590FB5D2FEA82980056EF52 /* MeFuncRowCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeFuncRowCell.swift; sourceTree = "<group>"; };
+		A590FB5E2FEA82980056EF52 /* MeMembershipCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeMembershipCardCell.swift; sourceTree = "<group>"; };
+		A590FB5F2FEA82980056EF52 /* MeServiceFulfillmentCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeServiceFulfillmentCell.swift; sourceTree = "<group>"; };
+		A590FB602FEA82980056EF52 /* MeStatsStripCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeStatsStripCell.swift; sourceTree = "<group>"; };
+		A590FB622FEA82980056EF52 /* FuncRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FuncRowView.swift; sourceTree = "<group>"; };
+		A590FB632FEA82980056EF52 /* SectionTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionTitleView.swift; sourceTree = "<group>"; };
+		A590FB642FEA82980056EF52 /* StageMetricsCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StageMetricsCardView.swift; sourceTree = "<group>"; };
+		A590FB682FEA82980056EF52 /* DevicesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicesViewController.swift; sourceTree = "<group>"; };
+		A590FB6C2FEA82980056EF52 /* DietPlanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DietPlanViewController.swift; sourceTree = "<group>"; };
+		A590FB702FEA82980056EF52 /* FamilyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyViewController.swift; sourceTree = "<group>"; };
+		A590FB742FEA82980056EF52 /* HealthEvaluationsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthEvaluationsViewController.swift; sourceTree = "<group>"; };
+		A590FB782FEA82980056EF52 /* HealthReportViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthReportViewController.swift; sourceTree = "<group>"; };
+		A590FB7C2FEA82980056EF52 /* MembershipViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MembershipViewController.swift; sourceTree = "<group>"; };
+		A590FB802FEA82980056EF52 /* MonitoringPlanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoringPlanViewController.swift; sourceTree = "<group>"; };
+		A590FB822FEA82980056EF52 /* OrderCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderCardCell.swift; sourceTree = "<group>"; };
+		A590FB852FEA82980056EF52 /* OrderListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderListViewController.swift; sourceTree = "<group>"; };
+		A590FB892FEA82980056EF52 /* PointsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointsViewController.swift; sourceTree = "<group>"; };
+		A590FB8D2FEA82980056EF52 /* PolicyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyViewController.swift; sourceTree = "<group>"; };
+		A590FB912FEA82980056EF52 /* ProfileViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewController.swift; sourceTree = "<group>"; };
+		A590FB932FEA82980056EF52 /* StageReportCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StageReportCell.swift; sourceTree = "<group>"; };
+		A590FB942FEA82980056EF52 /* WeeklyReportCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyReportCell.swift; sourceTree = "<group>"; };
+		A590FB982FEA82980056EF52 /* SettingsToggleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsToggleCell.swift; sourceTree = "<group>"; };
+		A590FB9B2FEA82980056EF52 /* AboutSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSettingsViewController.swift; sourceTree = "<group>"; };
+		A590FB9C2FEA82980056EF52 /* AccessibilitySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySettingsViewController.swift; sourceTree = "<group>"; };
+		A590FB9D2FEA82980056EF52 /* NotificationSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsViewController.swift; sourceTree = "<group>"; };
+		A590FB9E2FEA82980056EF52 /* PrivacySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySettingsViewController.swift; sourceTree = "<group>"; };
+		A590FB9F2FEA82980056EF52 /* SecuritySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecuritySettingsViewController.swift; sourceTree = "<group>"; };
+		A590FBA02FEA82980056EF52 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
+		A590FBA22FEA82980056EF52 /* MyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyViewController.swift; sourceTree = "<group>"; };
+		A590FBA42FEA82980056EF52 /* AgreementCheckboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgreementCheckboxView.swift; sourceTree = "<group>"; };
+		A590FBA52FEA82980056EF52 /* BrandHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandHeaderView.swift; sourceTree = "<group>"; };
+		A590FBA62FEA82980056EF52 /* CaptchaVerifyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptchaVerifyView.swift; sourceTree = "<group>"; };
+		A590FBA72FEA82980056EF52 /* LoginFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginFieldView.swift; sourceTree = "<group>"; };
+		A590FBA82FEA82980056EF52 /* NotificationGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationGuideView.swift; sourceTree = "<group>"; };
+		A590FBA92FEA82980056EF52 /* OptionChipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionChipView.swift; sourceTree = "<group>"; };
+		A590FBAA2FEA82980056EF52 /* PhoneBindingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneBindingView.swift; sourceTree = "<group>"; };
+		A590FBAB2FEA82980056EF52 /* PrivacyPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyPromptView.swift; sourceTree = "<group>"; };
+		A590FBAC2FEA82980056EF52 /* VerifyCodeButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerifyCodeButton.swift; sourceTree = "<group>"; };
+		A590FBB02FEA82980056EF52 /* ForgotPasswordViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordViewController.swift; sourceTree = "<group>"; };
+		A590FBB42FEA82980056EF52 /* OnboardingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewController.swift; sourceTree = "<group>"; };
+		A590FBB62FEA82980056EF52 /* LoginViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
+		A590FBBA2FEA82980056EF52 /* HealthMallViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthMallViewController.swift; sourceTree = "<group>"; };
+		A590FBBE2FEA82980056EF52 /* PaymentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentViewController.swift; sourceTree = "<group>"; };
+		A590FBC22FEA82980056EF52 /* ServiceListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceListViewController.swift; sourceTree = "<group>"; };
+		A590FBC42FEA82980056EF52 /* ServiceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceViewController.swift; sourceTree = "<group>"; };
 		A5917CE02FDFA7C000878961 /* HomeRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRoutes.swift; sourceTree = "<group>"; };
 		A5917CF92FDFC8EF00878961 /* DGCharts+Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DGCharts+Theme.swift"; sourceTree = "<group>"; };
 		A5917CFB2FDFC8EF00878961 /* UIButton+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIButton+Funde.swift"; sourceTree = "<group>"; };
@@ -241,78 +286,31 @@
 		A5917D002FDFC8EF00878961 /* UIView+Layout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+Layout.swift"; sourceTree = "<group>"; };
 		A5917D012FDFC8EF00878961 /* UIView+Shadow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+Shadow.swift"; sourceTree = "<group>"; };
 		A5917D032FDFC8EF00878961 /* UIViewController+Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+Alert.swift"; sourceTree = "<group>"; };
-		A5917D0D2FDFD7D000878961 /* ForgotPasswordViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordViewController.swift; sourceTree = "<group>"; };
-		A5917D0F2FDFD7E500878961 /* AgreementCheckboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgreementCheckboxView.swift; sourceTree = "<group>"; };
-		A5917D102FDFD7E500878961 /* CaptchaVerifyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptchaVerifyView.swift; sourceTree = "<group>"; };
-		A5917D112FDFD7E500878961 /* NotificationGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationGuideView.swift; sourceTree = "<group>"; };
-		A5917D122FDFD7E500878961 /* PhoneBindingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneBindingView.swift; sourceTree = "<group>"; };
-		A5917D132FDFD7E500878961 /* PrivacyPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyPromptView.swift; sourceTree = "<group>"; };
-		A5917D142FDFD7E500878961 /* VerifyCodeButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerifyCodeButton.swift; sourceTree = "<group>"; };
 		A5917D1D2FDFD7FE00878961 /* LoginModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginModels.swift; sourceTree = "<group>"; };
 		A5917D1E2FDFD7FE00878961 /* LoginService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginService.swift; sourceTree = "<group>"; };
 		A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginServiceProtocol.swift; sourceTree = "<group>"; };
 		A5917D232FDFD96D00878961 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WebViewController.swift; path = Other/Common/Base/WebViewController.swift; sourceTree = "<group>"; };
-		A5917D252FDFDD7F00878961 /* HealthArchiveCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthArchiveCardCell.swift; sourceTree = "<group>"; };
-		A5917D262FDFDD7F00878961 /* HealthQuickEntriesCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthQuickEntriesCell.swift; sourceTree = "<group>"; };
-		A5917D272FDFDD7F00878961 /* HealthScoreCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthScoreCardCell.swift; sourceTree = "<group>"; };
-		A5917D282FDFDD7F00878961 /* HealthVitalMetricsCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthVitalMetricsCell.swift; sourceTree = "<group>"; };
-		A5917D2E2FDFDD9800878961 /* MeFuncRowCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeFuncRowCell.swift; sourceTree = "<group>"; };
-		A5917D2F2FDFDD9800878961 /* MeMembershipCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeMembershipCardCell.swift; sourceTree = "<group>"; };
-		A5917D302FDFDD9800878961 /* MeServiceFulfillmentCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeServiceFulfillmentCell.swift; sourceTree = "<group>"; };
-		A5917D312FDFDD9800878961 /* MeStatsStripCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeStatsStripCell.swift; sourceTree = "<group>"; };
-		A5917D372FDFFAC300878961 /* MessageBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageBubbleCell.swift; sourceTree = "<group>"; };
-		A5917D392FDFFAC300878961 /* ConversationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ConversationCell.swift; path = PL/Message/ConversationCell.swift; sourceTree = "<group>"; };
-		A5B99BB42FE148B800D92180 /* BodyFigureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyFigureView.swift; sourceTree = "<group>"; };
-		A5B99BB52FE148B800D92180 /* HealthRecordBodyCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordBodyCardCell.swift; sourceTree = "<group>"; };
-		A5B99BB62FE148B800D92180 /* HealthRecordHistoryCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordHistoryCell.swift; sourceTree = "<group>"; };
-		A5B99BB72FE148B800D92180 /* HealthRecordLifestyleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordLifestyleCell.swift; sourceTree = "<group>"; };
-		A5B99BB82FE148B800D92180 /* HealthRecordMetricRowCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordMetricRowCell.swift; sourceTree = "<group>"; };
-		A5B99BB92FE148B800D92180 /* HealthRecordModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordModels.swift; sourceTree = "<group>"; };
-		A5B99BBA2FE148B800D92180 /* HealthRecordUserInfoCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordUserInfoCell.swift; sourceTree = "<group>"; };
-		A5B99BBB2FE148B800D92180 /* HealthRecordViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordViewController.swift; sourceTree = "<group>"; };
-		A5B99BBC2FE148B800D92180 /* RiskBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiskBarView.swift; sourceTree = "<group>"; };
 		A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIFont+Funde.swift"; sourceTree = "<group>"; };
-		A5BFCB2A2FE3C15D008DA1DF /* AboutSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSettingsViewController.swift; sourceTree = "<group>"; };
-		A5BFCB2B2FE3C15D008DA1DF /* AccessibilitySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySettingsViewController.swift; sourceTree = "<group>"; };
-		A5BFCB2C2FE3C15D008DA1DF /* NotificationSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsViewController.swift; sourceTree = "<group>"; };
-		A5BFCB2D2FE3C15D008DA1DF /* PrivacySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySettingsViewController.swift; sourceTree = "<group>"; };
-		A5BFCB2E2FE3C15D008DA1DF /* SecuritySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecuritySettingsViewController.swift; sourceTree = "<group>"; };
-		A5BFCB352FE3C18D008DA1DF /* SettingsToggleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsToggleCell.swift; sourceTree = "<group>"; };
-		A7EDC9DBA2C15DAEC992461C /* ChatViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChatViewController.swift; path = PL/Message/ChatViewController.swift; sourceTree = "<group>"; };
 		A8B0D2D90AC6467582FAAE9C /* MessageRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MessageRoutes.swift; path = BLL/Message/MessageRoutes.swift; sourceTree = "<group>"; };
 		AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OAuthCredential.swift; path = DAL/Networking/OAuthCredential.swift; sourceTree = "<group>"; };
 		B1B291D76D4C819D8DB33D00 /* DatabaseManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DatabaseManager.swift; path = DAL/Storage/DatabaseManager.swift; sourceTree = "<group>"; };
-		B498405ABB27F6D8377D6064 /* MonitoringPlanViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MonitoringPlanViewController.swift; sourceTree = "<group>"; };
 		B6373F937CC9DA144A80873C /* BluetoothModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BluetoothModels.swift; path = DAL/Bluetooth/BluetoothModels.swift; sourceTree = "<group>"; };
 		B7AE47164C661037814AB024 /* Message.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Message.swift; path = DAL/IM/Message.swift; sourceTree = "<group>"; };
 		B8DE397CDF8225D92B0353A0 /* SceneDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SceneDelegate.swift; path = Other/SceneDelegate.swift; sourceTree = "<group>"; };
-		BA2FD7801043AC641280FAA4 /* PointsViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PointsViewController.swift; sourceTree = "<group>"; };
-		BDFA6D00CF0E1707D0957144 /* MetricRulerView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MetricRulerView.swift; sourceTree = "<group>"; };
 		C0DFD924CDD4A764ABF604FB /* DALProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DALProtocol.swift; path = Other/Common/Protocols/DALProtocol.swift; sourceTree = "<group>"; };
-		C363076AE63C6D8EBF4615DB /* HomeQuickActionsCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeQuickActionsCell.swift; sourceTree = "<group>"; };
 		C585503B59B93311DEC6A839 /* HealthRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HealthRoutes.swift; path = BLL/Health/HealthRoutes.swift; sourceTree = "<group>"; };
-		CB1061151A764123A448CC1C /* MetricsViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MetricsViewController.swift; sourceTree = "<group>"; };
 		CF09D89100EBE0ABD42544FD /* RongCloudMessageDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RongCloudMessageDelegate.swift; path = DAL/IM/RongCloudMessageDelegate.swift; sourceTree = "<group>"; };
 		CFFDA4B68A5A8E056326B5DF /* lhjk-client-new.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "lhjk-client-new.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D0727F1AEE4F87CC1D8471BF /* BluetoothService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BluetoothService.swift; path = BLL/Health/BluetoothService.swift; sourceTree = "<group>"; };
 		D333C32A8805FAD51C4D2820 /* UserDefaultsManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = UserDefaultsManager.swift; path = DAL/Storage/UserDefaultsManager.swift; sourceTree = "<group>"; };
-		D50703581C623E4254C38209 /* MetricCardCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MetricCardCell.swift; path = PL/Health/MetricCardCell.swift; sourceTree = "<group>"; };
-		D5CCFA53EAAFCBA929BF63B5 /* HomeHeroCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeHeroCell.swift; sourceTree = "<group>"; };
-		D7C3F2FAE5619994A3AA7A46 /* SettingsViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
-		D87802E5D53C4815174A814D /* FuncRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FuncRowView.swift; sourceTree = "<group>"; };
 		DB2F07AA65B496162BCA2DB3 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		DB9B669A52C4314F17B603D9 /* APIResponse.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = APIResponse.swift; path = DAL/Networking/APIResponse.swift; sourceTree = "<group>"; };
 		DCE57F7A320AD8DA12CD7236 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Other/Resources/Assets.xcassets; sourceTree = "<group>"; };
-		DD680380E870019FA45DC7C5 /* MembershipViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MembershipViewController.swift; sourceTree = "<group>"; };
 		E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_lhjk_client_new.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2C9738A2B82C009F94EDFE7 /* APIError.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = APIError.swift; path = DAL/Networking/APIError.swift; sourceTree = "<group>"; };
 		E4C406B883EDA36A6FBC5C86 /* PlaceholderViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PlaceholderViewController.swift; path = Other/Common/Base/PlaceholderViewController.swift; sourceTree = "<group>"; };
-		E9C2E856DFAEC8757D284064 /* SectionTitleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SectionTitleView.swift; sourceTree = "<group>"; };
 		EE076FFD3B924E308E3D26E9 /* BaseNavigationController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BaseNavigationController.swift; path = Other/Common/Base/BaseNavigationController.swift; sourceTree = "<group>"; };
-		EE6B98583B23B6831E89C159 /* DevicesViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DevicesViewController.swift; sourceTree = "<group>"; };
 		F33F829631DE3DD09B5C6FF3 /* PaymentProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PaymentProtocol.swift; path = DAL/Payment/PaymentProtocol.swift; sourceTree = "<group>"; };
-		F66310705999D8297D1FE4EF /* HomeTaskCardCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeTaskCardCell.swift; sourceTree = "<group>"; };
-		F95D4E27E21CB917BA8D97C8 /* DietPlanViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DietPlanViewController.swift; sourceTree = "<group>"; };
 		FE938ED267A4A5BD94207F6E /* RongCloudManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RongCloudManager.swift; path = DAL/IM/RongCloudManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -329,19 +327,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0FD3A9E13BDA70689ACE60A8 /* Cells */ = {
-			isa = PBXGroup;
-			children = (
-				D5CCFA53EAAFCBA929BF63B5 /* HomeHeroCell.swift */,
-				C363076AE63C6D8EBF4615DB /* HomeQuickActionsCell.swift */,
-				545B6FD5E21C779F139D89E5 /* HomeTeamCardCell.swift */,
-				F66310705999D8297D1FE4EF /* HomeTaskCardCell.swift */,
-				1F1F99A3F53E0201E0382896 /* HomeServiceBannerCell.swift */,
-				2BA7A883A92F5B5D981EAD6C /* HomeArticleCell.swift */,
-			);
-			path = Cells;
-			sourceTree = "<group>";
-		};
 		209982680F814E7623CEE52C /* Networking */ = {
 			isa = PBXGroup;
 			children = (
@@ -371,39 +356,6 @@
 				B6373F937CC9DA144A80873C /* BluetoothModels.swift */,
 			);
 			name = Bluetooth;
-			sourceTree = "<group>";
-		};
-		4FBDEA25F6088496CD29930C /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				D87802E5D53C4815174A814D /* FuncRowView.swift */,
-				E9C2E856DFAEC8757D284064 /* SectionTitleView.swift */,
-				7EAF498F5E583779ABA3E77A /* StageMetricsCardView.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		5BBC7A0F6F458645EB658DDB /* Health */ = {
-			isa = PBXGroup;
-			children = (
-				A5B99BBD2FE148B800D92180 /* Record */,
-				A5917D292FDFDD7F00878961 /* Cells */,
-				A57D2F102FDBFF13002E43BA /* MetricCardCell.swift */,
-				A57D2F152FDBFF13002E43BA /* Metrics */,
-				A57D2EFE2FDBBE3B002E43BA /* HealthViewController.swift */,
-				7BA15F07EE00BE72C38F6C89 /* PeripheralCell.swift */,
-				D50703581C623E4254C38209 /* MetricCardCell.swift */,
-			);
-			name = Health;
-			sourceTree = "<group>";
-		};
-		701ADE3BAB86A97B058B77F4 /* Report */ = {
-			isa = PBXGroup;
-			children = (
-				8056F0ABC51890F951CC058C /* WeeklyReportCell.swift */,
-				A0407478440907A929B00481 /* StageReportCell.swift */,
-			);
-			path = Report;
 			sourceTree = "<group>";
 		};
 		75BC1DDC53A99376450DD2BB /* Common */ = {
@@ -462,75 +414,6 @@
 			path = DAL/ECG;
 			sourceTree = "<group>";
 		};
-		A57D2EF92FDBBE00002E43BA /* My */ = {
-			isa = PBXGroup;
-			children = (
-				A5BFCB2F2FE3C15D008DA1DF /* Settings */,
-				A5917D322FDFDD9800878961 /* Cells */,
-				A57D2EF82FDBBE00002E43BA /* MyViewController.swift */,
-				4FBDEA25F6088496CD29930C /* Components */,
-				D7C3F2FAE5619994A3AA7A46 /* SettingsViewController.swift */,
-				A2DE7CB0CC0F0792F08218E9 /* ProfileViewController.swift */,
-				081BA2DBDE01D1406E30170D /* PolicyViewController.swift */,
-				619369377609556A6596BEFF /* HealthReportViewController.swift */,
-				27EE4ECD3E9C86C039F31E29 /* AppointmentsViewController.swift */,
-				EE6B98583B23B6831E89C159 /* DevicesViewController.swift */,
-				F95D4E27E21CB917BA8D97C8 /* DietPlanViewController.swift */,
-				B498405ABB27F6D8377D6064 /* MonitoringPlanViewController.swift */,
-				024BB0505F52EBA8BBB0F6A6 /* HealthEvaluationsViewController.swift */,
-				701ADE3BAB86A97B058B77F4 /* Report */,
-				EA01A96D629DA43ECA3537FD /* Order */,
-				DD680380E870019FA45DC7C5 /* MembershipViewController.swift */,
-				BA2FD7801043AC641280FAA4 /* PointsViewController.swift */,
-				719AE3975B99859C1D663A23 /* FamilyViewController.swift */,
-			);
-			name = My;
-			path = PL/My;
-			sourceTree = "<group>";
-		};
-		A57D2EFB2FDBBE00002E43BA /* RegisterLogin */ = {
-			isa = PBXGroup;
-			children = (
-				A57D2EFA2FDBBE00002E43BA /* LoginViewController.swift */,
-				A5917D0D2FDFD7D000878961 /* ForgotPasswordViewController.swift */,
-				FA28A0AC1981B76945C1AD19 /* Components */,
-				3E2C1E52BF27D76D4C2DEAEA /* OnboardingViewController.swift */,
-			);
-			name = RegisterLogin;
-			path = PL/RegisterLogin;
-			sourceTree = "<group>";
-		};
-		A57D2F012FDBBE75002E43BA /* Home */ = {
-			isa = PBXGroup;
-			children = (
-				A57D2F002FDBBE75002E43BA /* HomeViewController.swift */,
-				0FD3A9E13BDA70689ACE60A8 /* Cells */,
-			);
-			name = Home;
-			path = PL/Home;
-			sourceTree = "<group>";
-		};
-		A57D2F152FDBFF13002E43BA /* Metrics */ = {
-			isa = PBXGroup;
-			children = (
-				A57D2F112FDBFF13002E43BA /* BloodPressureViewController.swift */,
-				A57D2F122FDBFF13002E43BA /* BloodSugarViewController.swift */,
-				A57D2F132FDBFF13002E43BA /* HeartRateViewController.swift */,
-				A57D2F142FDBFF13002E43BA /* WeightViewController.swift */,
-				BDFA6D00CF0E1707D0957144 /* MetricRulerView.swift */,
-				48F0BFA51617B47B9D5DA86D /* MetricAddViewController.swift */,
-				4BD50DDCF0289450DE8869D0 /* SleepViewController.swift */,
-				7054846090DC999E8A4AA089 /* SpO2ViewController.swift */,
-				13CFE1614483ECDDFB1F6BF7 /* EcgViewController.swift */,
-				746F03316488E8B043EE38F1 /* FundusViewController.swift */,
-				418F40E80C8DD064F73A6FFE /* DigestiveViewController.swift */,
-				78F343524CCA393486B22E8E /* ExerciseFoodViewController.swift */,
-				CB1061151A764123A448CC1C /* MetricsViewController.swift */,
-			);
-			name = Metrics;
-			path = PL/Health/Metrics;
-			sourceTree = "<group>";
-		};
 		A57D2F1D2FDC0647002E43BA /* My */ = {
 			isa = PBXGroup;
 			children = (
@@ -562,6 +445,741 @@
 			);
 			name = User;
 			path = BLL/User;
+			sourceTree = "<group>";
+		};
+		A590FB242FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB1E2FEA82980056EF52 /* HealthArchiveCardCell.swift */,
+				A590FB1F2FEA82980056EF52 /* HealthQuickEntriesCell.swift */,
+				A590FB202FEA82980056EF52 /* HealthScoreCardCell.swift */,
+				A590FB212FEA82980056EF52 /* HealthVitalMetricsCell.swift */,
+				A590FB222FEA82980056EF52 /* MetricCardCell.swift */,
+				A590FB232FEA82980056EF52 /* PeripheralCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB252FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB272FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB262FEA82980056EF52 /* MetricRulerView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB342FEA82980056EF52 /* Metrics */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB252FEA82980056EF52 /* Cells */,
+				A590FB272FEA82980056EF52 /* Components */,
+				A590FB282FEA82980056EF52 /* BloodPressureViewController.swift */,
+				A590FB292FEA82980056EF52 /* BloodSugarViewController.swift */,
+				A590FB2A2FEA82980056EF52 /* DigestiveViewController.swift */,
+				A590FB2B2FEA82980056EF52 /* EcgViewController.swift */,
+				A590FB2C2FEA82980056EF52 /* ExerciseFoodViewController.swift */,
+				A590FB2D2FEA82980056EF52 /* FundusViewController.swift */,
+				A590FB2E2FEA82980056EF52 /* HeartRateViewController.swift */,
+				A590FB2F2FEA82980056EF52 /* MetricAddViewController.swift */,
+				A590FB302FEA82980056EF52 /* MetricsViewController.swift */,
+				A590FB312FEA82980056EF52 /* SleepViewController.swift */,
+				A590FB322FEA82980056EF52 /* SpO2ViewController.swift */,
+				A590FB332FEA82980056EF52 /* WeightViewController.swift */,
+			);
+			path = Metrics;
+			sourceTree = "<group>";
+		};
+		A590FB3A2FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB352FEA82980056EF52 /* HealthRecordBodyCardCell.swift */,
+				A590FB362FEA82980056EF52 /* HealthRecordHistoryCell.swift */,
+				A590FB372FEA82980056EF52 /* HealthRecordLifestyleCell.swift */,
+				A590FB382FEA82980056EF52 /* HealthRecordMetricRowCell.swift */,
+				A590FB392FEA82980056EF52 /* HealthRecordUserInfoCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB3D2FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB3B2FEA82980056EF52 /* BodyFigureView.swift */,
+				A590FB3C2FEA82980056EF52 /* RiskBarView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB402FEA82980056EF52 /* Record */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB3A2FEA82980056EF52 /* Cells */,
+				A590FB3D2FEA82980056EF52 /* Components */,
+				A590FB3E2FEA82980056EF52 /* HealthRecordModels.swift */,
+				A590FB3F2FEA82980056EF52 /* HealthRecordViewController.swift */,
+			);
+			path = Record;
+			sourceTree = "<group>";
+		};
+		A590FB422FEA82980056EF52 /* Health */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB242FEA82980056EF52 /* Cells */,
+				A590FB342FEA82980056EF52 /* Metrics */,
+				A590FB402FEA82980056EF52 /* Record */,
+				A590FB412FEA82980056EF52 /* HealthViewController.swift */,
+			);
+			name = Health;
+			path = PL/Health;
+			sourceTree = "<group>";
+		};
+		A590FB492FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB432FEA82980056EF52 /* HomeArticleCell.swift */,
+				A590FB442FEA82980056EF52 /* HomeHeroCell.swift */,
+				A590FB452FEA82980056EF52 /* HomeQuickActionsCell.swift */,
+				A590FB462FEA82980056EF52 /* HomeServiceBannerCell.swift */,
+				A590FB472FEA82980056EF52 /* HomeTaskCardCell.swift */,
+				A590FB482FEA82980056EF52 /* HomeTeamCardCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB4B2FEA82980056EF52 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB492FEA82980056EF52 /* Cells */,
+				A590FB4A2FEA82980056EF52 /* HomeViewController.swift */,
+			);
+			name = Home;
+			path = PL/Home;
+			sourceTree = "<group>";
+		};
+		A590FB4E2FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB4C2FEA82980056EF52 /* ConversationCell.swift */,
+				A590FB4D2FEA82980056EF52 /* MessageBubbleCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB4F2FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB502FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB522FEA82980056EF52 /* Chat */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB4F2FEA82980056EF52 /* Cells */,
+				A590FB502FEA82980056EF52 /* Components */,
+				A590FB512FEA82980056EF52 /* ChatViewController.swift */,
+			);
+			path = Chat;
+			sourceTree = "<group>";
+		};
+		A590FB532FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB542FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB562FEA82980056EF52 /* MessageList */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB532FEA82980056EF52 /* Cells */,
+				A590FB542FEA82980056EF52 /* Components */,
+				A590FB552FEA82980056EF52 /* MessageListViewController.swift */,
+			);
+			path = MessageList;
+			sourceTree = "<group>";
+		};
+		A590FB582FEA82980056EF52 /* Message */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB4E2FEA82980056EF52 /* Cells */,
+				A590FB522FEA82980056EF52 /* Chat */,
+				A590FB562FEA82980056EF52 /* MessageList */,
+				A590FB572FEA82980056EF52 /* ConversationListViewController.swift */,
+			);
+			name = Message;
+			path = PL/Message;
+			sourceTree = "<group>";
+		};
+		A590FB592FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB5A2FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB5C2FEA82980056EF52 /* Appointments */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB592FEA82980056EF52 /* Cells */,
+				A590FB5A2FEA82980056EF52 /* Components */,
+				A590FB5B2FEA82980056EF52 /* AppointmentsViewController.swift */,
+			);
+			path = Appointments;
+			sourceTree = "<group>";
+		};
+		A590FB612FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB5D2FEA82980056EF52 /* MeFuncRowCell.swift */,
+				A590FB5E2FEA82980056EF52 /* MeMembershipCardCell.swift */,
+				A590FB5F2FEA82980056EF52 /* MeServiceFulfillmentCell.swift */,
+				A590FB602FEA82980056EF52 /* MeStatsStripCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB652FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB622FEA82980056EF52 /* FuncRowView.swift */,
+				A590FB632FEA82980056EF52 /* SectionTitleView.swift */,
+				A590FB642FEA82980056EF52 /* StageMetricsCardView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB662FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB672FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB692FEA82980056EF52 /* Devices */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB662FEA82980056EF52 /* Cells */,
+				A590FB672FEA82980056EF52 /* Components */,
+				A590FB682FEA82980056EF52 /* DevicesViewController.swift */,
+			);
+			path = Devices;
+			sourceTree = "<group>";
+		};
+		A590FB6A2FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB6B2FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB6D2FEA82980056EF52 /* DietPlan */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB6A2FEA82980056EF52 /* Cells */,
+				A590FB6B2FEA82980056EF52 /* Components */,
+				A590FB6C2FEA82980056EF52 /* DietPlanViewController.swift */,
+			);
+			path = DietPlan;
+			sourceTree = "<group>";
+		};
+		A590FB6E2FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB6F2FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB712FEA82980056EF52 /* Family */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB6E2FEA82980056EF52 /* Cells */,
+				A590FB6F2FEA82980056EF52 /* Components */,
+				A590FB702FEA82980056EF52 /* FamilyViewController.swift */,
+			);
+			path = Family;
+			sourceTree = "<group>";
+		};
+		A590FB722FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB732FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB752FEA82980056EF52 /* HealthEvaluations */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB722FEA82980056EF52 /* Cells */,
+				A590FB732FEA82980056EF52 /* Components */,
+				A590FB742FEA82980056EF52 /* HealthEvaluationsViewController.swift */,
+			);
+			path = HealthEvaluations;
+			sourceTree = "<group>";
+		};
+		A590FB762FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB772FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB792FEA82980056EF52 /* HealthReport */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB762FEA82980056EF52 /* Cells */,
+				A590FB772FEA82980056EF52 /* Components */,
+				A590FB782FEA82980056EF52 /* HealthReportViewController.swift */,
+			);
+			path = HealthReport;
+			sourceTree = "<group>";
+		};
+		A590FB7A2FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB7B2FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB7D2FEA82980056EF52 /* Membership */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB7A2FEA82980056EF52 /* Cells */,
+				A590FB7B2FEA82980056EF52 /* Components */,
+				A590FB7C2FEA82980056EF52 /* MembershipViewController.swift */,
+			);
+			path = Membership;
+			sourceTree = "<group>";
+		};
+		A590FB7E2FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB7F2FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB812FEA82980056EF52 /* MonitoringPlan */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB7E2FEA82980056EF52 /* Cells */,
+				A590FB7F2FEA82980056EF52 /* Components */,
+				A590FB802FEA82980056EF52 /* MonitoringPlanViewController.swift */,
+			);
+			path = MonitoringPlan;
+			sourceTree = "<group>";
+		};
+		A590FB832FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB822FEA82980056EF52 /* OrderCardCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB842FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB862FEA82980056EF52 /* Order */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB832FEA82980056EF52 /* Cells */,
+				A590FB842FEA82980056EF52 /* Components */,
+				A590FB852FEA82980056EF52 /* OrderListViewController.swift */,
+			);
+			path = Order;
+			sourceTree = "<group>";
+		};
+		A590FB872FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB882FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB8A2FEA82980056EF52 /* Points */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB872FEA82980056EF52 /* Cells */,
+				A590FB882FEA82980056EF52 /* Components */,
+				A590FB892FEA82980056EF52 /* PointsViewController.swift */,
+			);
+			path = Points;
+			sourceTree = "<group>";
+		};
+		A590FB8B2FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB8C2FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB8E2FEA82980056EF52 /* Policy */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB8B2FEA82980056EF52 /* Cells */,
+				A590FB8C2FEA82980056EF52 /* Components */,
+				A590FB8D2FEA82980056EF52 /* PolicyViewController.swift */,
+			);
+			path = Policy;
+			sourceTree = "<group>";
+		};
+		A590FB8F2FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB902FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB922FEA82980056EF52 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB8F2FEA82980056EF52 /* Cells */,
+				A590FB902FEA82980056EF52 /* Components */,
+				A590FB912FEA82980056EF52 /* ProfileViewController.swift */,
+			);
+			path = Profile;
+			sourceTree = "<group>";
+		};
+		A590FB952FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB932FEA82980056EF52 /* StageReportCell.swift */,
+				A590FB942FEA82980056EF52 /* WeeklyReportCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB962FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FB972FEA82980056EF52 /* Report */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB952FEA82980056EF52 /* Cells */,
+				A590FB962FEA82980056EF52 /* Components */,
+			);
+			path = Report;
+			sourceTree = "<group>";
+		};
+		A590FB992FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB982FEA82980056EF52 /* SettingsToggleCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FB9A2FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FBA12FEA82980056EF52 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB992FEA82980056EF52 /* Cells */,
+				A590FB9A2FEA82980056EF52 /* Components */,
+				A590FB9B2FEA82980056EF52 /* AboutSettingsViewController.swift */,
+				A590FB9C2FEA82980056EF52 /* AccessibilitySettingsViewController.swift */,
+				A590FB9D2FEA82980056EF52 /* NotificationSettingsViewController.swift */,
+				A590FB9E2FEA82980056EF52 /* PrivacySettingsViewController.swift */,
+				A590FB9F2FEA82980056EF52 /* SecuritySettingsViewController.swift */,
+				A590FBA02FEA82980056EF52 /* SettingsViewController.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		A590FBA32FEA82980056EF52 /* My */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB5C2FEA82980056EF52 /* Appointments */,
+				A590FB612FEA82980056EF52 /* Cells */,
+				A590FB652FEA82980056EF52 /* Components */,
+				A590FB692FEA82980056EF52 /* Devices */,
+				A590FB6D2FEA82980056EF52 /* DietPlan */,
+				A590FB712FEA82980056EF52 /* Family */,
+				A590FB752FEA82980056EF52 /* HealthEvaluations */,
+				A590FB792FEA82980056EF52 /* HealthReport */,
+				A590FB7D2FEA82980056EF52 /* Membership */,
+				A590FB812FEA82980056EF52 /* MonitoringPlan */,
+				A590FB862FEA82980056EF52 /* Order */,
+				A590FB8A2FEA82980056EF52 /* Points */,
+				A590FB8E2FEA82980056EF52 /* Policy */,
+				A590FB922FEA82980056EF52 /* Profile */,
+				A590FB972FEA82980056EF52 /* Report */,
+				A590FBA12FEA82980056EF52 /* Settings */,
+				A590FBA22FEA82980056EF52 /* MyViewController.swift */,
+			);
+			name = My;
+			path = PL/My;
+			sourceTree = "<group>";
+		};
+		A590FBAD2FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A590FBA42FEA82980056EF52 /* AgreementCheckboxView.swift */,
+				A590FBA52FEA82980056EF52 /* BrandHeaderView.swift */,
+				A590FBA62FEA82980056EF52 /* CaptchaVerifyView.swift */,
+				A590FBA72FEA82980056EF52 /* LoginFieldView.swift */,
+				A590FBA82FEA82980056EF52 /* NotificationGuideView.swift */,
+				A590FBA92FEA82980056EF52 /* OptionChipView.swift */,
+				A590FBAA2FEA82980056EF52 /* PhoneBindingView.swift */,
+				A590FBAB2FEA82980056EF52 /* PrivacyPromptView.swift */,
+				A590FBAC2FEA82980056EF52 /* VerifyCodeButton.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FBAE2FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FBAF2FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FBB12FEA82980056EF52 /* ForgotPassword */ = {
+			isa = PBXGroup;
+			children = (
+				A590FBAE2FEA82980056EF52 /* Cells */,
+				A590FBAF2FEA82980056EF52 /* Components */,
+				A590FBB02FEA82980056EF52 /* ForgotPasswordViewController.swift */,
+			);
+			path = ForgotPassword;
+			sourceTree = "<group>";
+		};
+		A590FBB22FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FBB32FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FBB52FEA82980056EF52 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				A590FBB22FEA82980056EF52 /* Cells */,
+				A590FBB32FEA82980056EF52 /* Components */,
+				A590FBB42FEA82980056EF52 /* OnboardingViewController.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		A590FBB72FEA82980056EF52 /* RegisterLogin */ = {
+			isa = PBXGroup;
+			children = (
+				A590FBAD2FEA82980056EF52 /* Components */,
+				A590FBB12FEA82980056EF52 /* ForgotPassword */,
+				A590FBB52FEA82980056EF52 /* Onboarding */,
+				A590FBB62FEA82980056EF52 /* LoginViewController.swift */,
+			);
+			name = RegisterLogin;
+			path = PL/RegisterLogin;
+			sourceTree = "<group>";
+		};
+		A590FBB82FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FBB92FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FBBB2FEA82980056EF52 /* HealthMall */ = {
+			isa = PBXGroup;
+			children = (
+				A590FBB82FEA82980056EF52 /* Cells */,
+				A590FBB92FEA82980056EF52 /* Components */,
+				A590FBBA2FEA82980056EF52 /* HealthMallViewController.swift */,
+			);
+			path = HealthMall;
+			sourceTree = "<group>";
+		};
+		A590FBBC2FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FBBD2FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FBBF2FEA82980056EF52 /* Payment */ = {
+			isa = PBXGroup;
+			children = (
+				A590FBBC2FEA82980056EF52 /* Cells */,
+				A590FBBD2FEA82980056EF52 /* Components */,
+				A590FBBE2FEA82980056EF52 /* PaymentViewController.swift */,
+			);
+			path = Payment;
+			sourceTree = "<group>";
+		};
+		A590FBC02FEA82980056EF52 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A590FBC12FEA82980056EF52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A590FBC32FEA82980056EF52 /* ServiceList */ = {
+			isa = PBXGroup;
+			children = (
+				A590FBC02FEA82980056EF52 /* Cells */,
+				A590FBC12FEA82980056EF52 /* Components */,
+				A590FBC22FEA82980056EF52 /* ServiceListViewController.swift */,
+			);
+			path = ServiceList;
+			sourceTree = "<group>";
+		};
+		A590FBC52FEA82980056EF52 /* Service */ = {
+			isa = PBXGroup;
+			children = (
+				A590FBBB2FEA82980056EF52 /* HealthMall */,
+				A590FBBF2FEA82980056EF52 /* Payment */,
+				A590FBC32FEA82980056EF52 /* ServiceList */,
+				A590FBC42FEA82980056EF52 /* ServiceViewController.swift */,
+			);
+			name = Service;
+			path = PL/Service;
 			sourceTree = "<group>";
 		};
 		A5917CE12FDFA7C000878961 /* Home */ = {
@@ -629,74 +1247,12 @@
 			path = Other/Common/Extensions;
 			sourceTree = "<group>";
 		};
-		A5917D292FDFDD7F00878961 /* Cells */ = {
-			isa = PBXGroup;
-			children = (
-				A5917D252FDFDD7F00878961 /* HealthArchiveCardCell.swift */,
-				A5917D262FDFDD7F00878961 /* HealthQuickEntriesCell.swift */,
-				A5917D272FDFDD7F00878961 /* HealthScoreCardCell.swift */,
-				A5917D282FDFDD7F00878961 /* HealthVitalMetricsCell.swift */,
-			);
-			name = Cells;
-			path = PL/Health/Cells;
-			sourceTree = "<group>";
-		};
-		A5917D322FDFDD9800878961 /* Cells */ = {
-			isa = PBXGroup;
-			children = (
-				A5BFCB352FE3C18D008DA1DF /* SettingsToggleCell.swift */,
-				A5917D2E2FDFDD9800878961 /* MeFuncRowCell.swift */,
-				A5917D2F2FDFDD9800878961 /* MeMembershipCardCell.swift */,
-				A5917D302FDFDD9800878961 /* MeServiceFulfillmentCell.swift */,
-				A5917D312FDFDD9800878961 /* MeStatsStripCell.swift */,
-			);
-			path = Cells;
-			sourceTree = "<group>";
-		};
-		A5917D382FDFFAC300878961 /* Cells */ = {
-			isa = PBXGroup;
-			children = (
-				A5917D372FDFFAC300878961 /* MessageBubbleCell.swift */,
-			);
-			name = Cells;
-			path = PL/Message/Cells;
-			sourceTree = "<group>";
-		};
-		A5B99BBD2FE148B800D92180 /* Record */ = {
-			isa = PBXGroup;
-			children = (
-				A5B99BB42FE148B800D92180 /* BodyFigureView.swift */,
-				A5B99BB52FE148B800D92180 /* HealthRecordBodyCardCell.swift */,
-				A5B99BB62FE148B800D92180 /* HealthRecordHistoryCell.swift */,
-				A5B99BB72FE148B800D92180 /* HealthRecordLifestyleCell.swift */,
-				A5B99BB82FE148B800D92180 /* HealthRecordMetricRowCell.swift */,
-				A5B99BB92FE148B800D92180 /* HealthRecordModels.swift */,
-				A5B99BBA2FE148B800D92180 /* HealthRecordUserInfoCell.swift */,
-				A5B99BBB2FE148B800D92180 /* HealthRecordViewController.swift */,
-				A5B99BBC2FE148B800D92180 /* RiskBarView.swift */,
-			);
-			name = Record;
-			path = PL/Health/Record;
-			sourceTree = "<group>";
-		};
 		A5BFCA372FE38EF1008DA1DF /* UIFont */ = {
 			isa = PBXGroup;
 			children = (
 				A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */,
 			);
 			path = UIFont;
-			sourceTree = "<group>";
-		};
-		A5BFCB2F2FE3C15D008DA1DF /* Settings */ = {
-			isa = PBXGroup;
-			children = (
-				A5BFCB2A2FE3C15D008DA1DF /* AboutSettingsViewController.swift */,
-				A5BFCB2B2FE3C15D008DA1DF /* AccessibilitySettingsViewController.swift */,
-				A5BFCB2C2FE3C15D008DA1DF /* NotificationSettingsViewController.swift */,
-				A5BFCB2D2FE3C15D008DA1DF /* PrivacySettingsViewController.swift */,
-				A5BFCB2E2FE3C15D008DA1DF /* SecuritySettingsViewController.swift */,
-			);
-			path = Settings;
 			sourceTree = "<group>";
 		};
 		A987952ACD55240446C185ED /* lhjk-client-new */ = {
@@ -717,17 +1273,6 @@
 				D333C32A8805FAD51C4D2820 /* UserDefaultsManager.swift */,
 			);
 			name = Storage;
-			sourceTree = "<group>";
-		};
-		AFCB59D26ECFBEF3993DAC61 /* Service */ = {
-			isa = PBXGroup;
-			children = (
-				A57D2F032FDBBEB7002E43BA /* ServiceViewController.swift */,
-				7B2F26CCFF4734186BF04A39 /* PaymentViewController.swift */,
-				892001FB5FF7399E601EF9C4 /* ServiceListViewController.swift */,
-				629C18D65321C9E6BC32BA86 /* HealthMallViewController.swift */,
-			);
-			name = Service;
 			sourceTree = "<group>";
 		};
 		B64D5D28AFB9110FDD54A8D6 /* Health */ = {
@@ -766,27 +1311,15 @@
 			name = Service;
 			sourceTree = "<group>";
 		};
-		C827DD6945CC87211F64D8BD /* Message */ = {
-			isa = PBXGroup;
-			children = (
-				A5917D382FDFFAC300878961 /* Cells */,
-				A5917D392FDFFAC300878961 /* ConversationCell.swift */,
-				A57D2F052FDBBEC8002E43BA /* MessageListViewController.swift */,
-				A7EDC9DBA2C15DAEC992461C /* ChatViewController.swift */,
-				A4DACDBFFDBFF750E34307AC /* ConversationListViewController.swift */,
-			);
-			name = Message;
-			sourceTree = "<group>";
-		};
 		C9BEC10038955A42DC8E640C /* PL */ = {
 			isa = PBXGroup;
 			children = (
-				A57D2F012FDBBE75002E43BA /* Home */,
-				A57D2EF92FDBBE00002E43BA /* My */,
-				A57D2EFB2FDBBE00002E43BA /* RegisterLogin */,
-				5BBC7A0F6F458645EB658DDB /* Health */,
-				C827DD6945CC87211F64D8BD /* Message */,
-				AFCB59D26ECFBEF3993DAC61 /* Service */,
+				A590FB422FEA82980056EF52 /* Health */,
+				A590FB4B2FEA82980056EF52 /* Home */,
+				A590FB582FEA82980056EF52 /* Message */,
+				A590FBA32FEA82980056EF52 /* My */,
+				A590FBB72FEA82980056EF52 /* RegisterLogin */,
+				A590FBC52FEA82980056EF52 /* Service */,
 			);
 			name = PL;
 			sourceTree = "<group>";
@@ -830,15 +1363,6 @@
 				A8B0D2D90AC6467582FAAE9C /* MessageRoutes.swift */,
 			);
 			name = Message;
-			sourceTree = "<group>";
-		};
-		EA01A96D629DA43ECA3537FD /* Order */ = {
-			isa = PBXGroup;
-			children = (
-				6B6CEC5F1C6384EFD8D0C047 /* OrderCardCell.swift */,
-				0CC32FFF96970D13A3A394E7 /* OrderListViewController.swift */,
-			);
-			path = Order;
 			sourceTree = "<group>";
 		};
 		EC87C779E7C4829BF736DA19 /* Router */ = {
@@ -893,22 +1417,6 @@
 				840D488A2D621EED67F49634 /* PLProtocol.swift */,
 			);
 			name = Protocols;
-			sourceTree = "<group>";
-		};
-		FA28A0AC1981B76945C1AD19 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				A5917D0F2FDFD7E500878961 /* AgreementCheckboxView.swift */,
-				A5917D102FDFD7E500878961 /* CaptchaVerifyView.swift */,
-				A5917D112FDFD7E500878961 /* NotificationGuideView.swift */,
-				A5917D122FDFD7E500878961 /* PhoneBindingView.swift */,
-				A5917D132FDFD7E500878961 /* PrivacyPromptView.swift */,
-				A5917D142FDFD7E500878961 /* VerifyCodeButton.swift */,
-				5A664F4EB7478EC69CC8B7C6 /* BrandHeaderView.swift */,
-				7D7AD8DF0E1609567B12918C /* LoginFieldView.swift */,
-				8B273E85E9AF9070DCE471A1 /* OptionChipView.swift */,
-			);
-			path = Components;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1100,22 +1608,11 @@
 				0EE2E6B7960C05819866D0E1 /* BluetoothManager.swift in Sources */,
 				5E7531B1805BDFC74CD1F8CB /* BluetoothModels.swift in Sources */,
 				1694DDA9C65C92BEE8B3AA7B /* Conversation.swift in Sources */,
-				A5B99BBE2FE148B800D92180 /* HealthRecordModels.swift in Sources */,
-				A5B99BBF2FE148B800D92180 /* BodyFigureView.swift in Sources */,
-				A5B99BC02FE148B800D92180 /* HealthRecordUserInfoCell.swift in Sources */,
 				A590FB1A2FEA2F6E0056EF52 /* UserService.swift in Sources */,
 				A590FB1B2FEA2F6E0056EF52 /* UserServiceProtocol.swift in Sources */,
 				A590FB1C2FEA2F6E0056EF52 /* UserModels.swift in Sources */,
 				A590FB1D2FEA2F6E0056EF52 /* UserRoutes.swift in Sources */,
-				A5B99BC12FE148B800D92180 /* HealthRecordHistoryCell.swift in Sources */,
-				A5B99BC22FE148B800D92180 /* RiskBarView.swift in Sources */,
-				A5B99BC32FE148B800D92180 /* HealthRecordBodyCardCell.swift in Sources */,
-				A5B99BC42FE148B800D92180 /* HealthRecordLifestyleCell.swift in Sources */,
-				A5B99BC52FE148B800D92180 /* HealthRecordMetricRowCell.swift in Sources */,
-				A5B99BC62FE148B800D92180 /* HealthRecordViewController.swift in Sources */,
 				880D3EEECACFBB9A6791AB14 /* Message.swift in Sources */,
-				A5917D3A2FDFFAC300878961 /* MessageBubbleCell.swift in Sources */,
-				A5917D3B2FDFFAC300878961 /* ConversationCell.swift in Sources */,
 				B3900106696EDAEC01403D9D /* RongCloudManager.swift in Sources */,
 				B92F96EB8F6DADF4562EA642 /* RongCloudMessageDelegate.swift in Sources */,
 				43464FED90F9F0DFF7F7CADB /* APIError.swift in Sources */,
@@ -1127,12 +1624,7 @@
 				D97D86F91B5A3A4D1C22DDC3 /* PaymentOrder.swift in Sources */,
 				2AB37F19E9E9BA0DCE4E2FF9 /* PaymentProtocol.swift in Sources */,
 				B0BC602D83CB797AB66DFE1F /* WechatPayChannel.swift in Sources */,
-				A57D2F042FDBBEB7002E43BA /* ServiceViewController.swift in Sources */,
 				8E749A7845EBA8C07946E821 /* Router.swift in Sources */,
-				A5917D2A2FDFDD7F00878961 /* HealthQuickEntriesCell.swift in Sources */,
-				A5917D2B2FDFDD7F00878961 /* HealthArchiveCardCell.swift in Sources */,
-				A5917D2C2FDFDD7F00878961 /* HealthScoreCardCell.swift in Sources */,
-				A5917D2D2FDFDD7F00878961 /* HealthVitalMetricsCell.swift in Sources */,
 				05433145BBE114CF0C1DC08A /* DatabaseManager.swift in Sources */,
 				31C52A8BD36FA64D4C32B098 /* UserDefaultsManager.swift in Sources */,
 				A97FF7EF73364502F99C2EC4 /* AppDelegate.swift in Sources */,
@@ -1140,102 +1632,117 @@
 				A5917D062FDFC8EF00878961 /* UIColor+Hex.swift in Sources */,
 				A5917D072FDFC8EF00878961 /* UIViewController+Alert.swift in Sources */,
 				A5917D082FDFC8EF00878961 /* UIView+Shadow.swift in Sources */,
-				A5917D332FDFDD9800878961 /* MeServiceFulfillmentCell.swift in Sources */,
-				A5917D342FDFDD9800878961 /* MeFuncRowCell.swift in Sources */,
-				A5BFCB362FE3C18D008DA1DF /* SettingsToggleCell.swift in Sources */,
-				A5917D352FDFDD9800878961 /* MeStatsStripCell.swift in Sources */,
-				A5917D362FDFDD9800878961 /* MeMembershipCardCell.swift in Sources */,
 				A5917D092FDFC8EF00878961 /* UIView+Layout.swift in Sources */,
 				A5917D0A2FDFC8EF00878961 /* UIColor+Theme.swift in Sources */,
 				A5917D0B2FDFC8EF00878961 /* UIButton+Funde.swift in Sources */,
 				A5917D0C2FDFC8EF00878961 /* DGCharts+Theme.swift in Sources */,
 				678D746E713E617DA4218CF8 /* BaseViewController.swift in Sources */,
-				A57D2F062FDBBEC8002E43BA /* MessageListViewController.swift in Sources */,
 				E9F251651FF71AEBC2DF03F3 /* BLLProtocol.swift in Sources */,
 				023299BEDDBAE0D022B08E7B /* DALProtocol.swift in Sources */,
-				A5917D162FDFD7E500878961 /* PrivacyPromptView.swift in Sources */,
-				A5917D182FDFD7E500878961 /* NotificationGuideView.swift in Sources */,
-				A5917D192FDFD7E500878961 /* PhoneBindingView.swift in Sources */,
-				A5917D1A2FDFD7E500878961 /* CaptchaVerifyView.swift in Sources */,
-				A5917D1B2FDFD7E500878961 /* VerifyCodeButton.swift in Sources */,
-				A5917D1C2FDFD7E500878961 /* AgreementCheckboxView.swift in Sources */,
 				A57D2F242FDC0661002E43BA /* RegisterLoginRoutes.swift in Sources */,
-				A57D2EFC2FDBBE00002E43BA /* MyViewController.swift in Sources */,
-				A57D2EFD2FDBBE00002E43BA /* LoginViewController.swift in Sources */,
 				59AB481874792A6D2327D4DB /* PLProtocol.swift in Sources */,
 				C8C2F63AA4929D219BE2AE0C /* RootTabBarController.swift in Sources */,
 				625D4BF5B8323C4730A5B48E /* SceneDelegate.swift in Sources */,
-				85D1EAC623198A9F60F786E0 /* PeripheralCell.swift in Sources */,
-				A57D2F022FDBBE75002E43BA /* HomeViewController.swift in Sources */,
-				1573E68259A66AD868AFD131 /* ChatViewController.swift in Sources */,
-				B9EFCF3E657E0B1117AEF7E2 /* ConversationListViewController.swift in Sources */,
-				A57D2EFF2FDBBE3B002E43BA /* HealthViewController.swift in Sources */,
-				1EE2121358C8F93652FC103C /* PaymentViewController.swift in Sources */,
-				FC144619EF2E5B9C0F8CAC47 /* BrandHeaderView.swift in Sources */,
-				4F7369070CC43FA996104A94 /* LoginFieldView.swift in Sources */,
-				D37E9CD6CE58F539A8D8DBFB /* FuncRowView.swift in Sources */,
-				0EDC5622BF3A0A37E849F288 /* SectionTitleView.swift in Sources */,
-				33DDECBC677E7E50B96C3779 /* SettingsViewController.swift in Sources */,
-				8B8C09E1713C1F6FC5A641CA /* ProfileViewController.swift in Sources */,
-				0DF3EEBD3CBD7D3B5436CB24 /* PolicyViewController.swift in Sources */,
-				4D3B9FC870DC051DB24DD8F6 /* HealthReportViewController.swift in Sources */,
-				7B46EF5C3CB00C67C3413246 /* AppointmentsViewController.swift in Sources */,
-				B071816CF85673E86ECBF759 /* DevicesViewController.swift in Sources */,
-				B270B847530087B6D64A4B03 /* DietPlanViewController.swift in Sources */,
-				4A75427BA911A7B10D4DDE6E /* MonitoringPlanViewController.swift in Sources */,
-				8449BE1294FC1603412521D4 /* HealthEvaluationsViewController.swift in Sources */,
 				D0DF85E8760C6773E9B32743 /* RouteSetup.swift in Sources */,
-				A57D2F162FDBFF13002E43BA /* BloodPressureViewController.swift in Sources */,
-				A57D2F172FDBFF13002E43BA /* HeartRateViewController.swift in Sources */,
-				A57D2F182FDBFF13002E43BA /* BloodSugarViewController.swift in Sources */,
-				A57D2F192FDBFF13002E43BA /* WeightViewController.swift in Sources */,
-				A57D2F1A2FDBFF13002E43BA /* MetricCardCell.swift in Sources */,
 				D4D3CF9A74172D4C53A40241 /* PlaceholderViewController.swift in Sources */,
 				E7E5276C54E35414EB42377A /* HealthRoutes.swift in Sources */,
 				A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */,
-				A5BFCB302FE3C15D008DA1DF /* AccessibilitySettingsViewController.swift in Sources */,
-				A5BFCB312FE3C15D008DA1DF /* AboutSettingsViewController.swift in Sources */,
-				A5BFCB322FE3C15D008DA1DF /* PrivacySettingsViewController.swift in Sources */,
-				A5BFCB332FE3C15D008DA1DF /* SecuritySettingsViewController.swift in Sources */,
-				A5BFCB342FE3C15D008DA1DF /* NotificationSettingsViewController.swift in Sources */,
-				27260D21123BF37DC03CD18F /* MetricRulerView.swift in Sources */,
-				62628470BAE98A14205557DD /* MetricAddViewController.swift in Sources */,
 				A576A2202FE8E22E004F6070 /* ECGSimulator.swift in Sources */,
 				A576A2212FE8E22E004F6070 /* ECGChartView.swift in Sources */,
 				A576A2222FE8E22E004F6070 /* ECGDataBuffer.swift in Sources */,
-				BE14F14A358741BB99BE0FFA /* MetricsViewController.swift in Sources */,
-				342788F37504E84D0A004D5E /* SleepViewController.swift in Sources */,
-				7568562CC69E30C273DCAF3A /* SpO2ViewController.swift in Sources */,
-				0A509A5F93C44346FA943249 /* EcgViewController.swift in Sources */,
 				A5917CE22FDFA7C000878961 /* HomeRoutes.swift in Sources */,
-				DA0FC023460D3BD196E8DE73 /* FundusViewController.swift in Sources */,
-				BB7DEF26F4B9703D4AF29861 /* DigestiveViewController.swift in Sources */,
-				E11C466E9195539DC2B9C064 /* ExerciseFoodViewController.swift in Sources */,
 				A57D2F1E2FDC0647002E43BA /* MyRoutes.swift in Sources */,
-				2EA1671EACE2C23AF10A0DDF /* HomeHeroCell.swift in Sources */,
-				B4E6835B6A7B7B08AED3294E /* HomeQuickActionsCell.swift in Sources */,
-				1EE4690D0E179DD18C481D76 /* HomeTeamCardCell.swift in Sources */,
-				86A90CFE9F2E03462DACDD60 /* HomeTaskCardCell.swift in Sources */,
-				BB1E36BDFE3D72E20FBEDCF0 /* HomeServiceBannerCell.swift in Sources */,
-				A5917D0E2FDFD7D000878961 /* ForgotPasswordViewController.swift in Sources */,
-				F1DE89B1375768770C1F498F /* HomeArticleCell.swift in Sources */,
 				C93572D0D1BE419981086975 /* MessageRoutes.swift in Sources */,
-				BF95CF00169880173A78BDF8 /* MetricCardCell.swift in Sources */,
-				9B3BD71652518F27624BD396 /* StageMetricsCardView.swift in Sources */,
-				3E3A18231BB2871AEBFFBA7B /* WeeklyReportCell.swift in Sources */,
-				5648A1F17004E9968A7F96E4 /* StageReportCell.swift in Sources */,
-				18D56CDA5128C0C654896D46 /* OptionChipView.swift in Sources */,
-				9A248986A42446AB3705EC31 /* OnboardingViewController.swift in Sources */,
-				CBDE3CB76555F2D48F79ADC9 /* OrderCardCell.swift in Sources */,
-				BA0FFADEEC815606D73DFCBF /* OrderListViewController.swift in Sources */,
-				E2B789D15CA89A4157DC0C35 /* MembershipViewController.swift in Sources */,
-				FC5E44818A63C1C164911BDB /* PointsViewController.swift in Sources */,
-				8D68B8774B8EA704796D6F1A /* FamilyViewController.swift in Sources */,
 				631F39830B0FACBBF98B6C6F /* ServiceRoutes.swift in Sources */,
-				7A8B706AA025C5FAC1433DA9 /* ServiceListViewController.swift in Sources */,
-				68F481056F1B78EE61CC78F8 /* HealthMallViewController.swift in Sources */,
 				EF703DBA6D3A64DB74961F32 /* APIResponse.swift in Sources */,
 				3EA9A6D3AD0E682EFBCFADE3 /* APIManager+Async.swift in Sources */,
+				A590FBC62FEA82980056EF52 /* AccessibilitySettingsViewController.swift in Sources */,
+				A590FBC72FEA82980056EF52 /* BrandHeaderView.swift in Sources */,
+				A590FBC82FEA82980056EF52 /* MeFuncRowCell.swift in Sources */,
+				A590FBC92FEA82980056EF52 /* PeripheralCell.swift in Sources */,
+				A590FBCA2FEA82980056EF52 /* LoginViewController.swift in Sources */,
+				A590FBCB2FEA82980056EF52 /* HealthReportViewController.swift in Sources */,
+				A590FBCC2FEA82980056EF52 /* HomeQuickActionsCell.swift in Sources */,
+				A590FBCD2FEA82980056EF52 /* DigestiveViewController.swift in Sources */,
+				A590FBCE2FEA82980056EF52 /* LoginFieldView.swift in Sources */,
+				A590FBCF2FEA82980056EF52 /* SpO2ViewController.swift in Sources */,
+				A590FBD02FEA82980056EF52 /* MessageBubbleCell.swift in Sources */,
+				A590FBD12FEA82980056EF52 /* OptionChipView.swift in Sources */,
+				A590FBD22FEA82980056EF52 /* PolicyViewController.swift in Sources */,
+				A590FBD32FEA82980056EF52 /* SleepViewController.swift in Sources */,
+				A590FBD42FEA82980056EF52 /* HealthEvaluationsViewController.swift in Sources */,
+				A590FBD52FEA82980056EF52 /* NotificationSettingsViewController.swift in Sources */,
+				A590FBD62FEA82980056EF52 /* BloodSugarViewController.swift in Sources */,
+				A590FBD72FEA82980056EF52 /* DietPlanViewController.swift in Sources */,
+				A590FBD82FEA82980056EF52 /* MeStatsStripCell.swift in Sources */,
+				A590FBD92FEA82980056EF52 /* HealthVitalMetricsCell.swift in Sources */,
+				A590FBDA2FEA82980056EF52 /* ServiceViewController.swift in Sources */,
+				A590FBDB2FEA82980056EF52 /* AboutSettingsViewController.swift in Sources */,
+				A590FBDC2FEA82980056EF52 /* PrivacyPromptView.swift in Sources */,
+				A590FBDD2FEA82980056EF52 /* FuncRowView.swift in Sources */,
+				A590FBDE2FEA82980056EF52 /* AppointmentsViewController.swift in Sources */,
+				A590FBDF2FEA82980056EF52 /* HealthRecordHistoryCell.swift in Sources */,
+				A590FBE02FEA82980056EF52 /* BodyFigureView.swift in Sources */,
+				A590FBE12FEA82980056EF52 /* MetricCardCell.swift in Sources */,
+				A590FBE22FEA82980056EF52 /* HomeTaskCardCell.swift in Sources */,
+				A590FBE32FEA82980056EF52 /* SettingsToggleCell.swift in Sources */,
+				A590FBE42FEA82980056EF52 /* BloodPressureViewController.swift in Sources */,
+				A590FBE52FEA82980056EF52 /* MeMembershipCardCell.swift in Sources */,
+				A590FBE62FEA82980056EF52 /* HeartRateViewController.swift in Sources */,
+				A590FBE72FEA82980056EF52 /* MetricAddViewController.swift in Sources */,
+				A590FBE82FEA82980056EF52 /* OnboardingViewController.swift in Sources */,
+				A590FBE92FEA82980056EF52 /* MembershipViewController.swift in Sources */,
+				A590FBEA2FEA82980056EF52 /* HealthMallViewController.swift in Sources */,
+				A590FBEB2FEA82980056EF52 /* PrivacySettingsViewController.swift in Sources */,
+				A590FBEC2FEA82980056EF52 /* MessageListViewController.swift in Sources */,
+				A590FBED2FEA82980056EF52 /* WeeklyReportCell.swift in Sources */,
+				A590FBEE2FEA82980056EF52 /* RiskBarView.swift in Sources */,
+				A590FBEF2FEA82980056EF52 /* EcgViewController.swift in Sources */,
+				A590FBF02FEA82980056EF52 /* ExerciseFoodViewController.swift in Sources */,
+				A590FBF12FEA82980056EF52 /* HomeArticleCell.swift in Sources */,
+				A590FBF22FEA82980056EF52 /* WeightViewController.swift in Sources */,
+				A590FBF32FEA82980056EF52 /* FamilyViewController.swift in Sources */,
+				A590FBF42FEA82980056EF52 /* SettingsViewController.swift in Sources */,
+				A590FBF52FEA82980056EF52 /* HealthRecordBodyCardCell.swift in Sources */,
+				A590FBF62FEA82980056EF52 /* SecuritySettingsViewController.swift in Sources */,
+				A590FBF72FEA82980056EF52 /* MetricsViewController.swift in Sources */,
+				A590FBF82FEA82980056EF52 /* ChatViewController.swift in Sources */,
+				A590FBF92FEA82980056EF52 /* HealthQuickEntriesCell.swift in Sources */,
+				A590FBFA2FEA82980056EF52 /* OrderCardCell.swift in Sources */,
+				A590FBFB2FEA82980056EF52 /* HealthScoreCardCell.swift in Sources */,
+				A590FBFC2FEA82980056EF52 /* AgreementCheckboxView.swift in Sources */,
+				A590FBFD2FEA82980056EF52 /* HealthRecordLifestyleCell.swift in Sources */,
+				A590FBFE2FEA82980056EF52 /* NotificationGuideView.swift in Sources */,
+				A590FBFF2FEA82980056EF52 /* VerifyCodeButton.swift in Sources */,
+				A590FC002FEA82980056EF52 /* ConversationCell.swift in Sources */,
+				A590FC012FEA82980056EF52 /* FundusViewController.swift in Sources */,
+				A590FC022FEA82980056EF52 /* OrderListViewController.swift in Sources */,
+				A590FC032FEA82980056EF52 /* HealthRecordModels.swift in Sources */,
+				A590FC042FEA82980056EF52 /* HomeServiceBannerCell.swift in Sources */,
+				A590FC052FEA82980056EF52 /* ServiceListViewController.swift in Sources */,
+				A590FC062FEA82980056EF52 /* ConversationListViewController.swift in Sources */,
+				A590FC072FEA82980056EF52 /* HomeViewController.swift in Sources */,
+				A590FC082FEA82980056EF52 /* SectionTitleView.swift in Sources */,
+				A590FC092FEA82980056EF52 /* PaymentViewController.swift in Sources */,
+				A590FC0A2FEA82980056EF52 /* HealthViewController.swift in Sources */,
+				A590FC0B2FEA82980056EF52 /* MeServiceFulfillmentCell.swift in Sources */,
+				A590FC0C2FEA82980056EF52 /* HomeTeamCardCell.swift in Sources */,
+				A590FC0D2FEA82980056EF52 /* ProfileViewController.swift in Sources */,
+				A590FC0E2FEA82980056EF52 /* MyViewController.swift in Sources */,
+				A590FC0F2FEA82980056EF52 /* CaptchaVerifyView.swift in Sources */,
+				A590FC102FEA82980056EF52 /* HealthRecordViewController.swift in Sources */,
+				A590FC112FEA82980056EF52 /* HealthArchiveCardCell.swift in Sources */,
+				A590FC122FEA82980056EF52 /* MetricRulerView.swift in Sources */,
+				A590FC132FEA82980056EF52 /* StageReportCell.swift in Sources */,
+				A590FC142FEA82980056EF52 /* DevicesViewController.swift in Sources */,
+				A590FC152FEA82980056EF52 /* PhoneBindingView.swift in Sources */,
+				A590FC162FEA82980056EF52 /* HealthRecordMetricRowCell.swift in Sources */,
+				A590FC172FEA82980056EF52 /* HealthRecordUserInfoCell.swift in Sources */,
+				A590FC182FEA82980056EF52 /* PointsViewController.swift in Sources */,
+				A590FC192FEA82980056EF52 /* MonitoringPlanViewController.swift in Sources */,
+				A590FC1A2FEA82980056EF52 /* StageMetricsCardView.swift in Sources */,
+				A590FC1B2FEA82980056EF52 /* HomeHeroCell.swift in Sources */,
+				A590FC1C2FEA82980056EF52 /* ForgotPasswordViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

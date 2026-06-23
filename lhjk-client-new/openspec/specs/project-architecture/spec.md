@@ -164,6 +164,54 @@ lhjk-client/
 
 ---
 
+### Requirement: PL Layer File Organization (VC-Centric)
+
+PL 层的每个业务模块 SHALL 以 **VC 为中心** 组织文件夹结构，规则如下：
+
+**模块级别结构**（以 `My/` 为例）：
+```
+ModuleName/
+├── XxxViewController.swift          ← 主 VC（模块入口页）
+├── Cells/                           ← 主 VC 用到的 Cell
+│   └── XxxCell.swift
+├── Components/                      ← 主 VC 用到的自定义控件
+│   └── XxxView.swift
+├── SubPageA/                        ← 二级页面（子 VC 文件夹）
+│   ├── SubPageAViewController.swift
+│   ├── Cells/                       ← 该子 VC 的 Cell
+│   │   └── XxxCell.swift
+│   ├── Components/                  ← 该子 VC 的自定义控件
+│   │   └── XxxView.swift
+│   └── SubSubPage/                  ← 三级页面（递归适用）
+│       └── ...
+└── SubPageB/
+    └── ...
+```
+
+**核心原则**：
+
+1. **VC 即文件夹中心**：每个 VC 所在文件夹，其 Cell 放入 `Cells/` 子目录，自定义控件（非 Cell 的 View）放入 `Components/` 子目录
+2. **二级 VC 必须独立建文件夹**：子页面 VC 不得平铺在上级目录中；文件夹名与模块/页面名称对应（如设置页 → `Settings/`）
+3. **递归适用**：三级、四级页面同样遵循上述规则，在对应的子文件夹内继续建立 `Cells/` 和 `Components/`
+4. **Model 文件与 VC 同目录**：如果某个 VC 有专属的 Model 文件，直接放在该 VC 所在文件夹（与 VC 平级），不建议单独拆 `Model/` 子目录
+
+#### Scenario: 在已有模块中新增子页面
+- **WHEN** 在已有模块（如 `My/`）中新增一个子页面（如"收藏" → `FavoritesViewController`）
+- **THEN** 必须在模块下创建独立文件夹 `My/Favorites/`，将 `FavoritesViewController.swift` 放入其中；若该页面有专属 Cell 或自定义控件，则在 `Favorites/` 下分别创建 `Cells/` 和 `Components/` 子目录存放
+
+#### Scenario: 在已有模块中新增 Cell
+- **WHEN** 在已有模块中为某个 VC 新增 Cell
+- **THEN** 必须判断该 Cell 属于哪个 VC，放入该 VC 对应文件夹下的 `Cells/` 目录；不得跨层级放置
+
+#### Scenario: 审查目录结构
+- **WHEN** 需要检查 PL 层目录是否符合规范
+- **THEN** 检查要点：
+  - 模块根目录是否有非主 VC 的子页面 VC 文件（违规，应放入子文件夹）
+  - 模块根目录或子页面目录中是否有散落的 Cell 或自定义 View 未放入 `Cells/` / `Components/`（违规）
+  - `Cells/` 和 `Components/` 的命名是否统一使用首字母大写的英文单词
+
+---
+
 ### Requirement: Debugging — Log First, Don't Guess
 对反复修改仍无法解决的 UI 布局 / 渲染问题，SHALL 优先加 log 定位根因，不得凭猜测反复修改。
 
