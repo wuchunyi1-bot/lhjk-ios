@@ -27,6 +27,7 @@
 		33DDECBC677E7E50B96C3779 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C3F2FAE5619994A3AA7A46 /* SettingsViewController.swift */; };
 		342788F37504E84D0A004D5E /* SleepViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD50DDCF0289450DE8869D0 /* SleepViewController.swift */; };
 		3E3A18231BB2871AEBFFBA7B /* WeeklyReportCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8056F0ABC51890F951CC058C /* WeeklyReportCell.swift */; };
+		3EA9A6D3AD0E682EFBCFADE3 /* APIManager+Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 649B848D3E577A97460BAB7C /* APIManager+Async.swift */; };
 		43464FED90F9F0DFF7F7CADB /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2C9738A2B82C009F94EDFE7 /* APIError.swift */; };
 		4A75427BA911A7B10D4DDE6E /* MonitoringPlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B498405ABB27F6D8377D6064 /* MonitoringPlanViewController.swift */; };
 		4D3B9FC870DC051DB24DD8F6 /* HealthReportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 619369377609556A6596BEFF /* HealthReportViewController.swift */; };
@@ -71,6 +72,10 @@
 		A57D2F1A2FDBFF13002E43BA /* MetricCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F102FDBFF13002E43BA /* MetricCardCell.swift */; };
 		A57D2F1E2FDC0647002E43BA /* MyRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F1B2FDC0647002E43BA /* MyRoutes.swift */; };
 		A57D2F242FDC0661002E43BA /* RegisterLoginRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F202FDC0661002E43BA /* RegisterLoginRoutes.swift */; };
+		A590FB1A2FEA2F6E0056EF52 /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB172FEA2F6E0056EF52 /* UserService.swift */; };
+		A590FB1B2FEA2F6E0056EF52 /* UserServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB182FEA2F6E0056EF52 /* UserServiceProtocol.swift */; };
+		A590FB1C2FEA2F6E0056EF52 /* UserModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB152FEA2F6E0056EF52 /* UserModels.swift */; };
+		A590FB1D2FEA2F6E0056EF52 /* UserRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB162FEA2F6E0056EF52 /* UserRoutes.swift */; };
 		A5917CE22FDFA7C000878961 /* HomeRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917CE02FDFA7C000878961 /* HomeRoutes.swift */; };
 		A5917D062FDFC8EF00878961 /* UIColor+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917CFD2FDFC8EF00878961 /* UIColor+Hex.swift */; };
 		A5917D072FDFC8EF00878961 /* UIViewController+Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D032FDFC8EF00878961 /* UIViewController+Alert.swift */; };
@@ -147,6 +152,7 @@
 		E2B789D15CA89A4157DC0C35 /* MembershipViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD680380E870019FA45DC7C5 /* MembershipViewController.swift */; };
 		E7E5276C54E35414EB42377A /* HealthRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C585503B59B93311DEC6A839 /* HealthRoutes.swift */; };
 		E9F251651FF71AEBC2DF03F3 /* BLLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 625430E3BA9BF6D9CA97AAE8 /* BLLProtocol.swift */; };
+		EF703DBA6D3A64DB74961F32 /* APIResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9B669A52C4314F17B603D9 /* APIResponse.swift */; };
 		EF81F5EA5B41E6A3D6AD7317 /* IMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 929B2C07064774594EB5F7EC /* IMService.swift */; };
 		F1DE89B1375768770C1F498F /* HomeArticleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BA7A883A92F5B5D981EAD6C /* HomeArticleCell.swift */; };
 		FC144619EF2E5B9C0F8CAC47 /* BrandHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A664F4EB7478EC69CC8B7C6 /* BrandHeaderView.swift */; };
@@ -185,6 +191,7 @@
 		625430E3BA9BF6D9CA97AAE8 /* BLLProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BLLProtocol.swift; path = Other/Common/Protocols/BLLProtocol.swift; sourceTree = "<group>"; };
 		629C18D65321C9E6BC32BA86 /* HealthMallViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HealthMallViewController.swift; path = PL/Service/HealthMallViewController.swift; sourceTree = "<group>"; };
 		62E9EC642D4693434806DE88 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = Info.plist; path = Other/Resources/Info.plist; sourceTree = "<group>"; };
+		649B848D3E577A97460BAB7C /* APIManager+Async.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "APIManager+Async.swift"; path = "DAL/Networking/APIManager+Async.swift"; sourceTree = "<group>"; };
 		68DC37BCDD618E2DCE9A9D02 /* OAuthAuthenticator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OAuthAuthenticator.swift; path = DAL/Networking/OAuthAuthenticator.swift; sourceTree = "<group>"; };
 		6B6CEC5F1C6384EFD8D0C047 /* OrderCardCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderCardCell.swift; sourceTree = "<group>"; };
 		6E9969E87449F15762387486 /* AlipayChannel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AlipayChannel.swift; path = DAL/Payment/AlipayChannel.swift; sourceTree = "<group>"; };
@@ -222,6 +229,10 @@
 		A57D2F142FDBFF13002E43BA /* WeightViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightViewController.swift; sourceTree = "<group>"; };
 		A57D2F1B2FDC0647002E43BA /* MyRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyRoutes.swift; sourceTree = "<group>"; };
 		A57D2F202FDC0661002E43BA /* RegisterLoginRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterLoginRoutes.swift; sourceTree = "<group>"; };
+		A590FB152FEA2F6E0056EF52 /* UserModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserModels.swift; sourceTree = "<group>"; };
+		A590FB162FEA2F6E0056EF52 /* UserRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRoutes.swift; sourceTree = "<group>"; };
+		A590FB172FEA2F6E0056EF52 /* UserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserService.swift; sourceTree = "<group>"; };
+		A590FB182FEA2F6E0056EF52 /* UserServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserServiceProtocol.swift; sourceTree = "<group>"; };
 		A5917CE02FDFA7C000878961 /* HomeRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRoutes.swift; sourceTree = "<group>"; };
 		A5917CF92FDFC8EF00878961 /* DGCharts+Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DGCharts+Theme.swift"; sourceTree = "<group>"; };
 		A5917CFB2FDFC8EF00878961 /* UIButton+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIButton+Funde.swift"; sourceTree = "<group>"; };
@@ -290,6 +301,7 @@
 		D7C3F2FAE5619994A3AA7A46 /* SettingsViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		D87802E5D53C4815174A814D /* FuncRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FuncRowView.swift; sourceTree = "<group>"; };
 		DB2F07AA65B496162BCA2DB3 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		DB9B669A52C4314F17B603D9 /* APIResponse.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = APIResponse.swift; path = DAL/Networking/APIResponse.swift; sourceTree = "<group>"; };
 		DCE57F7A320AD8DA12CD7236 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Other/Resources/Assets.xcassets; sourceTree = "<group>"; };
 		DD680380E870019FA45DC7C5 /* MembershipViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MembershipViewController.swift; sourceTree = "<group>"; };
 		E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_lhjk_client_new.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -338,6 +350,8 @@
 				2864D2DFAE001AA678A08E54 /* NetworkMonitor.swift */,
 				68DC37BCDD618E2DCE9A9D02 /* OAuthAuthenticator.swift */,
 				AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */,
+				DB9B669A52C4314F17B603D9 /* APIResponse.swift */,
+				649B848D3E577A97460BAB7C /* APIManager+Async.swift */,
 			);
 			name = Networking;
 			sourceTree = "<group>";
@@ -536,6 +550,18 @@
 			);
 			name = RegisterLogin;
 			path = BLL/RegisterLogin;
+			sourceTree = "<group>";
+		};
+		A590FB192FEA2F6E0056EF52 /* User */ = {
+			isa = PBXGroup;
+			children = (
+				A590FB152FEA2F6E0056EF52 /* UserModels.swift */,
+				A590FB162FEA2F6E0056EF52 /* UserRoutes.swift */,
+				A590FB172FEA2F6E0056EF52 /* UserService.swift */,
+				A590FB182FEA2F6E0056EF52 /* UserServiceProtocol.swift */,
+			);
+			name = User;
+			path = BLL/User;
 			sourceTree = "<group>";
 		};
 		A5917CE12FDFA7C000878961 /* Home */ = {
@@ -848,6 +874,7 @@
 		F652125E9A5F2721ADE9B5ED /* BLL */ = {
 			isa = PBXGroup;
 			children = (
+				A590FB192FEA2F6E0056EF52 /* User */,
 				A5917CE12FDFA7C000878961 /* Home */,
 				A57D2F222FDC0661002E43BA /* RegisterLogin */,
 				A57D2F1D2FDC0647002E43BA /* My */,
@@ -1076,6 +1103,10 @@
 				A5B99BBE2FE148B800D92180 /* HealthRecordModels.swift in Sources */,
 				A5B99BBF2FE148B800D92180 /* BodyFigureView.swift in Sources */,
 				A5B99BC02FE148B800D92180 /* HealthRecordUserInfoCell.swift in Sources */,
+				A590FB1A2FEA2F6E0056EF52 /* UserService.swift in Sources */,
+				A590FB1B2FEA2F6E0056EF52 /* UserServiceProtocol.swift in Sources */,
+				A590FB1C2FEA2F6E0056EF52 /* UserModels.swift in Sources */,
+				A590FB1D2FEA2F6E0056EF52 /* UserRoutes.swift in Sources */,
 				A5B99BC12FE148B800D92180 /* HealthRecordHistoryCell.swift in Sources */,
 				A5B99BC22FE148B800D92180 /* RiskBarView.swift in Sources */,
 				A5B99BC32FE148B800D92180 /* HealthRecordBodyCardCell.swift in Sources */,
@@ -1203,6 +1234,8 @@
 				631F39830B0FACBBF98B6C6F /* ServiceRoutes.swift in Sources */,
 				7A8B706AA025C5FAC1433DA9 /* ServiceListViewController.swift in Sources */,
 				68F481056F1B78EE61CC78F8 /* HealthMallViewController.swift in Sources */,
+				EF703DBA6D3A64DB74961F32 /* APIResponse.swift in Sources */,
+				3EA9A6D3AD0E682EFBCFADE3 /* APIManager+Async.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

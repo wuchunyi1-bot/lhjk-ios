@@ -17,13 +17,13 @@ protocol LoginServiceProtocol {
     /// 发送短信验证码
     /// - Parameters:
     ///   - phone: 手机号
-    ///   - captchaToken: 拼图验证通过后的凭证
-    func sendVerificationCode(to phone: String, captchaToken: String) async throws -> SMSResponse
+    ///   - type: 验证码类型（`"login"` / `"reset_password"`）
+    func sendVerificationCode(to phone: String, type: String) async throws -> SMSResponse
 
     // MARK: - Login
 
     /// 验证码登录（新用户自动注册）
-    func loginByPhone(_ phone: String, code: String, smsRequestId: String) async throws -> LoginResult
+    func loginByPhone(_ phone: String, code: String) async throws -> LoginResult
 
     /// 密码登录
     func loginByPassword(_ phone: String, password: String) async throws -> LoginResult

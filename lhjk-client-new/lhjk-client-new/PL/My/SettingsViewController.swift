@@ -60,7 +60,6 @@ final class SettingsViewController: BaseViewController, UITableViewDataSource, U
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        // Re-hide nav bar when going back to Me (which has hidden nav bar)
         if navigationController?.viewControllers.last is MyViewController {
             navigationController?.setNavigationBarHidden(true, animated: animated)
         }

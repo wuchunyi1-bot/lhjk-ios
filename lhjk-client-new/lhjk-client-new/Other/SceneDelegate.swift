@@ -14,6 +14,20 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window = UIWindow(windowScene: windowScene)
         window?.rootViewController = RootTabBarController()
         window?.makeKeyAndVisible()
+
+        // 已登录但未完成完善信息 → 强制展示 onboarding
+        checkOnboardingRequired()
+    }
+
+    /// 检查本地登录态：有 token 但未完成完善信息 → 弹出 onboarding
+    private func checkOnboardingRequired() {
+        let hasToken = UserDefaults.standard.string(forKey: "auth_access_token") != nil
+        let onboarded = UserDefaults.standard.bool(forKey: "fd_onboarded")
+        guard hasToken && !onboarded else { return }
+        print("[SceneDelegate] hasToken=true onboarded=false → presenting onboarding")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            Router.shared.present("/onboarding")
+        }
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {

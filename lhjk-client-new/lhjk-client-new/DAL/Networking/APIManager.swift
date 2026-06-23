@@ -12,7 +12,7 @@ enum APIEnvironment: String {
     var baseURL: URL {
         switch self {
         case .development:
-            return URL(string: "https://dev-api.lhjk.com")!
+            return URL(string: "http://gateway-dev.lianhaojiankang.com")!
         case .staging:
             return URL(string: "https://staging-api.lhjk.com")!
         case .production:
@@ -40,8 +40,18 @@ final class APIManager {
     /// 当前 API 环境
     var environment: APIEnvironment = .development
 
-    /// Alamofire Session（含 AuthenticationInterceptor）
-    private var session: Session!
+    /// Alamofire Session（含 AuthenticationInterceptor，用于需认证的请求）
+    var session: Session!
+
+    /// 无认证 Session（用于登录、发送验证码等公开接口）
+    var publicSession: Session!
+
+    /// JSONDecoder 配置：后端使用 snake_case 字段名
+    let jsonDecoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return decoder
+    }()
 
     /// 底层 URLSession 配置（保持复用）
     private let configuration: URLSessionConfiguration = {
@@ -56,6 +66,11 @@ final class APIManager {
     private init() {
         let savedCredential = Self.loadCredentialFromStorage()
         configureSession(with: savedCredential)
+        // 无认证 Session — 公开接口不需 Token
+        publicSession = Session(
+            configuration: configuration,
+            eventMonitors: [LogMonitor()]
+        )
     }
 
     /// 使用指定 Credential 重建 Session
@@ -178,7 +193,8 @@ final class APIManager {
         responseType: T.Type,
         progressHandler: ((Double) -> Void)? = nil
     ) -> AnyPublisher<T, APIError> {
-        let url = environment.baseURL.appendingPathComponent(path)
+        let cleanPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
+        let url = environment.baseURL.appendingPathComponent(cleanPath)
 
         return session.upload(
             multipartFormData: { formData in
@@ -197,7 +213,7 @@ final class APIManager {
             progressHandler?(progress.fractionCompleted)
         }
         .validate()
-        .publishDecodable(type: T.self)
+        .publishDecodable(type: T.self, decoder: jsonDecoder)
         .tryMap { response in
             switch response.result {
             case .success(let value):
@@ -220,7 +236,9 @@ final class APIManager {
         parameters: [String: Any]?,
         responseType: T.Type
     ) -> AnyPublisher<T, APIError> {
-        let url = environment.baseURL.appendingPathComponent(path)
+        // 去除 path 前导 `/`，防止 appendingPathComponent 吞掉 baseURL 的路径前缀
+        let cleanPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
+        let url = environment.baseURL.appendingPathComponent(cleanPath)
 
         let encoding: ParameterEncoding = {
             switch method {
@@ -238,7 +256,7 @@ final class APIManager {
             encoding: encoding
         )
         .validate()
-        .publishDecodable(type: T.self)
+        .publishDecodable(type: T.self, decoder: jsonDecoder)
         .tryMap { response in
             switch response.result {
             case .success(let value):
@@ -252,6 +270,13 @@ final class APIManager {
         }
         .eraseToAnyPublisher()
     }
+}
+
+// MARK: - JSONDecoder Extension
+
+extension APIManager {
+    /// 获取配置了 snake_case 转换的 JSONDecoder，供 DAL 层其他地方复用
+    var snakeCaseDecoder: JSONDecoder { jsonDecoder }
 }
 
 // MARK: - HTTPMethod（简化版，直接使用 Alamofire）
@@ -271,6 +296,15 @@ struct MultipartFormData {
 
 extension APIError {
     init(from afError: AFError, data: Data?) {
+        // 解码失败 → 优先处理，打印原始响应用于调试
+        if case .responseSerializationFailed(let reason) = afError {
+            if let data = data, let raw = String(data: data, encoding: .utf8) {
+                print("[APIManager] Decode failed — reason: \(reason) — raw: \(raw.prefix(2000))")
+            }
+            self = .decodingError(afError)
+            return
+        }
+
         if let underlying = afError.underlyingError {
             let nsError = underlying as NSError
             if nsError.code == NSURLErrorTimedOut {
@@ -284,8 +318,6 @@ extension APIError {
         }
 
         switch afError {
-        case .responseSerializationFailed:
-            self = .decodingError(afError)
         case .responseValidationFailed(let reason):
             if case .unacceptableStatusCode(let code) = reason {
                 switch code {
@@ -310,17 +342,20 @@ struct EmptyResponse: Decodable {}
 
 // MARK: - 日志监控
 
-/// 请求/响应日志事件监控（仅 DEBUG 模式输出）
+/// 请求/响应日志事件监控
 final class LogMonitor: EventMonitor {
 
-    #if DEBUG
     func request(_ request: Request, didCreateURLRequest urlRequest: URLRequest) {
         print("[API] → \(urlRequest.httpMethod ?? "?") \(urlRequest.url?.absoluteString ?? "")")
         if let headers = urlRequest.allHTTPHeaderFields, !headers.isEmpty {
             print("[API] Headers: \(headers)")
         }
-        if let body = urlRequest.httpBody, let json = try? JSONSerialization.jsonObject(with: body) {
-            print("[API] Body: \(json)")
+        if let body = urlRequest.httpBody {
+            if let str = String(data: body, encoding: .utf8) {
+                print("[API] Body(raw): \(str)")
+            } else {
+                print("[API] Body: \(body.count) bytes")
+            }
         }
     }
 
@@ -328,14 +363,20 @@ final class LogMonitor: EventMonitor {
         if let httpResponse = response.response {
             print("[API] ← \(httpResponse.statusCode) \(httpResponse.url?.absoluteString ?? "")")
         }
-        if let data = response.data, let json = try? JSONSerialization.jsonObject(with: data) {
-            print("[API] Response: \(json)")
+        if let data = response.data {
+            if let str = String(data: data, encoding: .utf8) {
+                print("[API] Response(raw): \(str.prefix(2000))")
+            } else {
+                print("[API] Response: \(data.count) bytes")
+            }
         }
         if let error = response.error {
             print("[API] Error: \(error.localizedDescription)")
+            if let afError = error.asAFError {
+                print("[API] AFError: \(afError)")
+            }
         }
     }
-    #endif
 }
 
 // MARK: - UserDefaults Keys

@@ -433,9 +433,11 @@
 
 #### Scenario: 引导触发条件
 - **WHEN** 登录成功后
-- **THEN** 检查本地存储中 `fd_onboarded` 标记
-- **WHEN** 标记为 `true` → 跳过引导，直接进入 `/home`
-- **WHEN** 标记为 `false` 或不存在 → 进入引导流程
+- **THEN** 仅检查本地 `UserDefaults` 中的 `fd_onboarded` 标记（不依赖后端判断）
+- **WHEN** `fd_onboarded == true` → 跳过引导，进入首页
+- **WHEN** `fd_onboarded == false` 或 key 不存在 → **必须**进入引导流程，不可跳过
+- **WHEN** App 冷启动（SceneDelegate）检测到本地已存 token 但 `fd_onboarded == false` → 自动弹出 onboarding
+- **设计原则**：完善信息是纯本地门控。杀掉 App 重开、清缓存重装，只要本地标记未置 true 就永远拦截在 onboarding，不依赖服务端是否有用户记录
 
 #### Scenario: 引导流程布局
 - **WHEN** OnboardingViewController 渲染
@@ -701,9 +703,9 @@ protocol LoginServiceProtocol {
     func agreePrivacy(version: Int) async throws
 
     /// 发送短信验证码
-    func sendVerificationCode(to phone: String, captchaToken: String) async throws -> SMSResponse
+    func sendVerificationCode(to phone: String, type: String) async throws -> SMSResponse
     /// 验证码登录（新用户自动注册）
-    func loginByPhone(_ phone: String, code: String, smsRequestId: String) async throws -> LoginResult
+    func loginByPhone(_ phone: String, code: String) async throws -> LoginResult
     /// 密码登录
     func loginByPassword(_ phone: String, password: String) async throws -> LoginResult
 
@@ -781,6 +783,317 @@ enum NotificationPermissionStatus {
     case notDetermined
     case unavailable
 }
+```
+
+### API Contract: 短信登录或注册
+
+> **Source**: Apifox `funde-api` → `POST /oauth2/token` (grant_type=sms)
+> **Synced**: 2026-06-23
+
+```
+POST {Base URL}/auth/oauth2/token
+Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+Pragma: no-cache
+```
+
+**Request Body** (`application/x-www-form-urlencoded`):
+
+| 参数名 | 类型 | 必填 | 描述 | 示例值 |
+|--------|------|------|------|--------|
+| `client_id` | string | 是 | 客户端标识 | `funde-app` |
+| `client_secret` | string | 是 | 客户端密钥 | `funde-app` |
+| `grant_type` | string | 是 | 授权类型，短信登录固定为 `sms` | `sms` |
+| `mobile` | string | 是 | 手机号码（11 位中国大陆手机号） | `13025417890` |
+| `code` | string | 是 | 短信验证码（6 位数字） | `123456` |
+
+> **Note**: `client_id` / `client_secret` 为固定常量，不随用户输入变化。`grant_type` 区分登录方式：`sms`（验证码登录）、`password`（密码登录，待补充）。
+
+**成功响应** (`200 OK`, `application/json`):
+
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| `access_token` | string | 访问令牌，后续请求通过 `Authorization: Bearer {access_token}` 携带 |
+| `refresh_token` | string | 刷新令牌，用于 Token 过期后自动续期 |
+| `token_type` | string | Token 类型，固定为 `bearer` |
+| `expires_in` | integer | Token 有效时长（秒） |
+| `scope` | string | Token 权限范围 |
+
+DAL 层实现应使用 `APIManager`（基于 Alamofire `Session`）发送请求，Token 由 `OAuthAuthenticator` + `AuthenticationInterceptor` 自动管理，详见 [[networking]] spec。
+
+对应的 BLL 方法签名：
+
+```swift
+/// 验证码登录（新用户自动注册）
+/// - Parameters:
+///   - phone: 手机号码（对应 `mobile`）
+///   - code: 短信验证码（对应 `code`）
+/// - Returns: `LoginResult` 包含 accessToken、refreshToken、isNewUser
+func loginByPhone(_ phone: String, code: String) async throws -> LoginResult
+```
+
+> **Update (2026-06-23)**: `loginByPhone` 签名移除了 `smsRequestId` 参数——该端点 `POST /oauth2/token` 不需要 `smsRequestId`，仅需 `mobile` + `code` + 固定 OAuth2 参数。
+
+### API Contract: 发送短信验证码
+
+> **Source**: Apifox `funde-api` → `GET /v1/mobileVerification/sendVerificationCode`
+> **operationId**: `sendVerificationCode`
+> **Synced**: 2026-06-23
+
+```
+GET {Base URL}/v1/mobileVerification/sendVerificationCode
+```
+
+**Query Parameters**:
+
+| 参数名 | 类型 | 必填 | 描述 |
+|--------|------|------|------|
+| `mobile` | string | 是 | 手机号码（11 位中国大陆手机号） |
+| `type` | string | 是 | 验证码类型：`"1"`=注册或登录，`"2"`=忘记密码，`"3"`=修改邮箱，`"4"`=修改手机号码 |
+| `clientId` | string | 是 | 客户端 ID（固定常量，如 `funde-app`） |
+
+> **Note**: `clientId` 为固定常量，由 DAL 层注入，不暴露给 BLL/PL 层。
+
+**成功响应** (`200 OK`, `application/json`):
+
+```json
+{
+  "code": "string",
+  "data": {},
+  "msg": "string",
+  "total": 0,
+  "success": true,
+  "failed": false
+}
+```
+
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| `code` | string | 业务状态码，`"0"` 或 `"200"` 表示成功 |
+| `data` | object | 响应数据体（字段随接口变化，此处为 `{}`） |
+| `msg` | string | 提示信息 |
+| `total` | integer | 分页总条数（非分页接口为 0） |
+| `success` | boolean | 是否成功 |
+| `failed` | boolean | 是否失败 |
+
+> **Note**: 这是 `funde-api` 的通用响应包装 `Result`。所有接口均使用此结构，`data` 内具体字段各接口不同。DAL 层应定义对应的 Codable 模型来解析 `data`。
+
+### API Environment: Servers
+
+> **Source**: Apifox `funde-api` OpenAPI `servers`
+> **Synced**: 2026-06-23
+
+| 环境 | Base URL |
+|------|----------|
+| 测试环境 (dev) | `http://gateway-dev.lianhaojiankang.com/console` |
+
+完整请求路径示例：`GET http://gateway-dev.lianhaojiankang.com/console/v1/mobileVerification/sendVerificationCode?mobile=13025417890&type=login&clientId=funde-app`
+
+> **Note**: 目前 Apifox 仅配置了测试环境。staging / production 的 Base URL 待补充。`/console` 为路径前缀，所有 API 路径拼接在其后。
+
+对应的 BLL 方法签名：
+
+```swift
+/// 发送短信验证码
+/// - Parameters:
+///   - phone: 手机号码（对应 `mobile`）
+///   - type: 验证码类型（对应 `type`），如 `"login"` / `"reset_password"`
+/// - Returns: `SMSResponse` 包含 smsRequestId、expireSeconds、resendAfter
+func sendVerificationCode(to phone: String, type: String) async throws -> SMSResponse
+```
+
+> **Update (2026-06-23)**: `sendVerificationCode` 新增 `type` 参数，移除 `captchaToken`——实际 API 不需要 captcha token 作为请求参数（拼图验证结果可能通过 Header 或其他机制传递，待确认）。
+
+### API Contract: 保存/修改用户信息
+
+> **Source**: Apifox `funde-api` → `POST /v1/users/saveUser`
+> **operationId**: `saveUser`
+> **Synced**: 2026-06-23
+
+```
+POST {Root URL}/mobile/v1/users/saveUser
+Content-Type: application/json
+Authorization: Bearer {access_token}
+```
+
+**Request Body** (`application/json`, schema `SUsers`):
+
+所有字段均为可选，按需发送：
+
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| `id` | int64 | 系统用户唯一 ID（修改时传入，新增时不传） |
+| `account` | string | 用户系统账号 |
+| `mobile` | string | 手机号码 |
+| `surname` | string | 姓氏 |
+| `chineseName` | string | 中文名称 |
+| `nickname` | string | 用户昵称 |
+| `email` | string | 用户邮箱 |
+| `sex` | string | 性别（`"1"`=男, `"2"`=女） |
+| `birthday` | string | 出生年月（`yyyy-MM-dd`） |
+| `nationality` | string | 国籍 |
+| `province` / `cities` | string | 籍贯 |
+| `address` | string | 户籍地址 |
+| `addressProvince` / `addressCity` / `addressArea` / `addressStreet` | string | 现住址 |
+| `idType` | int32 | 证件类型（默认 `1`=身份证） |
+| `idNumber` | string | 证件号 |
+| `education` | string | 学历 |
+| `age` | int32 | 年龄 |
+| `blood` | string | 血型 |
+| `career` | string | 职业 |
+| `imageUrl` | string | 头像路径 |
+| `userType` | int32 | 用户类型（`4`=普通用户） |
+| ... | | 其余 40+ 字段见 OpenAPI schema |
+
+> **Note**: Onboarding 流程只需提交 `mobile`, `chineseName`, `sex`, `birthday` 及扩展字段。
+
+**成功响应** (`200 OK`, `ResultObject`):
+
+```json
+{ "code": "0", "data": {}, "msg": "ok", "total": 0, "success": true, "failed": false }
+```
+
+对应的 BLL 方法签名：
+
+```swift
+/// 保存/修改用户信息
+/// - Parameter payload: Onboarding 提交的用户数据子集
+func saveUser(_ payload: SUsersOnboardingPayload) async throws
+```
+
+### API Contract: 查询用户详细信息
+
+> **Source**: Apifox `funde-api` → `GET /v1/users/getUserByParam`
+> **operationId**: `getUserByParam`
+> **Synced**: 2026-06-23
+
+```
+GET {Root URL}/mobile/v1/users/getUserByParam?mobile={mobile}
+Authorization: Bearer {access_token}
+```
+
+**Query Parameters**（至少传一个）:
+
+| 参数名 | 类型 | 必填 | 描述 |
+|--------|------|------|------|
+| `id` | string | 否 | 用户 ID |
+| `account` | string | 否 | 账号 |
+| `status` | string | 否 | 状态 |
+| `mobile` | string | 否 | 手机号码 |
+
+**成功响应** (`200 OK`, `ResultSUsersVO`):
+
+```json
+{
+  "code": "0",
+  "data": {
+    "id": 1, "mobile": "13025417890", "chineseName": "张三",
+    "sex": "1", "birthday": "1980-06-15", "nickname": "小张",
+    ...
+  },
+  "msg": "ok", "total": 0, "success": true, "failed": false
+}
+```
+
+`data` 类型为 `SUsersVO`，字段与 `SUsers` 一致。
+
+> **Note**: 用户不存在时 `success=false`, `code="404"` 或 `msg` 含"不存在"，BLL 层返回 `nil`。
+
+对应的 BLL 方法签名：
+
+```swift
+/// 根据手机号查询用户详细信息
+/// - Parameter mobile: 手机号码
+/// - Returns: 完整用户信息，不存在时返回 nil
+func getUserByParam(mobile: String) async throws -> SUsers?
+```
+
+### API Contract: 手机号验证码重置密码
+
+> **Source**: Apifox `funde-api` → `POST /v1/users/resetPasswordByMobile`
+> **operationId**: `resetPasswordByMobile`
+> **Synced**: 2026-06-23
+
+```
+POST {Root URL}/mobile/v1/users/resetPasswordByMobile
+Content-Type: application/json
+```
+
+**Request Body** (`ResetPasswordByMobileDTO`):
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| `mobile` | string | 是 | 手机号 |
+| `newPwd` | string | 是 | 新密码 |
+| `checkCode` | string | 是 | 验证码 |
+
+**响应**: `Result` (`{ code, data: {}, msg, total, success, failed }`)
+
+对应 BLL:
+```swift
+func resetPasswordByMobile(mobile: String, newPwd: String, checkCode: String) async throws
+```
+
+### API Contract: changePassword
+
+> **Source**: Apifox `funde-api` → `POST /v1/users/changePassword`
+> **operationId**: `changePassword`
+
+```
+POST {Root URL}/mobile/v1/users/changePassword?oldPwd=&newPwd=&mobile=&checkCode=
+```
+
+| 参数 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| `oldPwd` | string | 否 | 旧密码 |
+| `mobile` | string | 否 | 手机号 |
+| `newPwd` | string | 是 | 新密码 |
+| `checkCode` | string | 否 | 验证码 |
+
+对应 BLL:
+```swift
+func changePassword(mobile: String, oldPwd: String?, newPwd: String, checkCode: String?) async throws
+```
+
+### API Contract: 修改用户手机号
+
+> **Source**: Apifox `funde-api` → `POST /v1/users/changeMobile`
+> **operationId**: `changeMobile`
+
+```
+POST {Root URL}/mobile/v1/users/changeMobile?oldMobile=&newMobile=&checkCode=
+```
+
+| 参数 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| `oldMobile` | string | 否 | 旧手机号 |
+| `newMobile` | string | 是 | 新手机号 |
+| `checkCode` | string | 否 | 验证码 |
+
+对应 BLL:
+```swift
+func changeMobile(oldMobile: String?, newMobile: String, checkCode: String?) async throws
+```
+
+### API Contract: 修改当前用户密码
+
+> **Source**: Apifox `funde-api` → `POST /v1/users/changeCurrentPassword`
+> **operationId**: `changeCurrentPassword`
+
+```
+POST {Root URL}/mobile/v1/users/changeCurrentPassword
+Content-Type: application/json
+```
+
+**Request Body** (`ChangeCurrentPasswordDTO`):
+
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| `oldPwd` | string | 是 | 旧密码 |
+| `newPwd` | string | 是 | 新密码 |
+
+对应 BLL:
+```swift
+func changeCurrentPassword(oldPwd: String, newPwd: String) async throws
 ```
 
 ---

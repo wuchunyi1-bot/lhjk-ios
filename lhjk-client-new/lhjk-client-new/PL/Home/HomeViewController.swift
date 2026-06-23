@@ -67,7 +67,8 @@ final class HomeViewController: BaseViewController {
         Article(tag: "体重管理", tagType: "warning", title: "减重 5%，血糖能有多大改变?", author: "陈梅 注册营养师", reads: "1.5k 阅读"),
     ]
 
-    private let userName = "李秀英"
+    private var userName = "加载中…"
+    private var avatarChar = "我"
     private let advisor = "王顾问"
     private let daysLeft = 45
     private let riskScore = 62
@@ -164,6 +165,24 @@ final class HomeViewController: BaseViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        loadUserProfile()
+    }
+
+    private func loadUserProfile() {
+        let mobile = UserDefaults.standard.string(forKey: "current_user_mobile") ?? ""
+        guard !mobile.isEmpty else { return }
+        Swift.Task { [weak self] in
+            guard let self else { return }
+            if let user = try? await UserService.shared.getUserByParam(mobile: mobile) {
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    let name = user.chineseName ?? user.surname ?? user.nickname ?? "用户"
+                    self.userName = name
+                    self.avatarChar = String(name.prefix(1))
+                    self.applySnapshot()
+                }
+            }
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {

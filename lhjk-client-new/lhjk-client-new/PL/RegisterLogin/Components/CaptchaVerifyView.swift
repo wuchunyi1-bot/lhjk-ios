@@ -274,6 +274,7 @@ final class CaptchaVerifyView: UIView {
     // MARK: - Toast
 
     private func showToast(_ message: String) {
+        print("[CaptchaView] Toast: \(message)")
         puzzleHintLabel.text = message
         puzzleHintLabel.textColor = .fdDanger
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in

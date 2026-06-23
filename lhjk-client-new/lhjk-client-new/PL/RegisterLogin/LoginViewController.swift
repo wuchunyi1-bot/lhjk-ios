@@ -621,7 +621,7 @@ final class LoginViewController: BaseViewController {
     private func sendCode(phone: String, captchaToken: String) {
         Task {
             do {
-                let response = try await loginService.sendVerificationCode(to: phone, captchaToken: captchaToken)
+                let response = try await loginService.sendVerificationCode(to: phone, type: "1")
                 smsRequestId = response.smsRequestId
                 await MainActor.run {
                     codeButton.startCountdown()
@@ -676,14 +676,15 @@ final class LoginViewController: BaseViewController {
 
         setLoggingIn(true)
 
-        let requestId = smsRequestId ?? ""
         Task {
             do {
-                let result = try await loginService.loginByPhone(phone, code: code, smsRequestId: requestId)
+                let result = try await loginService.loginByPhone(phone, code: code)
                 await MainActor.run {
                     setLoggingIn(false)
                     loginService.saveToken(result.accessToken, refreshToken: result.refreshToken)
-                    handleLoginSuccess(isNewUser: result.isNewUser)
+                    // 存储手机号供 Onboarding / Profile 使用
+                    UserDefaults.standard.set(phone, forKey: "current_user_mobile")
+                    handleLoginSuccess()
                 }
             } catch {
                 await MainActor.run {
@@ -711,7 +712,7 @@ final class LoginViewController: BaseViewController {
                 await MainActor.run {
                     setLoggingIn(false)
                     loginService.saveToken(result.accessToken, refreshToken: result.refreshToken)
-                    handleLoginSuccess(isNewUser: false)
+                    handleLoginSuccess()
                 }
             } catch {
                 await MainActor.run {
@@ -724,8 +725,7 @@ final class LoginViewController: BaseViewController {
 
     // MARK: - Login Success
 
-    private func handleLoginSuccess(isNewUser: Bool) {
-        // Show notification permission guide
+    private func handleLoginSuccess() {
         showNotificationGuide { [weak self] in
             self?.navigateAfterLogin()
         }
@@ -785,8 +785,9 @@ final class LoginViewController: BaseViewController {
     // MARK: - Post-Login Navigation
 
     private func navigateAfterLogin() {
-        // Check onboarding status → home or onboarding
         let onboarded = UserDefaults.standard.bool(forKey: "fd_onboarded")
+        // 纯本地判断：未完成完善信息 → 必须进 onboarding，不能跳过
+        print("[LoginVC] navigateAfterLogin onboarded=\(onboarded)")
         dismiss(animated: true) {
             if !onboarded {
                 Router.shared.present("/onboarding")
@@ -845,7 +846,7 @@ final class LoginViewController: BaseViewController {
                     case .bound:
                         // Directly login
                         loginService.saveToken("token_wechat_\(UUID().uuidString.prefix(8))", refreshToken: "refresh_wechat")
-                        handleLoginSuccess(isNewUser: false)
+                        handleLoginSuccess()
 
                     case .unbound:
                         // Show phone binding
@@ -898,7 +899,7 @@ final class LoginViewController: BaseViewController {
                     setLoggingIn(false)
                     dismissPhoneBinding()
                     loginService.saveToken(result.accessToken, refreshToken: result.refreshToken)
-                    handleLoginSuccess(isNewUser: false)
+                    handleLoginSuccess()
                 }
             } catch LoginError.phoneBoundOtherWechat {
                 await MainActor.run {
@@ -1037,6 +1038,7 @@ final class LoginViewController: BaseViewController {
     private var toastWindow: UIWindow?
 
     private func showToast(_ message: String) {
+        print("[LoginVC] Toast: \(message)")
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
         present(alert, animated: true)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {

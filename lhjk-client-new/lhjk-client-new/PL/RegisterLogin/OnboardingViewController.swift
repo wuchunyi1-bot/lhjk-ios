@@ -546,15 +546,55 @@ final class OnboardingViewController: BaseViewController {
     }
 
     private func finish() {
-        UserDefaults.standard.set(true, forKey: "fd_onboarded")
-        UserDefaults.standard.set(38, forKey: "fd_archive_progress")
         let name = nameField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
-        if !name.isEmpty {
-            UserDefaults.standard.set(name, forKey: "fd_profile_name")
-        }
+        let mobile = UserDefaults.standard.string(forKey: "current_user_mobile")
 
-        // Dismiss back to TabBar — onboarding sits on top of the main app
-        // so user returns to the already-existing TabBar (typically /home)
-        dismiss(animated: true)
+        // 构建 Onboarding 提交数据
+        let payload = SUsersOnboardingPayload(
+            mobile: mobile,
+            chineseName: name,
+            sex: selectedGender == "男" ? "1" : (selectedGender == "女" ? "2" : nil),
+            birthday: birthYearText.isEmpty ? nil : "\(birthYearText)-01-01",
+            medicalHistory: historyGroup?.selectedLabels.joined(separator: ","),
+            smokingStatus: smokingGroup?.selectedLabels.first,
+            exerciseFrequency: exerciseGroup?.selectedLabels.first
+        )
+
+        // Loading state
+        nextButton.isEnabled = false
+        nextButton.alpha = 0.6
+        nextButton.setTitle("保存中…", for: .normal)
+
+        Task {
+            do {
+                try await UserService.shared.saveUser(payload)
+                await MainActor.run {
+                    UserDefaults.standard.set(true, forKey: "fd_onboarded")
+                    UserDefaults.standard.set(38, forKey: "fd_archive_progress")
+                    if !name.isEmpty {
+                        UserDefaults.standard.set(name, forKey: "fd_profile_name")
+                    }
+                    dismiss(animated: true)
+                }
+            } catch {
+                await MainActor.run {
+                    nextButton.isEnabled = true
+                    nextButton.alpha = 1.0
+                    nextButton.setTitle("开始我的健康之旅", for: .normal)
+                    showToast("保存失败: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
+    // MARK: - Toast
+
+    private func showToast(_ message: String) {
+        print("[OnboardingVC] Toast: \(message)")
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        present(alert, animated: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            alert.dismiss(animated: true)
+        }
     }
 }

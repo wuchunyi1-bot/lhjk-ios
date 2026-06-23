@@ -213,6 +213,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     }
 
     private func showToast(_ msg: String) {
+        print("[ChatVC] Toast: \(msg)")
         let alert = UIAlertController(title: nil, message: msg, preferredStyle: .alert)
         present(alert, animated: true)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { alert.dismiss(animated: true) }

@@ -18,6 +18,7 @@ enum RouteSetup {
         HealthRoutes.register()
         MessageRoutes.register()
         ServiceRoutes.register()
+        UserRoutes.register()
 
         // WebView 页面
         Router.shared.register(path: "/web/appointments") { _ in

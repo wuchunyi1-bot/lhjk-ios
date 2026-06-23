@@ -16,18 +16,34 @@ struct PrivacyVersionInfo {
     let privacyPolicyURL: String
 }
 
-/// 短信发送响应
-struct SMSResponse {
-    let smsRequestId: String
-    let expireSeconds: Int
-    let resendAfter: Int
+/// 短信发送响应（所有字段 optional，兼容后端差异）
+struct SMSResponse: Decodable {
+    let smsRequestId: String?
+    let expireSeconds: Int?
+    let resendAfter: Int?
 }
 
-/// 登录结果
+/// OAuth2 Token 响应（`POST /oauth2/token` 返回）
+struct TokenResponse: Decodable {
+    let accessToken: String
+    let refreshToken: String
+    let expiresIn: Int
+    let tokenType: String?
+    let scope: String?
+
+    enum CodingKeys: String, CodingKey {
+        case accessToken
+        case refreshToken
+        case expiresIn
+        case tokenType
+        case scope
+    }
+}
+
+/// 登录结果（BLL 层概念，由 `LoginService` 从 `TokenResponse` 转换）
 struct LoginResult {
     let accessToken: String
     let refreshToken: String
-    let isNewUser: Bool
 }
 
 /// 微信授权结果

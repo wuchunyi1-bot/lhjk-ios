@@ -17,8 +17,16 @@ class BaseViewController: UIViewController {
         super.viewWillAppear(animated)
 
         // 老年模式变更（含冷启动恢复）→ 自动刷新当前页字体
-        if UIFont.seniorModeVersion != lastSeniorVersion {
-            lastSeniorVersion = UIFont.seniorModeVersion
+        guard UIFont.seniorModeVersion != lastSeniorVersion else { return }
+        lastSeniorVersion = UIFont.seniorModeVersion
+
+        // 在转场动画中操作 tableView beginUpdates/endUpdates 会 crash，
+        // 延迟到转场完成后再刷新
+        if let coordinator = transitionCoordinator {
+            coordinator.animate(alongsideTransition: nil) { _ in
+                self.refreshForSeniorMode()
+            }
+        } else {
             refreshForSeniorMode()
         }
     }

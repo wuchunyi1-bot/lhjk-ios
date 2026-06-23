@@ -1,28 +1,29 @@
 import Foundation
 
-/// 登录业务逻辑实现（V1.0 Mock 版本）
-/// 参考 funde-client PRD 5.2 测试数据
+/// 登录业务逻辑实现
 ///
-/// V1.0 所有接口返回 mock 数据，V1.1 对接真实后端。
+/// V1.0 → V1.1: `sendVerificationCode` 和 `loginByPhone` 已对接真实 API，
+/// 其余方法（密码登录、微信、重置密码等）保持 mock。
 final class LoginService: LoginServiceProtocol {
 
     static let shared = LoginService()
 
-    // MARK: - Mock Storage
+    // MARK: - OAuth 常量
 
+    private let clientId = "funde-app"
+    private let clientSecret = "funde-app"
+
+    // MARK: - Private State
+
+    private var agreedPrivacyVersion: Int = 0
     private var storedToken: String?
     private var storedRefreshToken: String?
-    private var agreedPrivacyVersion: Int = 0
-
-    // Mock registered users
-    private var registeredUsers: Set<String> = ["15600000002", "15600000003"]
 
     private init() {}
 
-    // MARK: - Privacy
+    // MARK: - Privacy (Mock — 暂无真实 API)
 
     func getPrivacyVersion() async throws -> PrivacyVersionInfo {
-        // Simulate network delay
         try await Task.sleep(nanoseconds: 200_000_000)
         return PrivacyVersionInfo(
             latestPrivacyVersion: 2,
@@ -36,69 +37,95 @@ final class LoginService: LoginServiceProtocol {
         agreedPrivacyVersion = version
     }
 
-    // MARK: - SMS
+    // MARK: - SMS (Real API)
 
-    func sendVerificationCode(to phone: String, captchaToken: String) async throws -> SMSResponse {
-        try await Task.sleep(nanoseconds: 400_000_000)
+    func sendVerificationCode(to phone: String, type: String) async throws -> SMSResponse {
+        print("[LoginService] sendVerificationCode → mobile=\(phone) type=\(type)")
 
-        // Mock error scenarios
-        if phone == "15600000004" {
-            throw LoginError.accountFrozen
+        let params: [String: Any] = [
+            "mobile": phone,
+            "type": type,
+            "clientId": clientId
+        ]
+
+        let response: APIResponse<SMSResponse> = try await APIManager.shared
+            .publicGetAsync(
+                path: "/console/v1/mobileVerification/sendVerificationCode",
+                parameters: params,
+                responseType: APIResponse<SMSResponse>.self
+            )
+
+        guard response.isSuccess else {
+            print("[LoginService] sendVerificationCode ✗ code=\(response.code) msg=\(response.msg)")
+            throw LoginError(from: response.code, msg: response.msg ?? "")
         }
-        if phone == "15600000005" {
-            throw LoginError.accountCanceling
-        }
 
-        return SMSResponse(
-            smsRequestId: "sms_\(UUID().uuidString.prefix(8))",
-            expireSeconds: 300,
-            resendAfter: 60
-        )
+        print("[LoginService] sendVerificationCode ✓ smsRequestId=\(response.data?.smsRequestId ?? "nil")")
+        return response.data ?? SMSResponse(smsRequestId: nil, expireSeconds: nil, resendAfter: nil)
     }
 
-    // MARK: - Login
+    // MARK: - Login (Real API)
 
-    func loginByPhone(_ phone: String, code: String, smsRequestId: String) async throws -> LoginResult {
-        try await Task.sleep(nanoseconds: 500_000_000)
+    func loginByPhone(_ phone: String, code: String) async throws -> LoginResult {
+        print("[LoginService] loginByPhone → mobile=\(phone) code=\(code.prefix(2))****")
 
-        // Test mock: fixed code "111111" always passes
-        guard code == "111111" else {
-            throw LoginError.invalidCode
+        let params: [String: Any] = [
+            "client_id": clientId,
+            "client_secret": clientSecret,
+            "grant_type": "sms",
+            "mobile": phone,
+            "code": code
+        ]
+
+        let response: APIResponse<TokenResponse> = try await APIManager.shared
+            .publicPostFormURLEncodedAsync(
+                path: "/auth/oauth2/token",
+                parameters: params,
+                responseType: APIResponse<TokenResponse>.self
+            )
+
+        guard response.isSuccess, let token = response.data else {
+            print("[LoginService] loginByPhone ✗ code=\(response.code) msg=\(response.msg)")
+            throw LoginError(from: response.code, msg: response.msg ?? "")
         }
 
-        let isNewUser = !registeredUsers.contains(phone)
-        if isNewUser {
-            registeredUsers.insert(phone)
-        }
+        print("[LoginService] loginByPhone ✓ accessToken=\(token.accessToken.prefix(12))… expiresIn=\(token.expiresIn)s")
+
+        // 持久化 OAuthCredential
+        let credential = OAuthCredential(
+            accessToken: token.accessToken,
+            refreshToken: token.refreshToken,
+            expiration: Date().addingTimeInterval(TimeInterval(token.expiresIn))
+        )
+        APIManager.shared.setCredential(credential)
+
+        // 兼容旧版存储
+        storedToken = token.accessToken
+        storedRefreshToken = token.refreshToken
 
         return LoginResult(
-            accessToken: "token_\(UUID().uuidString.prefix(12))",
-            refreshToken: "refresh_\(UUID().uuidString.prefix(12))",
-            isNewUser: isNewUser
+            accessToken: token.accessToken,
+            refreshToken: token.refreshToken
         )
     }
+
+    // MARK: - Password Login (Mock — 待后续 API 对接)
 
     func loginByPassword(_ phone: String, password: String) async throws -> LoginResult {
         try await Task.sleep(nanoseconds: 500_000_000)
-
-        // Test mock: phone "15600000003" + password "Fdjk1234" → success
         guard phone == "15600000003" && password == "Fdjk1234" else {
             throw LoginError.invalidPassword
         }
-
         return LoginResult(
             accessToken: "token_\(UUID().uuidString.prefix(12))",
-            refreshToken: "refresh_\(UUID().uuidString.prefix(12))",
-            isNewUser: false
+            refreshToken: "refresh_\(UUID().uuidString.prefix(12))"
         )
     }
 
-    // MARK: - WeChat
+    // MARK: - WeChat (Mock — 待后续 API 对接)
 
     func wechatAuth(authCode: String) async throws -> WechatAuthResult {
         try await Task.sleep(nanoseconds: 500_000_000)
-
-        // Test mock: based on openid mock
         if authCode == "mock_openid_bound" {
             return WechatAuthResult(bindStatus: .bound, wechatTempToken: nil, maskedPhone: "156****7890")
         } else {
@@ -108,49 +135,32 @@ final class LoginService: LoginServiceProtocol {
 
     func wechatBindPhone(wechatToken: String, phone: String, code: String, confirmRebind: Bool) async throws -> LoginResult {
         try await Task.sleep(nanoseconds: 500_000_000)
-
-        guard code == "111111" else {
-            throw LoginError.invalidCode
-        }
-
-        // Phone already bound to other WeChat → conflict
-        if phone == "15600000006" && !confirmRebind {
-            throw LoginError.phoneBoundOtherWechat
-        }
-
+        guard code == "111111" else { throw LoginError.invalidCode }
+        if phone == "15600000006" && !confirmRebind { throw LoginError.phoneBoundOtherWechat }
         return LoginResult(
             accessToken: "token_\(UUID().uuidString.prefix(12))",
-            refreshToken: "refresh_\(UUID().uuidString.prefix(12))",
-            isNewUser: false
+            refreshToken: "refresh_\(UUID().uuidString.prefix(12))"
         )
     }
 
-    // MARK: - Password Reset
+    // MARK: - Password Reset (Real API)
 
     func resetPassword(phone: String, code: String, newPassword: String) async throws {
-        try await Task.sleep(nanoseconds: 500_000_000)
-
-        guard code == "111111" else {
-            throw LoginError.invalidCode
-        }
-        // Success — password updated in mock
+        try await UserService.shared.resetPasswordByMobile(mobile: phone, newPwd: newPassword, checkCode: code)
     }
 
-    // MARK: - Session
+    // MARK: - Session (Mock — 待后续 API 对接)
 
     func getSessionStatus() async throws -> SessionStatus {
         try await Task.sleep(nanoseconds: 200_000_000)
-
         guard storedToken != nil else {
             return SessionStatus(isValid: false, accountStatus: .normal, reason: "token_expired")
         }
-
         return SessionStatus(isValid: true, accountStatus: .normal, reason: nil)
     }
 
     func reportNotificationPermission(status: NotificationPermissionStatus) async throws {
         try await Task.sleep(nanoseconds: 100_000_000)
-        // Mock: save success
     }
 
     // MARK: - Token Storage
@@ -158,16 +168,46 @@ final class LoginService: LoginServiceProtocol {
     func saveToken(_ token: String, refreshToken: String) {
         storedToken = token
         storedRefreshToken = refreshToken
-        // TODO: V1.1 — save to Keychain
     }
 
     func getToken() -> String? {
-        return storedToken
+        storedToken
     }
 
     func clearSession() {
         storedToken = nil
         storedRefreshToken = nil
+        APIManager.shared.clearCredential()
+    }
+}
+
+// MARK: - LoginError → 从 API 响应映射
+
+extension LoginError {
+    /// 根据 API 返回的 `code` / `msg` 构造对应错误
+    init(from code: String, msg: String) {
+        print("[LoginService] Server error — code=\(code) msg=\(msg)")
+        switch code {
+        case "400":
+            self = .invalidPhone
+        case "401":
+            self = .invalidCode
+        case "403":
+            if msg.contains("冻结") { self = .accountFrozen }
+            else if msg.contains("注销") { self = .accountCanceling }
+            else { self = .invalidCode }
+        case "429":
+            self = .tooManyAttempts
+        case "408", "504":
+            self = .timeout
+        case "A0230":
+            self = msg.contains("失效") || msg.contains("过期") ? .codeExpired : .invalidCode
+        default:
+            if msg.contains("网络") || msg.contains("连接") { self = .networkError }
+            else if msg.contains("超时") { self = .timeout }
+            else if msg.contains("失效") || msg.contains("过期") { self = .codeExpired }
+            else { self = .serverMessage(msg) }
+        }
     }
 }
 
@@ -190,6 +230,7 @@ enum LoginError: Error, LocalizedError {
     case networkError
     case timeout
     case systemError
+    case serverMessage(String)
 
     var errorDescription: String? {
         switch self {
@@ -225,6 +266,8 @@ enum LoginError: Error, LocalizedError {
             return "请求超时，请稍后重试"
         case .systemError:
             return "系统暂时不可用，请稍后再试"
+        case .serverMessage(let msg):
+            return msg
         }
     }
 }

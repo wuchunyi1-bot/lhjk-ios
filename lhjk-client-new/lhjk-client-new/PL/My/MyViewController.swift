@@ -1,5 +1,6 @@
 import UIKit
 import SnapKit
+import Kingfisher
 
 /// 我的模块 Hub 页
 /// 参考 funde-client: prototype/src/views/me/MeView.vue
@@ -15,8 +16,9 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
 
     // MARK: - Mock Data
 
-    private let userName = "李秀英"
-    private let avatarChar = "英"
+    private var userName = "加载中…"
+    private var avatarChar = "我"
+    private var avatarURL: String?
     private let membershipLevel = "健康大会员"
 
     private let stats: [(value: String, label: String, accent: Bool, route: String)] = [
@@ -106,6 +108,47 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        loadUserProfile()
+    }
+
+    // MARK: - User Profile
+
+    private func loadUserProfile() {
+        let mobile = UserDefaults.standard.string(forKey: "current_user_mobile") ?? ""
+        guard !mobile.isEmpty else { return }
+        Task { [weak self] in
+            guard let self = self else { return }
+            do {
+                if let user = try await UserService.shared.getUserByParam(mobile: mobile) {
+                    await MainActor.run { [weak self] in
+                        guard let self = self else { return }
+                        let name = user.chineseName ?? user.surname ?? user.nickname ?? "用户"
+                        self.userName = name
+                        self.avatarChar = String(name.prefix(1))
+                        self.avatarURL = user.imageUrl
+                        self.refreshHeader()
+                    }
+                }
+            } catch {
+                // 静默失败 — 保留占位文字
+            }
+        }
+    }
+
+    private func refreshHeader() {
+        guard let header = tableView.tableHeaderView else { return }
+        if let avatar = header.viewWithTag(200) as? UIImageView {
+            let label = header.viewWithTag(201) as? UILabel
+            if let urlStr = avatarURL, let url = URL(string: urlStr) {
+                label?.isHidden = true
+                avatar.kf.setImage(with: url)
+            } else {
+                label?.isHidden = false
+                label?.text = avatarChar
+            }
+        }
+        header.setNeedsLayout()
+        header.layoutIfNeeded()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -140,19 +183,26 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
 
         // MARK: User Info Area
 
-        let avatarView: UIView = {
-            let v = UIView()
+        let avatarView: UIImageView = {
+            let v = UIImageView()
             v.backgroundColor = UIColor(hexString: "#F4ECE3")
             v.layer.cornerRadius = 32
             v.clipsToBounds = true
-            let label = UILabel()
-            label.text = avatarChar
-            label.font = .fdH2
-            label.textColor = UIColor(hexString: "#7B5E40")
-            v.addSubview(label)
-            label.snp.makeConstraints { $0.center.equalToSuperview() }
+            v.contentMode = .scaleAspectFill
+            v.tag = 200  // for later reference
             return v
         }()
+        let avatarLabel: UILabel = {
+            let l = UILabel()
+            l.text = avatarChar
+            l.font = .fdH2
+            l.textColor = UIColor(hexString: "#7B5E40")
+            l.textAlignment = .center
+            l.tag = 201
+            return l
+        }()
+        avatarView.addSubview(avatarLabel)
+        avatarLabel.snp.makeConstraints { $0.center.equalToSuperview() }
 
         let nameLabel: UILabel = {
             let l = UILabel()

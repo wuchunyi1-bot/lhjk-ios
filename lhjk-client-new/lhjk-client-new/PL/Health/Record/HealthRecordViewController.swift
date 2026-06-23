@@ -14,8 +14,8 @@ final class HealthRecordViewController: BaseViewController, UITableViewDataSourc
 
     // MARK: - Mock Data
 
-    private let userName = HealthRecordMockData.userName
-    private let avatarText = HealthRecordMockData.userAvatar
+    private var userName = "加载中…"
+    private var avatarText = "我"
     private let archiveProgress = HealthRecordMockData.archiveProgress
     private let riskItems = HealthRecordMockData.riskItems
     private let latestMetrics = HealthRecordMockData.latestMetrics
@@ -45,6 +45,23 @@ final class HealthRecordViewController: BaseViewController, UITableViewDataSourc
         super.viewDidLoad()
         title = "健康档案"
         hidesBottomBarWhenPushed = true
+        loadUserProfile()
+    }
+
+    private func loadUserProfile() {
+        let mobile = UserDefaults.standard.string(forKey: "current_user_mobile") ?? ""
+        guard !mobile.isEmpty else { return }
+        Task { [weak self] in
+            guard let self else { return }
+            if let user = try? await UserService.shared.getUserByParam(mobile: mobile) {
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    self.userName = user.chineseName ?? user.surname ?? user.nickname ?? "用户"
+                    self.avatarText = String(self.userName.prefix(1))
+                    self.tableView.reloadData()
+                }
+            }
+        }
     }
 
     override func setupUI() {

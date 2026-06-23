@@ -243,6 +243,7 @@ final class ForgotPasswordViewController: BaseViewController {
     // MARK: - Toast
 
     private func showToast(_ message: String, completion: (() -> Void)? = nil) {
+        print("[ForgotPwdVC] Toast: \(message)")
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
         present(alert, animated: true)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
