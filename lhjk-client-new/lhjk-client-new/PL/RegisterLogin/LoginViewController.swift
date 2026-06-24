@@ -621,7 +621,7 @@ final class LoginViewController: BaseViewController {
     private func sendCode(phone: String, captchaToken: String) {
         Task {
             do {
-                let response = try await loginService.sendVerificationCode(to: phone, type: "1")
+                let response = try await loginService.sendVerificationCode(to: phone, type: .login)
                 smsRequestId = response.smsRequestId
                 await MainActor.run {
                     codeButton.startCountdown()
@@ -684,6 +684,8 @@ final class LoginViewController: BaseViewController {
                     loginService.saveToken(result.accessToken, refreshToken: result.refreshToken)
                     // 存储手机号供 Onboarding / Profile 使用
                     UserDefaults.standard.set(phone, forKey: "current_user_mobile")
+                    // 登录成功后拉取用户信息
+                    Task { await UserManager.shared.fetchUserInfo() }
                     handleLoginSuccess()
                 }
             } catch {
@@ -712,6 +714,8 @@ final class LoginViewController: BaseViewController {
                 await MainActor.run {
                     setLoggingIn(false)
                     loginService.saveToken(result.accessToken, refreshToken: result.refreshToken)
+                    UserDefaults.standard.set(phone, forKey: "current_user_mobile")
+                    Task { await UserManager.shared.fetchUserInfo() }
                     handleLoginSuccess()
                 }
             } catch {

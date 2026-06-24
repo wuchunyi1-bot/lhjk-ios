@@ -17,8 +17,8 @@ protocol LoginServiceProtocol {
     /// 发送短信验证码
     /// - Parameters:
     ///   - phone: 手机号
-    ///   - type: 验证码类型（`"login"` / `"reset_password"`）
-    func sendVerificationCode(to phone: String, type: String) async throws -> SMSResponse
+    ///   - type: 验证码类型（`.login` / `.changePhone` / `.setPassword` / `.resetPassword`）
+    func sendVerificationCode(to phone: String, type: SMSVerificationType) async throws -> SMSResponse
 
     // MARK: - Login
 

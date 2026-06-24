@@ -169,20 +169,15 @@ final class HomeViewController: BaseViewController {
     }
 
     private func loadUserProfile() {
-        let mobile = UserDefaults.standard.string(forKey: "current_user_mobile") ?? ""
-        guard !mobile.isEmpty else { return }
-        Swift.Task { [weak self] in
-            guard let self else { return }
-            if let user = try? await UserService.shared.getUserByParam(mobile: mobile) {
-                await MainActor.run { [weak self] in
-                    guard let self else { return }
-                    let name = user.chineseName ?? user.surname ?? user.nickname ?? "用户"
-                    self.userName = name
-                    self.avatarChar = String(name.prefix(1))
-                    self.applySnapshot()
-                }
-            }
-        }
+        guard let user = UserManager.shared.currentUser else { return }
+        let name = user.chineseName ?? user.surname ?? user.nickname ?? "用户"
+        self.userName = name
+        self.avatarChar = String(name.prefix(1))
+        self.applySnapshot()
+    }
+
+    @objc private func onUserUpdated() {
+        loadUserProfile()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -194,7 +189,9 @@ final class HomeViewController: BaseViewController {
         view.backgroundColor = .fdBg
         view.addSubview(tableView)
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
-        applySnapshot()
+        // applySnapshot() 移到 viewWillAppear（通过 loadUserProfile），避免 view 未在 hierarchy 中时触发布局
+        NotificationCenter.default.addObserver(self, selector: #selector(onUserUpdated),
+                                               name: .userDidUpdate, object: nil)
     }
 
     // MARK: - Data source

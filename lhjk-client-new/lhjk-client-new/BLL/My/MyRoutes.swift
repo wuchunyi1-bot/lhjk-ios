@@ -32,11 +32,10 @@ enum MyRoutes {
         r.register(path: "/me/settings/privacy")        { _ in PrivacySettingsViewController() }
         r.register(path: "/me/settings/security")       { _ in SecuritySettingsViewController() }
         r.register(path: "/me/settings/about")          { _ in AboutSettingsViewController() }
-        r.register(path: "/me/settings/security/password") { _ in PlaceholderViewController(title: "设置登录密码") }
-        r.register(path: "/me/settings/cancel-account") { _ in PlaceholderViewController(title: "注销账户") }
+        r.register(path: "/me/settings/cancel-account") { _ in CancelAccountViewController() }
 
         // 新增子页面（占位）
-        r.register(path: "/me/change-phone")     { _ in PlaceholderViewController(title: "更换手机号") }
+        r.register(path: "/me/change-phone")     { _ in ChangePhoneViewController() }
         r.register(path: "/me/address")          { _ in PlaceholderViewController(title: "收货地址") }
         r.register(path: "/me/address/edit")     { params in PlaceholderViewController(title: "编辑地址") }
         r.register(path: "/me/health-profile")   { _ in PlaceholderViewController(title: "健康档案") }

@@ -27,22 +27,35 @@ final class SecuritySettingsViewController: BaseViewController {
     }
 
     private func loadUserData() {
-        let mobile = UserDefaults.standard.string(forKey: "current_user_mobile") ?? ""
-        guard !mobile.isEmpty else { return }
-        Task { [weak self] in
-            guard let self else { return }
-            if let user = try? await UserService.shared.getUserByParam(mobile: mobile) {
-                await MainActor.run { [weak self] in
-                    guard let self else { return }
-                    let hasPhone = user.mobile != nil && user.mobile!.count >= 11
-                    self.phoneValueLabel?.text = self.maskPhone(user.mobile)
-                    self.statusTitle?.text = hasPhone ? "账号安全状态良好" : "建议绑定手机号"
-                    self.statusDesc?.text = hasPhone ? "手机号已绑定，建议定期更新登录密码。" : "绑定手机号后可提升账号安全性。"
-                    // WeChat mock state
-                    self.wechatValueLabel?.text = UserDefaults.standard.string(forKey: "fd_wechat_nickname") ?? "未绑定"
-                }
-            }
+        guard let user = UserManager.shared.currentUser else { return }
+
+        // Phone
+        let hasPhone = user.mobile != nil && user.mobile!.count >= 11
+        phoneValueLabel?.text = maskPhone(user.mobile)
+
+        // Password
+        let hasPassword = user.pwd != nil && !(user.pwd!.isEmpty)
+        passwordValueLabel?.text = hasPassword ? "已设置" : "设置密码"
+
+        // WeChat
+        let wechatNickname = UserDefaults.standard.string(forKey: "fd_wechat_nickname")
+        let hasWechatOpenId = user.openIdWechat != nil && !(user.openIdWechat!.isEmpty)
+        if hasWechatOpenId || wechatNickname != nil {
+            wechatValueLabel?.text = wechatNickname ?? "微信用户"
+        } else {
+            wechatValueLabel?.text = "未绑定"
         }
+
+        // Status card
+        let allSecure = hasPhone && hasPassword && (hasWechatOpenId || wechatNickname != nil)
+        statusTitle?.text = allSecure ? "账号安全状态良好" : "建议完善账号安全"
+        statusDesc?.text = allSecure
+            ? "手机号、登录密码和微信授权均已设置。"
+            : "完善以上安全设置，可提升账号安全性和登录便利性。"
+    }
+
+    @objc private func onUserUpdated() {
+        loadUserData()
     }
 
     private func maskPhone(_ phone: String?) -> String {
@@ -53,6 +66,9 @@ final class SecuritySettingsViewController: BaseViewController {
     override func setupUI() {
         title = "账号安全"
         view.backgroundColor = .fdBg
+
+        NotificationCenter.default.addObserver(self, selector: #selector(onUserUpdated),
+                                               name: .userDidUpdate, object: nil)
 
         scrollView.showsVerticalScrollIndicator = false
         view.addSubview(scrollView)
@@ -198,26 +214,37 @@ final class SecuritySettingsViewController: BaseViewController {
     }
 
     @objc private func handlePasswordTap() {
-        // Navigate to password setup flow (placeholder)
-        Router.shared.push("/me/settings/security/password")
+        let vc = PasswordSetupViewController()
+        vc.hasExistingPassword = (UserManager.shared.currentUser?.pwd?.isEmpty == false)
+        navigationController?.pushViewController(vc, animated: true)
     }
 
     @objc private func handleWechatTap() {
-        let isBound = UserDefaults.standard.string(forKey: "fd_wechat_nickname") != nil
+        let isBound: Bool = {
+            if let openId = UserManager.shared.currentUser?.openIdWechat, !openId.isEmpty { return true }
+            return UserDefaults.standard.string(forKey: "fd_wechat_nickname") != nil
+        }()
+
         if isBound {
-            let alert = UIAlertController(title: "是否解绑微信账号？", message: nil, preferredStyle: .alert)
+            let alert = UIAlertController(
+                title: "是否解绑微信账号？",
+                message: "解绑后，将无法使用微信快速登录富德健康。",
+                preferredStyle: .alert
+            )
             alert.addAction(UIAlertAction(title: "取消", style: .cancel))
             alert.addAction(UIAlertAction(title: "立即解绑", style: .destructive) { [weak self] _ in
                 UserDefaults.standard.removeObject(forKey: "fd_wechat_nickname")
                 self?.wechatValueLabel?.text = "未绑定"
                 self?.showToast("微信已解绑")
+                Task { await UserManager.shared.refreshUserInfo() }
             })
             present(alert, animated: true)
         } else {
-            // Mock bind — in production this would invoke WeChat SDK
+            // V1.0 过渡方案: 模拟绑定（正式产品需接入微信 SDK）
             UserDefaults.standard.set("微信用户", forKey: "fd_wechat_nickname")
             wechatValueLabel?.text = "微信用户"
             showToast("微信已绑定")
+            Task { await UserManager.shared.refreshUserInfo() }
         }
     }
 

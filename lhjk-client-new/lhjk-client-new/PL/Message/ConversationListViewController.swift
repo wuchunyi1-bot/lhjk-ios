@@ -34,6 +34,7 @@ final class ConversationListViewController: BaseViewController, UITableViewDataS
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        loadData()
     }
 
     override func setupUI() {
@@ -54,7 +55,7 @@ final class ConversationListViewController: BaseViewController, UITableViewDataS
         emptyLabel.snp.makeConstraints { $0.center.equalTo(tableView) }
 
         buildFilterChips()
-        loadData()
+        // loadData() 移到 viewWillAppear，避免 view 未入 hierarchy 时触发布局
     }
 
     private func buildFilterChips() {

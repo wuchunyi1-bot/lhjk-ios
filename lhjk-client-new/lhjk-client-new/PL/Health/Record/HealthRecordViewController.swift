@@ -45,23 +45,20 @@ final class HealthRecordViewController: BaseViewController, UITableViewDataSourc
         super.viewDidLoad()
         title = "健康档案"
         hidesBottomBarWhenPushed = true
+        NotificationCenter.default.addObserver(self, selector: #selector(onUserUpdated),
+                                               name: .userDidUpdate, object: nil)
         loadUserProfile()
     }
 
     private func loadUserProfile() {
-        let mobile = UserDefaults.standard.string(forKey: "current_user_mobile") ?? ""
-        guard !mobile.isEmpty else { return }
-        Task { [weak self] in
-            guard let self else { return }
-            if let user = try? await UserService.shared.getUserByParam(mobile: mobile) {
-                await MainActor.run { [weak self] in
-                    guard let self else { return }
-                    self.userName = user.chineseName ?? user.surname ?? user.nickname ?? "用户"
-                    self.avatarText = String(self.userName.prefix(1))
-                    self.tableView.reloadData()
-                }
-            }
-        }
+        guard let user = UserManager.shared.currentUser else { return }
+        self.userName = user.chineseName ?? user.surname ?? user.nickname ?? "用户"
+        self.avatarText = String(self.userName.prefix(1))
+        self.tableView.reloadData()
+    }
+
+    @objc private func onUserUpdated() {
+        loadUserProfile()
     }
 
     override func setupUI() {

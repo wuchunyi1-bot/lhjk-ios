@@ -1,5 +1,29 @@
 import Foundation
 
+// MARK: - SMS 验证码类型
+
+/// 短信验证码发送场景
+enum SMSVerificationType {
+    /// 1 — 注册或登录
+    case login
+    /// 2 — 忘记密码 / 设置密码
+    case resetPassword
+    /// 3 — 修改邮箱（预留）
+    case changeEmail
+    /// 4 — 修改手机号码
+    case changePhone
+
+    /// 传给后端的整数值
+    var backendValue: String {
+        switch self {
+        case .login:         return "1"
+        case .resetPassword: return "2"
+        case .changeEmail:   return "3"
+        case .changePhone:   return "4"
+        }
+    }
+}
+
 /// 登录业务逻辑实现
 ///
 /// V1.0 → V1.1: `sendVerificationCode` 和 `loginByPhone` 已对接真实 API，
@@ -39,18 +63,18 @@ final class LoginService: LoginServiceProtocol {
 
     // MARK: - SMS (Real API)
 
-    func sendVerificationCode(to phone: String, type: String) async throws -> SMSResponse {
-        print("[LoginService] sendVerificationCode → mobile=\(phone) type=\(type)")
+    func sendVerificationCode(to phone: String, type: SMSVerificationType) async throws -> SMSResponse {
+        print("[LoginService] sendVerificationCode → mobile=\(phone) type=\(type.backendValue)")
 
         let params: [String: Any] = [
             "mobile": phone,
-            "type": type,
+            "type": type.backendValue,
             "clientId": clientId
         ]
 
         let response: APIResponse<SMSResponse> = try await APIManager.shared
             .publicGetAsync(
-                path: "/console/v1/mobileVerification/sendVerificationCode",
+                path: "/mobile/v1/mobileVerification/sendVerificationCode",
                 parameters: params,
                 responseType: APIResponse<SMSResponse>.self
             )

@@ -344,7 +344,6 @@ final class ServiceViewController: BaseViewController {
         tv.register(MedicalAssistCell.self, forCellReuseIdentifier: MedicalAssistCell.reuseID)
         tv.register(MatrixGridCell.self, forCellReuseIdentifier: MatrixGridCell.reuseID)
         tv.register(MallGridCell.self, forCellReuseIdentifier: MallGridCell.reuseID)
-        tv.tableHeaderView = buildTopbar()
         tv.contentInsetAdjustmentBehavior = .never
         return tv
     }()
@@ -352,6 +351,9 @@ final class ServiceViewController: BaseViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        if tableView.tableHeaderView == nil {
+            tableView.tableHeaderView = buildTopbar().sizedForTableHeader(in: view)
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {

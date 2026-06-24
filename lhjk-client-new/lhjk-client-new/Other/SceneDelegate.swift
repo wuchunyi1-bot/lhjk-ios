@@ -17,6 +17,13 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         // 已登录但未完成完善信息 → 强制展示 onboarding
         checkOnboardingRequired()
+
+        // 已登录且已完善信息 → 预加载用户信息
+        let hasToken = UserDefaults.standard.string(forKey: "auth_access_token") != nil
+        let onboarded = UserDefaults.standard.bool(forKey: "fd_onboarded")
+        if hasToken && onboarded {
+            Task { await UserManager.shared.fetchUserInfo() }
+        }
     }
 
     /// 检查本地登录态：有 token 但未完成完善信息 → 弹出 onboarding

@@ -93,7 +93,7 @@ final class UserService: UserServiceProtocol {
         if let code = checkCode { params["checkCode"] = code }
 
         let response: APIResponse<EmptyResponse> = try await APIManager.shared
-            .postAsync(path: "/mobile/v1/users/changePassword", parameters: params, responseType: APIResponse<EmptyResponse>.self)
+            .postFormURLEncodedAsync(path: "/mobile/v1/users/changePassword", parameters: params, responseType: APIResponse<EmptyResponse>.self)
 
         guard response.isSuccess else {
             print("[UserService] changePassword ✗ code=\(response.code)")
@@ -109,7 +109,7 @@ final class UserService: UserServiceProtocol {
         if let code = checkCode { params["checkCode"] = code }
 
         let response: APIResponse<EmptyResponse> = try await APIManager.shared
-            .postAsync(path: "/mobile/v1/users/changeMobile", parameters: params, responseType: APIResponse<EmptyResponse>.self)
+            .postFormURLEncodedAsync(path: "/mobile/v1/users/changeMobile", parameters: params, responseType: APIResponse<EmptyResponse>.self)
 
         guard response.isSuccess else {
             print("[UserService] changeMobile ✗ code=\(response.code)")

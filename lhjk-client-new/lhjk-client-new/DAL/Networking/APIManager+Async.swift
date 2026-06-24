@@ -47,6 +47,15 @@ extension APIManager {
         return try await request(url: url, method: .post, parameters: parameters, encoding: JSONEncoding.default, session: session)
     }
 
+    /// 已认证的 POST 请求，参数以 URL query string 方式传递（非 JSON body）
+    func postFormURLEncodedAsync<T: Decodable>(
+        path: String, parameters: [String: Any]? = nil, responseType: T.Type
+    ) async throws -> T {
+        let url = makeURL(path)
+        print("[APIManager] POST(urlenc) \(url)")
+        return try await request(url: url, method: .post, parameters: parameters, encoding: URLEncoding.default, session: session)
+    }
+
     func putAsync<T: Decodable>(
         path: String, parameters: [String: Any]? = nil, responseType: T.Type
     ) async throws -> T {

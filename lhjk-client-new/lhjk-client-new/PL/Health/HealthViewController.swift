@@ -58,7 +58,6 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         tv.register(HealthArchiveCardCell.self, forCellReuseIdentifier: HealthArchiveCardCell.reuseIdentifier)
         tv.register(HealthVitalMetricsCell.self, forCellReuseIdentifier: HealthVitalMetricsCell.reuseIdentifier)
         tv.register(HealthQuickEntriesCell.self, forCellReuseIdentifier: HealthQuickEntriesCell.reuseIdentifier)
-        tv.tableHeaderView = buildTableHeader()
         tv.contentInsetAdjustmentBehavior = .never
         return tv
     }()
@@ -68,6 +67,9 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        if tableView.tableHeaderView == nil {
+            tableView.tableHeaderView = buildTableHeader().sizedForTableHeader(in: view)
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {

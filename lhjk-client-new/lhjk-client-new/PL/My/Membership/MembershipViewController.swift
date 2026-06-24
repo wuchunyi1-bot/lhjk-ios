@@ -132,12 +132,18 @@ final class MembershipViewController: BaseViewController {
         tv.dataSource = self; tv.delegate = self
         tv.register(BenefitListCell.self, forCellReuseIdentifier: BenefitListCell.reuseID)
         tv.register(UpgradePlanCell.self, forCellReuseIdentifier: UpgradePlanCell.reuseID)
-        tv.tableHeaderView = buildHero()
         if #available(iOS 15.0, *) { tv.sectionHeaderTopPadding = 0 }
         return tv
     }()
 
     override func viewDidLoad() { super.viewDidLoad(); title = "会员权益" }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        if tableView.tableHeaderView == nil {
+            tableView.tableHeaderView = buildHero().sizedForTableHeader(in: view)
+        }
+    }
 
     override func setupUI() {
         view.backgroundColor = .fdBg

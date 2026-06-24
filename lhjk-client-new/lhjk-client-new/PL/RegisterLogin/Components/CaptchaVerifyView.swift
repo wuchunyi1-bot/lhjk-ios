@@ -132,7 +132,7 @@ final class CaptchaVerifyView: UIView {
 
         containerView.snp.makeConstraints { make in
             make.centerY.equalToSuperview()
-            make.leading.trailing.equalToSuperview().inset(28)
+            make.leading.trailing.equalToSuperview().inset(28).priority(750)
         }
 
         titleLabel.snp.makeConstraints { make in
@@ -148,7 +148,7 @@ final class CaptchaVerifyView: UIView {
 
         puzzleArea.snp.makeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(16)
-            make.leading.trailing.equalToSuperview().inset(20)
+            make.leading.trailing.equalToSuperview().inset(20).priority(750)
             make.height.equalTo(120)
         }
 
@@ -163,7 +163,7 @@ final class CaptchaVerifyView: UIView {
 
         sliderTrack.snp.makeConstraints { make in
             make.top.equalTo(puzzleArea.snp.bottom).offset(20)
-            make.leading.trailing.equalToSuperview().inset(20)
+            make.leading.trailing.equalToSuperview().inset(20).priority(750)
             make.height.equalTo(44)
             make.bottom.equalToSuperview().offset(-24)
         }

@@ -296,8 +296,9 @@ final class SettingsViewController: BaseViewController {
         )
         alert.addAction(UIAlertAction(title: "取消", style: .cancel))
         alert.addAction(UIAlertAction(title: "退出登录", style: .destructive) { [weak self] _ in
-            self?.showToast("已退出登录")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            LoginService.shared.clearSession()
+            UserManager.shared.clear()
+            self?.dismiss(animated: true) {
                 Router.shared.present("/login")
             }
         })

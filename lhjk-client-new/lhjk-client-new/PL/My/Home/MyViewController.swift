@@ -70,7 +70,8 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        tableView.tableHeaderView = buildTableHeader()
+        NotificationCenter.default.addObserver(self, selector: #selector(onUserUpdated),
+                                               name: .userDidUpdate, object: nil)
     }
 
     override func viewDidLayoutSubviews() {
@@ -94,31 +95,25 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        if tableView.tableHeaderView == nil {
+            tableView.tableHeaderView = buildTableHeader().sizedForTableHeader(in: view)
+        }
         loadUserProfile()
     }
 
     // MARK: - User Profile
 
     private func loadUserProfile() {
-        let mobile = UserDefaults.standard.string(forKey: "current_user_mobile") ?? ""
-        guard !mobile.isEmpty else { return }
-        Task { [weak self] in
-            guard let self = self else { return }
-            do {
-                if let user = try await UserService.shared.getUserByParam(mobile: mobile) {
-                    await MainActor.run { [weak self] in
-                        guard let self = self else { return }
-                        let name = user.chineseName ?? user.surname ?? user.nickname ?? "用户"
-                        self.userName = name
-                        self.avatarChar = String(name.prefix(1))
-                        self.avatarURL = user.imageUrl
-                        self.refreshHeader()
-                    }
-                }
-            } catch {
-                // 静默失败 — 保留占位文字
-            }
-        }
+        guard let user = UserManager.shared.currentUser else { return }
+        let name = user.chineseName ?? user.surname ?? user.nickname ?? "用户"
+        self.userName = name
+        self.avatarChar = String(name.prefix(1))
+        self.avatarURL = user.imageUrl
+        self.refreshHeader()
+    }
+
+    @objc private func onUserUpdated() {
+        loadUserProfile()
     }
 
     private func refreshHeader() {
@@ -311,7 +306,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         header.addSubview(membershipCard)
         membershipCard.snp.makeConstraints { make in
             make.top.equalTo(editBtn.snp.bottom).offset(20)
-            make.leading.trailing.equalToSuperview().inset(contentPadding)
+            make.leading.trailing.equalToSuperview().inset(contentPadding).priority(750)
         }
 
         // MARK: Stats Strip (from MeStatsStripCell)
@@ -325,7 +320,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             stack.distribution = .fillEqually
             container.addSubview(stack)
             stack.snp.makeConstraints { make in
-                make.edges.equalToSuperview().inset(UIEdgeInsets(top: 9, left: 0, bottom: 7, right: 0))
+                make.edges.equalToSuperview().inset(UIEdgeInsets(top: 9, left: 0, bottom: 7, right: 0)).priority(750)
             }
 
             for (i, (value, label, accent, route)) in stats.enumerated() {
@@ -374,7 +369,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         header.addSubview(statsContainer)
         statsContainer.snp.makeConstraints { make in
             make.top.equalTo(membershipCard.snp.bottom).offset(12)
-            make.leading.trailing.equalToSuperview().inset(contentPadding)
+            make.leading.trailing.equalToSuperview().inset(contentPadding).priority(750)
             make.bottom.equalToSuperview().offset(-16)
         }
 

@@ -247,6 +247,26 @@ final class HomeHeroCell: UITableViewCell {
         }
     }
 
+    // MARK: - Layout
+
+    /// 修复 automaticDimension 高度计算时 contentView.width == 0 导致的 fillEqually 约束冲突
+    /// 将 targetSize.width 替换为 table view 实际宽度，并强制水平方向按 required 解析
+    override func systemLayoutSizeFitting(
+        _ targetSize: CGSize,
+        withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority,
+        verticalFittingPriority: UILayoutPriority
+    ) -> CGSize {
+        var size = targetSize
+        if size.width == 0, let tv = superview as? UITableView {
+            size.width = tv.bounds.width
+        }
+        return super.systemLayoutSizeFitting(
+            size,
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: verticalFittingPriority
+        )
+    }
+
     // MARK: - Configure
 
     func configure(

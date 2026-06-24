@@ -43,6 +43,12 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
     // MARK: - Lifecycle
 
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        NotificationCenter.default.addObserver(self, selector: #selector(onUserUpdated),
+                                               name: .userDidUpdate, object: nil)
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
@@ -334,20 +340,12 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     // MARK: - Data Loading
 
     private func loadUserProfile() {
-        let mobile = UserDefaults.standard.string(forKey: "current_user_mobile") ?? ""
-        guard !mobile.isEmpty else { return }
-        Task { [weak self] in
-            guard let self = self else { return }
-            do {
-                if let user = try await UserService.shared.getUserByParam(mobile: mobile) {
-                    await MainActor.run { [weak self] in
-                        self?.applyUserData(user)
-                    }
-                }
-            } catch {
-                // silent fail — keep placeholders
-            }
-        }
+        guard let user = UserManager.shared.currentUser else { return }
+        applyUserData(user)
+    }
+
+    @objc private func onUserUpdated() {
+        loadUserProfile()
     }
 
     private func applyUserData(_ user: SUsers) {
