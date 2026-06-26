@@ -9,29 +9,12 @@ PODS:
   - FMDB/standard (2.7.12):
     - FMDB/Core
   - Kingfisher (7.12.0)
-  - RongCloudIM (5.40.0):
-    - RongCloudIM/ChatRoom (= 5.40.0)
-    - RongCloudIM/ContactCard (= 5.40.0)
-    - RongCloudIM/CustomerService (= 5.40.0)
-    - RongCloudIM/Discussion (= 5.40.0)
-    - RongCloudIM/IMKit (= 5.40.0)
-    - RongCloudIM/IMLib (= 5.40.0)
-    - RongCloudIM/IMLibCore (= 5.40.0)
-    - RongCloudIM/Location (= 5.40.0)
-    - RongCloudIM/LocationKit (= 5.40.0)
-    - RongCloudIM/PublicService (= 5.40.0)
-    - RongCloudIM/RongSticker (= 5.40.0)
-    - RongCloudIM/Sight (= 5.40.0)
   - RongCloudIM/ChatRoom (5.40.0):
     - RongCloudIM/IMLibCore
-  - RongCloudIM/ContactCard (5.40.0):
-    - RongCloudIM/IMKit
   - RongCloudIM/CustomerService (5.40.0):
     - RongCloudIM/IMLibCore
   - RongCloudIM/Discussion (5.40.0):
     - RongCloudIM/IMLibCore
-  - RongCloudIM/IMKit (5.40.0):
-    - RongCloudIM/IMLib
   - RongCloudIM/IMLib (5.40.0):
     - RongCloudIM/ChatRoom
     - RongCloudIM/CustomerService
@@ -39,17 +22,8 @@ PODS:
     - RongCloudIM/IMLibCore
     - RongCloudIM/PublicService
   - RongCloudIM/IMLibCore (5.40.0)
-  - RongCloudIM/Location (5.40.0):
-    - RongCloudIM/IMLibCore
-  - RongCloudIM/LocationKit (5.40.0):
-    - RongCloudIM/IMKit
-    - RongCloudIM/Location
   - RongCloudIM/PublicService (5.40.0):
     - RongCloudIM/IMLibCore
-  - RongCloudIM/RongSticker (5.40.0):
-    - RongCloudIM/IMKit
-  - RongCloudIM/Sight (5.40.0):
-    - RongCloudIM/IMKit
   - SnapKit (5.7.1)
 
 DEPENDENCIES:
@@ -57,7 +31,7 @@ DEPENDENCIES:
   - DGCharts
   - FMDB (~> 2.7)
   - Kingfisher (~> 7.0)
-  - RongCloudIM (~> 5.0)
+  - RongCloudIM/IMLib (~> 5.40.0)
   - SnapKit (~> 5.7)
 
 SPEC REPOS:
@@ -77,6 +51,6 @@ SPEC CHECKSUMS:
   RongCloudIM: c9ce09fd954aa63cf443fb0c55823f0d6f40dca6
   SnapKit: d612e99e678a2d3b95bf60b0705ed0a35c03484a
 
-PODFILE CHECKSUM: d4ad17b8bed1e02b4840c9dfbb8da8e128de639a
+PODFILE CHECKSUM: 37abbb4c6cce9a2430a681887bfb1405e0b4f541
 
 COCOAPODS: 1.16.2

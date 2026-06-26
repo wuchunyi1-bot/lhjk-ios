@@ -2,11 +2,12 @@ import Foundation
 
 /// 用户信息服务协议
 protocol UserServiceProtocol {
-    /// 保存/修改用户信息
-    func saveUser(_ payload: SUsersOnboardingPayload) async throws
+    /// 修改当前用户资料（Onboarding / 个人信息编辑）
+    /// - Returns: 修改后的完整用户信息
+    func updateCurrentProfile(_ payload: SUsersOnboardingPayload) async throws -> SUsers?
 
-    /// 根据手机号查询用户详细信息
-    func getUserByParam(mobile: String) async throws -> SUsers?
+    /// 获取当前登录用户基础信息（通过 token 识别，无需传参）
+    func getCurrentUserBaseInfo() async throws -> SUsers?
 
     // MARK: - 密码/手机号管理
 

@@ -49,7 +49,9 @@ extension UIFont {
             SeniorMode.enabled = newValue
             seniorModeVersion += 1
             UserDefaults.standard.set(newValue, forKey: seniorModeKey)
-            NotificationCenter.default.post(name: seniorModeDidChangeNotification, object: nil)
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: seniorModeDidChangeNotification, object: nil)
+            }
         }
     }
 

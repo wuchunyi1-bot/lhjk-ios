@@ -284,7 +284,7 @@ final class CancelAccountViewController: BaseViewController {
 
             // Redirect after 2 seconds
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                Router.shared.present("/login")
+                Router.shared.setRoot("/login")
             }
         }
     }

@@ -3,166 +3,221 @@ import Foundation
 // MARK: - 消息类型
 
 enum MessageType: String, Codable {
-    case text, image, notification, system, file
+    case text
+    case system
+    case metricCard = "metric-card"
+    case reportCard = "report-card"
+    case dietCard = "diet-card"
+    case appointmentCard = "appointment-card"
+    case caseCard = "case-card"
+    case planCard = "plan-card"
+    case mealAnalysis = "meal-analysis"
+    case aiWeeklyReport = "ai-weekly-report"
+
+    var isCard: Bool {
+        switch self {
+        case .metricCard, .reportCard, .dietCard, .appointmentCard, .caseCard, .planCard: return true
+        default: return false
+        }
+    }
 }
 
-// MARK: - 发送者类型
+// MARK: - 发送方角色
 
-enum MessageSender: String, Codable {
-    case patient, staff, system
+enum MessageRole: String, Codable {
+    case user, staff
 }
 
-// MARK: - 健康通知卡片
+// MARK: - 服务卡片
 
-struct NotificationPayload: Codable {
+struct ServiceCard: Codable {
     let title: String
-    let icon: NotificationIcon
-    let accent: NotificationAccent
-    let rows: [NotificationRow]
+    let icon: String        // SF Symbol 名
+    let accent: String?     // hex 主题色，nil 时用 roleTone fallback
+    let summary: String
+    let rows: [CardRow]
     let footnote: String?
+    let action: String?
 }
 
-struct NotificationRow: Codable {
+struct CardRow: Codable {
     let label: String
     let value: String
-    let statusText: String?
-    let statusTone: StatusTone?
+    let status: String?     // 状态文字，有值时渲染 status badge
 }
 
-enum NotificationIcon: String, Codable {
-    case glucose, ecg, pressure, spo2, weight, sleep, temperature, bmi
-    case diet, medicine, retina, lung, gut, report, plan, call, profile
+// MARK: - 餐食分析
 
-    var sfSymbol: String {
-        switch self {
-        case .glucose: return "drop"
-        case .ecg: return "waveform.path.ecg"
-        case .pressure: return "heart"
-        case .spo2: return "lungs"
-        case .weight: return "scalemass"
-        case .sleep: return "moon.zzz"
-        case .temperature: return "thermometer"
-        case .bmi: return "figure.stand"
-        case .diet: return "fork.knife"
-        case .medicine: return "pills"
-        case .retina: return "eye"
-        case .lung: return "nose"
-        case .gut: return "stethoscope"
-        case .report: return "doc.text"
-        case .plan: return "calendar"
-        case .call: return "phone"
-        case .profile: return "person.crop.circle"
-        }
-    }
+struct MealAnalysis: Codable {
+    let label: String                   // 餐食标签，如"昨日 晚餐"
+    let annotations: [MealAnnotation]
+    let comment: String                 // 营养师点评
+    let from: String                    // 点评人署名
 }
 
-enum NotificationAccent: String, Codable {
-    case coral, pink, gold, green, purple, blue
-
-    var mainHex: String {
-        switch self {
-        case .coral: return "#FF7A50"
-        case .pink: return "#E5564B"
-        case .gold: return "#F5A524"
-        case .green: return "#2DB983"
-        case .purple: return "#7B5E9F"
-        case .blue: return "#5C8DC9"
-        }
-    }
-
-    var softHex: String {
-        switch self {
-        case .coral: return "#FFF3EE"
-        case .pink: return "#FCE9E6"
-        case .gold: return "#FFF3DC"
-        case .green: return "#E6F7EF"
-        case .purple: return "#F3EFFC"
-        case .blue: return "#EBF1FA"
-        }
-    }
+struct MealAnnotation: Codable {
+    let text: String
+    let tag: MealAnnotationTag
+    let tip: String
 }
 
-enum StatusTone: String, Codable {
-    case danger, warning, success
+enum MealAnnotationTag: String, Codable {
+    case danger, success, warning
 }
 
-// MARK: - 消息模型
+// MARK: - AI 周报
 
-struct Message: Identifiable {
+struct AIWeeklyReport: Codable {
+    let weekNo: Int
+    let scoreBefore: Int
+    let scoreAfter: Int
+    let highlights: [AIHighlight]
+    let medal: AIMedal?
+    let nextGoal: String
+}
+
+struct AIHighlight: Codable {
+    let icon: String
+    let text: String
+}
+
+struct AIMedal: Codable {
+    let icon: String
+    let name: String
+}
+
+// MARK: - ChatMessage 模型
+
+/// 聊天消息模型 — 参考 funde-client ConversationDetailView.vue ChatMessage 类型
+struct ChatMessage: Identifiable, Codable {
     let id: String
-    let conversationId: String
     let type: MessageType
-    let sender: MessageSender
+    let role: MessageRole
     let senderName: String?
     let senderRole: String?
-    let avatarText: String?
-    let content: String
-    let payload: NotificationPayload?
-    let createdAt: Date
-    let recalled: Bool
-    var status: MessageStatus
+    let avatar: String?
+    let text: String?
+    let time: String
+    let card: ServiceCard?
+    let meal: MealAnalysis?
+    let report: AIWeeklyReport?
 
-    var isStaff: Bool { sender == .staff }
-    var isPatient: Bool { sender == .patient }
-    var isSystem: Bool { sender == .system || type == .system }
-}
-
-enum MessageStatus: String {
-    case sending, sent, delivered, read, failed
+    var isStaff: Bool { role == .staff }
+    var isUser: Bool { role == .user }
+    var isSystem: Bool { type == .system }
 }
 
 // MARK: - Mock Data
 
-extension Message {
-    static func mockMessages(for conversationId: String) -> [Message] {
-        [
-            Message(id: "MSG0001", conversationId: conversationId, type: .text, sender: .patient, senderName: nil, senderRole: nil, avatarText: nil, content: "你好，我最近血糖有点高，空腹都到8.2了", payload: nil, createdAt: Mock.date("08:30"), recalled: false, status: .sent),
-            Message(id: "MSG0002", conversationId: conversationId, type: .text, sender: .staff, senderName: "顾问五号", senderRole: "健康管理师", avatarText: "管", content: "收到，空腹血糖8.2确实偏高，正常应在3.9-6.1之间。请告诉我最近的饮食和运动情况。", payload: nil, createdAt: Mock.date("08:35"), recalled: false, status: .sent),
-            Message(id: "MSG0003", conversationId: conversationId, type: .text, sender: .patient, senderName: nil, senderRole: nil, avatarText: nil, content: "这周应酬比较多，吃了几顿大餐，甜食和酒水都摄入较多。运动也少了。", payload: nil, createdAt: Mock.date("08:40"), recalled: false, status: .sent),
-            Message(id: "MSG0004", conversationId: conversationId, type: .notification, sender: .staff, senderName: "顾问五号", senderRole: "健康管理师", avatarText: "管", content: "血糖上传通知", payload: NotificationPayload(
-                title: "血糖上传通知",
-                icon: .glucose, accent: .coral,
-                rows: [
-                    NotificationRow(label: "测量值", value: "8.2 mmol/L", statusText: "偏高", statusTone: .danger),
-                    NotificationRow(label: "今日范围", value: "7.6 ~ 8.4 mmol/L", statusText: nil, statusTone: nil),
-                    NotificationRow(label: "今日平均", value: "8.0 mmol/L", statusText: nil, statusTone: nil),
-                    NotificationRow(label: "测量时间", value: "2026-04-22 08:48", statusText: nil, statusTone: nil),
-                ],
-                footnote: "建议恢复低糖饮食一周，并持续监测餐后 2 小时血糖。"
-            ), createdAt: Mock.date("08:50"), recalled: false, status: .sent),
-            Message(id: "MSG0005", conversationId: conversationId, type: .text, sender: .patient, senderName: nil, senderRole: nil, avatarText: nil, content: "好的，我照做。另外想问一下，我上次开的药还要继续吃吗？", payload: nil, createdAt: Mock.date("09:00"), recalled: false, status: .sent),
-            Message(id: "MSG0006", conversationId: conversationId, type: .text, sender: .staff, senderName: "顾问五号", senderRole: "健康管理师", avatarText: "管", content: "二甲双胍请按原剂量继续服用。如果一周后空腹血糖仍高于7.0，我会安排熊医生给您调整方案。", payload: nil, createdAt: Mock.date("09:10"), recalled: false, status: .sent),
-            Message(id: "MSG0007", conversationId: conversationId, type: .text, sender: .patient, senderName: nil, senderRole: nil, avatarText: nil, content: "明白了，谢谢。我会注意的。", payload: nil, createdAt: Mock.date("09:15"), recalled: false, status: .sent),
-            Message(id: "MSG0008", conversationId: conversationId, type: .system, sender: .system, senderName: nil, senderRole: nil, avatarText: nil, content: "已为您创建随访计划：一周后复查血糖", payload: nil, createdAt: Mock.date("09:16"), recalled: false, status: .sent),
-            Message(id: "MSG0050", conversationId: conversationId, type: .notification, sender: .staff, senderName: "顾问五号", senderRole: "健康管理师", avatarText: "管", content: "心电上传通知", payload: NotificationPayload(
-                title: "心电上传通知",
-                icon: .ecg, accent: .pink,
-                rows: [
-                    NotificationRow(label: "心电结论", value: "夜间偶发室性早搏", statusText: "需关注", statusTone: .danger),
-                    NotificationRow(label: "最高心率", value: "108 次/分", statusText: nil, statusTone: nil),
-                    NotificationRow(label: "异常时段", value: "04-23 22:14 - 22:20", statusText: nil, statusTone: nil),
-                ],
-                footnote: "建议今日减少熬夜，保持复测，并关注胸闷心悸情况。"
-            ), createdAt: Mock.date("14:18"), recalled: false, status: .sent),
-            Message(id: "MSG0051", conversationId: conversationId, type: .notification, sender: .staff, senderName: "顾问五号", senderRole: "健康管理师", avatarText: "管", content: "血压上传通知", payload: NotificationPayload(
-                title: "血压上传通知",
-                icon: .pressure, accent: .gold,
-                rows: [
-                    NotificationRow(label: "测量值", value: "146 / 94 mmHg", statusText: "偏高", statusTone: .danger),
-                    NotificationRow(label: "今日范围", value: "138/88 ~ 149/96", statusText: nil, statusTone: nil),
-                    NotificationRow(label: "今日平均", value: "144 / 92 mmHg", statusText: nil, statusTone: nil),
-                    NotificationRow(label: "测量时间", value: "2026-04-24 08:32", statusText: nil, statusTone: nil),
-                ],
-                footnote: "建议晚间复测，并减少高盐饮食。"
-            ), createdAt: Mock.date("15:00"), recalled: false, status: .sent),
-        ]
+extension ChatMessage {
+    /// 按会话 ID 获取 mock 消息
+    static func mockMessages(for conversationId: String) -> [ChatMessage] {
+        switch conversationId {
+        case "conv-001", "manager", "1": return mockManagerMessages
+        case "conv-002", "doctor": return mockDoctorMessages
+        case "conv-003", "nutrition": return mockNutritionMessages
+        case "conv-ai-xd", "ai": return mockAIMessages
+        case "conv-team", "team": return mockTeamMessages
+        default: return mockDefaultMessages
+        }
     }
 
-    private enum Mock {
-        static func date(_ time: String) -> Date {
-            let fmt = DateFormatter()
-            fmt.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
-            return fmt.date(from: "2026-04-22T\(time):00+0800") ?? Date()
-        }
+    // 健管师会话
+    private static let mockManagerMessages: [ChatMessage] = [
+        .staff("MSG-M01", "李阿姨您好，我是您的专属健管师王顾问。", "王顾问", "健管师", "王", "今天 14:20"),
+        .staffCard("MSG-M02", ServiceCard(title: "血压趋势提醒", icon: "heart.text.square", accent: nil, summary: "近 7 天收缩压平均 137 mmHg，舒张压平均 86 mmHg，整体处于偏高状态。", rows: [
+            CardRow(label: "收缩压", value: "137 mmHg", status: "偏高"),
+            CardRow(label: "舒张压", value: "86 mmHg", status: "正常"),
+            CardRow(label: "测量天数", value: "7 / 7 天", status: nil),
+        ], footnote: "建议本周减少高盐饮食摄入，每天早晚各测一次血压并同步记录。", action: "查看监测方案")),
+        .user("MSG-M03", "好的，我晚上注意饮食。另外我最近睡眠不太好。", "今天 14:32"),
+        .staff("MSG-M04", "您提到睡眠问题，我会请林老师给您一些放松技巧。", "王顾问", "健管师", "王", "今天 14:35"),
+        .system("MSG-M05", "今天 14:36 已同步血压数据"),
+    ]
+
+    // 医生会话
+    private static let mockDoctorMessages: [ChatMessage] = [
+        .staff("MSG-D01", "您好，我看了您最近的血压和用药记录。", "张建国", "主任医师", "张", "今天 09:00"),
+        .staffCard("MSG-D02", ServiceCard(title: "用药复核", icon: "pills", accent: nil, summary: "当前用药方案：硝苯地平控释片 30mg qd，二甲双胍 0.5g tid。", rows: [
+            CardRow(label: "降压药", value: "硝苯地平控释片 30mg", status: "继续"),
+            CardRow(label: "降糖药", value: "二甲双胍 0.5g", status: "继续"),
+            CardRow(label: "用药周期", value: "已连续 12 周", status: nil),
+        ], footnote: "降压药先不要自行调整剂量，下次复诊时根据血压监测数据评估是否需要调药。", action: "查看用药记录")),
+        .user("MSG-D03", "好的医生，我按时吃药。那我下次什么时候来复诊？", "今天 09:10"),
+        .staff("MSG-D04", "建议 2 周后复诊，届时带着这两周的血压记录来。", "张建国", "主任医师", "张", "今天 09:15"),
+    ]
+
+    // 营养师会话
+    private static let mockNutritionMessages: [ChatMessage] = [
+        .staff("MSG-N01", "陈梅给您搭配了一份低钠 7 日早餐表，请查收。", "陈梅", "营养师", "陈", "昨天 16:00"),
+        .staffCard("MSG-N02", ServiceCard(title: "低钠 7 日早餐方案", icon: "fork.knife", accent: nil, summary: "总热量控制 1800 kcal/日，钠摄入 ≤ 2000 mg/日。", rows: [
+            CardRow(label: "周一", value: "燕麦粥 + 水煮蛋 + 凉拌黄瓜", status: nil),
+            CardRow(label: "周二", value: "全麦面包 + 牛油果 + 豆浆", status: nil),
+            CardRow(label: "周三", value: "小米粥 + 蒸饺 + 焯西兰花", status: nil),
+        ], footnote: "所有菜品请用低钠盐或薄盐酱油调味。早餐后 30 分钟散步有助于餐后血糖控制。", action: "查看完整方案")),
+        .staffMeal("MSG-N03", MealAnalysis(label: "昨日 晚餐", annotations: [
+            MealAnnotation(text: "红烧肉", tag: .danger, tip: "饱和脂肪较高，建议替换为清蒸鱼"),
+            MealAnnotation(text: "炒青菜", tag: .success, tip: "低热量高纤维，继续保持"),
+            MealAnnotation(text: "米饭（200g）", tag: .warning, tip: "碳水稍多，建议减至 150g"),
+        ], comment: "晚餐总体热量偏高，红烧肉是主要问题。建议下周尽量减少红烧类菜品，多用清蒸或水煮方式。青菜搭配很好，继续保持。", from: "营养师 陈梅")),
+        .user("MSG-N04", "谢谢陈老师！我明天开始按这个方案吃。红烧肉确实要戒了 😅", "昨天 16:30"),
+    ]
+
+    // AI 小德会话
+    private static let mockAIMessages: [ChatMessage] = [
+        .staff("MSG-A01", "主人早上好！☀️ 这是您本周的健康周报，请查收～", "小德", "AI 健康顾问", "德", "今天 08:00"),
+        .aiReport("MSG-A02", AIWeeklyReport(weekNo: 24, scoreBefore: 72, scoreAfter: 88, highlights: [
+            AIHighlight(icon: "figure.walk", text: "日均步数达到 8,200 步，超额完成目标"),
+            AIHighlight(icon: "fork.knife", text: "晚餐热量控制明显改善，蔬菜占比提升"),
+            AIHighlight(icon: "bed.double", text: "平均睡眠时长从 6.2h 提升至 7.1h"),
+        ], medal: AIMedal(icon: "medal", name: "自律之星"), nextGoal: "下周尝试每天晨跑 20 分钟，进一步提升心肺耐力～")),
+        .staff("MSG-A03", "主人，本周您的健康评分提升了 16 分！明天记得把晨跑数据同步过来。", "小德", "AI 健康顾问", "德", "今天 08:01"),
+        .user("MSG-A04", "好的小德！这周确实感觉状态好多了 👍", "今天 08:10"),
+    ]
+
+    // 团队群会话
+    private static let mockTeamMessages: [ChatMessage] = [
+        .system("MSG-T01", "王顾问邀请张建国医生、陈梅营养师加入服务群"),
+        .staff("MSG-T02", "大家好，我把李阿姨本周的监测数据同步到群里，请各位专家关注。", "王顾问", "健管师", "王", "今天 14:20"),
+        .staffCard("MSG-T03", ServiceCard(title: "本周监测汇总", icon: "chart.line.uptrend.xyaxis", accent: nil, summary: "血压整体偏高、血糖趋于稳定、睡眠质量有所改善。", rows: [
+            CardRow(label: "收缩压", value: "137 mmHg", status: "偏高"),
+            CardRow(label: "空腹血糖", value: "6.2 mmol/L", status: "正常"),
+            CardRow(label: "睡眠评分", value: "78 分", status: "改善中"),
+        ], footnote: "本周重点：控制盐摄入 + 保持运动 + 监测晨间血压。", action: "查看详细数据")),
+        .staff("MSG-T04", "收到，降压药方案维持不变，下周复诊时再评估。", "张建国", "主任医师", "张", "今天 14:35"),
+        .staff("MSG-T05", "饮食方案已更新，早餐减钠增钾，晚餐控制碳水。@陈梅", "陈梅", "营养师", "陈", "今天 14:40"),
+    ]
+
+    // 默认会话
+    private static let mockDefaultMessages: [ChatMessage] = [
+        .staff("MSG-001", "您好！请问有什么可以帮您的？", "健康顾问", "客服", "顾", "今天 10:00"),
+        .user("MSG-002", "我想了解一下我的健康管理方案", "今天 10:02"),
+        .staff("MSG-003", "好的，我来为您查看。您的专属健管师会在 24 小时内与您联系。", "健康顾问", "客服", "顾", "今天 10:05"),
+    ]
+
+    // MARK: Factory helpers
+
+    private static func staff(_ id: String, _ text: String, _ name: String, _ role: String, _ avatar: String, _ time: String) -> ChatMessage {
+        ChatMessage(id: id, type: .text, role: .staff, senderName: name, senderRole: role, avatar: avatar, text: text, time: time, card: nil, meal: nil, report: nil)
+    }
+
+    private static func user(_ id: String, _ text: String, _ time: String) -> ChatMessage {
+        ChatMessage(id: id, type: .text, role: .user, senderName: nil, senderRole: nil, avatar: nil, text: text, time: time, card: nil, meal: nil, report: nil)
+    }
+
+    private static func system(_ id: String, _ text: String) -> ChatMessage {
+        ChatMessage(id: id, type: .system, role: .user, senderName: nil, senderRole: nil, avatar: nil, text: text, time: "", card: nil, meal: nil, report: nil)
+    }
+
+    private static func staffCard(_ id: String, _ card: ServiceCard) -> ChatMessage {
+        ChatMessage(id: id, type: .metricCard, role: .staff, senderName: nil, senderRole: nil, avatar: nil, text: nil, time: "", card: card, meal: nil, report: nil)
+    }
+
+    private static func staffMeal(_ id: String, _ meal: MealAnalysis) -> ChatMessage {
+        ChatMessage(id: id, type: .mealAnalysis, role: .staff, senderName: nil, senderRole: nil, avatar: nil, text: nil, time: "", card: nil, meal: meal, report: nil)
+    }
+
+    private static func aiReport(_ id: String, _ report: AIWeeklyReport) -> ChatMessage {
+        ChatMessage(id: id, type: .aiWeeklyReport, role: .staff, senderName: "小德", senderRole: "AI 健康顾问", avatar: "德", text: nil, time: "今天 08:00", card: nil, meal: nil, report: report)
     }
 }

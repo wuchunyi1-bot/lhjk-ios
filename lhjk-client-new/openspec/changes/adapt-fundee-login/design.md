@@ -251,28 +251,30 @@ extension UIColor {
 - 账号冻结/注销中是否需要展示客服入口或申诉入口？PRD 标注 [待确认]
 - 新设备登录提醒的推送通道？PRD 标注 [待确认：提醒通道]
 
-## Onboarding (新增 2026-06-16)
+## Onboarding (新增 2026-06-16, 重写 2026-06-25)
 
-### 12. Onboarding 架构：单 ViewController + 步骤状态机
+### 12. Onboarding 架构：单页表单
 
-**选择**: 使用单个 `OnboardingViewController`，内部通过 `currentStep` 状态变量控制 4 个步骤的 UI 切换。子内容通过 show/hide 管理（非独立 VC 切换）。
+**选择 (2026-06-25 更新)**: 对齐 funde-client PRD §5.10 和实际 `OnboardingView.vue` 实现，改为单页表单。4 个字段（姓名 / 出生日期 / 性别 / 所在城市）垂直排列在 UIScrollView 中，固定底部「保存并继续」按钮。
 
-**理由**: 4 个步骤共享顶部进度条和底部操作区，单 VC 避免 NavigationController push/pop 的开销；步骤间过渡更流畅（fade in/out），且步骤间数据自然共享。
+**理由**: PRD §5.10 明确说明「该引导页不等同于健康档案，不采集身份证、详细地址、疾病史、保单等重信息」。原 4 步向导（健康史 / 生活习惯 / 团队见面）属于健康档案范畴，应拆到我的 / 健康档案中单独承接。单页表单减少步骤间的认知负担，更符合 50-70 岁目标用户。
 
-### 13. Chip 组件：OptionChipView
+**旧设计 (已废弃)**: 使用单个 `OnboardingViewController`，内部通过 `currentStep` 状态变量控制 4 个步骤的 UI 切换。
 
-**选择**: 创建 `OptionChipView` 自定义 UIView，封装选中/未选中样式和 tap 手势。支持 `allowMultipleSelection` 控制单选/多选模式。
+### 13. 展示判断：checkNeedOnboarding()
 
-**理由**: 4 个步骤中共有 4 组 chip（性别、病史、吸烟、运动），共享相同的交互模式（border 切换 + 背景色切换），统一组件减少重复代码。
+**选择 (2026-06-25 新增)**: 不再使用本地 `fd_onboarded` 标记，改为 `UserManager.checkNeedOnboarding()` 异步调用 `getUserByParam` API，检查返回的 `chineseName`、`sex`、`birthday` 是否都存在非空值。
 
-### 14. 团队卡片入场动画
+**理由**: 本地 flag 无法应对服务端数据被清空/回滚的场景。API 数据是真实的用户状态，比本地缓存更可靠。`fd_onboarded` 已从代码中完全移除。
 
-**选择**: Step 4 的团队卡片使用 `UIView.animate` 依次淡入（opacity 0→1 + translateY 16→0），每张卡片间隔 350ms。
+### 14. Chip 组件：OptionChipView
 
-**理由**: 直接复刻 funde-client 的 `ob-team-card--visible` CSS transition 效果，无需引入第三方动画库。
+**选择**: 复用 `OptionChipView` + `OptionChipGroup`（单选模式），用于性别选择。
+
+**理由**: 组件已存在，单选模式下直接满足需求。旧设计中 4 组 chip 的需求已随步骤简化而减少。
 
 ### 15. Onboarding 完成后的导航
 
 **选择**: Onboarding 完成后 `dismiss(animated: true)`，回到已有的 TabBarController。
 
-**理由**: OnboardingViewController 是 fullScreen present 在 TabBar 之上的。引导完成后 dismiss，用户自然回到已有 TabBar 的主页 Tab。不需要也不应该替换 root VC，否则会销毁 TabBar 结构。这与 funde-client SPA 中的 `router.replace('/home')` 语义不同——在 iOS 中，TabBar 框架始终存在，引导只是一个覆盖层。
+**理由**: OnboardingViewController 是 fullScreen present 在 TabBar 之上的。引导完成后 dismiss，用户自然回到已有 TabBar 的主页 Tab。不需要也不应该替换 root VC，否则会销毁 TabBar 结构。

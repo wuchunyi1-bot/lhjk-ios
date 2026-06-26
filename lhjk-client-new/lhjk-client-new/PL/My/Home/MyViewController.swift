@@ -206,32 +206,50 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         }()
 
         let editBtn: UIButton = {
-            let b = UIButton(type: .system)
-            b.setTitle(" 编辑资料", for: .normal)
-            b.setImage(UIImage(systemName: "chevron.right")?.withRenderingMode(.alwaysTemplate), for: .normal)
-            b.tintColor = .fdText2
-            b.setTitleColor(.fdText2, for: .normal)
-            b.titleLabel?.font = .fdMicro
-            b.backgroundColor = UIColor.white.withAlphaComponent(0.65)
-            b.layer.cornerRadius = 999
-            b.layer.borderWidth = 1
-            b.layer.borderColor = UIColor.fdBorder.cgColor
-            b.contentEdgeInsets = UIEdgeInsets(top: 4, left: 10, bottom: 4, right: 10)
-            b.semanticContentAttribute = .forceRightToLeft
+            var cfg = UIButton.Configuration.filled()
+            cfg.title = "编辑资料"
+            cfg.image = UIImage(systemName: "chevron.right")
+            cfg.imagePlacement = .trailing
+            cfg.imagePadding = 4
+            cfg.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 12, bottom: 5, trailing: 12)
+            // 图片大小
+            cfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 9, weight: .semibold)
+            // 文字字体
+            cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+                var outgoing = incoming
+                outgoing.font = .fdMicro
+                return outgoing
+            }
+            // 样式
+            cfg.baseForegroundColor = .fdText2
+            cfg.background.backgroundColor = UIColor.white.withAlphaComponent(0.65)
+            cfg.background.cornerRadius = 999
+            cfg.background.strokeColor = UIColor.fdBorder
+            cfg.background.strokeWidth = 1
+
+            let b = UIButton(configuration: cfg)
             b.addTarget(self, action: #selector(pushProfile), for: .touchUpInside)
             return b
         }()
 
         let healthBtn: UIButton = {
-            let b = UIButton(type: .system)
-            b.setTitle(" 健康档案", for: .normal)
-            b.setImage(UIImage(systemName: "heart")?.withRenderingMode(.alwaysTemplate), for: .normal)
-            b.tintColor = .white
-            b.setTitleColor(.white, for: .normal)
-            b.titleLabel?.font = .fdMicroSemibold
-            b.backgroundColor = .fdPrimary
-            b.layer.cornerRadius = 999
-            b.contentEdgeInsets = UIEdgeInsets(top: 4, left: 12, bottom: 4, right: 12)
+            var cfg = UIButton.Configuration.filled()
+            cfg.title = "健康档案"
+            cfg.image = UIImage(systemName: "heart")
+            cfg.imagePlacement = .leading
+            cfg.imagePadding = 6
+            cfg.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 14, bottom: 5, trailing: 14)
+            cfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
+            cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+                var outgoing = incoming
+                outgoing.font = .fdMicroSemibold
+                return outgoing
+            }
+            cfg.baseForegroundColor = .white
+            cfg.background.backgroundColor = .fdPrimary
+            cfg.background.cornerRadius = 999
+
+            let b = UIButton(configuration: cfg)
             b.addTarget(self, action: #selector(pushHealthRecord), for: .touchUpInside)
             return b
         }()

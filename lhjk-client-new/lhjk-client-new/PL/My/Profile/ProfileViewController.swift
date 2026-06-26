@@ -431,10 +431,11 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
     @objc private func handleNicknameTap() {
         showTextEditor(title: "修改用户昵称", placeholder: "请输入用户昵称", currentValue: nickname) { [weak self] text in
-            self?.nickname = text
-            self?.nicknameLabel?.text = text
-            self?.updateHint()
-            self?.showToast("已保存")
+            guard let self = self else { return }
+            self.nickname = text
+            self.nicknameLabel?.text = text
+            self.updateHint()
+            self.saveProfile()
         }
     }
 
@@ -446,10 +447,11 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
     @objc private func handleNameTap() {
         showTextEditor(title: "修改姓名", placeholder: "请输入姓名", currentValue: name) { [weak self] text in
-            self?.name = text
-            self?.nameLabel?.text = text
-            self?.updateHint()
-            self?.showToast("已保存")
+            guard let self = self else { return }
+            self.name = text
+            self.nameLabel?.text = text
+            self.updateHint()
+            self.saveProfile()
         }
     }
 
@@ -459,13 +461,13 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             self?.gender = "1"
             self?.genderLabel?.text = "男"
             self?.updateHint()
-            self?.showToast("已保存")
+            self?.saveProfile()
         })
         alert.addAction(UIAlertAction(title: "女", style: .default) { [weak self] _ in
             self?.gender = "2"
             self?.genderLabel?.text = "女"
             self?.updateHint()
-            self?.showToast("已保存")
+            self?.saveProfile()
         })
         alert.addAction(UIAlertAction(title: "取消", style: .cancel))
         present(alert, animated: true)
@@ -497,7 +499,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             self.birthLabel?.text = dateStr
             self.ageLabel?.text = self.calcAge(from: dateStr)
             self.updateHint()
-            self.showToast("已保存")
+            self.saveProfile()
         })
         present(alert, animated: true)
     }
@@ -518,7 +520,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
                     self?.city = display
                     self?.cityLabel?.text = display
                     self?.updateHint()
-                    self?.showToast("已保存")
+                    self?.saveProfile()
                 })
             }
         }
@@ -528,6 +530,58 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
     @objc private func handleAddressTap() {
         Router.shared.push("/me/address")
+    }
+
+    // MARK: - Save
+
+    /// 将当前编辑状态通过 API 持久化到后端
+    private func saveProfile() {
+        let mobile = UserDefaults.standard.string(forKey: "current_user_mobile")
+
+        // 解析城市为省/市
+        var province: String? = nil
+        var cityName: String? = nil
+        if !city.isEmpty {
+            let parts = city.components(separatedBy: " ")
+            if parts.count == 2 {
+                province = parts[0]
+                cityName = parts[1]
+            } else {
+                cityName = city
+            }
+        }
+
+        // 根据出生日期计算年龄
+        var age: Int? = nil
+        if !birthDate.isEmpty {
+            let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
+            if let birth = fmt.date(from: birthDate) {
+                age = Calendar.current.dateComponents([.year], from: birth, to: Date()).year
+            }
+        }
+
+        let payload = SUsersOnboardingPayload(
+            mobile: mobile,
+            chineseName: name.isEmpty ? nil : name,
+            sex: gender.isEmpty ? nil : gender,
+            birthday: birthDate.isEmpty ? nil : birthDate,
+            nickname: nickname.isEmpty ? nil : nickname,
+            province: province,
+            cities: cityName,
+            age: age,
+            medicalHistory: nil, smokingStatus: nil, exerciseFrequency: nil,
+            imageUrl: nil
+        )
+
+        Task {
+            do {
+                _ = try await UserService.shared.updateCurrentProfile(payload)
+                _ = await UserManager.shared.refreshUserInfo()
+                await MainActor.run { showToast("已保存") }
+            } catch {
+                await MainActor.run { showToast("保存失败: \(error.localizedDescription)") }
+            }
+        }
     }
 
     private func updateHint() {
@@ -557,13 +611,69 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     // MARK: - UIImagePickerControllerDelegate
 
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-        if let img = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage {
-            avatarImageView?.image = img
-            avatarImageView?.backgroundColor = .clear
-            avatarTextLabel?.isHidden = true
-            showToast("头像已更新")
+        guard let img = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage else {
+            picker.dismiss(animated: true)
+            return
         }
+
+        // 立即更新本地显示
+        avatarImageView?.image = img
+        avatarImageView?.backgroundColor = .clear
+        avatarTextLabel?.isHidden = true
         picker.dismiss(animated: true)
+
+        // 异步上传到 OSS 并保存到后端
+        uploadAvatar(img)
+    }
+
+    private func uploadAvatar(_ image: UIImage) {
+        guard let data = image.jpegData(compressionQuality: 0.8) else {
+            showToast("图片处理失败")
+            return
+        }
+
+        // 头像区域显示 loading
+        let loading = UIActivityIndicatorView(style: .medium)
+        loading.color = .fdPrimary
+        loading.startAnimating()
+        avatarImageView?.addSubview(loading)
+        loading.snp.makeConstraints { $0.center.equalToSuperview() }
+        avatarTextLabel?.isHidden = true
+
+        Task {
+            do {
+                // Step 1: 上传图片到 OSS
+                let url = try await OSSManager.shared.upload(
+                    data: data,
+                    folderName: "common",
+                    ext: "jpg",
+                    mimeType: "image/jpeg"
+                )
+
+                // Step 2: 保存 imageUrl 到后端
+                let mobile = UserDefaults.standard.string(forKey: "current_user_mobile")
+                let payload = SUsersOnboardingPayload(
+                    mobile: mobile,
+                    chineseName: nil, sex: nil, birthday: nil,
+                    medicalHistory: nil, smokingStatus: nil, exerciseFrequency: nil,
+                    imageUrl: url
+                )
+                _ = try await UserService.shared.updateCurrentProfile(payload)
+
+                // Step 3: 刷新本地用户缓存
+                _ = await UserManager.shared.refreshUserInfo()
+
+                await MainActor.run {
+                    loading.removeFromSuperview()
+                    showToast("头像已更新")
+                }
+            } catch {
+                await MainActor.run {
+                    loading.removeFromSuperview()
+                    showToast("头像上传失败: \(error.localizedDescription)")
+                }
+            }
+        }
     }
 
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {

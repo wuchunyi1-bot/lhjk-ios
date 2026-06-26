@@ -240,6 +240,46 @@ Hero 区下方 SHALL 在 tableHeaderView 内展示会员卡入口卡片。
 
 ---
 
+### Requirement: Profile Edit & Save
+个人信息页（`ProfileViewController`）SHALL 在用户修改任意字段后调用 `updateCurrentProfile` API 持久化，并刷新本地缓存。
+
+#### Scenario: 编辑字段
+- **WHEN** 用户修改昵称 / 姓名 / 性别 / 出生日期 / 所在城市
+- **THEN** 立即更新本地 UI 显示
+- **AND** 调用 `saveProfile()` → 构建 `SUsersOnboardingPayload`（含 mobile + 修改字段）→ `UserService.shared.updateCurrentProfile(payload)` → 成功后 `UserManager.shared.refreshUserInfo()`
+- **AND** 成功后 toast "已保存" + 发送 `.userDidUpdate` 通知更新首页
+- **AND** 失败后 toast 错误信息
+
+#### Scenario: 城市解析
+- **WHEN** 城市字符串为 "广东省 深圳市"
+- **THEN** 拆分为 `province = "广东省"`, `cities = "深圳市"` 传入 API
+- **WHEN** 城市字符串为 "上海市"（直辖市）
+- **THEN** 直接作为 `cities` 传入
+
+#### Scenario: 年龄自动计算
+- **WHEN** 出生日期已填写
+- **THEN** 根据出生日期自动计算 `age` 字段，随 payload 一起提交
+
+### Requirement: Avatar Upload
+编辑资料页（`ProfileViewController`）SHALL 支持头像选择后上传到阿里云 OSS 并保存至后端。
+
+#### Scenario: 选择头像
+- **WHEN** 用户点击头像行
+- **THEN** 弹出系统相册选择器（`UIImagePickerController`，`allowsEditing = true`）
+
+#### Scenario: 上传流程
+- **WHEN** 用户选择图片后
+- **THEN** 立即更新本地头像显示，关闭相册
+- **AND** 头像区域显示 `UIActivityIndicatorView` loading 指示器
+- **AND** 异步执行：JPEG 压缩（0.8 质量）→ `OSSManager.shared.upload(folderName: "common", ext: "jpg")` → `UserService.shared.updateCurrentProfile(imageUrl:)` → `UserManager.shared.refreshUserInfo()`
+- **AND** 成功后移除 loading → toast "头像已更新"
+- **AND** 失败后移除 loading → toast 错误信息
+
+#### Scenario: 头像同步
+- **WHEN** 头像上传并保存成功
+- **THEN** `UserManager.shared.refreshUserInfo()` 刷新本地缓存并发送 `.userDidUpdate` 通知
+- **AND** 「我的」首页头像通过 Kingfisher 自动加载新 `imageUrl`
+
 ### Requirement: Mock Data
 页面暂用 mock 数据渲染（与 funde-client `me.json` 一致），不做网络请求。
 

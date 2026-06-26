@@ -214,8 +214,12 @@ final class SecuritySettingsViewController: BaseViewController {
     }
 
     @objc private func handlePasswordTap() {
+        guard let phone = UserManager.shared.currentUser?.mobile, !phone.isEmpty else {
+            showToast("未获取到手机号")
+            return
+        }
         let vc = PasswordSetupViewController()
-        vc.hasExistingPassword = (UserManager.shared.currentUser?.pwd?.isEmpty == false)
+        vc.mode = .loggedIn(phone: phone)
         navigationController?.pushViewController(vc, animated: true)
     }
 

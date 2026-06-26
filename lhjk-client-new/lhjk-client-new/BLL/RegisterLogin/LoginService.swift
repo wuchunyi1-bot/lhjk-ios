@@ -26,8 +26,8 @@ enum SMSVerificationType {
 
 /// 登录业务逻辑实现
 ///
-/// V1.0 → V1.1: `sendVerificationCode` 和 `loginByPhone` 已对接真实 API，
-/// 其余方法（密码登录、微信、重置密码等）保持 mock。
+/// V1.0 → V1.1: `sendVerificationCode`、`loginByPhone`、`loginByPassword` 已对接真实 API，
+/// 其余方法（微信、会话状态等）保持 mock。
 final class LoginService: LoginServiceProtocol {
 
     static let shared = LoginService()
@@ -136,14 +136,40 @@ final class LoginService: LoginServiceProtocol {
     // MARK: - Password Login (Mock — 待后续 API 对接)
 
     func loginByPassword(_ phone: String, password: String) async throws -> LoginResult {
-        try await Task.sleep(nanoseconds: 500_000_000)
-        guard phone == "15600000003" && password == "Fdjk1234" else {
-            throw LoginError.invalidPassword
+        print("[LoginService] loginByPassword → mobile=\(phone)")
+
+        let params: [String: Any] = [
+            "client_id": clientId,
+            "client_secret": clientSecret,
+            "grant_type": "password",
+            "username": phone,
+            "password": password
+        ]
+
+        let response: APIResponse<TokenResponse> = try await APIManager.shared
+            .publicPostFormURLEncodedAsync(
+                path: "/auth/oauth2/token",
+                parameters: params,
+                responseType: APIResponse<TokenResponse>.self
+            )
+
+        guard response.isSuccess, let token = response.data else {
+            print("[LoginService] loginByPassword ✗ code=\(response.code) msg=\(response.msg)")
+            throw LoginError(from: response.code, msg: response.msg ?? "")
         }
-        return LoginResult(
-            accessToken: "token_\(UUID().uuidString.prefix(12))",
-            refreshToken: "refresh_\(UUID().uuidString.prefix(12))"
+
+        print("[LoginService] loginByPassword ✓ accessToken=\(token.accessToken.prefix(12))… expiresIn=\(token.expiresIn)s")
+
+        let credential = OAuthCredential(
+            accessToken: token.accessToken,
+            refreshToken: token.refreshToken,
+            expiration: Date().addingTimeInterval(TimeInterval(token.expiresIn))
         )
+        APIManager.shared.setCredential(credential)
+        storedToken = token.accessToken
+        storedRefreshToken = token.refreshToken
+
+        return LoginResult(accessToken: token.accessToken, refreshToken: token.refreshToken)
     }
 
     // MARK: - WeChat (Mock — 待后续 API 对接)

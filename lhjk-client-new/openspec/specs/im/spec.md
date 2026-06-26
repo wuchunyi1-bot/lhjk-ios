@@ -10,216 +10,404 @@
 
 ## Data Model
 
+> 参考 funde-client `prototype/src/mock/conversations.json` 完整数据模型
+
 ### Conversation (会话)
 
 | Field | Type | 说明 |
 |-------|------|------|
-| `id` | String | 会话唯一 ID，格式 `CV0001` |
-| `patientCid` | String | 关联客户 ID |
-| `name` | String | 客户姓名 |
-| `doctorTeam` | String | 医生团队名称 |
-| `tags` | [String] | 标签列表：`bmi`, `glucose`, `pressure`, `sleep`, `gut`, `uric`, `hyc` |
-| `preview` | String | 最后一条消息预览 |
-| `lastMessageAt` | Date | 最后消息时间 |
-| `unreadCount` | Int | 未读消息数 |
-| `priority` | Enum | `high` / `normal` / `low` |
-| `status` | Enum | `active` / `pending` / `closed` |
+| `id` | String | 会话唯一 ID，如 `conv-001`、`conv-ai-xd`、`conv-team` |
+| `role` | Enum | 角色类型：`ai` / `team` / `manager` / `doctor` / `nutrition` / `service` / `case` / `psychology` |
+| `roleLabel` | String | 角色标签文案，如"健管师 · 专属"、"主任医师 · 内科" |
+| `name` | String | 会话对象显示名称 |
+| `title` | String | 会话标题/职称，如"健康管理专家" |
+| `avatar` | String | 头像文字（取姓名首字） |
+| `status` | String | 在线状态文案，如"在线"、"今日可咨询"、"AI 在线" |
+| `serviceScope` | String | 服务范围描述，如"慢病逆转 · 日常随访" |
+| `lastMessage` | String | 最近一条消息的文本摘要 |
+| `lastTime` | String | 最近消息时间（友好格式：今天 HH:mm / 昨天 / 周几） |
+| `unread` | Int | 未读消息数 |
+| `important` | Bool | 是否重要会话，决定左侧高亮竖条 |
 
-### Message (消息)
-
-| Field | Type | 说明 |
-|-------|------|------|
-| `id` | String | 消息唯一 ID，格式 `MSG0001` |
-| `conversationId` | String | 所属会话 ID |
-| `type` | Enum | `text` / `image` / `notification` / `system` / `file` |
-| `sender` | Enum | `patient` / `staff` / `system` |
-| `senderName` | String? | 发送者显示名称（staff 类型时使用） |
-| `senderRole` | String? | 发送者角色（如"健康管理师"） |
-| `avatarText` | String? | 头像文字（staff avatar 首字） |
-| `content` | String | 文本内容 / 通知标题 |
-| `payload` | NotificationPayload? | 健康通知卡片数据（type=notification 时） |
-| `createdAt` | Date | 消息时间 |
-| `recalled` | Bool | 是否已撤回 |
-
-### NotificationPayload (健康通知卡片)
+### Message / ChatMessage (消息)
 
 | Field | Type | 说明 |
 |-------|------|------|
-| `title` | String | 卡片标题（如"血糖上传通知"） |
-| `icon` | String | 指标 icon key：`glucose` / `ecg` / `pressure` / `spo2` / `weight` / `sleep` |
-| `accent` | String | 主题色：`coral` / `pink` / `gold` / `green` / `purple` |
-| `rows` | [NotificationRow] | 键值对行数据 |
-| `footnote` | String? | 底部建议文本 |
+| `id` | String | 消息唯一 ID |
+| `type` | Enum | `text` / `system` / `metric-card` / `report-card` / `diet-card` / `appointment-card` / `case-card` / `plan-card` / `meal-analysis` / `ai-weekly-report` |
+| `role` | Enum | 发送方：`user`（用户） / `staff`（健管团队） |
+| `senderName` | String? | 发送者姓名（staff 侧显示） |
+| `senderRole` | String? | 发送者角色（群消息中区分多人） |
+| `avatar` | String? | 发送者头像文字 |
+| `text` | String | 文本内容（type=text 或 system 时使用） |
+| `time` | String | 消息时间（友好格式：刚刚 / HH:mm / 今天 HH:mm） |
+| `card` | ServiceCard? | 结构化卡片数据（type 为 *-card 时使用） |
 
-### NotificationRow
+### ServiceCard (结构化服务卡片)
 
 | Field | Type | 说明 |
 |-------|------|------|
-| `label` | String | 指标名称 |
-| `value` | String | 指标值 |
-| `statusText` | String? | 状态文字（如"偏高"、"需关注"） |
-| `statusTone` | String? | 状态色调：`danger` / `warning` / `success` |
+| `title` | String | 卡片标题（如"血压趋势提醒"） |
+| `icon` | String | SF Symbol 图标名 |
+| `accent` | String | 主题色 hex（由角色 roleTone 决定） |
+| `summary` | String | 卡片摘要描述 |
+| `rows` | [CardRow] | 键值对数据行 |
+| `footnote` | String? | 底部建议/备注文本 |
+| `action` | String? | 行动按钮文案（存在时渲染按钮） |
+
+### CardRow
+
+| Field | Type | 说明 |
+|-------|------|------|
+| `label` | String | 指标名称（如"收缩压"） |
+| `value` | String | 指标值（如"138 mmHg"） |
+| `status` | String? | 状态文字（如"偏高"、"需关注"），有值时显示 status badge |
+
+### MealAnalysis (餐食分析，type=meal-analysis)
+
+| Field | Type | 说明 |
+|-------|------|------|
+| `label` | String | 餐食标签（如"昨日 晚餐"） |
+| `annotations` | [MealAnnotation] | 食材标注列表 |
+| `comment` | String | 营养师点评文案 |
+| `from` | String | 点评人署名 |
+
+| MealAnnotation | Type | 说明 |
+|-------|------|------|
+| `text` | String | 食材名（如"红烧肉"） |
+| `tag` | Enum | 分类：`danger`（红） / `success`（绿） / `warning`（黄） |
+| `tip` | String | 标注提示（如"饱和脂肪较高"） |
+
+### AIWeeklyReport (AI 周报，type=ai-weekly-report)
+
+| Field | Type | 说明 |
+|-------|------|------|
+| `weekNo` | Int | 周次编号 |
+| `scoreBefore` | Int | 上周评分 |
+| `scoreAfter` | Int | 本周评分 |
+| `highlights` | [AIHighlight] | 本周亮点（icon + text） |
+| `medal` | AIMedal? | 勋章（有则渲染，无则隐藏） |
+| `nextGoal` | String | 下周目标文案 |
+
+| AIHighlight | Type | 说明 |
+|-------|------|------|
+| `icon` | String | SF Symbol 图标名 |
+| `text` | String | 亮点描述 |
+
+| AIMedal | Type | 说明 |
+|-------|------|------|
+| `icon` | String | 勋章图标 |
+| `name` | String | 勋章名称 |
+
+### Notification (系统通知)
+
+| Field | Type | 说明 |
+|-------|------|------|
+| `id` | String | 通知唯一 ID，如 `n1` |
+| `icon` | String | SF Symbol 图标名 |
+| `iconBg` | String | 图标背景色 hex |
+| `iconColor` | String | 图标前景色 hex |
+| `title` | String | 通知标题（加粗展示） |
+| `tag` | String | 分类标签文案（"预约提醒" / "保单" / "设备" / "报告"） |
+| `body` | String | 通知正文摘要（2 行截断） |
+| `time` | String | 发送时间（友好格式） |
+| `unread` | Bool | 是否未读 |
+
+### 角色主色调 (roleTone)
+
+| role | 主色 | 说明 |
+|------|------|------|
+| `ai` | `#FF7A50` (fdPrimary) | AI 健康顾问 |
+| `team` | `#FF7A50` (fdPrimary) | 三好共管服务群 |
+| `manager` | `#FF7A50` (fdPrimary) | 健管师 |
+| `doctor` | `#3D6FB8` | 医生 |
+| `nutrition` | `#1F9A6B` (fdSuccess) | 营养师 |
+| `case` | `#7B5E9F` | 个案管理师 |
+| `psychology` | `#5C8DC9` | 心理咨询师 |
+| `service` | `#B47300` (fdWarning) | 家庭服务台 |
+
+### 通知类型颜色映射
+
+| 类型 | 主色 | 背景色 |
+|------|------|--------|
+| 预约提醒 | `#3D6FB8` | `#EAF3FF` |
+| 保单 | `#B47300` | `#FFF3DC` |
+| 设备/指标 | `#FF7A50` | `#FFE9DF` |
+| 报告 | `#1F9A6B` | `#E6F7EF` |
 
 ---
 
-## Requirements
+## SDK Setup
 
-### Requirement: Conversation List
-系统 SHALL 展示会话列表，支持按标签筛选、未读计数和优先级标识。
+### Requirement: RongCloud SDK Initialization
+App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 
-**实现方案**: `UITableView` + 自定义 `ConversationCell`
+#### Scenario: SDK 初始化
+- **WHEN** `AppDelegate.application(_:didFinishLaunchingWithOptions:)` 调用 `configureThirdPartySDKs()`
+- **THEN** `RongCloudManager.shared.initialize(appKey: "k51hidwqkor2b")` 调用 `RCIMClient.shared().initWithAppKey()`
+- **AND** `RongCloudMessageDelegate.shared.register()` 将自身设为 `RCIMClient.receiveMessageDelegate`
 
-#### Scenario: 列表排序
-- **WHEN** 用户进入消息列表页
-- **THEN** 会话按 `lastMessageAt` 倒序排列，置顶会话始终在前
+### Requirement: IM Account Registration & Connection
+系统 SHALL 在用户登录后注册融云 IM 账号并建立长连接，冷启动时恢复连接，登出时断开。
+连接建立后由融云 SDK 内部负责自动重连，App 侧无需额外重连逻辑。
 
-#### Scenario: 会话行展示
-- **WHEN** ConversationCell 渲染
-- **THEN** 展示：
-  - 左侧圆形头像（44×44pt，显示客户姓名首字，背景色按姓名 hash 分配）
-  - 客户姓名（16pt bold，`fdText`）
-  - 医生团队名（12pt，`fdSubtext`）
-  - 右侧最后消息时间（12pt，`fdMuted`）
-  - 底部消息预览文字（14pt，`fdSubtext`，单行截断）
-  - 标签 pill（圆角 999，按 tag 分配背景色）
-  - 未读红点 badge（红色圆角，仅 unreadCount > 0 时显示）
+#### Scenario: 登录后获取 Token 并连接
+- **WHEN** 用户通过短信或密码登录成功
+- **THEN** 调用 `RongCloudManager.shared.fetchTokenAndConnect()`
+- **AND** 该方法调用 `POST /v1/account/addRongImAccount`（Bearer Token 鉴权）
+- **AND** 解析响应中的 `token` 字段
+- **AND** 将 token 持久化到 `UserDefaults`（key: `rc_im_token`）
+- **AND** 调用 `connect(with: token)` 建立融云长连接
+- **AND** IM 连接成功/失败均不阻塞页面跳转和 App 正常使用
 
-#### Scenario: 优先级标识
-- **WHEN** `priority` 为 `high`
-- **THEN** 左侧显示 3pt 宽品牌色竖条高亮
-- **WHEN** `priority` 为 `normal` / `low`
-- **THEN** 无特殊标识
+#### Scenario: Token 接口重试
+- **WHEN** `POST /v1/account/addRongImAccount` 请求失败
+- **THEN** 等待 2 秒后重试 1 次
+- **AND** 重试仍失败则放弃，打印日志
 
-#### Scenario: 标签筛选
-- **WHEN** 用户点击顶部标签 chip
-- **THEN** 会话列表按选中标签过滤（全部 / BMI / 血糖 / 血压 / 睡眠 / 肠道 / 尿酸 / HYC），chip 切换为选中态样式（品牌色底白字）
+#### Scenario: 冷启动恢复连接
+- **WHEN** App 冷启动且用户已登录（`auth_access_token` 存在）
+- **THEN** `SceneDelegate.willConnectTo` 中调用 `restoreIMConnection()`
+- **AND** 若 `UserDefaults` 中有已存储 token → 调用 `reconnect()` 直接连接
+- **AND** 若 token 不存在（从未获取或已清除）→ 调用 `fetchTokenAndConnect()` 重新获取并连接
+- **AND** 热启动（`sceneWillEnterForeground`）不额外处理，由融云 SDK 内部维持/恢复长连接
 
-#### Scenario: 滑动操作
-- **WHEN** 用户左滑会话行
-- **THEN** 显示"删除"（红色）和"置顶"（橙色）操作
+#### Scenario: 登出断开
+- **WHEN** 用户确认退出登录
+- **THEN** 调用 `RongCloudManager.shared.disconnect()`
+- **AND** `disconnect()` 调用 `RCIMClient.shared().disconnect()` 断开长连接
+- **AND** 清除内存中的 `currentUserId` 和 `connectionStatus`
+- **AND** 清除 `UserDefaults` 中存储的 token（key: `rc_im_token`）
+
+#### Scenario: 连接成功
+- **WHEN** 融云 SDK 回调 `connect` 成功
+- **THEN** `connectionStatus = .connected`，保存 `currentUserId`
+- **AND** 调用 `getRemoteConversationList(success:error:)` 将会话列表从服务端同步到本地数据库（融云批量查询 API 依赖本地数据）
+- **AND** 通过 `connectionStatusPublisher` 发布状态变化
+
+#### Scenario: 连接失败 / Token 错误
+- **WHEN** 融云 SDK 回调 `connect` 错误
+- **THEN** Token 错误（`RC_CONN_TOKEN_INCORRECT` / `RC_CONN_TOKEN_EXPIRE`）→ `connectionStatus = .tokenIncorrect`
+- **AND** 其他错误 → `connectionStatus = .disconnected`
+- **AND** 通过 `connectionStatusPublisher` 发布状态变化
+- **AND** 不做 App 侧重连，由融云 SDK 内部自动重试
+
+### Requirement: Message Reception
+系统 SHALL 接收融云推送的消息并转发至 App 内部。
+
+#### Scenario: 消息接收
+- **WHEN** 融云 SDK 收到新消息
+- **THEN** `RongCloudMessageDelegate.onReceived(_:left:object:)` 将 `RCMessage` 转为 `Message` 模型
+- **AND** 通过 `RongCloudManager.messageReceivedPublisher` 发布
+
+### Requirement: Messages Root Page
+系统 SHALL 提供消息模块根页面 `/messages`，聚合所有健管团队会话和系统通知入口。
+
+**路由**: `/messages`，Tab Bar「消息」Tab
+**数据源**: `GET /v1/session/getGroup`（获取我的群组）+ 融云 SDK `getConversationList()`（获取单聊实时数据），两者合并后展示
+
+#### Scenario: 页面结构
+- **WHEN** 用户进入消息页
+- **THEN** 顶部导航栏展示标题"消息" + 副标题"您的健管团队 7×24 在线"
+- **AND** 下方 FdSegment 分段控件，两个 Tab：「团队对话」（角标 = 所有会话 unread 之和）、「通知中心」（角标 = 未读通知数）
+- **AND** 默认激活「团队对话」Tab
+- **AND** 「团队对话」和「通知中心」是**两个独立的子 ViewController**（`ConversationListViewController` / `NotificationListViewController`），通过分段控件切换，各自管理自己的数据加载和刷新
+
+#### Scenario: 三好共管服务群置顶横幅
+- **WHEN** 「团队对话」Tab 激活
+- **THEN** 会话列表顶部渲染品牌渐变卡片（#FFF7F1 → #FFEDDF，橙色边框）
+- **AND** 展示心形图标 + "三好共管 · 您的专属团队"标签 + 在线人数 badge + 引导文案
+- **AND** 点击跳转 `/conversations/conv-team`
+
+#### Scenario: 会话行渲染
+- **WHEN** 遍历 conversations 数组渲染
+- **THEN** 每行展示：
+  - 左侧 46×46pt `fd-avatar--{role}` 角色色圆形头像（首字）
+  - 头像右上角未读角标（unread > 0 时，红色圆形 badge）
+  - 姓名（15pt bold）+ roleLabel 标签 pill（10pt，灰底灰字）
+  - 消息预览单行截断（12pt `fdSubtext`，max-width 220pt）
+  - 右侧时间戳（10pt `fdMuted`）
+- **AND** `important == true` 时左侧渲染 3pt 品牌色竖条
+
+#### Scenario: 通知中心 Tab 内联预览
+- **WHEN** 切换到「通知中心」Tab
+- **THEN** 平铺展示通知行列表（与 `/notifications` 同一数据源）
+- **AND** 每行：[圆角色图标（iconBg + iconColor）] + [标题 + 未读红点 + 时间] + [body 摘要] + [tag badge]
+- **AND** 点击单条通知暂静默（后续接入精确路由跳转）
 
 #### Scenario: 空状态
-- **WHEN** 无会话数据
-- **THEN** 居中展示"暂无消息"空状态插画和文字
+- **WHEN** 会话列表为空
+- **THEN** 展示插图 + "您的健管团队正在为您分配，将在 24 小时内主动联系您"
+- **WHEN** 通知列表为空
+- **THEN** 展示"暂无通知"
+
+#### Scenario: 会话列表数据源（两步合并）
+- **WHEN** `ConversationListViewController` 加载会话列表
+- **THEN** 前提：融云连接成功后已执行 `getRemoteConversationList` 将服务端会话同步到本地，确保本地数据库包含所有服务端会话
+- **AND** 第一步：调用 `GET /v1/session/getGroup` 获取我的群组列表，返回 `[GroupVO]`
+- **AND** 第二步：用所有 `groupId` 调用融云 `getConversations` 批量查询本地会话详情
+- **AND** 合并逻辑：**以融云返回的 `[RCConversation]` 为基准遍历**（而非 `[GroupVO]`）
+  - 对每个 `RCConversation`，用 `targetId` 查找匹配的 `GroupVO`
+  - 匹配成功 → `Conversation.fromGroupVO(group, rc: rc)` 合并展示
+  - 匹配失败 → 该融云会话**仍展示**，用 `fromRongCloud` fallback 元数据
+- **AND** 按融云 `sentTime` **倒序排列**（最新消息在前），不以后端接口返回顺序为准
+- **AND** 融云批量查询仅限于 `getGroup` 返回的 ID，减少不必要的遍历范围
+- **AND** `GroupVO` + `RCConversation` → `Conversation` 字段映射：
+  - 实时数据优先融云：`unreadMessageCount` → `unread`，`sentTime` → `lastTime`，`latestMessage` → `lastMessage`
+  - 展示元数据优先 `GroupVO`：`principalName ?? groupName` → `name`，`serviceName` → `title` / `roleLabel`
+  - `groupImg` 取首字 → `avatar`，`numbers` → `status`（"N 人在线"）
+  - `labelType == 1` → `important = true`，`serviceId` → `role`
+- **AND** 若 API 请求失败或融云未连接，fallback 到 mock 数据
+
+#### Scenario: 离线状态
+- **WHEN** 网络断开
+- **THEN** 展示本地缓存数据，顶部提示条"当前离线，消息可能不是最新"
+- **AND** 恢复连接后自动刷新
 
 ---
 
-### Requirement: Chat / Message Detail
-系统 SHALL 展示会话的完整消息流，支持文本气泡、健康通知卡片和系统消息。
+### Requirement: Conversation Detail / Chat
+系统 SHALL 展示单个会话的完整 IM 聊天界面，支持多角色、多消息类型和快捷回复。
 
-**实现方案**: `UITableView` + 自定义 `MessageBubbleCell` / `NotificationCardCell` / `SystemMessageCell`
+**路由**: `/conversations/:id`
+**数据源**: `GET /api/im/conversations/:id/messages`（历史消息拉取）+ WebSocket 实时推送
 
-#### Scenario: 文本气泡（患者端）
-- **WHEN** `sender` 为 `patient` 的文本消息
-- **THEN** 右侧对齐、品牌色气泡背景（`fdPrimarySoft`）、文字 `fdText`、圆角 16pt（右下角为直角），气泡外显示时间（11pt `fdMuted`）
+#### Scenario: 导航栏
+- **WHEN** 进入会话详情
+- **THEN** 导航栏展示对方姓名（`name`，16pt bold）+ 角色和在线状态（`roleLabel · status`，11pt `fdSubtext`）
+- **AND** 左侧返回箭头退回消息列表
 
-#### Scenario: 文本气泡（健管师端）
-- **WHEN** `sender` 为 `staff` 的文本消息
-- **THEN** 左侧对齐、白色气泡背景（`fdSurface`）、文字 `fdText`、圆角 16pt（左下角为直角），气泡上方显示发送者头像（36×36pt 圆形）+ 姓名 + 角色
+#### Scenario: 会话上下文横幅
+- **WHEN** 消息区顶部渲染
+- **THEN** 展示服务范围描述（`serviceScope`）+ 在线状态徽章（背景色 = `roleTone` 12% 透明度，文字色 = `roleTone`）
 
-#### Scenario: 健康通知卡片
-- **WHEN** `type` 为 `notification`
-- **THEN** 居中展示结构化卡片：
-  - 白色圆角卡片（16pt 圆角，阴影）
-  - 顶部 icon + 标题（14pt semibold）
-  - 中间多行 key-value 数据（label 12pt `fdSubtext`，value 14pt `fdText`）
-  - 异常值显示 status badge（绿/黄/红底对应色字）
-  - 底部建议文字（12pt `fdSubtext`，浅灰背景）
+#### Scenario: 文本气泡 — staff 侧
+- **WHEN** `role == "staff"` 的文本消息
+- **THEN** 左对齐：头像（34×34pt `fd-avatar--{role}`） + 气泡 + 时间
+- **AND** 气泡上方显示发送者姓名 + 角色 + 时间标签（11pt `fdMuted`）
+- **AND** 白色气泡（`fdSurface`），圆角 15pt（左上直角），阴影
+
+#### Scenario: 文本气泡 — user 侧
+- **WHEN** `role == "user"` 的文本消息
+- **THEN** 右对齐：气泡 + "我"头像（品牌色渐变圆形）+ 时间
+- **AND** 品牌色气泡（`fdPrimary`），白色文字，圆角 15pt（右上直角）
 
 #### Scenario: 系统消息
-- **WHEN** `type` 为 `system`
-- **THEN** 居中灰色文字（12pt `fdMuted`），无气泡
+- **WHEN** `type == "system"`
+- **THEN** 居中灰色胶囊样式（padding 5×12pt，`fdMuted` 文字，灰底 6% 透明度），无头像
 
-#### Scenario: 消息时间分组
-- **WHEN** 相邻两条消息的 `createdAt` 间隔 > 5 分钟
-- **THEN** 在中间插入时间分隔符（居中灰色文字，格式 `MM-dd HH:mm`）
+#### Scenario: 日期分割线
+- **WHEN** 消息区渲染
+- **THEN** 在消息顶部显示"今天"居中分割线（11pt `fdMuted`，灰色胶囊背景）
 
-#### Scenario: 滚动至底
-- **WHEN** 进入聊天页或新消息到达
-- **THEN** 自动滚动至最底部（若已在底部则平滑滚动，否则显示"新消息"提示按钮）
+#### Scenario: 结构化服务卡片
+- **WHEN** `type` 为 `metric-card` / `report-card` / `diet-card` / `appointment-card` / `case-card` / `plan-card`
+- **THEN** 左对齐白色卡片（18pt 圆角，`--card-accent` 边框，阴影）：
+  - 顶部 icon（46×46pt 圆角色方形，`card-accent-soft` 背景）+ 标题（15pt bold）+ 摘要（12pt）
+  - 分隔线 + 数据行（label + value + status badge）
+  - footnote 建议区（灰底 12pt）
+  - action 行动按钮（`card-accent-soft` 背景，`card-accent` 文字，13pt bold）
+- **AND** `card.accent` 不存在时使用 `roleTone` 作为 fallback
 
----
+#### Scenario: 餐食分析卡片（营养师专属）
+- **WHEN** `type == "meal-analysis"`
+- **THEN** 左对齐白色卡片（16pt 圆角，左下直角）：
+  - 顶部"餐食标签 · 营养师分析"头部
+  - 餐食照片占位区（80pt 高，灰色占位）
+  - 食材标注列表：每行 danger（红底）/ success（绿底）/ warning（黄底）圆角色标签 + 提示
+  - 营养师点评文案（13pt，分隔线下方）
+  - 右下角署名
 
-### Requirement: Message Composer / Input Bar
-系统 SHALL 提供底部输入栏，支持文本发送和工具入口。
+#### Scenario: AI 健康周报卡片（小德专属）
+- **WHEN** `type == "ai-weekly-report"`
+- **THEN** 品牌渐变卡片（#fff8f5 → #fff3ee，橙色边框，16pt 圆角）：
+  - 头部：小德圆形头像 + 第 N 周健康周报 + 时间
+  - 评分对比行（上周/本周 26pt 数字 + 绿色增量 badge）
+  - 本周亮点列表（icon + text 行）
+  - 勋章区（有则渲染，无则隐藏，黄色背景）
+  - 下周目标（白色底 + 品牌色左边框）
 
-#### Scenario: 输入栏布局
-- **WHEN** 聊天页渲染
-- **THEN** 底部固定输入栏包含：
-  - 左侧工具按钮（`+` icon，32×32pt）
-  - 中间文本输入框（圆角 18pt，`fdBg2` 背景，placeholder "输入消息..."）
-  - 右侧发送按钮（品牌色文字"发送"，15pt semibold）
+#### Scenario: 快捷回复
+- **WHEN** 输入区上方渲染
+- **THEN** 展示 3 个快捷回复按钮（按 `conv.role` 动态选取）：
+  - AI: "查看本周周报" / "我的健康目标" / "今日健康建议"
+  - 营养师: "今天早餐怎么吃？" / "帮我调整晚餐" / "查看饮食方案"
+  - 医生: "帮我看下指标" / "用药需要调整吗" / "预约复诊"
+  - 个案管理师: "查看个案进度" / "补充资料" / "联系家属"
+  - 心理咨询师: "开始放松练习" / "记录睡眠" / "预约咨询"
+  - 家庭服务台: "查看预约" / "改约时间" / "联系服务台"
+  - 团队群: "同步今日指标" / "请团队看一下" / "查看本周目标"
+  - 默认（健管师）: "上传血压" / "查看监测方案" / "联系健管师"
+- **AND** 横向滚动，点击直接发送对应文本
+- **AND** 圆角色白色按钮 + 灰色边框
+
+#### Scenario: 富媒体工具栏
+- **WHEN** 输入框左侧渲染
+- **THEN** 展示 3 个工具按钮：发送报告（document-2-line）/ 发送指标（chart-line-line）/ 发送图片（pic-line）
+- **AND** 32×32pt 圆角色灰底按钮，品牌色图标
+- **AND** 点击按钮发送占位消息（原型阶段不接真实上传）
+
+#### Scenario: 文本输入与发送
+- **WHEN** 用户输入文本
+- **THEN** 发送按钮有内容时激活（品牌色），空文本时禁用（灰色）
+- **AND** 点击发送或键盘回车 → 本地追加 user 侧气泡 → 滚动至底
+- **AND** 输入框圆角色 999pt，品牌色背景（#fff8f5），placeholder "发消息给{name}"
 
 #### Scenario: 键盘适配
-- **WHEN** 键盘弹出
-- **THEN** 输入栏跟随键盘上移，消息列表 contentInset 同步调整，保持底部消息可见
+- **WHEN** 键盘弹出/收起
+- **THEN** 输入栏跟随键盘上移/恢复，消息区 contentInset 同步调整
+- **AND** 页面使用全屏高度，消息区 flex-grow + overflow scroll
 
-#### Scenario: 发送文本
-- **WHEN** 用户输入文本并点击发送或键盘回车
-- **THEN** 清空输入框，消息以 `sending` 状态追加到列表，mock 返回成功后更新为 `sent`
-
-#### Scenario: 输入中状态
-- **WHEN** 输入框为空
-- **THEN** 发送按钮灰色置灰，不可点击
-- **WHEN** 输入框有内容
-- **THEN** 发送按钮恢复品牌色，可点击
+#### Scenario: 滚动行为
+- **WHEN** 进入聊天页或发送消息
+- **THEN** 自动滚动到消息区最底部
+- **WHEN** 新消息到达且已在底部
+- **THEN** 平滑滚动至底；否则显示"新消息"提示按钮
 
 ---
 
-### Requirement: Composer Tool Bar
-系统 SHALL 支持输入栏工具入口，提供快捷操作入口。
+### Requirement: Notification Center
+系统 SHALL 提供独立通知中心页面，按时间倒序展示所有系统推送通知。
 
-#### Scenario: 工具面板
-- **WHEN** 用户点击 `+` 按钮
-- **THEN** 弹出底部工具选择面板（半屏弹层），展示工具入口网格（13 个入口，3 列布局）：
-  | 入口 | icon SF Symbol | 说明 |
-  |------|---------------|------|
-  | 图片 | `photo` | 从相册选择 |
-  | 拍照 | `camera` | 拍摄照片 |
-  | 健康档案 | `doc.text` | 发送健康档案卡片 |
-  | 随访计划 | `calendar.badge.plus` | 创建随访计划 |
-  | 服务套餐 | `giftcard` | 推荐服务套餐 |
-  | 用药提醒 | `pills` | 发送用药提醒 |
-  | 饮食建议 | `fork.knife` | 发送饮食建议 |
-  | 运动处方 | `figure.walk` | 发送运动建议 |
-  | 预约挂号 | `calendar.badge.clock` | 预约挂号 |
-  | 健康问卷 | `checklist` | 发送问卷 |
-  | 在线问诊 | `stethoscope` | 发起在线问诊 |
-  | 知识库 | `book` | 发送健康知识 |
-  | 转派工单 | `arrow.triangle.swap` | 创建工单转派 |
+**路由**: `/notifications`
+**数据源**: `GET /api/notifications`
 
-> **V1.0 实现**: 工具入口以 UI 占位为主，点击后 toast 提示功能名。后续版本接入真实能力。
+#### Scenario: 通知卡片渲染
+- **WHEN** 进入通知中心
+- **THEN** 导航栏标题"通知中心"，左侧返回箭头
+- **AND** 每张通知以卡片形式渲染：[圆角色图标区（iconBg + iconColor，38×38pt 圆角色方形）] + [标题（14pt bold）+ 正文（12pt，2 行截断）+ tag badge + 时间（10pt）]
+- **AND** 按时间倒序平铺，卡片间有间距
+
+#### Scenario: 通知图标颜色
+- **WHEN** 渲染通知图标区
+- **THEN** 按 `tag` 类型映射颜色：预约提醒 → 蓝色 / 保险 → 黄色 / 设备指标 → 橙色 / 报告 → 绿色
+
+#### Scenario: 已读行为
+- **WHEN** 用户进入通知中心页面
+- **THEN** 触发 `POST /api/notifications/read-all` 标记全部已读
+- **AND** 消息列表「通知中心」Tab 角标归零
+
+#### Scenario: 空状态
+- **WHEN** 通知列表为空
+- **THEN** 展示空状态插图 + "暂无通知"
 
 ---
 
 ### Requirement: Design Tokens
-所有 UI 颜色 SHALL 通过 `UIColor.fd*` Token 引用。
+所有颜色 SHALL 通过 `UIColor.fd*` Token 或 roleTone 映射引用，不硬编码。
 
 #### Scenario: 消息气泡色
 | 角色 | 气泡背景 | 文字 |
 |------|---------|------|
-| Patient（右侧） | `fdPrimarySoft` (#FFF3EE) | `fdText` |
+| User（右侧） | `fdPrimary` (#FF7A50) | white |
 | Staff（左侧） | `fdSurface` (white) | `fdText` |
 
-#### Scenario: 通知卡片 accent 映射
-| accent | 主色 | 浅底色 |
-|--------|------|--------|
-| `coral` | `#FF7A50` (fdPrimary) | `#FFF3EE` |
-| `pink` | `#E5564B` (fdDanger) | `#FCE9E6` |
-| `gold` | `#F5A524` (fdWarning) | `#FFF3DC` |
-| `green` | `#2DB983` (fdSuccess) | `#E6F7EF` |
-| `purple` | `#7B5E9F` | `#F3EFFC` |
-
-#### Scenario: 标签 chip 色
-| tag | 背景色 | 文字色 |
+#### Scenario: 餐食标注色
+| tag | 背景色 | 圆点色 |
 |-----|--------|--------|
-| `bmi` | `#FFF3EE` | `#FF7A50` |
-| `glucose` | `#E6F7EF` | `#2DB983` |
-| `pressure` | `#FFF3DC` | `#F5A524` |
-| `sleep` | `#F3EFFC` | `#7B5E9F` |
-| `gut` | `#EBF1FA` | `#5C8DC9` |
-| `uric` | `#FCE9E6` | `#E5564B` |
-| `hyc` | `#FFE9DF` | `#D6602B` |
+| `danger` | `#FFF0EE` | `#FF4D4F` |
+| `success` | `#F0FAF4` | `#52B96A` |
+| `warning` | `#FFFBE6` | `#B47300` |
 
 ---
 
@@ -227,14 +415,19 @@
 
 | Component | Type | funde ref | 说明 |
 |-----------|------|-----------|------|
-| `ConversationCell` | UITableViewCell | `ConvoItem.vue` | 会话行（头像 + 姓名 + 预览 + 标签 + 未读） |
-| `ConversationListViewController` | UIViewController | `ConvoList.vue` | 会话列表页 + 标签筛选 chips |
-| `MessageBubbleCell` | UITableViewCell | `MessageBubble.vue` | 文本气泡（患者/健管师双样式） |
-| `NotificationCardCell` | UITableViewCell | `MessageBubble.vue` (notification) | 健康通知卡片 |
-| `SystemMessageCell` | UITableViewCell | `MessageList.vue` | 系统消息行 |
-| `ComposerView` | UIView | `Composer.vue` | 底部输入栏（工具按钮 + 输入框 + 发送） |
-| `ComposerToolSheet` | UIViewController | `ComposerToolModal.vue` | 工具选择弹层 |
-| `ChatViewController` | UIViewController | `ChatPanel.vue` + `MessageList.vue` | 聊天详情页 |
+| `MessagesViewController` | UIViewController | `MessagesView.vue` | 消息根页（分段 Tab + 团队横幅 + 会话列表 + 通知内联） |
+| `ConversationCell` | UITableViewCell | ChatRow | 会话行（角色色头像 + 姓名 + 角色标签 + 预览 + 未读角标） |
+| `NotificationCell` | UITableViewCell | noti-row | 通知行（图标区 + 标题 + 摘要 + tag badge + 时间） |
+| `TeamBannerView` | UIView | team-banner | 三好共管置顶横幅卡片 |
+| `ChatViewController` | UIViewController | `ConversationDetailView.vue` | 会话详情页（消息流 + 输入栏 + 快捷回复） |
+| `MessageBubbleCell` | UITableViewCell | chat-bubble | 文本气泡（staff 左 / user 右双样式） |
+| `ServiceCardCell` | UITableViewCell | chat-card | 结构化服务卡片（指标/报告/饮食/预约/个案/计划） |
+| `MealAnalysisCell` | UITableViewCell | meal-bubble | 餐食分析卡片 |
+| `AIWeeklyReportCell` | UITableViewCell | xd-report-card | AI 小德健康周报卡片 |
+| `SystemMessageCell` | UITableViewCell | system-pill | 系统消息胶囊 |
+| `QuickReplyBar` | UIView | quick-replies | 横向滚动快捷回复按钮组 |
+| `ComposerBar` | UIView | chat-composer | 底部输入栏（工具按钮 + 输入框 + 发送） |
+| `NotificationsViewController` | UIViewController | `NotificationsView.vue` | 通知中心独立页 |
 
 ---
 
@@ -242,38 +435,46 @@
 
 | State | 表现 |
 |-------|------|
-| **默认（会话列表）** | 15 条 mock 会话，已读/未读、标签、优先级完整 |
-| **标签筛选** | 切换 chip 过滤会话列表 |
-| **空会话** | "暂无消息"空状态 |
-| **聊天页** | 消息流（文本 + 通知卡片 + 系统消息），键盘适配 |
-| **发送中** | 新消息以 `sending` 状态追加，气泡半透明 |
-| **键盘弹起** | 输入栏上移，消息列表上滚 |
+| **消息列表 — 默认** | 团队横幅 + 8 个角色会话行，角标数字正确 |
+| **消息列表 — 通知 Tab** | 4 条通知行内联预览 |
+| **消息列表 — 空会话** | 新用户引导空状态（健管团队分配中） |
+| **消息列表 — 无通知** | "暂无通知"空状态 |
+| **聊天 — 默认** | 历史消息流（文本 + 卡片 + 系统消息），自动滚至底 |
+| **聊天 — 发送中** | user 消息追加到列表，气泡正常显示 |
+| **聊天 — 快捷回复** | 点击快捷回复 → 自动发送 → 追加消息 → 滚动至底 |
+| **聊天 — 键盘弹起** | 输入栏上移，消息区 contentInset 同步 |
+| **通知中心 — 默认** | 4 张通知卡片，按时间倒序 |
 
 ## Acceptance Checklist
 
-### 会话列表
-- [ ] 会话列表 15 条 mock 数据完整渲染
-- [ ] 每行：头像（首字圆形）、姓名、团队名、预览、时间、标签 pill、未读 badge
-- [ ] 8 个标签 chips 可点击切换筛选
-- [ ] 高优先级会话左侧竖条高亮
-- [ ] 左滑显示删除 / 置顶操作
-- [ ] 空状态展示
+### 消息列表页
+- [ ] Segmented Tab「团队对话」默认激活，角标 = 所有会话 unread 之和
+- [ ] 三好共管服务群置顶横幅始终可见，点击跳转 `/conversations/conv-team`
+- [ ] 8 个会话行渲染：头像（fd-avatar--{role} 色）、姓名、roleLabel、预览单行截断、时间、未读角标
+- [ ] important 会话左侧品牌色竖条
+- [ ] 点击会话行跳转 `/conversations/:id`
+- [ ] 切换到「通知中心」Tab 展示通知行内联预览
+- [ ] 通知行图标颜色按类型正确区分（蓝/黄/橙/绿）
 
 ### 聊天页
-- [ ] 消息流渲染：文本气泡（患者右侧 + 健管师左侧）、通知卡片（居中）、系统消息（居中灰色）
-- [ ] 患者气泡品牌色软底 + 右下角直角
-- [ ] 健管师气泡白底 + 左下角直角 + 头像/姓名/角色
-- [ ] 时间分组分隔线（间隔 > 5 分钟显示）
-- [ ] 健康通知卡片完整渲染（icon + 标题 + KV 行 + status badge + 建议）
-- [ ] 进入页面自动滚到底部
+- [ ] 导航栏：姓名 + roleLabel · status
+- [ ] 上下文横幅：serviceScope + 在线状态徽章（roleTone 色）
+- [ ] staff 文本气泡：左对齐白色气泡 + 头像 + 姓名/角色/时间
+- [ ] user 文本气泡：右对齐品牌色气泡 + "我"头像 + 时间
+- [ ] 系统消息：居中灰色胶囊
+- [ ] 日期分割线："今天"
+- [ ] 服务卡片渲染：icon + 标题 + 摘要 + 数据行 + footnote + action 按钮
+- [ ] 餐食分析卡片：餐食标签 + 照片占位 + 食材标注（红/绿/黄）+ 点评
+- [ ] AI 周报卡片：评分对比 + 亮点 + 勋章（如有）+ 下周目标
+- [ ] 快捷回复横向滚动，按角色动态文案
+- [ ] 空文本时发送按钮禁用，有内容时激活
+- [ ] 键盘弹起输入栏跟随
 
-### 输入栏
-- [ ] 底部固定：工具按钮 + 输入框 + 发送按钮
-- [ ] 空文本时发送按钮置灰
-- [ ] 键盘弹起时输入栏跟随，消息列表同步上滚
-- [ ] `+` 按钮弹出工具选择面板（13 个入口，3 列）
-- [ ] 工具入口点击 toast 提示功能名
+### 通知中心
+- [ ] 通知卡片图标颜色按类型区分
+- [ ] 标题 + 正文（2 行截断）+ 时间渲染正确
+- [ ] 空状态展示
 
 ### 通用
-- [ ] 所有颜色通过 `UIColor.fd*` Token 引用
-- [ ] 导航栏正常显示（Title 为客户姓名）
+- [ ] 所有颜色通过 roleTone / design token 映射
+- [ ] 可点击区域 ≥ 44pt

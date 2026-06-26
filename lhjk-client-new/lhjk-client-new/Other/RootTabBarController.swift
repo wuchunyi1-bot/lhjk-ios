@@ -43,7 +43,7 @@ final class RootTabBarController: UITabBarController {
         }
 
         // 消息
-        let messageVC = MessageListViewController()
+        let messageVC = MessagesViewController()
         let messageNav = BaseNavigationController(rootViewController: messageVC)
         messageNav.tabBarItem = UITabBarItem(
             title: "消息",

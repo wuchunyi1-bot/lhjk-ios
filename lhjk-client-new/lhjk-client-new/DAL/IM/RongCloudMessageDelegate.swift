@@ -1,4 +1,5 @@
 import Foundation
+import RongIMLibCore
 
 // MARK: - 融云消息接收代理 (DAL)
 
@@ -13,33 +14,73 @@ final class RongCloudMessageDelegate: NSObject {
     // MARK: - Properties
 
     /// 消息接收回调闭包（BLL 层注入）
-    var onMessageReceived: ((Message) -> Void)?
-    /// 消息已读回执回调
-    var onMessageReadReceipt: ((String, Date) -> Void)?
+    var onMessageReceived: ((RCMessage) -> Void)?
 
-    // MARK: - Initialization
+    // MARK: - Setup
 
-    private override init() {
-        super.init()
-        // TODO: RCIMClient.shared().receiveMessageDelegate = self
+    /// 注册为融云消息接收代理
+    func register() {
+        RCCoreClient.shared().addReceiveMessageDelegate(self)
+        print("[RongCloud] Message delegate registered")
     }
 }
 
-// MARK: - 融云代理实现（伪代码，实际需继承 NSObject + 协议）
+// MARK: - RCIMClientReceiveMessageDelegate
 
-/*
 extension RongCloudMessageDelegate: RCIMClientReceiveMessageDelegate {
 
     /// 收到消息回调
     func onReceived(_ message: RCMessage, left: Int32, object: Any?) {
-        guard let localMessage = Message.fromRongCloud(rcMessage: message) else { return }
-        RongCloudManager.shared.messageReceivedPublisher.send(localMessage)
-        onMessageReceived?(localMessage)
-    }
-
-    /// 消息已读回执
-    func onMessageReceiptResponse(_ conversationType: RCConversationType, targetId: String, messageUId: String, readerList: [RCReadReceiptInfo]) {
-        onMessageReadReceipt?(targetId, Date())
+        RongCloudManager.shared.messageReceivedPublisher.send(
+            ChatMessage.fromRongCloud(rcMessage: message)
+        )
+        onMessageReceived?(message)
+        print("[RongCloud] ← message received, type=\(message.objectName ?? "?") left=\(left)")
     }
 }
-*/
+
+// MARK: - RCMessage → ChatMessage 转换
+
+extension ChatMessage {
+    /// 将融云 RCMessage 转换为 App 内部的 ChatMessage 模型
+    static func fromRongCloud(rcMessage: RCMessage) -> ChatMessage {
+        let role: MessageRole
+        switch rcMessage.messageDirection {
+        case .MessageDirection_SEND:
+            role = .user
+        case .MessageDirection_RECEIVE:
+            role = .staff
+        @unknown default:
+            role = .staff
+        }
+
+        let content: String
+        let type: MessageType
+
+        if let textContent = rcMessage.content as? RCTextMessage {
+            content = textContent.content ?? ""
+            type = .text
+        } else {
+            content = ""
+            type = .text
+        }
+
+        let sentDate = Date(timeIntervalSince1970: TimeInterval(rcMessage.sentTime / 1000))
+        let timeFmt = DateFormatter()
+        timeFmt.dateFormat = "HH:mm"
+
+        return ChatMessage(
+            id: "\(rcMessage.messageId)",
+            type: type,
+            role: role,
+            senderName: nil,
+            senderRole: nil,
+            avatar: nil,
+            text: content,
+            time: timeFmt.string(from: sentDate),
+            card: nil,
+            meal: nil,
+            report: nil
+        )
+    }
+}

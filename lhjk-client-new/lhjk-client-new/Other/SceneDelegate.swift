@@ -12,28 +12,35 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
         window = UIWindow(windowScene: windowScene)
-        window?.rootViewController = RootTabBarController()
-        window?.makeKeyAndVisible()
 
-        // 已登录但未完成完善信息 → 强制展示 onboarding
-        checkOnboardingRequired()
-
-        // 已登录且已完善信息 → 预加载用户信息
         let hasToken = UserDefaults.standard.string(forKey: "auth_access_token") != nil
-        let onboarded = UserDefaults.standard.bool(forKey: "fd_onboarded")
-        if hasToken && onboarded {
-            Task { await UserManager.shared.fetchUserInfo() }
-        }
-    }
 
-    /// 检查本地登录态：有 token 但未完成完善信息 → 弹出 onboarding
-    private func checkOnboardingRequired() {
-        let hasToken = UserDefaults.standard.string(forKey: "auth_access_token") != nil
-        let onboarded = UserDefaults.standard.bool(forKey: "fd_onboarded")
-        guard hasToken && !onboarded else { return }
-        print("[SceneDelegate] hasToken=true onboarded=false → presenting onboarding")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            Router.shared.present("/onboarding")
+        if hasToken {
+            // 已登录 → 主界面
+            window?.rootViewController = RootTabBarController()
+            window?.makeKeyAndVisible()
+
+            // 冷启动：恢复 IM 连接
+            restoreIMConnection()
+
+            // 异步检查用户信息完整性，决定是否展示 onboarding
+            Task {
+                let needOnboarding = await UserManager.shared.checkNeedOnboarding()
+                await MainActor.run {
+                    if needOnboarding {
+                        print("[SceneDelegate] data incomplete → presenting onboarding")
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            Router.shared.present("/onboarding")
+                        }
+                    } else {
+                        print("[SceneDelegate] data complete → skip onboarding")
+                    }
+                }
+            }
+        } else {
+            // 未登录 → 登录页
+            window?.rootViewController = LoginViewController()
+            window?.makeKeyAndVisible()
         }
     }
 
@@ -50,10 +57,25 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneWillEnterForeground(_ scene: UIScene) {
-        // 应用从后台进入前台
+        // 热启动：融云 SDK 内部自动维持/恢复长连接，无需 App 侧干预
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
         // 应用进入后台，保存状态、释放资源
+    }
+
+    // MARK: - IM Connection
+
+    /// 冷启动恢复 IM 连接：有本地 token 则直接连接，没有则重新获取
+    private func restoreIMConnection() {
+        let rc = RongCloudManager.shared
+
+        if rc.currentToken != nil {
+            print("[SceneDelegate] IM cold start → reconnect with stored token")
+            rc.reconnect()
+        } else {
+            print("[SceneDelegate] IM cold start → token missing, fetching...")
+            rc.fetchTokenAndConnect()
+        }
     }
 }

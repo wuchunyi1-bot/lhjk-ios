@@ -1,127 +1,177 @@
 import UIKit
 import SnapKit
 
-/// 新用户引导 — 4 步健康档案初始建立
-/// 参考 funde-client: OnboardingView.vue
-///
-/// Step 1: 基本信息（姓名/性别/出生年份）
-/// Step 2: 健康史（既往病史多选 chip）
-/// Step 3: 生活习惯（吸烟/运动频率单选 chip）
-/// Step 4: 认识专属团队（卡片淡入动画）
+/// 基础信息引导页 — 注册后填写姓名、出生日期、性别、所在城市
+/// 参考 funde-client: OnboardingView.vue / PRD §5.10 注册后基础信息引导
 final class OnboardingViewController: BaseViewController {
 
-    // MARK: - Constants
+    // MARK: - Province / City Data
 
-    private let totalSteps = 4
+    private let provinces = ["广东省", "上海市", "北京市", "浙江省", "江苏省"]
 
-    // MARK: - Team Mock Data
-
-    private struct TeamMember {
-        let avatar: String; let name: String; let title: String; let specialty: String
-    }
-
-    private let team: [TeamMember] = [
-        TeamMember(avatar: "张", name: "张医生", title: "主治医师", specialty: "心内科·高血压管理"),
-        TeamMember(avatar: "陈", name: "陈营养师", title: "国家注册营养师", specialty: "慢病饮食·体重管理"),
-        TeamMember(avatar: "王", name: "王顾问", title: "高级健管师", specialty: "慢病逆转·日常跟进"),
+    private let cityMap: [String: [String]] = [
+        "广东省": ["深圳市", "广州市", "佛山市"],
+        "上海市": ["上海市"],
+        "北京市": ["北京市"],
+        "浙江省": ["杭州市", "宁波市"],
+        "江苏省": ["南京市", "苏州市"],
     ]
 
     // MARK: - State
 
-    private var currentStep = 1
-
-    // Step 1 data
-    private var nameText = ""
+    private var nameText: String { nameField.textField.text?.trimmingCharacters(in: .whitespaces) ?? "" }
+    private var birthDate: Date?
     private var selectedGender = ""
-    private var birthYearText = ""
+    private var selectedProvince = "广东省"
+    private var selectedCity = "深圳市"
 
-    // MARK: - UI — Top
+    // MARK: - UI — Header
 
-    private lazy var progressFill: UIView = {
+    private let badgeLabel: UILabel = {
+        let l = UILabel()
+        l.text = "1 分钟完成"
+        l.font = .fdCaptionSemibold
+        l.textColor = .fdPrimary
+        l.backgroundColor = .fdPrimarySoft
+        l.textAlignment = .center
+        l.layer.cornerRadius = 15
+        l.clipsToBounds = true
+        return l
+    }()
+
+    private let titleLabel: UILabel = {
+        let l = UILabel()
+        l.text = "完善基础信息"
+        l.font = .fdH2
+        l.textColor = .fdText
+        return l
+    }()
+
+    private let descLabel: UILabel = {
+        let l = UILabel()
+        l.text = "完善资料，开启您的专属健康管理"
+        l.font = .fdCaption
+        l.textColor = .fdSubtext
+        l.numberOfLines = 0
+        return l
+    }()
+
+    // MARK: - UI — Form
+
+    private lazy var nameField: LoginFieldView = {
+        let f = LoginFieldView(title: "姓名", placeholder: "请输入姓名", sfSymbol: "")
+        f.textField.addTarget(self, action: #selector(fieldChanged), for: .editingChanged)
+        return f
+    }()
+
+    // -- Birthday --
+
+    private let birthdayLabel: UILabel = {
+        let l = UILabel()
+        l.text = "出生日期"
+        l.font = .fdCaptionSemibold
+        l.textColor = .fdSubtext
+        return l
+    }()
+
+    private let birthdayShell: UIView = {
         let v = UIView()
-        v.backgroundColor = .fdPrimary
-        v.layer.cornerRadius = 1
+        v.backgroundColor = .fdSurface
+        v.layer.borderWidth = 1
+        v.layer.borderColor = UIColor.fdBorder.cgColor
+        v.layer.cornerRadius = 12
         return v
     }()
 
-    private let progressBar = UIView()
+    private lazy var birthdayField: UITextField = {
+        let tf = UITextField()
+        tf.placeholder = "请选择出生日期"
+        tf.font = .fdBody
+        tf.textColor = .fdText
+        tf.borderStyle = .none
+        tf.tintColor = .clear
 
-    private let stepLabel = UILabel()
-    private let titleLabel = UILabel()
-    private let descLabel = UILabel()
+        let dp = UIDatePicker()
+        dp.datePickerMode = .date
+        dp.maximumDate = Date()
+        dp.preferredDatePickerStyle = .wheels
+        dp.addTarget(self, action: #selector(dateChanged(_:)), for: .valueChanged)
+        tf.inputView = dp
 
-    // MARK: - UI — Body containers
-
-    private let bodyScrollView: UIScrollView = {
-        let sv = UIScrollView()
-        sv.showsVerticalScrollIndicator = false
-        sv.bounces = true
-        return sv
+        // Toolbar with Done button
+        let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 44))
+        toolbar.items = [
+            UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil),
+            UIBarButtonItem(title: "完成", style: .done, target: self, action: #selector(dismissDatePicker)),
+        ]
+        tf.inputAccessoryView = toolbar
+        return tf
     }()
 
-    private let bodyContent = UIView()
-
-    // Step 1
-    private let step1View = UIView()
-
-    private lazy var nameField: LoginFieldView = {
-        let f = LoginFieldView(title: "您的姓名", placeholder: "请输入真实姓名", sfSymbol: "")
-        f.textField.addTarget(self, action: #selector(step1Changed), for: .editingChanged)
-        return f
+    private let ageLabel: UILabel = {
+        let l = UILabel()
+        l.font = .fdCaption
+        l.textColor = .fdPrimary
+        l.isHidden = true
+        return l
     }()
 
-    private let genderChipGroup = UIView()
-    private var genderChips: [OptionChipView] = []
+    // -- Gender --
+
+    private let genderLabel: UILabel = {
+        let l = UILabel()
+        l.text = "性别"
+        l.font = .fdCaptionSemibold
+        l.textColor = .fdSubtext
+        return l
+    }()
+
+    private lazy var maleChip = OptionChipView(label: "男")
+    private lazy var femaleChip = OptionChipView(label: "女")
     private var genderGroup: OptionChipGroup?
 
-    private lazy var birthYearField: LoginFieldView = {
-        let f = LoginFieldView(title: "出生年份", placeholder: "例如：1980", sfSymbol: "")
-        f.textField.keyboardType = .numberPad
-        f.textField.addTarget(self, action: #selector(step1Changed), for: .editingChanged)
-        return f
+    // -- City --
+
+    private let cityLabel: UILabel = {
+        let l = UILabel()
+        l.text = "所在城市"
+        l.font = .fdCaptionSemibold
+        l.textColor = .fdSubtext
+        return l
     }()
 
-    // Step 2
-    private let step2View = UIView()
-    private let historyChipContainer = UIView()
-    private var historyChips: [OptionChipView] = []
-    private var historyGroup: OptionChipGroup?
-
-    // Step 3
-    private let step3View = UIView()
-    private let smokingChipContainer = UIView()
-    private var smokingChips: [OptionChipView] = []
-    private var smokingGroup: OptionChipGroup?
-
-    private let exerciseChipContainer = UIView()
-    private var exerciseChips: [OptionChipView] = []
-    private var exerciseGroup: OptionChipGroup?
-
-    // Step 4
-    private let step4View = UIView()
-    private var teamCardViews: [UIView] = []
-
-    // MARK: - UI — Bottom
-
-    private let footerBar = UIView()
-
-    private lazy var backButton: UIButton = {
+    private lazy var cityButton: UIButton = {
         let b = UIButton(type: .system)
-        b.setTitle("返回", for: .normal)
-        b.titleLabel?.font = .fdBodySemibold
-        b.setTitleColor(.fdSubtext, for: .normal)
+        b.setTitle("请选择省市", for: .normal)
+        b.setTitleColor(.fdMuted, for: .normal)
+        b.titleLabel?.font = .fdBody
         b.backgroundColor = .fdSurface
-        b.layer.cornerRadius = 18
-        b.layer.borderWidth = 1.5
+        b.layer.borderWidth = 1
         b.layer.borderColor = UIColor.fdBorder.cgColor
-        b.addTarget(self, action: #selector(goBack), for: .touchUpInside)
+        b.layer.cornerRadius = 12
+        b.contentHorizontalAlignment = .leading
+        b.titleEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 0)
+        b.addTarget(self, action: #selector(showCityPicker), for: .touchUpInside)
         return b
     }()
 
-    private lazy var nextButton: UIButton = {
+    // MARK: - UI — City Picker (lazy)
+
+    private var cityPickerContainer: UIView?
+    private var cityPickerView: UIPickerView?
+
+    // MARK: - UI — Footer
+
+    private let footerBar: UIView = {
+        let v = UIView()
+        v.backgroundColor = .fdBg
+        return v
+    }()
+
+    private lazy var saveButton: UIButton = {
         let b = UIButton(type: .system)
-        b.setTitle("下一步", for: .normal)
-        b.titleLabel?.font = .fdBodySemibold
+        b.setTitle("保存并继续", for: .normal)
+        b.titleLabel?.font = .fdBodyBold
         b.setTitleColor(.white, for: .normal)
         b.backgroundColor = .fdPrimary
         b.layer.cornerRadius = 18
@@ -129,7 +179,7 @@ final class OnboardingViewController: BaseViewController {
         b.layer.shadowOffset = CGSize(width: 0, height: 6)
         b.layer.shadowRadius = 18
         b.layer.shadowOpacity = 0.32
-        b.addTarget(self, action: #selector(goNext), for: .touchUpInside)
+        b.addTarget(self, action: #selector(saveAndContinue), for: .touchUpInside)
         return b
     }()
 
@@ -137,464 +187,368 @@ final class OnboardingViewController: BaseViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupSteps()
-        updateStepUI(animated: false)
+        updateSaveButtonState()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        // 自动聚焦姓名输入框
+        if nameText.isEmpty {
+            nameField.textField.becomeFirstResponder()
+        }
     }
 
     override func setupUI() {
         view.backgroundColor = .fdBg
 
-        // Progress bar
-        progressBar.backgroundColor = .fdBorder
-        view.addSubview(progressBar)
-        progressBar.addSubview(progressFill)
-        progressBar.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide)
-            make.leading.trailing.equalToSuperview()
-            make.height.equalTo(4)
-        }
-        progressFill.snp.makeConstraints { make in
-            make.leading.top.bottom.equalToSuperview()
-            make.width.equalToSuperview().multipliedBy(0.25)
-        }
-
-        // Header (step label + title + desc) — fixed at top
-        stepLabel.font = .fdCaption
-        stepLabel.textColor = .fdMuted
-        view.addSubview(stepLabel)
-        stepLabel.snp.makeConstraints { make in
-            make.top.equalTo(progressBar.snp.bottom).offset(32)
-            make.leading.trailing.equalToSuperview().inset(24)
-        }
-
-        titleLabel.font = .fdH2
-        titleLabel.textColor = .fdText
-        view.addSubview(titleLabel)
-        titleLabel.snp.makeConstraints { make in
-            make.top.equalTo(stepLabel.snp.bottom).offset(8)
-            make.leading.trailing.equalToSuperview().inset(24)
-        }
-
-        descLabel.font = .fdCaption
-        descLabel.textColor = .fdSubtext
-        view.addSubview(descLabel)
-        descLabel.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(6)
-            make.leading.trailing.equalToSuperview().inset(24)
-        }
-
-        // Footer — fixed at bottom
-        footerBar.backgroundColor = .fdBg
-        view.addSubview(footerBar)
-        footerBar.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview()
+        // ScrollView
+        let scrollView = UIScrollView()
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.keyboardDismissMode = .onDrag
+        view.addSubview(scrollView)
+        scrollView.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
             make.bottom.equalTo(view.safeAreaLayoutGuide)
-            make.height.equalTo(68)
-        }
-        footerBar.addSubview(backButton)
-        footerBar.addSubview(nextButton)
-
-        backButton.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(24)
-            make.centerY.equalToSuperview()
-            make.width.equalTo(88)
-            make.height.equalTo(52)
-        }
-        nextButton.snp.makeConstraints { make in
-            make.leading.equalTo(backButton.snp.trailing).offset(12)
-            make.trailing.equalToSuperview().offset(-24)
-            make.centerY.equalToSuperview()
-            make.height.equalTo(52)
         }
 
-        // Body ScrollView — between header and footer, content scrollable
-        view.addSubview(bodyScrollView)
-        bodyScrollView.addSubview(bodyContent)
-        bodyScrollView.snp.makeConstraints { make in
-            make.top.equalTo(descLabel.snp.bottom).offset(16)
-            make.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(footerBar.snp.top)
-        }
-        bodyContent.snp.makeConstraints { make in
+        let contentView = UIView()
+        scrollView.addSubview(contentView)
+        contentView.snp.makeConstraints { make in
             make.edges.width.equalToSuperview()
         }
 
-        // Step containers in body content
-        [step1View, step2View, step3View, step4View].forEach {
-            bodyContent.addSubview($0)
-            $0.snp.makeConstraints { m in
-                m.top.leading.trailing.equalToSuperview()
-                m.bottom.equalToSuperview().priority(.low)
-            }
-            $0.isHidden = true
+        // ── Header ──
+
+        contentView.addSubview(badgeLabel)
+        badgeLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(40)
+            make.leading.equalToSuperview().offset(24)
+            make.height.equalTo(30)
         }
-    }
 
-    // MARK: - Steps Setup
+        contentView.addSubview(titleLabel)
+        titleLabel.snp.makeConstraints { make in
+            make.top.equalTo(badgeLabel.snp.bottom).offset(18)
+            make.leading.trailing.equalToSuperview().inset(24)
+        }
 
-    private func setupSteps() {
-        setupStep1()
-        setupStep2()
-        setupStep3()
-        setupStep4()
-    }
+        contentView.addSubview(descLabel)
+        descLabel.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(8)
+            make.leading.trailing.equalToSuperview().inset(24)
+        }
 
-    private func setupStep1() {
-        // Gender chips
-        let male = OptionChipView(label: "男")
-        let female = OptionChipView(label: "女")
-        genderChips = [male, female]
-        genderGroup = OptionChipGroup(chips: genderChips, allowsMultipleSelection: false)
+        // ── Form ──
 
-        let genderLabel = UILabel()
-        genderLabel.text = "性别"
-        genderLabel.font = .fdCaptionSemibold
-        genderLabel.textColor = .fdSubtext
+        let formStack = UIStackView()
+        formStack.axis = .vertical
+        formStack.spacing = 18
+        contentView.addSubview(formStack)
+        formStack.snp.makeConstraints { make in
+            make.top.equalTo(descLabel.snp.bottom).offset(26)
+            make.leading.trailing.equalToSuperview().inset(24)
+        }
 
-        let chipRow = UIStackView()
-        chipRow.spacing = 10
-        chipRow.distribution = .fillEqually
-        genderChips.forEach { chipRow.addArrangedSubview($0) }
+        // 姓名
+        formStack.addArrangedSubview(nameField)
 
-        let genderStack = UIStackView(arrangedSubviews: [genderLabel, chipRow])
+        // 出生日期
+        birthdayShell.addSubview(birthdayField)
+        birthdayField.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(14)
+            make.centerY.equalToSuperview()
+        }
+        birthdayShell.snp.makeConstraints { make in
+            make.height.equalTo(52)
+        }
+
+        let birthdayStack = UIStackView(arrangedSubviews: [birthdayLabel, birthdayShell])
+        birthdayStack.axis = .vertical
+        birthdayStack.spacing = 9
+        formStack.addArrangedSubview(birthdayStack)
+
+        // 年龄提示
+        contentView.addSubview(ageLabel)
+        ageLabel.snp.makeConstraints { make in
+            make.top.equalTo(birthdayShell.snp.bottom).offset(7)
+            make.leading.equalToSuperview().offset(24)
+        }
+
+        // 性别
+        genderGroup = OptionChipGroup(chips: [maleChip, femaleChip], allowsMultipleSelection: false)
+        genderGroup?.onSelectionChanged = { [weak self] labels in
+            self?.selectedGender = labels.first ?? ""
+            self?.updateSaveButtonState()
+        }
+
+        let genderRow = UIStackView(arrangedSubviews: [maleChip, femaleChip])
+        genderRow.spacing = 12
+        genderRow.distribution = .fillEqually
+
+        let genderStack = UIStackView(arrangedSubviews: [genderLabel, genderRow])
         genderStack.axis = .vertical
-        genderStack.spacing = 10
+        genderStack.spacing = 9
+        formStack.addArrangedSubview(genderStack)
 
-        let step1Stack = UIStackView(arrangedSubviews: [nameField, genderStack, birthYearField])
-        step1Stack.axis = .vertical
-        step1Stack.spacing = 24
-        step1View.addSubview(step1Stack)
-        step1Stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)) }
-    }
-
-    private func setupStep2() {
-        let label = UILabel()
-        label.text = "既往病史（可多选）"
-        label.font = .fdCaptionSemibold
-        label.textColor = .fdSubtext
-
-        let historyOptions = ["高血压", "糖尿病", "血脂异常", "高尿酸", "冠心病", "甲状腺疾病", "骨质疏松", "无"]
-        historyChips = historyOptions.map { OptionChipView(label: $0) }
-        historyGroup = OptionChipGroup(chips: historyChips, allowsMultipleSelection: true)
-        historyGroup?.onSelectionChanged = { [weak self] _ in self?.updateNextButtonState() }
-
-        let chipGrid = UIStackView()
-        chipGrid.axis = .vertical
-        chipGrid.spacing = 10
-
-        // Build 2-column rows
-        for rowIndex in stride(from: 0, to: historyChips.count, by: 2) {
-            let row = UIStackView()
-            row.spacing = 10
-            row.distribution = .fillEqually
-            row.addArrangedSubview(historyChips[rowIndex])
-            if rowIndex + 1 < historyChips.count {
-                row.addArrangedSubview(historyChips[rowIndex + 1])
-            } else {
-                row.addArrangedSubview(UIView())
-            }
-            chipGrid.addArrangedSubview(row)
+        // 所在城市
+        cityButton.snp.makeConstraints { make in
+            make.height.equalTo(52)
         }
 
-        let stack = UIStackView(arrangedSubviews: [label, chipGrid])
-        stack.axis = .vertical
-        stack.spacing = 10
-        step2View.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)) }
-    }
+        let cityStack = UIStackView(arrangedSubviews: [cityLabel, cityButton])
+        cityStack.axis = .vertical
+        cityStack.spacing = 9
+        formStack.addArrangedSubview(cityStack)
 
-    private func setupStep3() {
-        let smokingLabel = UILabel()
-        smokingLabel.text = "吸烟情况"
-        smokingLabel.font = .fdCaptionSemibold
-        smokingLabel.textColor = .fdSubtext
-
-        smokingChips = ["不吸烟", "偶尔吸", "每天吸"].map { OptionChipView(label: $0) }
-        smokingGroup = OptionChipGroup(chips: smokingChips, allowsMultipleSelection: false)
-        smokingGroup?.onSelectionChanged = { [weak self] _ in self?.updateNextButtonState() }
-
-        let smokingRow = UIStackView()
-        smokingRow.spacing = 10
-        smokingChips.forEach { smokingRow.addArrangedSubview($0) }
-
-        let exerciseLabel = UILabel()
-        exerciseLabel.text = "运动频率（每周）"
-        exerciseLabel.font = .fdCaptionSemibold
-        exerciseLabel.textColor = .fdSubtext
-
-        exerciseChips = ["几乎不运动", "每周1-2次", "每周3-4次", "每周5次以上"].map { OptionChipView(label: $0) }
-        exerciseGroup = OptionChipGroup(chips: exerciseChips, allowsMultipleSelection: false)
-        exerciseGroup?.onSelectionChanged = { [weak self] _ in self?.updateNextButtonState() }
-
-        let exerciseGrid = UIStackView()
-        exerciseGrid.axis = .vertical
-        exerciseGrid.spacing = 10
-        for rowIndex in stride(from: 0, to: exerciseChips.count, by: 2) {
-            let row = UIStackView()
-            row.spacing = 10
-            row.distribution = .fillEqually
-            row.addArrangedSubview(exerciseChips[rowIndex])
-            if rowIndex + 1 < exerciseChips.count {
-                row.addArrangedSubview(exerciseChips[rowIndex + 1])
-            } else {
-                row.addArrangedSubview(UIView())
-            }
-            exerciseGrid.addArrangedSubview(row)
+        formStack.snp.makeConstraints { make in
+            make.bottom.equalToSuperview().offset(-100)
         }
 
-        let stack = UIStackView(arrangedSubviews: [smokingLabel, smokingRow, exerciseLabel, exerciseGrid])
-        stack.axis = .vertical
-        stack.spacing = 24
-        step3View.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)) }
-    }
+        // ── Footer ──
 
-    private func setupStep4() {
-        // Team cards built dynamically on reveal
-        let stack = UIStackView()
-        stack.axis = .vertical
-        stack.spacing = 14
-        step4View.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 4, left: 24, bottom: 0, right: 24)) }
-
-        for member in team {
-            let card = buildTeamCard(member)
-            card.alpha = 0
-            card.transform = CGAffineTransform(translationX: 0, y: 16)
-            stack.addArrangedSubview(card)
-            teamCardViews.append(card)
+        view.addSubview(footerBar)
+        footerBar.addSubview(saveButton)
+        footerBar.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(view.safeAreaLayoutGuide)
+            make.height.equalTo(82)
         }
-    }
-
-    private func buildTeamCard(_ member: TeamMember) -> UIView {
-        let card = UIView()
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 18
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 6
-        card.layer.shadowOpacity = 0.03
-
-        // Avatar
-        let avatar = UIView()
-        avatar.layer.cornerRadius = 26
-        avatar.clipsToBounds = true
-        let gradient = CAGradientLayer()
-        gradient.colors = [UIColor.fdPrimary.cgColor, UIColor(hexString: "#F25E36").cgColor]
-        gradient.startPoint = CGPoint(x: 0, y: 0)
-        gradient.endPoint = CGPoint(x: 1, y: 1)
-        gradient.frame = CGRect(x: 0, y: 0, width: 52, height: 52)
-        avatar.layer.insertSublayer(gradient, at: 0)
-
-        let avatarLabel = UILabel()
-        avatarLabel.text = member.avatar
-        avatarLabel.font = .fdH2
-        avatarLabel.textColor = .white
-        avatarLabel.textAlignment = .center
-        avatar.addSubview(avatarLabel)
-        avatarLabel.snp.makeConstraints { $0.center.equalToSuperview() }
-
-        card.addSubview(avatar)
-        avatar.snp.makeConstraints { make in
-            make.leading.top.equalToSuperview().inset(16)
-            make.size.equalTo(52)
-            // Anchor card bottom to avatar bottom + padding so card has definite height
-            make.bottom.equalToSuperview().offset(-16)
-        }
-
-        // Info
-        let nameLbl = UILabel()
-        nameLbl.text = member.name
-        nameLbl.font = .fdBodyBold
-        nameLbl.textColor = .fdText
-
-        let titleLbl = UILabel()
-        titleLbl.text = member.title
-        titleLbl.font = .fdCaption
-        titleLbl.textColor = .fdPrimary
-
-        let specialtyLbl = UILabel()
-        specialtyLbl.text = member.specialty
-        specialtyLbl.font = .fdCaption
-        specialtyLbl.textColor = .fdSubtext
-
-        let infoStack = UIStackView(arrangedSubviews: [nameLbl, titleLbl, specialtyLbl])
-        infoStack.axis = .vertical
-        infoStack.spacing = 2
-        card.addSubview(infoStack)
-        infoStack.snp.makeConstraints { make in
-            make.leading.equalTo(avatar.snp.trailing).offset(14)
-            make.trailing.equalToSuperview().offset(-16)
-            make.centerY.equalTo(avatar)
-        }
-
-        return card
-    }
-
-    // MARK: - Step UI Update
-
-    private func updateStepUI(animated: Bool) {
-        let progress = CGFloat(currentStep) / CGFloat(totalSteps)
-
-        let changes = {
-            // Progress bar
-            self.progressFill.snp.remakeConstraints { make in
-                make.leading.top.bottom.equalToSuperview()
-                make.width.equalToSuperview().multipliedBy(progress)
-            }
-            self.view.layoutIfNeeded()
-
-            // Step label
-            self.stepLabel.text = "\(self.currentStep) / \(self.totalSteps)"
-
-            // Step content
-            self.step1View.isHidden = self.currentStep != 1
-            self.step2View.isHidden = self.currentStep != 2
-            self.step3View.isHidden = self.currentStep != 3
-            self.step4View.isHidden = self.currentStep != 4
-
-            // Footer
-            self.backButton.isHidden = self.currentStep == 1
-            if self.currentStep == 4 {
-                self.nextButton.setTitle("开始我的健康之旅", for: .normal)
-                self.backButton.isHidden = true
-            } else {
-                self.nextButton.setTitle("下一步", for: .normal)
-            }
-        }
-
-        switch currentStep {
-        case 1:
-            titleLabel.text = "基本信息"
-            descLabel.text = "建立您的健康档案基础"
-        case 2:
-            titleLabel.text = "健康史"
-            descLabel.text = "了解您的既往病史"
-        case 3:
-            titleLabel.text = "生活习惯"
-            descLabel.text = "评估日常健康行为"
-        case 4:
-            titleLabel.text = "认识您的专属团队"
-            descLabel.text = "三位专家即将就位"
-        default: break
-        }
-
-        if animated {
-            UIView.animate(withDuration: 0.4, delay: 0, options: .curveEaseInOut, animations: changes) { _ in
-                if self.currentStep == 4 { self.revealTeam() }
-            }
-        } else {
-            changes()
-        }
-
-        updateNextButtonState()
-    }
-
-    private func updateNextButtonState() {
-        let canGo = canGoNext()
-        nextButton.isEnabled = canGo
-        nextButton.alpha = canGo ? 1.0 : 0.45
-        nextButton.layer.shadowOpacity = canGo ? 0.32 : 0
-    }
-
-    private func canGoNext() -> Bool {
-        switch currentStep {
-        case 1:
-            return !nameField.textField.text!.trimmingCharacters(in: .whitespaces).isEmpty &&
-                   genderGroup?.selectedChips.isEmpty == false
-        case 2:
-            return historyGroup?.selectedChips.isEmpty == false
-        case 3:
-            return smokingGroup?.selectedChips.isEmpty == false &&
-                   exerciseGroup?.selectedChips.isEmpty == false
-        default:
-            return true
-        }
-    }
-
-    // MARK: - Team Reveal Animation
-
-    private func revealTeam() {
-        for (i, card) in teamCardViews.enumerated() {
-            let delay = 0.35 + Double(i) * 0.25
-            UIView.animate(withDuration: 0.45, delay: delay, options: .curveEaseOut) {
-                card.alpha = 1
-                card.transform = .identity
-            }
+        saveButton.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(24)
+            make.centerY.equalToSuperview()
+            make.height.equalTo(54)
         }
     }
 
     // MARK: - Actions
 
-    @objc private func step1Changed() {
-        updateNextButtonState()
+    @objc private func fieldChanged() {
+        updateSaveButtonState()
     }
 
-    @objc private func goBack() {
-        guard currentStep > 1 else { return }
-        currentStep -= 1
-        updateStepUI(animated: true)
+    @objc private func dateChanged(_ picker: UIDatePicker) {
+        birthDate = picker.date
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        birthdayField.text = formatter.string(from: picker.date)
+        updateAgeLabel()
+        updateSaveButtonState()
     }
 
-    @objc private func goNext() {
-        if currentStep < totalSteps {
-            currentStep += 1
-            updateStepUI(animated: true)
-        } else {
-            finish()
+    @objc private func dismissDatePicker() {
+        birthdayField.resignFirstResponder()
+    }
+
+    @objc private func showCityPicker() {
+        view.endEditing(true)
+
+        let container = UIView()
+        container.backgroundColor = .fdSurface
+
+        // Toolbar
+        let toolbar = UIView()
+        toolbar.backgroundColor = .fdBg
+        container.addSubview(toolbar)
+        toolbar.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.height.equalTo(44)
+        }
+
+        let cancelBtn = UIButton(type: .system)
+        cancelBtn.setTitle("取消", for: .normal)
+        cancelBtn.titleLabel?.font = .fdBody
+        cancelBtn.setTitleColor(.fdSubtext, for: .normal)
+        cancelBtn.addAction(UIAction { [weak self] _ in self?.dismissCityPicker() }, for: .touchUpInside)
+        toolbar.addSubview(cancelBtn)
+        cancelBtn.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(16)
+            make.centerY.equalToSuperview()
+        }
+
+        let confirmBtn = UIButton(type: .system)
+        confirmBtn.setTitle("确定", for: .normal)
+        confirmBtn.titleLabel?.font = .fdBodySemibold
+        confirmBtn.setTitleColor(.fdPrimary, for: .normal)
+        confirmBtn.addAction(UIAction { [weak self] _ in self?.confirmCitySelection() }, for: .touchUpInside)
+        toolbar.addSubview(confirmBtn)
+        confirmBtn.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-16)
+            make.centerY.equalToSuperview()
+        }
+
+        // Picker
+        let picker = UIPickerView()
+        picker.delegate = self
+        picker.dataSource = self
+        cityPickerView = picker
+
+        // Set current selection
+        if let pIdx = provinces.firstIndex(of: selectedProvince),
+           let cities = cityMap[selectedProvince],
+           let cIdx = cities.firstIndex(of: selectedCity) {
+            picker.selectRow(pIdx, inComponent: 0, animated: false)
+            picker.selectRow(cIdx, inComponent: 1, animated: false)
+        }
+
+        container.addSubview(picker)
+        picker.snp.makeConstraints { make in
+            make.top.equalTo(toolbar.snp.bottom)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(container.safeAreaLayoutGuide)
+            make.height.equalTo(216)
+        }
+
+        view.addSubview(container)
+        container.snp.makeConstraints { make in
+            make.leading.trailing.bottom.equalToSuperview()
+        }
+        cityPickerContainer = container
+
+        // Animate in
+        container.transform = CGAffineTransform(translationX: 0, y: 300)
+        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
+            container.transform = .identity
         }
     }
 
-    private func finish() {
-        let name = nameField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+    private func dismissCityPicker() {
+        guard let container = cityPickerContainer else { return }
+        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseIn) {
+            container.transform = CGAffineTransform(translationX: 0, y: 300)
+        } completion: { _ in
+            container.removeFromSuperview()
+            self.cityPickerContainer = nil
+            self.cityPickerView = nil
+        }
+    }
+
+    private func confirmCitySelection() {
+        guard let picker = cityPickerView else { return }
+        let pIdx = picker.selectedRow(inComponent: 0)
+        let cIdx = picker.selectedRow(inComponent: 1)
+
+        selectedProvince = provinces.indices.contains(pIdx) ? provinces[pIdx] : provinces[0]
+        let cities = cityMap[selectedProvince] ?? []
+        selectedCity = cities.indices.contains(cIdx) ? cities[cIdx] : (cities.first ?? "")
+
+        let text = selectedProvince == selectedCity ? selectedCity : "\(selectedProvince) \(selectedCity)"
+        cityButton.setTitle(text, for: .normal)
+        cityButton.setTitleColor(.fdText, for: .normal)
+        updateSaveButtonState()
+        dismissCityPicker()
+    }
+
+    @objc private func saveAndContinue() {
+        guard !nameText.isEmpty else { showAlert("请输入姓名"); nameField.textField.becomeFirstResponder(); return }
+        guard let date = birthDate else { showAlert("请选择出生日期"); birthdayField.becomeFirstResponder(); return }
+        guard !selectedGender.isEmpty else { showAlert("请选择性别"); return }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let birthdayStr = formatter.string(from: date)
+
         let mobile = UserDefaults.standard.string(forKey: "current_user_mobile")
 
-        // 构建 Onboarding 提交数据
         let payload = SUsersOnboardingPayload(
             mobile: mobile,
-            chineseName: name,
-            sex: selectedGender == "男" ? "1" : (selectedGender == "女" ? "2" : nil),
-            birthday: birthYearText.isEmpty ? nil : "\(birthYearText)-01-01",
-            medicalHistory: historyGroup?.selectedLabels.joined(separator: ","),
-            smokingStatus: smokingGroup?.selectedLabels.first,
-            exerciseFrequency: exerciseGroup?.selectedLabels.first
+            chineseName: nameText,
+            sex: selectedGender == "男" ? "1" : "2",
+            birthday: birthdayStr,
+            medicalHistory: nil,
+            smokingStatus: nil,
+            exerciseFrequency: nil
         )
 
-        // Loading state
-        nextButton.isEnabled = false
-        nextButton.alpha = 0.6
-        nextButton.setTitle("保存中…", for: .normal)
+        // Loading
+        saveButton.isEnabled = false
+        saveButton.alpha = 0.6
+        saveButton.setTitle("保存中…", for: .normal)
 
         Task {
             do {
-                try await UserService.shared.saveUser(payload)
+                try await UserService.shared.updateCurrentProfile(payload)
                 await MainActor.run {
-                    UserDefaults.standard.set(true, forKey: "fd_onboarded")
-                    UserDefaults.standard.set(38, forKey: "fd_archive_progress")
-                    if !name.isEmpty {
-                        UserDefaults.standard.set(name, forKey: "fd_profile_name")
+                    UserDefaults.standard.set(20, forKey: "fd_archive_progress")
+                    if !nameText.isEmpty {
+                        UserDefaults.standard.set(nameText, forKey: "fd_profile_name")
                     }
+                    // 城市暂存本地（对齐 Vue localStorage）
+                    let cityText = selectedProvince == selectedCity ? selectedCity : "\(selectedProvince) \(selectedCity)"
+                    UserDefaults.standard.set(cityText, forKey: "fd_profile_city")
                     dismiss(animated: true)
                 }
             } catch {
                 await MainActor.run {
-                    nextButton.isEnabled = true
-                    nextButton.alpha = 1.0
-                    nextButton.setTitle("开始我的健康之旅", for: .normal)
-                    showToast("保存失败: \(error.localizedDescription)")
+                    saveButton.isEnabled = true
+                    saveButton.alpha = 1.0
+                    saveButton.setTitle("保存并继续", for: .normal)
+                    showAlert("保存失败: \(error.localizedDescription)")
                 }
             }
         }
     }
 
-    // MARK: - Toast
+    // MARK: - Helpers
 
-    private func showToast(_ message: String) {
-        print("[OnboardingVC] Toast: \(message)")
+    private func calculateAge(from date: Date) -> Int {
+        Calendar.current.dateComponents([.year], from: date, to: Date()).year ?? 0
+    }
+
+    private func updateAgeLabel() {
+        guard let date = birthDate else { ageLabel.isHidden = true; return }
+        let age = calculateAge(from: date)
+        if age > 0 {
+            ageLabel.text = "已自动计算年龄：\(age) 岁"
+            ageLabel.isHidden = false
+        } else {
+            ageLabel.isHidden = true
+        }
+    }
+
+    private func updateSaveButtonState() {
+        let can = !nameText.isEmpty && birthDate != nil && !selectedGender.isEmpty
+        saveButton.isEnabled = can
+        saveButton.alpha = can ? 1.0 : 0.45
+        saveButton.layer.shadowOpacity = can ? 0.32 : 0
+    }
+
+    private func showAlert(_ message: String) {
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
         present(alert, animated: true)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             alert.dismiss(animated: true)
+        }
+    }
+}
+
+// MARK: - UIPickerViewDataSource / Delegate
+
+extension OnboardingViewController: UIPickerViewDataSource, UIPickerViewDelegate {
+
+    func numberOfComponents(in pickerView: UIPickerView) -> Int { 2 }
+
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        if component == 0 { return provinces.count }
+        let pIdx = pickerView.selectedRow(inComponent: 0)
+        let province = provinces.indices.contains(pIdx) ? provinces[pIdx] : provinces[0]
+        return cityMap[province]?.count ?? 0
+    }
+
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        if component == 0 { return provinces.indices.contains(row) ? provinces[row] : nil }
+        let pIdx = pickerView.selectedRow(inComponent: 0)
+        let province = provinces.indices.contains(pIdx) ? provinces[pIdx] : provinces[0]
+        let cities = cityMap[province] ?? []
+        return cities.indices.contains(row) ? cities[row] : nil
+    }
+
+    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        if component == 0 {
+            pickerView.reloadComponent(1)
+            let province = provinces.indices.contains(row) ? provinces[row] : provinces[0]
+            if let cities = cityMap[province], !cities.isEmpty {
+                pickerView.selectRow(0, inComponent: 1, animated: true)
+            }
         }
     }
 }

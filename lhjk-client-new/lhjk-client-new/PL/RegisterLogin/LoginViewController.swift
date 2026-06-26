@@ -684,8 +684,7 @@ final class LoginViewController: BaseViewController {
                     loginService.saveToken(result.accessToken, refreshToken: result.refreshToken)
                     // 存储手机号供 Onboarding / Profile 使用
                     UserDefaults.standard.set(phone, forKey: "current_user_mobile")
-                    // 登录成功后拉取用户信息
-                    Task { await UserManager.shared.fetchUserInfo() }
+                    RongCloudManager.shared.fetchTokenAndConnect()
                     handleLoginSuccess()
                 }
             } catch {
@@ -715,7 +714,7 @@ final class LoginViewController: BaseViewController {
                     setLoggingIn(false)
                     loginService.saveToken(result.accessToken, refreshToken: result.refreshToken)
                     UserDefaults.standard.set(phone, forKey: "current_user_mobile")
-                    Task { await UserManager.shared.fetchUserInfo() }
+                    RongCloudManager.shared.fetchTokenAndConnect()
                     handleLoginSuccess()
                 }
             } catch {
@@ -789,12 +788,19 @@ final class LoginViewController: BaseViewController {
     // MARK: - Post-Login Navigation
 
     private func navigateAfterLogin() {
-        let onboarded = UserDefaults.standard.bool(forKey: "fd_onboarded")
-        // 纯本地判断：未完成完善信息 → 必须进 onboarding，不能跳过
-        print("[LoginVC] navigateAfterLogin onboarded=\(onboarded)")
-        dismiss(animated: true) {
-            if !onboarded {
-                Router.shared.present("/onboarding")
+        print("[LoginVC] navigateAfterLogin → checking data completeness")
+        Task {
+            let needOnboarding = await UserManager.shared.checkNeedOnboarding()
+            await MainActor.run {
+                Router.shared.setRoot("/")
+                if needOnboarding {
+                    print("[LoginVC] data incomplete → presenting onboarding")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        Router.shared.present("/onboarding")
+                    }
+                } else {
+                    print("[LoginVC] data complete → skip onboarding")
+                }
             }
         }
     }

@@ -63,20 +63,49 @@ final class UserManager {
     /// 适用场景：个人信息保存后
     @discardableResult
     func refreshUserInfo() async -> SUsers? {
-        guard let mobile = UserDefaults.standard.string(forKey: "current_user_mobile"), !mobile.isEmpty else {
-            print("[UserManager] refreshUserInfo → no mobile stored, skip")
-            return nil
-        }
-        print("[UserManager] refreshUserInfo → fetching for mobile=\(mobile)")
-        guard let user = try? await UserService.shared.getUserByParam(mobile: mobile) else {
+        print("[UserManager] refreshUserInfo → fetching current user")
+        guard let user = try? await UserService.shared.getCurrentUserBaseInfo() else {
             print("[UserManager] refreshUserInfo → request failed, keeping cached data")
             return currentUser
         }
         currentUser = user
         persist(user)
-        NotificationCenter.default.post(name: .userDidUpdate, object: user)
+        await MainActor.run {
+            NotificationCenter.default.post(name: .userDidUpdate, object: user)
+        }
         print("[UserManager] refreshUserInfo ✓ id=\(user.id ?? "nil")")
         return user
+    }
+
+    /// 检查是否需要展示引导页（onboarding）
+    ///
+    /// 调用 `getCurrentUserBaseInfo` 获取最新用户数据，检查 `chineseName`、`sex`、`birthday`
+    /// 三个字段是否都存在非空值。任意一个为空即返回 `true`（需要展示）。
+    ///
+    /// - Returns: `true` 表示需要展示 onboarding
+    func checkNeedOnboarding() async -> Bool {
+        let user = await refreshUserInfo()
+        if let user = user {
+            hasFetched = true
+            let nameEmpty = (user.chineseName ?? "").isEmpty
+            let sexEmpty = (user.sex ?? "").isEmpty
+            let birthdayEmpty = (user.birthday ?? "").isEmpty
+            let need = nameEmpty || sexEmpty || birthdayEmpty
+            print("[UserManager] checkNeedOnboarding → name=\(!nameEmpty) sex=\(!sexEmpty) birthday=\(!birthdayEmpty) need=\(need)")
+            return need
+        }
+        // 网络请求失败，fallback 到缓存
+        if let cached = currentUser {
+            let nameEmpty = (cached.chineseName ?? "").isEmpty
+            let sexEmpty = (cached.sex ?? "").isEmpty
+            let birthdayEmpty = (cached.birthday ?? "").isEmpty
+            let need = nameEmpty || sexEmpty || birthdayEmpty
+            print("[UserManager] checkNeedOnboarding → using cache, need=\(need)")
+            return need
+        }
+        // 无缓存且请求失败：不阻塞用户
+        print("[UserManager] checkNeedOnboarding → no data, default false")
+        return false
     }
 
     /// 登出时清除内存 + 本地缓存

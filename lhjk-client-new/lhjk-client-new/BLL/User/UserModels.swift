@@ -113,32 +113,47 @@ struct SUsers: Codable {
 
 /// Onboarding 完成后提交的用户数据子集
 ///
-/// 对应 `POST /v1/users/saveUser` 请求体
-/// 只包含 Onboarding 4 步流程中收集的字段
+/// 对应 `POST /mobile/v1/users/updateCurrentProfile` 请求体
+/// 所有字段均为 Optional，按需发送非空值
 struct SUsersOnboardingPayload: Encodable {
-    /// 手机号（登录时获取）
+    /// 手机号（当前登录账号）
     var mobile: String?
     /// 中文姓名（对应 `chineseName`）
     var chineseName: String?
     /// 性别："1"=男, "2"=女
     var sex: String?
-    /// 生日，"yyyy-MM-dd" 格式（由出生年份推导）
+    /// 生日，"yyyy-MM-dd" 格式
     var birthday: String?
+    /// 用户昵称
+    var nickname: String?
+    /// 省份（籍贯）
+    var province: String?
+    /// 城市（籍贯）
+    var cities: String?
+    /// 年龄（自动计算）
+    var age: Int?
     /// 既往病史，逗号分隔
     var medicalHistory: String?
     /// 吸烟情况
     var smokingStatus: String?
     /// 运动频率
     var exerciseFrequency: String?
+    /// 头像 URL
+    var imageUrl: String?
 
     enum CodingKeys: String, CodingKey {
         case mobile
         case chineseName
         case sex
         case birthday
+        case nickname
+        case province
+        case cities
+        case age
         case medicalHistory
         case smokingStatus
         case exerciseFrequency
+        case imageUrl
     }
 }
 

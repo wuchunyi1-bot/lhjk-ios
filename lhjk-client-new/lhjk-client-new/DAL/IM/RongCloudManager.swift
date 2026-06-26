@@ -1,15 +1,15 @@
 import Foundation
 import Combine
+import RongIMLibCore
 
 // MARK: - 融云连接状态
 
-/// 融云连接状态（映射 RCConnectionStatus）
+/// 融云连接状态
 enum RCConnectionStatus: Int {
     case connected = 0
     case connecting = 1
     case disconnected = 2
     case tokenIncorrect = 3
-    case cellularDenied = 4
 
     var description: String {
         switch self {
@@ -17,14 +17,20 @@ enum RCConnectionStatus: Int {
         case .connecting:     return "连接中"
         case .disconnected:   return "未连接"
         case .tokenIncorrect: return "Token 错误"
-        case .cellularDenied: return "蜂窝网络被拒绝"
         }
     }
 }
 
+// MARK: - Token 响应模型
+
+/// `POST /mobile/v1/account/addRongImAccount` 返回的 data 字段
+private struct RongCloudTokenResponse: Decodable {
+    let token: String?
+}
+
 // MARK: - 融云 SDK 管理器 (DAL)
 
-/// 融云 SDK 封装管理器
+/// 融云 SDK 封装管理器（基于 RongIMLibCore 5.x）
 final class RongCloudManager {
 
     // MARK: - Singleton
@@ -36,7 +42,7 @@ final class RongCloudManager {
     /// 连接状态变化
     let connectionStatusPublisher = PassthroughSubject<RCConnectionStatus, Never>()
     /// 收到的新消息
-    let messageReceivedPublisher = PassthroughSubject<Message, Never>()
+    let messageReceivedPublisher = PassthroughSubject<ChatMessage, Never>()
 
     // MARK: - Properties
 
@@ -44,23 +50,71 @@ final class RongCloudManager {
     private(set) var isInitialized: Bool = false
     /// 当前连接状态
     private(set) var connectionStatus: RCConnectionStatus = .disconnected
+    /// 当前登录用户的融云 userId
+    private(set) var currentUserId: String?
+
+    /// 融云核心客户端
+    private var client: RCCoreClient { RCCoreClient.shared() }
+
+    /// 当前存储的融云 token（内存缓存）
+    private(set) var currentToken: String?
+
+    // MARK: - Token Storage Keys
+
+    private static let tokenKey = "rc_im_token"
 
     // MARK: - Initialization
 
-    private init() {}
+    private init() {
+        // 冷启动时从 UserDefaults 恢复 token
+        currentToken = loadToken()
+    }
 
     // MARK: - Public Methods
 
-    /// 初始化融云 SDK
+    /// 初始化融云 SDK（App 启动时调用一次）
     /// - Parameter appKey: 融云应用 Key
     func initialize(appKey: String) {
-        // TODO: RCIMClient.shared().initWithAppKey(appKey)
-        // RCIMClient.initWithAppKey(appKey)
+        guard !isInitialized else {
+            print("[RongCloud] SDK already initialized")
+            return
+        }
+        client.initWithAppKey(appKey, option: nil)
         isInitialized = true
-        print("[RongCloud] SDK initialized with appKey: \(appKey)")
+
+        // 开启 SDK 控制台日志（Debug 级别）
+        #if DEBUG
+        RCFwLog.setRcDebugLogLevel(1)  // 1 = 开启 Debug 日志
+        print("[RongCloud] SDK log level: verbose")
+        #endif
+
+        print("[RongCloud] SDK initialized with appKey: \(appKey.prefix(4))****")
     }
 
-    /// 连接融云服务
+    /// 登录后完整流程：调后端获取 Token → 存本地 → 连接融云
+    /// - 失败时自动重试 1 次（含 2s 延迟）
+    func fetchTokenAndConnect() {
+        guard isInitialized else {
+            print("[RongCloud] Error: SDK not initialized")
+            return
+        }
+
+        Task {
+            await fetchTokenWithRetry()
+        }
+    }
+
+    /// 用已存储的 Token 连接（冷启动恢复用）
+    func reconnect() {
+        guard let token = loadToken() else {
+            print("[RongCloud] reconnect → no stored token, skip")
+            return
+        }
+        print("[RongCloud] reconnect → using stored token")
+        connect(with: token)
+    }
+
+    /// 连接融云服务（连上后融云 SDK 内部自动维持/重连，App 侧无需干预）
     /// - Parameter token: 融云 Token（从服务端获取）
     func connect(with token: String) {
         guard isInitialized else {
@@ -68,69 +122,178 @@ final class RongCloudManager {
             return
         }
 
-        // TODO: RCIMClient.shared().connect(withToken: token) { [weak self] userId in
-        //     self?.connectionStatus = .connected
-        //     self?.connectionStatusPublisher.send(.connected)
-        // } error: { [weak self] errorCode in
-        //     self?.handleConnectionError(errorCode)
-        // } tokenIncorrect: {
-        //     // Token 错误，需要重新获取
-        // }
+        currentToken = token
+        saveToken(token)
 
         connectionStatus = .connecting
         connectionStatusPublisher.send(.connecting)
-        print("[RongCloud] Connecting with token: \(token.prefix(8))...")
+        print("[RongCloud] Connecting...")
+
+        client.connect(withToken: token, dbOpened: nil, success: { [weak self] userId in
+            guard let self = self else { return }
+            self.currentUserId = userId
+            self.connectionStatus = .connected
+            self.connectionStatusPublisher.send(.connected)
+            print("[RongCloud] ✓ Connected, userId=\(userId)")
+            // 连接成功后同步服务端会话到本地，确保 getConversations 能查到最新数据
+            self.syncConversationsFromServer()
+        }, error: { [weak self] errorCode in
+            guard let self = self else { return }
+            self.handleConnectionError(errorCode)
+        })
     }
 
-    /// 断开融云连接
+    /// 断开融云连接（登出时调用）
     func disconnect() {
-        // TODO: RCIMClient.shared().disconnect()
+        client.disconnect()
+        currentUserId = nil
+        currentToken = nil
         connectionStatus = .disconnected
         connectionStatusPublisher.send(.disconnected)
+        clearToken()
+        print("[RongCloud] Disconnected, token cleared")
     }
 
-    /// 获取会话列表
-    func getConversationList() -> [Conversation] {
-        // TODO: RCIMClient.shared().getConversationList([.private, .group, .system])
-        return []
+    /// 获取单聊会话列表（异步）
+    func getConversationList(completion: @escaping ([RCConversation]) -> Void) {
+        client.getConversationList([
+            NSNumber(value: RCConversationType.ConversationType_PRIVATE.rawValue),
+        ]) { conversationList in
+            completion(conversationList ?? [])
+        }
     }
 
-    /// 获取指定会话的消息列表
-    /// - Parameters:
-    ///   - conversationId: 会话 ID
-    ///   - beforeMessageId: 起始消息 ID（向前翻页），nil 表示最新
-    ///   - count: 每页数量
+    /// 批量按 ID 获取会话 (5.8.2+)，只返回存在的会话，不存在的不返回
+    /// - Parameter targetIds: 会话 ID 列表
+    /// - Parameter completion: 异步回调
+    func getConversations(by targetIds: [String], completion: @escaping ([RCConversation]) -> Void) {
+        guard !targetIds.isEmpty else {
+            completion([])
+            return
+        }
+        let identifiers = targetIds.map { id in
+            RCConversationIdentifier(conversationIdentifier: .ConversationType_PRIVATE, targetId: id)
+        }
+        client.getConversations(identifiers, success: { conversations in
+            completion(conversations ?? [])
+        }, error: { _ in
+            completion([])
+        })
+    }
+
+    /// 获取指定会话的历史消息（异步）
     func getMessages(
         conversationId: String,
-        beforeMessageId: String? = nil,
-        count: Int = 20
-    ) -> [Message] {
-        // TODO: RCIMClient.shared().getHistoryMessages(.private, targetId: conversationId, oldestMessageId: beforeMessageId, count: count)
-        return []
+        oldestMessageId: Int = -1,
+        count: Int = 20,
+        completion: @escaping ([RCMessage]) -> Void
+    ) {
+        client.getHistoryMessages(
+            .ConversationType_PRIVATE,
+            targetId: conversationId,
+            oldestMessageId: oldestMessageId,
+            count: Int32(count)
+        ) { messages in
+            completion(messages ?? [])
+        }
+    }
+
+    /// 获取总未读消息数（异步）
+    func getTotalUnreadCount(completion: @escaping (Int) -> Void) {
+        client.getTotalUnreadCount { count in
+            completion(Int(count))
+        }
     }
 
     /// 清除会话未读数
     func clearUnreadCount(for conversationId: String) {
-        // TODO: RCIMClient.shared().clearMessagesUnreadStatus(.private, targetId: conversationId)
-    }
-
-    /// 删除会话
-    func deleteConversation(_ conversationId: String) {
-        // TODO: RCIMClient.shared().remove(.private, targetId: conversationId)
+        client.clearMessagesUnreadStatus(.ConversationType_PRIVATE, targetId: conversationId)
     }
 
     // MARK: - Private Methods
 
-    private func handleConnectionError(_ errorCode: Int) {
-        // 融云错误码映射
+    /// 连接成功后拉取远端会话列表同步到本地
+    /// 融云批量查询 API (`getConversations`) 只查本地数据，必须先同步远端
+    private func syncConversationsFromServer() {
+        client.getRemoteConversationList(success: {
+            print("[RongCloud] Remote conversations synced to local")
+        }, error: { errorCode in
+            print("[RongCloud] Sync remote conversations failed, code=\(errorCode.rawValue)")
+        })
+    }
+
+    /// 调后端获取 Token，失败重试 1 次
+    private func fetchTokenWithRetry() async {
+        print("[RongCloud] fetchToken → calling POST /mobile/v1/account/addRongImAccount")
+
+        let token = await fetchTokenOnce()
+        if let token = token {
+            connect(with: token)
+            return
+        }
+
+        // 重试
+        print("[RongCloud] fetchToken → retrying in 2s...")
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+
+        let retryToken = await fetchTokenOnce()
+        if let retryToken = retryToken {
+            connect(with: retryToken)
+        } else {
+            print("[RongCloud] fetchToken → failed after retry, giving up")
+        }
+    }
+
+    /// 单次请求 Token
+    private func fetchTokenOnce() async -> String? {
+        do {
+            let response: APIResponse<RongCloudTokenResponse> = try await APIManager.shared
+                .postAsync(
+                    path: "/mobile/v1/account/addRongImAccount",
+                    parameters: nil,
+                    responseType: APIResponse<RongCloudTokenResponse>.self
+                )
+
+            guard response.isSuccess, let token = response.data?.token, !token.isEmpty else {
+                print("[RongCloud] fetchTokenOnce ✗ code=\(response.code) msg=\(response.msg ?? "") data=\(response.data?.token ?? "nil")")
+                return nil
+            }
+
+            print("[RongCloud] fetchTokenOnce ✓ token=\(token.prefix(8))…")
+            return token
+        } catch {
+            print("[RongCloud] fetchTokenOnce ✗ error: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    private func handleConnectionError(_ errorCode: RCErrorCode) {
         switch errorCode {
-        case 31004:
+        case .RC_CONN_TOKEN_INCORRECT, .RC_CONN_TOKEN_EXPIRE:
             connectionStatus = .tokenIncorrect
-        case 31010:
-            connectionStatus = .cellularDenied
+            print("[RongCloud] ✗ Connection error, token incorrect/expired")
         default:
             connectionStatus = .disconnected
+            print("[RongCloud] ✗ Connection error, code=\(errorCode.rawValue) (SDK will auto-retry)")
         }
         connectionStatusPublisher.send(connectionStatus)
+    }
+
+    // MARK: - Token Persistence
+
+    private func saveToken(_ token: String) {
+        UserDefaults.standard.set(token, forKey: Self.tokenKey)
+    }
+
+    private func loadToken() -> String? {
+        let token = UserDefaults.standard.string(forKey: Self.tokenKey)
+        if let token = token, !token.isEmpty {
+            return token
+        }
+        return nil
+    }
+
+    private func clearToken() {
+        UserDefaults.standard.removeObject(forKey: Self.tokenKey)
     }
 }

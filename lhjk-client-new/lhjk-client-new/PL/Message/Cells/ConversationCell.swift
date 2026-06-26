@@ -1,115 +1,148 @@
 import UIKit
 import SnapKit
 
-/// 会话列表 Cell — 参考 funde-im ConvoItem.vue
+/// 会话行 Cell — 参考 funde-client MessagesView.vue chat-row
 final class ConversationCell: UITableViewCell {
 
     static let reuseIdentifier = "ConversationCell"
 
-    private let avatarView: UILabel = {
+    // MARK: - UI
+
+    private let accentBar: UIView = {
+        let v = UIView()
+        v.backgroundColor = .fdPrimary
+        v.layer.cornerRadius = 1.5
+        v.isHidden = true
+        return v
+    }()
+
+    private let avatarLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdH3Regular
+        l.font = .fdFont(ofSize: 17, weight: .semibold)
         l.textColor = .white
         l.textAlignment = .center
-        l.layer.cornerRadius = 22
+        l.layer.cornerRadius = 10
         l.clipsToBounds = true
         return l
     }()
 
-    private let nameLabel: UILabel = {
-        let l = UILabel(); l.font = .fdBodyBold; l.textColor = .fdText
-        return l
-    }()
-
-    private let teamLabel: UILabel = {
-        let l = UILabel(); l.font = .fdCaption; l.textColor = .fdSubtext
-        return l
-    }()
-
-    private let timeLabel: UILabel = {
-        let l = UILabel(); l.font = .fdCaption; l.textColor = .fdMuted; l.textAlignment = .right
-        return l
-    }()
-
-    private let previewLabel: UILabel = {
-        let l = UILabel(); l.font = .fdBody; l.textColor = .fdSubtext; l.numberOfLines = 1
-        return l
-    }()
-
-    private let badgeView: UILabel = {
+    private let badgeLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdMicroBold; l.textColor = .white
-        l.backgroundColor = .fdDanger; l.textAlignment = .center
-        l.layer.cornerRadius = 10; l.clipsToBounds = true
+        l.font = .fdFont(ofSize: 10, weight: .bold)
+        l.textColor = .white
+        l.backgroundColor = .fdDanger
+        l.textAlignment = .center
+        l.layer.cornerRadius = 9
+        l.clipsToBounds = true
         l.isHidden = true
         return l
     }()
 
-    private let priorityBar: UIView = {
-        let v = UIView(); v.layer.cornerRadius = 1.5; v.isHidden = true
-        return v
+    private let nameLabel: UILabel = {
+        let l = UILabel()
+        l.font = .fdFont(ofSize: 15, weight: .bold)
+        l.textColor = .fdText
+        return l
     }()
 
-    private let tagStack: UIStackView = {
-        let s = UIStackView(); s.axis = .horizontal; s.spacing = 4; s.alignment = .center
-        return s
+    private let roleTag: UILabel = {
+        let l = UILabel()
+        l.font = .fdFont(ofSize: 10)
+        l.textColor = .fdSubtext
+        l.backgroundColor = .fdBg2
+        l.layer.cornerRadius = 4
+        l.clipsToBounds = true
+        l.textAlignment = .center
+        return l
     }()
+
+    private let previewLabel: UILabel = {
+        let l = UILabel()
+        l.font = .fdFont(ofSize: 12)
+        l.textColor = .fdSubtext
+        l.numberOfLines = 1
+        return l
+    }()
+
+    private let timeLabel: UILabel = {
+        let l = UILabel()
+        l.font = .fdFont(ofSize: 10)
+        l.textColor = .fdMuted
+        l.textAlignment = .right
+        return l
+    }()
+
+    // MARK: - Init
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
-        backgroundColor = .clear
-        [priorityBar, avatarView, nameLabel, teamLabel, timeLabel, previewLabel, badgeView, tagStack].forEach(contentView.addSubview)
+        backgroundColor = .fdSurface
 
-        priorityBar.snp.makeConstraints { $0.leading.equalToSuperview(); $0.top.bottom.equalToSuperview().inset(12); $0.width.equalTo(3) }
-        avatarView.snp.makeConstraints { $0.leading.equalTo(priorityBar.snp.trailing).offset(16); $0.centerY.equalToSuperview(); $0.size.equalTo(44) }
-        nameLabel.snp.makeConstraints { $0.top.equalTo(avatarView); $0.leading.equalTo(avatarView.snp.trailing).offset(12) }
-        teamLabel.snp.makeConstraints { $0.centerY.equalTo(nameLabel); $0.leading.equalTo(nameLabel.snp.trailing).offset(6) }
-        timeLabel.snp.makeConstraints { $0.top.equalTo(avatarView); $0.trailing.equalToSuperview().offset(-16) }
-        previewLabel.snp.makeConstraints { $0.top.equalTo(nameLabel.snp.bottom).offset(4); $0.leading.equalTo(nameLabel); $0.trailing.lessThanOrEqualTo(badgeView.snp.leading).offset(-8) }
-        badgeView.snp.makeConstraints { $0.trailing.equalToSuperview().offset(-16); $0.bottom.equalTo(previewLabel); $0.size.equalTo(20) }
-        tagStack.snp.makeConstraints { $0.top.equalTo(previewLabel.snp.bottom).offset(6); $0.leading.equalTo(nameLabel); $0.bottom.lessThanOrEqualToSuperview().offset(-12) }
-    }
+        [accentBar, avatarLabel, badgeLabel, nameLabel, roleTag, previewLabel, timeLabel].forEach(contentView.addSubview)
 
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+        accentBar.snp.makeConstraints { make in
+            make.leading.top.bottom.equalToSuperview().inset(UIEdgeInsets(top: 14, left: 0, bottom: 14, right: 0))
+            make.width.equalTo(3)
+        }
 
-    func configure(_ c: Conversation) {
-        avatarView.text = c.avatarChar
-        avatarView.backgroundColor = avatarColor(for: c.name)
-        nameLabel.text = c.name
-        teamLabel.text = c.doctorTeam
-        timeLabel.text = timeFormat(c.lastMessageAt)
-        previewLabel.text = c.preview
-        badgeView.isHidden = c.unreadCount == 0
-        badgeView.text = c.unreadCount > 99 ? "99+" : "\(c.unreadCount)"
-        priorityBar.isHidden = c.priority != .high
-        priorityBar.backgroundColor = c.priority == .high ? .fdPrimary : .clear
+        avatarLabel.snp.makeConstraints { make in
+            make.leading.equalTo(accentBar.snp.trailing).offset(16)
+            make.centerY.equalToSuperview()
+            make.size.equalTo(46)
+        }
 
-        tagStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for tag in c.tags {
-            tagStack.addArrangedSubview(makeTagPill(tag))
+        badgeLabel.snp.makeConstraints { make in
+            make.top.equalTo(avatarLabel).offset(-2)
+            make.trailing.equalTo(avatarLabel).offset(2)
+            make.height.equalTo(18)
+            make.width.greaterThanOrEqualTo(18)
+        }
+
+        nameLabel.snp.makeConstraints { make in
+            make.top.equalTo(avatarLabel)
+            make.leading.equalTo(avatarLabel.snp.trailing).offset(12)
+        }
+
+        roleTag.snp.makeConstraints { make in
+            make.centerY.equalTo(nameLabel)
+            make.leading.equalTo(nameLabel.snp.trailing).offset(6)
+            make.height.equalTo(18)
+        }
+
+        timeLabel.snp.makeConstraints { make in
+            make.top.equalTo(nameLabel)
+            make.trailing.equalToSuperview().offset(-16)
+            make.leading.greaterThanOrEqualTo(roleTag.snp.trailing).offset(8)
+        }
+
+        previewLabel.snp.makeConstraints { make in
+            make.top.equalTo(nameLabel.snp.bottom).offset(3)
+            make.leading.equalTo(nameLabel)
+            make.trailing.lessThanOrEqualTo(timeLabel)
         }
     }
 
-    private func makeTagPill(_ tag: ConversationTag) -> UIView {
-        let v = UIView()
-        v.backgroundColor = UIColor(hexString: tag.bgColor); v.layer.cornerRadius = 999
-        let l = UILabel(); l.text = tag.label; l.font = .fdMicroSemibold; l.textColor = UIColor(hexString: tag.textColor)
-        v.addSubview(l)
-        l.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }
-        return v
-    }
+    required init?(coder: NSCoder) { fatalError() }
 
-    private func timeFormat(_ date: Date) -> String {
-        let fmt = DateFormatter()
-        if Calendar.current.isDateInToday(date) { fmt.dateFormat = "HH:mm" }
-        else if Calendar.current.isDate(date, equalTo: .init(), toGranularity: .weekOfYear) { fmt.dateFormat = "EEE" }
-        else { fmt.dateFormat = "MM/dd" }
-        return fmt.string(from: date)
-    }
+    // MARK: - Configure
 
-    private func avatarColor(for name: String) -> UIColor {
-        let colors: [UIColor] = [UIColor(hexString: "#FF7A50"), UIColor(hexString: "#5C8DC9"), UIColor(hexString: "#2DB983"), UIColor(hexString: "#F5A524"), UIColor(hexString: "#7B5E9F"), UIColor(hexString: "#E5564B"), UIColor(hexString: "#3D6FB8")]
-        return colors[abs(name.hashValue) % colors.count]
+    func configure(_ conv: Conversation) {
+        avatarLabel.text = conv.avatar
+        avatarLabel.backgroundColor = UIColor(hexString: conv.role.toneHex)
+
+        nameLabel.text = conv.name
+        roleTag.text = " \(conv.roleLabel) "
+        previewLabel.text = conv.lastMessage
+        timeLabel.text = conv.lastTime
+
+        accentBar.isHidden = !conv.important
+
+        if let badge = conv.unreadBadge {
+            badgeLabel.isHidden = false
+            badgeLabel.text = badge
+        } else {
+            badgeLabel.isHidden = true
+        }
     }
 }

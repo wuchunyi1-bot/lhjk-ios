@@ -2,7 +2,7 @@ import Foundation
 
 /// 用户信息服务
 ///
-/// 封装 `POST /mobile/v1/users/saveUser` 和 `GET /mobile/v1/users/getUserByParam`
+/// 封装 `POST /mobile/v1/users/updateCurrentProfile` 和 `GET /v1/users/getCurrentUserBaseInfo`
 final class UserService: UserServiceProtocol {
 
     // MARK: - Singleton
@@ -13,8 +13,8 @@ final class UserService: UserServiceProtocol {
 
     // MARK: - UserServiceProtocol
 
-    func saveUser(_ payload: SUsersOnboardingPayload) async throws {
-        print("[UserService] saveUser → mobile=\(payload.mobile ?? "nil") name=\(payload.chineseName ?? "nil")")
+    func updateCurrentProfile(_ payload: SUsersOnboardingPayload) async throws -> SUsers? {
+        print("[UserService] updateCurrentProfile → mobile=\(payload.mobile ?? "nil") name=\(payload.chineseName ?? "nil")")
 
         // 构建请求参数（只传非空字段）
         var params: [String: Any] = [:]
@@ -22,51 +22,46 @@ final class UserService: UserServiceProtocol {
         if let name = payload.chineseName { params["chineseName"] = name }
         if let sex = payload.sex { params["sex"] = sex }
         if let birthday = payload.birthday { params["birthday"] = birthday }
+        if let imageUrl = payload.imageUrl { params["imageUrl"] = imageUrl }
+        if let nickname = payload.nickname { params["nickname"] = nickname }
+        if let province = payload.province { params["province"] = province }
+        if let cities = payload.cities { params["cities"] = cities }
+        if let age = payload.age { params["age"] = age }
 
-        // 扩展字段
-        if let history = payload.medicalHistory { params["medicalHistory"] = history }
-        if let smoking = payload.smokingStatus { params["smokingStatus"] = smoking }
-        if let exercise = payload.exerciseFrequency { params["exerciseFrequency"] = exercise }
+        print("[UserService] updateCurrentProfile → params: \(params)")
 
-        print("[UserService] saveUser → params: \(params)")
-
-        let response: APIResponse<EmptyResponse> = try await APIManager.shared
-            .postAsync(path: "/mobile/v1/users/saveUser", parameters: params, responseType: APIResponse<EmptyResponse>.self)
+        let response: APIResponse<SUsers> = try await APIManager.shared
+            .postAsync(path: "/mobile/v1/users/updateCurrentProfile", parameters: params, responseType: APIResponse<SUsers>.self)
 
         guard response.isSuccess else {
-            print("[UserService] saveUser ✗ code=\(response.code) msg=\(response.msg)")
+            print("[UserService] updateCurrentProfile ✗ code=\(response.code) msg=\(response.msg)")
             throw UserServiceError.saveFailed(response.msg ?? "")
         }
 
-        print("[UserService] saveUser ✓")
+        print("[UserService] updateCurrentProfile ✓ id=\(response.data?.id ?? "-1")")
+        return response.data
     }
 
-    func getUserByParam(mobile: String) async throws -> SUsers? {
-        print("[UserService] getUserByParam → mobile=\(mobile)")
-
-        let params: [String: Any] = ["mobile": mobile]
+    func getCurrentUserBaseInfo() async throws -> SUsers? {
+        print("[UserService] getCurrentUserBaseInfo")
 
         let response: APIResponse<SUsers> = try await APIManager.shared
-            .getAsync(path: "/mobile/v1/users/getUserByParam", parameters: params, responseType: APIResponse<SUsers>.self)
+            .getAsync(path: "/mobile/v1/users/getCurrentUserBaseInfo", parameters: nil, responseType: APIResponse<SUsers>.self)
 
         guard response.isSuccess else {
-            if response.code == "404" || (response.msg ?? "").contains("不存在") {
-                print("[UserService] getUserByParam → user not found (code=\(response.code))")
-                return nil
-            }
-            print("[UserService] getUserByParam ✗ code=\(response.code) msg=\(response.msg)")
+            print("[UserService] getCurrentUserBaseInfo ✗ code=\(response.code) msg=\(response.msg ?? "")")
             throw UserServiceError.queryFailed(response.msg ?? "")
         }
 
         guard let user = response.data else {
-            print("[UserService] getUserByParam → data is null, returning nil")
+            print("[UserService] getCurrentUserBaseInfo → data is null, returning nil")
             return nil
         }
         if user.id == nil && user.mobile == nil && user.account == nil {
-            print("[UserService] getUserByParam → empty data, returning nil")
+            print("[UserService] getCurrentUserBaseInfo → empty data, returning nil")
             return nil
         }
-        print("[UserService] getUserByParam ✓ id=\(user.id ?? "nil") name=\(user.chineseName ?? "nil")")
+        print("[UserService] getCurrentUserBaseInfo ✓ id=\(user.id ?? "nil") name=\(user.chineseName ?? "nil")")
         return user
     }
 

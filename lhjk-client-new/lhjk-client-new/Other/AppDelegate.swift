@@ -77,7 +77,10 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     private func configureThirdPartySDKs() {
-        // TODO: 融云 SDK 初始化
+        // 融云 IM SDK
+        RongCloudManager.shared.initialize(appKey: "k51hidwqkor2b")
+        RongCloudMessageDelegate.shared.register()
+
         // TODO: 微信 SDK 注册
         // TODO: 支付宝 SDK 注册
     }

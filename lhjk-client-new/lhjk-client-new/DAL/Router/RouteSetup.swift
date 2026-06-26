@@ -12,6 +12,9 @@ enum RouteSetup {
         guard !isRegistered else { return }
         isRegistered = true
 
+        // 根视图（主 TabBar）
+        Router.shared.register(path: "/") { _ in RootTabBarController() }
+
         RegisterLoginRoutes.register()
         HomeRoutes.register()
         MyRoutes.register()

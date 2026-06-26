@@ -17,7 +17,7 @@ target 'lhjk-client-new' do
   pod 'Kingfisher', '~> 7.0'
 
   # ── IM ──
-  pod 'RongCloudIM', '~> 5.0'
+  pod 'RongCloudIM/IMLib', '~> 5.40.0'
 
   # ── Database ──
   pod 'FMDB', '~> 2.7'

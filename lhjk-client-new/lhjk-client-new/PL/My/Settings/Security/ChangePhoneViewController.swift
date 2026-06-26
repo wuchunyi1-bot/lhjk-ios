@@ -32,10 +32,6 @@ final class ChangePhoneViewController: BaseViewController {
     private var consentErrorBorder: UIView!
     private var submitBtn: UIButton!
 
-    // MARK: - Demo
-
-    private let demoCode = "111111"
-
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
@@ -175,17 +171,6 @@ final class ChangePhoneViewController: BaseViewController {
             make.width.equalTo(110)
         }
 
-        // Demo hint
-        let demoHint = UILabel()
-        demoHint.text = "演示验证码：\(demoCode)"
-        demoHint.font = .fdCaption
-        demoHint.textColor = .fdMuted
-        contentView.addSubview(demoHint)
-        demoHint.snp.makeConstraints { make in
-            make.top.equalTo(codeRow.snp.bottom).offset(8)
-            make.leading.trailing.equalToSuperview().inset(24)
-        }
-
         // MARK: 协议勾选
         consentErrorBorder = UIView()
         consentErrorBorder.layer.cornerRadius = 8
@@ -194,7 +179,7 @@ final class ChangePhoneViewController: BaseViewController {
         consentErrorBorder.backgroundColor = .clear
         contentView.addSubview(consentErrorBorder)
         consentErrorBorder.snp.makeConstraints { make in
-            make.top.equalTo(demoHint.snp.bottom).offset(32)
+            make.top.equalTo(codeRow.snp.bottom).offset(32)
             make.leading.trailing.equalToSuperview().inset(14)
         }
 

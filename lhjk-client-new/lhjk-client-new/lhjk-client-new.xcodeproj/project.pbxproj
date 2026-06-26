@@ -28,16 +28,29 @@
 		8E749A7845EBA8C07946E821 /* Router.swift in Sources */ = {isa = PBXBuildFile; fileRef = 595A3F9A5793396375B1815B /* Router.swift */; };
 		9F5D324E0D90EB682A0A77B4 /* OAuthCredential.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */; };
 		A3AADC4D6DF2A11DC4DA077F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7A38C4AFEC723E4B6C12D675 /* LaunchScreen.storyboard */; };
+		A55AB3382FED1E5C00CC3A35 /* OSSManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A55AB3352FED1E5C00CC3A35 /* OSSManager.swift */; };
+		A55AB3392FED1E5C00CC3A35 /* OSSModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A55AB3362FED1E5C00CC3A35 /* OSSModels.swift */; };
 		A576A2202FE8E22E004F6070 /* ECGSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21E2FE8E22E004F6070 /* ECGSimulator.swift */; };
 		A576A2212FE8E22E004F6070 /* ECGChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21C2FE8E22E004F6070 /* ECGChartView.swift */; };
 		A576A2222FE8E22E004F6070 /* ECGDataBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21D2FE8E22E004F6070 /* ECGDataBuffer.swift */; };
 		A57D2F1E2FDC0647002E43BA /* MyRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F1B2FDC0647002E43BA /* MyRoutes.swift */; };
 		A57D2F242FDC0661002E43BA /* RegisterLoginRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F202FDC0661002E43BA /* RegisterLoginRoutes.swift */; };
+		A58C72C62FEE2FEF003B405C /* NotificationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58C72C52FEE2FEF003B405C /* NotificationsViewController.swift */; };
+		A58C72C72FEE2FEF003B405C /* MessagesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58C72C42FEE2FEF003B405C /* MessagesViewController.swift */; };
+		A58C72CE2FEE3056003B405C /* ServiceCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58C72CB2FEE3056003B405C /* ServiceCardCell.swift */; };
+		A58C72CF2FEE3056003B405C /* TextBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58C72CD2FEE3056003B405C /* TextBubbleCell.swift */; };
+		A58C72D02FEE3056003B405C /* SystemMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58C72CC2FEE3056003B405C /* SystemMessageCell.swift */; };
+		A58C72D12FEE3056003B405C /* AIWeeklyReportCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58C72C82FEE3056003B405C /* AIWeeklyReportCell.swift */; };
+		A58C72D22FEE3056003B405C /* MealAnalysisCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58C72C92FEE3056003B405C /* MealAnalysisCell.swift */; };
+		A58C72D32FEE3056003B405C /* NotificationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58C72CA2FEE3056003B405C /* NotificationCell.swift */; };
 		A590FB1A2FEA2F6E0056EF52 /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB172FEA2F6E0056EF52 /* UserService.swift */; };
 		A590FB1B2FEA2F6E0056EF52 /* UserServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB182FEA2F6E0056EF52 /* UserServiceProtocol.swift */; };
 		A590FB1C2FEA2F6E0056EF52 /* UserModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB152FEA2F6E0056EF52 /* UserModels.swift */; };
 		A590FB1D2FEA2F6E0056EF52 /* UserRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB162FEA2F6E0056EF52 /* UserRoutes.swift */; };
 		A590FB1F2FEA2F6E0056EF52 /* UserManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB1E2FEA2F6E0056EF52 /* UserManager.swift */; };
+		A590FB432FEA2F6E0056EF52 /* ChangePhoneViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB402FEA2F6E0056EF52 /* ChangePhoneViewController.swift */; };
+		A590FB442FEA2F6E0056EF52 /* PasswordSetupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB412FEA2F6E0056EF52 /* PasswordSetupViewController.swift */; };
+		A590FB452FEA2F6E0056EF52 /* CancelAccountViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB422FEA2F6E0056EF52 /* CancelAccountViewController.swift */; };
 		A590FBC72FEA82980056EF52 /* BrandHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBA52FEA82980056EF52 /* BrandHeaderView.swift */; };
 		A590FBC92FEA82980056EF52 /* PeripheralCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB232FEA82980056EF52 /* PeripheralCell.swift */; };
 		A590FBCA2FEA82980056EF52 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBB62FEA82980056EF52 /* LoginViewController.swift */; };
@@ -45,7 +58,6 @@
 		A590FBCD2FEA82980056EF52 /* DigestiveViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB2A2FEA82980056EF52 /* DigestiveViewController.swift */; };
 		A590FBCE2FEA82980056EF52 /* LoginFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBA72FEA82980056EF52 /* LoginFieldView.swift */; };
 		A590FBCF2FEA82980056EF52 /* SpO2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB322FEA82980056EF52 /* SpO2ViewController.swift */; };
-		A590FBD02FEA82980056EF52 /* MessageBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB4D2FEA82980056EF52 /* MessageBubbleCell.swift */; };
 		A590FBD12FEA82980056EF52 /* OptionChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBA92FEA82980056EF52 /* OptionChipView.swift */; };
 		A590FBD32FEA82980056EF52 /* SleepViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB312FEA82980056EF52 /* SleepViewController.swift */; };
 		A590FBD62FEA82980056EF52 /* BloodSugarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB292FEA82980056EF52 /* BloodSugarViewController.swift */; };
@@ -61,7 +73,6 @@
 		A590FBE72FEA82980056EF52 /* MetricAddViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB2F2FEA82980056EF52 /* MetricAddViewController.swift */; };
 		A590FBE82FEA82980056EF52 /* OnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBB42FEA82980056EF52 /* OnboardingViewController.swift */; };
 		A590FBEA2FEA82980056EF52 /* HealthMallViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBBA2FEA82980056EF52 /* HealthMallViewController.swift */; };
-		A590FBEC2FEA82980056EF52 /* MessageListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB552FEA82980056EF52 /* MessageListViewController.swift */; };
 		A590FBEE2FEA82980056EF52 /* RiskBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB3C2FEA82980056EF52 /* RiskBarView.swift */; };
 		A590FBEF2FEA82980056EF52 /* EcgViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB2B2FEA82980056EF52 /* EcgViewController.swift */; };
 		A590FBF02FEA82980056EF52 /* ExerciseFoodViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB2C2FEA82980056EF52 /* ExerciseFoodViewController.swift */; };
@@ -81,7 +92,6 @@
 		A590FC032FEA82980056EF52 /* HealthRecordModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB3E2FEA82980056EF52 /* HealthRecordModels.swift */; };
 		A590FC042FEA82980056EF52 /* HomeServiceBannerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB462FEA82980056EF52 /* HomeServiceBannerCell.swift */; };
 		A590FC052FEA82980056EF52 /* ServiceListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBC22FEA82980056EF52 /* ServiceListViewController.swift */; };
-		A590FC062FEA82980056EF52 /* ConversationListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB572FEA82980056EF52 /* ConversationListViewController.swift */; };
 		A590FC072FEA82980056EF52 /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB4A2FEA82980056EF52 /* HomeViewController.swift */; };
 		A590FC092FEA82980056EF52 /* PaymentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FBBE2FEA82980056EF52 /* PaymentViewController.swift */; };
 		A590FC0A2FEA82980056EF52 /* HealthViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB412FEA82980056EF52 /* HealthViewController.swift */; };
@@ -122,9 +132,6 @@
 		A590FDA32FEA96190056EF52 /* AccessibilitySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FD842FEA96190056EF52 /* AccessibilitySettingsViewController.swift */; };
 		A590FDA42FEA96190056EF52 /* AboutSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FD832FEA96190056EF52 /* AboutSettingsViewController.swift */; };
 		A590FDA52FEA96190056EF52 /* SecuritySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FD872FEA96190056EF52 /* SecuritySettingsViewController.swift */; };
-		A590FB432FEA2F6E0056EF52 /* ChangePhoneViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB402FEA2F6E0056EF52 /* ChangePhoneViewController.swift */; };
-		A590FB442FEA2F6E0056EF52 /* PasswordSetupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB412FEA2F6E0056EF52 /* PasswordSetupViewController.swift */; };
-		A590FB452FEA2F6E0056EF52 /* CancelAccountViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB422FEA2F6E0056EF52 /* CancelAccountViewController.swift */; };
 		A590FDA62FEA96190056EF52 /* FamilyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FD5F2FEA96190056EF52 /* FamilyViewController.swift */; };
 		A590FDA72FEA96190056EF52 /* DietPlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FD5D2FEA96190056EF52 /* DietPlanViewController.swift */; };
 		A590FDA82FEA96190056EF52 /* NotificationSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FD852FEA96190056EF52 /* NotificationSettingsViewController.swift */; };
@@ -140,6 +147,9 @@
 		A5917D212FDFD7FE00878961 /* LoginModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D1D2FDFD7FE00878961 /* LoginModels.swift */; };
 		A5917D222FDFD7FE00878961 /* LoginServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */; };
 		A5917D242FDFD96D00878961 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D232FDFD96D00878961 /* WebViewController.swift */; };
+		A5B54B3F2FEE51E5009AB072 /* ConversationListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B54B3D2FEE51E5009AB072 /* ConversationListViewController.swift */; };
+		A5B54B402FEE51E5009AB072 /* NotificationListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B54B3E2FEE51E5009AB072 /* NotificationListViewController.swift */; };
+		A5B54B422FEE5FAE009AB072 /* GroupVO.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B54B412FEE5FAE009AB072 /* GroupVO.swift */; };
 		A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */; };
 		A952E20047557E6F1D7EE0AF /* Pods_lhjk_client_new.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */; };
 		A97FF7EF73364502F99C2EC4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FACC28499C23F3853EBBF10 /* AppDelegate.swift */; };
@@ -186,11 +196,21 @@
 		7FFA483EDF37CE2D4BEAFA2C /* BaseViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BaseViewController.swift; path = Other/Common/Base/BaseViewController.swift; sourceTree = "<group>"; };
 		840D488A2D621EED67F49634 /* PLProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PLProtocol.swift; path = Other/Common/Protocols/PLProtocol.swift; sourceTree = "<group>"; };
 		929B2C07064774594EB5F7EC /* IMService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = IMService.swift; path = BLL/Message/IMService.swift; sourceTree = "<group>"; };
+		A55AB3352FED1E5C00CC3A35 /* OSSManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSSManager.swift; sourceTree = "<group>"; };
+		A55AB3362FED1E5C00CC3A35 /* OSSModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSSModels.swift; sourceTree = "<group>"; };
 		A576A21C2FE8E22E004F6070 /* ECGChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGChartView.swift; sourceTree = "<group>"; };
 		A576A21D2FE8E22E004F6070 /* ECGDataBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGDataBuffer.swift; sourceTree = "<group>"; };
 		A576A21E2FE8E22E004F6070 /* ECGSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGSimulator.swift; sourceTree = "<group>"; };
 		A57D2F1B2FDC0647002E43BA /* MyRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyRoutes.swift; sourceTree = "<group>"; };
 		A57D2F202FDC0661002E43BA /* RegisterLoginRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterLoginRoutes.swift; sourceTree = "<group>"; };
+		A58C72C42FEE2FEF003B405C /* MessagesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesViewController.swift; sourceTree = "<group>"; };
+		A58C72C52FEE2FEF003B405C /* NotificationsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsViewController.swift; sourceTree = "<group>"; };
+		A58C72C82FEE3056003B405C /* AIWeeklyReportCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWeeklyReportCell.swift; sourceTree = "<group>"; };
+		A58C72C92FEE3056003B405C /* MealAnalysisCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealAnalysisCell.swift; sourceTree = "<group>"; };
+		A58C72CA2FEE3056003B405C /* NotificationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCell.swift; sourceTree = "<group>"; };
+		A58C72CB2FEE3056003B405C /* ServiceCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceCardCell.swift; sourceTree = "<group>"; };
+		A58C72CC2FEE3056003B405C /* SystemMessageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMessageCell.swift; sourceTree = "<group>"; };
+		A58C72CD2FEE3056003B405C /* TextBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextBubbleCell.swift; sourceTree = "<group>"; };
 		A590FB152FEA2F6E0056EF52 /* UserModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserModels.swift; sourceTree = "<group>"; };
 		A590FB162FEA2F6E0056EF52 /* UserRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRoutes.swift; sourceTree = "<group>"; };
 		A590FB172FEA2F6E0056EF52 /* UserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserService.swift; sourceTree = "<group>"; };
@@ -224,7 +244,10 @@
 		A590FB3C2FEA82980056EF52 /* RiskBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiskBarView.swift; sourceTree = "<group>"; };
 		A590FB3E2FEA82980056EF52 /* HealthRecordModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordModels.swift; sourceTree = "<group>"; };
 		A590FB3F2FEA82980056EF52 /* HealthRecordViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordViewController.swift; sourceTree = "<group>"; };
+		A590FB402FEA2F6E0056EF52 /* ChangePhoneViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePhoneViewController.swift; sourceTree = "<group>"; };
+		A590FB412FEA2F6E0056EF52 /* PasswordSetupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordSetupViewController.swift; sourceTree = "<group>"; };
 		A590FB412FEA82980056EF52 /* HealthViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthViewController.swift; sourceTree = "<group>"; };
+		A590FB422FEA2F6E0056EF52 /* CancelAccountViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancelAccountViewController.swift; sourceTree = "<group>"; };
 		A590FB432FEA82980056EF52 /* HomeArticleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeArticleCell.swift; sourceTree = "<group>"; };
 		A590FB442FEA82980056EF52 /* HomeHeroCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHeroCell.swift; sourceTree = "<group>"; };
 		A590FB452FEA82980056EF52 /* HomeQuickActionsCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeQuickActionsCell.swift; sourceTree = "<group>"; };
@@ -233,10 +256,7 @@
 		A590FB482FEA82980056EF52 /* HomeTeamCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTeamCardCell.swift; sourceTree = "<group>"; };
 		A590FB4A2FEA82980056EF52 /* HomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
 		A590FB4C2FEA82980056EF52 /* ConversationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationCell.swift; sourceTree = "<group>"; };
-		A590FB4D2FEA82980056EF52 /* MessageBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageBubbleCell.swift; sourceTree = "<group>"; };
 		A590FB512FEA82980056EF52 /* ChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewController.swift; sourceTree = "<group>"; };
-		A590FB552FEA82980056EF52 /* MessageListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageListViewController.swift; sourceTree = "<group>"; };
-		A590FB572FEA82980056EF52 /* ConversationListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListViewController.swift; sourceTree = "<group>"; };
 		A590FBA42FEA82980056EF52 /* AgreementCheckboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgreementCheckboxView.swift; sourceTree = "<group>"; };
 		A590FBA52FEA82980056EF52 /* BrandHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandHeaderView.swift; sourceTree = "<group>"; };
 		A590FBA62FEA82980056EF52 /* CaptchaVerifyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptchaVerifyView.swift; sourceTree = "<group>"; };
@@ -283,9 +303,6 @@
 		A590FD862FEA96190056EF52 /* PrivacySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySettingsViewController.swift; sourceTree = "<group>"; };
 		A590FD872FEA96190056EF52 /* SecuritySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecuritySettingsViewController.swift; sourceTree = "<group>"; };
 		A590FD882FEA96190056EF52 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
-		A590FB402FEA2F6E0056EF52 /* ChangePhoneViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePhoneViewController.swift; sourceTree = "<group>"; };
-		A590FB412FEA2F6E0056EF52 /* PasswordSetupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordSetupViewController.swift; sourceTree = "<group>"; };
-		A590FB422FEA2F6E0056EF52 /* CancelAccountViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancelAccountViewController.swift; sourceTree = "<group>"; };
 		A5917CE02FDFA7C000878961 /* HomeRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRoutes.swift; sourceTree = "<group>"; };
 		A5917CF92FDFC8EF00878961 /* DGCharts+Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DGCharts+Theme.swift"; sourceTree = "<group>"; };
 		A5917CFB2FDFC8EF00878961 /* UIButton+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIButton+Funde.swift"; sourceTree = "<group>"; };
@@ -298,6 +315,9 @@
 		A5917D1E2FDFD7FE00878961 /* LoginService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginService.swift; sourceTree = "<group>"; };
 		A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginServiceProtocol.swift; sourceTree = "<group>"; };
 		A5917D232FDFD96D00878961 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WebViewController.swift; path = Other/Common/Base/WebViewController.swift; sourceTree = "<group>"; };
+		A5B54B3D2FEE51E5009AB072 /* ConversationListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListViewController.swift; sourceTree = "<group>"; };
+		A5B54B3E2FEE51E5009AB072 /* NotificationListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationListViewController.swift; sourceTree = "<group>"; };
+		A5B54B412FEE5FAE009AB072 /* GroupVO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GroupVO.swift; path = DAL/IM/GroupVO.swift; sourceTree = "<group>"; };
 		A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIFont+Funde.swift"; sourceTree = "<group>"; };
 		A8B0D2D90AC6467582FAAE9C /* MessageRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MessageRoutes.swift; path = BLL/Message/MessageRoutes.swift; sourceTree = "<group>"; };
 		AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OAuthCredential.swift; path = DAL/Networking/OAuthCredential.swift; sourceTree = "<group>"; };
@@ -391,6 +411,7 @@
 		80323DB75D4CB2E15619DDBB /* DAL */ = {
 			isa = PBXGroup;
 			children = (
+				A55AB3372FED1E5C00CC3A35 /* OSS */,
 				A576A21F2FE8E22E004F6070 /* ECG */,
 				33AD0B9BEA61617FD7371544 /* Bluetooth */,
 				ECD3693CC57BA01CDA4D232D /* IM */,
@@ -409,6 +430,16 @@
 				E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A55AB3372FED1E5C00CC3A35 /* OSS */ = {
+			isa = PBXGroup;
+			children = (
+				A55AB3352FED1E5C00CC3A35 /* OSSManager.swift */,
+				A55AB3362FED1E5C00CC3A35 /* OSSModels.swift */,
+			);
+			name = OSS;
+			path = DAL/OSS;
 			sourceTree = "<group>";
 		};
 		A576A21F2FE8E22E004F6070 /* ECG */ = {
@@ -549,6 +580,17 @@
 			path = PL/Health;
 			sourceTree = "<group>";
 		};
+		A590FB462FEA2F6E0056EF52 /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				A590FD872FEA96190056EF52 /* SecuritySettingsViewController.swift */,
+				A590FB402FEA2F6E0056EF52 /* ChangePhoneViewController.swift */,
+				A590FB412FEA2F6E0056EF52 /* PasswordSetupViewController.swift */,
+				A590FB422FEA2F6E0056EF52 /* CancelAccountViewController.swift */,
+			);
+			path = Security;
+			sourceTree = "<group>";
+		};
 		A590FB492FEA82980056EF52 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
@@ -575,8 +617,13 @@
 		A590FB4E2FEA82980056EF52 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
+				A58C72C82FEE3056003B405C /* AIWeeklyReportCell.swift */,
+				A58C72C92FEE3056003B405C /* MealAnalysisCell.swift */,
+				A58C72CA2FEE3056003B405C /* NotificationCell.swift */,
+				A58C72CB2FEE3056003B405C /* ServiceCardCell.swift */,
+				A58C72CC2FEE3056003B405C /* SystemMessageCell.swift */,
+				A58C72CD2FEE3056003B405C /* TextBubbleCell.swift */,
 				A590FB4C2FEA82980056EF52 /* ConversationCell.swift */,
-				A590FB4D2FEA82980056EF52 /* MessageBubbleCell.swift */,
 			);
 			path = Cells;
 			sourceTree = "<group>";
@@ -605,37 +652,15 @@
 			path = Chat;
 			sourceTree = "<group>";
 		};
-		A590FB532FEA82980056EF52 /* Cells */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Cells;
-			sourceTree = "<group>";
-		};
-		A590FB542FEA82980056EF52 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		A590FB562FEA82980056EF52 /* MessageList */ = {
-			isa = PBXGroup;
-			children = (
-				A590FB532FEA82980056EF52 /* Cells */,
-				A590FB542FEA82980056EF52 /* Components */,
-				A590FB552FEA82980056EF52 /* MessageListViewController.swift */,
-			);
-			path = MessageList;
-			sourceTree = "<group>";
-		};
 		A590FB582FEA82980056EF52 /* Message */ = {
 			isa = PBXGroup;
 			children = (
+				A5B54B3D2FEE51E5009AB072 /* ConversationListViewController.swift */,
+				A5B54B3E2FEE51E5009AB072 /* NotificationListViewController.swift */,
+				A58C72C42FEE2FEF003B405C /* MessagesViewController.swift */,
+				A58C72C52FEE2FEF003B405C /* NotificationsViewController.swift */,
 				A590FB4E2FEA82980056EF52 /* Cells */,
 				A590FB522FEA82980056EF52 /* Chat */,
-				A590FB562FEA82980056EF52 /* MessageList */,
-				A590FB572FEA82980056EF52 /* ConversationListViewController.swift */,
 			);
 			name = Message;
 			path = PL/Message;
@@ -955,17 +980,6 @@
 			path = Cells;
 			sourceTree = "<group>";
 		};
-		A590FB462FEA2F6E0056EF52 /* Security */ = {
-			isa = PBXGroup;
-			children = (
-				A590FD872FEA96190056EF52 /* SecuritySettingsViewController.swift */,
-				A590FB402FEA2F6E0056EF52 /* ChangePhoneViewController.swift */,
-				A590FB412FEA2F6E0056EF52 /* PasswordSetupViewController.swift */,
-				A590FB422FEA2F6E0056EF52 /* CancelAccountViewController.swift */,
-			);
-			path = Security;
-			sourceTree = "<group>";
-		};
 		A590FD892FEA96190056EF52 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
@@ -1197,6 +1211,7 @@
 		ECD3693CC57BA01CDA4D232D /* IM */ = {
 			isa = PBXGroup;
 			children = (
+				A5B54B412FEE5FAE009AB072 /* GroupVO.swift */,
 				3743DC311DF3858D78351828 /* Conversation.swift */,
 				B7AE47164C661037814AB024 /* Message.swift */,
 				FE938ED267A4A5BD94207F6E /* RongCloudManager.swift */,
@@ -1314,25 +1329,11 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new-resources.sh",
-				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RongCloud.bundle",
-				"${PODS_ROOT}/RongCloudIM/RongCloudIM/en.lproj",
-				"${PODS_ROOT}/RongCloudIM/RongCloudIM/zh-Hans.lproj",
-				"${PODS_ROOT}/RongCloudIM/RongCloudIM/ar.lproj",
-				"${PODS_ROOT}/RongCloudIM/RongCloudIM/Emoji.plist",
-				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RCColor.plist",
 				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RCConfig.plist",
-				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RongSticker.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RongCloud.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/en.lproj",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/zh-Hans.lproj",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ar.lproj",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/Emoji.plist",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RCColor.plist",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RCConfig.plist",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RongSticker.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -1352,17 +1353,11 @@
 				"${BUILT_PRODUCTS_DIR}/Kingfisher/Kingfisher.framework",
 				"${BUILT_PRODUCTS_DIR}/SnapKit/SnapKit.framework",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/ChatRoom/RongChatRoom.framework/RongChatRoom",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/ContactCard/RongContactCard.framework/RongContactCard",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/CustomerService/RongCustomerService.framework/RongCustomerService",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/Discussion/RongDiscussion.framework/RongDiscussion",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/IMKit/RongIMKit.framework/RongIMKit",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/IMLib/RongIMLib.framework/RongIMLib",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/IMLibCore/RongIMLibCore.framework/RongIMLibCore",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/Location/RongLocation.framework/RongLocation",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/LocationKit/RongLocationKit.framework/RongLocationKit",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/PublicService/RongPublicService.framework/RongPublicService",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/RongSticker/RongSticker.framework/RongSticker",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/Sight/RongSight.framework/RongSight",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
@@ -1372,17 +1367,11 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Kingfisher.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SnapKit.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongChatRoom.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongContactCard.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongCustomerService.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongDiscussion.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongIMKit.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongIMLib.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongIMLibCore.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongLocation.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongLocationKit.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongPublicService.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongSticker.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongSight.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -1484,7 +1473,6 @@
 				A590FBCD2FEA82980056EF52 /* DigestiveViewController.swift in Sources */,
 				A590FBCE2FEA82980056EF52 /* LoginFieldView.swift in Sources */,
 				A590FBCF2FEA82980056EF52 /* SpO2ViewController.swift in Sources */,
-				A590FBD02FEA82980056EF52 /* MessageBubbleCell.swift in Sources */,
 				A590FBD12FEA82980056EF52 /* OptionChipView.swift in Sources */,
 				A590FBD32FEA82980056EF52 /* SleepViewController.swift in Sources */,
 				A590FBD62FEA82980056EF52 /* BloodSugarViewController.swift in Sources */,
@@ -1500,14 +1488,19 @@
 				A590FBE72FEA82980056EF52 /* MetricAddViewController.swift in Sources */,
 				A590FBE82FEA82980056EF52 /* OnboardingViewController.swift in Sources */,
 				A590FBEA2FEA82980056EF52 /* HealthMallViewController.swift in Sources */,
-				A590FBEC2FEA82980056EF52 /* MessageListViewController.swift in Sources */,
 				A590FBEE2FEA82980056EF52 /* RiskBarView.swift in Sources */,
 				A590FBEF2FEA82980056EF52 /* EcgViewController.swift in Sources */,
+				A58C72C62FEE2FEF003B405C /* NotificationsViewController.swift in Sources */,
+				A58C72C72FEE2FEF003B405C /* MessagesViewController.swift in Sources */,
 				A590FBF02FEA82980056EF52 /* ExerciseFoodViewController.swift in Sources */,
 				A590FBF12FEA82980056EF52 /* HomeArticleCell.swift in Sources */,
 				A590FBF22FEA82980056EF52 /* WeightViewController.swift in Sources */,
 				A590FBF52FEA82980056EF52 /* HealthRecordBodyCardCell.swift in Sources */,
 				A590FBF72FEA82980056EF52 /* MetricsViewController.swift in Sources */,
+				A5B54B3F2FEE51E5009AB072 /* ConversationListViewController.swift in Sources */,
+				A5B54B402FEE51E5009AB072 /* NotificationListViewController.swift in Sources */,
+				A55AB3382FED1E5C00CC3A35 /* OSSManager.swift in Sources */,
+				A55AB3392FED1E5C00CC3A35 /* OSSModels.swift in Sources */,
 				A590FBF82FEA82980056EF52 /* ChatViewController.swift in Sources */,
 				A590FBF92FEA82980056EF52 /* HealthQuickEntriesCell.swift in Sources */,
 				A590FBFB2FEA82980056EF52 /* HealthScoreCardCell.swift in Sources */,
@@ -1531,6 +1524,7 @@
 				A590FD972FEA96190056EF52 /* DevicesViewController.swift in Sources */,
 				A590FD982FEA96190056EF52 /* SettingsViewController.swift in Sources */,
 				A590FD992FEA96190056EF52 /* MeStatsStripCell.swift in Sources */,
+				A5B54B422FEE5FAE009AB072 /* GroupVO.swift in Sources */,
 				A590FD9A2FEA96190056EF52 /* MembershipViewController.swift in Sources */,
 				A590FD9B2FEA96190056EF52 /* HealthReportViewController.swift in Sources */,
 				A590FD9C2FEA96190056EF52 /* PointsViewController.swift in Sources */,
@@ -1553,10 +1547,15 @@
 				A590FC032FEA82980056EF52 /* HealthRecordModels.swift in Sources */,
 				A590FC042FEA82980056EF52 /* HomeServiceBannerCell.swift in Sources */,
 				A590FC052FEA82980056EF52 /* ServiceListViewController.swift in Sources */,
-				A590FC062FEA82980056EF52 /* ConversationListViewController.swift in Sources */,
 				A590FC072FEA82980056EF52 /* HomeViewController.swift in Sources */,
 				A590FC092FEA82980056EF52 /* PaymentViewController.swift in Sources */,
 				A590FC0A2FEA82980056EF52 /* HealthViewController.swift in Sources */,
+				A58C72CE2FEE3056003B405C /* ServiceCardCell.swift in Sources */,
+				A58C72CF2FEE3056003B405C /* TextBubbleCell.swift in Sources */,
+				A58C72D02FEE3056003B405C /* SystemMessageCell.swift in Sources */,
+				A58C72D12FEE3056003B405C /* AIWeeklyReportCell.swift in Sources */,
+				A58C72D22FEE3056003B405C /* MealAnalysisCell.swift in Sources */,
+				A58C72D32FEE3056003B405C /* NotificationCell.swift in Sources */,
 				A590FC0C2FEA82980056EF52 /* HomeTeamCardCell.swift in Sources */,
 				A590FC0F2FEA82980056EF52 /* CaptchaVerifyView.swift in Sources */,
 				A590FC102FEA82980056EF52 /* HealthRecordViewController.swift in Sources */,

@@ -183,7 +183,7 @@ final class MembershipViewController: BaseViewController {
         tagRow.snp.makeConstraints { $0.top.equalTo(expiry.snp.bottom).offset(12); $0.leading.equalToSuperview().inset(20); $0.bottom.equalToSuperview().offset(-20) }
 
         container.addSubview(card)
-        card.snp.makeConstraints { $0.top.equalToSuperview().offset(16); $0.leading.trailing.equalToSuperview().inset(16); $0.bottom.equalToSuperview().offset(-8) }
+        card.snp.makeConstraints { $0.top.equalToSuperview().offset(16); $0.leading.trailing.equalToSuperview().inset(16).priority(750); $0.bottom.equalToSuperview().offset(-8) }
         let size = container.systemLayoutSizeFitting(CGSize(width: w, height: UIView.layoutFittingCompressedSize.height), withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel)
         container.frame.size = CGSize(width: w, height: size.height)
         return container

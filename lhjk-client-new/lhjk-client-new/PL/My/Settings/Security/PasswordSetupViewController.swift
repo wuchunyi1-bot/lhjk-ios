@@ -1,14 +1,32 @@
 import UIKit
 import SnapKit
 
-/// 登录密码设置页（3 步流程）
+/// 登录密码设置页
 /// PRD: 02_用户_我的设置_v1.0 §5.4
 /// 原型: funde-client prototype/src/views/me/settings/SecuritySettingsView.vue
 ///
-/// Step 1: 手机验证 — 输入手机号 → 获取验证码
-/// Step 2: 填写验证码 — 输入 6 位验证码 → 下一步
-/// Step 3: 设置新密码 — 输入新密码 + 确认新密码 → 完成设置
+/// 两种模式:
+///   `.loggedIn(phone:)` — 登录态，手机号只读，Step 2(验证码) → Step 3(密码)
+///   `.standalone` — 未登录态，Step 1(手机号) → Step 2(验证码) → Step 3(密码)
+///
+/// 统一使用 `UserService.resetPasswordByMobile` 提交
 final class PasswordSetupViewController: BaseViewController {
+
+    // MARK: - Mode
+
+    enum Mode {
+        /// 登录态：手机号预填、只读，跳过 Step 1
+        case loggedIn(phone: String)
+        /// 未登录态：用户手动输入手机号
+        case standalone
+
+        var isLoggedIn: Bool {
+            if case .loggedIn = self { return true }
+            return false
+        }
+    }
+
+    var mode: Mode = .standalone
 
     // MARK: - Step
 
@@ -27,23 +45,17 @@ final class PasswordSetupViewController: BaseViewController {
     private var timer: Timer?
     private var showPassword = false
 
-    /// 是否有旧密码（nil = 首次设置，非 nil = 修改密码）
-    var hasExistingPassword: Bool = false
-
     // MARK: - UI Elements
 
     private var stepTitleLabel: UILabel!
     private var stepDescLabel: UILabel!
 
-    // Step 1
+    // Step 1 (仅 standalone)
     private var phoneField: UITextField!
-    private var phoneGetCodeBtn: UIButton!
-    private var phoneDemoHint: UILabel!
 
     // Step 2
     private var codeField: UITextField!
     private var codeResendBtn: UIButton!
-    private var codeDemoHint: UILabel!
     private var codeDescLabel: UILabel!
 
     // Step 3
@@ -59,11 +71,6 @@ final class PasswordSetupViewController: BaseViewController {
     private let codeContainer = UIView()
     private let passwordContainer = UIView()
 
-    // MARK: - Demo
-
-    private let demoPhone = "15600000003"
-    private let demoCode = "111111"
-
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
@@ -74,11 +81,22 @@ final class PasswordSetupViewController: BaseViewController {
             target: self,
             action: #selector(handleBack)
         )
+
+        // 登录态：跳过 Step 1，直接发验证码
+        if case .loggedIn(let phone) = mode {
+            enteredPhone = phone
+            step = .code
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        if step == .phone { phoneField.becomeFirstResponder() }
+        if mode.isLoggedIn {
+            // 登录态直接发验证码
+            sendCode(for: enteredPhone)
+        } else if step == .phone {
+            phoneField.becomeFirstResponder()
+        }
     }
 
     override func setupUI() {
@@ -114,20 +132,16 @@ final class PasswordSetupViewController: BaseViewController {
             make.leading.trailing.equalToSuperview().inset(24)
         }
 
-        // MARK: - Step 1: Phone
-
+        // MARK: - Step 1: Phone (仅 standalone)
         setupPhoneStep(contentView)
 
         // MARK: - Step 2: Code
-
         setupCodeStep(contentView)
 
         // MARK: - Step 3: Password
-
         setupPasswordStep(contentView)
 
         // MARK: - Action Button
-
         actionBtn = UIButton(type: .system)
         actionBtn.titleLabel?.font = .fdBodyBold
         actionBtn.setTitleColor(.white, for: .normal)
@@ -145,7 +159,7 @@ final class PasswordSetupViewController: BaseViewController {
         updateStepUI()
     }
 
-    // MARK: - Step 1 Setup
+    // MARK: - Step 1 Setup (仅 standalone)
 
     private func setupPhoneStep(_ parent: UIView) {
         parent.addSubview(phoneContainer)
@@ -163,18 +177,8 @@ final class PasswordSetupViewController: BaseViewController {
         phoneContainer.addSubview(phoneField)
         phoneField.snp.makeConstraints { make in
             make.top.equalTo(fieldLabel.snp.bottom).offset(8)
-            make.leading.trailing.equalToSuperview()
-            make.height.equalTo(52)
-        }
-
-        phoneDemoHint = UILabel()
-        phoneDemoHint.text = "演示手机号：\(demoPhone)"
-        phoneDemoHint.font = .fdCaption
-        phoneDemoHint.textColor = .fdMuted
-        phoneContainer.addSubview(phoneDemoHint)
-        phoneDemoHint.snp.makeConstraints { make in
-            make.top.equalTo(phoneField.snp.bottom).offset(8)
             make.leading.trailing.bottom.equalToSuperview()
+            make.height.equalTo(52)
         }
 
         phoneContainer.snp.makeConstraints { make in
@@ -210,7 +214,7 @@ final class PasswordSetupViewController: BaseViewController {
         codeContainer.addSubview(codeRow)
         codeRow.snp.makeConstraints { make in
             make.top.equalTo(fieldLabel.snp.bottom).offset(8)
-            make.leading.trailing.equalToSuperview()
+            make.leading.trailing.bottom.equalToSuperview()
             make.height.equalTo(52)
         }
 
@@ -238,16 +242,6 @@ final class PasswordSetupViewController: BaseViewController {
             make.width.equalTo(110)
         }
 
-        codeDemoHint = UILabel()
-        codeDemoHint.text = "演示验证码：\(demoCode)"
-        codeDemoHint.font = .fdCaption
-        codeDemoHint.textColor = .fdMuted
-        codeContainer.addSubview(codeDemoHint)
-        codeDemoHint.snp.makeConstraints { make in
-            make.top.equalTo(codeRow.snp.bottom).offset(8)
-            make.leading.trailing.bottom.equalToSuperview()
-        }
-
         codeContainer.snp.makeConstraints { make in
             make.top.equalTo(stepDescLabel.snp.bottom).offset(24)
             make.leading.trailing.equalToSuperview().inset(24)
@@ -259,7 +253,6 @@ final class PasswordSetupViewController: BaseViewController {
     private func setupPasswordStep(_ parent: UIView) {
         parent.addSubview(passwordContainer)
 
-        // New password
         let newPwdLabel = UILabel()
         newPwdLabel.text = "新密码"
         newPwdLabel.font = .fdFont(ofSize: 13, weight: .semibold)
@@ -315,7 +308,6 @@ final class PasswordSetupViewController: BaseViewController {
             make.centerY.equalToSuperview()
         }
 
-        // Confirm password
         let confirmPwdLabel = UILabel()
         confirmPwdLabel.text = "确认新密码"
         confirmPwdLabel.font = .fdFont(ofSize: 13, weight: .semibold)
@@ -379,17 +371,19 @@ final class PasswordSetupViewController: BaseViewController {
             stepTitleLabel.text = "手机验证"
             stepDescLabel.text = "通过短信验证码确认身份后，可设置新的登录密码。"
             actionBtn.setTitle("获取验证码", for: .normal)
+            actionBtn.isHidden = false
         case .code:
             title = "填写验证码"
             stepTitleLabel.text = "填写验证码"
-            let masked = maskPhone(enteredPhone)
-            codeDescLabel.text = "验证码已发送至 \(masked)"
+            codeDescLabel.text = "验证码已发送至 \(maskPhone(enteredPhone))"
             actionBtn.setTitle("下一步", for: .normal)
+            actionBtn.isHidden = false
         case .resetPassword:
             title = "设置新密码"
             stepTitleLabel.text = "设置新密码"
             stepDescLabel.text = "建议 6-20 位，可用数字和字母组合。请避免使用生日、手机号后 6 位等容易被猜到的密码。"
             actionBtn.setTitle("完成设置", for: .normal)
+            actionBtn.isHidden = false
         }
     }
 
@@ -400,7 +394,12 @@ final class PasswordSetupViewController: BaseViewController {
         case .phone:
             navigationController?.popViewController(animated: true)
         case .code:
-            step = .phone
+            if mode.isLoggedIn {
+                // 登录态没有 Step 1，直接返回
+                navigationController?.popViewController(animated: true)
+            } else {
+                step = .phone
+            }
         case .resetPassword:
             step = .code
         }
@@ -419,20 +418,15 @@ final class PasswordSetupViewController: BaseViewController {
         }
     }
 
-    private func handleSendCode() {
-        let phone = phoneField.text?.trimmingCharacters(in: .whitespaces) ?? ""
-        guard validatePhone(phone) else {
-            showToast("请输入正确的手机号")
-            return
-        }
-        enteredPhone = phone
+    // MARK: - Send Code
+
+    private func sendCode(for phone: String) {
         startCountdown()
         Task {
             do {
                 _ = try await LoginService.shared.sendVerificationCode(to: phone, type: .resetPassword)
                 await MainActor.run {
                     showToast("验证码已发送")
-                    step = .code
                 }
             } catch {
                 await MainActor.run {
@@ -443,6 +437,17 @@ final class PasswordSetupViewController: BaseViewController {
         }
     }
 
+    private func handleSendCode() {
+        let phone = phoneField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        guard validatePhone(phone) else {
+            showToast("请输入正确的手机号")
+            return
+        }
+        enteredPhone = phone
+        sendCode(for: phone)
+        step = .code
+    }
+
     private func handleVerifyCode() {
         let code = codeField.text?.trimmingCharacters(in: .whitespaces) ?? ""
         let cleanCode = code.replacingOccurrences(of: "\\D", with: "", options: .regularExpression)
@@ -450,17 +455,13 @@ final class PasswordSetupViewController: BaseViewController {
             showToast("请输入6位验证码")
             return
         }
-        // Demo: accept demo code; production: verify via API
-        if cleanCode == demoCode {
-            step = .resetPassword
-        } else {
-            showToast("验证码错误，请重新输入")
-        }
+        step = .resetPassword
     }
 
     private func handleSubmitPassword() {
         let newPwd = newPasswordField.text ?? ""
         let confirmPwd = confirmPasswordField.text ?? ""
+        let code = codeField.text?.trimmingCharacters(in: .whitespaces) ?? ""
 
         guard !newPwd.isEmpty else {
             showToast("请设置新密码")
@@ -488,17 +489,9 @@ final class PasswordSetupViewController: BaseViewController {
 
         Task {
             do {
-                if hasExistingPassword {
-                    // 修改密码（需要旧密码 + SMS 验证）
-                    try await UserService.shared.changePassword(
-                        mobile: enteredPhone, oldPwd: nil, newPwd: newPwd, checkCode: codeField.text ?? ""
-                    )
-                } else {
-                    // 首次设置密码
-                    try await UserService.shared.changePassword(
-                        mobile: enteredPhone, oldPwd: nil, newPwd: newPwd, checkCode: codeField.text ?? ""
-                    )
-                }
+                try await UserService.shared.resetPasswordByMobile(
+                    mobile: enteredPhone, newPwd: newPwd, checkCode: code
+                )
                 await MainActor.run {
                     showToast("密码设置成功")
                     Task { await UserManager.shared.refreshUserInfo() }
@@ -518,7 +511,7 @@ final class PasswordSetupViewController: BaseViewController {
 
     @objc private func resendCodeTapped() {
         stopCountdown()
-        handleSendCode()
+        sendCode(for: enteredPhone)
     }
 
     @objc private func togglePasswordVisibility() {

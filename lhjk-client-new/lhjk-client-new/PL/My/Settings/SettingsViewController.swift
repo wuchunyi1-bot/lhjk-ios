@@ -296,11 +296,10 @@ final class SettingsViewController: BaseViewController {
         )
         alert.addAction(UIAlertAction(title: "取消", style: .cancel))
         alert.addAction(UIAlertAction(title: "退出登录", style: .destructive) { [weak self] _ in
+            RongCloudManager.shared.disconnect()
             LoginService.shared.clearSession()
             UserManager.shared.clear()
-            self?.dismiss(animated: true) {
-                Router.shared.present("/login")
-            }
+            Router.shared.setRoot("/login")
         })
         present(alert, animated: true)
     }

@@ -8,6 +8,7 @@
 
 > **新增 (2026-06-16)**: 根据 funde-client `OnboardingView.vue`，新增 4 步新用户引导流程（基本信息 → 健康史 → 生活习惯 → 认识团队）。
 > **Reference**: funde-client `/prototype/src/views/onboarding/OnboardingView.vue`、`/prototype/src/mock/onboarding.json`
+> **更新 (2026-06-25)**: 对齐 funde-client PRD §5.10 和实际 Vue 实现，Onboarding 从 4 步向导简化为单页表单（姓名 / 出生日期 / 性别 / 所在城市），展示判断从本地 `fd_onboarded` 改为基于 `getUserByParam` API 返回的 `chineseName`、`sex`、`birthday` 字段完整性。`fd_onboarded` 已移除。
 
 > **Deferred**: 老年模式适配（Dynamic Type 联动）和 Logo Mark 渐变背景（CAGradientLayer）暂不在本次实现，先使用纯色品牌色方块代替渐变。
 
@@ -415,11 +416,19 @@
 ---
 
 ### Requirement: Post-Login Navigation
-登录成功后 SHALL 直接进入新用户引导流程（未完成）或首页（已完成引导）。当前版本不包含 redirect/deeplink 目标页还原。
+登录成功后 SHALL 通过 `UserManager.checkNeedOnboarding()` 异步判断是否需要展示引导页，基于 `getUserByParam` API 返回数据完整性做决策。
 
 #### Scenario: 登录成功
 - **WHEN** 登录成功后
-- **THEN** 检查 `fd_onboarded` 标记：已完成引导 → 进入 `/home`；未完成 → 进入 `/onboarding`（新用户引导）
+- **THEN** 调用 `UserManager.shared.checkNeedOnboarding()` → 内部通过 `refreshUserInfo()` 获取 `SUsers` 数据，检查 `chineseName`、`sex`、`birthday` 是否都存在非空值
+- **WHEN** 三个字段全部非空 → 数据完整，不展示 onboarding，进入 `/home`
+- **WHEN** 任一个字段为空或 nil → 数据不完整，展示 `/onboarding`
+- **WHEN** API 请求失败 → fallback 到 `UserDefaults` 缓存的 `SUsers` 数据做同样判断；无缓存时默认不展示（不阻塞用户）
+- **AND** `UserManager.checkNeedOnboarding()` 内部将拉取结果缓存到 `currentUser` 并标记 `hasFetched = true`，避免后续 `fetchUserInfo()` 重复请求
+
+#### Scenario: App 冷启动
+- **WHEN** SceneDelegate 检测到本地已存 token
+- **THEN** 设置 `RootTabBarController` 后异步调用 `checkNeedOnboarding()`，按结果决定是否 `present /onboarding`
 
 #### Scenario: redirect/deeplink **[DEFERRED]**
 > **状态**: 延迟到后续迭代。登录过期回跳等场景暂不实现 redirect 参数携带。
@@ -427,76 +436,64 @@
 ---
 
 ### Requirement: New User Onboarding Flow
-登录成功后，新用户 SHALL 通过 4 步引导流程完成健康档案初始建立。已完成的用户跳过引导直接进入首页。
+登录成功后，当 `UserManager.checkNeedOnboarding()` 判定数据不完整时，SHALL 展示单页基础信息引导表单。不收集健康档案字段（疾病史、生活习惯等）。
 
-参考 funde-client `OnboardingView.vue`：4 个步骤 + 进度条 + 底部导航按钮。
+参考 funde-client PRD §5.10「注册后基础信息引导」及 `OnboardingView.vue`：单页表单，4 个必填字段。
 
 #### Scenario: 引导触发条件
-- **WHEN** 登录成功后
-- **THEN** 仅检查本地 `UserDefaults` 中的 `fd_onboarded` 标记（不依赖后端判断）
-- **WHEN** `fd_onboarded == true` → 跳过引导，进入首页
-- **WHEN** `fd_onboarded == false` 或 key 不存在 → **必须**进入引导流程，不可跳过
-- **WHEN** App 冷启动（SceneDelegate）检测到本地已存 token 但 `fd_onboarded == false` → 自动弹出 onboarding
-- **设计原则**：完善信息是纯本地门控。杀掉 App 重开、清缓存重装，只要本地标记未置 true 就永远拦截在 onboarding，不依赖服务端是否有用户记录
+- **WHEN** `UserManager.checkNeedOnboarding()` 判定需要引导
+- **THEN** 全屏 present `OnboardingViewController`（`modalPresentationStyle = .fullScreen`）
+- **设计原则**：判断依据为 `getUserByParam` API 返回的 `chineseName`、`sex`、`birthday` 是否都存在非空值。不依赖本地 `fd_onboarded` 标记（已移除）
 
-#### Scenario: 引导流程布局
+#### Scenario: 页面布局
 - **WHEN** OnboardingViewController 渲染
-- **THEN** 全屏展示（无 Tab Bar，无系统导航栏），包含：
-  - 顶部进度条（4pt 高，fdPrimary 填充，fdBorder 底色，宽度按 `currentStep / totalSteps` 百分比过渡动画 0.4s）
-  - 步骤标签「{N} / 4」（12pt fdMuted）
-  - 标题（24pt bold fdText）
-  - 描述文字（13pt fdSubtext）
-  - 主体内容区（flex: 1，溢出滚动）
-  - 底部操作区：「返回」按钮 + 「下一步」/「开始我的健康之旅」按钮
+- **THEN** 全屏展示（无 Tab Bar，无系统导航栏，不可滑动关闭），包含：
+  - **Header**：「1 分钟完成」badge 胶囊（fdPrimarySoft 背景 + fdPrimary 文字 + 圆角 15pt）+ 标题「完善基础信息」（fdH2）+ 副标题「完善资料，开启您的专属健康管理」（fdCaption fdSubtext）
+  - **Form（ScrollView）**：4 个字段，间距 18pt
+  - **Footer（固定底部）**：「保存并继续」按钮（fdPrimary 背景 + 圆角 18pt + 阴影，fdBodyBold 白色文字）
 
-#### Scenario: Step 1 — 基本信息
-- **WHEN** 当前步骤为 1
-- **THEN** 展示 3 个字段：
-  - 「您的姓名」— 文本输入框（placeholder "请输入真实姓名"，maxLength 20）
-  - 「性别」— 男/女 chip 按钮（2 列并排，选中态 primarySoft 背景 + primary 文字 + primary 边框，默认态 surface 背景 + subtext 文字 + border 边框）
-  - 「出生年份」— 数字输入框（placeholder "例如：1980"，maxLength 4）
-- **AND** 「下一步」按钮在 name 非空 + gender 已选时启用
+#### Scenario: 字段 1 — 姓名
+- **WHEN** 页面渲染
+- **THEN** 复用 `LoginFieldView`（title "姓名"，placeholder "请输入姓名"）
+- **AND** `viewDidAppear` 时若姓名为空 → 自动 `becomeFirstResponder()` 聚焦
+- **AND** 监听 `editingChanged` 更新按钮状态
 
-#### Scenario: Step 2 — 健康史
-- **WHEN** 当前步骤为 2
-- **THEN** 展示「既往病史（可多选）」chip 组：
-  - 选项：高血压 / 糖尿病 / 血脂异常 / 高尿酸 / 冠心病 / 甲状腺疾病 / 骨质疏松 / 无
-  - 多选逻辑：选「无」清除其他项，选其他项自动清除「无」
-  - Chip 样式：圆角 20pt，高 38pt，padding horizontal 18pt
-- **AND** 「下一步」按钮在至少选中 1 项时启用
+#### Scenario: 字段 2 — 出生日期
+- **WHEN** 页面渲染
+- **THEN** 展示 label「出生日期」+ 输入框 shell（fdSurface 背景 + fdBorder 边框 + 圆角 12pt）
+- **AND** 输入框使用 `UITextField`（`tintColor = .clear`），`inputView` 设为 `UIDatePicker(.date, .wheels)`，`maximumDate = Date()`
+- **AND** `inputAccessoryView` 为 toolbar + "完成" 按钮关闭 picker
+- **AND** 选择日期后自动回填 "yyyy-MM-dd" 格式文字
+- **AND** 日期下方展示「已自动计算年龄：X 岁」（fdCaption fdPrimary 色），年龄 ≤ 0 时隐藏
 
-#### Scenario: Step 3 — 生活习惯
-- **WHEN** 当前步骤为 3
-- **THEN** 展示 2 组 chip：
-  - 「吸烟情况」— 单选（不吸烟 / 偶尔吸 / 每天吸）
-  - 「运动频率（每周）」— 单选（几乎不运动 / 每周1-2次 / 每周3-4次 / 每周5次以上）
-- **AND** 「下一步」按钮在两组均选中时启用
+#### Scenario: 字段 3 — 性别
+- **WHEN** 页面渲染
+- **THEN** 复用 `OptionChipView` + `OptionChipGroup`（单选模式），男/女 2 列等宽
+- **AND** 选中态：fdPrimarySoft 背景 + fdPrimary 文字 + fdPrimary 边框；默认态：fdSurface 背景 + fdSubtext 文字 + fdBorder 边框
 
-#### Scenario: Step 4 — 认识专属团队
-- **WHEN** 当前步骤为 4
-- **THEN** 展示团队卡片列表（3 张卡片，依次淡入动画）：
-  - 每个卡片：渐变色圆形头像（52pt）+ 姓名（16pt bold）+ 职称（12pt fdPrimary）+ 专长（12pt fdSubtext）
-  - 卡片：fdSurface 背景、圆角 18pt、阴影
-  - 动画：opacity 0→1 + translateY 16→0，每张卡片间隔 ~350ms 入场
-- **AND** 底部按钮变为「开始我的健康之旅」（全宽，无返回按钮）
+#### Scenario: 字段 4 — 所在城市
+- **WHEN** 页面渲染
+- **THEN** 展示 label「所在城市」+ 按钮 shell（placeholder "请选择省市"，fdMuted 色，fdSurface 背景 + fdBorder 边框 + 圆角 12pt）
+- **AND** 点击按钮 → 底部弹出省/市联动 `UIPickerView`（toolbar：「取消」/「确定」）
+- **AND** 确认后回填 "省份 城市" 或 "城市"（直辖市）
+- **AND** 默认选中 "广东省 深圳市"
 
-#### Scenario: 引导完成
-- **WHEN** 用户在 Step 4 点击「开始我的健康之旅」
-- **THEN** 保存 `fd_onboarded = true` 和 `fd_archive_progress = 38` 到本地存储
-- **AND** `dismiss(animated: true)` 返回已有 TabBar 主界面（Onboarding 是覆盖在 TabBar 之上的 fullScreen modal）
+#### Scenario: 按钮状态
+- **WHEN** 姓名非空 + 出生日期已选 + 性别已选
+- **THEN** 按钮启用（opacity 1.0 + shadow）
+- **WHEN** 任一字段未填
+- **THEN** 按钮置灰（opacity 0.45 + isEnabled false + shadow 0），点击时 toast 提示具体缺失字段
 
-#### Scenario: 步骤间导航
-- **WHEN** 用户在 Step 2-4 点击「返回」
-- **THEN** 当前步骤 -1，保留已填数据
-- **WHEN** 用户在 Step 1-3 点击「下一步」
-- **THEN** 当前步骤 +1
+#### Scenario: 保存
+- **WHEN** 用户点击「保存并继续」且所有字段已填
+- **THEN** 按钮进入 loading 态（"保存中…" + disabled）
+- **AND** 调用 `UserService.shared.updateCurrentProfile(payload)`，传入 `chineseName`、`sex`（"1"/"2"）、`birthday`（"yyyy-MM-dd"）
+- **AND** 成功后：`fd_archive_progress = 20`、`fd_profile_name = name`、`fd_profile_city = city`（全部写入 UserDefaults）→ `dismiss`
+- **AND** 失败后：恢复按钮 + toast 错误信息
+- **NOTE**: 城市暂存本地（API payload 暂无城市字段，对齐 Vue localStorage 方式）；`medicalHistory`、`smokingStatus`、`exerciseFrequency` 传入 nil
 
-#### Scenario: Chip 组件复用
-- **THEN** 所有 chip（性别、病史、吸烟、运动）使用统一的 `OptionChipView` 组件
-- **AND** 支持 `isMultiSelect` 模式（多选/单选切换）
-
-#### Scenario: 输入框复用
-- **THEN** Step 1 的输入框复用 `LoginFieldView`（无 icon 模式）或直接使用 UITextField + 统一样式
+#### Scenario: 无跳过入口
+- **THEN** 页面不提供关闭/跳过按钮，用户必须填写完整 4 个字段才能保存离开
 
 ---
 
@@ -685,9 +682,8 @@ V1.0 SHALL 允许多设备同时登录，不踢出旧设备；新设备登录时
 | `ForgotPasswordView` | UIView/VC | 忘记密码页 | Custom VC | 新增 |
 | `NotificationGuideView` | UIView/VC | 通知预引导弹窗 | Custom Modal VC | 新增 |
 | `ModeSwitchButton` | UIButton | `login-switch__link` | UIButton (文字链接) | 已有 |
-| `OnboardingViewController` | UIViewController | `ob-screen` | 4 步引导主页面 | 新增 |
-| `OptionChipView` | UIView | `ob-chip` | 可选中 chip 按钮（单选/多选） | 新增 |
-| `TeamCardView` | UIView | `ob-team-card` | 团队成员卡片（头像 + 信息） | 新增 |
+| `OnboardingViewController` | UIViewController | `ob-screen` | 单页基础信息表单（姓名/出生日期/性别/城市） | 重写 |
+| `OptionChipView` | UIView | `ob-chip` | 可选中 chip 按钮（单选/多选） | 已有 |
 
 ---
 
@@ -903,61 +899,66 @@ func sendVerificationCode(to phone: String, type: String) async throws -> SMSRes
 
 > **Update (2026-06-23)**: `sendVerificationCode` 新增 `type` 参数，移除 `captchaToken`——实际 API 不需要 captcha token 作为请求参数（拼图验证结果可能通过 Header 或其他机制传递，待确认）。
 
-### API Contract: 保存/修改用户信息
+### API Contract: 修改当前用户资料
 
-> **Source**: Apifox `funde-api` → `POST /v1/users/saveUser`
-> **operationId**: `saveUser`
-> **Synced**: 2026-06-23
+> **Source**: Apifox `funde-api` → `POST /v1/users/updateCurrentProfile`
+> **operationId**: `updateCurrentProfile`
+> **Synced**: 2026-06-25
 
 ```
-POST {Root URL}/mobile/v1/users/saveUser
+POST {Base URL}/v1/users/updateCurrentProfile
 Content-Type: application/json
 Authorization: Bearer {access_token}
 ```
 
-**Request Body** (`application/json`, schema `SUsers`):
+**Request Body** (`application/json`, schema `UserProfileUpdateDTO`):
 
-所有字段均为可选，按需发送：
+所有字段均为可选，按需发送（与 `SUsers` 字段一致）：
 
-| 字段 | 类型 | 描述 |
-|------|------|------|
-| `id` | int64 | 系统用户唯一 ID（修改时传入，新增时不传） |
-| `account` | string | 用户系统账号 |
-| `mobile` | string | 手机号码 |
-| `surname` | string | 姓氏 |
-| `chineseName` | string | 中文名称 |
-| `nickname` | string | 用户昵称 |
-| `email` | string | 用户邮箱 |
-| `sex` | string | 性别（`"1"`=男, `"2"`=女） |
-| `birthday` | string | 出生年月（`yyyy-MM-dd`） |
-| `nationality` | string | 国籍 |
-| `province` / `cities` | string | 籍贯 |
-| `address` | string | 户籍地址 |
-| `addressProvince` / `addressCity` / `addressArea` / `addressStreet` | string | 现住址 |
-| `idType` | int32 | 证件类型（默认 `1`=身份证） |
-| `idNumber` | string | 证件号 |
-| `education` | string | 学历 |
-| `age` | int32 | 年龄 |
-| `blood` | string | 血型 |
-| `career` | string | 职业 |
-| `imageUrl` | string | 头像路径 |
-| `userType` | int32 | 用户类型（`4`=普通用户） |
-| ... | | 其余 40+ 字段见 OpenAPI schema |
+| 字段 | 类型 | 必填 | 描述 |
+|------|------|------|------|
+| `id` | int64 | 否 | 系统用户唯一 ID（修改时传入，新增时不传） |
+| `account` | string | 否 | 用户系统账号 |
+| `mobile` | string | 否 | 手机号码 |
+| `surname` | string | 否 | 姓氏 |
+| `chineseName` | string | 否 | 中文名称 |
+| `nickname` | string | 否 | 用户昵称 |
+| `email` | string | 否 | 用户邮箱 |
+| `sex` | string | 否 | 性别（`"1"`=男, `"2"`=女） |
+| `birthday` | string | 否 | 出生年月（`yyyy-MM-dd`） |
+| `province` | string | 否 | 省份(籍贯) |
+| `cities` | string | 否 | 城市(籍贯) |
+| `age` | int32 | 否 | 年龄 |
+| `...` | | | 其余 50+ 字段见 OpenAPI schema |
 
-> **Note**: Onboarding 流程只需提交 `mobile`, `chineseName`, `sex`, `birthday` 及扩展字段。
+> **Note**: Onboarding 流程只需提交 `mobile`, `chineseName`, `sex`, `birthday`。不再提交 `medicalHistory`、`smokingStatus`、`exerciseFrequency`（对齐 funde-client PRD §5.10 单页表单设计）。
 
-**成功响应** (`200 OK`, `ResultObject`):
+**成功响应** (`200 OK`, `ResultSUsersVO`):
 
 ```json
-{ "code": "0", "data": {}, "msg": "ok", "total": 0, "success": true, "failed": false }
+{
+  "code": "0",
+  "data": {
+    "id": 1, "mobile": "13025417890", "chineseName": "张三",
+    "sex": "1", "birthday": "1980-06-15", ...
+  },
+  "msg": "ok", "total": 0, "success": true, "failed": false
+}
 ```
+
+`data` 类型为 `SUsersVO`（与 `SUsers` 字段一致），返回修改后的完整用户信息。
+
+**与旧接口的区别**:
+- 旧: `POST /mobile/v1/users/saveUser` → 返回空 `data: {}`
+- 新: `POST /v1/users/updateCurrentProfile` → 返回 `SUsersVO`（修改后的用户信息），路径无 `/mobile` 前缀
 
 对应的 BLL 方法签名：
 
 ```swift
-/// 保存/修改用户信息
-/// - Parameter payload: Onboarding 提交的用户数据子集
-func saveUser(_ payload: SUsersOnboardingPayload) async throws
+/// 修改当前用户资料（Onboarding / 个人信息编辑）
+/// - Parameter payload: 用户数据子集
+/// - Returns: 修改后的完整用户信息
+func updateCurrentProfile(_ payload: SUsersOnboardingPayload) async throws -> SUsers?
 ```
 
 ### API Contract: 查询用户详细信息
@@ -1169,7 +1170,8 @@ func changeCurrentPassword(oldPwd: String, newPwd: String) async throws
 - [ ] 系统不再弹窗时展示设置引导
 
 ### 登录后导航
-- [ ] 登录成功检查 `fd_onboarded` → 已完成则进入 `/home`，未完成进入 `/onboarding`
+- [ ] 登录成功调用 `checkNeedOnboarding()` → 依 API 数据完整性决定进入 `/home` 或 `/onboarding`
+- [ ] App 冷启动已有 token → 异步检查数据完整性后决定是否弹 onboarding
 - [ ] ~~redirect/deeplink 目标页还原~~ — 延迟实现
 
 ### 登录态与账号状态
@@ -1189,13 +1191,12 @@ func changeCurrentPassword(oldPwd: String, newPwd: String) async throws
 - [ ] 登录成功 dismiss → 进入主 Tab 页或目标页
 
 ### 新用户引导 (Onboarding)
-- [ ] 登录成功且 `fd_onboarded` 为 false 时进入引导
-- [ ] 顶部进度条动画过渡 4 步
-- [ ] Step 1: 姓名 + 性别 chip + 出生年份，校验通过才可下一步
-- [ ] Step 2: 既往病史多选 chip（8 项），「无」与其他互斥
-- [ ] Step 3: 吸烟单选 + 运动频率单选
-- [ ] Step 4: 团队卡片依次淡入动画（3 张）
-- [ ] Chip 选中/未选中样式正确（primarySoft vs surface）
-- [ ] 「返回」按钮在 Step 2-4 可用，数据保留
-- [ ] 完成后保存 `fd_onboarded=true`，replace 到 `/home`
-- [ ] 已完成的用户再次登录直接到 `/home`
+- [ ] `checkNeedOnboarding()` 判定数据不完整时进入单页引导表单
+- [ ] "1 分钟完成" badge + "完善基础信息" 标题正确渲染
+- [ ] 姓名自动聚焦，keyboardType 正确
+- [ ] 出生日期 UIDatePicker(.wheels) 弹出，选择后回填 + 年龄自动计算
+- [ ] 性别 chip 单选，选中/未选中样式正确
+- [ ] 所在城市点击弹出省/市联动 UIPickerView，选择后回填
+- [ ] 字段不全时按钮置灰不可点，点击 toast 提示
+- [ ] 全部填写后点击保存 → loading → API 调用 → `fd_archive_progress=20` → dismiss
+- [ ] 无跳过/关闭入口，用户必须完成 4 字段
