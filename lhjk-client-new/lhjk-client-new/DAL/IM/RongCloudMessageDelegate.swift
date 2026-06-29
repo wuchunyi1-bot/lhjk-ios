@@ -80,7 +80,8 @@ extension ChatMessage {
             time: timeFmt.string(from: sentDate),
             card: nil,
             meal: nil,
-            report: nil
+            report: nil,
+            conversationId: rcMessage.targetId
         )
     }
 }

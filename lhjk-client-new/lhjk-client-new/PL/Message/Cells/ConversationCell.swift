@@ -21,7 +21,7 @@ final class ConversationCell: UITableViewCell {
         l.font = .fdFont(ofSize: 17, weight: .semibold)
         l.textColor = .white
         l.textAlignment = .center
-        l.layer.cornerRadius = 10
+        l.layer.cornerRadius = 23  // 46 / 2 = 圆形
         l.clipsToBounds = true
         return l
     }()
@@ -42,6 +42,7 @@ final class ConversationCell: UITableViewCell {
         let l = UILabel()
         l.font = .fdFont(ofSize: 15, weight: .bold)
         l.textColor = .fdText
+        l.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return l
     }()
 
@@ -53,6 +54,7 @@ final class ConversationCell: UITableViewCell {
         l.layer.cornerRadius = 4
         l.clipsToBounds = true
         l.textAlignment = .center
+        l.setContentCompressionResistancePriority(.required, for: .horizontal)
         return l
     }()
 
@@ -69,7 +71,15 @@ final class ConversationCell: UITableViewCell {
         l.font = .fdFont(ofSize: 10)
         l.textColor = .fdMuted
         l.textAlignment = .right
+        l.setContentCompressionResistancePriority(.required, for: .horizontal)
+        l.setContentHuggingPriority(.required, for: .horizontal)
         return l
+    }()
+
+    private let separatorLine: UIView = {
+        let v = UIView()
+        v.backgroundColor = .fdBorder
+        return v
     }()
 
     // MARK: - Init
@@ -79,7 +89,7 @@ final class ConversationCell: UITableViewCell {
         selectionStyle = .none
         backgroundColor = .fdSurface
 
-        [accentBar, avatarLabel, badgeLabel, nameLabel, roleTag, previewLabel, timeLabel].forEach(contentView.addSubview)
+        [accentBar, avatarLabel, badgeLabel, nameLabel, roleTag, previewLabel, timeLabel, separatorLine].forEach(contentView.addSubview)
 
         accentBar.snp.makeConstraints { make in
             make.leading.top.bottom.equalToSuperview().inset(UIEdgeInsets(top: 14, left: 0, bottom: 14, right: 0))
@@ -99,27 +109,36 @@ final class ConversationCell: UITableViewCell {
             make.width.greaterThanOrEqualTo(18)
         }
 
+        // 时间自适应宽度 + 固定右侧位置，确保始终展示
+        timeLabel.snp.makeConstraints { make in
+            make.top.equalTo(avatarLabel).offset(4)
+            make.trailing.equalToSuperview().offset(-16)
+        }
+
         nameLabel.snp.makeConstraints { make in
-            make.top.equalTo(avatarLabel)
+            make.top.equalTo(avatarLabel).offset(4)
             make.leading.equalTo(avatarLabel.snp.trailing).offset(12)
+            make.trailing.lessThanOrEqualTo(roleTag.snp.leading).offset(-6)
         }
 
         roleTag.snp.makeConstraints { make in
             make.centerY.equalTo(nameLabel)
             make.leading.equalTo(nameLabel.snp.trailing).offset(6)
+            make.trailing.lessThanOrEqualTo(timeLabel.snp.leading).offset(-8)
             make.height.equalTo(18)
         }
 
-        timeLabel.snp.makeConstraints { make in
-            make.top.equalTo(nameLabel)
-            make.trailing.equalToSuperview().offset(-16)
-            make.leading.greaterThanOrEqualTo(roleTag.snp.trailing).offset(8)
-        }
-
         previewLabel.snp.makeConstraints { make in
-            make.top.equalTo(nameLabel.snp.bottom).offset(3)
+            make.top.equalTo(nameLabel.snp.bottom).offset(6)
             make.leading.equalTo(nameLabel)
             make.trailing.lessThanOrEqualTo(timeLabel)
+        }
+
+        separatorLine.snp.makeConstraints { make in
+            make.leading.equalTo(avatarLabel)
+            make.trailing.equalTo(timeLabel)
+            make.bottom.equalToSuperview()
+            make.height.equalTo(0.5)
         }
     }
 

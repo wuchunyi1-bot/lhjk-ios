@@ -101,6 +101,8 @@ struct ChatMessage: Identifiable, Codable {
     let card: ServiceCard?
     let meal: MealAnalysis?
     let report: AIWeeklyReport?
+    /// 所属会话 ID（融云消息携带，mock 消息为 nil）
+    let conversationId: String?
 
     var isStaff: Bool { role == .staff }
     var isUser: Bool { role == .user }
@@ -198,26 +200,26 @@ extension ChatMessage {
     // MARK: Factory helpers
 
     private static func staff(_ id: String, _ text: String, _ name: String, _ role: String, _ avatar: String, _ time: String) -> ChatMessage {
-        ChatMessage(id: id, type: .text, role: .staff, senderName: name, senderRole: role, avatar: avatar, text: text, time: time, card: nil, meal: nil, report: nil)
+        ChatMessage(id: id, type: .text, role: .staff, senderName: name, senderRole: role, avatar: avatar, text: text, time: time, card: nil, meal: nil, report: nil, conversationId: nil)
     }
 
     private static func user(_ id: String, _ text: String, _ time: String) -> ChatMessage {
-        ChatMessage(id: id, type: .text, role: .user, senderName: nil, senderRole: nil, avatar: nil, text: text, time: time, card: nil, meal: nil, report: nil)
+        ChatMessage(id: id, type: .text, role: .user, senderName: nil, senderRole: nil, avatar: nil, text: text, time: time, card: nil, meal: nil, report: nil, conversationId: nil)
     }
 
     private static func system(_ id: String, _ text: String) -> ChatMessage {
-        ChatMessage(id: id, type: .system, role: .user, senderName: nil, senderRole: nil, avatar: nil, text: text, time: "", card: nil, meal: nil, report: nil)
+        ChatMessage(id: id, type: .system, role: .user, senderName: nil, senderRole: nil, avatar: nil, text: text, time: "", card: nil, meal: nil, report: nil, conversationId: nil)
     }
 
     private static func staffCard(_ id: String, _ card: ServiceCard) -> ChatMessage {
-        ChatMessage(id: id, type: .metricCard, role: .staff, senderName: nil, senderRole: nil, avatar: nil, text: nil, time: "", card: card, meal: nil, report: nil)
+        ChatMessage(id: id, type: .metricCard, role: .staff, senderName: nil, senderRole: nil, avatar: nil, text: nil, time: "", card: card, meal: nil, report: nil, conversationId: nil)
     }
 
     private static func staffMeal(_ id: String, _ meal: MealAnalysis) -> ChatMessage {
-        ChatMessage(id: id, type: .mealAnalysis, role: .staff, senderName: nil, senderRole: nil, avatar: nil, text: nil, time: "", card: nil, meal: meal, report: nil)
+        ChatMessage(id: id, type: .mealAnalysis, role: .staff, senderName: nil, senderRole: nil, avatar: nil, text: nil, time: "", card: nil, meal: meal, report: nil, conversationId: nil)
     }
 
     private static func aiReport(_ id: String, _ report: AIWeeklyReport) -> ChatMessage {
-        ChatMessage(id: id, type: .aiWeeklyReport, role: .staff, senderName: "小德", senderRole: "AI 健康顾问", avatar: "德", text: nil, time: "今天 08:00", card: nil, meal: nil, report: report)
+        ChatMessage(id: id, type: .aiWeeklyReport, role: .staff, senderName: "小德", senderRole: "AI 健康顾问", avatar: "德", text: nil, time: "今天 08:00", card: nil, meal: nil, report: report, conversationId: nil)
     }
 }

@@ -43,6 +43,8 @@ final class RongCloudManager {
     let connectionStatusPublisher = PassthroughSubject<RCConnectionStatus, Never>()
     /// 收到的新消息
     let messageReceivedPublisher = PassthroughSubject<ChatMessage, Never>()
+    /// 远端会话列表同步完成
+    let remoteConversationListDidSyncPublisher = PassthroughSubject<RCErrorCode, Never>()
 
     // MARK: - Properties
 
@@ -80,6 +82,7 @@ final class RongCloudManager {
             return
         }
         client.initWithAppKey(appKey, option: nil)
+        setupConversationDelegate()
         isInitialized = true
 
         // 开启 SDK 控制台日志（Debug 级别）
@@ -110,7 +113,7 @@ final class RongCloudManager {
             print("[RongCloud] reconnect → no stored token, skip")
             return
         }
-        print("[RongCloud] reconnect → using stored token")
+        print("[RongCloud] reconnect → token=\(token)")
         connect(with: token)
     }
 
@@ -157,17 +160,56 @@ final class RongCloudManager {
     /// 获取单聊会话列表（异步）
     func getConversationList(completion: @escaping ([RCConversation]) -> Void) {
         client.getConversationList([
-            NSNumber(value: RCConversationType.ConversationType_PRIVATE.rawValue),
+            NSNumber(value: RCConversationType.ConversationType_GROUP.rawValue),NSNumber(value: RCConversationType.ConversationType_PRIVATE.rawValue)
         ]) { conversationList in
             completion(conversationList ?? [])
         }
     }
 
     /// 批量按 ID 获取会话 (5.8.2+)，只返回存在的会话，不存在的不返回
-    /// API 限制单次最多 100 个，超过自动分批
+    /// 内部分批查询，每批 100 个
     /// - Parameter targetIds: 会话 ID 列表
     /// - Parameter completion: 异步回调
     func getConversations(by targetIds: [String], completion: @escaping ([RCConversation]) -> Void) {
+        getConversationsByIdBatch(targetIds: targetIds, completion: completion)
+    }
+
+    /// 按时间戳方式获取会话列表，startTime 为一周前，count=100
+    /// 拉取后按 targetIds 过滤，不存在的不返回
+    /// - Parameter targetIds: 会话 ID 列表
+    /// - Parameter completion: 异步回调
+    func getConversationsByTime(targetIds: [String], completion: @escaping ([RCConversation]) -> Void) {
+        guard !targetIds.isEmpty else {
+            completion([])
+            return
+        }
+        let oneWeekAgoMs = Int64((Date().timeIntervalSince1970 - 7 * 24 * 60 * 60) * 1000)
+        client.getConversationList(
+            [NSNumber(value: RCConversationType.ConversationType_GROUP.rawValue),NSNumber(value: RCConversationType.ConversationType_PRIVATE.rawValue)],
+            count: 100,
+            startTime: oneWeekAgoMs
+        ) { [weak self] conversationList in
+            guard let self = self else { return }
+            let list = conversationList ?? []
+            print("[RongCloud] getConversationsByTime total=\(list.count)")
+            for conv in list {
+                let typeStr: String
+                switch conv.conversationType {
+                case .ConversationType_PRIVATE: typeStr = "单聊"
+                case .ConversationType_GROUP:   typeStr = "群聊"
+                default:                        typeStr = "其他(\(conv.conversationType.rawValue))"
+                }
+                print("[RongCloud]   conv id=\(conv.targetId), type=\(typeStr), unread=\(conv.unreadMessageCount)")
+            }
+            let filtered = list.filter { targetIds.contains($0.targetId) }
+            print("[RongCloud] getConversationsByTime filtered=\(filtered.count)")
+            completion(filtered)
+        }
+    }
+
+    /// [保留] 原按 ID 分批查询逻辑，每批 10 个
+    /// 当前未使用，后续如需切回可按需调用
+    private func getConversationsByIdBatch(targetIds: [String], completion: @escaping ([RCConversation]) -> Void) {
         guard !targetIds.isEmpty else {
             completion([])
             return
@@ -185,8 +227,8 @@ final class RongCloudManager {
                 RCConversationIdentifier(conversationIdentifier: .ConversationType_GROUP, targetId: id)
             }
             group.enter()
-            //给100个数据最后只返回来10个，我看看传10个会有啥结果
             client.getConversations(identifiers, success: { conversations in
+                print("+++++++++\(conversations.count)")
                 allResults.append(contentsOf: conversations)
                 group.leave()
             }, error: { [weak self] errorCode in
@@ -202,19 +244,49 @@ final class RongCloudManager {
 
     /// 获取指定会话的历史消息（异步）
     func getMessages(
-        conversationId: String,
+        conversationType: RCConversationType = .ConversationType_GROUP,
+        targetId: String,
         oldestMessageId: Int = -1,
         count: Int = 20,
         completion: @escaping ([RCMessage]) -> Void
     ) {
         client.getHistoryMessages(
-            .ConversationType_PRIVATE,
-            targetId: conversationId,
+            conversationType,
+            targetId: targetId,
             oldestMessageId: oldestMessageId,
             count: Int32(count)
         ) { messages in
             completion(messages ?? [])
         }
+    }
+
+    /// 发送文本消息
+    func sendTextMessage(
+        conversationType: RCConversationType,
+        targetId: String,
+        content: String,
+        completion: @escaping (RCMessage?, RCErrorCode) -> Void
+    ) {
+        let textMsg = RCTextMessage(content: content)
+        client.sendMessage(
+            conversationType,
+            targetId: targetId,
+            content: textMsg,
+            pushContent: nil,
+            pushData: nil,
+            attached: nil,
+            success: { [weak self] messageId in
+                guard let self = self else { return }
+                print("[RongCloud] sendTextMessage ✓ messageId=\(messageId)")
+                self.client.getMessage(messageId) { message in
+                    completion(message, .RC_SUCCESS)
+                }
+            },
+            error: { [weak self] errorCode, _ in
+                self?.logError("sendTextMessage", code: errorCode)
+                completion(nil, errorCode)
+            }
+        )
     }
 
     /// 获取总未读消息数（异步）
@@ -330,5 +402,37 @@ final class RongCloudManager {
 
     private func clearToken() {
         UserDefaults.standard.removeObject(forKey: Self.tokenKey)
+    }
+
+    // MARK: - RCConversationDelegate Bridge
+
+    /// 内部 NSObject 桥接，因为 RCConversationDelegate 继承自 NSObjectProtocol
+    private var conversationDelegateBridge: RongCloudConversationDelegateBridge?
+
+    private func setupConversationDelegate() {
+        let bridge = RongCloudConversationDelegateBridge(manager: self)
+        conversationDelegateBridge = bridge
+        client.setRCConversationDelegate(bridge)
+    }
+}
+
+// MARK: - RCConversationDelegate Bridge
+
+/// RCConversationDelegate 要求 NSObjectProtocol，用内部类桥接
+private final class RongCloudConversationDelegateBridge: NSObject, RCConversationDelegate {
+    private weak var manager: RongCloudManager?
+
+    init(manager: RongCloudManager) {
+        self.manager = manager
+        super.init()
+    }
+
+    func conversationDidSync() {
+        print("[RongCloud] conversationDidSync")
+    }
+
+    func remoteConversationListDidSync(_ code: RCErrorCode) {
+        print("[RongCloud] remoteConversationListDidSync code=\(code.rawValue)")
+        manager?.remoteConversationListDidSyncPublisher.send(code)
     }
 }

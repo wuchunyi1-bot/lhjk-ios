@@ -39,6 +39,7 @@ final class ConversationListViewController: UIViewController, UITableViewDataSou
 
     func loadData() {
         Task {
+//            async let _ = IMService.shared.testFetchAllConversations()
             conversations = await IMService.shared.loadConversations()
             await MainActor.run {
                 tableView.reloadData()

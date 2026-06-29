@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import RongIMLibCore
 
 /// IM 业务服务 — 会话 / 消息 / 通知管理
@@ -12,14 +13,50 @@ final class IMService {
     private var notifications: [AppNotification] = AppNotification.mockData()
     private var messagesStore: [String: [ChatMessage]] = [:]
 
-    private init() {}
+    private var cancellables = Set<AnyCancellable>()
+
+    private init() {
+        // 订阅实时消息，按 conversationId 缓存
+        RongCloudManager.shared.messageReceivedPublisher
+            .sink { [weak self] msg in
+                self?.onMessageReceived(msg)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func onMessageReceived(_ msg: ChatMessage) {
+        guard let convId = msg.conversationId else { return }
+        messagesStore[convId, default: []].append(msg)
+        print("[IMService] real-time message received for conv=\(convId)")
+    }
 
     // MARK: - Conversations
+
+    /// 测试方法：获取所有会话列表，打印会话 ID 和会话类型
+    /// 与 loadConversations() 并行调用以验证数据
+    func testFetchAllConversations() async {
+        let list: [RCConversation] = await withCheckedContinuation { continuation in
+            RongCloudManager.shared.getConversationList { conversations in
+                continuation.resume(returning: conversations)
+            }
+        }
+        print("[IMService] ===== 会话列表测试 =====")
+        for conv in list {
+            let typeStr: String
+            switch conv.conversationType {
+            case .ConversationType_PRIVATE: typeStr = "单聊"
+            case .ConversationType_GROUP:   typeStr = "群聊"
+            default:                        typeStr = "其他(\(conv.conversationType.rawValue))"
+            }
+            print("[IMService] conv id=\(conv.targetId), type=\(typeStr), unread=\(conv.unreadMessageCount)")
+        }
+        print("[IMService] 共 \(list.count) 个会话")
+    }
 
     /// 两步合并加载会话列表：
     /// 1. `GET /mobile/v1/session/getGroup` 获取群组元数据
     /// 2. 用 groupId 列表调融云 `getConversations` 批量查询本地会话
-    /// 3. 以融云返回数据为基准遍历，匹配 GroupVO 元数据，按 sentTime 倒序排列
+    /// 3. 匹配上融云的在前展示（按 sentTime 倒序），未匹配的 GroupVO 在后展示
     /// 失败时 fallback 到 mock 数据
     func loadConversations() async -> [Conversation] {
         let isConnected = RongCloudManager.shared.connectionStatus == .connected
@@ -61,16 +98,34 @@ final class IMService {
                 }
             }
 
-            // Step 3: 以融云返回数据为基准遍历，按 sentTime 倒序
+            // Step 3: 匹配融云的在前展示，未匹配的在后
+            // 先按 sentTime 倒序排列融云返回的会话
             let sortedRC = rcList.sorted { $0.sentTime > $1.sentTime }
-            let list: [Conversation] = sortedRC.map { rc in
+            var matchedIds = Set<String>()
+
+            // 匹配上融云的会话（RCConversation + GroupVO），在前展示
+            var matchedList: [Conversation] = []
+            for rc in sortedRC {
                 if let group = groupDict[rc.targetId] {
-                    return Conversation.fromGroupVO(group, rc: rc)
+                    matchedList.append(Conversation.fromGroupVO(group, rc: rc))
+                    matchedIds.insert(rc.targetId)
                 } else {
                     // 融云有会话但群组 API 未返回 → fallback 元数据
-                    return Conversation.fromRongCloud(rc)
+                    matchedList.append(Conversation.fromRongCloud(rc))
+                    matchedIds.insert(rc.targetId)
                 }
             }
+
+            // 未匹配上融云的 GroupVO（只有群组 API 数据，无融云会话），在后展示
+            var unmatchedList: [Conversation] = []
+            for (gid, group) in groupDict {
+                if !matchedIds.contains(gid) {
+                    unmatchedList.append(Conversation.fromGroupVO(group, rc: nil))
+                }
+            }
+
+            let list = matchedList + unmatchedList
+            print("[IMService] matched=\(matchedList.count) unmatched=\(unmatchedList.count)")
 
             conversations = list
         } else {
@@ -119,6 +174,23 @@ final class IMService {
 
     // MARK: - Messages
 
+    /// 异步加载历史消息（从融云 SDK）
+    func loadMessages(conversationId: String) async -> [ChatMessage] {
+        let rcMessages: [RCMessage] = await withCheckedContinuation { continuation in
+            RongCloudManager.shared.getMessages(
+                targetId: conversationId,
+                count: 20
+            ) { messages in
+                continuation.resume(returning: messages)
+            }
+        }
+        let chatMessages = rcMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }
+        messagesStore[conversationId] = chatMessages
+        print("[IMService] loadMessages conv=\(conversationId) count=\(chatMessages.count)")
+        return chatMessages
+    }
+
+    /// 同步获取缓存消息（若缓存为空则 fallback 到 mock）
     func getMessages(conversationId: String) -> [ChatMessage] {
         if messagesStore[conversationId] == nil {
             messagesStore[conversationId] = ChatMessage.mockMessages(for: conversationId)
@@ -126,21 +198,24 @@ final class IMService {
         return messagesStore[conversationId] ?? []
     }
 
-    func sendMessage(_ text: String, conversationId: String) -> ChatMessage {
-        let msg = ChatMessage(
-            id: "local-\(Int(Date().timeIntervalSince1970 * 1000))",
-            type: .text,
-            role: .user,
-            senderName: nil,
-            senderRole: nil,
-            avatar: nil,
-            text: text,
-            time: "刚刚",
-            card: nil,
-            meal: nil,
-            report: nil
-        )
-        messagesStore[conversationId, default: []].append(msg)
-        return msg
+    /// 发送文本消息（通过融云 SDK）
+    func sendMessage(_ text: String, conversationId: String) async -> ChatMessage? {
+        let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
+            RongCloudManager.shared.sendTextMessage(
+                conversationType: .ConversationType_GROUP,
+                targetId: conversationId,
+                content: text
+            ) { message, errorCode in
+                continuation.resume(returning: (message, errorCode))
+            }
+        }
+        if let rcMsg = result.0 {
+            let chatMsg = ChatMessage.fromRongCloud(rcMessage: rcMsg)
+            messagesStore[conversationId, default: []].append(chatMsg)
+            return chatMsg
+        } else {
+            print("[IMService] sendMessage ✗ errorCode=\(result.1.rawValue)")
+            return nil
+        }
     }
 }

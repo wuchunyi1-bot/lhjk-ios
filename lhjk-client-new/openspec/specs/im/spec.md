@@ -200,6 +200,24 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 - **THEN** `RongCloudMessageDelegate.onReceived(_:left:object:)` 将 `RCMessage` 转为 `Message` 模型
 - **AND** 通过 `RongCloudManager.messageReceivedPublisher` 发布
 
+### Requirement: Remote Conversation Sync Delegate
+系统 SHALL 通过 `RCConversationDelegate` 监听远端会话同步完成事件。
+
+#### Scenario: Delegate 注册
+- **WHEN** `RongCloudManager.initialize(appKey:)` 调用
+- **THEN** 调用 `client.setRCConversationDelegate(self)` 注册 delegate
+- **AND** `RongCloudManager` 遵循 `RCConversationDelegate` 协议
+
+#### Scenario: 远端会话同步完成
+- **WHEN** 融云 SDK 完成远端会话列表同步
+- **THEN** `RCConversationDelegate.remoteConversationListDidSync(_:)` 被回调
+- **AND** 通过 `remoteConversationListDidSyncPublisher` 发布同步结果（`PassthroughSubject<RCErrorCode, Never>`）
+
+#### Scenario: 实时会话同步完成
+- **WHEN** 融云 SDK 完成实时会话同步
+- **THEN** `RCConversationDelegate.conversationDidSync()` 被回调
+- **AND** 打印 `[RongCloud] conversationDidSync` 日志
+
 ### Requirement: Messages Root Page
 系统 SHALL 提供消息模块根页面 `/messages`，聚合所有健管团队会话和系统通知入口。
 
@@ -222,11 +240,16 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 #### Scenario: 会话行渲染
 - **WHEN** 遍历 conversations 数组渲染
 - **THEN** 每行展示：
-  - 左侧 46×46pt `fd-avatar--{role}` 角色色圆形头像（首字）
+  - 左侧 46×46pt `fd-avatar--{role}` 角色色圆形头像（首字），`cornerRadius = 23` 确保正圆
   - 头像右上角未读角标（unread > 0 时，红色圆形 badge）
   - 姓名（15pt bold）+ roleLabel 标签 pill（10pt，灰底灰字）
-  - 消息预览单行截断（12pt `fdSubtext`，max-width 220pt）
-  - 右侧时间戳（10pt `fdMuted`）
+  - 消息预览单行截断（12pt `fdSubtext`）
+  - 右侧时间戳（10pt `fdMuted`，固定宽度 44pt，始终展示不被挤压）
+  - 底部分割线（0.5pt，`fdBorder` 色，左右对齐内容区）
+- **AND** 水平压缩优先级：`nameLabel` = `.defaultLow`（仅群名可省略），`roleTag` / `timeLabel` = `.required`（必须完整展示）
+- **AND** `timeLabel` 固定宽度 44pt + 固定 trailing 16pt，确保时间始终可见
+- **AND** `roleTag.trailing ≤ timeLabel.leading - 8`，防止标签遮挡时间
+- **AND** `nameLabel.trailing ≤ roleTag.leading - 6`，超长群名自动 `...` 截断
 - **AND** `important == true` 时左侧渲染 3pt 品牌色竖条
 
 #### Scenario: 通知中心 Tab 内联预览
@@ -245,19 +268,28 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 - **WHEN** `ConversationListViewController` 加载会话列表
 - **THEN** 前提：融云连接成功后已执行 `getRemoteConversationList` 将服务端会话同步到本地，确保本地数据库包含所有服务端会话
 - **AND** 第一步：调用 `GET /v1/session/getGroup` 获取我的群组列表，返回 `[GroupVO]`
-- **AND** 第二步：用所有 `groupId` 调用融云 `getConversations` 批量查询本地会话详情
-- **AND** 合并逻辑：**以融云返回的 `[RCConversation]` 为基准遍历**（而非 `[GroupVO]`）
+- **AND** 第二步：用所有 `groupId` 调用融云 `getConversations` 批量查询本地会话详情（按 ID 分批，每批 100 个）
+- **AND** 合并逻辑：**匹配上融云的在前展示，未匹配的在后展示**
+  - 先遍历融云返回的 `[RCConversation]`，按 `sentTime` 倒序排列
   - 对每个 `RCConversation`，用 `targetId` 查找匹配的 `GroupVO`
-  - 匹配成功 → `Conversation.fromGroupVO(group, rc: rc)` 合并展示
-  - 匹配失败 → 该融云会话**仍展示**，用 `fromRongCloud` fallback 元数据
-- **AND** 按融云 `sentTime` **倒序排列**（最新消息在前），不以后端接口返回顺序为准
-- **AND** 融云批量查询仅限于 `getGroup` 返回的 ID，减少不必要的遍历范围
+  - 匹配成功 → `Conversation.fromGroupVO(group, rc: rc)`，记录为已匹配
+  - 匹配失败（融云有会话但群组 API 未返回）→ `Conversation.fromRongCloud(rc)` fallback
+  - 再遍历 `GroupVO` 中未被匹配的项 → `Conversation.fromGroupVO(group, rc: nil)` 追加到末尾
+- **AND** 最终顺序：匹配的（按 sentTime 倒序）+ 未匹配的 GroupVO
 - **AND** `GroupVO` + `RCConversation` → `Conversation` 字段映射：
   - 实时数据优先融云：`unreadMessageCount` → `unread`，`sentTime` → `lastTime`，`latestMessage` → `lastMessage`
   - 展示元数据优先 `GroupVO`：`principalName ?? groupName` → `name`，`serviceName` → `title` / `roleLabel`
   - `groupImg` 取首字 → `avatar`，`numbers` → `status`（"N 人在线"）
   - `labelType == 1` → `important = true`，`serviceId` → `role`
+  - rc 为 nil 时：`unread = 0`，`lastTime = ""`，`lastMessage` fallback 到 GroupVO.lastContent
 - **AND** 若 API 请求失败或融云未连接，fallback 到 mock 数据
+
+#### Scenario: 测试方法 — 全量会话打印
+- **WHEN** `ConversationListViewController.loadData()` 执行
+- **THEN** 并行调用 `IMService.testFetchAllConversations()` 获取全量会话列表（通过 `getConversationList` 而非按 ID 批量查询）
+- **AND** 打印每个会话的 ID、会话类型（单聊/群聊/其他）、未读数
+- **AND** 该方法是临时测试用途，不影响正式数据流和 UI 渲染
+- **AND** 使用 `async let` 与 `loadConversations()` 并行执行，不阻塞主流程
 
 #### Scenario: 离线状态
 - **WHEN** 网络断开
@@ -270,7 +302,7 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 系统 SHALL 展示单个会话的完整 IM 聊天界面，支持多角色、多消息类型和快捷回复。
 
 **路由**: `/conversations/:id`
-**数据源**: `GET /api/im/conversations/:id/messages`（历史消息拉取）+ WebSocket 实时推送
+**数据源**: 融云 SDK `getHistoryMessages`（历史消息拉取）+ `RCIMClientReceiveMessageDelegate`（实时消息接收）
 
 #### Scenario: 导航栏
 - **WHEN** 进入会话详情
@@ -363,6 +395,22 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 - **THEN** 自动滚动到消息区最底部
 - **WHEN** 新消息到达且已在底部
 - **THEN** 平滑滚动至底；否则显示"新消息"提示按钮
+
+#### Scenario: 消息收发（融云 API）
+- **WHEN** 用户进入聊天页
+- **THEN** 调用 `RongCloudManager.getMessages(conversationType:targetId:count:)` 拉取最近 20 条历史消息
+- **AND** 将 `[RCMessage]` 通过 `ChatMessage.fromRongCloud(rcMessage:)` 转为 `[ChatMessage]` 展示
+- **AND** 若融云返回空或失败，fallback 到 mock 数据确保页面可用
+
+- **WHEN** 用户发送文本消息
+- **THEN** 先乐观展示本地 `ChatMessage`（id 前缀 `local-`，time "刚刚"）
+- **AND** 异步调用 `RongCloudManager.sendTextMessage(conversationType:targetId:content:)` 发送到融云
+- **AND** 发送成功后用服务端返回的 `RCMessage` 替换本地消息（更新 id、time 等字段）
+
+- **WHEN** 融云推送新消息到当前会话
+- **THEN** `ChatViewController` 订阅 `RongCloudManager.messageReceivedPublisher`
+- **AND** 过滤 `conversationId` 匹配的消息，去重后追加到 `messages` 末尾并插入行、滚动至底
+- **AND** `IMService` 同步将实时消息缓存到 `messagesStore`
 
 ---
 

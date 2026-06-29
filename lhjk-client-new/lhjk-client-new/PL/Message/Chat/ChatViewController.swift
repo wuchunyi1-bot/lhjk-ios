@@ -1,5 +1,6 @@
 import UIKit
 import SnapKit
+import Combine
 
 /// 聊天详情页 — 参考 funde-client ConversationDetailView.vue
 final class ChatViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate {
@@ -10,6 +11,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     private var conversation: Conversation?
     private var messages: [ChatMessage] = []
     private var inputBottomConstraint: Constraint?
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - UI
 
@@ -32,7 +34,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     // Input bar
     private lazy var inputBar: UIView = {
         let v = UIView()
-        v.backgroundColor = UIColor.white.withAlphaComponent(0.96)
+        v.backgroundColor = .white
         v.layer.shadowColor = UIColor.black.cgColor
         v.layer.shadowOffset = CGSize(width: 0, height: -1)
         v.layer.shadowRadius = 3
@@ -155,11 +157,22 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         }
 
         sendBtn.snp.makeConstraints { $0.width.equalTo(56); $0.height.equalTo(36) }
+        textField.snp.makeConstraints { $0.height.equalTo(36) }
+
+        // 底部安全区域填充白色，与 inputBar 颜色一致
+        let safeAreaFill = UIView()
+        safeAreaFill.backgroundColor = .white
+        view.addSubview(safeAreaFill)
+        safeAreaFill.snp.makeConstraints { make in
+            make.top.equalTo(inputBar.snp.bottom)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
 
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
 
         setupQuickReplies(for: conv)
+        setupRealtimeSubscription()
         loadMessages()
     }
 
@@ -200,12 +213,46 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         send(text: text)
     }
 
+    // MARK: - Real-time Messages
+
+    private func setupRealtimeSubscription() {
+        // Combine 订阅：逐条追加新消息
+        RongCloudManager.shared.messageReceivedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] msg in
+                guard let self = self else { return }
+                guard msg.conversationId == self.conversationId else { return }
+                guard !self.messages.contains(where: { $0.id == msg.id }) else { return }
+                self.messages.append(msg)
+                let idx = IndexPath(row: self.messages.count - 1, section: 0)
+                self.tableView.insertRows(at: [idx], with: .none)
+                self.scrollToBottom(animated: true)
+            }
+            .store(in: &cancellables)
+
+        // Delegate 回调：收到消息后全量刷新
+        RongCloudMessageDelegate.shared.onMessageReceived = { [weak self] rcMsg in
+            guard let self = self else { return }
+            guard rcMsg.targetId == self.conversationId else { return }
+            DispatchQueue.main.async {
+                self.loadMessages()
+            }
+        }
+    }
+
     // MARK: - Data
 
     private func loadMessages() {
-        messages = IMService.shared.getMessages(conversationId: conversationId)
-        tableView.reloadData()
-        DispatchQueue.main.async { self.scrollToBottom(animated: false) }
+        Task {
+            let msgs = await IMService.shared.loadMessages(conversationId: conversationId)
+            await MainActor.run {
+                messages = msgs.isEmpty
+                    ? IMService.shared.getMessages(conversationId: conversationId)
+                    : msgs
+                tableView.reloadData()
+                scrollToBottom(animated: false)
+            }
+        }
     }
 
     // MARK: - UITableView
@@ -310,11 +357,36 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     }
 
     private func send(text: String) {
-        let msg = IMService.shared.sendMessage(text, conversationId: conversationId)
-        messages.append(msg)
+        // 先乐观展示本地消息
+        let localMsg = ChatMessage(
+            id: "local-\(Int(Date().timeIntervalSince1970 * 1000))",
+            type: .text,
+            role: .user,
+            senderName: nil,
+            senderRole: nil,
+            avatar: nil,
+            text: text,
+            time: "刚刚",
+            card: nil,
+            meal: nil,
+            report: nil,
+            conversationId: conversationId
+        )
+        messages.append(localMsg)
         let idx = IndexPath(row: messages.count - 1, section: 0)
         tableView.insertRows(at: [idx], with: .none)
         scrollToBottom(animated: true)
+
+        // 异步发送到融云
+        Task {
+            let sentMsg = await IMService.shared.sendMessage(text, conversationId: conversationId)
+            if let sentMsg = sentMsg, let localIdx = messages.firstIndex(where: { $0.id == localMsg.id }) {
+                await MainActor.run {
+                    messages[localIdx] = sentMsg
+                    tableView.reloadRows(at: [IndexPath(row: localIdx, section: 0)], with: .none)
+                }
+            }
+        }
     }
 
     @objc private func textChanged() {

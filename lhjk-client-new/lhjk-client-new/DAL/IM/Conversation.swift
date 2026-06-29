@@ -159,20 +159,28 @@ extension Conversation {
     }
 
     /// 从 GroupVO + RCConversation 合并创建 Conversation
-    /// 仅在融云存在该会话时调用
+    /// rc 为 nil 时仅使用 GroupVO 数据（无融云会话）
     /// - Parameters:
     ///   - group: 后端群组数据（展示元数据）
-    ///   - rc: 融云会话数据（实时未读数、最后消息）
-    static func fromGroupVO(_ group: GroupVO, rc: RCConversation) -> Conversation {
+    ///   - rc: 融云会话数据（实时未读数、最后消息），nil 时 fallback 到 GroupVO
+    static func fromGroupVO(_ group: GroupVO, rc: RCConversation?) -> Conversation {
         let convId = group.groupId ?? ""
 
-        // 实时数据：融云
-        let unread = Int(rc.unreadMessageCount)
-        let lastTimeStr = formatRCTime(rc.sentTime)
+        // 实时数据：融云优先，nil 时 fallback 到 GroupVO
+        let unread: Int
+        let lastTimeStr: String
         let lastMsg: String
-        if let textMsg = rc.latestMessage as? RCTextMessage, !textMsg.content.isEmpty {
-            lastMsg = textMsg.content
+        if let rc = rc {
+            unread = Int(rc.unreadMessageCount)
+            lastTimeStr = formatRCTime(rc.sentTime)
+            if let textMsg = rc.latestMessage as? RCTextMessage, !textMsg.content.isEmpty {
+                lastMsg = textMsg.content
+            } else {
+                lastMsg = group.lastContent ?? "暂无消息"
+            }
         } else {
+            unread = 0
+            lastTimeStr = ""
             lastMsg = group.lastContent ?? "暂无消息"
         }
 
