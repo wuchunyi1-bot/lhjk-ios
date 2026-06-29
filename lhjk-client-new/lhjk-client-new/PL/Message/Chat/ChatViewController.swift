@@ -1,9 +1,10 @@
 import UIKit
 import SnapKit
 import Combine
+import Kingfisher
 
 /// 聊天详情页 — 参考 funde-client ConversationDetailView.vue
-final class ChatViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate {
+final class ChatViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
     // MARK: - Properties
 
@@ -27,6 +28,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         tv.register(ServiceCardCell.self, forCellReuseIdentifier: ServiceCardCell.reuseID)
         tv.register(MealAnalysisCell.self, forCellReuseIdentifier: MealAnalysisCell.reuseID)
         tv.register(AIWeeklyReportCell.self, forCellReuseIdentifier: AIWeeklyReportCell.reuseID)
+        tv.register(ImageBubbleCell.self, forCellReuseIdentifier: ImageBubbleCell.reuseID)
         tv.keyboardDismissMode = .interactive
         return tv
     }()
@@ -56,13 +58,17 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     }()
 
     private lazy var toolBtns: [UIButton] = {
-        ["doc.text", "chart.line.uptrend.xyaxis", "photo"].map { icon in
+        let icons = ["doc.text", "chart.line.uptrend.xyaxis", "photo"]
+        return icons.enumerated().map { idx, icon in
             let b = UIButton(type: .system)
             b.setImage(UIImage(systemName: icon), for: .normal)
             b.tintColor = .fdPrimary
             b.backgroundColor = .fdBg2
             b.layer.cornerRadius = 10
             b.snp.makeConstraints { $0.size.equalTo(32) }
+            if idx == 2 {
+                b.addTarget(self, action: #selector(showImagePicker), for: .touchUpInside)
+            }
             return b
         }
     }()
@@ -110,6 +116,12 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        RongCloudManager.shared.clearGroupUnreadCount(for: conversationId)
+        IMService.shared.markAsRead(conversationId)
     }
 
     override func setupUI() {
@@ -245,6 +257,17 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     private func loadMessages() {
         Task {
             let msgs = await IMService.shared.loadMessages(conversationId: conversationId)
+            print("[Chat] loadMessages count=\(msgs.count)")
+            for msg in msgs {
+                switch msg.type {
+                case .text:
+                    print("[Chat]   [text] id=\(msg.id) content=\(msg.text ?? "")")
+                case .image:
+                    print("[Chat]   [image] id=\(msg.id) imagePath=\(msg.imagePath ?? "nil")")
+                default:
+                    print("[Chat]   [\(msg.type.rawValue)] id=\(msg.id)")
+                }
+            }
             await MainActor.run {
                 messages = msgs.isEmpty
                     ? IMService.shared.getMessages(conversationId: conversationId)
@@ -284,6 +307,14 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         case .aiWeeklyReport:
             let cell = tableView.dequeueReusableCell(withIdentifier: AIWeeklyReportCell.reuseID, for: indexPath) as! AIWeeklyReportCell
             cell.configure(msg)
+            return cell
+        case .image:
+            print("[Chat] cellForRow image: id=\(msg.id) imagePath=\(msg.imagePath ?? "nil")")
+            let cell = tableView.dequeueReusableCell(withIdentifier: ImageBubbleCell.reuseID, for: indexPath) as! ImageBubbleCell
+            cell.configure(msg, tone: conversation?.role.toneHex ?? "#FF7A50", convRole: conversation?.role ?? .manager)
+            cell.onTapImage = { [weak self] path in
+                self?.showImagePreview(path: path)
+            }
             return cell
         }
     }
@@ -370,6 +401,9 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             card: nil,
             meal: nil,
             report: nil,
+            imagePath: nil,
+            thumbWidth: nil,
+            thumbHeight: nil,
             conversationId: conversationId
         )
         messages.append(localMsg)
@@ -427,5 +461,205 @@ extension ChatViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         sendMessage()
         return true
+    }
+}
+
+// MARK: - UIImagePickerController
+
+extension ChatViewController {
+
+    @objc private func showImagePicker() {
+        let sheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        sheet.addAction(UIAlertAction(title: "拍照", style: .default) { [weak self] _ in
+            self?.openCamera()
+        })
+        sheet.addAction(UIAlertAction(title: "从相册选择", style: .default) { [weak self] _ in
+            self?.openPhotoLibrary()
+        })
+        sheet.addAction(UIAlertAction(title: "取消", style: .cancel))
+        present(sheet, animated: true)
+    }
+
+    private func openCamera() {
+        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+            print("[Chat] Camera not available")
+            return
+        }
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+
+    private func openPhotoLibrary() {
+        guard UIImagePickerController.isSourceTypeAvailable(.photoLibrary) else { return }
+        let picker = UIImagePickerController()
+        picker.sourceType = .photoLibrary
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+
+    func imagePickerController(_ picker: UIImagePickerController,
+                               didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+        picker.dismiss(animated: true)
+        guard let image = (info[.originalImage] ?? info[.editedImage]) as? UIImage else { return }
+        sendImage(image)
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true)
+    }
+
+    private func sendImage(_ image: UIImage) {
+        // 乐观展示本地图片气泡
+        let localPath = saveImageToTemp(image)
+        let localMsg = ChatMessage(
+            id: "local-img-\(Int(Date().timeIntervalSince1970 * 1000))",
+            type: .image,
+            role: .user,
+            senderName: nil,
+            senderRole: nil,
+            avatar: nil,
+            text: nil,
+            time: "刚刚",
+            card: nil,
+            meal: nil,
+            report: nil,
+            imagePath: localPath,
+            thumbWidth: Int(image.size.width),
+            thumbHeight: Int(image.size.height),
+            conversationId: conversationId
+        )
+        messages.append(localMsg)
+        let idx = IndexPath(row: messages.count - 1, section: 0)
+        tableView.insertRows(at: [idx], with: .none)
+        scrollToBottom(animated: true)
+
+        // 异步发送到融云
+        Task {
+            let sentMsg = await IMService.shared.sendImage(image, conversationId: conversationId)
+            if let sentMsg = sentMsg,
+               let localIdx = messages.firstIndex(where: { $0.id == localMsg.id }) {
+                await MainActor.run {
+                    messages[localIdx] = sentMsg
+                    tableView.reloadRows(at: [IndexPath(row: localIdx, section: 0)], with: .none)
+                }
+            }
+        }
+    }
+
+    private func saveImageToTemp(_ image: UIImage) -> String? {
+        guard let data = image.jpegData(compressionQuality: 0.8) else { return nil }
+        let path = NSTemporaryDirectory() + "rc_img_\(Int(Date().timeIntervalSince1970 * 1000)).jpg"
+        try? data.write(to: URL(fileURLWithPath: path))
+        return path
+    }
+
+    private func showImagePreview(path: String?) {
+        guard let path = path else { return }
+        let previewVC = ImagePreviewViewController(imagePath: path)
+        previewVC.modalPresentationStyle = .fullScreen
+        present(previewVC, animated: true)
+    }
+}
+
+// MARK: - Image Preview
+
+/// 全屏图片预览
+private final class ImagePreviewViewController: UIViewController, UIScrollViewDelegate {
+
+    private let imagePath: String
+    private let scrollView = UIScrollView()
+    private let imageView = UIImageView()
+    private let closeBtn: UIButton = {
+        let b = UIButton(type: .system)
+        b.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
+        b.tintColor = .white
+        b.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        b.layer.cornerRadius = 16
+        return b
+    }()
+
+    init(imagePath: String) {
+        self.imagePath = imagePath
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .black
+
+        scrollView.delegate = self
+        scrollView.minimumZoomScale = 1.0
+        scrollView.maximumZoomScale = 3.0
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.contentInsetAdjustmentBehavior = .never
+
+        imageView.contentMode = .scaleAspectFit
+
+        view.addSubview(scrollView)
+        scrollView.addSubview(imageView)
+        view.addSubview(closeBtn)
+
+        scrollView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        closeBtn.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
+            make.trailing.equalToSuperview().offset(-16)
+            make.size.equalTo(32)
+        }
+
+        closeBtn.addTarget(self, action: #selector(dismissPreview), for: .touchUpInside)
+        loadImage()
+    }
+
+    private func layoutImageView(_ image: UIImage) {
+        let viewSize = view.bounds.size
+        let imgSize = image.size
+        guard viewSize.width > 0, imgSize.width > 0 else { return }
+
+        let ratio = min(viewSize.width / imgSize.width, viewSize.height / imgSize.height)
+        let displayW = imgSize.width * ratio
+        let displayH = imgSize.height * ratio
+
+        imageView.snp.remakeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.equalTo(displayW)
+            make.height.equalTo(displayH)
+        }
+    }
+
+    private func loadImage() {
+        if imagePath.hasPrefix("/") {
+            if let img = UIImage(contentsOfFile: imagePath) {
+                imageView.image = img
+                layoutImageView(img)
+            }
+        } else if let url = URL(string: imagePath) {
+            // Kingfisher 优先读缓存，无缓存则下载并缓存
+            imageView.kf.setImage(with: url, options: [
+                .transition(.fade(0.3)),
+                .cacheOriginalImage
+            ]) { [weak self] result in
+                guard let self = self else { return }
+                if case .success(let value) = result {
+                    self.layoutImageView(value.image)
+                }
+            }
+        }
+    }
+
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? { imageView }
+
+    func scrollViewDidZoom(_ scrollView: UIScrollView) {
+        let offsetX = max((scrollView.bounds.width - scrollView.contentSize.width) * 0.5, 0)
+        let offsetY = max((scrollView.bounds.height - scrollView.contentSize.height) * 0.5, 0)
+        scrollView.contentInset = UIEdgeInsets(top: offsetY, left: offsetX, bottom: offsetY, right: offsetX)
+    }
+
+    @objc private func dismissPreview() {
+        dismiss(animated: true)
     }
 }

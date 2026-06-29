@@ -289,6 +289,37 @@ final class RongCloudManager {
         )
     }
 
+    /// 发送图片消息
+    func sendImageMessage(
+        conversationType: RCConversationType,
+        targetId: String,
+        image: UIImage,
+        completion: @escaping (RCMessage?, RCErrorCode) -> Void
+    ) {
+        let imgMsg = RCImageMessage(image: image)
+        client.sendMediaMessage(
+            conversationType,
+            targetId: targetId,
+            content: imgMsg,
+            pushContent: nil,
+            pushData: nil,
+            attached: nil,
+            progress: nil,
+            success: { [weak self] messageId in
+                guard let self = self else { return }
+                print("[RongCloud] sendImageMessage ✓ messageId=\(messageId)")
+                self.client.getMessage(messageId) { message in
+                    completion(message, .RC_SUCCESS)
+                }
+            },
+            error: { [weak self] errorCode, _ in
+                self?.logError("sendImageMessage", code: errorCode)
+                completion(nil, errorCode)
+            },
+            cancel: nil
+        )
+    }
+
     /// 获取总未读消息数（异步）
     func getTotalUnreadCount(completion: @escaping (Int) -> Void) {
         client.getTotalUnreadCount { count in
@@ -297,9 +328,15 @@ final class RongCloudManager {
     }
 
     /// 清除会话未读数
-    func clearUnreadCount(for conversationId: String) {
+    func clearGroupUnreadCount(for conversationId: String) {
+        client.clearMessagesUnreadStatus(.ConversationType_GROUP, targetId: conversationId, completion: nil)
+    }
+    
+    /// 清除会话未读数
+    func clearPrivateUnreadCount(for conversationId: String) {
         client.clearMessagesUnreadStatus(.ConversationType_PRIVATE, targetId: conversationId, completion: nil)
     }
+    
 
     // MARK: - Private Methods
 

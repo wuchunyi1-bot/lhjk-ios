@@ -175,6 +175,8 @@ extension Conversation {
             lastTimeStr = formatRCTime(rc.sentTime)
             if let textMsg = rc.latestMessage as? RCTextMessage, !textMsg.content.isEmpty {
                 lastMsg = textMsg.content
+            } else if rc.latestMessage is RCImageMessage {
+                lastMsg = "[图片]"
             } else {
                 lastMsg = group.lastContent ?? "暂无消息"
             }

@@ -56,13 +56,30 @@ extension ChatMessage {
 
         let content: String
         let type: MessageType
+        let imagePath: String?
+        let thumbWidth: Int?
+        let thumbHeight: Int?
 
         if let textContent = rcMessage.content as? RCTextMessage {
-            content = textContent.content ?? ""
+            content = textContent.content
             type = .text
+            imagePath = nil
+            thumbWidth = nil
+            thumbHeight = nil
+        } else if let imageContent = rcMessage.content as? RCImageMessage {
+            content = "[图片]"
+            type = .image
+            imagePath = imageContent.imageUrl ?? imageContent.remoteUrl ?? imageContent.localPath
+            thumbWidth = imageContent.thumWidth > 0 ? imageContent.thumWidth : nil
+            thumbHeight = imageContent.thumHeight > 0 ? imageContent.thumHeight : nil
+            print("[RongCloud] fromRongCloud image → imageUrl=\(imageContent.imageUrl ?? "nil") remoteUrl=\(imageContent.remoteUrl ?? "nil") localPath=\(imageContent.localPath ?? "nil") thumbSize=\(thumbWidth ?? 0)x\(thumbHeight ?? 0)")
         } else {
             content = ""
             type = .text
+            imagePath = nil
+            thumbWidth = nil
+            thumbHeight = nil
+            print("[RongCloud] fromRongCloud unknown type objectName=\(rcMessage.objectName ?? "nil")")
         }
 
         let sentDate = Date(timeIntervalSince1970: TimeInterval(rcMessage.sentTime / 1000))
@@ -81,6 +98,9 @@ extension ChatMessage {
             card: nil,
             meal: nil,
             report: nil,
+            imagePath: imagePath,
+            thumbWidth: thumbWidth,
+            thumbHeight: thumbHeight,
             conversationId: rcMessage.targetId
         )
     }

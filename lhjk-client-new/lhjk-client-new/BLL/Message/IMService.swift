@@ -184,10 +184,12 @@ final class IMService {
                 continuation.resume(returning: messages)
             }
         }
-        let chatMessages = rcMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }
-        messagesStore[conversationId] = chatMessages
-        print("[IMService] loadMessages conv=\(conversationId) count=\(chatMessages.count)")
-        return chatMessages
+        // 融云 getHistoryMessages 返回最新在前，倒序使最旧在上、最新在下
+        let chatMessages = rcMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }.reversed()
+        let sorted = Array(chatMessages)
+        messagesStore[conversationId] = sorted
+        print("[IMService] loadMessages conv=\(conversationId) count=\(sorted.count)")
+        return sorted
     }
 
     /// 同步获取缓存消息（若缓存为空则 fallback 到 mock）
@@ -215,6 +217,27 @@ final class IMService {
             return chatMsg
         } else {
             print("[IMService] sendMessage ✗ errorCode=\(result.1.rawValue)")
+            return nil
+        }
+    }
+
+    /// 发送图片消息（通过融云 SDK）
+    func sendImage(_ image: UIImage, conversationId: String) async -> ChatMessage? {
+        let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
+            RongCloudManager.shared.sendImageMessage(
+                conversationType: .ConversationType_GROUP,
+                targetId: conversationId,
+                image: image
+            ) { message, errorCode in
+                continuation.resume(returning: (message, errorCode))
+            }
+        }
+        if let rcMsg = result.0 {
+            let chatMsg = ChatMessage.fromRongCloud(rcMessage: rcMsg)
+            messagesStore[conversationId, default: []].append(chatMsg)
+            return chatMsg
+        } else {
+            print("[IMService] sendImage ✗ errorCode=\(result.1.rawValue)")
             return nil
         }
     }

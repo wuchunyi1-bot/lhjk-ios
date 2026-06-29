@@ -33,6 +33,7 @@
 		A576A2202FE8E22E004F6070 /* ECGSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21E2FE8E22E004F6070 /* ECGSimulator.swift */; };
 		A576A2212FE8E22E004F6070 /* ECGChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21C2FE8E22E004F6070 /* ECGChartView.swift */; };
 		A576A2222FE8E22E004F6070 /* ECGDataBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21D2FE8E22E004F6070 /* ECGDataBuffer.swift */; };
+		A579AECD2FF268D900D9493A /* ImageBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A579AECC2FF268D900D9493A /* ImageBubbleCell.swift */; };
 		A57D2F1E2FDC0647002E43BA /* MyRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F1B2FDC0647002E43BA /* MyRoutes.swift */; };
 		A57D2F242FDC0661002E43BA /* RegisterLoginRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F202FDC0661002E43BA /* RegisterLoginRoutes.swift */; };
 		A58C72C62FEE2FEF003B405C /* NotificationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58C72C52FEE2FEF003B405C /* NotificationsViewController.swift */; };
@@ -201,6 +202,7 @@
 		A576A21C2FE8E22E004F6070 /* ECGChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGChartView.swift; sourceTree = "<group>"; };
 		A576A21D2FE8E22E004F6070 /* ECGDataBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGDataBuffer.swift; sourceTree = "<group>"; };
 		A576A21E2FE8E22E004F6070 /* ECGSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGSimulator.swift; sourceTree = "<group>"; };
+		A579AECC2FF268D900D9493A /* ImageBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageBubbleCell.swift; sourceTree = "<group>"; };
 		A57D2F1B2FDC0647002E43BA /* MyRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyRoutes.swift; sourceTree = "<group>"; };
 		A57D2F202FDC0661002E43BA /* RegisterLoginRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterLoginRoutes.swift; sourceTree = "<group>"; };
 		A58C72C42FEE2FEF003B405C /* MessagesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesViewController.swift; sourceTree = "<group>"; };
@@ -617,12 +619,7 @@
 		A590FB4E2FEA82980056EF52 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
-				A58C72C82FEE3056003B405C /* AIWeeklyReportCell.swift */,
-				A58C72C92FEE3056003B405C /* MealAnalysisCell.swift */,
 				A58C72CA2FEE3056003B405C /* NotificationCell.swift */,
-				A58C72CB2FEE3056003B405C /* ServiceCardCell.swift */,
-				A58C72CC2FEE3056003B405C /* SystemMessageCell.swift */,
-				A58C72CD2FEE3056003B405C /* TextBubbleCell.swift */,
 				A590FB4C2FEA82980056EF52 /* ConversationCell.swift */,
 			);
 			path = Cells;
@@ -631,6 +628,12 @@
 		A590FB4F2FEA82980056EF52 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
+				A58C72CC2FEE3056003B405C /* SystemMessageCell.swift */,
+				A58C72CB2FEE3056003B405C /* ServiceCardCell.swift */,
+				A579AECC2FF268D900D9493A /* ImageBubbleCell.swift */,
+				A58C72CD2FEE3056003B405C /* TextBubbleCell.swift */,
+				A58C72C82FEE3056003B405C /* AIWeeklyReportCell.swift */,
+				A58C72C92FEE3056003B405C /* MealAnalysisCell.swift */,
 			);
 			path = Cells;
 			sourceTree = "<group>";
@@ -1470,6 +1473,7 @@
 				A590FBC92FEA82980056EF52 /* PeripheralCell.swift in Sources */,
 				A590FBCA2FEA82980056EF52 /* LoginViewController.swift in Sources */,
 				A590FBCC2FEA82980056EF52 /* HomeQuickActionsCell.swift in Sources */,
+				A579AECD2FF268D900D9493A /* ImageBubbleCell.swift in Sources */,
 				A590FBCD2FEA82980056EF52 /* DigestiveViewController.swift in Sources */,
 				A590FBCE2FEA82980056EF52 /* LoginFieldView.swift in Sources */,
 				A590FBCF2FEA82980056EF52 /* SpO2ViewController.swift in Sources */,
