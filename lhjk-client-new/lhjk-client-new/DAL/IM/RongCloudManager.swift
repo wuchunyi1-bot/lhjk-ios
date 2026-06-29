@@ -164,6 +164,7 @@ final class RongCloudManager {
     }
 
     /// 批量按 ID 获取会话 (5.8.2+)，只返回存在的会话，不存在的不返回
+    /// API 限制单次最多 100 个，超过自动分批
     /// - Parameter targetIds: 会话 ID 列表
     /// - Parameter completion: 异步回调
     func getConversations(by targetIds: [String], completion: @escaping ([RCConversation]) -> Void) {
@@ -171,14 +172,32 @@ final class RongCloudManager {
             completion([])
             return
         }
-        let identifiers = targetIds.map { id in
-            RCConversationIdentifier(conversationIdentifier: .ConversationType_PRIVATE, targetId: id)
+        let batchSize = 100
+        let chunks = stride(from: 0, to: targetIds.count, by: batchSize).map {
+            Array(targetIds[$0..<min($0 + batchSize, targetIds.count)])
         }
-        client.getConversations(identifiers, success: { conversations in
-            completion(conversations ?? [])
-        }, error: { _ in
-            completion([])
-        })
+
+        var allResults: [RCConversation] = []
+        let group = DispatchGroup()
+
+        for chunk in chunks {
+            let identifiers = chunk.map { id in
+                RCConversationIdentifier(conversationIdentifier: .ConversationType_GROUP, targetId: id)
+            }
+            group.enter()
+            //给100个数据最后只返回来10个，我看看传10个会有啥结果
+            client.getConversations(identifiers, success: { conversations in
+                allResults.append(contentsOf: conversations)
+                group.leave()
+            }, error: { [weak self] errorCode in
+                self?.logError("getConversations batch", code: errorCode)
+                group.leave()
+            })
+        }
+
+        group.notify(queue: .main) {
+            completion(allResults)
+        }
     }
 
     /// 获取指定会话的历史消息（异步）
@@ -207,7 +226,7 @@ final class RongCloudManager {
 
     /// 清除会话未读数
     func clearUnreadCount(for conversationId: String) {
-        client.clearMessagesUnreadStatus(.ConversationType_PRIVATE, targetId: conversationId)
+        client.clearMessagesUnreadStatus(.ConversationType_PRIVATE, targetId: conversationId, completion: nil)
     }
 
     // MARK: - Private Methods
@@ -217,8 +236,8 @@ final class RongCloudManager {
     private func syncConversationsFromServer() {
         client.getRemoteConversationList(success: {
             print("[RongCloud] Remote conversations synced to local")
-        }, error: { errorCode in
-            print("[RongCloud] Sync remote conversations failed, code=\(errorCode.rawValue)")
+        }, error: { [weak self] errorCode in
+            self?.logError("Sync remote conversations", code: errorCode)
         })
     }
 
@@ -268,15 +287,31 @@ final class RongCloudManager {
     }
 
     private func handleConnectionError(_ errorCode: RCErrorCode) {
+        let desc = errorDescription(errorCode)
         switch errorCode {
         case .RC_CONN_TOKEN_INCORRECT, .RC_CONN_TOKEN_EXPIRE:
             connectionStatus = .tokenIncorrect
-            print("[RongCloud] ✗ Connection error, token incorrect/expired")
+            print("[RongCloud] ✗ Connect failed: \(desc)")
         default:
             connectionStatus = .disconnected
-            print("[RongCloud] ✗ Connection error, code=\(errorCode.rawValue) (SDK will auto-retry)")
+            print("[RongCloud] ✗ Connect failed: \(desc) (SDK will auto-retry)")
         }
         connectionStatusPublisher.send(connectionStatus)
+    }
+
+    /// RCErrorCode → 可读错误描述
+    private func errorDescription(_ code: RCErrorCode) -> String {
+        switch code {
+        case .RC_CONN_TOKEN_INCORRECT:  return "TOKEN_INCORRECT (31004)"
+        case .RC_CONN_TOKEN_EXPIRE:     return "TOKEN_EXPIRE (31008)"
+        case .RC_CONN_APP_BLOCKED_OR_DELETED: return "APP_BLOCKED_OR_DELETED (34001)"
+        default:                        return "\(code) raw=\(code.rawValue)"
+        }
+    }
+
+    /// 打印所有 callback 的完整错误信息
+    private func logError(_ context: String, code: RCErrorCode) {
+        print("[RongCloud] ✗ \(context) — \(errorDescription(code))")
     }
 
     // MARK: - Token Persistence
