@@ -154,6 +154,10 @@
 		A59BAAD62FF3723A0005BEA9 /* VideoBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59BAAD52FF3723A0005BEA9 /* VideoBubbleCell.swift */; };
 		A59BAAD72FF3723A0005BEA9 /* FileBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59BAAD32FF3723A0005BEA9 /* FileBubbleCell.swift */; };
 		A59BAAD82FF3723A0005BEA9 /* SysNotifyCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59BAAD42FF3723A0005BEA9 /* SysNotifyCell.swift */; };
+		A59BAADA2FF394090005BEA9 /* CenteredTipCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59BAAD92FF394090005BEA9 /* CenteredTipCell.swift */; };
+		A59BAADF2FF3A2290005BEA9 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59BAADB2FF3A2290005BEA9 /* AudioRecorder.swift */; };
+		A59BAAE32FF3A4490005BEA9 /* FileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59BAAE12FF3A4490005BEA9 /* FileManager.swift */; };
+		A59BAAE52FF3A8200005BEA9 /* VoiceBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59BAAE42FF3A81F0005BEA9 /* VoiceBubbleCell.swift */; };
 		A5B54B3F2FEE51E5009AB072 /* ConversationListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B54B3D2FEE51E5009AB072 /* ConversationListViewController.swift */; };
 		A5B54B402FEE51E5009AB072 /* NotificationListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B54B3E2FEE51E5009AB072 /* NotificationListViewController.swift */; };
 		A5B54B422FEE5FAE009AB072 /* GroupVO.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B54B412FEE5FAE009AB072 /* GroupVO.swift */; };
@@ -329,6 +333,10 @@
 		A59BAAD32FF3723A0005BEA9 /* FileBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBubbleCell.swift; sourceTree = "<group>"; };
 		A59BAAD42FF3723A0005BEA9 /* SysNotifyCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SysNotifyCell.swift; sourceTree = "<group>"; };
 		A59BAAD52FF3723A0005BEA9 /* VideoBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoBubbleCell.swift; sourceTree = "<group>"; };
+		A59BAAD92FF394090005BEA9 /* CenteredTipCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CenteredTipCell.swift; sourceTree = "<group>"; };
+		A59BAADB2FF3A2290005BEA9 /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
+		A59BAAE12FF3A4490005BEA9 /* FileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileManager.swift; sourceTree = "<group>"; };
+		A59BAAE42FF3A81F0005BEA9 /* VoiceBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceBubbleCell.swift; sourceTree = "<group>"; };
 		A5B54B3D2FEE51E5009AB072 /* ConversationListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListViewController.swift; sourceTree = "<group>"; };
 		A5B54B3E2FEE51E5009AB072 /* NotificationListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationListViewController.swift; sourceTree = "<group>"; };
 		A5B54B412FEE5FAE009AB072 /* GroupVO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GroupVO.swift; path = DAL/IM/GroupVO.swift; sourceTree = "<group>"; };
@@ -425,6 +433,8 @@
 		80323DB75D4CB2E15619DDBB /* DAL */ = {
 			isa = PBXGroup;
 			children = (
+				A59BAAE22FF3A4490005BEA9 /* FileManager */,
+				A59BAADD2FF3A2290005BEA9 /* Media */,
 				A55AB3372FED1E5C00CC3A35 /* OSS */,
 				A576A21F2FE8E22E004F6070 /* ECG */,
 				33AD0B9BEA61617FD7371544 /* Bluetooth */,
@@ -640,6 +650,8 @@
 		A590FB4F2FEA82980056EF52 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
+				A59BAAE42FF3A81F0005BEA9 /* VoiceBubbleCell.swift */,
+				A59BAAD92FF394090005BEA9 /* CenteredTipCell.swift */,
 				A59BAAD32FF3723A0005BEA9 /* FileBubbleCell.swift */,
 				A59BAAD42FF3723A0005BEA9 /* SysNotifyCell.swift */,
 				A59BAAD52FF3723A0005BEA9 /* VideoBubbleCell.swift */,
@@ -1110,6 +1122,24 @@
 			path = DAL/IM/CustomMessages;
 			sourceTree = "<group>";
 		};
+		A59BAADD2FF3A2290005BEA9 /* Media */ = {
+			isa = PBXGroup;
+			children = (
+				A59BAADB2FF3A2290005BEA9 /* AudioRecorder.swift */,
+			);
+			name = Media;
+			path = DAL/Media;
+			sourceTree = "<group>";
+		};
+		A59BAAE22FF3A4490005BEA9 /* FileManager */ = {
+			isa = PBXGroup;
+			children = (
+				A59BAAE12FF3A4490005BEA9 /* FileManager.swift */,
+			);
+			name = FileManager;
+			path = DAL/FileManager;
+			sourceTree = "<group>";
+		};
 		A5BFCA372FE38EF1008DA1DF /* UIFont */ = {
 			isa = PBXGroup;
 			children = (
@@ -1466,8 +1496,10 @@
 				D0C0F9A29B4ED9D6FB4A6C01 /* AlipayChannel.swift in Sources */,
 				D97D86F91B5A3A4D1C22DDC3 /* PaymentOrder.swift in Sources */,
 				2AB37F19E9E9BA0DCE4E2FF9 /* PaymentProtocol.swift in Sources */,
+				A59BAADA2FF394090005BEA9 /* CenteredTipCell.swift in Sources */,
 				B0BC602D83CB797AB66DFE1F /* WechatPayChannel.swift in Sources */,
 				8E749A7845EBA8C07946E821 /* Router.swift in Sources */,
+				A59BAAE52FF3A8200005BEA9 /* VoiceBubbleCell.swift in Sources */,
 				05433145BBE114CF0C1DC08A /* DatabaseManager.swift in Sources */,
 				31C52A8BD36FA64D4C32B098 /* UserDefaultsManager.swift in Sources */,
 				A97FF7EF73364502F99C2EC4 /* AppDelegate.swift in Sources */,
@@ -1489,6 +1521,7 @@
 				D0DF85E8760C6773E9B32743 /* RouteSetup.swift in Sources */,
 				D4D3CF9A74172D4C53A40241 /* PlaceholderViewController.swift in Sources */,
 				E7E5276C54E35414EB42377A /* HealthRoutes.swift in Sources */,
+				A59BAAE32FF3A4490005BEA9 /* FileManager.swift in Sources */,
 				A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */,
 				A576A2202FE8E22E004F6070 /* ECGSimulator.swift in Sources */,
 				A576A2212FE8E22E004F6070 /* ECGChartView.swift in Sources */,
@@ -1518,6 +1551,7 @@
 				A590FBE12FEA82980056EF52 /* MetricCardCell.swift in Sources */,
 				A590FBE22FEA82980056EF52 /* HomeTaskCardCell.swift in Sources */,
 				A590FBE42FEA82980056EF52 /* BloodPressureViewController.swift in Sources */,
+				A59BAADF2FF3A2290005BEA9 /* AudioRecorder.swift in Sources */,
 				A590FBE62FEA82980056EF52 /* HeartRateViewController.swift in Sources */,
 				A590FBE72FEA82980056EF52 /* MetricAddViewController.swift in Sources */,
 				A590FBE82FEA82980056EF52 /* OnboardingViewController.swift in Sources */,

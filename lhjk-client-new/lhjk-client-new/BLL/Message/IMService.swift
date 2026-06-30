@@ -73,16 +73,16 @@ final class IMService {
                 }
                 groupDict = dict
             } else {
-                print("[IMService] getGroup ✗ code=\(response.code)")
+//                print("[IMService] getGroup ✗ code=\(response.code)")
                 conversations = Conversation.mockData()
                 return conversations
             }
         } catch {
-            print("[IMService] getGroup ✗ error: \(error.localizedDescription)")
+//            print("[IMService] getGroup ✗ error: \(error.localizedDescription)")
             conversations = Conversation.mockData()
             return conversations
         }
-        print("groupDict ====  \(groupDict)")
+//        print("groupDict ====  \(groupDict)")
         guard !groupDict.isEmpty else {
             conversations = Conversation.mockData()
             return conversations
@@ -90,7 +90,7 @@ final class IMService {
 
         // Step 2: 提取 groupId 列表，批量查融云本地会话
         let groupIds = Array(groupDict.keys)
-        print("groupIds ====  \(groupIds)")
+//        print("groupIds ====  \(groupIds)")
         if isConnected {
             let rcList: [RCConversation] = await withCheckedContinuation { continuation in
                 RongCloudManager.shared.getConversations(by: groupIds) { list in
@@ -125,7 +125,7 @@ final class IMService {
             }
 
             let list = matchedList + unmatchedList
-            print("[IMService] matched=\(matchedList.count) unmatched=\(unmatchedList.count)")
+//            print("[IMService] matched=\(matchedList.count) unmatched=\(unmatchedList.count)")
 
             conversations = list
         } else {
@@ -348,6 +348,30 @@ final class IMService {
             return chatMsg
         } else {
             print("[IMService] sendSysNotify ✗ errorCode=\(result.1.rawValue)")
+            return nil
+        }
+    }
+
+    /// 发送语音消息（RC:HQVCMsg）
+    func sendVoice(localPath: String, duration: Int, conversationId: String) async -> ChatMessage? {
+        let senderInfo = makeSenderUserInfo()
+        let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
+            RongCloudManager.shared.sendHQVoiceMessage(
+                conversationType: .ConversationType_GROUP,
+                targetId: conversationId,
+                localPath: localPath,
+                duration: duration,
+                senderUserInfo: senderInfo
+            ) { message, errorCode in
+                continuation.resume(returning: (message, errorCode))
+            }
+        }
+        if let rcMsg = result.0 {
+            let chatMsg = ChatMessage.fromRongCloud(rcMessage: rcMsg)
+            messagesStore[conversationId, default: []].append(chatMsg)
+            return chatMsg
+        } else {
+            print("[IMService] sendVoice ✗ errorCode=\(result.1.rawValue)")
             return nil
         }
     }

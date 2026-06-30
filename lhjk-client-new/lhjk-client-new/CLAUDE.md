@@ -158,6 +158,33 @@ rcMessage.content?.senderUserInfo  →  ChatMessage
 - 自定义类型通过基类 `RCMessageContent` 的 `.extra` 字段拿附加数据
 - 新增 `MessageType` 时同步更新 `ChatViewController` 的 cell 注册和 `cellForRow` 分发
 
+#### 引用回复（replyMessage）
+
+`content.extra` 可能包含引用回复信息，JSON 结构：
+
+```json
+{
+  "replyMessage": {
+    "calcLastText": "被引用消息的内容 / 图片 URL",
+    "calcLastName": "被引用消息的发送者名",
+    "calcLastType": "RC:TxtMsg | RC:ImgMsg | ..."
+  }
+}
+```
+
+**解析规则**：
+- `fromRongCloud` 中将 `extra` 按 JSON 解析为 `ReplyMessage`
+- `calcLastType` 以 `RC:` 开头为融云内置类型，`AD:` 开头为自定义类型
+- 无 `replyMessage` key 或解析失败时 `reply = nil`
+
+**ReplyMessage 模型字段**：
+
+| JSON key | Swift 属性 | 类型 |
+|---|---|---|
+| `calcLastText` | `text` | `String` |
+| `calcLastName` | `senderName` | `String` |
+| `calcLastType` | `messageType` | `String` |
+
 ### 检查清单
 
 - [ ] `fromRongCloud` 是否从 `rcMessage.content?.senderUserInfo` 提取了 name → senderName, name.prefix(1) → avatar？
@@ -319,4 +346,189 @@ rcMessage.content?.senderUserInfo  →  ChatMessage
   DAL/IM/RongCloudMessageDelegate.swift ← fromRongCloud 完善解析
   BLL/Message/IMService.swift       ← sendFile / sendVideo / sendSysNotify
   PL/Message/Chat/ChatViewController.swift ← cell 注册 + 入口 + cellForRow
+```
+
+## 居中提示 Cell：日期分隔 + 撤回通知
+
+### 外观
+
+- 屏幕水平居中，背景 `clear`
+- 字体：`fdFont(ofSize: 11)`，颜色：`fdMuted`（与 metaLabel 一致）
+- 单行文本，无交互
+
+### 场景 1：日期分隔
+
+每天的第一条消息前插入时间标记，格式按日期距离：
+
+| 条件 | 显示 |
+|---|---|
+| 当天 | `"今天"` |
+| 昨天 | `"昨天"` |
+| 同年 | `"MM-dd"`（如 `"06-30"`） |
+| 跨年 | `"yyyy-MM-dd"`（如 `"2026-06-30"`） |
+
+**插入逻辑**（在 `ChatViewController` 的 `loadMessages` 后处理）：
+- 遍历已排序的消息列表，比较相邻消息的 `time` 日期
+- 日期变化时，在前一条消息之前插入一个 `.timeMarker` 类型的 `ChatMessage`
+- 时间标记的 `text` 为格式化后的日期字符串
+- 额外标记不参与 `fromRongCloud` 转换，由 UI 层 `insertTimeMarkers()` 生成
+
+### 场景 2：撤回通知（RC:RcNtf）
+
+融云撤回消息的 objectName 为 `RC:RcNtf`，content 类型为 `RCRecallNotificationMessage`。
+
+**解析**（`fromRongCloud`）：
+```
+rcMessage.content as? RCRecallNotificationMessage
+  → operatorId (撤回者 ID)
+  → 从 senderUserInfo 或消息上下文中获取撤回者 name
+  → text = "xxx 撤回了一条消息"
+  → type = .recall
+```
+
+**UI 展示**：同日期分隔，居中灰色文字。
+
+### MessageType 扩展
+
+```swift
+case timeMarker   // 日期分隔
+case recall       // 撤回通知
+```
+
+### Cell 设计
+
+**新增 `CenteredTipCell`**：
+- 注册 ID：`"CenteredTipCell"`
+- 单行 UILabel，居中，`fdMuted` 色，font 11
+- 不区分 staff/user，无头像、无气泡
+- 配置：`func configure(text: String)`
+
+### CellForRow 分发
+
+```
+.timeMarker, .recall → CenteredTipCell
+```
+
+### 改动范围
+
+```
+新增文件：
+  PL/Message/Chat/Cells/CenteredTipCell.swift    ← 居中提示 Cell
+
+修改文件：
+  DAL/IM/Message.swift                           ← MessageType 加 .timeMarker / .recall
+  DAL/IM/RongCloudMessageDelegate.swift           ← fromRongCloud 解析 RC:RcNtf
+  PL/Message/Chat/ChatViewController.swift        ← cell 注册 + insertTimeMarkers() + cellForRow
+```
+
+## 语音录制与文件管理（DAL/Media）
+
+### 概述
+
+语音消息需要本地录制能力。使用 Apple 原生 `AVAudioRecorder` + `FileManager`，**不引入第三方库**。
+
+两个模块解耦：
+- `AudioRecorder` 只负责录制，路径由外部传入
+- `MediaFileManager` 是通用文件管理器，不止用于音频
+
+### AudioRecorder（AVAudioRecorder 封装）
+
+| 方法 | 说明 |
+|---|---|
+| `requestPermission() async -> Bool` | 请求麦克风权限 |
+| `startRecording(to url: URL) throws` | 开始录制到指定路径（由调用方传入） |
+| `pauseRecording()` | 暂停 |
+| `resumeRecording() throws` | 恢复 |
+| `stopRecording() -> URL?` | 停止并返回文件路径 |
+| `cancelRecording()` | 放弃录制并删除临时文件 |
+
+**回调**：`onDidFinish` / `onDidFail`
+**格式**：AAC (.m4a)，单声道 22050Hz
+**路径**：完全由外部传入，不与文件管理耦合
+
+### MediaFileManager（通用文件管理器）
+
+参考 `HRFileManager` 设计，实例化使用保证线程安全。
+
+| 方法 | 说明 |
+|---|---|
+| `basePath(_ type:) -> String` | 获取沙盒目录路径（Documents/Library/Caches/Temp） |
+| `fileExists(atPath:isDirectory:) -> Bool` | 文件/文件夹是否存在 |
+| `createFile(atPath:isDirectory:) -> Bool` | 创建文件/文件夹 |
+| `createDocumentsDirectory(_:) -> Bool` | 在 Documents 下创建文件夹 |
+| `createDirectories(_:baseType:) -> Bool` | 多级目录创建 |
+| `deleteFile(atPath:) -> Bool` | 删除文件/文件夹 |
+| `fileSize(atPath:) -> Int64` | 单文件大小（字节） |
+| `sizeOfDirectory(atPath:) -> Int64` | 文件夹大小（递归） |
+| `fileAttributes(atPath:) -> [FileAttributeKey: Any]?` | 文件属性字典 |
+| `copyFile(fromPath:toPath:) -> Bool` | 复制文件 |
+| `writeFile(_:to:fileName:) -> Bool` | 将 Data 写入文件 |
+
+### 文件范围
+
+```
+新增文件：
+  DAL/Media/AudioRecorder.swift       ← AVAudioRecorder 封装（路径外部传入）
+  DAL/Media/MediaFileManager.swift    ← 通用文件管理器（SandboxFolderType 枚举）
+
+修改文件：
+  Other/Resources/Info.plist          ← NSMicrophoneUsageDescription
+
+依赖：
+  无（纯 Foundation + AVFoundation 原生 API）
+```
+
+## 语音消息
+
+### 类型映射
+
+使用融云系统高清语音类型 `RCHQVoiceMessage`（`RC:HQVCMsg`），不用自定义类型。
+
+| 层 | 表示 |
+|---|---|
+| 融云传输 | `RC:HQVCMsg`，`RCHQVoiceMessage`（localPath + duration） |
+| App 内部 | `MessageType.voice`，`imagePath`=localPath，`thumbHeight`=duration |
+
+### 录制格式
+
+WAV，单声道 8000Hz 16bit，兼容融云 `RCHQVoiceMessage`。
+
+### 录制交互（仿微信）
+
+1. 输入栏右侧语音按钮（`mic.fill` 图标），点击切换键盘/语音模式
+2. 语音模式：输入框替换为 `"按住 说话"` 按钮，`fdSurface` 背景
+3. 长按开始录音，上滑超过阈值取消，松开发送
+4. 录音中按钮文案变 `"松开 发送"`，上滑变 `"松开 取消"`
+5. 取消时震动反馈，不发送
+6. 最短录音 1 秒，不足时提示
+
+### 发送流程
+
+```
+按住说话 → AudioRecorder.startRecording(to: tempURL)
+  → 松开发送 → stopRecording() → fileSize / duration
+  → RongCloudManager.sendFileMessage(fileUrl: tempURL.path, fileSuffix: "mp3", ...)
+  → 后续对接 OSS 上传后替换 fileUrl
+```
+
+### 语音气泡 Cell（VoiceBubbleCell）
+
+- staff 左 / user 右布局，同 TextBubbleCell 方向
+- 气泡宽度随 duration 变化（40pt ~ 160pt）
+- 内容：波形图标 + 时长（如 `15"`）
+- staff：`fdSurface` 背景，图标 + 文字 fdText
+- user：`#FF7A50` 背景，图标 + 文字白色
+- 点击播放（后续实现）
+
+### 改动范围
+
+```
+新增文件：
+  PL/Message/Chat/Cells/VoiceBubbleCell.swift  ← 语音气泡 Cell
+
+修改文件：
+  DAL/IM/Message.swift                         ← MessageType + .voice
+  DAL/IM/RongCloudMessageDelegate.swift         ← mp3 FileMessage → type=.voice
+  DAL/IM/Conversation.swift                     ← lastMessageText 补 [音频]
+  PL/Message/Chat/ChatViewController.swift      ← 语音按钮 + 录制交互 + cellForRow
 ```

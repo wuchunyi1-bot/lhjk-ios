@@ -41,14 +41,21 @@ final class TextBubbleCell: UITableViewCell {
 
     required init?(coder: NSCoder) { fatalError() }
 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        // 显式清理所有 SnapKit 约束，避免 remakeConstraints 在复用时不彻底
+        [avatarLabel, metaLabel, bubbleView, timeLabel].forEach {
+            $0.snp.removeConstraints()
+        }
+    }
+
     func configure(_ msg: ChatMessage, tone: String, convRole: ConversationRole) {
         let isStaff = msg.isStaff
 
-        avatarLabel.isHidden = !isStaff
         metaLabel.isHidden = !isStaff
+        timeLabel.isHidden = isStaff
 
         if isStaff {
-            timeLabel.isHidden = true
             avatarLabel.text = msg.avatar ?? ""
             avatarLabel.backgroundColor = UIColor(hexString: tone)
             metaLabel.text = [msg.senderName, msg.senderRole, msg.time].compactMap { $0 }.joined(separator: " · ")
@@ -60,58 +67,60 @@ final class TextBubbleCell: UITableViewCell {
             bubbleView.layer.shadowOpacity = 0.06
             bubbleView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner, .layerMinXMaxYCorner]
             msgLabel.textColor = .fdText
-
-            avatarLabel.snp.remakeConstraints { make in
-                make.top.equalToSuperview().offset(6)
-                make.leading.equalToSuperview().offset(16)
-                make.size.equalTo(34)
-            }
-            metaLabel.snp.remakeConstraints { make in
-                make.top.equalTo(avatarLabel)
-                make.leading.equalTo(avatarLabel.snp.trailing).offset(9)
-            }
-            bubbleView.snp.remakeConstraints { make in
-                make.top.equalTo(metaLabel.snp.bottom).offset(4)
-                make.leading.equalTo(metaLabel)
-                make.trailing.lessThanOrEqualToSuperview().offset(-56).priority(750)
-                make.bottom.equalToSuperview().offset(-10)
-            }
-            // 清理 user 分支遗留的 timeLabel 约束
-            timeLabel.snp.removeConstraints()
         } else {
-            timeLabel.isHidden = false
+            avatarLabel.text = "我"
+            avatarLabel.backgroundColor = UIColor(hexString: tone)
+            timeLabel.text = msg.time
+
             bubbleView.backgroundColor = UIColor(hexString: "#FF7A50")
             bubbleView.layer.shadowColor = nil
             bubbleView.layer.shadowOpacity = 0
             bubbleView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMaxYCorner, .layerMinXMaxYCorner]
             msgLabel.textColor = .white
+        }
 
-            avatarLabel.text = "我"
-            avatarLabel.backgroundColor = UIColor(hexString: tone)
-            avatarLabel.isHidden = false
+        msgLabel.text = msg.text
+        layoutForStaff(isStaff)
+    }
 
-            // 清理 staff 遗留的 metaLabel 约束，避免与 user 布局冲突
-            metaLabel.snp.removeConstraints()
-
-            // 先定位 avatarLabel，再让 bubbleView 参照它（避免 fork 旧约束）
-            avatarLabel.snp.remakeConstraints { make in
-                make.top.equalToSuperview().offset(6)
+    /// 统一布局入口：prepareForReuse 已清理旧约束，用 makeConstraints 重建
+    private func layoutForStaff(_ isStaff: Bool) {
+        avatarLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(6)
+            make.size.equalTo(34)
+            if isStaff {
+                make.leading.equalToSuperview().offset(16)
+            } else {
                 make.trailing.equalToSuperview().offset(-16)
-                make.size.equalTo(34)
             }
-            bubbleView.snp.remakeConstraints { make in
+        }
+
+        metaLabel.snp.makeConstraints { make in
+            make.top.equalTo(avatarLabel)
+            if isStaff {
+                make.leading.equalTo(avatarLabel.snp.trailing).offset(9)
+            }
+        }
+
+        bubbleView.snp.makeConstraints { make in
+            if isStaff {
+                make.top.equalTo(metaLabel.snp.bottom).offset(4)
+                make.leading.equalTo(metaLabel)
+                make.trailing.lessThanOrEqualToSuperview().offset(-56).priority(750)
+                make.bottom.equalToSuperview().offset(-10)
+            } else {
                 make.top.equalTo(avatarLabel)
                 make.trailing.equalTo(avatarLabel.snp.leading).offset(-9)
                 make.leading.greaterThanOrEqualToSuperview().offset(56).priority(750)
             }
-            timeLabel.snp.remakeConstraints { make in
+        }
+
+        timeLabel.snp.makeConstraints { make in
+            if !isStaff {
                 make.trailing.equalTo(bubbleView)
                 make.top.equalTo(bubbleView.snp.bottom).offset(2)
                 make.bottom.equalToSuperview().offset(-10)
             }
-            timeLabel.text = msg.time
         }
-
-        msgLabel.text = msg.text
     }
 }

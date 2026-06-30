@@ -237,7 +237,7 @@ final class RongCloudManager {
             }
             group.enter()
             client.getConversations(identifiers, success: { conversations in
-                print("+++++++++\(conversations.count)")
+//                print("+++++++++\(conversations.count)")
                 allResults.append(contentsOf: conversations)
                 group.leave()
             }, error: { [weak self] errorCode in
@@ -335,6 +335,42 @@ final class RongCloudManager {
             },
             error: { [weak self] errorCode, _ in
                 self?.logError("sendImageMessage", code: errorCode)
+                completion(nil, errorCode)
+            },
+            cancel: nil
+        )
+    }
+
+    /// 发送高清语音消息（RC:HQVCMsg）
+    func sendHQVoiceMessage(
+        conversationType: RCConversationType,
+        targetId: String,
+        localPath: String,
+        duration: Int,
+        senderUserInfo: RCUserInfo? = nil,
+        completion: @escaping (RCMessage?, RCErrorCode) -> Void
+    ) {
+        let msg = RCHQVoiceMessage(path: localPath, duration: duration)
+        if let senderInfo = senderUserInfo {
+            msg.senderUserInfo = senderInfo
+        }
+        client.sendMediaMessage(
+            conversationType,
+            targetId: targetId,
+            content: msg,
+            pushContent: nil,
+            pushData: nil,
+            attached: nil,
+            progress: nil,
+            success: { [weak self] messageId in
+                guard let self = self else { return }
+                print("[RongCloud] sendHQVoiceMessage ✓ messageId=\(messageId)")
+                self.client.getMessage(messageId) { message in
+                    completion(message, .RC_SUCCESS)
+                }
+            },
+            error: { [weak self] errorCode, _ in
+                self?.logError("sendHQVoiceMessage", code: errorCode)
                 completion(nil, errorCode)
             },
             cancel: nil

@@ -120,6 +120,31 @@ extension Conversation {
         "conv-006": (.psychology, "心理咨询师", "林老师", "国家二级心理咨询师", "林", "在线", "情绪管理 · 睡眠认知行为", false),
     ]
 
+    /// 根据消息内容类型返回会话列表展示文案
+    private static func lastMessageText(from content: RCMessageContent?) -> String {
+        guard let content else { return "" }
+        switch content {
+        case let text as RCTextMessage:
+            return text.content
+        case is RCImageMessage:
+            return "[图片]"
+        case is RCHQVoiceMessage:
+            return "[语音]"
+        case let file as FileMessage:
+            if file.fileSuffix == "mp3" { return "[音频]" }
+            if file.fileSuffix == "richText" { return "[团队知识]" }
+            return "[文件]"
+        case is VideoMessage:
+            return "[视频]"
+        case is SysNotifyMessage:
+            return "[套餐]"
+        case is RCRecallNotificationMessage:
+            return "[撤回消息]"
+        default:
+            return ""
+        }
+    }
+
     /// 从融云 RCConversation 转换为 Conversation 模型
     /// - Parameter rc: 融云会话对象
     /// - Returns: 合并了预定义元数据的 Conversation，未匹配时使用默认元数据
@@ -136,11 +161,7 @@ extension Conversation {
             important: false
         )
 
-        // 提取最后一条消息文本
-        var lastMsg = ""
-        if let textMsg = rc.latestMessage as? RCTextMessage {
-            lastMsg = textMsg.content
-        }
+        let lastMsg = lastMessageText(from: rc.latestMessage)
 
         return Conversation(
             id: convId,
@@ -169,17 +190,12 @@ extension Conversation {
         // 实时数据：融云优先，nil 时 fallback 到 GroupVO
         let unread: Int
         let lastTimeStr: String
-        let lastMsg: String
+        var lastMsg: String
         if let rc = rc {
             unread = Int(rc.unreadMessageCount)
             lastTimeStr = formatRCTime(rc.sentTime)
-            if let textMsg = rc.latestMessage as? RCTextMessage, !textMsg.content.isEmpty {
-                lastMsg = textMsg.content
-            } else if rc.latestMessage is RCImageMessage {
-                lastMsg = "[图片]"
-            } else {
-                lastMsg = group.lastContent ?? "暂无消息"
-            }
+            let text = lastMessageText(from: rc.latestMessage)
+            lastMsg = text.isEmpty ? (group.lastContent ?? "暂无消息") : text
         } else {
             unread = 0
             lastTimeStr = ""

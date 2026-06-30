@@ -15,6 +15,8 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     private var cancellables = Set<AnyCancellable>()
     private var isLoadingMore = false
     private var hasMoreMessages = true
+    private var isVoiceMode = false
+    private let audioRecorder = AudioRecorder()
 
     // MARK: - UI
 
@@ -34,6 +36,8 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         tv.register(FileBubbleCell.self, forCellReuseIdentifier: FileBubbleCell.reuseID)
         tv.register(VideoBubbleCell.self, forCellReuseIdentifier: VideoBubbleCell.reuseID)
         tv.register(SysNotifyCell.self, forCellReuseIdentifier: SysNotifyCell.reuseID)
+        tv.register(CenteredTipCell.self, forCellReuseIdentifier: CenteredTipCell.reuseID)
+        tv.register(VoiceBubbleCell.self, forCellReuseIdentifier: VoiceBubbleCell.reuseID)
         tv.keyboardDismissMode = .interactive
         tv.refreshControl = refreshControl
         return tv
@@ -70,7 +74,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     }()
 
     private lazy var toolBtns: [UIButton] = {
-        let icons = ["doc.text", "chart.line.uptrend.xyaxis", "photo"]
+        let icons = ["doc.text", "mic.fill", "photo"]
         return icons.enumerated().map { idx, icon in
             let b = UIButton(type: .system)
             b.setImage(UIImage(systemName: icon), for: .normal)
@@ -78,7 +82,9 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             b.backgroundColor = .fdBg2
             b.layer.cornerRadius = 10
             b.snp.makeConstraints { $0.size.equalTo(32) }
-            if idx == 2 {
+            if idx == 1 {
+                b.addTarget(self, action: #selector(toggleVoiceMode), for: .touchUpInside)
+            } else if idx == 2 {
                 b.addTarget(self, action: #selector(showImagePicker), for: .touchUpInside)
             }
             return b
@@ -111,6 +117,22 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         b.addTarget(self, action: #selector(sendMessage), for: .touchUpInside)
         b.isEnabled = false
         b.setTitleColor(.fdMuted, for: .disabled)
+        return b
+    }()
+
+    private lazy var voiceInputButton: UIButton = {
+        let b = UIButton(type: .system)
+        b.setTitle("按住 说话", for: .normal)
+        b.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
+        b.setTitleColor(.fdText, for: .normal)
+        b.backgroundColor = .fdSurface
+        b.layer.cornerRadius = 18
+        b.layer.borderWidth = 1
+        b.layer.borderColor = UIColor.fdBorder.cgColor
+        b.isHidden = true
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleVoiceLongPress(_:)))
+        longPress.minimumPressDuration = 0.1
+        b.addGestureRecognizer(longPress)
         return b
     }()
 
@@ -149,7 +171,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         toolsRow.axis = .horizontal
         toolsRow.spacing = 6
 
-        let inputRow = UIStackView(arrangedSubviews: [toolsRow, textField, sendBtn])
+        let inputRow = UIStackView(arrangedSubviews: [toolsRow, textField, voiceInputButton, sendBtn])
         inputRow.axis = .horizontal
         inputRow.spacing = 8
         inputRow.alignment = .center
@@ -182,6 +204,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
 
         sendBtn.snp.makeConstraints { $0.width.equalTo(56); $0.height.equalTo(36) }
         textField.snp.makeConstraints { $0.height.equalTo(36) }
+        voiceInputButton.snp.makeConstraints { $0.height.equalTo(36) }
 
         // 底部安全区域填充白色，与 inputBar 颜色一致
         let safeAreaFill = UIView()
@@ -282,9 +305,10 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
                 }
             }
             await MainActor.run {
-                messages = msgs.isEmpty
+                var list = msgs.isEmpty
                     ? IMService.shared.getMessages(conversationId: conversationId)
                     : msgs
+                messages = insertTimeMarkers(list)
                 tableView.reloadData()
                 scrollToBottom(animated: false)
             }
@@ -296,7 +320,8 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             refreshControl.endRefreshing()
             return
         }
-        guard let oldestMsg = messages.first else {
+        // 跳过 timeMarker，取最早的真实消息 ID
+        guard let oldestMsg = messages.first(where: { $0.type != .timeMarker }) else {
             refreshControl.endRefreshing()
             return
         }
@@ -310,19 +335,107 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
                 if olderMessages.isEmpty {
                     hasMoreMessages = false
                 } else {
-                    messages.insert(contentsOf: olderMessages, at: 0)
+                    let raw = messages.filter { $0.type != .timeMarker } + olderMessages
+                    messages = insertTimeMarkers(raw.sorted { ($0.sentTime ?? 0) < ($1.sentTime ?? 0) })
                     tableView.reloadData()
-                    // 保持滚动位置不变
-                    let offset = olderMessages.count
-                    if offset > 0 {
-                        let indexPath = IndexPath(row: offset, section: 0)
-                        tableView.scrollToRow(at: indexPath, at: .top, animated: false)
+                    // 保持滚动位置不变：跳过新增的 timeMarker 计算 offset
+                    let addedCount = messages.count - (raw.count - olderMessages.count)
+                    if addedCount > 0 {
+                        tableView.scrollToRow(at: IndexPath(row: addedCount - 1, section: 0), at: .top, animated: false)
                     }
                 }
                 refreshControl.endRefreshing()
                 isLoadingMore = false
             }
         }
+    }
+
+    /// 在消息列表中插入日期分隔标记
+    /// 比较相邻消息的日期，跨天时在上方插入 `.timeMarker`
+    private func insertTimeMarkers(_ list: [ChatMessage]) -> [ChatMessage] {
+        guard !list.isEmpty else { return list }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+
+        var result: [ChatMessage] = []
+        var lastDate: Date?
+
+        for msg in list {
+            // skip messages that already have a time (mock 数据 "今天 14:20") or parse sentTime
+            guard let sentTime = parseMessageDate(msg) else {
+                result.append(msg)
+                continue
+            }
+            let msgDate = calendar.startOfDay(for: sentTime)
+
+            if lastDate == nil || msgDate != lastDate {
+                let dateText = formatDateMarker(msgDate, today: today, yesterday: yesterday, calendar: calendar)
+                let marker = ChatMessage(
+                    id: "marker-\(msg.id)",
+                    type: .timeMarker,
+                    role: .user,
+                    senderName: nil, senderRole: nil, avatar: nil,
+                    text: dateText, time: "", sentTime: nil,
+                    card: nil, meal: nil, report: nil,
+                    imagePath: nil, thumbWidth: nil, thumbHeight: nil,
+                    conversationId: conversationId,
+                    extra: nil, reply: nil
+                )
+                result.append(marker)
+            }
+            result.append(msg)
+            lastDate = msgDate
+        }
+
+        return result
+    }
+
+    /// 从 ChatMessage 的 time 字段解析 Date
+    private func parseMessageDate(_ msg: ChatMessage) -> Date? {
+        // 优先用 sentTime（融云消息）
+        if let st = msg.sentTime, st > 0 {
+            return Date(timeIntervalSince1970: TimeInterval(st) / 1000.0)
+        }
+        // fallback: 字符串格式
+        guard !msg.time.isEmpty else { return Date() }
+        let raw = msg.time
+        if raw.hasPrefix("今天") {
+            return parseTime(raw.replacingOccurrences(of: "今天 ", with: ""), baseDate: Date())
+        }
+        if raw.hasPrefix("昨天") {
+            let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+            return parseTime(raw.replacingOccurrences(of: "昨天 ", with: ""), baseDate: yesterday)
+        }
+        return parseTime(raw, baseDate: Date())
+    }
+
+    private func parseTime(_ timeStr: String, baseDate: Date) -> Date? {
+        let parts = timeStr.split(separator: ":")
+        guard parts.count == 2,
+              let hour = Int(parts[0]),
+              let minute = Int(parts[1]) else { return nil }
+        return Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: baseDate)
+    }
+
+    /// 日期格式：今天 / 昨天 / MM-dd / yyyy-MM-dd
+    private func formatDateMarker(_ date: Date, today: Date, yesterday: Date, calendar: Calendar) -> String {
+        if calendar.isDate(date, inSameDayAs: today) {
+            return "今天"
+        }
+        if calendar.isDate(date, inSameDayAs: yesterday) {
+            return "昨天"
+        }
+        let fmt = DateFormatter()
+        let year = calendar.component(.year, from: date)
+        let thisYear = calendar.component(.year, from: Date())
+        if year == thisYear {
+            fmt.dateFormat = "MM-dd"
+        } else {
+            fmt.dateFormat = "yyyy-MM-dd"
+        }
+        return fmt.string(from: date)
     }
 
     // MARK: - UITableView
@@ -373,6 +486,14 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             return cell
         case .sysNotify:
             let cell = tableView.dequeueReusableCell(withIdentifier: SysNotifyCell.reuseID, for: indexPath) as! SysNotifyCell
+            cell.configure(msg, tone: conversation?.role.toneHex ?? "#FF7A50", convRole: conversation?.role ?? .manager)
+            return cell
+        case .timeMarker, .recall:
+            let cell = tableView.dequeueReusableCell(withIdentifier: CenteredTipCell.reuseID, for: indexPath) as! CenteredTipCell
+            cell.configure(text: msg.text ?? "")
+            return cell
+        case .voice:
+            let cell = tableView.dequeueReusableCell(withIdentifier: VoiceBubbleCell.reuseID, for: indexPath) as! VoiceBubbleCell
             cell.configure(msg, tone: conversation?.role.toneHex ?? "#FF7A50", convRole: conversation?.role ?? .manager)
             return cell
         }
@@ -457,6 +578,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             avatar: nil,
             text: text,
             time: "刚刚",
+            sentTime: nil,
             card: nil,
             meal: nil,
             report: nil,
@@ -464,7 +586,8 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             thumbWidth: nil,
             thumbHeight: nil,
             conversationId: conversationId,
-            extra: nil
+            extra: nil,
+            reply: nil
         )
         messages.append(localMsg)
         UIView.performWithoutAnimation {
@@ -506,6 +629,93 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     @objc private func keyboardWillHide(_ n: Notification) {
         inputBottomConstraint?.update(offset: 0)
         UIView.animate(withDuration: 0.25) { self.view.layoutIfNeeded() }
+    }
+
+    // MARK: - Voice
+
+    @objc private func toggleVoiceMode() {
+        isVoiceMode.toggle()
+        textField.isHidden = isVoiceMode
+        sendBtn.isHidden = isVoiceMode
+        voiceInputButton.isHidden = !isVoiceMode
+        if isVoiceMode {
+            textField.resignFirstResponder()
+        }
+    }
+
+    @objc private func handleVoiceLongPress(_ gesture: UILongPressGestureRecognizer) {
+        let location = gesture.location(in: voiceInputButton)
+        let isCancelled = location.y < -60
+
+        switch gesture.state {
+        case .began:
+            guard awaitPermission() else { return }
+            voiceInputButton.setTitle("松开 发送", for: .normal)
+            voiceInputButton.backgroundColor = UIColor(hexString: "#FF7A50").withAlphaComponent(0.15)
+            let fm = MediaFileManager()
+            let url = URL(fileURLWithPath: fm.basePath(.temp) + "/voice_\(Int(Date().timeIntervalSince1970)).wav")
+            try? audioRecorder.startRecording(to: url)
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+
+        case .changed:
+            if isCancelled {
+                voiceInputButton.setTitle("松开 取消", for: .normal)
+                voiceInputButton.backgroundColor = UIColor.red.withAlphaComponent(0.1)
+            } else {
+                voiceInputButton.setTitle("松开 发送", for: .normal)
+                voiceInputButton.backgroundColor = UIColor(hexString: "#FF7A50").withAlphaComponent(0.15)
+            }
+
+        case .ended:
+            voiceInputButton.setTitle("按住 说话", for: .normal)
+            voiceInputButton.backgroundColor = .fdSurface
+
+            if isCancelled {
+                audioRecorder.cancelRecording()
+            } else {
+                guard audioRecorder.isRecording || audioRecorder.isPaused else { break }
+                let duration = Int(audioRecorder.currentDuration)
+                guard duration >= 1, let url = audioRecorder.stopRecording() else {
+                    // 录音太短，静默处理
+                    break
+                }
+                let localPath = url.path
+                Task {
+                    let sent = await IMService.shared.sendVoice(
+                        localPath: localPath,
+                        duration: duration,
+                        conversationId: conversationId
+                    )
+                    if let sent {
+                        await MainActor.run {
+                            if let localIdx = messages.firstIndex(where: { $0.type == .voice && $0.imagePath == localPath }) {
+                                messages[localIdx] = sent
+                                tableView.reloadRows(at: [IndexPath(row: localIdx, section: 0)], with: .none)
+                            }
+                        }
+                    }
+                }
+            }
+
+        case .cancelled, .failed:
+            voiceInputButton.setTitle("按住 说话", for: .normal)
+            voiceInputButton.backgroundColor = .fdSurface
+            audioRecorder.cancelRecording()
+
+        default: break
+        }
+    }
+
+    private func awaitPermission() -> Bool {
+        let semaphore = DispatchSemaphore(value: 0)
+        var granted = false
+        Task {
+            granted = await audioRecorder.requestPermission()
+            semaphore.signal()
+        }
+        semaphore.wait()
+        return granted
     }
 
     // MARK: - Helpers
@@ -583,6 +793,7 @@ extension ChatViewController {
             avatar: nil,
             text: nil,
             time: "刚刚",
+            sentTime: nil,
             card: nil,
             meal: nil,
             report: nil,
@@ -590,7 +801,8 @@ extension ChatViewController {
             thumbWidth: Int(image.size.width),
             thumbHeight: Int(image.size.height),
             conversationId: conversationId,
-            extra: nil
+            extra: nil,
+            reply: nil
         )
         messages.append(localMsg)
         UIView.performWithoutAnimation {

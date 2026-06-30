@@ -128,7 +128,7 @@ final class VideoBubbleCell: UITableViewCell {
             make.top.equalTo(metaLabel.snp.bottom).offset(4)
             make.bottom.equalToSuperview().offset(-8)
             make.width.equalTo(200)
-            make.height.equalTo(140)
+            make.height.equalTo(140).priority(750)
             if isStaff {
                 make.leading.equalTo(metaLabel)
             } else {
