@@ -177,6 +177,23 @@ rcMessage.content?.senderUserInfo  →  ChatMessage
 - `calcLastType` 以 `RC:` 开头为融云内置类型，`AD:` 开头为自定义类型
 - 无 `replyMessage` key 或解析失败时 `reply = nil`
 
+#### UI 展示
+
+引用信息在消息气泡**下方**展示，灰色圆角卡片：
+
+```
+┌─────────────────┐
+│ 回复 张三        │  ← replyNameLabel, fdPrimary 色, font 11
+│ 老张你好...      │  ← replyContentLabel (文本) 或 replyImageView (图片缩略图)
+└─────────────────┘
+```
+
+- `calcLastType == "RC:ImgMsg"` → `calcLastText` 为图片 URL，用 Kingfisher 加载 32x32 缩略图
+- 其他类型 → 单行文本预览，`fdSubtext` 色，font 12
+- 宽 200pt，高 52pt，背景 `#F5F5F5`，圆角 6
+- staff 消息左对齐气泡，user 消息右对齐气泡
+- 无引用时整个 replyView 隐藏
+
 **ReplyMessage 模型字段**：
 
 | JSON key | Swift 属性 | 类型 |
@@ -482,16 +499,26 @@ case recall       // 撤回通知
 
 ### 类型映射
 
-使用融云系统高清语音类型 `RCHQVoiceMessage`（`RC:HQVCMsg`），不用自定义类型。
+使用融云系统高清语音类型 `RCHQVoiceMessage`（`RC:HQVCMsg`）。
 
 | 层 | 表示 |
 |---|---|
 | 融云传输 | `RC:HQVCMsg`，`RCHQVoiceMessage`（localPath + duration） |
-| App 内部 | `MessageType.voice`，`imagePath`=localPath，`thumbHeight`=duration |
+| SDK 上传后 | 服务器转码为 M4A 格式 |
+| SDK 下载后 | 本地 M4A 文件（`localPath`），AVAudioPlayer 原生支持 |
+| App 内部 | `MessageType.voice`，`imagePath`=localPath/remoteUrl，`thumbHeight`=duration |
 
 ### 录制格式
 
-WAV，单声道 8000Hz 16bit，兼容融云 `RCHQVoiceMessage`。
+WAV，单声道 8000Hz 16bit。融云 SDK 上传后服务端转码为 M4A。
+
+### 播放
+
+`AVAudioPlayer` 直接播放 M4A 文件（`imagePath`），无需格式转换。**opus-ios 已移除**（模拟器不支持，且融云已转 M4A，无需自行解码）。
+
+### 音频转换（占位）
+
+`DAL/Media/AudioConverter.swift` 为空壳，`convertWebMToWAV()` 返回 nil。真机需 Opus 解码的场景暂不启用。
 
 ### 录制交互（仿微信）
 
@@ -506,9 +533,17 @@ WAV，单声道 8000Hz 16bit，兼容融云 `RCHQVoiceMessage`。
 
 ```
 按住说话 → AudioRecorder.startRecording(to: tempURL)
-  → 松开发送 → stopRecording() → fileSize / duration
-  → RongCloudManager.sendFileMessage(fileUrl: tempURL.path, fileSuffix: "mp3", ...)
-  → 后续对接 OSS 上传后替换 fileUrl
+  → 松开发送 → stopRecording() → duration
+  → IMService.sendVoice(localPath:duration:) → RongCloudManager.sendHQVoiceMessage()
+  → 融云 SDK 上传 → 服务端转 M4A
+```
+
+### 接收播放流程
+
+```
+收到 RC:HQVCMsg → localPath ?? remoteUrl → imagePath
+  → 点击播放 → 本地文件直接 AVAudioPlayer 播
+  → 无本地文件 → RongCloudManager.downloadMediaMessage() → 下载 M4A → 播放
 ```
 
 ### 语音气泡 Cell（VoiceBubbleCell）
@@ -531,4 +566,39 @@ WAV，单声道 8000Hz 16bit，兼容融云 `RCHQVoiceMessage`。
   DAL/IM/RongCloudMessageDelegate.swift         ← mp3 FileMessage → type=.voice
   DAL/IM/Conversation.swift                     ← lastMessageText 补 [音频]
   PL/Message/Chat/ChatViewController.swift      ← 语音按钮 + 录制交互 + cellForRow
+```
+
+## 消息已读回执
+
+### 规则
+
+进入聊天详情页加载历史消息后，对接收方向的消息发送已读回执，告知发送方消息已被阅读。
+
+### 调用时机
+
+- `IMService.loadMessages` 获取历史消息后，筛选 `messageDirection == .RECEIVE` 的消息
+- 逐条调用 `sendReadReceiptRequest`
+
+### API 封装
+
+**`RongCloudManager.sendReadReceiptRequest(messageId:completion:)`**：
+- 通过 `client.getMessage(messageId)` 获取 `RCMessage` 对象
+- 调用 `client.sendReadReceiptRequest(message, success, error)`
+
+### 会话列表实时更新
+
+`ConversationListViewController` 订阅融云回调，新消息到达时自动刷新列表：
+
+| 订阅 | 说明 |
+|---|---|
+| `RongCloudManager.messageReceivedPublisher` | 收到新消息 → 刷新会话列表（更新 lastMessage + unread） |
+| `RongCloudManager.remoteConversationListDidSyncPublisher` | 远端会话同步完成 → 刷新 |
+
+### 改动范围
+
+```
+修改文件：
+  DAL/IM/RongCloudManager.swift              ← sendReadReceiptRequest 封装
+  BLL/Message/IMService.swift                ← loadMessages 后发送已读回执
+  PL/Message/ConversationListViewController.swift ← 订阅新消息 + 远端同步回调
 ```

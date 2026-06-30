@@ -341,6 +341,34 @@ final class RongCloudManager {
         )
     }
 
+    /// 发送已读回执
+    func sendReadReceiptRequest(messageId: Int, completion: ((Bool) -> Void)? = nil) {
+        client.getMessage(messageId) { [weak self] message in
+            guard let self, let message else {
+                completion?(false)
+                return
+            }
+            self.client.sendReadReceiptRequest(message, success: {
+                print("[RongCloud] sendReadReceiptRequest ✓ msgId=\(messageId)")
+                completion?(true)
+            }, error: { errorCode in
+                print("[RongCloud] sendReadReceiptRequest ✗ msgId=\(messageId) code=\(errorCode.rawValue)")
+                completion?(false)
+            })
+        }
+    }
+
+    /// 下载媒体消息（语音），完成后 localPath 可用
+    func downloadMediaMessage(_ messageId: Int, completion: @escaping (String?) -> Void) {
+        client.downloadMediaMessage(messageId, progress: nil, success: { localPath in
+            print("[RongCloud] downloadMedia ✓ msgId=\(messageId) path=\(localPath)")
+            completion(localPath)
+        }, error: { errorCode in
+            print("[RongCloud] downloadMedia ✗ msgId=\(messageId) code=\(errorCode.rawValue)")
+            completion(nil)
+        })
+    }
+
     /// 发送高清语音消息（RC:HQVCMsg）
     func sendHQVoiceMessage(
         conversationType: RCConversationType,

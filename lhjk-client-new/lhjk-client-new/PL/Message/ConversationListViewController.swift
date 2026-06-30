@@ -1,5 +1,6 @@
 import UIKit
 import SnapKit
+import Combine
 
 /// 团队对话列表 — MessagesViewController 的子 VC
 /// 展示三好共管置顶横幅 + 融云会话列表
@@ -7,6 +8,7 @@ final class ConversationListViewController: UIViewController, UITableViewDataSou
 
     var onDataChanged: (() -> Void)?
     private var conversations: [Conversation] = []
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - UI
 
@@ -28,6 +30,22 @@ final class ConversationListViewController: UIViewController, UITableViewDataSou
         view.backgroundColor = .fdBg
         view.addSubview(tableView)
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        // 收到新消息 → 刷新会话列表
+        RongCloudManager.shared.messageReceivedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.loadData()
+            }
+            .store(in: &cancellables)
+
+        // 远端会话同步完成 → 刷新
+        RongCloudManager.shared.remoteConversationListDidSyncPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.loadData()
+            }
+            .store(in: &cancellables)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -39,7 +57,6 @@ final class ConversationListViewController: UIViewController, UITableViewDataSou
 
     func loadData() {
         Task {
-//            async let _ = IMService.shared.testFetchAllConversations()
             conversations = await IMService.shared.loadConversations()
             await MainActor.run {
                 tableView.reloadData()

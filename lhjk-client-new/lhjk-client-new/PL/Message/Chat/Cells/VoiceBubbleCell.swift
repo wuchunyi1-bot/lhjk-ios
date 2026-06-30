@@ -1,5 +1,7 @@
 import UIKit
 import SnapKit
+import Kingfisher
+import AVFoundation
 
 /// 语音气泡 Cell — 波形图标 + 时长，宽度随 duration 变化
 final class VoiceBubbleCell: UITableViewCell {
@@ -15,6 +17,14 @@ final class VoiceBubbleCell: UITableViewCell {
         l.layer.cornerRadius = 17
         l.clipsToBounds = true
         return l
+    }()
+    private let avatarImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFill
+        iv.layer.cornerRadius = 17
+        iv.clipsToBounds = true
+        iv.isHidden = true
+        return iv
     }()
 
     private let metaLabel: UILabel = {
@@ -50,6 +60,13 @@ final class VoiceBubbleCell: UITableViewCell {
         return v
     }()
 
+    // MARK: - Playback
+
+    private var player: AVAudioPlayer?
+    private var currentAudioPath: String?
+    private var currentMessageId: Int = 0
+    private var isPlaying = false
+
     // MARK: - Init
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -57,11 +74,21 @@ final class VoiceBubbleCell: UITableViewCell {
         selectionStyle = .none
         backgroundColor = .fdBg
 
-        [avatarLabel, metaLabel, bubbleView].forEach(contentView.addSubview)
+        [avatarLabel, avatarImageView, metaLabel, bubbleView].forEach(contentView.addSubview)
         [iconView, durationLabel, unreadDot].forEach(bubbleView.addSubview)
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(togglePlay))
+        bubbleView.addGestureRecognizer(tap)
+        bubbleView.isUserInteractionEnabled = true
     }
 
     required init?(coder: NSCoder) { fatalError() }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        stopPlayback()
+        currentAudioPath = nil
+    }
 
     // MARK: - Configure
 
@@ -69,7 +96,22 @@ final class VoiceBubbleCell: UITableViewCell {
         let isStaff = msg.isStaff
         let seconds = msg.thumbHeight ?? 0
 
-        avatarLabel.text = isStaff ? (msg.avatar ?? msg.senderName?.prefix(1).description ?? "?") : "我"
+        // 停止上一个播放
+        stopPlayback()
+        currentAudioPath = msg.imagePath
+        currentMessageId = Int(msg.id) ?? 0
+        print("[VoiceBubble] configure → path=\(msg.imagePath ?? "nil") duration=\(seconds) msgId=\(currentMessageId)")
+        updatePlayIcon(false)
+
+        if let urlStr = msg.portraitUrl, !urlStr.isEmpty, let url = URL(string: urlStr) {
+            avatarImageView.isHidden = false
+            avatarLabel.isHidden = true
+            avatarImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+        } else {
+            avatarImageView.isHidden = true
+            avatarLabel.isHidden = false
+            avatarLabel.text = isStaff ? (msg.avatar ?? msg.senderName?.prefix(1).description ?? "?") : "我"
+        }
         avatarLabel.backgroundColor = isStaff
             ? UIColor(hexString: tone)
             : UIColor(hexString: "#FF7A50")
@@ -90,6 +132,84 @@ final class VoiceBubbleCell: UITableViewCell {
         layoutForStaff(isStaff, seconds: seconds)
     }
 
+    // MARK: - Playback Actions
+
+    @objc private func togglePlay() {
+        print("[VoiceBubble] togglePlay called, isPlaying=\(isPlaying)")
+        if isPlaying {
+            stopPlayback()
+        } else {
+            startPlayback()
+        }
+    }
+
+    private func startPlayback() {
+        guard let path = currentAudioPath, !path.isEmpty else {
+            print("[VoiceBubble] ✗ path nil/empty")
+            return
+        }
+
+        // 本地文件 → 直接播放（M4A/WAV/MP3 等）
+        if path.hasPrefix("/") {
+            playFile(URL(fileURLWithPath: path))
+            return
+        }
+
+        // 远程 → 下载后播放
+        if currentMessageId > 0 {
+            print("[VoiceBubble] downloading msgId=\(currentMessageId)")
+            updatePlayIcon(true)
+            RongCloudManager.shared.downloadMediaMessage(currentMessageId) { [weak self] localPath in
+                guard let self, let localPath else {
+                    DispatchQueue.main.async { self?.updatePlayIcon(false) }
+                    return
+                }
+                print("[VoiceBubble] downloaded: \(localPath)")
+                DispatchQueue.main.async {
+                    self.currentAudioPath = localPath
+                    self.playFile(URL(fileURLWithPath: localPath))
+                }
+            }
+            return
+        }
+
+        print("[VoiceBubble] ✗ cannot handle: \(path)")
+    }
+
+    private func playFile(_ url: URL) {
+        let exists = FileManager.default.fileExists(atPath: url.path)
+        print("[VoiceBubble] play: \(url.path), exists=\(exists)")
+        guard exists else { updatePlayIcon(false); return }
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+            player = try AVAudioPlayer(contentsOf: url)
+            player?.delegate = self
+            player?.play()
+            isPlaying = true
+            updatePlayIcon(true)
+            print("[VoiceBubble] ✓ playing, duration=\(player?.duration ?? 0)")
+        } catch {
+            print("[VoiceBubble] ✗ failed: \(error)")
+            updatePlayIcon(false)
+        }
+    }
+
+    private func stopPlayback() {
+        print("[VoiceBubble] stopPlayback")
+        player?.stop()
+        player = nil
+        isPlaying = false
+        updatePlayIcon(false)
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    private func updatePlayIcon(_ playing: Bool) {
+        iconView.image = UIImage(systemName: playing ? "waveform.circle.fill" : "waveform")
+    }
+
+    // MARK: - Layout
+
     private func layoutForStaff(_ isStaff: Bool, seconds: Int) {
         let bubbleWidth = voiceBubbleWidth(seconds: seconds)
 
@@ -101,6 +221,9 @@ final class VoiceBubbleCell: UITableViewCell {
             } else {
                 make.trailing.equalToSuperview().offset(-16)
             }
+        }
+        avatarImageView.snp.remakeConstraints { make in
+            make.edges.equalTo(avatarLabel)
         }
 
         metaLabel.snp.remakeConstraints { make in
@@ -158,5 +281,15 @@ final class VoiceBubbleCell: UITableViewCell {
         let maxWidth: CGFloat = 160
         let width = minWidth + CGFloat(min(seconds, 60)) * (maxWidth - minWidth) / 60.0
         return width
+    }
+}
+
+// MARK: - AVAudioPlayerDelegate
+
+extension VoiceBubbleCell: AVAudioPlayerDelegate {
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        isPlaying = false
+        updatePlayIcon(false)
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 }

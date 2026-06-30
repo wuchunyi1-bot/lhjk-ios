@@ -184,6 +184,8 @@ final class IMService {
                 continuation.resume(returning: messages)
             }
         }
+        // 发送已读回执（仅接收方向、且未读的消息）
+        sendReadReceiptsIfNeeded(rcMessages)
         // 融云 getHistoryMessages 返回最新在前，倒序使最旧在上、最新在下
         let chatMessages = rcMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }.reversed()
         let sorted = Array(chatMessages)
@@ -203,6 +205,8 @@ final class IMService {
                 continuation.resume(returning: messages)
             }
         }
+        // 发送已读回执（仅接收方向、且未读的消息）
+        sendReadReceiptsIfNeeded(rcMessages)
         let older = rcMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }.reversed()
         let sorted = Array(older)
         // 插入到缓存前部
@@ -373,6 +377,15 @@ final class IMService {
         } else {
             print("[IMService] sendVoice ✗ errorCode=\(result.1.rawValue)")
             return nil
+        }
+    }
+
+    /// 给需要回执且尚未发送的消息发已读回执
+    private func sendReadReceiptsIfNeeded(_ messages: [RCMessage]) {
+        for msg in messages {
+            guard msg.messageDirection == .MessageDirection_RECEIVE else { continue }
+            guard let receipt = msg.readReceiptInfo, receipt.isReceiptRequestMessage, !receipt.hasRespond else { continue }
+            RongCloudManager.shared.sendReadReceiptRequest(messageId: msg.messageId)
         }
     }
 

@@ -88,10 +88,10 @@ extension ChatMessage {
             // 高清语音 RC:HQVCMsg
             content = "[语音]"
             type = .voice
-            imagePath = voiceContent.localPath
+            imagePath = voiceContent.localPath ?? voiceContent.remoteUrl
             thumbWidth = nil
             thumbHeight = Int(voiceContent.duration)
-            print("[RongCloud] fromRongCloud voice → localPath=\(voiceContent.localPath ?? "nil") duration=\(voiceContent.duration)s")
+            print("[RongCloud] fromRongCloud voice → localPath=\(voiceContent.localPath ?? "nil") remoteUrl=\(voiceContent.remoteUrl ?? "nil") duration=\(voiceContent.duration)s")
         } else {
             // 自定义消息类型：尝试 downcast 到具体子类，fallback 到 RCMessageContent 基类
             type = mapObjectName(rcMessage.objectName)
@@ -125,6 +125,7 @@ extension ChatMessage {
             senderName: senderName,
             senderRole: nil,
             avatar: senderAvatar,
+            portraitUrl: senderInfo?.portraitUri,
             text: content,
             time: timeFmt.string(from: sentDate),
             sentTime: rcMessage.sentTime,

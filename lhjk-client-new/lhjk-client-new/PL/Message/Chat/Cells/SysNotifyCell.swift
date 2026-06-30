@@ -17,6 +17,14 @@ final class SysNotifyCell: UITableViewCell {
         l.clipsToBounds = true
         return l
     }()
+    private let avatarImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFill
+        iv.layer.cornerRadius = 17
+        iv.clipsToBounds = true
+        iv.isHidden = true
+        return iv
+    }()
 
     private let metaLabel: UILabel = {
         let l = UILabel()
@@ -74,7 +82,7 @@ final class SysNotifyCell: UITableViewCell {
         selectionStyle = .none
         backgroundColor = .fdBg
 
-        [avatarLabel, metaLabel, cardView].forEach(contentView.addSubview)
+        [avatarLabel, avatarImageView, metaLabel, cardView].forEach(contentView.addSubview)
         [coverImageView, titleLabel, descLabel, actionHint].forEach(cardView.addSubview)
     }
 
@@ -86,26 +94,35 @@ final class SysNotifyCell: UITableViewCell {
         let isStaff = msg.isStaff
         let notify = msg.sysNotifyContent
 
-        if notify?.isShowUser ?? true {
-            avatarLabel.text = isStaff ? (msg.avatar ?? msg.senderName?.prefix(1).description ?? "?") : "我"
-            avatarLabel.backgroundColor = isStaff
-                ? UIColor(hexString: tone)
-                : UIColor(hexString: "#FF7A50")
-            avatarLabel.isHidden = false
+        let showUser = notify?.isShowUser ?? true
+
+        if showUser {
+            if let urlStr = msg.portraitUrl, !urlStr.isEmpty, let url = URL(string: urlStr) {
+                avatarImageView.isHidden = false
+                avatarLabel.isHidden = true
+                avatarImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+            } else {
+                avatarImageView.isHidden = true
+                avatarLabel.isHidden = false
+                avatarLabel.text = isStaff ? (msg.avatar ?? msg.senderName?.prefix(1).description ?? "?") : "我"
+                avatarLabel.backgroundColor = isStaff
+                    ? UIColor(hexString: tone)
+                    : UIColor(hexString: "#FF7A50")
+            }
             metaLabel.isHidden = false
             metaLabel.text = isStaff
                 ? [msg.senderName, msg.senderRole, msg.time].compactMap { $0 }.joined(separator: " · ")
                 : msg.time
+            metaLabel.textAlignment = isStaff ? .left : .right
         } else {
             avatarLabel.isHidden = true
+            avatarImageView.isHidden = true
             metaLabel.isHidden = true
         }
-        metaLabel.textAlignment = isStaff ? .left : .right
 
         titleLabel.text = notify?.title ?? ""
         descLabel.text = notify?.content ?? ""
 
-        // 封面图
         if let imgUrl = notify?.imageUrl, let url = URL(string: imgUrl) {
             coverImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
             coverImageView.isHidden = false
@@ -113,7 +130,7 @@ final class SysNotifyCell: UITableViewCell {
             coverImageView.isHidden = true
         }
 
-        layoutForStaff(isStaff, hasCover: !coverImageView.isHidden, showUser: notify?.isShowUser ?? true)
+        layoutForStaff(isStaff, hasCover: !coverImageView.isHidden, showUser: showUser)
     }
 
     private func layoutForStaff(_ isStaff: Bool, hasCover: Bool, showUser: Bool) {
@@ -128,6 +145,9 @@ final class SysNotifyCell: UITableViewCell {
                 }
                 make.top.equalToSuperview().offset(8)
                 make.size.equalTo(34)
+            }
+            avatarImageView.snp.remakeConstraints { make in
+                make.edges.equalTo(avatarLabel)
             }
 
             metaLabel.snp.remakeConstraints { make in

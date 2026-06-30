@@ -134,6 +134,8 @@ struct ChatMessage: Identifiable {
     let senderName: String?
     let senderRole: String?
     let avatar: String?
+    /// 发送者头像 URL，优先于 avatar 文字展示
+    let portraitUrl: String?
     let text: String?
     let time: String
     /// 发送时间戳（毫秒），用于日期比较
@@ -172,7 +174,7 @@ struct ChatMessage: Identifiable {
 
 extension ChatMessage: Codable {
     enum CodingKeys: String, CodingKey {
-        case id, type, role, senderName, senderRole, avatar
+        case id, type, role, senderName, senderRole, avatar, portraitUrl
         case text, time, card, meal, report
         case imagePath, thumbWidth, thumbHeight
         case conversationId, extra, reply, sentTime
@@ -186,6 +188,7 @@ extension ChatMessage: Codable {
         senderName = try c.decodeIfPresent(String.self, forKey: .senderName)
         senderRole = try c.decodeIfPresent(String.self, forKey: .senderRole)
         avatar = try c.decodeIfPresent(String.self, forKey: .avatar)
+        portraitUrl = try c.decodeIfPresent(String.self, forKey: .portraitUrl)
         text = try c.decodeIfPresent(String.self, forKey: .text)
         time = try c.decode(String.self, forKey: .time)
         card = try c.decodeIfPresent(ServiceCard.self, forKey: .card)
@@ -211,6 +214,7 @@ extension ChatMessage: Codable {
         try c.encodeIfPresent(senderName, forKey: .senderName)
         try c.encodeIfPresent(senderRole, forKey: .senderRole)
         try c.encodeIfPresent(avatar, forKey: .avatar)
+        try c.encodeIfPresent(portraitUrl, forKey: .portraitUrl)
         try c.encodeIfPresent(text, forKey: .text)
         try c.encode(time, forKey: .time)
         try c.encodeIfPresent(card, forKey: .card)
@@ -317,26 +321,26 @@ extension ChatMessage {
     // MARK: Factory helpers
 
     private static func staff(_ id: String, _ text: String, _ name: String, _ role: String, _ avatar: String, _ time: String) -> ChatMessage {
-        ChatMessage(id: id, type: .text, role: .staff, senderName: name, senderRole: role, avatar: avatar, text: text, time: time, sentTime: nil, card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
+        ChatMessage(id: id, type: .text, role: .staff, senderName: name, senderRole: role, avatar: avatar, portraitUrl: nil, text: text, time: time, sentTime: nil, card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
     }
 
     private static func user(_ id: String, _ text: String, _ time: String) -> ChatMessage {
-        ChatMessage(id: id, type: .text, role: .user, senderName: nil, senderRole: nil, avatar: nil, text: text, time: time, sentTime: nil, card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
+        ChatMessage(id: id, type: .text, role: .user, senderName: nil, senderRole: nil, avatar: nil, portraitUrl: nil, text: text, time: time, sentTime: nil, card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
     }
 
     private static func system(_ id: String, _ text: String) -> ChatMessage {
-        ChatMessage(id: id, type: .system, role: .user, senderName: nil, senderRole: nil, avatar: nil, text: text, time: "", sentTime: nil, card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
+        ChatMessage(id: id, type: .system, role: .user, senderName: nil, senderRole: nil, avatar: nil, portraitUrl: nil, text: text, time: "", sentTime: nil, card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
     }
 
     private static func staffCard(_ id: String, _ card: ServiceCard) -> ChatMessage {
-        ChatMessage(id: id, type: .metricCard, role: .staff, senderName: nil, senderRole: nil, avatar: nil, text: nil, time: "", sentTime: nil, card: card, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
+        ChatMessage(id: id, type: .metricCard, role: .staff, senderName: nil, senderRole: nil, avatar: nil, portraitUrl: nil, text: nil, time: "", sentTime: nil, card: card, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
     }
 
     private static func staffMeal(_ id: String, _ meal: MealAnalysis) -> ChatMessage {
-        ChatMessage(id: id, type: .mealAnalysis, role: .staff, senderName: nil, senderRole: nil, avatar: nil, text: nil, time: "", sentTime: nil, card: nil, meal: meal, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
+        ChatMessage(id: id, type: .mealAnalysis, role: .staff, senderName: nil, senderRole: nil, avatar: nil, portraitUrl: nil, text: nil, time: "", sentTime: nil, card: nil, meal: meal, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
     }
 
     private static func aiReport(_ id: String, _ report: AIWeeklyReport) -> ChatMessage {
-        ChatMessage(id: id, type: .aiWeeklyReport, role: .staff, senderName: "小德", senderRole: "AI 健康顾问", avatar: "德", text: nil, time: "今天 08:00", sentTime: nil, card: nil, meal: nil, report: report, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
+        ChatMessage(id: id, type: .aiWeeklyReport, role: .staff, senderName: "小德", senderRole: "AI 健康顾问", avatar: "德", portraitUrl: nil, text: nil, time: "今天 08:00", sentTime: nil, card: nil, meal: nil, report: report, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
     }
 }

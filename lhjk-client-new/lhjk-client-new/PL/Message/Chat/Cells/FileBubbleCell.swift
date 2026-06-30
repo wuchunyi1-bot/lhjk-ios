@@ -1,5 +1,6 @@
 import UIKit
 import SnapKit
+import Kingfisher
 
 /// 文件 / 音频 / 团队知识 气泡 Cell
 final class FileBubbleCell: UITableViewCell {
@@ -15,6 +16,14 @@ final class FileBubbleCell: UITableViewCell {
         l.layer.cornerRadius = 17
         l.clipsToBounds = true
         return l
+    }()
+    private let avatarImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFill
+        iv.layer.cornerRadius = 17
+        iv.clipsToBounds = true
+        iv.isHidden = true
+        return iv
     }()
 
     private let metaLabel: UILabel = {
@@ -62,7 +71,7 @@ final class FileBubbleCell: UITableViewCell {
         selectionStyle = .none
         backgroundColor = .fdBg
 
-        [avatarLabel, metaLabel, cardView].forEach(contentView.addSubview)
+        [avatarLabel, avatarImageView, metaLabel, cardView].forEach(contentView.addSubview)
         [iconView, nameLabel, sizeLabel].forEach(cardView.addSubview)
     }
 
@@ -74,10 +83,18 @@ final class FileBubbleCell: UITableViewCell {
         let isStaff = msg.isStaff
         let file = msg.fileContent
 
-        avatarLabel.text = isStaff ? (msg.avatar ?? msg.senderName?.prefix(1).description ?? "?") : "我"
-        avatarLabel.backgroundColor = isStaff
-            ? UIColor(hexString: tone)
-            : UIColor(hexString: "#FF7A50")
+        if let urlStr = msg.portraitUrl, !urlStr.isEmpty, let url = URL(string: urlStr) {
+            avatarImageView.isHidden = false
+            avatarLabel.isHidden = true
+            avatarImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+        } else {
+            avatarImageView.isHidden = true
+            avatarLabel.isHidden = false
+            avatarLabel.text = isStaff ? (msg.avatar ?? msg.senderName?.prefix(1).description ?? "?") : "我"
+            avatarLabel.backgroundColor = isStaff
+                ? UIColor(hexString: tone)
+                : UIColor(hexString: "#FF7A50")
+        }
 
         metaLabel.text = isStaff
             ? [msg.senderName, msg.senderRole, msg.time].compactMap { $0 }.joined(separator: " · ")
@@ -111,6 +128,9 @@ final class FileBubbleCell: UITableViewCell {
             }
             make.top.equalToSuperview().offset(8)
             make.size.equalTo(34)
+        }
+        avatarImageView.snp.makeConstraints { make in
+            make.edges.equalTo(avatarLabel)
         }
 
         metaLabel.snp.remakeConstraints { make in

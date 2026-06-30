@@ -17,6 +17,14 @@ final class VideoBubbleCell: UITableViewCell {
         l.clipsToBounds = true
         return l
     }()
+    private let avatarImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFill
+        iv.layer.cornerRadius = 17
+        iv.clipsToBounds = true
+        iv.isHidden = true
+        return iv
+    }()
 
     private let metaLabel: UILabel = {
         let l = UILabel()
@@ -59,7 +67,7 @@ final class VideoBubbleCell: UITableViewCell {
         selectionStyle = .none
         backgroundColor = .fdBg
 
-        [avatarLabel, metaLabel, coverView].forEach(contentView.addSubview)
+        [avatarLabel, avatarImageView, metaLabel, coverView].forEach(contentView.addSubview)
         coverView.addSubview(playIcon)
         coverView.addSubview(durationLabel)
     }
@@ -72,10 +80,18 @@ final class VideoBubbleCell: UITableViewCell {
         let isStaff = msg.isStaff
         let video = msg.videoContent
 
-        avatarLabel.text = isStaff ? (msg.avatar ?? msg.senderName?.prefix(1).description ?? "?") : "我"
-        avatarLabel.backgroundColor = isStaff
-            ? UIColor(hexString: tone)
-            : UIColor(hexString: "#FF7A50")
+        if let urlStr = msg.portraitUrl, !urlStr.isEmpty, let url = URL(string: urlStr) {
+            avatarImageView.isHidden = false
+            avatarLabel.isHidden = true
+            avatarImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+        } else {
+            avatarImageView.isHidden = true
+            avatarLabel.isHidden = false
+            avatarLabel.text = isStaff ? (msg.avatar ?? msg.senderName?.prefix(1).description ?? "?") : "我"
+            avatarLabel.backgroundColor = isStaff
+                ? UIColor(hexString: tone)
+                : UIColor(hexString: "#FF7A50")
+        }
 
         metaLabel.text = isStaff
             ? [msg.senderName, msg.senderRole, msg.time].compactMap { $0 }.joined(separator: " · ")
@@ -113,6 +129,9 @@ final class VideoBubbleCell: UITableViewCell {
             }
             make.top.equalToSuperview().offset(8)
             make.size.equalTo(34)
+        }
+        avatarImageView.snp.makeConstraints { make in
+            make.edges.equalTo(avatarLabel)
         }
 
         metaLabel.snp.remakeConstraints { make in

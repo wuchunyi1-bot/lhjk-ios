@@ -23,6 +23,14 @@ final class ImageBubbleCell: UITableViewCell {
         l.clipsToBounds = true
         return l
     }()
+    private let avatarImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFill
+        iv.layer.cornerRadius = 17
+        iv.clipsToBounds = true
+        iv.isHidden = true
+        return iv
+    }()
 
     private let metaLabel: UILabel = {
         let l = UILabel()
@@ -48,7 +56,7 @@ final class ImageBubbleCell: UITableViewCell {
         selectionStyle = .none
         backgroundColor = .fdBg
 
-        [avatarLabel, metaLabel, photoView].forEach(contentView.addSubview)
+        [avatarLabel, avatarImageView, metaLabel, photoView].forEach(contentView.addSubview)
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
         photoView.addGestureRecognizer(tap)
@@ -62,7 +70,15 @@ final class ImageBubbleCell: UITableViewCell {
         let isStaff = msg.isStaff
         imagePath = msg.imagePath
 
-        avatarLabel.text = isStaff ? (msg.avatar ?? msg.senderName?.prefix(1).description ?? "?") : "我"
+        if let urlStr = msg.portraitUrl, !urlStr.isEmpty, let url = URL(string: urlStr) {
+            avatarImageView.isHidden = false
+            avatarLabel.isHidden = true
+            avatarImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+        } else {
+            avatarImageView.isHidden = true
+            avatarLabel.isHidden = false
+            avatarLabel.text = isStaff ? (msg.avatar ?? msg.senderName?.prefix(1).description ?? "?") : "我"
+        }
         avatarLabel.backgroundColor = isStaff
             ? UIColor(hexString: tone)
             : UIColor(hexString: "#FF7A50")
@@ -115,6 +131,9 @@ final class ImageBubbleCell: UITableViewCell {
             }
             make.top.equalToSuperview().offset(8)
             make.size.equalTo(34)
+        }
+        avatarImageView.snp.remakeConstraints { make in
+            make.edges.equalTo(avatarLabel)
         }
 
         metaLabel.snp.remakeConstraints { make in

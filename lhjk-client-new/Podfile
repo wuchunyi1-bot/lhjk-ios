@@ -19,6 +19,9 @@ target 'lhjk-client-new' do
   # ── IM ──
   pod 'RongCloudIM/IMLib', '~> 5.40.0'
 
+  # ── Audio Decode (暂未启用 — 模拟器不支持) ──
+  # pod 'opus-ios', '~> 1.1.3'
+
   # ── Database ──
   pod 'FMDB', '~> 2.7'
 
