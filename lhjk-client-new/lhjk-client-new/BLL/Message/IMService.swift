@@ -192,6 +192,25 @@ final class IMService {
         return sorted
     }
 
+    /// 加载更早的历史消息
+    func loadOlderMessages(conversationId: String, oldestMessageId: Int) async -> [ChatMessage] {
+        let rcMessages: [RCMessage] = await withCheckedContinuation { continuation in
+            RongCloudManager.shared.getMessages(
+                targetId: conversationId,
+                oldestMessageId: oldestMessageId,
+                count: 20
+            ) { messages in
+                continuation.resume(returning: messages)
+            }
+        }
+        let older = rcMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }.reversed()
+        let sorted = Array(older)
+        // 插入到缓存前部
+        messagesStore[conversationId] = sorted + (messagesStore[conversationId] ?? [])
+        print("[IMService] loadOlderMessages conv=\(conversationId) count=\(sorted.count)")
+        return sorted
+    }
+
     /// 同步获取缓存消息（若缓存为空则 fallback 到 mock）
     func getMessages(conversationId: String) -> [ChatMessage] {
         if messagesStore[conversationId] == nil {
@@ -202,11 +221,13 @@ final class IMService {
 
     /// 发送文本消息（通过融云 SDK）
     func sendMessage(_ text: String, conversationId: String) async -> ChatMessage? {
+        let senderInfo = makeSenderUserInfo()
         let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
             RongCloudManager.shared.sendTextMessage(
                 conversationType: .ConversationType_GROUP,
                 targetId: conversationId,
-                content: text
+                content: text,
+                senderUserInfo: senderInfo
             ) { message, errorCode in
                 continuation.resume(returning: (message, errorCode))
             }
@@ -223,11 +244,13 @@ final class IMService {
 
     /// 发送图片消息（通过融云 SDK）
     func sendImage(_ image: UIImage, conversationId: String) async -> ChatMessage? {
+        let senderInfo = makeSenderUserInfo()
         let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
             RongCloudManager.shared.sendImageMessage(
                 conversationType: .ConversationType_GROUP,
                 targetId: conversationId,
-                image: image
+                image: image,
+                senderUserInfo: senderInfo
             ) { message, errorCode in
                 continuation.resume(returning: (message, errorCode))
             }
@@ -240,5 +263,104 @@ final class IMService {
             print("[IMService] sendImage ✗ errorCode=\(result.1.rawValue)")
             return nil
         }
+    }
+
+    /// 发送文件消息（AD:FileMsg）
+    func sendFile(fileUrl: String, fileName: String, fileSize: String,
+                  fileSuffix: String, conversationId: String) async -> ChatMessage? {
+        let senderInfo = makeSenderUserInfo()
+        let pushContent = "\(senderInfo.name):[文件]"
+        let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
+            RongCloudManager.shared.sendFileMessage(
+                conversationType: .ConversationType_GROUP,
+                targetId: conversationId,
+                fileUrl: fileUrl,
+                fileName: fileName,
+                fileSize: fileSize,
+                fileSuffix: fileSuffix,
+                senderUserInfo: senderInfo,
+                pushContent: pushContent
+            ) { message, errorCode in
+                continuation.resume(returning: (message, errorCode))
+            }
+        }
+        if let rcMsg = result.0 {
+            let chatMsg = ChatMessage.fromRongCloud(rcMessage: rcMsg)
+            messagesStore[conversationId, default: []].append(chatMsg)
+            return chatMsg
+        } else {
+            print("[IMService] sendFile ✗ errorCode=\(result.1.rawValue)")
+            return nil
+        }
+    }
+
+    /// 发送视频消息（AD:VideoMsg）
+    func sendVideo(videoUrl: String, videoName: String, videoTime: Int,
+                   videoCoverImg: String? = nil, conversationId: String) async -> ChatMessage? {
+        let senderInfo = makeSenderUserInfo()
+        let pushContent = "\(senderInfo.name):[视频]"
+        let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
+            RongCloudManager.shared.sendVideoMessage(
+                conversationType: .ConversationType_GROUP,
+                targetId: conversationId,
+                videoUrl: videoUrl,
+                videoName: videoName,
+                videoTime: videoTime,
+                videoCoverImg: videoCoverImg,
+                senderUserInfo: senderInfo,
+                pushContent: pushContent
+            ) { message, errorCode in
+                continuation.resume(returning: (message, errorCode))
+            }
+        }
+        if let rcMsg = result.0 {
+            let chatMsg = ChatMessage.fromRongCloud(rcMessage: rcMsg)
+            messagesStore[conversationId, default: []].append(chatMsg)
+            return chatMsg
+        } else {
+            print("[IMService] sendVideo ✗ errorCode=\(result.1.rawValue)")
+            return nil
+        }
+    }
+
+    /// 发送套餐消息（AD:SysNotify）
+    func sendSysNotify(businessData: String, title: String, content: String,
+                       imageUrl: String? = nil, conversationId: String) async -> ChatMessage? {
+        let senderInfo = makeSenderUserInfo()
+        let pushContent = "\(senderInfo.name):[套餐]"
+        let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
+            RongCloudManager.shared.sendSysNotifyMessage(
+                conversationType: .ConversationType_GROUP,
+                targetId: conversationId,
+                businessData: businessData,
+                title: title,
+                content: content,
+                imageUrl: imageUrl,
+                senderUserInfo: senderInfo,
+                pushContent: pushContent
+            ) { message, errorCode in
+                continuation.resume(returning: (message, errorCode))
+            }
+        }
+        if let rcMsg = result.0 {
+            let chatMsg = ChatMessage.fromRongCloud(rcMessage: rcMsg)
+            messagesStore[conversationId, default: []].append(chatMsg)
+            return chatMsg
+        } else {
+            print("[IMService] sendSysNotify ✗ errorCode=\(result.1.rawValue)")
+            return nil
+        }
+    }
+
+    // MARK: - Helpers
+
+    /// 构建融云发送者信息，数据来源于 UserManager 当前用户缓存
+    private func makeSenderUserInfo() -> RCUserInfo {
+        let user = UserManager.shared.currentUser
+        return RCUserInfo(
+            userId: user?.id ?? "",
+            name: user?.chineseName ?? user?.nickname ?? "",
+            portrait: user?.imageUrl ?? ""
+        )
     }
 }

@@ -13,6 +13,8 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     private var messages: [ChatMessage] = []
     private var inputBottomConstraint: Constraint?
     private var cancellables = Set<AnyCancellable>()
+    private var isLoadingMore = false
+    private var hasMoreMessages = true
 
     // MARK: - UI
 
@@ -29,8 +31,18 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         tv.register(MealAnalysisCell.self, forCellReuseIdentifier: MealAnalysisCell.reuseID)
         tv.register(AIWeeklyReportCell.self, forCellReuseIdentifier: AIWeeklyReportCell.reuseID)
         tv.register(ImageBubbleCell.self, forCellReuseIdentifier: ImageBubbleCell.reuseID)
+        tv.register(FileBubbleCell.self, forCellReuseIdentifier: FileBubbleCell.reuseID)
+        tv.register(VideoBubbleCell.self, forCellReuseIdentifier: VideoBubbleCell.reuseID)
+        tv.register(SysNotifyCell.self, forCellReuseIdentifier: SysNotifyCell.reuseID)
         tv.keyboardDismissMode = .interactive
+        tv.refreshControl = refreshControl
         return tv
+    }()
+
+    private let refreshControl: UIRefreshControl = {
+        let rc = UIRefreshControl()
+        rc.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+        return rc
     }()
 
     // Input bar
@@ -236,9 +248,10 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
                 guard msg.conversationId == self.conversationId else { return }
                 guard !self.messages.contains(where: { $0.id == msg.id }) else { return }
                 self.messages.append(msg)
-                let idx = IndexPath(row: self.messages.count - 1, section: 0)
-                self.tableView.insertRows(at: [idx], with: .none)
-                self.scrollToBottom(animated: true)
+                UIView.performWithoutAnimation {
+                    self.tableView.insertRows(at: [IndexPath(row: self.messages.count - 1, section: 0)], with: .none)
+                }
+                self.scrollToBottom(animated: false)
             }
             .store(in: &cancellables)
 
@@ -274,6 +287,40 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
                     : msgs
                 tableView.reloadData()
                 scrollToBottom(animated: false)
+            }
+        }
+    }
+
+    @objc private func handleRefresh() {
+        guard !isLoadingMore, hasMoreMessages else {
+            refreshControl.endRefreshing()
+            return
+        }
+        guard let oldestMsg = messages.first else {
+            refreshControl.endRefreshing()
+            return
+        }
+        isLoadingMore = true
+        Task {
+            let olderMessages = await IMService.shared.loadOlderMessages(
+                conversationId: conversationId,
+                oldestMessageId: Int(oldestMsg.id) ?? -1
+            )
+            await MainActor.run {
+                if olderMessages.isEmpty {
+                    hasMoreMessages = false
+                } else {
+                    messages.insert(contentsOf: olderMessages, at: 0)
+                    tableView.reloadData()
+                    // 保持滚动位置不变
+                    let offset = olderMessages.count
+                    if offset > 0 {
+                        let indexPath = IndexPath(row: offset, section: 0)
+                        tableView.scrollToRow(at: indexPath, at: .top, animated: false)
+                    }
+                }
+                refreshControl.endRefreshing()
+                isLoadingMore = false
             }
         }
     }
@@ -315,6 +362,18 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             cell.onTapImage = { [weak self] path in
                 self?.showImagePreview(path: path)
             }
+            return cell
+        case .file:
+            let cell = tableView.dequeueReusableCell(withIdentifier: FileBubbleCell.reuseID, for: indexPath) as! FileBubbleCell
+            cell.configure(msg, tone: conversation?.role.toneHex ?? "#FF7A50", convRole: conversation?.role ?? .manager)
+            return cell
+        case .video:
+            let cell = tableView.dequeueReusableCell(withIdentifier: VideoBubbleCell.reuseID, for: indexPath) as! VideoBubbleCell
+            cell.configure(msg, tone: conversation?.role.toneHex ?? "#FF7A50", convRole: conversation?.role ?? .manager)
+            return cell
+        case .sysNotify:
+            let cell = tableView.dequeueReusableCell(withIdentifier: SysNotifyCell.reuseID, for: indexPath) as! SysNotifyCell
+            cell.configure(msg, tone: conversation?.role.toneHex ?? "#FF7A50", convRole: conversation?.role ?? .manager)
             return cell
         }
     }
@@ -404,12 +463,14 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             imagePath: nil,
             thumbWidth: nil,
             thumbHeight: nil,
-            conversationId: conversationId
+            conversationId: conversationId,
+            extra: nil
         )
         messages.append(localMsg)
-        let idx = IndexPath(row: messages.count - 1, section: 0)
-        tableView.insertRows(at: [idx], with: .none)
-        scrollToBottom(animated: true)
+        UIView.performWithoutAnimation {
+            tableView.insertRows(at: [IndexPath(row: messages.count - 1, section: 0)], with: .none)
+        }
+        scrollToBottom(animated: false)
 
         // 异步发送到融云
         Task {
@@ -528,12 +589,14 @@ extension ChatViewController {
             imagePath: localPath,
             thumbWidth: Int(image.size.width),
             thumbHeight: Int(image.size.height),
-            conversationId: conversationId
+            conversationId: conversationId,
+            extra: nil
         )
         messages.append(localMsg)
-        let idx = IndexPath(row: messages.count - 1, section: 0)
-        tableView.insertRows(at: [idx], with: .none)
-        scrollToBottom(animated: true)
+        UIView.performWithoutAnimation {
+            tableView.insertRows(at: [IndexPath(row: messages.count - 1, section: 0)], with: .none)
+        }
+        scrollToBottom(animated: false)
 
         // 异步发送到融云
         Task {

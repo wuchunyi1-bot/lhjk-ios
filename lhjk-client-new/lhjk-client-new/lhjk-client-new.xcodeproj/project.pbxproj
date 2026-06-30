@@ -148,6 +148,12 @@
 		A5917D212FDFD7FE00878961 /* LoginModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D1D2FDFD7FE00878961 /* LoginModels.swift */; };
 		A5917D222FDFD7FE00878961 /* LoginServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */; };
 		A5917D242FDFD96D00878961 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D232FDFD96D00878961 /* WebViewController.swift */; };
+		A59BAAD02FF3715C0005BEA9 /* SysNotifyMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59BAACD2FF3715C0005BEA9 /* SysNotifyMessage.swift */; };
+		A59BAAD12FF3715C0005BEA9 /* VideoMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59BAACE2FF3715C0005BEA9 /* VideoMessage.swift */; };
+		A59BAAD22FF3715C0005BEA9 /* FileMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59BAACC2FF3715C0005BEA9 /* FileMessage.swift */; };
+		A59BAAD62FF3723A0005BEA9 /* VideoBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59BAAD52FF3723A0005BEA9 /* VideoBubbleCell.swift */; };
+		A59BAAD72FF3723A0005BEA9 /* FileBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59BAAD32FF3723A0005BEA9 /* FileBubbleCell.swift */; };
+		A59BAAD82FF3723A0005BEA9 /* SysNotifyCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59BAAD42FF3723A0005BEA9 /* SysNotifyCell.swift */; };
 		A5B54B3F2FEE51E5009AB072 /* ConversationListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B54B3D2FEE51E5009AB072 /* ConversationListViewController.swift */; };
 		A5B54B402FEE51E5009AB072 /* NotificationListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B54B3E2FEE51E5009AB072 /* NotificationListViewController.swift */; };
 		A5B54B422FEE5FAE009AB072 /* GroupVO.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B54B412FEE5FAE009AB072 /* GroupVO.swift */; };
@@ -317,6 +323,12 @@
 		A5917D1E2FDFD7FE00878961 /* LoginService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginService.swift; sourceTree = "<group>"; };
 		A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginServiceProtocol.swift; sourceTree = "<group>"; };
 		A5917D232FDFD96D00878961 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WebViewController.swift; path = Other/Common/Base/WebViewController.swift; sourceTree = "<group>"; };
+		A59BAACC2FF3715C0005BEA9 /* FileMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileMessage.swift; sourceTree = "<group>"; };
+		A59BAACD2FF3715C0005BEA9 /* SysNotifyMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SysNotifyMessage.swift; sourceTree = "<group>"; };
+		A59BAACE2FF3715C0005BEA9 /* VideoMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoMessage.swift; sourceTree = "<group>"; };
+		A59BAAD32FF3723A0005BEA9 /* FileBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBubbleCell.swift; sourceTree = "<group>"; };
+		A59BAAD42FF3723A0005BEA9 /* SysNotifyCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SysNotifyCell.swift; sourceTree = "<group>"; };
+		A59BAAD52FF3723A0005BEA9 /* VideoBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoBubbleCell.swift; sourceTree = "<group>"; };
 		A5B54B3D2FEE51E5009AB072 /* ConversationListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListViewController.swift; sourceTree = "<group>"; };
 		A5B54B3E2FEE51E5009AB072 /* NotificationListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationListViewController.swift; sourceTree = "<group>"; };
 		A5B54B412FEE5FAE009AB072 /* GroupVO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GroupVO.swift; path = DAL/IM/GroupVO.swift; sourceTree = "<group>"; };
@@ -628,6 +640,9 @@
 		A590FB4F2FEA82980056EF52 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
+				A59BAAD32FF3723A0005BEA9 /* FileBubbleCell.swift */,
+				A59BAAD42FF3723A0005BEA9 /* SysNotifyCell.swift */,
+				A59BAAD52FF3723A0005BEA9 /* VideoBubbleCell.swift */,
 				A58C72CC2FEE3056003B405C /* SystemMessageCell.swift */,
 				A58C72CB2FEE3056003B405C /* ServiceCardCell.swift */,
 				A579AECC2FF268D900D9493A /* ImageBubbleCell.swift */,
@@ -1084,6 +1099,17 @@
 			path = Other/Common/Extensions;
 			sourceTree = "<group>";
 		};
+		A59BAACF2FF3715C0005BEA9 /* CustomMessages */ = {
+			isa = PBXGroup;
+			children = (
+				A59BAACC2FF3715C0005BEA9 /* FileMessage.swift */,
+				A59BAACD2FF3715C0005BEA9 /* SysNotifyMessage.swift */,
+				A59BAACE2FF3715C0005BEA9 /* VideoMessage.swift */,
+			);
+			name = CustomMessages;
+			path = DAL/IM/CustomMessages;
+			sourceTree = "<group>";
+		};
 		A5BFCA372FE38EF1008DA1DF /* UIFont */ = {
 			isa = PBXGroup;
 			children = (
@@ -1214,6 +1240,7 @@
 		ECD3693CC57BA01CDA4D232D /* IM */ = {
 			isa = PBXGroup;
 			children = (
+				A59BAACF2FF3715C0005BEA9 /* CustomMessages */,
 				A5B54B412FEE5FAE009AB072 /* GroupVO.swift */,
 				3743DC311DF3858D78351828 /* Conversation.swift */,
 				B7AE47164C661037814AB024 /* Message.swift */,
@@ -1414,6 +1441,9 @@
 				A5917D242FDFD96D00878961 /* WebViewController.swift in Sources */,
 				EF81F5EA5B41E6A3D6AD7317 /* IMService.swift in Sources */,
 				8DC19885FA8CBC4AD853552E /* PaymentService.swift in Sources */,
+				A59BAAD62FF3723A0005BEA9 /* VideoBubbleCell.swift in Sources */,
+				A59BAAD72FF3723A0005BEA9 /* FileBubbleCell.swift in Sources */,
+				A59BAAD82FF3723A0005BEA9 /* SysNotifyCell.swift in Sources */,
 				A5917D202FDFD7FE00878961 /* LoginService.swift in Sources */,
 				A5917D212FDFD7FE00878961 /* LoginModels.swift in Sources */,
 				A5917D222FDFD7FE00878961 /* LoginServiceProtocol.swift in Sources */,
@@ -1514,6 +1544,9 @@
 				A590FBFF2FEA82980056EF52 /* VerifyCodeButton.swift in Sources */,
 				A590FC002FEA82980056EF52 /* ConversationCell.swift in Sources */,
 				A590FD8B2FEA96190056EF52 /* StageMetricsCardView.swift in Sources */,
+				A59BAAD02FF3715C0005BEA9 /* SysNotifyMessage.swift in Sources */,
+				A59BAAD12FF3715C0005BEA9 /* VideoMessage.swift in Sources */,
+				A59BAAD22FF3715C0005BEA9 /* FileMessage.swift in Sources */,
 				A590FD8C2FEA96190056EF52 /* HealthEvaluationsViewController.swift in Sources */,
 				A590FD8D2FEA96190056EF52 /* AppointmentsViewController.swift in Sources */,
 				A590FD8E2FEA96190056EF52 /* MeServiceFulfillmentCell.swift in Sources */,

@@ -6,6 +6,9 @@ enum MessageType: String, Codable {
     case text
     case image
     case system
+    case file
+    case video
+    case sysNotify
     case metricCard = "metric-card"
     case reportCard = "report-card"
     case dietCard = "diet-card"
@@ -90,7 +93,7 @@ struct AIMedal: Codable {
 // MARK: - ChatMessage 模型
 
 /// 聊天消息模型 — 参考 funde-client ConversationDetailView.vue ChatMessage 类型
-struct ChatMessage: Identifiable, Codable {
+struct ChatMessage: Identifiable {
     let id: String
     let type: MessageType
     let role: MessageRole
@@ -110,10 +113,75 @@ struct ChatMessage: Identifiable, Codable {
     let thumbHeight: Int?
     /// 所属会话 ID（融云消息携带，mock 消息为 nil）
     let conversationId: String?
+    /// 消息附加字段（自定义类型时从 RCMessageContent.extra 提取）
+    let extra: String?
+
+    // MARK: - 自定义消息内容（非 Codable，fromRongCloud 填充）
+
+    /// AD:FileMsg 消息体
+    var fileContent: FileMessage? = nil
+    /// AD:VideoMsg 消息体
+    var videoContent: VideoMessage? = nil
+    /// AD:SysNotify 消息体
+    var sysNotifyContent: SysNotifyMessage? = nil
 
     var isStaff: Bool { role == .staff }
     var isUser: Bool { role == .user }
     var isSystem: Bool { type == .system }
+}
+
+// MARK: - Codable
+
+extension ChatMessage: Codable {
+    enum CodingKeys: String, CodingKey {
+        case id, type, role, senderName, senderRole, avatar
+        case text, time, card, meal, report
+        case imagePath, thumbWidth, thumbHeight
+        case conversationId, extra
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        type = try c.decode(MessageType.self, forKey: .type)
+        role = try c.decode(MessageRole.self, forKey: .role)
+        senderName = try c.decodeIfPresent(String.self, forKey: .senderName)
+        senderRole = try c.decodeIfPresent(String.self, forKey: .senderRole)
+        avatar = try c.decodeIfPresent(String.self, forKey: .avatar)
+        text = try c.decodeIfPresent(String.self, forKey: .text)
+        time = try c.decode(String.self, forKey: .time)
+        card = try c.decodeIfPresent(ServiceCard.self, forKey: .card)
+        meal = try c.decodeIfPresent(MealAnalysis.self, forKey: .meal)
+        report = try c.decodeIfPresent(AIWeeklyReport.self, forKey: .report)
+        imagePath = try c.decodeIfPresent(String.self, forKey: .imagePath)
+        thumbWidth = try c.decodeIfPresent(Int.self, forKey: .thumbWidth)
+        thumbHeight = try c.decodeIfPresent(Int.self, forKey: .thumbHeight)
+        conversationId = try c.decodeIfPresent(String.self, forKey: .conversationId)
+        extra = try c.decodeIfPresent(String.self, forKey: .extra)
+        fileContent = nil
+        videoContent = nil
+        sysNotifyContent = nil
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(type, forKey: .type)
+        try c.encode(role, forKey: .role)
+        try c.encodeIfPresent(senderName, forKey: .senderName)
+        try c.encodeIfPresent(senderRole, forKey: .senderRole)
+        try c.encodeIfPresent(avatar, forKey: .avatar)
+        try c.encodeIfPresent(text, forKey: .text)
+        try c.encode(time, forKey: .time)
+        try c.encodeIfPresent(card, forKey: .card)
+        try c.encodeIfPresent(meal, forKey: .meal)
+        try c.encodeIfPresent(report, forKey: .report)
+        try c.encodeIfPresent(imagePath, forKey: .imagePath)
+        try c.encodeIfPresent(thumbWidth, forKey: .thumbWidth)
+        try c.encodeIfPresent(thumbHeight, forKey: .thumbHeight)
+        try c.encodeIfPresent(conversationId, forKey: .conversationId)
+        try c.encodeIfPresent(extra, forKey: .extra)
+    }
 }
 
 // MARK: - Mock Data
@@ -207,26 +275,26 @@ extension ChatMessage {
     // MARK: Factory helpers
 
     private static func staff(_ id: String, _ text: String, _ name: String, _ role: String, _ avatar: String, _ time: String) -> ChatMessage {
-        ChatMessage(id: id, type: .text, role: .staff, senderName: name, senderRole: role, avatar: avatar, text: text, time: time, card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil)
+        ChatMessage(id: id, type: .text, role: .staff, senderName: name, senderRole: role, avatar: avatar, text: text, time: time, card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil)
     }
 
     private static func user(_ id: String, _ text: String, _ time: String) -> ChatMessage {
-        ChatMessage(id: id, type: .text, role: .user, senderName: nil, senderRole: nil, avatar: nil, text: text, time: time, card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil)
+        ChatMessage(id: id, type: .text, role: .user, senderName: nil, senderRole: nil, avatar: nil, text: text, time: time, card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil)
     }
 
     private static func system(_ id: String, _ text: String) -> ChatMessage {
-        ChatMessage(id: id, type: .system, role: .user, senderName: nil, senderRole: nil, avatar: nil, text: text, time: "", card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil)
+        ChatMessage(id: id, type: .system, role: .user, senderName: nil, senderRole: nil, avatar: nil, text: text, time: "", card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil)
     }
 
     private static func staffCard(_ id: String, _ card: ServiceCard) -> ChatMessage {
-        ChatMessage(id: id, type: .metricCard, role: .staff, senderName: nil, senderRole: nil, avatar: nil, text: nil, time: "", card: card, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil)
+        ChatMessage(id: id, type: .metricCard, role: .staff, senderName: nil, senderRole: nil, avatar: nil, text: nil, time: "", card: card, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil)
     }
 
     private static func staffMeal(_ id: String, _ meal: MealAnalysis) -> ChatMessage {
-        ChatMessage(id: id, type: .mealAnalysis, role: .staff, senderName: nil, senderRole: nil, avatar: nil, text: nil, time: "", card: nil, meal: meal, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil)
+        ChatMessage(id: id, type: .mealAnalysis, role: .staff, senderName: nil, senderRole: nil, avatar: nil, text: nil, time: "", card: nil, meal: meal, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil)
     }
 
     private static func aiReport(_ id: String, _ report: AIWeeklyReport) -> ChatMessage {
-        ChatMessage(id: id, type: .aiWeeklyReport, role: .staff, senderName: "小德", senderRole: "AI 健康顾问", avatar: "德", text: nil, time: "今天 08:00", card: nil, meal: nil, report: report, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil)
+        ChatMessage(id: id, type: .aiWeeklyReport, role: .staff, senderName: "小德", senderRole: "AI 健康顾问", avatar: "德", text: nil, time: "今天 08:00", card: nil, meal: nil, report: report, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil)
     }
 }

@@ -83,6 +83,7 @@ final class RongCloudManager {
         }
         client.initWithAppKey(appKey, option: nil)
         setupConversationDelegate()
+        registerCustomMessageTypes()
         isInitialized = true
 
         // 开启 SDK 控制台日志（Debug 级别）
@@ -92,6 +93,14 @@ final class RongCloudManager {
         #endif
 
         print("[RongCloud] SDK initialized with appKey: \(appKey.prefix(4))****")
+    }
+
+    /// 注册自定义消息类型（须在 SDK 初始化后、发送前调用）
+    private func registerCustomMessageTypes() {
+        client.registerMessageType(FileMessage.self)
+        client.registerMessageType(VideoMessage.self)
+        client.registerMessageType(SysNotifyMessage.self)
+        print("[RongCloud] Custom message types registered: AD:FileMsg, AD:VideoMsg, AD:SysNotify")
     }
 
     /// 登录后完整流程：调后端获取 Token → 存本地 → 连接融云
@@ -261,13 +270,19 @@ final class RongCloudManager {
     }
 
     /// 发送文本消息
+    /// - Parameter senderUserInfo: 发送者信息（userId / name / portrait），由上层 BLL 传入
     func sendTextMessage(
         conversationType: RCConversationType,
         targetId: String,
         content: String,
+        senderUserInfo: RCUserInfo? = nil,
         completion: @escaping (RCMessage?, RCErrorCode) -> Void
     ) {
         let textMsg = RCTextMessage(content: content)
+        if let senderInfo = senderUserInfo {
+            textMsg.senderUserInfo = senderInfo
+        }
+
         client.sendMessage(
             conversationType,
             targetId: targetId,
@@ -290,13 +305,19 @@ final class RongCloudManager {
     }
 
     /// 发送图片消息
+    /// - Parameter senderUserInfo: 发送者信息（userId / name / portrait），由上层 BLL 传入
     func sendImageMessage(
         conversationType: RCConversationType,
         targetId: String,
         image: UIImage,
+        senderUserInfo: RCUserInfo? = nil,
         completion: @escaping (RCMessage?, RCErrorCode) -> Void
     ) {
         let imgMsg = RCImageMessage(image: image)
+        if let senderInfo = senderUserInfo {
+            imgMsg.senderUserInfo = senderInfo
+        }
+
         client.sendMediaMessage(
             conversationType,
             targetId: targetId,
@@ -317,6 +338,135 @@ final class RongCloudManager {
                 completion(nil, errorCode)
             },
             cancel: nil
+        )
+    }
+
+    /// 发送文件消息（AD:FileMsg）
+    func sendFileMessage(
+        conversationType: RCConversationType,
+        targetId: String,
+        fileUrl: String,
+        fileName: String,
+        fileSize: String,
+        fileSuffix: String,
+        senderUserInfo: RCUserInfo? = nil,
+        pushContent: String? = nil,
+        completion: @escaping (RCMessage?, RCErrorCode) -> Void
+    ) {
+        let msg = FileMessage()
+        msg.fileUrl = fileUrl
+        msg.fileName = fileName
+        msg.fileSize = fileSize
+        msg.fileSuffix = fileSuffix
+        msg.lastMsgDisplayContent = "[文件]"
+        if let senderInfo = senderUserInfo {
+            msg.senderUserInfo = senderInfo
+        }
+        client.sendMessage(
+            conversationType,
+            targetId: targetId,
+            content: msg,
+            pushContent: pushContent,
+            pushData: nil,
+            attached: nil,
+            success: { [weak self] messageId in
+                guard let self = self else { return }
+                print("[RongCloud] sendFileMessage ✓ messageId=\(messageId)")
+                self.client.getMessage(messageId) { message in
+                    completion(message, .RC_SUCCESS)
+                }
+            },
+            error: { [weak self] errorCode, _ in
+                self?.logError("sendFileMessage", code: errorCode)
+                completion(nil, errorCode)
+            }
+        )
+    }
+
+    /// 发送视频消息（AD:VideoMsg）
+    func sendVideoMessage(
+        conversationType: RCConversationType,
+        targetId: String,
+        videoUrl: String,
+        videoName: String,
+        videoTime: Int,
+        videoCoverImg: String? = nil,
+        senderUserInfo: RCUserInfo? = nil,
+        pushContent: String? = nil,
+        completion: @escaping (RCMessage?, RCErrorCode) -> Void
+    ) {
+        let msg = VideoMessage()
+        msg.videoUrl = videoUrl
+        msg.videoName = videoName
+        msg.videoTime = videoTime
+        msg.videoCoverImg = videoCoverImg
+        msg.videoSuffix = "mp4"
+        msg.lastMsgDisplayContent = "[视频]"
+        if let senderInfo = senderUserInfo {
+            msg.senderUserInfo = senderInfo
+        }
+        client.sendMessage(
+            conversationType,
+            targetId: targetId,
+            content: msg,
+            pushContent: pushContent,
+            pushData: nil,
+            attached: nil,
+            success: { [weak self] messageId in
+                guard let self = self else { return }
+                print("[RongCloud] sendVideoMessage ✓ messageId=\(messageId)")
+                self.client.getMessage(messageId) { message in
+                    completion(message, .RC_SUCCESS)
+                }
+            },
+            error: { [weak self] errorCode, _ in
+                self?.logError("sendVideoMessage", code: errorCode)
+                completion(nil, errorCode)
+            }
+        )
+    }
+
+    /// 发送套餐 / 系统通知消息（AD:SysNotify）
+    func sendSysNotifyMessage(
+        conversationType: RCConversationType,
+        targetId: String,
+        businessData: String,
+        title: String,
+        content: String,
+        imageUrl: String? = nil,
+        senderUserInfo: RCUserInfo? = nil,
+        pushContent: String? = nil,
+        completion: @escaping (RCMessage?, RCErrorCode) -> Void
+    ) {
+        let msg = SysNotifyMessage()
+        msg.businessData = businessData
+        msg.title = title
+        msg.content = content
+        msg.imageUrl = imageUrl
+        msg.urlKey = "SET_MEAL"
+        msg.isShowUser = true
+        msg.lastMsgDisplayContent = "[套餐]"
+        if let senderInfo = senderUserInfo {
+            msg.senderUserInfo = senderInfo
+        }
+        client.sendMessage(
+            conversationType,
+            targetId: targetId,
+            content: msg,
+            pushContent: pushContent,
+            pushData: nil,
+            attached: nil,
+            success: { [weak self] messageId in
+                guard let self = self else { return }
+                print("[RongCloud] sendSysNotifyMessage ✓ messageId=\(messageId)")
+                self.client.getMessage(messageId) { message in
+                    completion(message, .RC_SUCCESS)
+                }
+            },
+            error: { [weak self] errorCode, _ in
+                self?.logError("sendSysNotifyMessage", code: errorCode)
+                completion(nil, errorCode)
+            }
         )
     }
 

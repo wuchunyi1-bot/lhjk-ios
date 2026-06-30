@@ -46,12 +46,12 @@ final class TextBubbleCell: UITableViewCell {
 
         avatarLabel.isHidden = !isStaff
         metaLabel.isHidden = !isStaff
-        timeLabel.isHidden = false
 
         if isStaff {
+            timeLabel.isHidden = true
             avatarLabel.text = msg.avatar ?? ""
             avatarLabel.backgroundColor = UIColor(hexString: tone)
-            metaLabel.text = [msg.senderName, msg.senderRole].compactMap { $0 }.joined(separator: " · ")
+            metaLabel.text = [msg.senderName, msg.senderRole, msg.time].compactMap { $0 }.joined(separator: " · ")
 
             bubbleView.backgroundColor = .fdSurface
             bubbleView.layer.shadowColor = UIColor.black.cgColor
@@ -73,15 +73,13 @@ final class TextBubbleCell: UITableViewCell {
             bubbleView.snp.remakeConstraints { make in
                 make.top.equalTo(metaLabel.snp.bottom).offset(4)
                 make.leading.equalTo(metaLabel)
-                make.trailing.lessThanOrEqualToSuperview().offset(-56)
+                make.trailing.lessThanOrEqualToSuperview().offset(-56).priority(750)
                 make.bottom.equalToSuperview().offset(-10)
             }
-            timeLabel.snp.remakeConstraints { make in
-                make.leading.equalTo(bubbleView)
-                make.top.equalTo(bubbleView.snp.bottom).offset(2)
-            }
-            timeLabel.text = msg.time
+            // 清理 user 分支遗留的 timeLabel 约束
+            timeLabel.snp.removeConstraints()
         } else {
+            timeLabel.isHidden = false
             bubbleView.backgroundColor = UIColor(hexString: "#FF7A50")
             bubbleView.layer.shadowColor = nil
             bubbleView.layer.shadowOpacity = 0
@@ -92,15 +90,19 @@ final class TextBubbleCell: UITableViewCell {
             avatarLabel.backgroundColor = UIColor(hexString: tone)
             avatarLabel.isHidden = false
 
-            bubbleView.snp.remakeConstraints { make in
-                make.top.equalToSuperview().offset(6)
-                make.trailing.equalTo(avatarLabel.snp.leading).offset(-9)
-                make.leading.greaterThanOrEqualToSuperview().offset(56)
-            }
+            // 清理 staff 遗留的 metaLabel 约束，避免与 user 布局冲突
+            metaLabel.snp.removeConstraints()
+
+            // 先定位 avatarLabel，再让 bubbleView 参照它（避免 fork 旧约束）
             avatarLabel.snp.remakeConstraints { make in
-                make.top.equalTo(bubbleView)
+                make.top.equalToSuperview().offset(6)
                 make.trailing.equalToSuperview().offset(-16)
                 make.size.equalTo(34)
+            }
+            bubbleView.snp.remakeConstraints { make in
+                make.top.equalTo(avatarLabel)
+                make.trailing.equalTo(avatarLabel.snp.leading).offset(-9)
+                make.leading.greaterThanOrEqualToSuperview().offset(56).priority(750)
             }
             timeLabel.snp.remakeConstraints { make in
                 make.trailing.equalTo(bubbleView)

@@ -66,6 +66,7 @@ extension ChatMessage {
             imagePath = nil
             thumbWidth = nil
             thumbHeight = nil
+            print("[RongCloud] fromRongCloud text type objectName=\(rcMessage.objectName ?? "nil") content = \(content) sendUserInfo === \(textContent.senderUserInfo)")
         } else if let imageContent = rcMessage.content as? RCImageMessage {
             content = "[图片]"
             type = .image
@@ -74,25 +75,37 @@ extension ChatMessage {
             thumbHeight = imageContent.thumHeight > 0 ? imageContent.thumHeight : nil
             print("[RongCloud] fromRongCloud image → imageUrl=\(imageContent.imageUrl ?? "nil") remoteUrl=\(imageContent.remoteUrl ?? "nil") localPath=\(imageContent.localPath ?? "nil") thumbSize=\(thumbWidth ?? 0)x\(thumbHeight ?? 0)")
         } else {
-            content = ""
-            type = .text
+            // 自定义消息类型：尝试 downcast 到具体子类，fallback 到 RCMessageContent 基类
+            type = mapObjectName(rcMessage.objectName)
             imagePath = nil
             thumbWidth = nil
             thumbHeight = nil
-            print("[RongCloud] fromRongCloud unknown type objectName=\(rcMessage.objectName ?? "nil")")
+            content = ""
+            print("[RongCloud] fromRongCloud custom type objectName=\(rcMessage.objectName ?? "nil")")
         }
 
+        let senderInfo = rcMessage.content?.senderUserInfo
+        let senderName = senderInfo?.name
+        let senderAvatar = senderName?.prefix(1).description
+        let extra = rcMessage.content?.extra
         let sentDate = Date(timeIntervalSince1970: TimeInterval(rcMessage.sentTime / 1000))
         let timeFmt = DateFormatter()
         timeFmt.dateFormat = "HH:mm"
 
-        return ChatMessage(
+        // 自定义消息内容
+        let fileContent = rcMessage.content as? FileMessage
+        let videoContent = rcMessage.content as? VideoMessage
+        let sysNotifyContent = rcMessage.content as? SysNotifyMessage
+
+        print("[RongCloud] fromRongCloud senderUserInfo → name=\(senderName ?? "nil") portraitUri=\(senderInfo?.portraitUri ?? "nil") userId=\(senderInfo?.userId ?? "nil")")
+
+        var msg = ChatMessage(
             id: "\(rcMessage.messageId)",
             type: type,
             role: role,
-            senderName: nil,
+            senderName: senderName,
             senderRole: nil,
-            avatar: nil,
+            avatar: senderAvatar,
             text: content,
             time: timeFmt.string(from: sentDate),
             card: nil,
@@ -101,7 +114,22 @@ extension ChatMessage {
             imagePath: imagePath,
             thumbWidth: thumbWidth,
             thumbHeight: thumbHeight,
-            conversationId: rcMessage.targetId
+            conversationId: rcMessage.targetId,
+            extra: extra
         )
+        msg.fileContent = fileContent
+        msg.videoContent = videoContent
+        msg.sysNotifyContent = sysNotifyContent
+        return msg
+    }
+
+    /// objectName → MessageType 映射
+    private static func mapObjectName(_ objectName: String?) -> MessageType {
+        switch objectName {
+        case "AD:FileMsg":   return .file
+        case "AD:VideoMsg":  return .video
+        case "AD:SysNotify": return .sysNotify
+        default:             return .text
+        }
     }
 }
