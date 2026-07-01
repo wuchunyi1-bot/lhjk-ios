@@ -80,8 +80,8 @@ struct Conversation: Identifiable, Codable {
     let avatar: String
     let status: String
     let serviceScope: String
-    let lastMessage: String
-    let lastTime: String
+    var lastMessage: String
+    var lastTime: String
     var unread: Int
     let important: Bool
 
@@ -121,7 +121,7 @@ extension Conversation {
     ]
 
     /// 根据消息内容类型返回会话列表展示文案
-    private static func lastMessageText(from content: RCMessageContent?) -> String {
+    static func lastMessageText(from content: RCMessageContent?) -> String {
         guard let content else { return "" }
         switch content {
         case let text as RCTextMessage:
@@ -248,7 +248,7 @@ extension Conversation {
     }
 
     /// 融云时间戳 → 友好格式
-    private static func formatRCTime(_ timestamp: Int64) -> String {
+    static func formatRCTime(_ timestamp: Int64) -> String {
         guard timestamp > 0 else { return "" }
         let date = Date(timeIntervalSince1970: TimeInterval(timestamp) / 1000)
         let now = Date()

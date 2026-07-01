@@ -45,6 +45,10 @@ final class RongCloudManager {
     let messageReceivedPublisher = PassthroughSubject<ChatMessage, Never>()
     /// 远端会话列表同步完成
     let remoteConversationListDidSyncPublisher = PassthroughSubject<RCErrorCode, Never>()
+    /// 多端会话同步完成（已读状态/新消息等）
+    let conversationDidSyncPublisher = PassthroughSubject<Void, Never>()
+    /// 消息发送成功（携带 conversationId，用于会话列表局部刷新）
+    let messageSentPublisher = PassthroughSubject<String, Never>()
 
     // MARK: - Properties
 
@@ -292,7 +296,8 @@ final class RongCloudManager {
             attached: nil,
             success: { [weak self] messageId in
                 guard let self = self else { return }
-                print("[RongCloud] sendTextMessage ✓ messageId=\(messageId)")
+                print("[RongCloud] sendTextMessage ✓ messageId=\(messageId) → messageSentPublisher.send(\(targetId))")
+                self.messageSentPublisher.send(targetId)
                 self.client.getMessage(messageId) { message in
                     completion(message, .RC_SUCCESS)
                 }
@@ -328,7 +333,8 @@ final class RongCloudManager {
             progress: nil,
             success: { [weak self] messageId in
                 guard let self = self else { return }
-                print("[RongCloud] sendImageMessage ✓ messageId=\(messageId)")
+                print("[RongCloud] sendImageMessage ✓ messageId=\(messageId) → messageSentPublisher.send(\(targetId))")
+                self.messageSentPublisher.send(targetId)
                 self.client.getMessage(messageId) { message in
                     completion(message, .RC_SUCCESS)
                 }
@@ -392,7 +398,8 @@ final class RongCloudManager {
             progress: nil,
             success: { [weak self] messageId in
                 guard let self = self else { return }
-                print("[RongCloud] sendHQVoiceMessage ✓ messageId=\(messageId)")
+                print("[RongCloud] sendHQVoiceMessage ✓ messageId=\(messageId) → messageSentPublisher.send(\(targetId))")
+                self.messageSentPublisher.send(targetId)
                 self.client.getMessage(messageId) { message in
                     completion(message, .RC_SUCCESS)
                 }
@@ -435,7 +442,8 @@ final class RongCloudManager {
             attached: nil,
             success: { [weak self] messageId in
                 guard let self = self else { return }
-                print("[RongCloud] sendFileMessage ✓ messageId=\(messageId)")
+                print("[RongCloud] sendFileMessage ✓ messageId=\(messageId) → messageSentPublisher.send(\(targetId))")
+                self.messageSentPublisher.send(targetId)
                 self.client.getMessage(messageId) { message in
                     completion(message, .RC_SUCCESS)
                 }
@@ -478,7 +486,8 @@ final class RongCloudManager {
             attached: nil,
             success: { [weak self] messageId in
                 guard let self = self else { return }
-                print("[RongCloud] sendVideoMessage ✓ messageId=\(messageId)")
+                print("[RongCloud] sendVideoMessage ✓ messageId=\(messageId) → messageSentPublisher.send(\(targetId))")
+                self.messageSentPublisher.send(targetId)
                 self.client.getMessage(messageId) { message in
                     completion(message, .RC_SUCCESS)
                 }
@@ -522,7 +531,8 @@ final class RongCloudManager {
             attached: nil,
             success: { [weak self] messageId in
                 guard let self = self else { return }
-                print("[RongCloud] sendSysNotifyMessage ✓ messageId=\(messageId)")
+                print("[RongCloud] sendSysNotifyMessage ✓ messageId=\(messageId) → messageSentPublisher.send(\(targetId))")
+                self.messageSentPublisher.send(targetId)
                 self.client.getMessage(messageId) { message in
                     completion(message, .RC_SUCCESS)
                 }
@@ -680,6 +690,7 @@ private final class RongCloudConversationDelegateBridge: NSObject, RCConversatio
 
     func conversationDidSync() {
         print("[RongCloud] conversationDidSync")
+        manager?.conversationDidSyncPublisher.send()
     }
 
     func remoteConversationListDidSync(_ code: RCErrorCode) {

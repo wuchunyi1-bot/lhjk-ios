@@ -31,26 +31,52 @@ final class ConversationListViewController: UIViewController, UITableViewDataSou
         view.addSubview(tableView)
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        // 收到新消息 → 刷新会话列表
-        RongCloudManager.shared.messageReceivedPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.loadData()
-            }
-            .store(in: &cancellables)
-
-        // 远端会话同步完成 → 刷新
-        RongCloudManager.shared.remoteConversationListDidSyncPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.loadData()
-            }
-            .store(in: &cancellables)
+        setupSubscriptions()
+        loadData()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        loadData()
+    }
+
+    // MARK: - Subscriptions
+
+    private func setupSubscriptions() {
+        // 收到新消息 → 局部更新（匹配不到则全量刷新）
+        RongCloudManager.shared.messageReceivedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] msg in
+                print("[ConvList] messageReceived → convId=\(msg.conversationId ?? "nil")")
+                self?.handleConversationUpdate(conversationId: msg.conversationId)
+            }
+            .store(in: &cancellables)
+
+        // 远端会话同步完成 → 全量刷新（涉及新会话）
+        RongCloudManager.shared.remoteConversationListDidSyncPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                print("[ConvList] remoteConversationListDidSync → full reload")
+                self?.loadData()
+            }
+            .store(in: &cancellables)
+
+        // 多端会话同步（已读/新消息等）→ 批量局部更新
+        RongCloudManager.shared.conversationDidSyncPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                print("[ConvList] conversationDidSync → batch update, local count=\(self?.conversations.count ?? 0)")
+                self?.handleBatchConversationUpdate()
+            }
+            .store(in: &cancellables)
+
+        // 自己发送消息成功 → 局部更新（发消息不会触发 onReceived）
+        RongCloudManager.shared.messageSentPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] convId in
+                print("[ConvList] messageSent → convId=\(convId)")
+                self?.handleConversationUpdate(conversationId: convId)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Data
@@ -61,6 +87,56 @@ final class ConversationListViewController: UIViewController, UITableViewDataSou
             await MainActor.run {
                 tableView.reloadData()
                 onDataChanged?()
+            }
+        }
+    }
+
+    /// 收到新消息 → B方案局部更新：查单条 RCConversation，匹配到则置顶
+    private func handleConversationUpdate(conversationId: String?) {
+        guard let convId = conversationId else {
+            print("[ConvList] handleConversationUpdate ✗ convId is nil, skip")
+            return
+        }
+        print("[ConvList] handleConversationUpdate → convId=\(convId), local conversations=\(conversations.map { $0.id })")
+        Task {
+            if let updated = await IMService.shared.updateConversation(id: convId) {
+                await MainActor.run {
+                    print("[ConvList] ✓ updated convId=\(convId) lastMsg=\(updated.lastMessage) unread=\(updated.unread), moving to top")
+                    conversations.removeAll { $0.id == convId }
+                    conversations.insert(updated, at: 0)
+                    tableView.reloadData()
+                    onDataChanged?()
+                }
+            } else {
+                // 本地未匹配 → 全量刷新
+                print("[ConvList] ✗ convId=\(convId) not found locally, fallback to full loadData()")
+                await MainActor.run { loadData() }
+            }
+        }
+    }
+
+    /// 多端同步 → 批量局部更新 unread/lastMessage/lastTime
+    private func handleBatchConversationUpdate() {
+        Task {
+            var anyChanged = false
+            for conv in conversations {
+                if let updated = await IMService.shared.updateConversation(id: conv.id) {
+                    if let idx = conversations.firstIndex(where: { $0.id == conv.id }) {
+                        let oldUnread = conversations[idx].unread
+                        conversations[idx] = updated
+                        anyChanged = true
+                        print("[ConvList] batchUpdate convId=\(conv.id) unread \(oldUnread)→\(updated.unread) lastMsg=\(updated.lastMessage)")
+                    }
+                }
+            }
+            if anyChanged {
+                print("[ConvList] batchUpdate ✓ \(conversations.filter { $0.unread > 0 }.count) unread conversations")
+                await MainActor.run {
+                    tableView.reloadData()
+                    onDataChanged?()
+                }
+            } else {
+                print("[ConvList] batchUpdate → no changes")
             }
         }
     }

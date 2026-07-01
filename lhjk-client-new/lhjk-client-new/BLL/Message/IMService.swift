@@ -156,6 +156,48 @@ final class IMService {
         if let idx = conversations.firstIndex(where: { $0.id == conversationId }) {
             conversations[idx].unread = 0
         }
+        RongCloudManager.shared.clearGroupUnreadCount(for: conversationId)
+    }
+
+    /// B方案：按 conversationId 从融云查单条 RCConversation，局部更新本地会话
+    /// - Returns: 更新后的 Conversation；本地未找到该 id 返回 nil
+    func updateConversation(id: String) async -> Conversation? {
+        guard let idx = conversations.firstIndex(where: { $0.id == id }) else {
+            print("[IMService] updateConversation ✗ convId=\(id) not found in local cache (count=\(conversations.count), ids=\(conversations.map { $0.id }))")
+            return nil
+        }
+        let oldLastMsg = conversations[idx].lastMessage
+        let oldUnread  = conversations[idx].unread
+
+        guard RongCloudManager.shared.connectionStatus == .connected else {
+            print("[IMService] updateConversation ✗ convId=\(id) RongCloud not connected, return cached")
+            return conversations[idx]
+        }
+
+        let rcList: [RCConversation] = await withCheckedContinuation { continuation in
+            RongCloudManager.shared.getConversations(by: [id]) { list in
+                print("[IMService] updateConversation convId=\(id) getConversations callback, count=\(list.count)")
+                continuation.resume(returning: list)
+            }
+        }
+
+        guard let rc = rcList.first else {
+            print("[IMService] updateConversation ✗ convId=\(id) RCConversation not found in RongCloud, keep cached")
+            return conversations[idx]
+        }
+
+        // 只更新融云侧字段，不动后端元数据
+        let lastMsg = Conversation.lastMessageText(from: rc.latestMessage)
+        let newLastMsg = lastMsg.isEmpty ? "暂无消息" : lastMsg
+        let newTime    = Conversation.formatRCTime(rc.sentTime)
+        let newUnread  = Int(rc.unreadMessageCount)
+
+        print("[IMService] updateConversation ✓ convId=\(id) lastMsg \"\(oldLastMsg.prefix(12))…\" → \"\(newLastMsg.prefix(12))…\" unread \(oldUnread)→\(newUnread) time=\(newTime)")
+
+        conversations[idx].lastMessage = newLastMsg
+        conversations[idx].lastTime   = newTime
+        conversations[idx].unread     = newUnread
+        return conversations[idx]
     }
 
     func deleteConversation(_ conversationId: String) {
