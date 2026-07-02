@@ -275,46 +275,41 @@ final class RongCloudManager {
         }
     }
 
-    /// 从远端服务器拉取历史消息（使用 RCRemoteHistoryMsgOption）
+    /// 拉取历史消息（融云推荐 API，使用 RCHistoryMessageOption）
     /// - Parameters:
     ///   - targetId: 会话 ID
-    ///   - recordTime: 查询起点时间戳（毫秒），首次传当前时间
+    ///   - recordTime: 起始时间戳（毫秒），首次传 0
     ///   - count: 拉取数量
     ///   - order: 拉取顺序，默认降序（取比 recordTime 早的消息）
-    ///   - includeLocal: 是否包含本地已存在的消息，默认 true（首次加载需要全量数据）
-    /// - Returns: (消息列表, 是否还有更多)
-    func getRemoteMessages(
+    /// - Returns: (消息列表, 下次翻页用的 timestamp, 是否还有更多)
+    func getHistoryMessages(
         targetId: String,
-        recordTime: Int64,
+        recordTime: Int64 = 0,
         count: Int = 20,
-        order: RCRemoteHistoryOrder = .desc,
-        includeLocal: Bool = false
-    ) async -> (messages: [RCMessage], isRemaining: Bool) {
-        let option = RCRemoteHistoryMsgOption()
+        order: RCHistoryMessageOrder = .desc
+    ) async -> (messages: [RCMessage], timestamp: Int64, isRemaining: Bool) {
+        let option = RCHistoryMessageOption()
         option.recordTime = recordTime
         option.count = count
         option.order = order
-        option.includeLocalExistMessage = includeLocal
         let dateStr = Date(timeIntervalSince1970: TimeInterval(recordTime) / 1000)
-        print("[RongCloud] getRemoteMessages -> targetId=\(targetId) recordTime=\(recordTime) (\(dateStr)) count=\(count) order=\(order.rawValue) includeLocal=\(includeLocal)")
+        print("[RongCloud] getHistoryMessages -> targetId=\(targetId) recordTime=\(recordTime) (\(dateStr)) count=\(count)")
         return await withCheckedContinuation { continuation in
-            client.getRemoteHistoryMessages(
+            client.getMessages(
                 .ConversationType_GROUP,
                 targetId: targetId,
                 option: option,
-                success: { messages, isRemaining in
+                complete: { messages, timestamp, isRemaining, code in
                     let list = messages ?? []
-                    // SDK 有时返回 count=0 但 isRemaining=true，这是矛盾的。
-                    // 没拉到消息就认为没有更多了，否则 UI 层会认为还有数据导致异常。
                     let actualIsRemaining = list.isEmpty ? false : isRemaining
-                    print("[RongCloud] getRemoteMessages OK count=\(list.count) isRemaining=\(actualIsRemaining) (raw=\(isRemaining))")
-                    if let first = list.first { print("[RongCloud]   first msgId=\(first.messageId) sentTime=\(first.sentTime) (\(Date(timeIntervalSince1970: TimeInterval(first.sentTime) / 1000)))") }
-                    if let last = list.last { print("[RongCloud]   last  msgId=\(last.messageId) sentTime=\(last.sentTime) (\(Date(timeIntervalSince1970: TimeInterval(last.sentTime) / 1000)))") }
-                    continuation.resume(returning: (list, actualIsRemaining))
+                    print("[RongCloud] getHistoryMessages OK count=\(list.count) isRemaining=\(actualIsRemaining) timestamp=\(timestamp)")
+                    if let first = list.first { print("[RongCloud]   first msgId=\(first.messageId) sentTime=\(first.sentTime)") }
+                    if let last = list.last { print("[RongCloud]   last  msgId=\(last.messageId) sentTime=\(last.sentTime)") }
+                    continuation.resume(returning: (list, timestamp, actualIsRemaining))
                 },
                 error: { errorCode in
-                    print("[RongCloud] getRemoteMessages ERR code=\(errorCode.rawValue)")
-                    continuation.resume(returning: ([], false))
+                    print("[RongCloud] getHistoryMessages ERR code=\(errorCode.rawValue)")
+                    continuation.resume(returning: ([], 0, false))
                 }
             )
         }

@@ -670,183 +670,132 @@ func configure(...) {
 
 ---
 
-## 7. 远端消息加载（getRemoteHistoryMessages）
+## 7. 远端消息加载 — 重构
 
-### 7.1 问题
+> **2026-07-02 重构**：融云官方回复，拉取历史消息应使用 `getMessages` + `RCHistoryMessageOption`，而非 `getRemoteHistoryMessages` + `RCRemoteHistoryMsgOption`。
 
-当前 `RongCloudManager.getMessages()` 使用 `getHistoryMessages`，该 API **只查融云本地数据库**，不拉远端服务器。本地 DB 仅存连接后同步到的近期消息，超过本地缓存的历史消息拉不到。
+### 7.1 当前问题
 
-### 7.2 融云远端 API
+`getRemoteHistoryMessages` 返回的消息 `messageId` 可能为 `-1`（未入库），导致依赖 `messageId` 的操作全部失效：
+- 语音下载播放 ❌
+- 撤回消息 ❌
+- 已读回执 ❌
+
+### 7.2 融云推荐 API
 
 ```objc
-// RCCoreClient.h:1663
-- (void)getRemoteHistoryMessages:(RCConversationType)conversationType
-                        targetId:(NSString *)targetId
-                      recordTime:(long long)recordTime   // 起始时间戳（毫秒），首次传当前时间
-                           count:(int)count
-                         success:(void (^)(NSArray<RCMessage *> *messages, BOOL isRemaining))successBlock
-                           error:(void (^)(RCErrorCode status))errorBlock;
+// RCCoreClient.h:1745
+- (void)getMessages:(RCConversationType)conversationType
+           targetId:(NSString *)targetId
+             option:(RCHistoryMessageOption *)option
+           complete:(nullable void (^)(NSArray<RCMessage *> *_Nullable messages,
+                                        long long timestamp,
+                                        BOOL isRemaining,
+                                        RCErrorCode code))complete
+              error:(nullable void (^)(RCErrorCode status))errorBlock;
 ```
 
-- `recordTime`：查询起点，返回 ≤ 该时间的消息，按时间倒序
-- `isRemaining`：`true` 表示远端还有更早的消息
-- 每次最多 20 条（融云限制）
+**`RCHistoryMessageOption`**：
 
-### 7.3 两阶段加载策略
+```objc
+@interface RCHistoryMessageOption : NSObject
+@property (nonatomic, assign) long long recordTime;        // 起始时间戳（毫秒），首次传 0
+@property (nonatomic, assign) NSInteger count;              // 1 < count <= 100
+@property (nonatomic, assign) RCHistoryMessageOrder order; // Desc（降序）/ Asc（升序），默认降序
+@end
+```
+
+### 7.3 翻页规则
 
 ```
-首次进入 → getRemoteHistoryMessages(recordTime: now, count: 20)
-    → 有消息 → 展示，记录 isRemaining
-    → 无消息 → 空列表
+首次进入 → getMessages(recordTime: 0, count: 20)
+    → 回调返回 (messages, timestamp, isRemaining, code)
+    → 消息正常入库，messageId > 0 ✅
 
-下拉加载更多 → getRemoteHistoryMessages(recordTime: oldestMsg.sentTime, count: 20)
-    → 有消息 → 插入列表头部，更新 isRemaining
-    → isRemaining == false → hasMoreMessages = false（不再触发下拉）
+下拉加载更多 → getMessages(recordTime: timestamp, count: 20)
+    → timestamp 是上次回调返回的服务端游标
+    → isRemaining == false → 没有更多了
 ```
 
 ### 7.4 DAL — RongCloudManager 改动
 
-#### 7.4.1 新增远端消息查询方法（使用 RCRemoteHistoryMsgOption）
+#### 7.4.1 删除旧方法
 
-融云 SDK 提供两种 `getRemoteHistoryMessages` 重载：
+- ❌ `getRemoteMessages(targetId:recordTime:count:order:includeLocal:)` — **删除**
+- ❌ `RCRemoteHistoryMsgOption` — **不再使用**
 
-1. **旧版（已废弃）**：直接传 `recordTime` + `count`
-2. **新版（当前使用）**：通过 `RCRemoteHistoryMsgOption` 统一配置
-
-```objc
-@interface RCRemoteHistoryMsgOption : NSObject
-@property (nonatomic, assign) long long recordTime;               // 起始消息时间戳（毫秒），默认 0
-@property (nonatomic, assign) NSInteger count;                    // 数量，1 < count <= 100，默认 0
-@property (nonatomic, assign) RCRemoteHistoryOrder order;         // Desc（降序，默认）/ Asc（升序）
-@property (nonatomic, assign) BOOL includeLocalExistMessage;      // YES=全量返回 NO=仅返回本地不存在的，默认 NO
-@end
-```
-
-**实现**：
+#### 7.4.2 新增方法
 
 ```swift
-/// 从远端服务器拉取历史消息
+/// 拉取历史消息（融云推荐 API，使用 RCHistoryMessageOption）
 /// - Parameters:
 ///   - targetId: 会话 ID
-///   - recordTime: 查询起点时间戳（毫秒），首次传当前时间
+///   - recordTime: 起始时间戳（毫秒），首次传 0
 ///   - count: 拉取数量
 ///   - order: 拉取顺序，默认降序
-///   - includeLocal: 是否包含本地已存在的消息，默认 false（仅返回本地 DB 中不存在的新消息）
-/// - Returns: (消息列表, 是否还有更多)
-func getRemoteMessages(
+/// - Returns: (消息列表, 下次翻页用的 timestamp, 是否还有更多)
+func getHistoryMessages(
     targetId: String,
-    recordTime: Int64,
+    recordTime: Int64 = 0,
     count: Int = 20,
-    order: RCRemoteHistoryOrder = .RCRemoteHistoryOrderDesc,
-    includeLocal: Bool = false
-) async -> (messages: [RCMessage], isRemaining: Bool) {
-    let option = RCRemoteHistoryMsgOption()
-    option.recordTime = recordTime
-    option.count = count
-    option.order = order
-    option.includeLocalExistMessage = includeLocal
-    let dateStr = Date(timeIntervalSince1970: TimeInterval(recordTime) / 1000)
-    print("[RongCloud] getRemoteMessages -> targetId=\(targetId) recordTime=\(recordTime) (\(dateStr)) count=\(count) order=\(order.rawValue) includeLocal=\(includeLocal)")
-    return await withCheckedContinuation { continuation in
-        client.getRemoteHistoryMessages(
-            .ConversationType_GROUP,
-            targetId: targetId,
-            option: option,
-            success: { messages, isRemaining in
-                let list = messages ?? []
-                let actualIsRemaining = list.isEmpty ? false : isRemaining
-                print("[RongCloud] getRemoteMessages OK count=\(list.count) isRemaining=\(actualIsRemaining) (raw=\(isRemaining))")
-                continuation.resume(returning: (list, actualIsRemaining))
-            },
-            error: { errorCode in
-                print("[RongCloud] getRemoteMessages ERR code=\(errorCode.rawValue)")
-                continuation.resume(returning: ([], false))
-            }
-        )
-    }
-}
+    order: RCHistoryMessageOrder = .desc
+) async -> (messages: [RCMessage], timestamp: Int64, isRemaining: Bool)
 ```
 
-**参数说明**：
-
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| `recordTime` | — | 查询起点时间戳（毫秒），0 = 从最新开始 |
-| `count` | 20 | 每次拉取数量，上限 100 |
-| `order` | `Desc` | 降序取比 recordTime 早的消息；`Asc` 升序取比 recordTime 新的 |
-| `includeLocalExistMessage` | `false` | false = 仅返回本地不存在的（默认）；true = 全量返回 |
-
-#### 7.4.2 本地查询方法保留
-
-原有的 `getMessages(targetId:oldestMessageId:count:completion:)` 仍使用 `getHistoryMessages` 查本地 DB，保留作为快速加载。
+内部调用 `client.getMessages(.ConversationType_GROUP, targetId: targetId, option: option, complete: ..., error: ...)`。
 
 ### 7.5 BLL — IMService 改动
 
-#### 7.5.1 修改 `loadMessages` — 首屏走远端
+#### 7.5.1 `loadMessages` — 直接调用新 API
 
 ```swift
-func loadMessages(conversationId: String) async -> [ChatMessage] {
-    let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
-    let (rcMessages, isRemaining) = await RongCloudManager.shared.getRemoteMessages(
+func loadMessages(conversationId: String) async -> (messages: [ChatMessage], timestamp: Int64, isRemaining: Bool) {
+    let (rcMessages, timestamp, isRemaining) = await RongCloudManager.shared.getHistoryMessages(
         targetId: conversationId,
-        recordTime: nowMs,
+        recordTime: 0,
         count: 20
     )
     sendReadReceiptsIfNeeded(rcMessages)
     let chatMessages = rcMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }.reversed()
     messagesStore[conversationId] = Array(chatMessages)
-    // isRemaining 通过某个方式传给 ChatViewController（见 7.6）
-    return Array(chatMessages)
+    return (Array(chatMessages), timestamp, isRemaining)
 }
 ```
 
-#### 7.5.2 修改 `loadOlderMessages` — 翻页走远端
+#### 7.5.2 `loadOlderMessages` — 用 timestamp 翻页
 
 ```swift
-func loadOlderMessages(conversationId: String, oldestMessageId: Int) async -> (messages: [ChatMessage], isRemaining: Bool) {
-    // 用消息 ID 反查 sentTime
-    let sentTime: Int64 = await withCheckedContinuation { continuation in
-        RongCloudManager.shared.getMessage(messageId: oldestMessageId) { msg in
-            continuation.resume(returning: msg?.sentTime ?? 0)
-        }
-    }
-    guard sentTime > 0 else { return ([], false) }
-
-    let (rcMessages, isRemaining) = await RongCloudManager.shared.getRemoteMessages(
+func loadOlderMessages(conversationId: String, timestamp: Int64) async -> (messages: [ChatMessage], timestamp: Int64, isRemaining: Bool) {
+    let (rcMessages, newTimestamp, isRemaining) = await RongCloudManager.shared.getHistoryMessages(
         targetId: conversationId,
-        recordTime: sentTime,
+        recordTime: timestamp,
         count: 20
     )
     sendReadReceiptsIfNeeded(rcMessages)
     let older = rcMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }.reversed()
     messagesStore[conversationId] = Array(older) + (messagesStore[conversationId] ?? [])
-    return (Array(older), isRemaining)
+    return (Array(older), newTimestamp, isRemaining)
 }
 ```
 
-> **注意**：`loadOlderMessages` 返回值需要改为 `(messages, isRemaining)` 元组，`ChatViewController.handleRefresh` 需对应修改。
-
-#### 7.5.3 新增 `getMessage` 封装（DAL）
-
-```swift
-// RongCloudManager.swift
-func getMessage(messageId: Int, completion: @escaping (RCMessage?) -> Void) {
-    client.getMessage(messageId, completion: completion)
-}
-```
-
-> 这个 API 融云 SDK 已有，`sendReadReceiptRequest` 里就在用。如果 `loadOlderMessages` 需要翻查 `sentTime`，可复用。
+> **参数变更**：`beforeSentTime: Int64` → `timestamp: Int64`，语义从"消息时间戳"变为"服务端翻页游标"。
 
 ### 7.6 PL — ChatViewController 改动
 
-#### 7.6.1 `hasMoreMessages` 由远端决定
+#### 7.6.1 新增 `lastTimestamp` 状态
 
 ```swift
-// 改 loadMessages 返回 isRemaining
+private var lastTimestamp: Int64 = 0
+```
+
+#### 7.6.2 `loadMessages` 保存 timestamp
+
+```swift
 private func loadMessages() {
     Task {
-        let (msgs, isRemaining) = await IMService.shared.loadMessages(conversationId: conversationId)
+        let (msgs, timestamp, isRemaining) = await IMService.shared.loadMessages(conversationId: conversationId)
         await MainActor.run {
+            lastTimestamp = timestamp
             hasMoreMessages = isRemaining
             // ... 其余不变
         }
@@ -854,42 +803,52 @@ private func loadMessages() {
 }
 ```
 
-#### 7.6.2 `handleRefresh` 适配新返回值
+#### 7.6.3 `handleRefresh` 用 timestamp 翻页
 
 ```swift
 @objc private func handleRefresh() {
     guard !isLoadingMore, hasMoreMessages else { ... }
-    // ...
+    isLoadingMore = true
     Task {
-        let (olderMessages, isRemaining) = await IMService.shared.loadOlderMessages(
+        let (olderMessages, newTimestamp, isRemaining) = await IMService.shared.loadOlderMessages(
             conversationId: conversationId,
-            oldestMessageId: Int(oldestMsg.id) ?? -1
+            timestamp: lastTimestamp
         )
         await MainActor.run {
+            lastTimestamp = newTimestamp
             if !isRemaining { hasMoreMessages = false }
-            // ... 其余不变
+            // 去重 + insertTimeMarkers + reloadData
+            // ... 其余不变（去掉 beforeSentTime 相关逻辑）
         }
     }
 }
 ```
 
-### 7.7 改动文件（增量）
+### 7.7 副作用：修复 messageId = -1 问题
+
+新 API 返回的消息正常存入本地 DB，`rcMessage.messageId > 0` 可靠，以下操作自然修复：
+- `VoiceBubbleCell` 语音下载（`downloadMediaMessage`）
+- `sendReadReceiptRequest` 已读回执
+- `recallMessage` 撤回消息
+
+### 7.8 改动文件清单
 
 ```
 修改文件：
-  DAL/IM/RongCloudManager.swift    ← 新增 getRemoteMessages()、getMessage()
-  BLL/Message/IMService.swift      ← loadMessages / loadOlderMessages 改为走远端，返回值加 isRemaining
-  PL/Message/Chat/ChatViewController.swift ← handleRefresh / loadMessages 适配新返回值
+  DAL/IM/RongCloudManager.swift     ← 删除 getRemoteMessages()，新增 getHistoryMessages()
+  BLL/Message/IMService.swift       ← loadMessages / loadOlderMessages 适配新签名（timestamp 代替 beforeSentTime）
+  PL/Message/Chat/ChatViewController.swift ← loadMessages / handleRefresh 适配
 ```
 
-### 7.8 边界情况
+### 7.9 边界情况
 
 | 场景 | 处理 |
 |------|------|
 | 远端返回空 + isRemaining=false | 会话无历史消息，`hasMoreMessages=false` |
-| 首次加载 20 条，isRemaining=true | 允许下拉翻页 |
+| 首次加载 20 条，isRemaining=true | 保存 `timestamp`，允许下拉翻页 |
 | 翻页返回 0 条，isRemaining=false | `hasMoreMessages=false`，下拉不再触发 |
-| 网络断开拉远端失败 | error 回调返回 `([], false)`，保留当前列表 |
+| 网络断开拉远端失败 | error 回调返回 `([], 0, false)`，保留当前列表 |
+| `messageId` 为 -1 | 不再出现（新 API 消息正常入库） |
 
 ---
 

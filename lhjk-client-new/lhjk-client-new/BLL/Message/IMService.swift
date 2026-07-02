@@ -236,72 +236,37 @@ final class IMService {
 
     // MARK: - Messages
 
-    /// 异步加载历史消息（优先本地 DB，本地为空再查远端）
-    /// - Returns: (消息列表, 是否还有更多远端消息)
-    func loadMessages(conversationId: String) async -> (messages: [ChatMessage], isRemaining: Bool) {
-        // Step 1: 先查本地 DB（会话列表能展示 latestMessage 说明本地有数据）
-        let localMessages: [RCMessage] = await withCheckedContinuation { continuation in
-            RongCloudManager.shared.getMessages(targetId: conversationId, count: 20) { messages in
-                continuation.resume(returning: messages)
-            }
-        }
-        if !localMessages.isEmpty {
-            // 本地有消息，直接展示，同时异步拉远端更新
-            sendReadReceiptsIfNeeded(localMessages)
-            let chatMessages = localMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }.reversed()
-            let sorted = Array(chatMessages)
-            messagesStore[conversationId] = sorted
-            print("[IMService] loadMessages conv=\(conversationId) count=\(sorted.count) from=local, will also fetch remote")
-            // 异步拉远端补充（不阻塞 UI）
-            Task {
-                let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
-                let (remoteMessages, _) = await RongCloudManager.shared.getRemoteMessages(
-                    targetId: conversationId, recordTime: nowMs, count: 20
-                )
-                if !remoteMessages.isEmpty {
-                    let remoteChat = remoteMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }.reversed()
-                    messagesStore[conversationId] = Array(remoteChat)
-                }
-            }
-            // 拉到满页就认为还有更多（不信任 SDK 的 isRemaining 标志）
-            return (sorted, sorted.count >= 0)
-        }
-
-        // Step 2: 本地为空，尝试远端拉取
-        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
-        let (rcMessages, isRemaining) = await RongCloudManager.shared.getRemoteMessages(
+    /// 异步加载历史消息（直接走融云推荐 API，消息正常入库 messageId 可靠）
+    /// - Returns: (消息列表, 下次翻页用的 timestamp, 是否还有更多远端消息)
+    func loadMessages(conversationId: String) async -> (messages: [ChatMessage], timestamp: Int64, isRemaining: Bool) {
+        let (rcMessages, timestamp, isRemaining) = await RongCloudManager.shared.getHistoryMessages(
             targetId: conversationId,
-            recordTime: nowMs,
+            recordTime: 0,
             count: 20
         )
-        // 发送已读回执（仅接收方向、且未读的消息）
         sendReadReceiptsIfNeeded(rcMessages)
-        // 融云返回最新在前，倒序使最旧在上、最新在下
         let chatMessages = rcMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }.reversed()
         let sorted = Array(chatMessages)
-        // 只有远端有数据时才覆盖本地缓存，避免空数组覆盖掉已有的 mock 数据
         if !sorted.isEmpty {
             messagesStore[conversationId] = sorted
         }
-        // 拉到满页就认为还有更多（不信任 SDK 的 isRemaining 标志）
-        let hasMore = sorted.count >= 0
-        print("[IMService] loadMessages conv=\(conversationId) count=\(sorted.count) hasMore=\(hasMore) (sdkIsRemaining=\(isRemaining))")
-        return (sorted, hasMore)
+        print("[IMService] loadMessages conv=\(conversationId) count=\(sorted.count) timestamp=\(timestamp) isRemaining=\(isRemaining)")
+        for msg in rcMessages {
+            print("[IMService]   msgId=\(msg.messageId) sentTime=\(msg.sentTime)")
+        }
+        return (sorted, timestamp, isRemaining)
     }
 
-    /// 加载更早的历史消息（优先本地 DB，本地没有再查远端）
-    /// - Parameter beforeSentTime: 当前最早消息的时间戳（毫秒），加载比它更早的消息
-    /// - Returns: (消息列表, 是否还有更多)
-    func loadOlderMessages(conversationId: String, beforeSentTime: Int64) async -> (messages: [ChatMessage], isRemaining: Bool) {
-        let dateStr = Date(timeIntervalSince1970: TimeInterval(beforeSentTime) / 1000)
-        print("[IMService] loadOlderMessages conv=\(conversationId) beforeSentTime=\(beforeSentTime) (\(dateStr))")
+    /// 加载更早的历史消息（用上次返回的 timestamp 翻页）
+    /// - Parameter timestamp: 上次 getHistoryMessages 回调返回的翻页游标
+    /// - Returns: (消息列表, 新的 timestamp, 是否还有更多)
+    func loadOlderMessages(conversationId: String, timestamp: Int64) async -> (messages: [ChatMessage], timestamp: Int64, isRemaining: Bool) {
+        print("[IMService] loadOlderMessages conv=\(conversationId) timestamp=\(timestamp)")
 
-        // 远端拉取：includeLocal=true 确保拿到全量（本地已有消息 SDK 会返回但 msgId=-1，fromRongCloud 已处理）
-        let (rcMessages, isRemaining) = await RongCloudManager.shared.getRemoteMessages(
+        let (rcMessages, newTimestamp, isRemaining) = await RongCloudManager.shared.getHistoryMessages(
             targetId: conversationId,
-            recordTime: beforeSentTime,
-            count: 20,
-            includeLocal: true
+            recordTime: timestamp,
+            count: 20
         )
         sendReadReceiptsIfNeeded(rcMessages)
         let older = rcMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }.reversed()
@@ -309,10 +274,8 @@ final class IMService {
         if !sorted.isEmpty {
             messagesStore[conversationId] = sorted + (messagesStore[conversationId] ?? [])
         }
-        // 拉到满页就认为还有更多（不信任 SDK 的 isRemaining 标志）
-        let hasMore = sorted.count >= 0
-        print("[IMService] loadOlderMessages conv=\(conversationId) count=\(sorted.count) hasMore=\(hasMore) (sdkIsRemaining=\(isRemaining))")
-        return (sorted, hasMore)
+        print("[IMService] loadOlderMessages conv=\(conversationId) count=\(sorted.count) newTimestamp=\(newTimestamp) isRemaining=\(isRemaining)")
+        return (sorted, newTimestamp, isRemaining)
     }
 
     /// 同步获取缓存消息（若缓存为空则 fallback 到 mock）

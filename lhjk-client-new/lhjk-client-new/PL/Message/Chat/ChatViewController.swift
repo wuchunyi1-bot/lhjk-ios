@@ -26,6 +26,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     private var cancellables = Set<AnyCancellable>()
     private var isLoadingMore = false
     private var hasMoreMessages = true
+    private var lastTimestamp: Int64 = 0
     private var isVoiceMode = false
     private let audioRecorder = AudioRecorder()
     private var actionMenu: MessageActionMenu?
@@ -307,19 +308,22 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
 
     private func loadMessages() {
         Task {
-            let (msgs, isRemaining) = await IMService.shared.loadMessages(conversationId: conversationId)
-            print("[Chat] loadMessages count=\(msgs.count) isRemaining=\(isRemaining)")
+            let (msgs, timestamp, isRemaining) = await IMService.shared.loadMessages(conversationId: conversationId)
+            print("[Chat] loadMessages count=\(msgs.count) timestamp=\(timestamp) isRemaining=\(isRemaining)")
             for msg in msgs {
                 switch msg.type {
                 case .text:
                     print("[Chat]   [text] id=\(msg.id) content=\(msg.text ?? "")")
                 case .image:
                     print("[Chat]   [image] id=\(msg.id) imagePath=\(msg.imagePath ?? "nil")")
+                case .voice:
+                    print("[Chat]   [voice] id=\(msg.id) messageId=\(msg.messageId) imagePath=\(msg.imagePath ?? "nil")")
                 default:
                     print("[Chat]   [\(msg.type.rawValue)] id=\(msg.id)")
                 }
             }
             await MainActor.run {
+                lastTimestamp = timestamp
                 hasMoreMessages = isRemaining
                 var list = msgs.isEmpty
                     ? IMService.shared.getMessages(conversationId: conversationId)
@@ -332,39 +336,30 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     }
 
     @objc private func handleRefresh() {
-        print("[Chat] handleRefresh called — isLoadingMore=\(isLoadingMore) hasMoreMessages=\(hasMoreMessages) messages.count=\(messages.count)")
+        print("[Chat] handleRefresh called — isLoadingMore=\(isLoadingMore) hasMoreMessages=\(hasMoreMessages) lastTimestamp=\(lastTimestamp) messages.count=\(messages.count)")
         guard !isLoadingMore, hasMoreMessages else {
             print("[Chat] handleRefresh ✗ blocked — isLoadingMore=\(isLoadingMore) hasMoreMessages=\(hasMoreMessages)")
             refreshControl.endRefreshing()
             return
         }
-        // 跳过 timeMarker / recall，取最早的真实消息作为翻页锚点
-        guard let oldestMsg = messages.first(where: { $0.type != .timeMarker && $0.type != .recall }),
-              let oldestSentTime = oldestMsg.sentTime else {
-            print("[Chat] handleRefresh ✗ no valid anchor found (messages.count=\(messages.count)), skip this refresh")
-            refreshControl.endRefreshing()
-            return
-        }
-        print("[Chat] handleRefresh → loading older messages, before sentTime=\(oldestSentTime) (\(Date(timeIntervalSince1970: TimeInterval(oldestSentTime) / 1000)))")
         isLoadingMore = true
         Task {
-            let (olderMessages, isRemaining) = await IMService.shared.loadOlderMessages(
+            let (olderMessages, newTimestamp, isRemaining) = await IMService.shared.loadOlderMessages(
                 conversationId: conversationId,
-                beforeSentTime: oldestSentTime
+                timestamp: lastTimestamp
             )
-            print("[Chat] handleRefresh → loadOlderMessages returned \(olderMessages.count) messages, isRemaining=\(isRemaining)")
+            print("[Chat] handleRefresh → loadOlderMessages returned \(olderMessages.count) messages, newTimestamp=\(newTimestamp) isRemaining=\(isRemaining)")
             await MainActor.run {
+                lastTimestamp = newTimestamp
                 hasMoreMessages = isRemaining
                 if olderMessages.isEmpty {
                     print("[Chat] handleRefresh → no more messages")
                 } else {
-                    // 去重：includeLocal=true 可能返回本地已有消息的副本
                     let existingIds = Set(messages.map { $0.id })
                     let newOlder = olderMessages.filter { !existingIds.contains($0.id) }
                     let raw = messages.filter { $0.type != .timeMarker } + newOlder
                     messages = insertTimeMarkers(raw.sorted { ($0.sentTime ?? Int64.max) < ($1.sentTime ?? Int64.max) })
                     tableView.reloadData()
-                    // 保持滚动位置不变：跳过新增的 timeMarker 计算 offset
                     let addedCount = messages.count - (raw.count - newOlder.count)
                     print("[Chat] handleRefresh ✓ loaded \(newOlder.count) new messages (deduped from \(olderMessages.count)), total now \(messages.count), scroll to row \(addedCount - 1)")
                     if addedCount > 0 {
