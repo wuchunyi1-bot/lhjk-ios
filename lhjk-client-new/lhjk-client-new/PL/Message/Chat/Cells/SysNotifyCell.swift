@@ -6,6 +6,9 @@ import Kingfisher
 final class SysNotifyCell: UITableViewCell {
     static let reuseID = "SysNotifyCell"
 
+    weak var delegate: ChatCellDelegate?
+    private var currentMessage: ChatMessage?
+
     // MARK: - UI
 
     private let avatarLabel: UILabel = {
@@ -84,6 +87,9 @@ final class SysNotifyCell: UITableViewCell {
 
         [avatarLabel, avatarImageView, metaLabel, cardView].forEach(contentView.addSubview)
         [coverImageView, titleLabel, descLabel, actionHint].forEach(cardView.addSubview)
+
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
+        cardView.addGestureRecognizer(longPress)
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -91,6 +97,7 @@ final class SysNotifyCell: UITableViewCell {
     // MARK: - Configure
 
     func configure(_ msg: ChatMessage, tone: String, convRole: ConversationRole) {
+        currentMessage = msg
         let isStaff = msg.isStaff
         let notify = msg.sysNotifyContent
 
@@ -143,7 +150,7 @@ final class SysNotifyCell: UITableViewCell {
                 } else {
                     make.trailing.equalToSuperview().offset(-16)
                 }
-                make.top.equalToSuperview().offset(8)
+                make.top.equalToSuperview().offset(8).priority(999)
                 make.size.equalTo(34)
             }
             avatarImageView.snp.remakeConstraints { make in
@@ -164,9 +171,9 @@ final class SysNotifyCell: UITableViewCell {
             if showUser {
                 make.top.equalTo(metaLabel.snp.bottom).offset(metaOffset)
             } else {
-                make.top.equalToSuperview().offset(8)
+                make.top.equalToSuperview().offset(8).priority(999)
             }
-            make.bottom.equalToSuperview().offset(-8)
+            make.bottom.equalToSuperview().offset(-8).priority(999)
             make.width.equalTo(260)
             if isStaff {
                 make.leading.equalToSuperview().offset(showUser ? 58 : 16)
@@ -202,5 +209,10 @@ final class SysNotifyCell: UITableViewCell {
             make.leading.equalToSuperview().offset(12)
             make.bottom.equalToSuperview().offset(-12)
         }
+    }
+
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began, let msg = currentMessage else { return }
+        delegate?.cellDidLongPress(self, message: msg)
     }
 }

@@ -6,6 +6,9 @@ import Kingfisher
 final class TextBubbleCell: UITableViewCell {
     static let reuseID = "TextBubbleCell"
 
+    weak var delegate: ChatCellDelegate?
+    private var currentMessage: ChatMessage?
+
     private let avatarLabel = UILabel()
     private let avatarImageView: UIImageView = {
         let iv = UIImageView()
@@ -49,6 +52,18 @@ final class TextBubbleCell: UITableViewCell {
         iv.backgroundColor = UIColor.black.withAlphaComponent(0.05)
         return iv
     }()
+    private let replyVoiceIcon: UIImageView = {
+        let iv = UIImageView(image: UIImage(systemName: "waveform"))
+        iv.tintColor = .fdSubtext
+        iv.contentMode = .scaleAspectFit
+        return iv
+    }()
+    private let replyVoiceDurationLabel: UILabel = {
+        let l = UILabel()
+        l.font = .fdFont(ofSize: 12)
+        l.textColor = .fdSubtext
+        return l
+    }()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -74,24 +89,45 @@ final class TextBubbleCell: UITableViewCell {
 
         [avatarLabel, avatarImageView, metaLabel, bubbleView, timeLabel, replyView].forEach(contentView.addSubview)
         bubbleView.addSubview(msgLabel)
-        [replyNameLabel, replyContentLabel, replyImageView].forEach(replyView.addSubview)
+        [replyNameLabel, replyContentLabel, replyImageView, replyVoiceIcon, replyVoiceDurationLabel].forEach(replyView.addSubview)
+
+        // replyView 点击手势
+        let replyTap = UITapGestureRecognizer(target: self, action: #selector(handleReplyTap))
+        replyView.addGestureRecognizer(replyTap)
 
         msgLabel.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 13, bottom: 10, right: 13)) }
+
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
+        bubbleView.addGestureRecognizer(longPress)
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
     override func prepareForReuse() {
         super.prepareForReuse()
+        currentMessage = nil
         // 显式清理所有 SnapKit 约束，避免 remakeConstraints 在复用时不彻底
         [avatarLabel, avatarImageView, metaLabel, bubbleView, timeLabel, replyView].forEach {
             $0.snp.removeConstraints()
         }
         avatarImageView.image = nil
         replyImageView.image = nil
+        replyVoiceIcon.isHidden = true
+        replyVoiceDurationLabel.text = nil
+    }
+
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began, let msg = currentMessage else { return }
+        delegate?.cellDidLongPress(self, message: msg)
+    }
+
+    @objc private func handleReplyTap() {
+        guard let msg = currentMessage else { return }
+        delegate?.cellDidTapReply(self, message: msg)
     }
 
     func configure(_ msg: ChatMessage, tone: String, convRole: ConversationRole) {
+        currentMessage = msg
         let isStaff = msg.isStaff
 
         metaLabel.isHidden = !isStaff
@@ -131,23 +167,51 @@ final class TextBubbleCell: UITableViewCell {
             msgLabel.textColor = .white
         }
 
-        // 引用回复
+        // 引用回复 — 按类型展示不同样式
         if let reply = msg.reply {
             replyView.isHidden = false
             replyNameLabel.text = "回复 \(reply.senderName)"
-            if reply.messageType == "RC:ImgMsg", let url = URL(string: reply.text) {
+
+            // 重置所有子视图可见性
+            replyContentLabel.isHidden = true
+            replyImageView.isHidden = true
+            replyVoiceIcon.isHidden = true
+            replyVoiceDurationLabel.isHidden = true
+
+            if reply.isImage {
+                // 图片引用：缩略图
                 replyImageView.isHidden = false
-                replyContentLabel.isHidden = true
-                replyImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+                if let url = URL(string: reply.text), url.scheme?.hasPrefix("http") == true {
+                    replyImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+                }
+            } else if reply.isVoice {
+                // 语音引用：波形图标 + 时长
+                replyVoiceIcon.isHidden = false
+                replyVoiceDurationLabel.isHidden = false
+                if let dur = reply.duration, dur > 0 {
+                    replyVoiceDurationLabel.text = "\(dur)\""
+                }
+            } else if reply.isVideo {
+                // 视频引用：封面缩略图
+                replyImageView.isHidden = false
+                if let url = URL(string: reply.text) {
+                    replyImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+                }
             } else {
-                replyImageView.isHidden = true
+                // 文本 / 文件 / 套餐：文字
                 replyContentLabel.isHidden = false
-                replyContentLabel.text = reply.text
+                if reply.isFile {
+                    replyContentLabel.text = "[文件] \(reply.fileName ?? reply.text)"
+                } else {
+                    replyContentLabel.text = reply.text
+                }
             }
         } else {
             replyView.isHidden = true
         }
 
+        // 限制气泡最大宽度：屏幕宽 - 头像区(16+34+9) - 右边距(56) - 气泡内边距(26)
+        msgLabel.preferredMaxLayoutWidth = UIScreen.main.bounds.width - 141
         msgLabel.text = msg.text
         layoutForStaff(isStaff, hasReply: msg.reply != nil)
     }
@@ -155,7 +219,7 @@ final class TextBubbleCell: UITableViewCell {
     /// 统一布局入口：prepareForReuse 已清理旧约束，用 makeConstraints 重建
     private func layoutForStaff(_ isStaff: Bool, hasReply: Bool) {
         avatarLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(6)
+            make.top.equalToSuperview().offset(6).priority(999)
             make.size.equalTo(34)
             if isStaff {
                 make.leading.equalToSuperview().offset(16)
@@ -180,7 +244,7 @@ final class TextBubbleCell: UITableViewCell {
                 make.top.equalTo(metaLabel.snp.bottom).offset(4)
                 make.leading.equalTo(metaLabel)
                 make.trailing.lessThanOrEqualToSuperview().offset(-56).priority(750)
-                if !hasReply { make.bottom.equalToSuperview().offset(-10) }
+                if !hasReply { make.bottom.equalToSuperview().offset(-10).priority(999) }
             } else {
                 make.top.equalTo(avatarLabel)
                 make.trailing.equalTo(avatarLabel.snp.leading).offset(-9)
@@ -192,10 +256,10 @@ final class TextBubbleCell: UITableViewCell {
             replyView.snp.makeConstraints { make in
                 make.top.equalTo(bubbleView.snp.bottom).offset(4)
                 make.width.equalTo(200)
-                make.height.equalTo(52)
+                make.height.equalTo(52).priority(999)
                 if isStaff {
                     make.leading.equalTo(bubbleView)
-                    make.bottom.equalToSuperview().offset(-10)
+                    make.bottom.equalToSuperview().offset(-10).priority(999)
                 } else {
                     make.trailing.equalTo(bubbleView)
                 }
@@ -216,6 +280,16 @@ final class TextBubbleCell: UITableViewCell {
                 make.leading.equalToSuperview().offset(8)
                 make.size.equalTo(32)
             }
+
+            replyVoiceIcon.snp.makeConstraints { make in
+                make.top.equalTo(replyNameLabel.snp.bottom).offset(4)
+                make.leading.equalToSuperview().offset(8)
+                make.size.equalTo(16)
+            }
+            replyVoiceDurationLabel.snp.makeConstraints { make in
+                make.leading.equalTo(replyVoiceIcon.snp.trailing).offset(4)
+                make.centerY.equalTo(replyVoiceIcon)
+            }
         }
 
         // user: timeLabel 承接底部，有 reply 时挂在 replyView 下面
@@ -223,7 +297,7 @@ final class TextBubbleCell: UITableViewCell {
             if !isStaff {
                 make.trailing.equalTo(bubbleView)
                 make.top.equalTo((hasReply ? replyView : bubbleView).snp.bottom).offset(2)
-                make.bottom.equalToSuperview().offset(-10)
+                make.bottom.equalToSuperview().offset(-10).priority(999)
             }
         }
     }

@@ -159,15 +159,17 @@ final class RongCloudManager {
         })
     }
 
-    /// 断开融云连接（登出时调用）
+    /// 断开融云连接并清除本地数据（登出时调用）
     func disconnect() {
-        client.disconnect()
-        currentUserId = nil
-        currentToken = nil
-        connectionStatus = .disconnected
-        connectionStatusPublisher.send(.disconnected)
-        clearToken()
-        print("[RongCloud] Disconnected, token cleared")
+        client.logout { [weak self] _ in
+            guard let self = self else { return }
+            self.currentUserId = nil
+            self.currentToken = nil
+            self.connectionStatus = .disconnected
+            self.connectionStatusPublisher.send(.disconnected)
+            self.clearToken()
+            print("[RongCloud] Logged out, local data cleared")
+        }
     }
 
     /// 获取单聊会话列表（异步）
@@ -255,7 +257,7 @@ final class RongCloudManager {
         }
     }
 
-    /// 获取指定会话的历史消息（异步）
+    /// 获取指定会话的历史消息（异步）— 仅查本地 DB
     func getMessages(
         conversationType: RCConversationType = .ConversationType_GROUP,
         targetId: String,
@@ -273,16 +275,72 @@ final class RongCloudManager {
         }
     }
 
+    /// 从远端服务器拉取历史消息（使用 RCRemoteHistoryMsgOption）
+    /// - Parameters:
+    ///   - targetId: 会话 ID
+    ///   - recordTime: 查询起点时间戳（毫秒），首次传当前时间
+    ///   - count: 拉取数量
+    ///   - order: 拉取顺序，默认降序（取比 recordTime 早的消息）
+    ///   - includeLocal: 是否包含本地已存在的消息，默认 true（首次加载需要全量数据）
+    /// - Returns: (消息列表, 是否还有更多)
+    func getRemoteMessages(
+        targetId: String,
+        recordTime: Int64,
+        count: Int = 20,
+        order: RCRemoteHistoryOrder = .desc,
+        includeLocal: Bool = false
+    ) async -> (messages: [RCMessage], isRemaining: Bool) {
+        let option = RCRemoteHistoryMsgOption()
+        option.recordTime = recordTime
+        option.count = count
+        option.order = order
+        option.includeLocalExistMessage = includeLocal
+        let dateStr = Date(timeIntervalSince1970: TimeInterval(recordTime) / 1000)
+        print("[RongCloud] getRemoteMessages -> targetId=\(targetId) recordTime=\(recordTime) (\(dateStr)) count=\(count) order=\(order.rawValue) includeLocal=\(includeLocal)")
+        return await withCheckedContinuation { continuation in
+            client.getRemoteHistoryMessages(
+                .ConversationType_GROUP,
+                targetId: targetId,
+                option: option,
+                success: { messages, isRemaining in
+                    let list = messages ?? []
+                    // SDK 有时返回 count=0 但 isRemaining=true，这是矛盾的。
+                    // 没拉到消息就认为没有更多了，否则 UI 层会认为还有数据导致异常。
+                    let actualIsRemaining = list.isEmpty ? false : isRemaining
+                    print("[RongCloud] getRemoteMessages OK count=\(list.count) isRemaining=\(actualIsRemaining) (raw=\(isRemaining))")
+                    if let first = list.first { print("[RongCloud]   first msgId=\(first.messageId) sentTime=\(first.sentTime) (\(Date(timeIntervalSince1970: TimeInterval(first.sentTime) / 1000)))") }
+                    if let last = list.last { print("[RongCloud]   last  msgId=\(last.messageId) sentTime=\(last.sentTime) (\(Date(timeIntervalSince1970: TimeInterval(last.sentTime) / 1000)))") }
+                    continuation.resume(returning: (list, actualIsRemaining))
+                },
+                error: { errorCode in
+                    print("[RongCloud] getRemoteMessages ERR code=\(errorCode.rawValue)")
+                    continuation.resume(returning: ([], false))
+                }
+            )
+        }
+    }
+
+    /// 按消息 ID 查单条消息（异步）
+    func getMessage(messageId: Int) async -> RCMessage? {
+        await withCheckedContinuation { continuation in
+            client.getMessage(messageId) { message in
+                continuation.resume(returning: message)
+            }
+        }
+    }
+
     /// 发送文本消息
     /// - Parameter senderUserInfo: 发送者信息（userId / name / portrait），由上层 BLL 传入
     func sendTextMessage(
         conversationType: RCConversationType,
         targetId: String,
         content: String,
+        extra: String? = nil,
         senderUserInfo: RCUserInfo? = nil,
         completion: @escaping (RCMessage?, RCErrorCode) -> Void
     ) {
         let textMsg = RCTextMessage(content: content)
+        textMsg.extra = extra
         if let senderInfo = senderUserInfo {
             textMsg.senderUserInfo = senderInfo
         }
@@ -315,10 +373,12 @@ final class RongCloudManager {
         conversationType: RCConversationType,
         targetId: String,
         image: UIImage,
+        extra: String? = nil,
         senderUserInfo: RCUserInfo? = nil,
         completion: @escaping (RCMessage?, RCErrorCode) -> Void
     ) {
         let imgMsg = RCImageMessage(image: image)
+        imgMsg.extra = extra
         if let senderInfo = senderUserInfo {
             imgMsg.senderUserInfo = senderInfo
         }
@@ -364,6 +424,23 @@ final class RongCloudManager {
         }
     }
 
+    /// 撤回消息（融云限制：仅自己发送的消息，60 分钟内）
+    func recallMessage(messageId: Int, completion: @escaping (Bool) -> Void) {
+        client.getMessage(messageId) { [weak self] message in
+            guard let self, let message else {
+                completion(false)
+                return
+            }
+            self.client.recall(message, success: { msgId in
+                print("[RongCloud] recallMessage ✓ messageId=\(msgId)")
+                completion(true)
+            }, error: { errorCode in
+                print("[RongCloud] recallMessage ✗ messageId=\(messageId) code=\(errorCode.rawValue)")
+                completion(false)
+            })
+        }
+    }
+
     /// 下载媒体消息（语音），完成后 localPath 可用
     func downloadMediaMessage(_ messageId: Int, completion: @escaping (String?) -> Void) {
         client.downloadMediaMessage(messageId, progress: nil, success: { localPath in
@@ -381,10 +458,12 @@ final class RongCloudManager {
         targetId: String,
         localPath: String,
         duration: Int,
+        extra: String? = nil,
         senderUserInfo: RCUserInfo? = nil,
         completion: @escaping (RCMessage?, RCErrorCode) -> Void
     ) {
         let msg = RCHQVoiceMessage(path: localPath, duration: duration)
+        msg.extra = extra
         if let senderInfo = senderUserInfo {
             msg.senderUserInfo = senderInfo
         }
@@ -420,6 +499,7 @@ final class RongCloudManager {
         fileName: String,
         fileSize: String,
         fileSuffix: String,
+        extra: String? = nil,
         senderUserInfo: RCUserInfo? = nil,
         pushContent: String? = nil,
         completion: @escaping (RCMessage?, RCErrorCode) -> Void
@@ -429,6 +509,7 @@ final class RongCloudManager {
         msg.fileName = fileName
         msg.fileSize = fileSize
         msg.fileSuffix = fileSuffix
+        msg.extra = extra
         msg.lastMsgDisplayContent = "[文件]"
         if let senderInfo = senderUserInfo {
             msg.senderUserInfo = senderInfo
@@ -463,6 +544,7 @@ final class RongCloudManager {
         videoName: String,
         videoTime: Int,
         videoCoverImg: String? = nil,
+        extra: String? = nil,
         senderUserInfo: RCUserInfo? = nil,
         pushContent: String? = nil,
         completion: @escaping (RCMessage?, RCErrorCode) -> Void
@@ -472,6 +554,7 @@ final class RongCloudManager {
         msg.videoName = videoName
         msg.videoTime = videoTime
         msg.videoCoverImg = videoCoverImg
+        msg.extra = extra
         msg.videoSuffix = "mp4"
         msg.lastMsgDisplayContent = "[视频]"
         if let senderInfo = senderUserInfo {
@@ -507,6 +590,7 @@ final class RongCloudManager {
         title: String,
         content: String,
         imageUrl: String? = nil,
+        extra: String? = nil,
         senderUserInfo: RCUserInfo? = nil,
         pushContent: String? = nil,
         completion: @escaping (RCMessage?, RCErrorCode) -> Void
@@ -516,6 +600,7 @@ final class RongCloudManager {
         msg.title = title
         msg.content = content
         msg.imageUrl = imageUrl
+        msg.extra = extra
         msg.urlKey = "SET_MEAL"
         msg.isShowUser = true
         msg.lastMsgDisplayContent = "[套餐]"

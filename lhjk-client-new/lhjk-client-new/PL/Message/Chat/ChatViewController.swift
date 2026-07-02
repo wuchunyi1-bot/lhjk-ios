@@ -2,9 +2,20 @@ import UIKit
 import SnapKit
 import Combine
 import Kingfisher
+import AVFoundation
+
+/// 消息 Cell 长按回调协议
+protocol ChatCellDelegate: AnyObject {
+    func cellDidLongPress(_ cell: UITableViewCell, message: ChatMessage)
+    func cellDidTapReply(_ cell: UITableViewCell, message: ChatMessage)
+}
+
+extension ChatCellDelegate {
+    func cellDidTapReply(_ cell: UITableViewCell, message: ChatMessage) {}
+}
 
 /// 聊天详情页 — 参考 funde-client ConversationDetailView.vue
-final class ChatViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+final class ChatViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, ChatCellDelegate {
 
     // MARK: - Properties
 
@@ -17,6 +28,9 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     private var hasMoreMessages = true
     private var isVoiceMode = false
     private let audioRecorder = AudioRecorder()
+    private var actionMenu: MessageActionMenu?
+    private var quotePreviewBar: QuotePreviewBar?
+    private var quotedMessage: ChatMessage?
 
     // MARK: - UI
 
@@ -221,6 +235,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         setupQuickReplies(for: conv)
         setupRealtimeSubscription()
         loadMessages()
+        print("[Chat] setupUI done — refreshControl=\(String(describing: tableView.refreshControl)) bounces=\(tableView.bounces) contentSize=\(tableView.contentSize)")
     }
 
     deinit { NotificationCenter.default.removeObserver(self) }
@@ -292,8 +307,8 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
 
     private func loadMessages() {
         Task {
-            let msgs = await IMService.shared.loadMessages(conversationId: conversationId)
-            print("[Chat] loadMessages count=\(msgs.count)")
+            let (msgs, isRemaining) = await IMService.shared.loadMessages(conversationId: conversationId)
+            print("[Chat] loadMessages count=\(msgs.count) isRemaining=\(isRemaining)")
             for msg in msgs {
                 switch msg.type {
                 case .text:
@@ -305,6 +320,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
                 }
             }
             await MainActor.run {
+                hasMoreMessages = isRemaining
                 var list = msgs.isEmpty
                     ? IMService.shared.getMessages(conversationId: conversationId)
                     : msgs
@@ -316,30 +332,41 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     }
 
     @objc private func handleRefresh() {
+        print("[Chat] handleRefresh called — isLoadingMore=\(isLoadingMore) hasMoreMessages=\(hasMoreMessages) messages.count=\(messages.count)")
         guard !isLoadingMore, hasMoreMessages else {
+            print("[Chat] handleRefresh ✗ blocked — isLoadingMore=\(isLoadingMore) hasMoreMessages=\(hasMoreMessages)")
             refreshControl.endRefreshing()
             return
         }
-        // 跳过 timeMarker，取最早的真实消息 ID
-        guard let oldestMsg = messages.first(where: { $0.type != .timeMarker }) else {
+        // 跳过 timeMarker / recall，取最早的真实消息作为翻页锚点
+        guard let oldestMsg = messages.first(where: { $0.type != .timeMarker && $0.type != .recall }),
+              let oldestSentTime = oldestMsg.sentTime else {
+            print("[Chat] handleRefresh ✗ no valid anchor found (messages.count=\(messages.count)), skip this refresh")
             refreshControl.endRefreshing()
             return
         }
+        print("[Chat] handleRefresh → loading older messages, before sentTime=\(oldestSentTime) (\(Date(timeIntervalSince1970: TimeInterval(oldestSentTime) / 1000)))")
         isLoadingMore = true
         Task {
-            let olderMessages = await IMService.shared.loadOlderMessages(
+            let (olderMessages, isRemaining) = await IMService.shared.loadOlderMessages(
                 conversationId: conversationId,
-                oldestMessageId: Int(oldestMsg.id) ?? -1
+                beforeSentTime: oldestSentTime
             )
+            print("[Chat] handleRefresh → loadOlderMessages returned \(olderMessages.count) messages, isRemaining=\(isRemaining)")
             await MainActor.run {
+                hasMoreMessages = isRemaining
                 if olderMessages.isEmpty {
-                    hasMoreMessages = false
+                    print("[Chat] handleRefresh → no more messages")
                 } else {
-                    let raw = messages.filter { $0.type != .timeMarker } + olderMessages
-                    messages = insertTimeMarkers(raw.sorted { ($0.sentTime ?? 0) < ($1.sentTime ?? 0) })
+                    // 去重：includeLocal=true 可能返回本地已有消息的副本
+                    let existingIds = Set(messages.map { $0.id })
+                    let newOlder = olderMessages.filter { !existingIds.contains($0.id) }
+                    let raw = messages.filter { $0.type != .timeMarker } + newOlder
+                    messages = insertTimeMarkers(raw.sorted { ($0.sentTime ?? Int64.max) < ($1.sentTime ?? Int64.max) })
                     tableView.reloadData()
                     // 保持滚动位置不变：跳过新增的 timeMarker 计算 offset
-                    let addedCount = messages.count - (raw.count - olderMessages.count)
+                    let addedCount = messages.count - (raw.count - newOlder.count)
+                    print("[Chat] handleRefresh ✓ loaded \(newOlder.count) new messages (deduped from \(olderMessages.count)), total now \(messages.count), scroll to row \(addedCount - 1)")
                     if addedCount > 0 {
                         tableView.scrollToRow(at: IndexPath(row: addedCount - 1, section: 0), at: .top, animated: false)
                     }
@@ -381,7 +408,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
                     card: nil, meal: nil, report: nil,
                     imagePath: nil, thumbWidth: nil, thumbHeight: nil,
                     conversationId: conversationId,
-                    extra: nil, reply: nil
+                    extra: nil, reply: nil, messageId: -1
                 )
                 result.append(marker)
             }
@@ -450,6 +477,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         switch msg.type {
         case .text:
             let cell = tableView.dequeueReusableCell(withIdentifier: TextBubbleCell.reuseID, for: indexPath) as! TextBubbleCell
+            cell.delegate = self
             cell.configure(msg, tone: conversation?.role.toneHex ?? "#FF7A50", convRole: conversation?.role ?? .manager)
             return cell
         case .system:
@@ -471,6 +499,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         case .image:
             print("[Chat] cellForRow image: id=\(msg.id) imagePath=\(msg.imagePath ?? "nil")")
             let cell = tableView.dequeueReusableCell(withIdentifier: ImageBubbleCell.reuseID, for: indexPath) as! ImageBubbleCell
+            cell.delegate = self
             cell.configure(msg, tone: conversation?.role.toneHex ?? "#FF7A50", convRole: conversation?.role ?? .manager)
             cell.onTapImage = { [weak self] path in
                 self?.showImagePreview(path: path)
@@ -478,14 +507,17 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             return cell
         case .file:
             let cell = tableView.dequeueReusableCell(withIdentifier: FileBubbleCell.reuseID, for: indexPath) as! FileBubbleCell
+            cell.delegate = self
             cell.configure(msg, tone: conversation?.role.toneHex ?? "#FF7A50", convRole: conversation?.role ?? .manager)
             return cell
         case .video:
             let cell = tableView.dequeueReusableCell(withIdentifier: VideoBubbleCell.reuseID, for: indexPath) as! VideoBubbleCell
+            cell.delegate = self
             cell.configure(msg, tone: conversation?.role.toneHex ?? "#FF7A50", convRole: conversation?.role ?? .manager)
             return cell
         case .sysNotify:
             let cell = tableView.dequeueReusableCell(withIdentifier: SysNotifyCell.reuseID, for: indexPath) as! SysNotifyCell
+            cell.delegate = self
             cell.configure(msg, tone: conversation?.role.toneHex ?? "#FF7A50", convRole: conversation?.role ?? .manager)
             return cell
         case .timeMarker, .recall:
@@ -494,6 +526,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             return cell
         case .voice:
             let cell = tableView.dequeueReusableCell(withIdentifier: VoiceBubbleCell.reuseID, for: indexPath) as! VoiceBubbleCell
+            cell.delegate = self
             cell.configure(msg, tone: conversation?.role.toneHex ?? "#FF7A50", convRole: conversation?.role ?? .manager)
             return cell
         }
@@ -588,7 +621,8 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             thumbHeight: nil,
             conversationId: conversationId,
             extra: nil,
-            reply: nil
+            reply: nil,
+            messageId: -1
         )
         messages.append(localMsg)
         UIView.performWithoutAnimation {
@@ -598,11 +632,13 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
 
         // 异步发送到融云
         Task {
-            let sentMsg = await IMService.shared.sendMessage(text, conversationId: conversationId)
-            if let sentMsg = sentMsg, let localIdx = messages.firstIndex(where: { $0.id == localMsg.id }) {
-                await MainActor.run {
-                    messages[localIdx] = sentMsg
-                    tableView.reloadRows(at: [IndexPath(row: localIdx, section: 0)], with: .none)
+            let reply = quotedMessage.flatMap { ReplyMessage.from($0) }
+            let sentMsg = await IMService.shared.sendMessage(text, conversationId: conversationId, replyMessage: reply)
+            await MainActor.run {
+                self.dismissQuote()
+                if let sentMsg = sentMsg, let localIdx = self.messages.firstIndex(where: { $0.id == localMsg.id }) {
+                    self.messages[localIdx] = sentMsg
+                    self.tableView.reloadRows(at: [IndexPath(row: localIdx, section: 0)], with: .none)
                 }
             }
         }
@@ -683,17 +719,19 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
                 }
                 let localPath = url.path
                 Task {
+                    let reply = quotedMessage.flatMap { ReplyMessage.from($0) }
                     let sent = await IMService.shared.sendVoice(
                         localPath: localPath,
                         duration: duration,
-                        conversationId: conversationId
+                        conversationId: conversationId,
+                        replyMessage: reply
                     )
-                    if let sent {
-                        await MainActor.run {
-                            if let localIdx = messages.firstIndex(where: { $0.type == .voice && $0.imagePath == localPath }) {
-                                messages[localIdx] = sent
-                                tableView.reloadRows(at: [IndexPath(row: localIdx, section: 0)], with: .none)
-                            }
+                    await MainActor.run {
+                        self.dismissQuote()
+                        if let sent,
+                           let localIdx = self.messages.firstIndex(where: { $0.type == .voice && $0.imagePath == localPath }) {
+                            self.messages[localIdx] = sent
+                            self.tableView.reloadRows(at: [IndexPath(row: localIdx, section: 0)], with: .none)
                         }
                     }
                 }
@@ -719,7 +757,203 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         return granted
     }
 
+    // MARK: - Long Press Menu
+
+    func cellDidLongPress(_ cell: UITableViewCell, message: ChatMessage) {
+        // 关闭已有菜单
+        actionMenu?.dismiss()
+
+        // 构建可见按钮列表
+        var actions: [MessageActionMenu.Action] = []
+        if message.canCopy { actions.append(.copy) }
+        if message.canRecall { actions.append(.recall) }
+        if message.canQuote { actions.append(.quote) }
+        guard !actions.isEmpty else { return }
+
+        let cellRect = cell.convert(cell.bounds, to: view)
+        let menu = MessageActionMenu()
+        menu.onAction = { [weak self] action in
+            self?.handleAction(action, message: message)
+        }
+        menu.configure(above: cellRect, in: view, actions: actions)
+        view.addSubview(menu)
+        actionMenu = menu
+    }
+
+    private func handleAction(_ action: MessageActionMenu.Action, message: ChatMessage) {
+        actionMenu?.dismiss()
+        switch action {
+        case .copy:   handleCopy(message)
+        case .recall: handleRecall(message)
+        case .quote:  handleQuote(message)
+        }
+    }
+
+    private func handleCopy(_ message: ChatMessage) {
+        UIPasteboard.general.string = message.text
+        showToast("已复制")
+    }
+
+    private func handleRecall(_ message: ChatMessage) {
+        let alert = UIAlertController(title: "撤回消息", message: "确定撤回这条消息吗？", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        alert.addAction(UIAlertAction(title: "撤回", style: .default) { [weak self] _ in
+            self?.performRecall(message)
+        })
+        present(alert, animated: true)
+    }
+
+    private func performRecall(_ message: ChatMessage) {
+        guard let msgId = Int(message.id) else { return }
+        Task {
+            let success = await IMService.shared.recallMessage(msgId)
+            await MainActor.run {
+                if success {
+                    self.replaceMessageWithRecall(message)
+                    self.showToast("已撤回")
+                } else {
+                    self.showToast("撤回失败，请重试")
+                }
+            }
+        }
+    }
+
+    private func replaceMessageWithRecall(_ message: ChatMessage) {
+        guard let idx = messages.firstIndex(where: { $0.id == message.id }) else { return }
+        let recalMsg = ChatMessage(
+            id: message.id,
+            type: .recall,
+            role: .user,
+            senderName: nil, senderRole: nil, avatar: nil, portraitUrl: nil,
+            text: "你撤回了一条消息",
+            time: message.time,
+            sentTime: message.sentTime,
+            card: nil, meal: nil, report: nil,
+            imagePath: nil, thumbWidth: nil, thumbHeight: nil,
+            conversationId: message.conversationId,
+            extra: nil, reply: nil, messageId: message.messageId
+        )
+        messages[idx] = recalMsg
+        tableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .fade)
+    }
+
+    private func handleQuote(_ message: ChatMessage) {
+        quotedMessage = message
+        showQuotePreview(for: ReplyMessage.from(message))
+    }
+
+    private func showQuotePreview(for reply: ReplyMessage) {
+        quotePreviewBar?.removeFromSuperview()
+        let bar = QuotePreviewBar()
+        bar.configure(with: reply)
+        bar.onDismiss = { [weak self] in
+            self?.dismissQuote()
+        }
+        bar.onTap = { [weak self] in
+            self?.handleQuotePreviewTap(reply: reply)
+        }
+        view.insertSubview(bar, belowSubview: inputBar)
+        bar.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(inputBar.snp.top)
+            make.height.equalTo(52)
+        }
+        quotePreviewBar = bar
+    }
+
+    private func dismissQuote() {
+        quotedMessage = nil
+        quotePreviewBar?.dismiss()
+        quotePreviewBar = nil
+    }
+
+    /// 点击 QuotePreviewBar 的引用内容区域
+    private func handleQuotePreviewTap(reply: ReplyMessage) {
+        if reply.isImage {
+            showImagePreview(path: reply.text)
+        } else if reply.isVoice {
+            playVoice(urlPath: reply.text)
+        } else if reply.isVideo {
+            showToast("视频播放")
+        }
+    }
+
+    /// 点击消息气泡内的引用区（replyView）
+    func cellDidTapReply(_ cell: UITableViewCell, message: ChatMessage) {
+        guard let reply = message.reply else { return }
+        if reply.isImage {
+            showImagePreview(path: reply.text)
+        } else if reply.isVoice {
+            playVoice(urlPath: reply.text)
+        } else if reply.isVideo {
+            showToast("视频播放")
+        }
+    }
+
+    /// 播放语音（下载后 AVAudioPlayer 播放）
+    private func playVoice(urlPath: String) {
+        // 本地文件直接播
+        if urlPath.hasPrefix("/"), FileManager.default.fileExists(atPath: urlPath) {
+            playAudioFile(url: URL(fileURLWithPath: urlPath))
+            return
+        }
+        // 远程 URL 先下载
+        guard let remoteURL = URL(string: urlPath) else { return }
+        showToast("正在加载语音...")
+        Task {
+            let (tempURL, _) = try await URLSession.shared.download(from: remoteURL)
+            await MainActor.run {
+                playAudioFile(url: tempURL)
+            }
+        }
+    }
+
+    private func playAudioFile(url: URL) {
+        do {
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.prepareToPlay()
+            player.play()
+        } catch {
+            print("[Chat] playVoice ✗ error: \(error.localizedDescription)")
+            showToast("语音播放失败")
+        }
+    }
+
+    @objc private func dismissActionMenu() {
+        actionMenu?.dismiss()
+    }
+
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        actionMenu?.dismiss()
+    }
+
     // MARK: - Helpers
+
+    private func showToast(_ message: String) {
+        let container = UIView()
+        container.backgroundColor = UIColor.black.withAlphaComponent(0.7)
+        container.layer.cornerRadius = 8
+        container.clipsToBounds = true
+        let label = UILabel()
+        label.text = message
+        label.font = .fdFont(ofSize: 14)
+        label.textColor = .white
+        label.textAlignment = .center
+        container.addSubview(label)
+        label.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16))
+        }
+        view.addSubview(container)
+        container.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.centerY.equalToSuperview().offset(-40)
+        }
+        UIView.animate(withDuration: 0.3, delay: 1.5, options: [], animations: {
+            container.alpha = 0
+        }) { _ in
+            container.removeFromSuperview()
+        }
+    }
 
     private func scrollToBottom(animated: Bool) {
         guard !messages.isEmpty else { return }
@@ -804,7 +1038,8 @@ extension ChatViewController {
             thumbHeight: Int(image.size.height),
             conversationId: conversationId,
             extra: nil,
-            reply: nil
+            reply: nil,
+            messageId: -1
         )
         messages.append(localMsg)
         UIView.performWithoutAnimation {
@@ -814,12 +1049,14 @@ extension ChatViewController {
 
         // 异步发送到融云
         Task {
-            let sentMsg = await IMService.shared.sendImage(image, conversationId: conversationId)
-            if let sentMsg = sentMsg,
-               let localIdx = messages.firstIndex(where: { $0.id == localMsg.id }) {
-                await MainActor.run {
-                    messages[localIdx] = sentMsg
-                    tableView.reloadRows(at: [IndexPath(row: localIdx, section: 0)], with: .none)
+            let reply = quotedMessage.flatMap { ReplyMessage.from($0) }
+            let sentMsg = await IMService.shared.sendImage(image, conversationId: conversationId, replyMessage: reply)
+            await MainActor.run {
+                self.dismissQuote()
+                if let sentMsg = sentMsg,
+                   let localIdx = self.messages.firstIndex(where: { $0.id == localMsg.id }) {
+                    self.messages[localIdx] = sentMsg
+                    self.tableView.reloadRows(at: [IndexPath(row: localIdx, section: 0)], with: .none)
                 }
             }
         }

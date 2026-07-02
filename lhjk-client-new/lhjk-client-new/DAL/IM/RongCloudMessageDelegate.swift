@@ -118,8 +118,20 @@ extension ChatMessage {
 
         print("[RongCloud] fromRongCloud senderUserInfo → name=\(senderName ?? "nil") portraitUri=\(senderInfo?.portraitUri ?? "nil") userId=\(senderInfo?.userId ?? "nil")")
 
+        // 远端消息若本地未入库，messageId 为 -1，改用服务端 messageUId
+        let msgId: String = {
+            if rcMessage.messageId > 0 {
+                return "\(rcMessage.messageId)"
+            }
+            if let uid = rcMessage.messageUId, !uid.isEmpty {
+                return uid
+            }
+            return "rm-\(rcMessage.sentTime)"
+        }()
+        print("[RongCloud] fromRongCloud msgId → localId=\(rcMessage.messageId) resolved=\(msgId)")
+
         var msg = ChatMessage(
-            id: "\(rcMessage.messageId)",
+            id: msgId,
             type: type,
             role: role,
             senderName: senderName,
@@ -137,7 +149,8 @@ extension ChatMessage {
             thumbHeight: thumbHeight,
             conversationId: rcMessage.targetId,
             extra: extra,
-            reply: reply
+            reply: reply,
+            messageId: rcMessage.messageId
         )
         msg.fileContent = fileContent
         msg.videoContent = videoContent

@@ -6,6 +6,9 @@ import Kingfisher
 final class VideoBubbleCell: UITableViewCell {
     static let reuseID = "VideoBubbleCell"
 
+    weak var delegate: ChatCellDelegate?
+    private var currentMessage: ChatMessage?
+
     // MARK: - UI
 
     private let avatarLabel: UILabel = {
@@ -70,6 +73,9 @@ final class VideoBubbleCell: UITableViewCell {
         [avatarLabel, avatarImageView, metaLabel, coverView].forEach(contentView.addSubview)
         coverView.addSubview(playIcon)
         coverView.addSubview(durationLabel)
+
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
+        coverView.addGestureRecognizer(longPress)
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -77,6 +83,7 @@ final class VideoBubbleCell: UITableViewCell {
     // MARK: - Configure
 
     func configure(_ msg: ChatMessage, tone: String, convRole: ConversationRole) {
+        currentMessage = msg
         let isStaff = msg.isStaff
         let video = msg.videoContent
 
@@ -127,7 +134,7 @@ final class VideoBubbleCell: UITableViewCell {
             } else {
                 make.trailing.equalToSuperview().offset(-16)
             }
-            make.top.equalToSuperview().offset(8)
+            make.top.equalToSuperview().offset(8).priority(999)
             make.size.equalTo(34)
         }
         avatarImageView.snp.makeConstraints { make in
@@ -145,7 +152,7 @@ final class VideoBubbleCell: UITableViewCell {
 
         coverView.snp.remakeConstraints { make in
             make.top.equalTo(metaLabel.snp.bottom).offset(4)
-            make.bottom.equalToSuperview().offset(-8)
+            make.bottom.equalToSuperview().offset(-8).priority(999)
             make.width.equalTo(200)
             make.height.equalTo(140).priority(750)
             if isStaff {
@@ -168,5 +175,10 @@ final class VideoBubbleCell: UITableViewCell {
                 make.width.greaterThanOrEqualTo(36)
             }
         }
+    }
+
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began, let msg = currentMessage else { return }
+        delegate?.cellDidLongPress(self, message: msg)
     }
 }

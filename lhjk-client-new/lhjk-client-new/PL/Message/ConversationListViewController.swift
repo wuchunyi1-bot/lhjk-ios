@@ -77,6 +77,15 @@ final class ConversationListViewController: UIViewController, UITableViewDataSou
                 self?.handleConversationUpdate(conversationId: convId)
             }
             .store(in: &cancellables)
+
+        // 会话被标记已读 → 局部更新该会话的未读数
+        IMService.shared.conversationMarkedReadPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] convId in
+                print("[ConvList] conversationMarkedRead → convId=\(convId)")
+                self?.handleConversationUpdate(conversationId: convId)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Data

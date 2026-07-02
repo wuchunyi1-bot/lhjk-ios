@@ -15,6 +15,9 @@ final class IMService {
 
     private var cancellables = Set<AnyCancellable>()
 
+    /// 会话已读状态变更（conversationId），用于会话列表局部刷新
+    let conversationMarkedReadPublisher = PassthroughSubject<String, Never>()
+
     private init() {
         // 订阅实时消息，按 conversationId 缓存
         RongCloudManager.shared.messageReceivedPublisher
@@ -157,6 +160,16 @@ final class IMService {
             conversations[idx].unread = 0
         }
         RongCloudManager.shared.clearGroupUnreadCount(for: conversationId)
+        conversationMarkedReadPublisher.send(conversationId)
+    }
+
+    /// 撤回消息，成功返回 true
+    func recallMessage(_ messageId: Int) async -> Bool {
+        await withCheckedContinuation { continuation in
+            RongCloudManager.shared.recallMessage(messageId: messageId) { success in
+                continuation.resume(returning: success)
+            }
+        }
     }
 
     /// B方案：按 conversationId 从融云查单条 RCConversation，局部更新本地会话
@@ -204,6 +217,13 @@ final class IMService {
         conversations.removeAll { $0.id == conversationId }
     }
 
+    /// 登出时清除所有内存缓存
+    func clear() {
+        conversations.removeAll()
+        messagesStore.removeAll()
+        print("[IMService] cleared")
+    }
+
     // MARK: - Notifications
 
     func getNotifications() -> [AppNotification] {
@@ -216,63 +236,105 @@ final class IMService {
 
     // MARK: - Messages
 
-    /// 异步加载历史消息（从融云 SDK）
-    func loadMessages(conversationId: String) async -> [ChatMessage] {
-        let rcMessages: [RCMessage] = await withCheckedContinuation { continuation in
-            RongCloudManager.shared.getMessages(
-                targetId: conversationId,
-                count: 20
-            ) { messages in
+    /// 异步加载历史消息（优先本地 DB，本地为空再查远端）
+    /// - Returns: (消息列表, 是否还有更多远端消息)
+    func loadMessages(conversationId: String) async -> (messages: [ChatMessage], isRemaining: Bool) {
+        // Step 1: 先查本地 DB（会话列表能展示 latestMessage 说明本地有数据）
+        let localMessages: [RCMessage] = await withCheckedContinuation { continuation in
+            RongCloudManager.shared.getMessages(targetId: conversationId, count: 20) { messages in
                 continuation.resume(returning: messages)
             }
         }
+        if !localMessages.isEmpty {
+            // 本地有消息，直接展示，同时异步拉远端更新
+            sendReadReceiptsIfNeeded(localMessages)
+            let chatMessages = localMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }.reversed()
+            let sorted = Array(chatMessages)
+            messagesStore[conversationId] = sorted
+            print("[IMService] loadMessages conv=\(conversationId) count=\(sorted.count) from=local, will also fetch remote")
+            // 异步拉远端补充（不阻塞 UI）
+            Task {
+                let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+                let (remoteMessages, _) = await RongCloudManager.shared.getRemoteMessages(
+                    targetId: conversationId, recordTime: nowMs, count: 20
+                )
+                if !remoteMessages.isEmpty {
+                    let remoteChat = remoteMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }.reversed()
+                    messagesStore[conversationId] = Array(remoteChat)
+                }
+            }
+            // 拉到满页就认为还有更多（不信任 SDK 的 isRemaining 标志）
+            return (sorted, sorted.count >= 0)
+        }
+
+        // Step 2: 本地为空，尝试远端拉取
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        let (rcMessages, isRemaining) = await RongCloudManager.shared.getRemoteMessages(
+            targetId: conversationId,
+            recordTime: nowMs,
+            count: 20
+        )
         // 发送已读回执（仅接收方向、且未读的消息）
         sendReadReceiptsIfNeeded(rcMessages)
-        // 融云 getHistoryMessages 返回最新在前，倒序使最旧在上、最新在下
+        // 融云返回最新在前，倒序使最旧在上、最新在下
         let chatMessages = rcMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }.reversed()
         let sorted = Array(chatMessages)
-        messagesStore[conversationId] = sorted
-        print("[IMService] loadMessages conv=\(conversationId) count=\(sorted.count)")
-        return sorted
+        // 只有远端有数据时才覆盖本地缓存，避免空数组覆盖掉已有的 mock 数据
+        if !sorted.isEmpty {
+            messagesStore[conversationId] = sorted
+        }
+        // 拉到满页就认为还有更多（不信任 SDK 的 isRemaining 标志）
+        let hasMore = sorted.count >= 0
+        print("[IMService] loadMessages conv=\(conversationId) count=\(sorted.count) hasMore=\(hasMore) (sdkIsRemaining=\(isRemaining))")
+        return (sorted, hasMore)
     }
 
-    /// 加载更早的历史消息
-    func loadOlderMessages(conversationId: String, oldestMessageId: Int) async -> [ChatMessage] {
-        let rcMessages: [RCMessage] = await withCheckedContinuation { continuation in
-            RongCloudManager.shared.getMessages(
-                targetId: conversationId,
-                oldestMessageId: oldestMessageId,
-                count: 20
-            ) { messages in
-                continuation.resume(returning: messages)
-            }
-        }
-        // 发送已读回执（仅接收方向、且未读的消息）
+    /// 加载更早的历史消息（优先本地 DB，本地没有再查远端）
+    /// - Parameter beforeSentTime: 当前最早消息的时间戳（毫秒），加载比它更早的消息
+    /// - Returns: (消息列表, 是否还有更多)
+    func loadOlderMessages(conversationId: String, beforeSentTime: Int64) async -> (messages: [ChatMessage], isRemaining: Bool) {
+        let dateStr = Date(timeIntervalSince1970: TimeInterval(beforeSentTime) / 1000)
+        print("[IMService] loadOlderMessages conv=\(conversationId) beforeSentTime=\(beforeSentTime) (\(dateStr))")
+
+        // 远端拉取：includeLocal=true 确保拿到全量（本地已有消息 SDK 会返回但 msgId=-1，fromRongCloud 已处理）
+        let (rcMessages, isRemaining) = await RongCloudManager.shared.getRemoteMessages(
+            targetId: conversationId,
+            recordTime: beforeSentTime,
+            count: 20,
+            includeLocal: true
+        )
         sendReadReceiptsIfNeeded(rcMessages)
         let older = rcMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }.reversed()
         let sorted = Array(older)
-        // 插入到缓存前部
-        messagesStore[conversationId] = sorted + (messagesStore[conversationId] ?? [])
-        print("[IMService] loadOlderMessages conv=\(conversationId) count=\(sorted.count)")
-        return sorted
+        if !sorted.isEmpty {
+            messagesStore[conversationId] = sorted + (messagesStore[conversationId] ?? [])
+        }
+        // 拉到满页就认为还有更多（不信任 SDK 的 isRemaining 标志）
+        let hasMore = sorted.count >= 0
+        print("[IMService] loadOlderMessages conv=\(conversationId) count=\(sorted.count) hasMore=\(hasMore) (sdkIsRemaining=\(isRemaining))")
+        return (sorted, hasMore)
     }
 
     /// 同步获取缓存消息（若缓存为空则 fallback 到 mock）
     func getMessages(conversationId: String) -> [ChatMessage] {
-        if messagesStore[conversationId] == nil {
+        let cached = messagesStore[conversationId]
+        if cached == nil || cached?.isEmpty == true {
             messagesStore[conversationId] = ChatMessage.mockMessages(for: conversationId)
         }
         return messagesStore[conversationId] ?? []
     }
 
     /// 发送文本消息（通过融云 SDK）
-    func sendMessage(_ text: String, conversationId: String) async -> ChatMessage? {
+    func sendMessage(_ text: String, conversationId: String,
+                     replyMessage: ReplyMessage? = nil) async -> ChatMessage? {
         let senderInfo = makeSenderUserInfo()
+        let extra = replyMessage.flatMap { ReplyMessage.toExtraJSON($0) }
         let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
             RongCloudManager.shared.sendTextMessage(
                 conversationType: .ConversationType_GROUP,
                 targetId: conversationId,
                 content: text,
+                extra: extra,
                 senderUserInfo: senderInfo
             ) { message, errorCode in
                 continuation.resume(returning: (message, errorCode))
@@ -289,13 +351,16 @@ final class IMService {
     }
 
     /// 发送图片消息（通过融云 SDK）
-    func sendImage(_ image: UIImage, conversationId: String) async -> ChatMessage? {
+    func sendImage(_ image: UIImage, conversationId: String,
+                   replyMessage: ReplyMessage? = nil) async -> ChatMessage? {
         let senderInfo = makeSenderUserInfo()
+        let extra = replyMessage.flatMap { ReplyMessage.toExtraJSON($0) }
         let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
             RongCloudManager.shared.sendImageMessage(
                 conversationType: .ConversationType_GROUP,
                 targetId: conversationId,
                 image: image,
+                extra: extra,
                 senderUserInfo: senderInfo
             ) { message, errorCode in
                 continuation.resume(returning: (message, errorCode))
@@ -313,9 +378,11 @@ final class IMService {
 
     /// 发送文件消息（AD:FileMsg）
     func sendFile(fileUrl: String, fileName: String, fileSize: String,
-                  fileSuffix: String, conversationId: String) async -> ChatMessage? {
+                  fileSuffix: String, conversationId: String,
+                  replyMessage: ReplyMessage? = nil) async -> ChatMessage? {
         let senderInfo = makeSenderUserInfo()
         let pushContent = "\(senderInfo.name):[文件]"
+        let extra = replyMessage.flatMap { ReplyMessage.toExtraJSON($0) }
         let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
             RongCloudManager.shared.sendFileMessage(
                 conversationType: .ConversationType_GROUP,
@@ -324,6 +391,7 @@ final class IMService {
                 fileName: fileName,
                 fileSize: fileSize,
                 fileSuffix: fileSuffix,
+                extra: extra,
                 senderUserInfo: senderInfo,
                 pushContent: pushContent
             ) { message, errorCode in
@@ -342,9 +410,11 @@ final class IMService {
 
     /// 发送视频消息（AD:VideoMsg）
     func sendVideo(videoUrl: String, videoName: String, videoTime: Int,
-                   videoCoverImg: String? = nil, conversationId: String) async -> ChatMessage? {
+                   videoCoverImg: String? = nil, conversationId: String,
+                   replyMessage: ReplyMessage? = nil) async -> ChatMessage? {
         let senderInfo = makeSenderUserInfo()
         let pushContent = "\(senderInfo.name):[视频]"
+        let extra = replyMessage.flatMap { ReplyMessage.toExtraJSON($0) }
         let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
             RongCloudManager.shared.sendVideoMessage(
                 conversationType: .ConversationType_GROUP,
@@ -353,6 +423,7 @@ final class IMService {
                 videoName: videoName,
                 videoTime: videoTime,
                 videoCoverImg: videoCoverImg,
+                extra: extra,
                 senderUserInfo: senderInfo,
                 pushContent: pushContent
             ) { message, errorCode in
@@ -371,9 +442,11 @@ final class IMService {
 
     /// 发送套餐消息（AD:SysNotify）
     func sendSysNotify(businessData: String, title: String, content: String,
-                       imageUrl: String? = nil, conversationId: String) async -> ChatMessage? {
+                       imageUrl: String? = nil, conversationId: String,
+                       replyMessage: ReplyMessage? = nil) async -> ChatMessage? {
         let senderInfo = makeSenderUserInfo()
         let pushContent = "\(senderInfo.name):[套餐]"
+        let extra = replyMessage.flatMap { ReplyMessage.toExtraJSON($0) }
         let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
             RongCloudManager.shared.sendSysNotifyMessage(
                 conversationType: .ConversationType_GROUP,
@@ -382,6 +455,7 @@ final class IMService {
                 title: title,
                 content: content,
                 imageUrl: imageUrl,
+                extra: extra,
                 senderUserInfo: senderInfo,
                 pushContent: pushContent
             ) { message, errorCode in
@@ -399,14 +473,17 @@ final class IMService {
     }
 
     /// 发送语音消息（RC:HQVCMsg）
-    func sendVoice(localPath: String, duration: Int, conversationId: String) async -> ChatMessage? {
+    func sendVoice(localPath: String, duration: Int, conversationId: String,
+                   replyMessage: ReplyMessage? = nil) async -> ChatMessage? {
         let senderInfo = makeSenderUserInfo()
+        let extra = replyMessage.flatMap { ReplyMessage.toExtraJSON($0) }
         let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
             RongCloudManager.shared.sendHQVoiceMessage(
                 conversationType: .ConversationType_GROUP,
                 targetId: conversationId,
                 localPath: localPath,
                 duration: duration,
+                extra: extra,
                 senderUserInfo: senderInfo
             ) { message, errorCode in
                 continuation.resume(returning: (message, errorCode))

@@ -97,18 +97,34 @@ struct AIMedal: Codable {
 
 /// 消息引用回复信息 — 从 content.extra JSON 解析
 struct ReplyMessage: Codable {
-    /// 被引用消息的内容 / 图片 URL
+    /// 被引用消息的内容（文本）或远程 URL（图片/语音/视频/文件）
     let text: String
     /// 被引用消息的发送者名
     let senderName: String
-    /// 被引用消息的类型（RC:TxtMsg / RC:ImgMsg / ...）
+    /// 被引用消息的类型（RC:TxtMsg / RC:ImgMsg / RC:HQVCMsg / AD:VideoMsg / AD:FileMsg / AD:SysNotify）
     let messageType: String
+    /// 语音/视频时长（秒），仅 isVoice / isVideo 时有值
+    var duration: Int?
+    /// 文件名，仅 isFile / isVideo 时有值
+    var fileName: String?
+    /// 文件大小，仅 isFile 时有值
+    var fileSize: String?
 
     enum CodingKeys: String, CodingKey {
         case text = "calcLastText"
         case senderName = "calcLastName"
         case messageType = "calcLastType"
+        case duration, fileName, fileSize
     }
+
+    // MARK: - 类型判断
+
+    var isImage: Bool { messageType == "RC:ImgMsg" }
+    var isVoice: Bool { messageType == "RC:HQVCMsg" }
+    var isVideo: Bool { messageType == "AD:VideoMsg" }
+    var isFile: Bool  { messageType == "AD:FileMsg" }
+    /// 是否为媒体类型（图片/语音/视频），展示时渲染缩略图/图标而非文本
+    var isMediaType: Bool { isImage || isVoice || isVideo }
 
     /// 从 content.extra JSON 字符串解析引用回复
     static func fromExtra(_ extra: String?) -> ReplyMessage? {
@@ -117,10 +133,29 @@ struct ReplyMessage: Codable {
         let payload = try? JSONDecoder().decode(ExtraPayload.self, from: data)
         return payload?.replyMessage
     }
+
+    /// 从 ChatMessage 构建引用信息
+    static func from(_ msg: ChatMessage) -> ReplyMessage {
+        ReplyMessage(
+            text: msg.quotePreviewText,
+            senderName: msg.senderName ?? "",
+            messageType: msg.quoteObjectName,
+            duration: msg.quoteMediaDuration,
+            fileName: msg.quoteMediaFileName,
+            fileSize: msg.quoteMediaFileSize
+        )
+    }
+
+    /// 将引用信息序列化为 content.extra JSON 字符串
+    static func toExtraJSON(_ reply: ReplyMessage) -> String? {
+        let payload = ExtraPayload(replyMessage: reply)
+        guard let data = try? JSONEncoder().encode(payload) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
 }
 
 /// extra JSON 的顶层结构
-private struct ExtraPayload: Codable {
+struct ExtraPayload: Codable {
     let replyMessage: ReplyMessage?
 }
 
@@ -155,6 +190,8 @@ struct ChatMessage: Identifiable {
     let extra: String?
     /// 引用回复信息（从 extra JSON 解析）
     let reply: ReplyMessage?
+    /// 融云消息 ID（用于下载媒体等操作），remote 消息未入库时为 -1
+    let messageId: Int
 
     // MARK: - 自定义消息内容（非 Codable，fromRongCloud 填充）
 
@@ -204,6 +241,7 @@ extension ChatMessage: Codable {
         fileContent = nil
         videoContent = nil
         sysNotifyContent = nil
+        messageId = -1
     }
 
     func encode(to encoder: Encoder) throws {
@@ -227,6 +265,82 @@ extension ChatMessage: Codable {
         try c.encodeIfPresent(extra, forKey: .extra)
         try c.encodeIfPresent(reply, forKey: .reply)
         try c.encodeIfPresent(sentTime, forKey: .sentTime)
+    }
+}
+
+// MARK: - 消息操作能力
+
+extension ChatMessage {
+    /// 是否可撤回：自己发的，发送距今 ≤ 60 分钟
+    var canRecall: Bool {
+        guard role == .user, let sent = sentTime, sent > 0 else { return false }
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        return (nowMs - sent) <= 60 * 60 * 1000
+    }
+
+    /// 是否可复制：仅文本消息
+    var canCopy: Bool { type == .text }
+
+    /// 是否可引用：非撤回、非时间标记
+    var canQuote: Bool { type != .recall && type != .timeMarker }
+
+    /// 引用所需的 objectName（融云消息类型标识）
+    var quoteObjectName: String {
+        switch type {
+        case .text:   return "RC:TxtMsg"
+        case .image:  return "RC:ImgMsg"
+        case .voice:  return "RC:HQVCMsg"
+        case .file:   return "AD:FileMsg"
+        case .video:  return "AD:VideoMsg"
+        case .sysNotify: return "AD:SysNotify"
+        default:      return "RC:TxtMsg"
+        }
+    }
+
+    /// 引用所需的预览文本（文本消息用内容，媒体类型用远程 URL）
+    var quotePreviewText: String {
+        switch type {
+        case .text:
+            return text ?? ""
+        case .image:
+            return imagePath ?? ""       // 远程图片 URL
+        case .voice:
+            return imagePath ?? ""       // 远程语音 URL
+        case .video:
+            return videoContent?.videoCoverImg ?? videoContent?.videoUrl ?? ""
+        case .file:
+            return fileContent?.fileUrl ?? ""
+        case .sysNotify:
+            return sysNotifyContent?.title ?? "[套餐]"
+        default:
+            return ""
+        }
+    }
+
+    /// 引用消息的媒体时长（语音/视频），单位秒
+    var quoteMediaDuration: Int? {
+        switch type {
+        case .voice: return thumbHeight  // duration 复用 thumbHeight 字段
+        case .video: return videoContent?.videoTime
+        default:     return nil
+        }
+    }
+
+    /// 引用消息的文件名
+    var quoteMediaFileName: String? {
+        switch type {
+        case .file:  return fileContent?.fileName
+        case .video: return videoContent?.videoName
+        default:     return nil
+        }
+    }
+
+    /// 引用消息的文件大小
+    var quoteMediaFileSize: String? {
+        switch type {
+        case .file: return fileContent?.fileSize
+        default:    return nil
+        }
     }
 }
 
@@ -321,26 +435,26 @@ extension ChatMessage {
     // MARK: Factory helpers
 
     private static func staff(_ id: String, _ text: String, _ name: String, _ role: String, _ avatar: String, _ time: String) -> ChatMessage {
-        ChatMessage(id: id, type: .text, role: .staff, senderName: name, senderRole: role, avatar: avatar, portraitUrl: nil, text: text, time: time, sentTime: nil, card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
+        ChatMessage(id: id, type: .text, role: .staff, senderName: name, senderRole: role, avatar: avatar, portraitUrl: nil, text: text, time: time, sentTime: nil, card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil, messageId: -1)
     }
 
     private static func user(_ id: String, _ text: String, _ time: String) -> ChatMessage {
-        ChatMessage(id: id, type: .text, role: .user, senderName: nil, senderRole: nil, avatar: nil, portraitUrl: nil, text: text, time: time, sentTime: nil, card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
+        ChatMessage(id: id, type: .text, role: .user, senderName: nil, senderRole: nil, avatar: nil, portraitUrl: nil, text: text, time: time, sentTime: nil, card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil, messageId: -1)
     }
 
     private static func system(_ id: String, _ text: String) -> ChatMessage {
-        ChatMessage(id: id, type: .system, role: .user, senderName: nil, senderRole: nil, avatar: nil, portraitUrl: nil, text: text, time: "", sentTime: nil, card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
+        ChatMessage(id: id, type: .system, role: .user, senderName: nil, senderRole: nil, avatar: nil, portraitUrl: nil, text: text, time: "", sentTime: nil, card: nil, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil, messageId: -1)
     }
 
     private static func staffCard(_ id: String, _ card: ServiceCard) -> ChatMessage {
-        ChatMessage(id: id, type: .metricCard, role: .staff, senderName: nil, senderRole: nil, avatar: nil, portraitUrl: nil, text: nil, time: "", sentTime: nil, card: card, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
+        ChatMessage(id: id, type: .metricCard, role: .staff, senderName: nil, senderRole: nil, avatar: nil, portraitUrl: nil, text: nil, time: "", sentTime: nil, card: card, meal: nil, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil, messageId: -1)
     }
 
     private static func staffMeal(_ id: String, _ meal: MealAnalysis) -> ChatMessage {
-        ChatMessage(id: id, type: .mealAnalysis, role: .staff, senderName: nil, senderRole: nil, avatar: nil, portraitUrl: nil, text: nil, time: "", sentTime: nil, card: nil, meal: meal, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
+        ChatMessage(id: id, type: .mealAnalysis, role: .staff, senderName: nil, senderRole: nil, avatar: nil, portraitUrl: nil, text: nil, time: "", sentTime: nil, card: nil, meal: meal, report: nil, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil, messageId: -1)
     }
 
     private static func aiReport(_ id: String, _ report: AIWeeklyReport) -> ChatMessage {
-        ChatMessage(id: id, type: .aiWeeklyReport, role: .staff, senderName: "小德", senderRole: "AI 健康顾问", avatar: "德", portraitUrl: nil, text: nil, time: "今天 08:00", sentTime: nil, card: nil, meal: nil, report: report, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil)
+        ChatMessage(id: id, type: .aiWeeklyReport, role: .staff, senderName: "小德", senderRole: "AI 健康顾问", avatar: "德", portraitUrl: nil, text: nil, time: "今天 08:00", sentTime: nil, card: nil, meal: nil, report: report, imagePath: nil, thumbWidth: nil, thumbHeight: nil, conversationId: nil, extra: nil, reply: nil, messageId: -1)
     }
 }

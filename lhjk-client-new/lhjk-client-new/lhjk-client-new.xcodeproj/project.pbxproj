@@ -148,6 +148,8 @@
 		A5917D212FDFD7FE00878961 /* LoginModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D1D2FDFD7FE00878961 /* LoginModels.swift */; };
 		A5917D222FDFD7FE00878961 /* LoginServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */; };
 		A5917D242FDFD96D00878961 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D232FDFD96D00878961 /* WebViewController.swift */; };
+		A592A7C92FF5172A00B7E4B5 /* MessageActionMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = A592A7C72FF5172A00B7E4B5 /* MessageActionMenu.swift */; };
+		A592A7CA2FF5172A00B7E4B5 /* QuotePreviewBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A592A7C82FF5172A00B7E4B5 /* QuotePreviewBar.swift */; };
 		A59BAAD02FF3715C0005BEA9 /* SysNotifyMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59BAACD2FF3715C0005BEA9 /* SysNotifyMessage.swift */; };
 		A59BAAD12FF3715C0005BEA9 /* VideoMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59BAACE2FF3715C0005BEA9 /* VideoMessage.swift */; };
 		A59BAAD22FF3715C0005BEA9 /* FileMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59BAACC2FF3715C0005BEA9 /* FileMessage.swift */; };
@@ -327,6 +329,8 @@
 		A5917D1E2FDFD7FE00878961 /* LoginService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginService.swift; sourceTree = "<group>"; };
 		A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginServiceProtocol.swift; sourceTree = "<group>"; };
 		A5917D232FDFD96D00878961 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WebViewController.swift; path = Other/Common/Base/WebViewController.swift; sourceTree = "<group>"; };
+		A592A7C72FF5172A00B7E4B5 /* MessageActionMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageActionMenu.swift; sourceTree = "<group>"; };
+		A592A7C82FF5172A00B7E4B5 /* QuotePreviewBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotePreviewBar.swift; sourceTree = "<group>"; };
 		A59BAACC2FF3715C0005BEA9 /* FileMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileMessage.swift; sourceTree = "<group>"; };
 		A59BAACD2FF3715C0005BEA9 /* SysNotifyMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SysNotifyMessage.swift; sourceTree = "<group>"; };
 		A59BAACE2FF3715C0005BEA9 /* VideoMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoMessage.swift; sourceTree = "<group>"; };
@@ -675,6 +679,8 @@
 		A590FB522FEA82980056EF52 /* Chat */ = {
 			isa = PBXGroup;
 			children = (
+				A592A7C72FF5172A00B7E4B5 /* MessageActionMenu.swift */,
+				A592A7C82FF5172A00B7E4B5 /* QuotePreviewBar.swift */,
 				A590FB4F2FEA82980056EF52 /* Cells */,
 				A590FB502FEA82980056EF52 /* Components */,
 				A590FB512FEA82980056EF52 /* ChatViewController.swift */,
@@ -1483,6 +1489,8 @@
 				A590FB1A2FEA2F6E0056EF52 /* UserService.swift in Sources */,
 				A590FB1B2FEA2F6E0056EF52 /* UserServiceProtocol.swift in Sources */,
 				A590FB1C2FEA2F6E0056EF52 /* UserModels.swift in Sources */,
+				A592A7C92FF5172A00B7E4B5 /* MessageActionMenu.swift in Sources */,
+				A592A7CA2FF5172A00B7E4B5 /* QuotePreviewBar.swift in Sources */,
 				A590FB1D2FEA2F6E0056EF52 /* UserRoutes.swift in Sources */,
 				A590FB1F2FEA2F6E0056EF52 /* UserManager.swift in Sources */,
 				880D3EEECACFBB9A6791AB14 /* Message.swift in Sources */,

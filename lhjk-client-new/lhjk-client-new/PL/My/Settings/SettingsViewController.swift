@@ -296,6 +296,7 @@ final class SettingsViewController: BaseViewController {
         )
         alert.addAction(UIAlertAction(title: "取消", style: .cancel))
         alert.addAction(UIAlertAction(title: "退出登录", style: .destructive) { [weak self] _ in
+            IMService.shared.clear()
             RongCloudManager.shared.disconnect()
             LoginService.shared.clearSession()
             UserManager.shared.clear()

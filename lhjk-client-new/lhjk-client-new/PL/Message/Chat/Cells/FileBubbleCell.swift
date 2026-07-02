@@ -6,6 +6,9 @@ import Kingfisher
 final class FileBubbleCell: UITableViewCell {
     static let reuseID = "FileBubbleCell"
 
+    weak var delegate: ChatCellDelegate?
+    private var currentMessage: ChatMessage?
+
     // MARK: - UI
 
     private let avatarLabel: UILabel = {
@@ -73,6 +76,9 @@ final class FileBubbleCell: UITableViewCell {
 
         [avatarLabel, avatarImageView, metaLabel, cardView].forEach(contentView.addSubview)
         [iconView, nameLabel, sizeLabel].forEach(cardView.addSubview)
+
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
+        cardView.addGestureRecognizer(longPress)
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -80,6 +86,7 @@ final class FileBubbleCell: UITableViewCell {
     // MARK: - Configure
 
     func configure(_ msg: ChatMessage, tone: String, convRole: ConversationRole) {
+        currentMessage = msg
         let isStaff = msg.isStaff
         let file = msg.fileContent
 
@@ -126,7 +133,7 @@ final class FileBubbleCell: UITableViewCell {
             } else {
                 make.trailing.equalToSuperview().offset(-16)
             }
-            make.top.equalToSuperview().offset(8)
+            make.top.equalToSuperview().offset(8).priority(999)
             make.size.equalTo(34)
         }
         avatarImageView.snp.makeConstraints { make in
@@ -144,7 +151,7 @@ final class FileBubbleCell: UITableViewCell {
 
         cardView.snp.remakeConstraints { make in
             make.top.equalTo(metaLabel.snp.bottom).offset(4)
-            make.bottom.equalToSuperview().offset(-8)
+            make.bottom.equalToSuperview().offset(-8).priority(999)
             make.width.equalTo(240)
             if isStaff {
                 make.leading.equalTo(metaLabel)
@@ -171,5 +178,10 @@ final class FileBubbleCell: UITableViewCell {
             make.trailing.equalToSuperview().offset(-12)
             make.bottom.equalToSuperview().offset(-12)
         }
+    }
+
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began, let msg = currentMessage else { return }
+        delegate?.cellDidLongPress(self, message: msg)
     }
 }

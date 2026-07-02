@@ -9,6 +9,8 @@ final class ImageBubbleCell: UITableViewCell {
 
     // MARK: - Properties
 
+    weak var delegate: ChatCellDelegate?
+    private var currentMessage: ChatMessage?
     private var imagePath: String?
     var onTapImage: ((String?) -> Void)?
 
@@ -60,6 +62,9 @@ final class ImageBubbleCell: UITableViewCell {
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
         photoView.addGestureRecognizer(tap)
+
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
+        photoView.addGestureRecognizer(longPress)
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -67,6 +72,7 @@ final class ImageBubbleCell: UITableViewCell {
     // MARK: - Configure
 
     func configure(_ msg: ChatMessage, tone: String, convRole: ConversationRole) {
+        currentMessage = msg
         let isStaff = msg.isStaff
         imagePath = msg.imagePath
 
@@ -129,7 +135,7 @@ final class ImageBubbleCell: UITableViewCell {
             } else {
                 make.trailing.equalToSuperview().offset(-16)
             }
-            make.top.equalToSuperview().offset(8)
+            make.top.equalToSuperview().offset(8).priority(999)
             make.size.equalTo(34)
         }
         avatarImageView.snp.remakeConstraints { make in
@@ -147,7 +153,7 @@ final class ImageBubbleCell: UITableViewCell {
 
         photoView.snp.remakeConstraints { make in
             make.top.equalTo(metaLabel.snp.bottom).offset(4)
-            make.bottom.equalToSuperview().offset(-8)
+            make.bottom.equalToSuperview().offset(-8).priority(999)
             make.width.equalTo(displayW)
             make.height.equalTo(displayH).priority(750)
             if isStaff {
@@ -162,5 +168,10 @@ final class ImageBubbleCell: UITableViewCell {
 
     @objc private func imageTapped() {
         onTapImage?(imagePath)
+    }
+
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began, let msg = currentMessage else { return }
+        delegate?.cellDidLongPress(self, message: msg)
     }
 }

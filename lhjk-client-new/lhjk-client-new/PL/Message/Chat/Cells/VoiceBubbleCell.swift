@@ -7,6 +7,9 @@ import AVFoundation
 final class VoiceBubbleCell: UITableViewCell {
     static let reuseID = "VoiceBubbleCell"
 
+    weak var delegate: ChatCellDelegate?
+    private var currentMessage: ChatMessage?
+
     // MARK: - UI
 
     private let avatarLabel: UILabel = {
@@ -80,6 +83,9 @@ final class VoiceBubbleCell: UITableViewCell {
         let tap = UITapGestureRecognizer(target: self, action: #selector(togglePlay))
         bubbleView.addGestureRecognizer(tap)
         bubbleView.isUserInteractionEnabled = true
+
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
+        bubbleView.addGestureRecognizer(longPress)
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -93,13 +99,14 @@ final class VoiceBubbleCell: UITableViewCell {
     // MARK: - Configure
 
     func configure(_ msg: ChatMessage, tone: String, convRole: ConversationRole) {
+        currentMessage = msg
         let isStaff = msg.isStaff
         let seconds = msg.thumbHeight ?? 0
 
         // 停止上一个播放
         stopPlayback()
         currentAudioPath = msg.imagePath
-        currentMessageId = Int(msg.id) ?? 0
+        currentMessageId = msg.messageId
         print("[VoiceBubble] configure → path=\(msg.imagePath ?? "nil") duration=\(seconds) msgId=\(currentMessageId)")
         updatePlayIcon(false)
 
@@ -143,28 +150,29 @@ final class VoiceBubbleCell: UITableViewCell {
         }
     }
 
-    private func startPlayback() {
-        guard let path = currentAudioPath, !path.isEmpty else {
-            print("[VoiceBubble] ✗ path nil/empty")
-            return
-        }
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began, let msg = currentMessage else { return }
+        delegate?.cellDidLongPress(self, message: msg)
+    }
 
-        // 本地文件 → 直接播放（M4A/WAV/MP3 等）
-        if path.hasPrefix("/") {
+    private func startPlayback() {
+        // 1. 本地文件存在 → 直接播放
+        if let path = currentAudioPath, !path.isEmpty, path.hasPrefix("/") {
             playFile(URL(fileURLWithPath: path))
             return
         }
 
-        // 远程 → 下载后播放
+        // 2. messageId 有效 → 通过融云 SDK 下载
         if currentMessageId > 0 {
-            print("[VoiceBubble] downloading msgId=\(currentMessageId)")
+            print("[VoiceBubble] downloading via SDK msgId=\(currentMessageId)")
             updatePlayIcon(true)
             RongCloudManager.shared.downloadMediaMessage(currentMessageId) { [weak self] localPath in
                 guard let self, let localPath else {
+                    print("[VoiceBubble] ✗ SDK download failed msgId=\(self?.currentMessageId ?? 0)")
                     DispatchQueue.main.async { self?.updatePlayIcon(false) }
                     return
                 }
-                print("[VoiceBubble] downloaded: \(localPath)")
+                print("[VoiceBubble] ✓ SDK downloaded: \(localPath)")
                 DispatchQueue.main.async {
                     self.currentAudioPath = localPath
                     self.playFile(URL(fileURLWithPath: localPath))
@@ -173,7 +181,36 @@ final class VoiceBubbleCell: UITableViewCell {
             return
         }
 
-        print("[VoiceBubble] ✗ cannot handle: \(path)")
+        // 3. messageId 不可用 → 尝试直接下载 remoteUrl
+        if let urlStr = currentAudioPath, !urlStr.isEmpty,
+           let remoteURL = URL(string: urlStr) {
+            print("[VoiceBubble] downloading via URL: \(urlStr)")
+            updatePlayIcon(true)
+            URLSession.shared.downloadTask(with: remoteURL) { [weak self] tempURL, _, error in
+                guard let self, let tempURL = tempURL, error == nil else {
+                    print("[VoiceBubble] ✗ URL download failed: \(error?.localizedDescription ?? "nil")")
+                    DispatchQueue.main.async { self?.updatePlayIcon(false) }
+                    return
+                }
+                // 移动到持久位置
+                let dest = URL(fileURLWithPath: NSTemporaryDirectory() + "voice_\(Int(Date().timeIntervalSince1970)).m4a")
+                try? FileManager.default.removeItem(at: dest)
+                do {
+                    try FileManager.default.moveItem(at: tempURL, to: dest)
+                    print("[VoiceBubble] ✓ URL downloaded: \(dest.path)")
+                    DispatchQueue.main.async {
+                        self.currentAudioPath = dest.path
+                        self.playFile(dest)
+                    }
+                } catch {
+                    print("[VoiceBubble] ✗ move file failed: \(error)")
+                    DispatchQueue.main.async { self.updatePlayIcon(false) }
+                }
+            }.resume()
+            return
+        }
+
+        print("[VoiceBubble] ✗ no local path, no messageId, no remote URL — cannot play")
     }
 
     private func playFile(_ url: URL) {
@@ -214,7 +251,7 @@ final class VoiceBubbleCell: UITableViewCell {
         let bubbleWidth = voiceBubbleWidth(seconds: seconds)
 
         avatarLabel.snp.remakeConstraints { make in
-            make.top.equalToSuperview().offset(8)
+            make.top.equalToSuperview().offset(8).priority(999)
             make.size.equalTo(34)
             if isStaff {
                 make.leading.equalToSuperview().offset(16)
@@ -237,7 +274,7 @@ final class VoiceBubbleCell: UITableViewCell {
 
         bubbleView.snp.remakeConstraints { make in
             make.top.equalTo(metaLabel.snp.bottom).offset(4)
-            make.bottom.equalToSuperview().offset(-8)
+            make.bottom.equalToSuperview().offset(-8).priority(999)
             make.width.equalTo(bubbleWidth)
             make.height.equalTo(40)
             if isStaff {
