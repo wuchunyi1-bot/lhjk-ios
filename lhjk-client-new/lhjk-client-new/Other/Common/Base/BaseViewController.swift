@@ -3,32 +3,19 @@ import UIKit
 /// 基础视图控制器 — 提供通用 UI 配置入口 + 老年模式自动刷新
 class BaseViewController: UIViewController {
 
-    /// 记录上次渲染时的 seniorModeVersion，初始 -1 保证首次 viewWillAppear 一定触发检查
-    private var lastSeniorVersion: Int = -1
-
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         setupUI()
         bindViewModel()
-    }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-
-        // 老年模式变更（含冷启动恢复）→ 自动刷新当前页字体
-        guard UIFont.seniorModeVersion != lastSeniorVersion else { return }
-        lastSeniorVersion = UIFont.seniorModeVersion
-
-        // 在转场动画中操作 tableView beginUpdates/endUpdates 会 crash，
-        // 延迟到转场完成后再刷新
-        if let coordinator = transitionCoordinator {
-            coordinator.animate(alongsideTransition: nil) { _ in
-                self.refreshForSeniorMode()
-            }
-        } else {
-            refreshForSeniorMode()
-        }
+        // 监听老年模式变更通知，收到后即时刷新，避免每次 viewWillAppear 都触发
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(onSeniorModeChanged),
+            name: UIFont.seniorModeDidChangeNotification,
+            object: nil
+        )
     }
 
     /// 子类重写以配置 UI 外观
@@ -36,6 +23,15 @@ class BaseViewController: UIViewController {
 
     /// 子类重写以绑定 ViewModel 数据
     func bindViewModel() {}
+
+    @objc private func onSeniorModeChanged() {
+        guard isViewLoaded else { return }
+        refreshForSeniorMode()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
 
     /// 老年模式变更时的刷新方法
     /// 策略：不在 cell 层面做 destroy/recreate（开销大、浪费）

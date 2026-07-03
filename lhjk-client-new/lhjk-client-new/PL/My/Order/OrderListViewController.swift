@@ -81,7 +81,7 @@ final class OrderListViewController: BaseViewController {
         let seg = UISegmentedControl(items: tabs)
         seg.selectedSegmentIndex = 0
         seg.selectedSegmentTintColor = .fdPrimary
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.fdCaptionSemibold], for: .selected)
+        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.fdCaption], for: .selected)
         seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.fdCaption], for: .normal)
         seg.backgroundColor = .fdBg2
         seg.addTarget(self, action: #selector(tabChanged(_:)), for: .valueChanged)

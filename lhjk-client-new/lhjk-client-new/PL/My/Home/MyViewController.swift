@@ -132,6 +132,14 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         header.layoutIfNeeded()
     }
 
+    override func refreshForSeniorMode() {
+        super.refreshForSeniorMode()
+        // tableHeaderView 不在 tableView 自动刷新范围内，需重建以使按钮高度适配老年模式字号
+        tableView.tableHeaderView = buildTableHeader().sizedForTableHeader(in: view)
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
+    }
+
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
