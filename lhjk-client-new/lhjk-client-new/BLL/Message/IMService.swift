@@ -15,8 +15,14 @@ final class IMService {
 
     private var cancellables = Set<AnyCancellable>()
 
+    /// 是否已完成过会话列表加载（含 mock fallback），用于避免重复 HTTP 请求
+    private(set) var hasLoadedConversations = false
+
     /// 会话已读状态变更（conversationId），用于会话列表局部刷新
     let conversationMarkedReadPublisher = PassthroughSubject<String, Never>()
+
+    /// 团队对话总未读数变更，用于底部消息 Tab 角标更新
+    let totalUnreadCountDidChangePublisher = PassthroughSubject<Int, Never>()
 
     private init() {
         // 订阅实时消息，按 conversationId 缓存
@@ -25,12 +31,28 @@ final class IMService {
                 self?.onMessageReceived(msg)
             }
             .store(in: &cancellables)
+
+        // IM 连接成功后主动加载会话列表，确保角标在 App 启动时即可用
+        RongCloudManager.shared.connectionStatusPublisher
+            .filter { $0 == .connected }
+            .sink { [weak self] _ in
+                guard let self, self.conversations.isEmpty else { return }
+                Task { _ = await self.loadConversations() }
+            }
+            .store(in: &cancellables)
     }
 
     private func onMessageReceived(_ msg: ChatMessage) {
         guard let convId = msg.conversationId else { return }
         messagesStore[convId, default: []].append(msg)
         print("[IMService] real-time message received for conv=\(convId)")
+
+        // 若会话列表已加载，主动更新该会话未读数（即使 ConversationListVC 未加载也能驱动角标刷新）
+        guard !conversations.isEmpty,
+              conversations.contains(where: { $0.id == convId }) else { return }
+        Task {
+            _ = await updateConversation(id: convId)
+        }
     }
 
     // MARK: - Conversations
@@ -76,24 +98,26 @@ final class IMService {
                 }
                 groupDict = dict
             } else {
-//                print("[IMService] getGroup ✗ code=\(response.code)")
                 conversations = Conversation.mockData()
+                hasLoadedConversations = true
+                notifyUnreadCountChanged()
                 return conversations
             }
         } catch {
-//            print("[IMService] getGroup ✗ error: \(error.localizedDescription)")
             conversations = Conversation.mockData()
+            hasLoadedConversations = true
+            notifyUnreadCountChanged()
             return conversations
         }
-//        print("groupDict ====  \(groupDict)")
         guard !groupDict.isEmpty else {
             conversations = Conversation.mockData()
+            hasLoadedConversations = true
+            notifyUnreadCountChanged()
             return conversations
         }
 
         // Step 2: 提取 groupId 列表，批量查融云本地会话
         let groupIds = Array(groupDict.keys)
-//        print("groupIds ====  \(groupIds)")
         if isConnected {
             let rcList: [RCConversation] = await withCheckedContinuation { continuation in
                 RongCloudManager.shared.getConversations(by: groupIds) { list in
@@ -128,13 +152,13 @@ final class IMService {
             }
 
             let list = matchedList + unmatchedList
-//            print("[IMService] matched=\(matchedList.count) unmatched=\(unmatchedList.count)")
-
             conversations = list
         } else {
             conversations = Conversation.mockData()
         }
 
+        hasLoadedConversations = true
+        notifyUnreadCountChanged()
         return conversations
     }
 
@@ -155,12 +179,18 @@ final class IMService {
         notifications.filter { $0.unread }.count
     }
 
+    /// 通知订阅者总未读数已变更
+    private func notifyUnreadCountChanged() {
+        totalUnreadCountDidChangePublisher.send(totalUnreadCount())
+    }
+
     func markAsRead(_ conversationId: String) {
         if let idx = conversations.firstIndex(where: { $0.id == conversationId }) {
             conversations[idx].unread = 0
         }
         RongCloudManager.shared.clearGroupUnreadCount(for: conversationId)
         conversationMarkedReadPublisher.send(conversationId)
+        notifyUnreadCountChanged()
     }
 
     /// 撤回消息，成功返回 true
@@ -210,17 +240,21 @@ final class IMService {
         conversations[idx].lastMessage = newLastMsg
         conversations[idx].lastTime   = newTime
         conversations[idx].unread     = newUnread
+        notifyUnreadCountChanged()
         return conversations[idx]
     }
 
     func deleteConversation(_ conversationId: String) {
         conversations.removeAll { $0.id == conversationId }
+        notifyUnreadCountChanged()
     }
 
     /// 登出时清除所有内存缓存
     func clear() {
         conversations.removeAll()
         messagesStore.removeAll()
+        hasLoadedConversations = false
+        notifyUnreadCountChanged()
         print("[IMService] cleared")
     }
 

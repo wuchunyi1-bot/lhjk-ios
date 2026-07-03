@@ -672,6 +672,8 @@
 		A590FB502FEA82980056EF52 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A592A7C72FF5172A00B7E4B5 /* MessageActionMenu.swift */,
+				A592A7C82FF5172A00B7E4B5 /* QuotePreviewBar.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -679,8 +681,6 @@
 		A590FB522FEA82980056EF52 /* Chat */ = {
 			isa = PBXGroup;
 			children = (
-				A592A7C72FF5172A00B7E4B5 /* MessageActionMenu.swift */,
-				A592A7C82FF5172A00B7E4B5 /* QuotePreviewBar.swift */,
 				A590FB4F2FEA82980056EF52 /* Cells */,
 				A590FB502FEA82980056EF52 /* Components */,
 				A590FB512FEA82980056EF52 /* ChatViewController.swift */,

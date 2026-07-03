@@ -55,8 +55,8 @@ final class ConversationListViewController: UIViewController, UITableViewDataSou
         RongCloudManager.shared.remoteConversationListDidSyncPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                print("[ConvList] remoteConversationListDidSync → full reload")
-                self?.loadData()
+                print("[ConvList] remoteConversationListDidSync → force reload")
+                self?.forceReload()
             }
             .store(in: &cancellables)
 
@@ -91,6 +91,18 @@ final class ConversationListViewController: UIViewController, UITableViewDataSou
     // MARK: - Data
 
     func loadData() {
+        // 冷启动时 IMService 已主动加载过，直接用缓存避免重复 HTTP 请求
+        if IMService.shared.hasLoadedConversations {
+            conversations = IMService.shared.getConversations()
+            tableView.reloadData()
+            onDataChanged?()
+            return
+        }
+        forceReload()
+    }
+
+    /// 全量刷新（远端同步完成 / 收到未知会话消息时使用）
+    func forceReload() {
         Task {
             conversations = await IMService.shared.loadConversations()
             await MainActor.run {
@@ -118,8 +130,8 @@ final class ConversationListViewController: UIViewController, UITableViewDataSou
                 }
             } else {
                 // 本地未匹配 → 全量刷新
-                print("[ConvList] ✗ convId=\(convId) not found locally, fallback to full loadData()")
-                await MainActor.run { loadData() }
+                print("[ConvList] ✗ convId=\(convId) not found locally, fallback to full reload")
+                await MainActor.run { forceReload() }
             }
         }
     }

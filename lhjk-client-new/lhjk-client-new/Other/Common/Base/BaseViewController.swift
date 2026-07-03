@@ -53,7 +53,9 @@ class BaseViewController: UIViewController {
 
 /// 标准 ↔ 老年 字号映射表（双向）
 private let seniorFontSizeMap: [(standard: CGFloat, senior: CGFloat)] = [
+    (10, 13),  // 未使用 token 的硬编码小字号（roleTag / timeLabel / badge 等）
     (11, 14),  // fdMicro
+    (12, 15),  // 未使用 token 的硬编码字号（previewLabel 等）
     (13, 16),  // fdCaption
     (14, 18),  // 介于 caption~body 的 monospaced 数字
     (15, 19),  // fdBody

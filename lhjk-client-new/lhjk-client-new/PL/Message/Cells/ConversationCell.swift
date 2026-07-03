@@ -28,7 +28,7 @@ final class ConversationCell: UITableViewCell {
 
     private let badgeLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 10, weight: .bold)
+        l.font = .fdMicroBold
         l.textColor = .white
         l.backgroundColor = .fdDanger
         l.textAlignment = .center
@@ -40,7 +40,7 @@ final class ConversationCell: UITableViewCell {
 
     private let nameLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 15, weight: .bold)
+        l.font = .fdBodyBold
         l.textColor = .fdText
         l.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return l
@@ -48,7 +48,7 @@ final class ConversationCell: UITableViewCell {
 
     private let roleTag: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 10)
+        l.font = .fdMicro
         l.textColor = .fdSubtext
         l.backgroundColor = .fdBg2
         l.layer.cornerRadius = 4
@@ -60,7 +60,7 @@ final class ConversationCell: UITableViewCell {
 
     private let previewLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 12)
+        l.font = .fdCaption
         l.textColor = .fdSubtext
         l.numberOfLines = 1
         return l
@@ -68,7 +68,7 @@ final class ConversationCell: UITableViewCell {
 
     private let timeLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 10)
+        l.font = .fdMicro
         l.textColor = .fdMuted
         l.textAlignment = .right
         l.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -109,9 +109,9 @@ final class ConversationCell: UITableViewCell {
             make.width.greaterThanOrEqualTo(18)
         }
 
-        // 时间自适应宽度 + 固定右侧位置，确保始终展示
+        // 时间与 nameLabel / roleTag y 轴居中对齐
         timeLabel.snp.makeConstraints { make in
-            make.top.equalTo(avatarLabel).offset(4)
+            make.centerY.equalTo(nameLabel)
             make.trailing.equalToSuperview().offset(-16)
         }
 

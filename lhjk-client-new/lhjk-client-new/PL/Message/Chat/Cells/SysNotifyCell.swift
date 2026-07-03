@@ -31,7 +31,7 @@ final class SysNotifyCell: UITableViewCell {
 
     private let metaLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 10)
+        l.font = .fdMicro
         l.textColor = .fdMuted
         return l
     }()
@@ -100,6 +100,8 @@ final class SysNotifyCell: UITableViewCell {
         currentMessage = msg
         let isStaff = msg.isStaff
         let notify = msg.sysNotifyContent
+
+        metaLabel.font = .fdMicro
 
         let showUser = notify?.isShowUser ?? true
 

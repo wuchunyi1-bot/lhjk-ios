@@ -1,12 +1,17 @@
 import UIKit
+import Combine
 
-/// 根 TabBar 控制器 — 集成 6 大业务模块入口
+/// 根 TabBar 控制器 — 集成 5 大业务模块入口
 final class RootTabBarController: UITabBarController {
+
+    private var messageNav: BaseNavigationController?
+    private var cancellables = Set<AnyCancellable>()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupViewControllers()
         configureAppearance()
+        setupBadgeSubscription()
     }
 
     private func setupViewControllers() {
@@ -44,12 +49,13 @@ final class RootTabBarController: UITabBarController {
 
         // 消息
         let messageVC = MessagesViewController()
-        let messageNav = BaseNavigationController(rootViewController: messageVC)
-        messageNav.tabBarItem = UITabBarItem(
+        let msgNav = BaseNavigationController(rootViewController: messageVC)
+        msgNav.tabBarItem = UITabBarItem(
             title: "消息",
             image: UIImage(systemName: "message"),
             selectedImage: UIImage(systemName: "message.fill")
         )
+        messageNav = msgNav
 
         // 我的
         let myVC = MyViewController()
@@ -60,7 +66,7 @@ final class RootTabBarController: UITabBarController {
             selectedImage: UIImage(systemName: "person.fill")
         )
 
-        viewControllers = [homeNav, healthNav, serviceNav, messageNav, myNav]
+        viewControllers = [homeNav, healthNav, serviceNav, msgNav, myNav]
     }
 
     private func configureAppearance() {
@@ -68,5 +74,25 @@ final class RootTabBarController: UITabBarController {
         appearance.configureWithDefaultBackground()
         tabBar.standardAppearance = appearance
         tabBar.scrollEdgeAppearance = appearance
+    }
+
+    // MARK: - Badge
+
+    private func setupBadgeSubscription() {
+        IMService.shared.totalUnreadCountDidChangePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] totalUnread in
+                self?.updateMessageBadge(totalUnread)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func updateMessageBadge(_ totalUnread: Int) {
+        if totalUnread > 0 {
+            let text = totalUnread > 99 ? "99+" : "\(totalUnread)"
+            messageNav?.tabBarItem.badgeValue = text
+        } else {
+            messageNav?.tabBarItem.badgeValue = nil
+        }
     }
 }

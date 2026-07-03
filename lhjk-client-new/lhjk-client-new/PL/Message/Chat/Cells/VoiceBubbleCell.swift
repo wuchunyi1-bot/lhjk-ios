@@ -32,7 +32,7 @@ final class VoiceBubbleCell: UITableViewCell {
 
     private let metaLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 10)
+        l.font = .fdMicro
         l.textColor = .fdMuted
         return l
     }()
@@ -102,6 +102,8 @@ final class VoiceBubbleCell: UITableViewCell {
         currentMessage = msg
         let isStaff = msg.isStaff
         let seconds = msg.thumbHeight ?? 0
+
+        metaLabel.font = .fdMicro
 
         // 停止上一个播放
         stopPlayback()

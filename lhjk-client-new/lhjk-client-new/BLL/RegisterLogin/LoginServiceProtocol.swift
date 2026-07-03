@@ -57,6 +57,9 @@ protocol LoginServiceProtocol {
     /// 从 Keychain 读取 token
     func getToken() -> String?
 
+    /// 调用服务端退出登录接口（fire-and-forget，不处理结果）
+    func logout() async
+
     /// 清除本地登录态
     func clearSession()
 }

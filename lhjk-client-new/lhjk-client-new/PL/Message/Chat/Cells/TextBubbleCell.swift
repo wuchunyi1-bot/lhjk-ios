@@ -33,13 +33,13 @@ final class TextBubbleCell: UITableViewCell {
     }()
     private let replyNameLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 11)
+        l.font = .fdMicro
         l.textColor = .fdPrimary
         return l
     }()
     private let replyContentLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 12)
+        l.font = .fdCaption
         l.textColor = .fdSubtext
         l.numberOfLines = 1
         return l
@@ -60,7 +60,7 @@ final class TextBubbleCell: UITableViewCell {
     }()
     private let replyVoiceDurationLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 12)
+        l.font = .fdCaption
         l.textColor = .fdSubtext
         return l
     }()
@@ -81,10 +81,10 @@ final class TextBubbleCell: UITableViewCell {
         msgLabel.font = .fdBody
         msgLabel.numberOfLines = 0
 
-        metaLabel.font = .fdFont(ofSize: 11)
+        metaLabel.font = .fdMicro
         metaLabel.textColor = .fdMuted
 
-        timeLabel.font = .fdFont(ofSize: 10)
+        timeLabel.font = .fdMicro
         timeLabel.textColor = .fdMuted
 
         [avatarLabel, avatarImageView, metaLabel, bubbleView, timeLabel, replyView].forEach(contentView.addSubview)
@@ -129,6 +129,11 @@ final class TextBubbleCell: UITableViewCell {
     func configure(_ msg: ChatMessage, tone: String, convRole: ConversationRole) {
         currentMessage = msg
         let isStaff = msg.isStaff
+
+        // 每次配置时重设 token 字体，确保 cell 复用时老年模式字号正确
+        metaLabel.font = .fdMicro
+        timeLabel.font = .fdMicro
+        msgLabel.font = .fdBody
 
         metaLabel.isHidden = !isStaff
         timeLabel.isHidden = isStaff

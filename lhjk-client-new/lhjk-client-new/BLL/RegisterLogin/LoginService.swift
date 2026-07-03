@@ -215,6 +215,21 @@ final class LoginService: LoginServiceProtocol {
 
     // MARK: - Token Storage
 
+    /// 调用服务端退出登录接口（fire-and-forget，不处理返回结果）
+    func logout() async {
+        print("[LoginService] logout → calling DELETE /auth/oauth2/logout")
+        do {
+            let response: APIResponse<EmptyResponse> = try await APIManager.shared.deleteAsync(
+                path: "/auth/oauth2/logout",
+                parameters: nil,
+                responseType: APIResponse<EmptyResponse>.self
+            )
+            print("[LoginService] logout ✓ code=\(response.code) msg=\(response.msg ?? "nil")")
+        } catch {
+            print("[LoginService] logout ✗ error: \(error.localizedDescription)")
+        }
+    }
+
     func saveToken(_ token: String, refreshToken: String) {
         storedToken = token
         storedRefreshToken = refreshToken

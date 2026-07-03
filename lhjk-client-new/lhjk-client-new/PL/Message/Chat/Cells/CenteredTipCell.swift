@@ -8,7 +8,7 @@ final class CenteredTipCell: UITableViewCell {
 
     private let tipLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 11)
+        l.font = .fdMicro
         l.textColor = .fdMuted
         l.textAlignment = .center
         return l
@@ -31,6 +31,7 @@ final class CenteredTipCell: UITableViewCell {
     required init?(coder: NSCoder) { fatalError() }
 
     func configure(text: String) {
+        tipLabel.font = .fdMicro
         tipLabel.text = text
     }
 }

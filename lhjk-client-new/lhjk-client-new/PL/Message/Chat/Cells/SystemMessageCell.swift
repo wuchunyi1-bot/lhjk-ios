@@ -7,7 +7,7 @@ final class SystemMessageCell: UITableViewCell {
 
     private let pillLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 12)
+        l.font = .fdCaption
         l.textColor = .fdMuted
         l.textAlignment = .center
         l.backgroundColor = UIColor.black.withAlphaComponent(0.06)
@@ -33,6 +33,7 @@ final class SystemMessageCell: UITableViewCell {
     required init?(coder: NSCoder) { fatalError() }
 
     func configure(text: String) {
+        pillLabel.font = .fdCaption
         pillLabel.text = "  \(text)  "
     }
 }

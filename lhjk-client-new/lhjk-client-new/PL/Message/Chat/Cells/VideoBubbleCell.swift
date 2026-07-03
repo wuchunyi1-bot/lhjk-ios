@@ -31,7 +31,7 @@ final class VideoBubbleCell: UITableViewCell {
 
     private let metaLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 10)
+        l.font = .fdMicro
         l.textColor = .fdMuted
         return l
     }()
@@ -86,6 +86,8 @@ final class VideoBubbleCell: UITableViewCell {
         currentMessage = msg
         let isStaff = msg.isStaff
         let video = msg.videoContent
+
+        metaLabel.font = .fdMicro
 
         if let urlStr = msg.portraitUrl, !urlStr.isEmpty, let url = URL(string: urlStr) {
             avatarImageView.isHidden = false

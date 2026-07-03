@@ -298,6 +298,138 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 
 ---
 
+### Requirement: Proactive Conversation Loading
+`IMService` SHALL 在 IM 连接成功后主动加载会话列表，不依赖 `ConversationListViewController` 的 UI 生命周期触发。
+
+**动机**：`UITabBarController` 懒加载子 VC 的 view，用户停留在首页时 `ConversationListViewController.viewDidLoad` 不会执行。如果等到用户首次点击消息 Tab 才加载会话，此前的所有新消息都无法驱动角标更新。
+
+#### Scenario: IM 连接成功后自动加载
+- **WHEN** `RongCloudManager.connectionStatusPublisher` 发出 `.connected`
+- **THEN** `IMService` 检查 `conversations.isEmpty`，若为空则调用 `loadConversations()`
+- **AND** `loadConversations()` 执行完整两步合并流程：`GET /mobile/v1/session/getGroup` → 融云 `getConversations(by:)` → 合并排序
+- **AND** 加载完成后自动触发 `notifyUnreadCountChanged()` → 角标更新
+
+#### Scenario: 避免重复加载
+- **WHEN** IM 重连（如从后台恢复）
+- **THEN** 若 `conversations` 非空（已加载过），跳过，不重复请求
+- **WHEN** 用户登出后重新登录 → `clear()` 清空 `conversations`
+- **THEN** 下次 IM 连接时 `conversations.isEmpty` 为 true → 重新加载
+
+#### Scenario: 收到新消息时 IMService 自行更新未读数
+- **WHEN** `IMService.onMessageReceived(_:)` 收到新消息
+- **THEN** 除缓存到 `messagesStore` 外，若 `conversations` 已加载且包含该 `conversationId`，则调用 `updateConversation(id:)` 刷新 unread
+- **AND** `updateConversation` 内部调用 `notifyUnreadCountChanged()` → 角标实时更新
+- **AND** 此路径不依赖 `ConversationListViewController` 的订阅，即使用户在其他 Tab 角标也能刷新
+
+---
+
+### Requirement: Message Tab Bar Badge
+系统 SHALL 在底部 Tab Bar「消息」Tab 上展示未读消息角标，角标数字 = 所有团队对话未读数之和。
+
+**数据源**：`IMService.totalUnreadCount()`（遍历 `conversations` 累加 `unread` 字段）
+**更新机制**：`IMService` 通过 Combine publisher `totalUnreadCountDidChangePublisher` 发布变更，`RootTabBarController` 订阅并更新 `messageNav.tabBarItem.badgeValue`
+
+> **暂时只计算团队对话未读数**，待通知中心接入后将 `notiUnreadCount()` 也纳入角标计算。
+
+#### Scenario: 显示规则
+- **WHEN** 总未读数 > 0
+- **THEN** 消息 Tab 显示角标数字（总未读数 > 99 显示 "99+"）
+- **WHEN** 总未读数 == 0
+- **THEN** 消息 Tab 隐藏角标（`badgeValue = nil`）
+
+#### Scenario: 会话加载后更新角标
+- **WHEN** `IMService.loadConversations()` 完成并设置 `conversations` 列表
+- **THEN** 调用 `notifyUnreadCountChanged()` → 通过 `totalUnreadCountDidChangePublisher` 发布新的总未读数
+- **AND** `RootTabBarController` 收到后更新消息 Tab 角标
+
+#### Scenario: 收到新消息后更新角标
+- **WHEN** 融云推送新消息 → `messageReceivedPublisher` 发出
+- **THEN** 两条路径并行处理：
+  - `IMService.onMessageReceived` → 会话已加载则 `updateConversation(id:)` → 角标更新（主力路径，不依赖 UI）
+  - `ConversationListViewController` 订阅 → `handleConversationUpdate` → 更新列表 UI + 角标（UI 已加载时生效）
+
+#### Scenario: 标记已读后更新角标
+- **WHEN** 用户在会话详情页退出（`ChatViewController.viewDidDisappear`）或点击会话行
+- **THEN** 调用 `IMService.markAsRead(_:)` → 将 `unread` 重置为 0
+- **AND** 调用 `RongCloudManager.clearGroupUnreadCount(for:)` 清除融云侧未读
+- **AND** 调用 `notifyUnreadCountChanged()` → 角标自动刷新
+
+#### Scenario: 删除会话后更新角标
+- **WHEN** `IMService.deleteConversation(_:)` 被调用
+- **THEN** 从 `conversations` 移除该会话后调用 `notifyUnreadCountChanged()` → 角标自动刷新
+
+#### Scenario: 登出后清除角标
+- **WHEN** `IMService.clear()` 被调用（用户登出时）
+- **THEN** 清空 `conversations` + 重置 `hasLoadedConversations = false` + 调用 `notifyUnreadCountChanged()` → 角标归零
+
+#### Scenario: 初始状态
+- **WHEN** App 冷启动后尚未加载会话列表
+- **THEN** 消息 Tab 无角标（`conversations` 为空，`totalUnreadCount() = 0`）
+- **AND** IM 连接成功后自动加载，角标随即更新
+
+---
+
+### Requirement: Conversation List Cache & Reload
+`ConversationListViewController` SHALL 优先使用 `IMService` 已缓存的会话列表，避免重复 HTTP 请求。
+
+**机制**：`IMService.hasLoadedConversations` 标记是否已完成首次加载。`loadData()` 检查此标记，已加载则直接用 `getConversations()` 缓存；需全量刷新时使用 `forceReload()`。
+
+#### Scenario: 首次进入消息 Tab（缓存命中）
+- **WHEN** 用户点击消息 Tab → `ConversationListViewController.viewDidLoad` → `loadData()`
+- **AND** `IMService.hasLoadedConversations == true`（冷启动时 IM 连接后已加载）
+- **THEN** 直接从 `IMService.getConversations()` 取缓存数据 → `tableView.reloadData()`
+- **AND** 不发起 HTTP 请求，零网络开销
+
+#### Scenario: 首次进入消息 Tab（缓存未命中，降级）
+- **WHEN** `hasLoadedConversations == false`（极少见：IM 尚未连接或加载失败）
+- **THEN** 调用 `forceReload()` → `loadConversations()` 完整加载
+
+#### Scenario: 远端会话同步完成后强制刷新
+- **WHEN** `remoteConversationListDidSyncPublisher` 发出（融云服务端会话同步完成）
+- **THEN** 调用 `forceReload()` → 完整 HTTP + 融云查询 + 合并
+- **AND** 因为可能涉及新增会话，不能只用缓存
+
+#### Scenario: 收到未知会话消息时强制刷新
+- **WHEN** `handleConversationUpdate` 在本地 `conversations` 中找不到该 `conversationId`
+- **THEN** 调用 `forceReload()` → 全量加载（可能为新增群组）
+
+### Publisher 数据流
+
+```
+App 冷启动
+  SceneDelegate.restoreIMConnection()
+    → RongCloudManager.connect()
+      → connectionStatusPublisher(.connected)
+        ├─ syncConversationsFromServer() (async)
+        └─ IMService: conversations.isEmpty → loadConversations()  ← 提前加载
+              → GET /mobile/v1/session/getGroup
+              → 融云 getConversations(by: groupIds)
+              → 合并排序 → hasLoadedConversations = true
+                → notifyUnreadCountChanged()
+                  → RootTabBarController.updateMessageBadge()
+                    → 角标更新 ✅
+
+新消息到达（用户在其他 Tab）
+  融云 SDK → messageReceivedPublisher
+    ├─ IMService.onMessageReceived
+    │   → conversations 非空 → updateConversation(id:)
+    │     → notifyUnreadCountChanged() → 角标更新 ✅
+    └─ ConversationListViewController (如 UI 已加载)
+        → handleConversationUpdate → 列表刷新 + 角标
+
+用户点击消息 Tab（首次）
+  ConversationListViewController.viewDidLoad
+    → loadData()
+      → hasLoadedConversations = true → getConversations() 缓存
+        → 零网络请求，秒开 ✅
+
+远端同步完成
+  remoteConversationListDidSyncPublisher
+    → ConversationListViewController.forceReload() → 全量刷新
+```
+
+---
+
 ### Requirement: Conversation Detail / Chat
 系统 SHALL 展示单个会话的完整 IM 聊天界面，支持多角色、多消息类型和快捷回复。
 
@@ -463,6 +595,7 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 
 | Component | Type | funde ref | 说明 |
 |-----------|------|-----------|------|
+| `RootTabBarController` | UITabBarController | — | 根 TabBar，订阅 `totalUnreadCountDidChangePublisher` 更新消息 Tab 角标 |
 | `MessagesViewController` | UIViewController | `MessagesView.vue` | 消息根页（分段 Tab + 团队横幅 + 会话列表 + 通知内联） |
 | `ConversationCell` | UITableViewCell | ChatRow | 会话行（角色色头像 + 姓名 + 角色标签 + 预览 + 未读角标） |
 | `NotificationCell` | UITableViewCell | noti-row | 通知行（图标区 + 标题 + 摘要 + tag badge + 时间） |
@@ -500,9 +633,18 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 - [ ] 三好共管服务群置顶横幅始终可见，点击跳转 `/conversations/conv-team`
 - [ ] 8 个会话行渲染：头像（fd-avatar--{role} 色）、姓名、roleLabel、预览单行截断、时间、未读角标
 - [ ] important 会话左侧品牌色竖条
-- [ ] 点击会话行跳转 `/conversations/:id`
+- [ ] 点击会话行跳转 `/conversations/:id`，并清除该会话未读数
 - [ ] 切换到「通知中心」Tab 展示通知行内联预览
 - [ ] 通知行图标颜色按类型正确区分（蓝/黄/橙/绿）
+
+### 底部消息角标
+- [ ] 消息 Tab 角标 = 所有团队对话 unread 之和（通知中心未读暂不纳入）
+- [ ] IM 连接成功后自动加载会话列表，无需等待用户进入消息 Tab
+- [ ] 冷启动停留在首页时收到新消息 → 角标实时更新（IMService 自行处理，不依赖 ConversationListVC）
+- [ ] 首次进入消息 Tab → 命中 `hasLoadedConversations` 缓存，不重复 HTTP 请求
+- [ ] 标记已读后角标数字递减，全部已读后角标消失（`badgeValue = nil`）
+- [ ] 远端会话同步完成 → `forceReload()` 全量刷新
+- [ ] 登出后角标归零 + `hasLoadedConversations` 重置，重登后重新加载
 
 ### 聊天页
 - [ ] 导航栏：姓名 + roleLabel · status

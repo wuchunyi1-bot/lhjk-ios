@@ -272,10 +272,12 @@ final class CancelAccountViewController: BaseViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
             guard let self else { return }
 
-            // Clear auth state
-            LoginService.shared.clearSession()
+            // Call logout API then clear auth state
+            Task {
+                await LoginService.shared.logout()
+                LoginService.shared.clearSession()
+            }
             UserManager.shared.clear()
-
             // Show result
             self.noticeContainer.isHidden = true
             self.resultContainer.isHidden = false
