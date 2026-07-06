@@ -44,6 +44,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             ("fork.knife", UIColor(hexString: "#D6602B"), "饮食方案", "可按档案生成", "/me/diet-plan"),
             ("checklist", UIColor(hexString: "#5C8DC9"), "健康评估", "2 项待完成", "/me/health-evaluations"),
             ("clock", UIColor(hexString: "#6B9FE4"), "我的预约", "1 个待到店", "/me/appointments"),
+            ("creditcard", UIColor(hexString: "#FF7A50"), "我的卡券", "1 张已激活", "/me/vouchers"),
         ]),
     ]
 
@@ -118,6 +119,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
 
     private func refreshHeader() {
         guard let header = tableView.tableHeaderView else { return }
+        // 更新头像
         if let avatar = header.viewWithTag(200) as? UIImageView {
             let label = header.viewWithTag(201) as? UILabel
             if let urlStr = avatarURL, let url = URL(string: urlStr) {
@@ -128,6 +130,8 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
                 label?.text = avatarChar
             }
         }
+        // 更新用户名
+        (header.viewWithTag(202) as? UILabel)?.text = userName
         header.setNeedsLayout()
         header.layoutIfNeeded()
     }
@@ -198,6 +202,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             l.text = userName
             l.font = .fdH2
             l.textColor = .fdText
+            l.tag = 202
             return l
         }()
 

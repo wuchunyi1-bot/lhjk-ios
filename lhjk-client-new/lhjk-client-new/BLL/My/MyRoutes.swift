@@ -34,10 +34,16 @@ enum MyRoutes {
         r.register(path: "/me/settings/about")          { _ in AboutSettingsViewController() }
         r.register(path: "/me/settings/cancel-account") { _ in CancelAccountViewController() }
 
+        // 卡券
+        r.register(path: "/me/vouchers")         { _ in VoucherListViewController() }
+
         // 新增子页面（占位）
         r.register(path: "/me/change-phone")     { _ in ChangePhoneViewController() }
-        r.register(path: "/me/address")          { _ in PlaceholderViewController(title: "收货地址") }
-        r.register(path: "/me/address/edit")     { params in PlaceholderViewController(title: "编辑地址") }
+        r.register(path: "/me/address")          { _ in AddressListViewController() }
+        r.register(path: "/me/address/edit")     { params in
+            let id = (params["id"] as? Int64) ?? (params["id"] as? String).flatMap(Int64.init)
+            return AddressEditViewController(addressId: id)
+        }
         r.register(path: "/me/health-profile")   { _ in PlaceholderViewController(title: "健康档案") }
         r.register(path: "/orders")          { params in
             let tab = params["tab"] as? String
