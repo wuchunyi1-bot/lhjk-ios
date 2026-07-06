@@ -1,61 +1,38 @@
 import UIKit
 import SnapKit
 
-/// 全部订单列表 — 5 Tab 筛选 + 订单卡片
-/// 参考 funde-client: OrderListView.vue
+/// 全部订单列表 — 容器 VC
+///
+/// 管理横向滚动 Tab 栏 + 10 个 OrderTabViewController 子 VC。
+/// 每个子 VC 拥有独立的 TableView 和数据缓存，仅首次加载时请求 API。
 final class OrderListViewController: BaseViewController {
 
-    // MARK: - Data Models
+    // MARK: - Tab 定义
 
-    private enum OrderStatus: String, CaseIterable {
-        case pendingUse = "pending_use"
-        case inProgress = "in_progress"
-        case completed = "completed"
-        case pendingReview = "pending_review"
-
-        var label: String {
-            switch self {
-            case .pendingUse: return "待使用"
-            case .inProgress: return "使用中"
-            case .completed: return "已完成"
-            case .pendingReview: return "待评价"
-            }
-        }
+    private struct TabItem {
+        let title: String
+        let status: Int?       // nil = 全部
     }
 
-    private struct ServiceOrder {
-        let id: String
-        let serviceName: String
-        let serviceTag: String
-        let status: OrderStatus
-        let statusLabel: String
-        let startDate: String
-        let endDate: String
-        let price: Int
-        let daysLeft: Int
-    }
-
-    // MARK: - Tabs
-
-    private let tabs = ["全部", "待使用", "使用中", "已完成", "待评价"]
-    private let tabStatus: [OrderStatus?] = [nil, .pendingUse, .inProgress, .completed, .pendingReview]
-
-    // MARK: - Mock Data
-
-    private let allOrders: [ServiceOrder] = [
-        ServiceOrder(id: "ord-001", serviceName: "德好·慢病逆转", serviceTag: "三好共管",
-                     status: .inProgress, statusLabel: "使用中",
-                     startDate: "2026-03-15", endDate: "2026-09-15", price: 9800, daysLeft: 45),
-        ServiceOrder(id: "ord-002", serviceName: "德健·健康管理师", serviceTag: "健管家",
-                     status: .completed, statusLabel: "已完成",
-                     startDate: "2025-01-01", endDate: "2025-12-31", price: 2980, daysLeft: 0),
-        ServiceOrder(id: "ord-003", serviceName: "慈铭高端体检", serviceTag: "三甲体检套餐",
-                     status: .pendingUse, statusLabel: "待使用",
-                     startDate: "2026-05-28", endDate: "2026-06-30", price: 1680, daysLeft: 35),
-        ServiceOrder(id: "ord-004", serviceName: "营养师膳食指导", serviceTag: "慢病饮食干预",
-                     status: .pendingReview, statusLabel: "待评价",
-                     startDate: "2026-04-01", endDate: "2026-05-01", price: 699, daysLeft: 0),
+    private let tabs: [TabItem] = [
+        TabItem(title: "全部",       status: nil),
+        TabItem(title: "待付款",     status: 1),
+        TabItem(title: "待发货",     status: 2),
+        TabItem(title: "待收货",     status: 3),
+        TabItem(title: "使用中",     status: 4),
+        TabItem(title: "已完成",     status: 5),
+        TabItem(title: "退款/售后",  status: 6),
+        TabItem(title: "已逾期",     status: 7),
+        TabItem(title: "已取消",     status: 8),
+        TabItem(title: "退款审核中", status: 9),
     ]
+
+    // MARK: - State
+
+    private var selectedTabIndex = 0
+    private var childVCs: [OrderTabViewController] = []
+    private var needsInitialScroll = false
+    private var isAnimatingScroll = false
 
     private let initialTab: String?
 
@@ -65,165 +42,302 @@ final class OrderListViewController: BaseViewController {
     }
     required init?(coder: NSCoder) { fatalError() }
 
-    // MARK: - State
-
-    private var selectedTabIndex = 0
-
-    private lazy var filteredOrders: [ServiceOrder] = {
-        let status = tabStatus[selectedTabIndex]
-        guard let status = status else { return allOrders }
-        return allOrders.filter { $0.status == status }
-    }()
-
     // MARK: - UI
 
-    private lazy var segmentedControl: UISegmentedControl = {
-        let seg = UISegmentedControl(items: tabs)
-        seg.selectedSegmentIndex = 0
-        seg.selectedSegmentTintColor = .fdPrimary
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.fdCaption], for: .selected)
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.fdCaption], for: .normal)
-        seg.backgroundColor = .fdBg2
-        seg.addTarget(self, action: #selector(tabChanged(_:)), for: .valueChanged)
-        return seg
+    private lazy var tabCollectionView: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        layout.minimumInteritemSpacing = 8
+        layout.minimumLineSpacing = 8
+
+        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        cv.backgroundColor = .fdBg
+        cv.showsHorizontalScrollIndicator = false
+        cv.dataSource = self
+        cv.delegate = self
+        cv.register(OrderTabCell.self, forCellWithReuseIdentifier: OrderTabCell.reuseId)
+        return cv
     }()
 
-    private lazy var tableView: UITableView = {
-        let tv = UITableView(frame: .zero, style: .plain)
-        tv.backgroundColor = .fdBg
-        tv.separatorStyle = .none
-        tv.showsVerticalScrollIndicator = false
-        tv.register(OrderCardCell.self, forCellReuseIdentifier: OrderCardCell.reuseIdentifier)
-        tv.dataSource = self
-        tv.delegate = self
-        tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
-        return tv
-    }()
-
-    private lazy var emptyView: UIView = {
+    /// 选中指示条
+    private let indicatorBar: UIView = {
         let v = UIView()
-        let icon = UIImageView(image: UIImage(systemName: "doc.text.magnifyingglass"))
-        icon.tintColor = .fdMuted
-        icon.contentMode = .scaleAspectFit
-        v.addSubview(icon)
-        icon.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.centerY.equalToSuperview().offset(-20)
-            make.size.equalTo(48)
-        }
-        let label = UILabel()
-        label.text = "暂无订单"
-        label.font = .fdCaption
-        label.textColor = .fdMuted
-        label.textAlignment = .center
-        v.addSubview(label)
-        label.snp.makeConstraints { make in
-            make.top.equalTo(icon.snp.bottom).offset(12)
-            make.centerX.equalToSuperview()
-        }
+        v.backgroundColor = .fdPrimary
+        v.layer.cornerRadius = 1.5
         return v
     }()
 
+    private let containerView = UIView()
+
     // MARK: - Lifecycle
+
+    // 禁止自动转发，手动管理子 VC 生命周期
+    override var shouldAutomaticallyForwardAppearanceMethods: Bool { false }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "我的订单"
 
-        // Apply initial tab from route params (e.g. /orders?tab=pending_use)
-        if let tab = initialTab, let idx = tabStatus.firstIndex(where: { $0?.rawValue == tab }) {
+        // 解析初始 Tab
+        let tabMapping: [String: Int] = [
+            "pending_payment": 1, "pending_ship": 2, "pending_receive": 3,
+            "in_progress": 4, "completed": 5, "refund": 6,
+            "overdue": 7, "cancelled": 8, "refund_review": 9,
+        ]
+        if let tab = initialTab, let idx = tabMapping[tab] {
             selectedTabIndex = idx
-            segmentedControl.selectedSegmentIndex = idx
+            needsInitialScroll = true
         }
+
+        buildChildVCs()
     }
 
     override func setupUI() {
         view.backgroundColor = .fdBg
 
-        view.addSubview(segmentedControl)
-        segmentedControl.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.height.equalTo(32)
+        // Tab 栏容器
+        let tabContainer = UIView()
+        tabContainer.backgroundColor = .fdBg
+        view.addSubview(tabContainer)
+        tabContainer.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(44)
         }
 
-        view.addSubview(tableView)
-        tableView.snp.makeConstraints { make in
-            make.top.equalTo(segmentedControl.snp.bottom).offset(12)
+        tabContainer.addSubview(tabCollectionView)
+        tabCollectionView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
+        tabContainer.addSubview(indicatorBar)
+
+        // 子 VC 容器
+        view.addSubview(containerView)
+        containerView.snp.makeConstraints { make in
+            make.top.equalTo(tabContainer.snp.bottom)
             make.leading.trailing.bottom.equalToSuperview()
         }
+    }
 
-        view.addSubview(emptyView)
-        emptyView.snp.makeConstraints { make in
-            make.top.equalTo(segmentedControl.snp.bottom)
-            make.leading.trailing.bottom.equalToSuperview()
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        // 首次 layout 后滚动到初始 Tab
+        if needsInitialScroll {
+            needsInitialScroll = false
+            isAnimatingScroll = true
+            tabCollectionView.scrollToItem(at: IndexPath(item: selectedTabIndex, section: 0), at: .centeredHorizontally, animated: false)
+            tabCollectionView.layoutIfNeeded()
+            isAnimatingScroll = false
         }
-        emptyView.isHidden = true
 
-        updateDisplay()
+        // 滚动动画期间不更新指示条（由 scrollViewDidScroll 处理）
+        if !isAnimatingScroll {
+            updateIndicatorBar(animated: false)
+        }
+
+        // 确保当前选中的子 VC 已添加（首次 layout 后）
+        if currentChildVC == nil {
+            showChildVC(at: selectedTabIndex)
+        }
+    }
+
+    // MARK: - Child VC Management
+
+    private func buildChildVCs() {
+        childVCs = tabs.map { tab in
+            OrderTabViewController(status: tab.status)
+        }
+    }
+
+    /// 当前正在显示的子 VC（用于 appearance 管理）
+    private var currentChildVC: OrderTabViewController?
+
+    /// 显示指定索引的子 VC，手动触发生命周期
+    private func showChildVC(at index: Int) {
+        guard index >= 0, index < childVCs.count else { return }
+        let isVisible = isViewLoaded && view.window != nil
+
+        // 旧子 VC：viewWillDisappear + viewDidDisappear
+        if let old = currentChildVC, isVisible {
+            old.beginAppearanceTransition(false, animated: false)
+            old.endAppearanceTransition()
+        }
+
+        // 移除旧子 VC
+        for vc in children {
+            vc.willMove(toParent: nil)
+            vc.view.removeFromSuperview()
+            vc.removeFromParent()
+            vc.didMove(toParent: nil)
+        }
+
+        // 添加新子 VC
+        let child = childVCs[index]
+        child.willMove(toParent: self)
+        addChild(child)
+        containerView.addSubview(child.view)
+        child.view.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        child.didMove(toParent: self)
+        currentChildVC = child
+
+        // 新子 VC：viewWillAppear + viewDidAppear
+        if isVisible {
+            child.beginAppearanceTransition(true, animated: false)
+            child.endAppearanceTransition()
+        }
+    }
+
+    // 父 VC appearance 变化时，转发给当前子 VC
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        currentChildVC?.beginAppearanceTransition(true, animated: animated)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        currentChildVC?.endAppearanceTransition()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        currentChildVC?.beginAppearanceTransition(false, animated: animated)
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        currentChildVC?.endAppearanceTransition()
+    }
+
+    // MARK: - Indicator Bar
+
+    private func updateIndicatorBar(animated: Bool) {
+        let indexPath = IndexPath(item: selectedTabIndex, section: 0)
+        guard let attrs = tabCollectionView.layoutAttributesForItem(at: indexPath) else { return }
+
+        // 把 cell frame 从 collectionView 坐标系转换到 tabCollectionView 的 superview（tabContainer）坐标系
+        let cellFrameInCV = attrs.frame
+        let converted = tabCollectionView.convert(cellFrameInCV, to: tabCollectionView.superview)
+
+        let barWidth: CGFloat = 20
+        let barX = converted.midX - barWidth / 2
+        let barY = converted.maxY - 3
+
+        let update = {
+            self.indicatorBar.frame = CGRect(x: barX, y: barY, width: barWidth, height: 3)
+        }
+
+        if animated {
+            UIView.animate(withDuration: 0.25, animations: update)
+        } else {
+            update()
+        }
     }
 
     // MARK: - Actions
 
-    @objc private func tabChanged(_ seg: UISegmentedControl) {
-        selectedTabIndex = seg.selectedSegmentIndex
-        updateDisplay()
+    private func selectTab(at index: Int) {
+        guard index != selectedTabIndex else { return }
+        selectedTabIndex = index
+
+        // 1. 更新 Cell 外观
+        tabCollectionView.reloadData()
+
+        // 2. 滚动 Tab 到可见区域（动画期间由 scrollViewDidScroll 驱动指示条）
+        isAnimatingScroll = true
+        tabCollectionView.scrollToItem(at: IndexPath(item: index, section: 0), at: .centeredHorizontally, animated: true)
+
+        // 3. 切换子 VC
+        showChildVC(at: index)
     }
 
-    private func updateDisplay() {
-        let status = tabStatus[selectedTabIndex]
-        if let status = status {
-            filteredOrders = allOrders.filter { $0.status == status }
-        } else {
-            filteredOrders = allOrders
-        }
-        tableView.reloadData()
-        emptyView.isHidden = !filteredOrders.isEmpty
-        tableView.isHidden = filteredOrders.isEmpty
+    // MARK: - Scroll Delegate（驱动指示条跟随滚动动画）
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        guard isAnimatingScroll else { return }
+        updateIndicatorBar(animated: false)
+    }
+
+    func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
+        isAnimatingScroll = false
+        updateIndicatorBar(animated: false)
     }
 }
 
-// MARK: - UITableViewDataSource
+// MARK: - UICollectionViewDataSource
 
-extension OrderListViewController: UITableViewDataSource {
+extension OrderListViewController: UICollectionViewDataSource {
 
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return filteredOrders.count
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return tabs.count
     }
 
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: OrderCardCell.reuseIdentifier, for: indexPath) as? OrderCardCell else {
-            return UITableViewCell()
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: OrderTabCell.reuseId, for: indexPath) as? OrderTabCell else {
+            return UICollectionViewCell()
         }
-        let o = filteredOrders[indexPath.row]
-        cell.configure(
-            name: o.serviceName,
-            status: o.statusLabel,
-            statusKey: o.status.rawValue,
-            tag: o.serviceTag,
-            startDate: o.startDate,
-            endDate: o.endDate,
-            price: o.price,
-            daysLeft: o.daysLeft
-        )
+        cell.configure(title: tabs[indexPath.item].title, isSelected: indexPath.item == selectedTabIndex)
         return cell
     }
 }
 
-// MARK: - UITableViewDelegate
+// MARK: - UICollectionViewDelegate
 
-extension OrderListViewController: UITableViewDelegate {
+extension OrderListViewController: UICollectionViewDelegate {
 
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return UITableView.automaticDimension
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        selectTab(at: indexPath.item)
+    }
+}
+
+// MARK: - UICollectionViewDelegateFlowLayout
+
+extension OrderListViewController: UICollectionViewDelegateFlowLayout {
+
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        let title = tabs[indexPath.item].title
+        let width = title.boundingRect(
+            with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: 30),
+            options: .usesLineFragmentOrigin,
+            attributes: [.font: UIFont.fdCaptionSemibold],
+            context: nil
+        ).width + 16 // 左右各 8pt padding
+        return CGSize(width: ceil(width), height: 30)
     }
 
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let order = filteredOrders[indexPath.row]
-        Router.shared.push("/orders/detail", params: ["id": order.id])
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+        return UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+    }
+}
+
+// MARK: - Tab Cell
+
+private final class OrderTabCell: UICollectionViewCell {
+
+    static let reuseId = "OrderTabCell"
+
+    private let titleLabel: UILabel = {
+        let l = UILabel()
+        l.font = .fdCaptionSemibold
+        l.textAlignment = .center
+        return l
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        contentView.addSubview(titleLabel)
+        titleLabel.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+        }
     }
 
-    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 130
+    required init?(coder: NSCoder) { fatalError() }
+
+    func configure(title: String, isSelected: Bool) {
+        titleLabel.text = title
+        titleLabel.textColor = isSelected ? .fdPrimary : .fdSubtext
     }
 }

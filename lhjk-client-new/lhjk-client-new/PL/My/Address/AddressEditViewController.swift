@@ -4,16 +4,16 @@ import SnapKit
 /// 收货地址编辑页（新增 / 修改）
 ///
 /// 表单包含：收货人、手机号、所在地区（省/市/区）、详细地址、邮政编码、是否默认地址
-/// - 新增模式：不传 `addressId`，表单为空，标题为"新增地址"
-/// - 修改模式：传入 `addressId`，自动加载已有地址填充表单，标题为"编辑地址"
+/// - 新增模式：不传 `address`，表单为空，标题为"新增地址"
+/// - 修改模式：传入 `address`，直接填充表单（无网络请求），标题为"编辑地址"
 ///
 /// 参考 funde-client 地址编辑表单交互
 final class AddressEditViewController: BaseViewController {
 
     // MARK: - Mode
 
-    private let addressId: Int64?
-    private var isEditMode: Bool { addressId != nil }
+    private let existingAddress: MAddress?
+    private var isEditMode: Bool { existingAddress != nil }
 
     // MARK: - Form State
 
@@ -25,8 +25,6 @@ final class AddressEditViewController: BaseViewController {
     private var addressText: String = ""
     private var codeText: String = ""
     private var isDefault: Bool = false
-
-    private var existingAddress: MAddress?
 
     // MARK: - UI
 
@@ -72,8 +70,8 @@ final class AddressEditViewController: BaseViewController {
 
     // MARK: - Init
 
-    init(addressId: Int64? = nil) {
-        self.addressId = addressId
+    init(address: MAddress? = nil) {
+        self.existingAddress = address
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -84,9 +82,6 @@ final class AddressEditViewController: BaseViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
-        if isEditMode {
-            loadExistingAddress()
-        }
     }
 
     override func setupUI() {
@@ -126,6 +121,11 @@ final class AddressEditViewController: BaseViewController {
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         tap.cancelsTouchesInView = false
         view.addGestureRecognizer(tap)
+
+        // 编辑模式：直接填充表单
+        if let addr = existingAddress {
+            fillForm(with: addr)
+        }
     }
 
     // MARK: - Form Builder
@@ -266,25 +266,7 @@ final class AddressEditViewController: BaseViewController {
         return tf
     }
 
-    // MARK: - Data Loading
-
-    private func loadExistingAddress() {
-        Task {
-            do {
-                let data = try await AddressService.shared.getAddressList(pageSize: 100)
-                if let addr = data.records?.first(where: { $0.id == addressId }) {
-                    await MainActor.run {
-                        self.existingAddress = addr
-                        self.fillForm(with: addr)
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    self.showToast("加载地址信息失败")
-                }
-            }
-        }
-    }
+    // MARK: - Fill Form
 
     private func fillForm(with address: MAddress) {
         nameField.text = address.name
@@ -345,7 +327,7 @@ final class AddressEditViewController: BaseViewController {
         }
 
         let payload = AddressSavePayload(
-            id: addressId,
+            id: existingAddress?.id,
             name: nameText.trimmingCharacters(in: .whitespaces),
             mobile: mobileText.trimmingCharacters(in: .whitespaces),
             isDefault: isDefault ? 1 : 0,

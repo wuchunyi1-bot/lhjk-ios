@@ -161,8 +161,8 @@ final class AddressListViewController: BaseViewController {
     }
 
     private func editAddress(_ address: MAddress) {
-        guard let id = address.id else { return }
-        Router.shared.push("/me/address/edit", params: ["id": id])
+        guard address.id != nil else { return }
+        Router.shared.push("/me/address/edit", params: ["address": address])
     }
 
     private func deleteAddress(_ address: MAddress, at indexPath: IndexPath) {

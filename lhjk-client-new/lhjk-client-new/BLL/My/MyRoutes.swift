@@ -41,8 +41,8 @@ enum MyRoutes {
         r.register(path: "/me/change-phone")     { _ in ChangePhoneViewController() }
         r.register(path: "/me/address")          { _ in AddressListViewController() }
         r.register(path: "/me/address/edit")     { params in
-            let id = (params["id"] as? Int64) ?? (params["id"] as? String).flatMap(Int64.init)
-            return AddressEditViewController(addressId: id)
+            let address = params["address"] as? MAddress
+            return AddressEditViewController(address: address)
         }
         r.register(path: "/me/health-profile")   { _ in PlaceholderViewController(title: "健康档案") }
         r.register(path: "/orders")          { params in

@@ -54,8 +54,8 @@
 - **THEN** BLL 层调用 `POST /v1/address/saveOrUpdateAddress`，不传 `id` 字段，创建成功后返回地址列表页并刷新
 
 #### Scenario: 修改地址
-- **WHEN** 用户在地址编辑页修改已有地址的信息并提交
-- **THEN** BLL 层调用 `POST /v1/address/saveOrUpdateAddress`，传入 `id` 字段，更新成功后返回地址列表页并刷新
+- **WHEN** 用户在地址列表页点击某个地址的编辑按钮
+- **THEN** 列表页将已有的 `MAddress` 对象直接传递给编辑页，编辑页立即填充表单（无需再次网络请求），用户修改后 BLL 层调用 `POST /v1/address/saveOrUpdateAddress`，传入 `id` 字段，更新成功后返回地址列表页并刷新
 
 #### Scenario: 删除地址
 - **WHEN** 用户在地址列表页滑动删除或点击删除按钮

@@ -428,7 +428,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             }
             cell.configure(stats: fulfillmentStats, services: services)
             cell.onStatTap = { [weak self] idx in
-                let tabs = ["pending_use", "in_progress", "completed", "pending_review"]
+                let tabs = ["pending_ship", "in_progress", "completed", "pending_payment"]
                 guard idx < tabs.count else { return }
                 Router.shared.push("/orders", params: ["tab": tabs[idx]])
             }

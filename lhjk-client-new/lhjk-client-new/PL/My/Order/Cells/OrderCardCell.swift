@@ -1,8 +1,9 @@
 import UIKit
 import SnapKit
 
-/// 订单卡片 Cell — 服务名 + 状态标签 + 服务标签 + 日期 + 价格 + 剩余天数
+/// 订单卡片 Cell — 服务名 + 状态标签 + 套餐描述 + 日期 + 价格
 /// 参考 funde-client: order-card
+/// 对接后端 AppOrderListBO 模型
 final class OrderCardCell: UITableViewCell {
 
     static let reuseIdentifier = "OrderCardCell"
@@ -16,21 +17,23 @@ final class OrderCardCell: UITableViewCell {
     private let tagLabel = UILabel()
     private let dateLabel = UILabel()
     private let priceLabel = UILabel()
-    private let daysRow = UIView()
-    private let daysIcon = UIImageView()
-    private let daysLabel = UILabel()
 
-    // MARK: - Status Color Map
+    // MARK: - Status Color Map (API status 1-9)
 
     struct StatusStyle {
         let bg: UIColor; let text: UIColor
     }
 
-    private let statusColors: [String: StatusStyle] = [
-        "pending_use":    StatusStyle(bg: UIColor(hexString: "#FFF3EE"), text: UIColor(hexString: "#FF7A50")),
-        "in_progress":    StatusStyle(bg: UIColor(hexString: "#EEF6FF"), text: UIColor(hexString: "#3D6FB8")),
-        "completed":      StatusStyle(bg: UIColor(hexString: "#F0FAF4"), text: UIColor(hexString: "#52B96A")),
-        "pending_review": StatusStyle(bg: UIColor(hexString: "#FFF8E8"), text: UIColor(hexString: "#B47300")),
+    private let statusColors: [Int: StatusStyle] = [
+        1: StatusStyle(bg: UIColor(hexString: "#FFF8E8"), text: UIColor(hexString: "#B47300")), // 待付款
+        2: StatusStyle(bg: UIColor(hexString: "#FFF3EE"), text: UIColor(hexString: "#FF7A50")), // 待发货
+        3: StatusStyle(bg: UIColor(hexString: "#FFF3EE"), text: UIColor(hexString: "#FF7A50")), // 待收货
+        4: StatusStyle(bg: UIColor(hexString: "#EEF6FF"), text: UIColor(hexString: "#3D6FB8")), // 使用中
+        5: StatusStyle(bg: UIColor(hexString: "#F0FAF4"), text: UIColor(hexString: "#52B96A")), // 已完成
+        6: StatusStyle(bg: UIColor(hexString: "#FFF0F0"), text: UIColor(hexString: "#D6602B")), // 退款/售后
+        7: StatusStyle(bg: UIColor(hexString: "#F0F0F0"), text: UIColor(hexString: "#999999")), // 已逾期
+        8: StatusStyle(bg: UIColor(hexString: "#F0F0F0"), text: UIColor(hexString: "#999999")), // 已取消
+        9: StatusStyle(bg: UIColor(hexString: "#FFF8E8"), text: UIColor(hexString: "#B47300")), // 退款审核中
     ]
 
     // MARK: - Init
@@ -65,6 +68,7 @@ final class OrderCardCell: UITableViewCell {
         // Header row: name + status
         nameLabel.font = .fdBodyBold
         nameLabel.textColor = .fdText
+        nameLabel.numberOfLines = 1
 
         cardView.addSubview(nameLabel)
         cardView.addSubview(statusContainer)
@@ -78,13 +82,14 @@ final class OrderCardCell: UITableViewCell {
             make.trailing.equalToSuperview().offset(-16)
         }
 
-        // Service tag
+        // Package description / hospital name
         tagLabel.font = .fdCaption
         tagLabel.textColor = .fdSubtext
+        tagLabel.numberOfLines = 1
         cardView.addSubview(tagLabel)
         tagLabel.snp.makeConstraints { make in
             make.top.equalTo(nameLabel.snp.bottom).offset(4)
-            make.leading.equalToSuperview().inset(16)
+            make.leading.trailing.equalToSuperview().inset(16)
         }
 
         // Date
@@ -94,6 +99,7 @@ final class OrderCardCell: UITableViewCell {
         dateLabel.snp.makeConstraints { make in
             make.top.equalTo(tagLabel.snp.bottom).offset(10)
             make.leading.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview().offset(-16)
         }
 
         // Price
@@ -104,67 +110,21 @@ final class OrderCardCell: UITableViewCell {
             make.centerY.equalTo(dateLabel)
             make.trailing.equalToSuperview().offset(-16)
         }
-
-        // Days row
-        daysIcon.image = UIImage(systemName: "clock")
-        daysIcon.tintColor = .fdPrimary
-        daysIcon.contentMode = .scaleAspectFit
-        daysRow.addSubview(daysIcon)
-        daysIcon.snp.makeConstraints { make in
-            make.leading.centerY.equalToSuperview()
-            make.size.equalTo(14)
-        }
-
-        daysLabel.font = .fdCaption
-        daysLabel.textColor = .fdPrimary
-        daysRow.addSubview(daysLabel)
-        daysLabel.snp.makeConstraints { make in
-            make.leading.equalTo(daysIcon.snp.trailing).offset(4)
-            make.top.bottom.trailing.equalToSuperview()
-        }
-
-        daysRow.isHidden = true
-        cardView.addSubview(daysRow)
-        daysRow.snp.makeConstraints { make in
-            make.top.equalTo(dateLabel.snp.bottom).offset(8)
-            make.leading.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-16)
-        }
-
-        // When daysRow is hidden, anchor bottom to dateLabel
-        dateLabel.snp.makeConstraints { make in
-            make.bottom.equalToSuperview().offset(-16).priority(.low)
-        }
     }
 
     // MARK: - Configure
 
-    func configure(name: String, status: String, statusKey: String, tag: String, startDate: String, endDate: String, price: Int, daysLeft: Int) {
-        nameLabel.text = name
-        statusLabel.text = status
-        tagLabel.text = tag
-        dateLabel.text = "\(startDate) — \(endDate)"
-        priceLabel.text = "¥\(price.formattedWithSeparator)"
+    func configure(order: MOrder) {
+        nameLabel.text = order.orderName ?? "未命名订单"
+        statusLabel.text = order.statusLabel
+        tagLabel.text = order.packageDescription ?? order.hospitalName
+        dateLabel.text = order.dateRangeText
+        priceLabel.text = order.priceText
 
         // Status style
-        if let style = statusColors[statusKey] {
+        if let status = order.status, let style = statusColors[status] {
             statusContainer.backgroundColor = style.bg
             statusLabel.textColor = style.text
-        }
-
-        // Days left
-        if daysLeft > 0 {
-            daysRow.isHidden = false
-            daysLabel.text = "剩余 \(daysLeft) 天"
-
-            // Reprioritize bottom to daysRow
-            dateLabel.snp.removeConstraints()
-            dateLabel.snp.makeConstraints { make in
-                make.top.equalTo(tagLabel.snp.bottom).offset(10)
-                make.leading.equalToSuperview().inset(16)
-            }
-        } else {
-            daysRow.isHidden = true
         }
     }
 
@@ -175,16 +135,5 @@ final class OrderCardCell: UITableViewCell {
         tagLabel.text = nil
         dateLabel.text = nil
         priceLabel.text = nil
-        daysLabel.text = nil
-    }
-}
-
-// MARK: - Number Formatter
-
-private extension Int {
-    var formattedWithSeparator: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return formatter.string(from: NSNumber(value: self)) ?? "\(self)"
     }
 }

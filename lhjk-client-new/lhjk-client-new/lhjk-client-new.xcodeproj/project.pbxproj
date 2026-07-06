@@ -32,6 +32,9 @@
 		A500D99E2FFB880300820B8D /* VoucherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A500D99C2FFB880300820B8D /* VoucherService.swift */; };
 		A500D9A32FFB883E00820B8D /* VoucherListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A500D9A12FFB883E00820B8D /* VoucherListViewController.swift */; };
 		A500D9A42FFB883E00820B8D /* VoucherCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A500D99F2FFB883E00820B8D /* VoucherCell.swift */; };
+		A500D9A72FFB9E0E00820B8D /* OrderModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A500D9A52FFB9E0E00820B8D /* OrderModels.swift */; };
+		A500D9A82FFB9E0E00820B8D /* OrderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A500D9A62FFB9E0E00820B8D /* OrderService.swift */; };
+		A500D9AA2FFBA20F00820B8D /* OrderTabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A500D9A92FFBA20F00820B8D /* OrderTabViewController.swift */; };
 		A5163AE72FFB643400EB7551 /* AddressService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5163AE62FFB643400EB7551 /* AddressService.swift */; };
 		A5163AE82FFB643400EB7551 /* AddressModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5163AE52FFB643400EB7551 /* AddressModels.swift */; };
 		A5163AEE2FFB644F00EB7551 /* AddressEditViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5163AEB2FFB644E00EB7551 /* AddressEditViewController.swift */; };
@@ -222,6 +225,9 @@
 		A500D99C2FFB880300820B8D /* VoucherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoucherService.swift; sourceTree = "<group>"; };
 		A500D99F2FFB883E00820B8D /* VoucherCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoucherCell.swift; sourceTree = "<group>"; };
 		A500D9A12FFB883E00820B8D /* VoucherListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoucherListViewController.swift; sourceTree = "<group>"; };
+		A500D9A52FFB9E0E00820B8D /* OrderModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OrderModels.swift; path = BLL/Service/OrderModels.swift; sourceTree = "<group>"; };
+		A500D9A62FFB9E0E00820B8D /* OrderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OrderService.swift; path = BLL/Service/OrderService.swift; sourceTree = "<group>"; };
+		A500D9A92FFBA20F00820B8D /* OrderTabViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderTabViewController.swift; sourceTree = "<group>"; };
 		A5163AE52FFB643400EB7551 /* AddressModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressModels.swift; sourceTree = "<group>"; };
 		A5163AE62FFB643400EB7551 /* AddressService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressService.swift; sourceTree = "<group>"; };
 		A5163AE92FFB644E00EB7551 /* AddressCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressCell.swift; sourceTree = "<group>"; };
@@ -1035,6 +1041,7 @@
 		A590FD7A2FEA96190056EF52 /* Order */ = {
 			isa = PBXGroup;
 			children = (
+				A500D9A92FFBA20F00820B8D /* OrderTabViewController.swift */,
 				A590FD782FEA96190056EF52 /* Cells */,
 				A590FD792FEA96190056EF52 /* OrderListViewController.swift */,
 			);
@@ -1263,6 +1270,8 @@
 		C4193BC7FCD37A9D67D93F74 /* Service */ = {
 			isa = PBXGroup;
 			children = (
+				A500D9A52FFB9E0E00820B8D /* OrderModels.swift */,
+				A500D9A62FFB9E0E00820B8D /* OrderService.swift */,
 				31DDB71613DB8E688C4122B3 /* PaymentService.swift */,
 				282C1F0671F2C969561DE1C7 /* ServiceRoutes.swift */,
 			);
@@ -1589,6 +1598,7 @@
 				E9F251651FF71AEBC2DF03F3 /* BLLProtocol.swift in Sources */,
 				023299BEDDBAE0D022B08E7B /* DALProtocol.swift in Sources */,
 				A57D2F242FDC0661002E43BA /* RegisterLoginRoutes.swift in Sources */,
+				A500D9AA2FFBA20F00820B8D /* OrderTabViewController.swift in Sources */,
 				59AB481874792A6D2327D4DB /* PLProtocol.swift in Sources */,
 				C8C2F63AA4929D219BE2AE0C /* RootTabBarController.swift in Sources */,
 				625D4BF5B8323C4730A5B48E /* SceneDelegate.swift in Sources */,
@@ -1636,6 +1646,8 @@
 				A58C72C72FEE2FEF003B405C /* MessagesViewController.swift in Sources */,
 				A590FBF02FEA82980056EF52 /* ExerciseFoodViewController.swift in Sources */,
 				A590FBF12FEA82980056EF52 /* HomeArticleCell.swift in Sources */,
+				A500D9A72FFB9E0E00820B8D /* OrderModels.swift in Sources */,
+				A500D9A82FFB9E0E00820B8D /* OrderService.swift in Sources */,
 				A590FBF22FEA82980056EF52 /* WeightViewController.swift in Sources */,
 				A590FBF52FEA82980056EF52 /* HealthRecordBodyCardCell.swift in Sources */,
 				A590FBF72FEA82980056EF52 /* MetricsViewController.swift in Sources */,

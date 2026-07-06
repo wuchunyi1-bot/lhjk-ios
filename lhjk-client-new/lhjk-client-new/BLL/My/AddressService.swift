@@ -65,7 +65,7 @@ final class AddressService {
         print("[AddressService] saveOrUpdateAddress → id=\(payload.id?.description ?? "nil") name=\(payload.name)")
 
         let params: [String: Any] = [
-            "id": payload.id as Any,
+            "id": payload.id.map(String.init) as Any,
             "name": payload.name,
             "mobile": payload.mobile,
             "isDefault": payload.isDefault,
@@ -101,7 +101,7 @@ final class AddressService {
         let response: APIResponse<EmptyResponse> = try await APIManager.shared
             .deleteAsync(
                 path: "/mobile/v1/address/deleteAddressById",
-                parameters: ["id": id],
+                parameters: ["id": String(id)],
                 responseType: APIResponse<EmptyResponse>.self
             )
 
