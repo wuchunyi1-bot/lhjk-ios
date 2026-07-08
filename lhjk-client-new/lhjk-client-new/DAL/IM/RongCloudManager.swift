@@ -204,7 +204,7 @@ final class RongCloudManager {
             count: 100,
             startTime: oneWeekAgoMs
         ) { [weak self] conversationList in
-            guard let self = self else { return }
+            guard self != nil else { return }
             let list = conversationList ?? []
             print("[RongCloud] getConversationsByTime total=\(list.count)")
             for conv in list {
@@ -444,7 +444,7 @@ final class RongCloudManager {
         }, error: { errorCode in
             print("[RongCloud] downloadMedia ✗ msgId=\(messageId) code=\(errorCode.rawValue)")
             completion(nil)
-        })
+        })        
     }
 
     /// 发送高清语音消息（RC:HQVCMsg）

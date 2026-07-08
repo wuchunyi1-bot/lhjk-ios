@@ -80,7 +80,7 @@ final class LoginService: LoginServiceProtocol {
             )
 
         guard response.isSuccess else {
-            print("[LoginService] sendVerificationCode ✗ code=\(response.code) msg=\(response.msg)")
+            print("[LoginService] sendVerificationCode ✗ code=\(response.code) msg=\(String(describing: response.msg))")
             throw LoginError(from: response.code, msg: response.msg ?? "")
         }
 
@@ -109,7 +109,7 @@ final class LoginService: LoginServiceProtocol {
             )
 
         guard response.isSuccess, let token = response.data else {
-            print("[LoginService] loginByPhone ✗ code=\(response.code) msg=\(response.msg)")
+            print("[LoginService] loginByPhone ✗ code=\(response.code) msg=\(response.msg ?? "")")
             throw LoginError(from: response.code, msg: response.msg ?? "")
         }
 
@@ -154,7 +154,7 @@ final class LoginService: LoginServiceProtocol {
             )
 
         guard response.isSuccess, let token = response.data else {
-            print("[LoginService] loginByPassword ✗ code=\(response.code) msg=\(response.msg)")
+            print("[LoginService] loginByPassword ✗ code=\(response.code) msg=\(response.msg ?? "")")
             throw LoginError(from: response.code, msg: response.msg ?? "")
         }
 

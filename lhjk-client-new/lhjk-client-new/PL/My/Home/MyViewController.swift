@@ -1,52 +1,15 @@
 import UIKit
 import SnapKit
 import Kingfisher
+import Combine
 
 /// 我的模块 Hub 页
-/// 参考 funde-client: prototype/src/views/me/MeView.vue
-///
-/// 布局: UITableView 2 sections
-///   tableHeaderView: Hero 区 + 会员卡 + 统计条（合并 MeMembershipCardCell + MeStatsStripCell）
-///   Section 0: MeServiceFulfillmentCell
-///   Section 1: MeFuncRowCell × 7 (健康管理)
-/// 注: "账号与设置"、"关于" 分组和退出登录已移至 SettingsViewController（/me/settings）
 final class MyViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate {
 
-    // MARK: - Mock Data
+    // MARK: - ViewModel
 
-    private var userName = "加载中…"
-    private var avatarChar = "我"
-    private var avatarURL: String?
-    private let membershipLevel = "健康大会员"
-
-    private let stats: [(value: String, label: String, accent: Bool, route: String)] = [
-        ("892", "健康积分", true, "/me/points"),
-        ("4", "家庭成员", false, "/me/family"),
-        ("2", "我的保单", false, "/me/policy"),
-        ("Lv.3", "健康等级", false, "/me/membership"),
-    ]
-
-    private let fulfillmentStats: [(value: String, label: String, accent: Bool)] = [
-        ("2", "待使用", true), ("1", "使用中", false), ("3", "已完成", false), ("1", "待评价", false),
-    ]
-
-    private let services: [(icon: String, iconBg: String, iconColorHex: String, name: String, status: String, statusType: String, detail: String)] = [
-        ("德好", "#FF7A50", "#FFFFFF", "慢病逆转管理", "进行中", "success", "服务至 2026/06/30 · 剩 45 天"),
-        ("体检", "#E6F7EF", "#1F9A6B", "慈铭高端体检 · 三甲套餐", "待使用", "warning", "5 月 23 日 · 上海陆家嘴中心"),
-    ]
-
-    private let functionGroups: [(title: String, rows: [(icon: String, color: UIColor, label: String, detail: String?, route: String)])] = [
-        ("健康管理", [
-            ("doc.text", UIColor(hexString: "#7B5E9F"), "健康档案", "完整度 72%", "/health/record"),
-            ("heart.text.square", UIColor(hexString: "#1F9A6B"), "健康报告", "周报 / 阶段小结", "/me/health-report"),
-            ("cross.case", UIColor(hexString: "#3D6FB8"), "体检报告单", "3 份已上传", "/me/medical-reports"),
-            ("calendar", UIColor(hexString: "#B47300"), "监测方案", "当前方案生效中", "/me/monitoring-plan"),
-            ("fork.knife", UIColor(hexString: "#D6602B"), "饮食方案", "可按档案生成", "/me/diet-plan"),
-            ("checklist", UIColor(hexString: "#5C8DC9"), "健康评估", "2 项待完成", "/me/health-evaluations"),
-            ("clock", UIColor(hexString: "#6B9FE4"), "我的预约", "1 个待到店", "/me/appointments"),
-            ("creditcard", UIColor(hexString: "#FF7A50"), "我的卡券", "1 张已激活", "/me/vouchers"),
-        ]),
-    ]
+    private let viewModel = MyViewModel()
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - UI
 
@@ -64,27 +27,17 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         return tv
     }()
 
-    /// 渐变背景 layer（需要在 viewDidLayoutSubviews 中更新 frame）
     private let headerGradient = CAGradientLayer()
 
     // MARK: - Lifecycle
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        NotificationCenter.default.addObserver(self, selector: #selector(onUserUpdated),
-                                               name: .userDidUpdate, object: nil)
-    }
-
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        // Update gradient frame when bounds are known
         if let header = tableView.tableHeaderView {
             headerGradient.frame = header.bounds
-            // Recalculate header size with actual width
             let size = header.systemLayoutSizeFitting(
                 CGSize(width: view.bounds.width, height: UIView.layoutFittingCompressedSize.height),
-                withHorizontalFittingPriority: .required,
-                verticalFittingPriority: .fittingSizeLevel
+                withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel
             )
             if header.frame.size.height != size.height {
                 header.frame.size = CGSize(width: view.bounds.width, height: size.height)
@@ -99,49 +52,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         if tableView.tableHeaderView == nil {
             tableView.tableHeaderView = buildTableHeader().sizedForTableHeader(in: view)
         }
-        loadUserProfile()
-    }
-
-    // MARK: - User Profile
-
-    private func loadUserProfile() {
-        guard let user = UserManager.shared.currentUser else { return }
-        let name = user.chineseName ?? user.surname ?? user.nickname ?? "用户"
-        self.userName = name
-        self.avatarChar = String(name.prefix(1))
-        self.avatarURL = user.imageUrl
-        self.refreshHeader()
-    }
-
-    @objc private func onUserUpdated() {
-        loadUserProfile()
-    }
-
-    private func refreshHeader() {
-        guard let header = tableView.tableHeaderView else { return }
-        // 更新头像
-        if let avatar = header.viewWithTag(200) as? UIImageView {
-            let label = header.viewWithTag(201) as? UILabel
-            if let urlStr = avatarURL, let url = URL(string: urlStr) {
-                label?.isHidden = true
-                avatar.kf.setImage(with: url)
-            } else {
-                label?.isHidden = false
-                label?.text = avatarChar
-            }
-        }
-        // 更新用户名
-        (header.viewWithTag(202) as? UILabel)?.text = userName
-        header.setNeedsLayout()
-        header.layoutIfNeeded()
-    }
-
-    override func refreshForSeniorMode() {
-        super.refreshForSeniorMode()
-        // tableHeaderView 不在 tableView 自动刷新范围内，需重建以使按钮高度适配老年模式字号
-        tableView.tableHeaderView = buildTableHeader().sizedForTableHeader(in: view)
-        view.setNeedsLayout()
-        view.layoutIfNeeded()
+        viewModel.loadUserProfile()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -156,25 +67,55 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             make.top.leading.trailing.equalToSuperview()
             make.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom)
         }
+        bindViewModel()
     }
 
-    // MARK: - Table Header (Hero + Membership Card + Stats Strip)
+    override func refreshForSeniorMode() {
+        super.refreshForSeniorMode()
+        tableView.tableHeaderView = buildTableHeader().sizedForTableHeader(in: view)
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
+    }
+
+    // MARK: - Binding
+
+    override func bindViewModel() {
+        viewModel.$userName
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshHeader() }
+            .store(in: &cancellables)
+    }
+
+    private func refreshHeader() {
+        guard let header = tableView.tableHeaderView else { return }
+        if let avatar = header.viewWithTag(200) as? UIImageView {
+            let label = header.viewWithTag(201) as? UILabel
+            if let urlStr = viewModel.avatarURL, let url = URL(string: urlStr) {
+                label?.isHidden = true
+                avatar.kf.setImage(with: url)
+            } else {
+                label?.isHidden = false
+                label?.text = viewModel.avatarChar
+            }
+        }
+        (header.viewWithTag(202) as? UILabel)?.text = viewModel.userName
+        header.setNeedsLayout()
+        header.layoutIfNeeded()
+    }
+
+    // MARK: - Table Header
 
     private func buildTableHeader() -> UIView {
         let header = UIView()
         header.backgroundColor = .clear
         header.clipsToBounds = false
 
-        // Warm gradient matching funde-client var(--fd-gradient-hero)
         headerGradient.colors = [UIColor(hexString: "#FFF7F1").cgColor, UIColor(hexString: "#FFE9DC").cgColor]
         headerGradient.startPoint = CGPoint(x: 0, y: 0)
         headerGradient.endPoint = CGPoint(x: 1, y: 1)
         header.layer.insertSublayer(headerGradient, at: 0)
 
         let contentPadding: CGFloat = 16
-        let cardRadius: CGFloat = 18
-
-        // MARK: User Info Area
 
         let avatarView: UIImageView = {
             let v = UIImageView()
@@ -182,12 +123,12 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             v.layer.cornerRadius = 32
             v.clipsToBounds = true
             v.contentMode = .scaleAspectFill
-            v.tag = 200  // for later reference
+            v.tag = 200
             return v
         }()
         let avatarLabel: UILabel = {
             let l = UILabel()
-            l.text = avatarChar
+            l.text = viewModel.avatarChar
             l.font = .fdH2
             l.textColor = UIColor(hexString: "#7B5E40")
             l.textAlignment = .center
@@ -199,7 +140,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
 
         let nameLabel: UILabel = {
             let l = UILabel()
-            l.text = userName
+            l.text = viewModel.userName
             l.font = .fdH2
             l.textColor = .fdText
             l.tag = 202
@@ -225,21 +166,15 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             cfg.imagePlacement = .trailing
             cfg.imagePadding = 4
             cfg.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 12, bottom: 5, trailing: 12)
-            // 图片大小
             cfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 9, weight: .semibold)
-            // 文字字体
             cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                var outgoing = incoming
-                outgoing.font = .fdMicro
-                return outgoing
+                var outgoing = incoming; outgoing.font = .fdMicro; return outgoing
             }
-            // 样式
             cfg.baseForegroundColor = .fdText2
             cfg.background.backgroundColor = UIColor.white.withAlphaComponent(0.65)
             cfg.background.cornerRadius = 999
             cfg.background.strokeColor = UIColor.fdBorder
             cfg.background.strokeWidth = 1
-
             let b = UIButton(configuration: cfg)
             b.addTarget(self, action: #selector(pushProfile), for: .touchUpInside)
             return b
@@ -254,21 +189,17 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             cfg.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 14, bottom: 5, trailing: 14)
             cfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
             cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                var outgoing = incoming
-                outgoing.font = .fdMicroSemibold
-                return outgoing
+                var outgoing = incoming; outgoing.font = .fdMicroSemibold; return outgoing
             }
             cfg.baseForegroundColor = .white
             cfg.background.backgroundColor = .fdPrimary
             cfg.background.cornerRadius = 999
-
             let b = UIButton(configuration: cfg)
             b.addTarget(self, action: #selector(pushHealthRecord), for: .touchUpInside)
             return b
         }()
 
         [avatarView, nameLabel, settingsBtn, editBtn, healthBtn].forEach(header.addSubview)
-
         avatarView.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(52)
             make.leading.equalToSuperview().offset(contentPadding + 2)
@@ -292,111 +223,77 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             make.leading.equalTo(editBtn.snp.trailing).offset(8)
         }
 
-        // MARK: Membership Card (from MeMembershipCardCell)
-
+        // Membership Card
         let membershipCard: UIView = {
             let card = UIView()
             card.backgroundColor = UIColor(hexString: "#FFF7F1")
-            card.layer.cornerRadius = cardRadius
+            card.layer.cornerRadius = 18
             card.layer.borderWidth = 1
             card.layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.2).cgColor
             card.isUserInteractionEnabled = true
             card.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(pushMembership)))
 
             let titleLbl = UILabel()
-            titleLbl.text = "会员中心"
-            titleLbl.font = .fdCaption
-            titleLbl.textColor = .fdSubtext
-
+            titleLbl.text = "会员中心"; titleLbl.font = .fdCaption; titleLbl.textColor = .fdSubtext
             let levelLbl = UILabel()
-            levelLbl.text = membershipLevel
-            levelLbl.font = .fdCaptionSemibold
-            levelLbl.textColor = .fdPrimary
-
+            levelLbl.text = viewModel.membershipLevel; levelLbl.font = .fdCaptionSemibold; levelLbl.textColor = .fdPrimary
             let moreLbl = UILabel()
-            moreLbl.text = "查看更多 ›"
-            moreLbl.font = .fdCaption
-            moreLbl.textColor = .fdSubtext
+            moreLbl.text = "查看更多 ›"; moreLbl.font = .fdCaption; moreLbl.textColor = .fdSubtext
 
             [titleLbl, levelLbl, moreLbl].forEach(card.addSubview)
-            titleLbl.snp.makeConstraints { make in
-                make.top.leading.equalToSuperview().inset(16)
-            }
+            titleLbl.snp.makeConstraints { make in make.top.leading.equalToSuperview().inset(16) }
             levelLbl.snp.makeConstraints { make in
                 make.top.equalTo(titleLbl.snp.bottom).offset(4)
                 make.leading.equalToSuperview().inset(16)
                 make.bottom.equalToSuperview().offset(-16)
             }
-            moreLbl.snp.makeConstraints { make in
-                make.centerY.equalToSuperview()
-                make.trailing.equalToSuperview().offset(-16)
-            }
+            moreLbl.snp.makeConstraints { make in make.centerY.equalToSuperview(); make.trailing.equalToSuperview().offset(-16) }
             return card
         }()
-
         header.addSubview(membershipCard)
         membershipCard.snp.makeConstraints { make in
             make.top.equalTo(editBtn.snp.bottom).offset(20)
             make.leading.trailing.equalToSuperview().inset(contentPadding).priority(750)
         }
 
-        // MARK: Stats Strip (from MeStatsStripCell)
-
+        // Stats Strip
         let statsContainer: UIView = {
             let container = UIView()
             container.backgroundColor = UIColor.white.withAlphaComponent(0.6)
             container.layer.cornerRadius = 14
-
-            let stack = UIStackView()
-            stack.distribution = .fillEqually
+            let stack = UIStackView(); stack.distribution = .fillEqually
             container.addSubview(stack)
             stack.snp.makeConstraints { make in
                 make.edges.equalToSuperview().inset(UIEdgeInsets(top: 9, left: 0, bottom: 7, right: 0)).priority(750)
             }
 
-            for (i, (value, label, accent, route)) in stats.enumerated() {
+            let stats = viewModel.stats
+            for (i, stat) in stats.enumerated() {
                 let col = UIView()
                 let valLbl = UILabel()
-                valLbl.text = value
-                valLbl.textColor = accent ? .fdPrimary : .fdText
-                valLbl.font = .fdH2
-                valLbl.textAlignment = .center
-
+                valLbl.text = stat.value; valLbl.textColor = stat.accent ? .fdPrimary : .fdText
+                valLbl.font = .fdH2; valLbl.textAlignment = .center
                 let lblLbl = UILabel()
-                lblLbl.text = label
-                lblLbl.font = .fdMicro
-                lblLbl.textColor = .fdSubtext
-                lblLbl.textAlignment = .center
-
-                col.addSubview(valLbl)
-                col.addSubview(lblLbl)
-                valLbl.snp.makeConstraints { make in
-                    make.top.centerX.equalToSuperview()
-                }
+                lblLbl.text = stat.label; lblLbl.font = .fdMicro; lblLbl.textColor = .fdSubtext; lblLbl.textAlignment = .center
+                col.addSubview(valLbl); col.addSubview(lblLbl)
+                valLbl.snp.makeConstraints { make in make.top.centerX.equalToSuperview() }
                 lblLbl.snp.makeConstraints { make in
-                    make.top.equalTo(valLbl.snp.bottom).offset(4)
-                    make.centerX.bottom.equalToSuperview()
+                    make.top.equalTo(valLbl.snp.bottom).offset(4); make.centerX.bottom.equalToSuperview()
                 }
-
                 if i < stats.count - 1 {
                     let divider = UIView()
                     divider.backgroundColor = UIColor.fdPrimary.withAlphaComponent(0.12)
                     col.addSubview(divider)
                     divider.snp.makeConstraints { make in
-                        make.trailing.centerY.equalToSuperview()
-                        make.width.equalTo(1)
-                        make.height.equalTo(36)
+                        make.trailing.centerY.equalToSuperview(); make.width.equalTo(1); make.height.equalTo(36)
                     }
                 }
-
-                col.isUserInteractionEnabled = true
-                col.tag = i
+                col.isUserInteractionEnabled = true; col.tag = i
                 col.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(statTapped(_:))))
                 stack.addArrangedSubview(col)
             }
             return container
         }()
-
         header.addSubview(statsContainer)
         statsContainer.snp.makeConstraints { make in
             make.top.equalTo(membershipCard.snp.bottom).offset(12)
@@ -409,15 +306,10 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
 
     // MARK: - UITableViewDataSource
 
-    /// 2 sections: 0=ServiceFulfillment, 1=HealthMgt
     func numberOfSections(in tableView: UITableView) -> Int { 2 }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        switch section {
-        case 0: return 1
-        case 1: return functionGroups[0].rows.count   // 7
-        default: return 0
-        }
+        section == 0 ? 1 : viewModel.functionGroups[0].rows.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -426,7 +318,11 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             guard let cell = tableView.dequeueReusableCell(withIdentifier: MeServiceFulfillmentCell.reuseIdentifier, for: indexPath) as? MeServiceFulfillmentCell else {
                 return UITableViewCell()
             }
-            cell.configure(stats: fulfillmentStats, services: services)
+            cell.configure(stats: viewModel.fulfillmentStats.map {
+                ($0.value, $0.label, $0.accent)
+            }, services: viewModel.services.map {
+                ($0.icon, $0.iconBg, $0.iconColorHex, $0.name, $0.status, $0.statusType, $0.detail)
+            })
             cell.onStatTap = { [weak self] idx in
                 let tabs = ["pending_ship", "in_progress", "completed", "pending_payment"]
                 guard idx < tabs.count else { return }
@@ -439,7 +335,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             guard let cell = tableView.dequeueReusableCell(withIdentifier: MeFuncRowCell.reuseIdentifier, for: indexPath) as? MeFuncRowCell else {
                 return UITableViewCell()
             }
-            let group = functionGroups[indexPath.section - 1]
+            let group = viewModel.functionGroups[indexPath.section - 1]
             let row = group.rows[indexPath.row]
             cell.configure(data: MeFuncRowCell.RowData(
                 icon: row.icon, color: row.color, title: row.label, detail: row.detail,
@@ -457,31 +353,22 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
     // MARK: - UITableViewDelegate
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        switch indexPath.section {
-        case 1: return 48
-        default: return UITableView.automaticDimension
-        }
+        indexPath.section == 1 ? 48 : UITableView.automaticDimension
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         let titles = ["我的订单", "健康管理"]
         guard section < titles.count else { return nil }
-        let title = titles[section]
         let container = UIView(); container.backgroundColor = .fdBg
-        let titleView = SectionTitleView(title: title, more: section == 0 ? "全部订单 ›" : nil)
+        let titleView = SectionTitleView(title: titles[section], more: section == 0 ? "全部订单 ›" : nil)
         titleView.onMoreTapped = { Router.shared.push("/orders") }
         container.addSubview(titleView)
         titleView.snp.makeConstraints { $0.leading.trailing.equalToSuperview().inset(16); $0.centerY.equalToSuperview() }
         return container
     }
 
-    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        return 44
-    }
-
-    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        return 0.01
-    }
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat { 44 }
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat { 0.01 }
 
     // MARK: - Actions
 
@@ -491,8 +378,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
     @objc private func pushHealthRecord() { Router.shared.push("/health/record") }
 
     @objc private func statTapped(_ gesture: UITapGestureRecognizer) {
-        guard let idx = gesture.view?.tag, idx < stats.count else { return }
-        Router.shared.push(stats[idx].route)
+        guard let idx = gesture.view?.tag, idx < viewModel.stats.count else { return }
+        Router.shared.push(viewModel.stats[idx].route)
     }
-
 }

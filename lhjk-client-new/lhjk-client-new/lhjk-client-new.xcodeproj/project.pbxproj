@@ -48,6 +48,12 @@
 		A579AECD2FF268D900D9493A /* ImageBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A579AECC2FF268D900D9493A /* ImageBubbleCell.swift */; };
 		A57D2F1E2FDC0647002E43BA /* MyRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F1B2FDC0647002E43BA /* MyRoutes.swift */; };
 		A57D2F242FDC0661002E43BA /* RegisterLoginRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D2F202FDC0661002E43BA /* RegisterLoginRoutes.swift */; };
+		A586B42A2FFDF67100305F98 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A586B4282FFDF67100305F98 /* HomeViewModel.swift */; };
+		A586B42D2FFDF68500305F98 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A586B42B2FFDF68500305F98 /* ChatViewModel.swift */; };
+		A586B4302FFDFDD100305F98 /* ConversationListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A586B42E2FFDFDD100305F98 /* ConversationListViewModel.swift */; };
+		A586B4332FFDFE3D00305F98 /* MyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A586B4312FFDFE3D00305F98 /* MyViewModel.swift */; };
+		A586B4362FFDFEA400305F98 /* AddressListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A586B4342FFDFEA400305F98 /* AddressListViewModel.swift */; };
+		A586B4392FFDFEB000305F98 /* VoucherListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A586B4372FFDFEB000305F98 /* VoucherListViewModel.swift */; };
 		A58C72C62FEE2FEF003B405C /* NotificationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58C72C52FEE2FEF003B405C /* NotificationsViewController.swift */; };
 		A58C72C72FEE2FEF003B405C /* MessagesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58C72C42FEE2FEF003B405C /* MessagesViewController.swift */; };
 		A58C72CE2FEE3056003B405C /* ServiceCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58C72CB2FEE3056003B405C /* ServiceCardCell.swift */; };
@@ -241,6 +247,12 @@
 		A579AECC2FF268D900D9493A /* ImageBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageBubbleCell.swift; sourceTree = "<group>"; };
 		A57D2F1B2FDC0647002E43BA /* MyRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyRoutes.swift; sourceTree = "<group>"; };
 		A57D2F202FDC0661002E43BA /* RegisterLoginRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterLoginRoutes.swift; sourceTree = "<group>"; };
+		A586B4282FFDF67100305F98 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		A586B42B2FFDF68500305F98 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
+		A586B42E2FFDFDD100305F98 /* ConversationListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListViewModel.swift; sourceTree = "<group>"; };
+		A586B4312FFDFE3D00305F98 /* MyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyViewModel.swift; sourceTree = "<group>"; };
+		A586B4342FFDFEA400305F98 /* AddressListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressListViewModel.swift; sourceTree = "<group>"; };
+		A586B4372FFDFEB000305F98 /* VoucherListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoucherListViewModel.swift; sourceTree = "<group>"; };
 		A58C72C42FEE2FEF003B405C /* MessagesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesViewController.swift; sourceTree = "<group>"; };
 		A58C72C52FEE2FEF003B405C /* NotificationsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsViewController.swift; sourceTree = "<group>"; };
 		A58C72C82FEE3056003B405C /* AIWeeklyReportCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWeeklyReportCell.swift; sourceTree = "<group>"; };
@@ -495,6 +507,7 @@
 		A500D9A22FFB883E00820B8D /* Vouchers */ = {
 			isa = PBXGroup;
 			children = (
+				A586B4382FFDFEB000305F98 /* ViewModels */,
 				A500D9A02FFB883E00820B8D /* Cells */,
 				A500D9A12FFB883E00820B8D /* VoucherListViewController.swift */,
 			);
@@ -512,6 +525,7 @@
 		A5163AED2FFB644E00EB7551 /* Address */ = {
 			isa = PBXGroup;
 			children = (
+				A586B4352FFDFEA400305F98 /* ViewModels */,
 				A5163AEA2FFB644E00EB7551 /* Cells */,
 				A5163AEB2FFB644E00EB7551 /* AddressEditViewController.swift */,
 				A5163AEC2FFB644E00EB7551 /* AddressListViewController.swift */,
@@ -563,6 +577,54 @@
 			);
 			name = RegisterLogin;
 			path = BLL/RegisterLogin;
+			sourceTree = "<group>";
+		};
+		A586B4292FFDF67100305F98 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A586B4282FFDF67100305F98 /* HomeViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A586B42C2FFDF68500305F98 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A586B42B2FFDF68500305F98 /* ChatViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A586B42F2FFDFDD100305F98 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A586B42E2FFDFDD100305F98 /* ConversationListViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A586B4322FFDFE3D00305F98 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A586B4312FFDFE3D00305F98 /* MyViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A586B4352FFDFEA400305F98 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A586B4342FFDFEA400305F98 /* AddressListViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A586B4382FFDFEB000305F98 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A586B4372FFDFEB000305F98 /* VoucherListViewModel.swift */,
+			);
+			path = ViewModels;
 			sourceTree = "<group>";
 		};
 		A590FB192FEA2F6E0056EF52 /* User */ = {
@@ -698,6 +760,7 @@
 		A590FB4B2FEA82980056EF52 /* Home */ = {
 			isa = PBXGroup;
 			children = (
+				A586B4292FFDF67100305F98 /* ViewModels */,
 				A590FB492FEA82980056EF52 /* Cells */,
 				A590FB4A2FEA82980056EF52 /* HomeViewController.swift */,
 			);
@@ -744,6 +807,7 @@
 		A590FB522FEA82980056EF52 /* Chat */ = {
 			isa = PBXGroup;
 			children = (
+				A586B42C2FFDF68500305F98 /* ViewModels */,
 				A590FB4F2FEA82980056EF52 /* Cells */,
 				A590FB502FEA82980056EF52 /* Components */,
 				A590FB512FEA82980056EF52 /* ChatViewController.swift */,
@@ -754,6 +818,7 @@
 		A590FB582FEA82980056EF52 /* Message */ = {
 			isa = PBXGroup;
 			children = (
+				A586B42F2FFDFDD100305F98 /* ViewModels */,
 				A5B54B3D2FEE51E5009AB072 /* ConversationListViewController.swift */,
 				A5B54B3E2FEE51E5009AB072 /* NotificationListViewController.swift */,
 				A58C72C42FEE2FEF003B405C /* MessagesViewController.swift */,
@@ -1007,6 +1072,7 @@
 		A590FD722FEA96190056EF52 /* Home */ = {
 			isa = PBXGroup;
 			children = (
+				A586B4322FFDFE3D00305F98 /* ViewModels */,
 				A590FD6C2FEA96190056EF52 /* Cells */,
 				A590FD702FEA96190056EF52 /* Components */,
 				A590FD712FEA96190056EF52 /* MyViewController.swift */,
@@ -1606,6 +1672,7 @@
 				D4D3CF9A74172D4C53A40241 /* PlaceholderViewController.swift in Sources */,
 				E7E5276C54E35414EB42377A /* HealthRoutes.swift in Sources */,
 				A59BAAE32FF3A4490005BEA9 /* FileManager.swift in Sources */,
+				A586B4392FFDFEB000305F98 /* VoucherListViewModel.swift in Sources */,
 				A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */,
 				A576A2202FE8E22E004F6070 /* ECGSimulator.swift in Sources */,
 				A576A2212FE8E22E004F6070 /* ECGChartView.swift in Sources */,
@@ -1622,6 +1689,7 @@
 				A590FBCC2FEA82980056EF52 /* HomeQuickActionsCell.swift in Sources */,
 				A579AECD2FF268D900D9493A /* ImageBubbleCell.swift in Sources */,
 				A590FBCD2FEA82980056EF52 /* DigestiveViewController.swift in Sources */,
+				A586B4362FFDFEA400305F98 /* AddressListViewModel.swift in Sources */,
 				A590FBCE2FEA82980056EF52 /* LoginFieldView.swift in Sources */,
 				A590FBCF2FEA82980056EF52 /* SpO2ViewController.swift in Sources */,
 				A590FBD12FEA82980056EF52 /* OptionChipView.swift in Sources */,
@@ -1634,6 +1702,7 @@
 				A590FBE02FEA82980056EF52 /* BodyFigureView.swift in Sources */,
 				A590FBE12FEA82980056EF52 /* MetricCardCell.swift in Sources */,
 				A590FBE22FEA82980056EF52 /* HomeTaskCardCell.swift in Sources */,
+				A586B4302FFDFDD100305F98 /* ConversationListViewModel.swift in Sources */,
 				A590FBE42FEA82980056EF52 /* BloodPressureViewController.swift in Sources */,
 				A59BAADF2FF3A2290005BEA9 /* AudioRecorder.swift in Sources */,
 				A590FBE62FEA82980056EF52 /* HeartRateViewController.swift in Sources */,
@@ -1658,6 +1727,7 @@
 				A590FBF82FEA82980056EF52 /* ChatViewController.swift in Sources */,
 				A5163AE72FFB643400EB7551 /* AddressService.swift in Sources */,
 				A5163AE82FFB643400EB7551 /* AddressModels.swift in Sources */,
+				A586B4332FFDFE3D00305F98 /* MyViewModel.swift in Sources */,
 				A590FBF92FEA82980056EF52 /* HealthQuickEntriesCell.swift in Sources */,
 				A590FBFB2FEA82980056EF52 /* HealthScoreCardCell.swift in Sources */,
 				A590FBFC2FEA82980056EF52 /* AgreementCheckboxView.swift in Sources */,
@@ -1671,6 +1741,7 @@
 				A59BAAD22FF3715C0005BEA9 /* FileMessage.swift in Sources */,
 				A590FD8C2FEA96190056EF52 /* HealthEvaluationsViewController.swift in Sources */,
 				A590FD8D2FEA96190056EF52 /* AppointmentsViewController.swift in Sources */,
+				A586B42D2FFDF68500305F98 /* ChatViewModel.swift in Sources */,
 				A590FD8E2FEA96190056EF52 /* MeServiceFulfillmentCell.swift in Sources */,
 				A590FD8F2FEA96190056EF52 /* MyViewController.swift in Sources */,
 				A590FD902FEA96190056EF52 /* OrderListViewController.swift in Sources */,
@@ -1699,6 +1770,7 @@
 				A590FB432FEA2F6E0056EF52 /* ChangePhoneViewController.swift in Sources */,
 				A590FB442FEA2F6E0056EF52 /* PasswordSetupViewController.swift in Sources */,
 				A590FB452FEA2F6E0056EF52 /* CancelAccountViewController.swift in Sources */,
+				A586B42A2FFDF67100305F98 /* HomeViewModel.swift in Sources */,
 				A590FDA62FEA96190056EF52 /* FamilyViewController.swift in Sources */,
 				A590FDA72FEA96190056EF52 /* DietPlanViewController.swift in Sources */,
 				A590FDA82FEA96190056EF52 /* NotificationSettingsViewController.swift in Sources */,

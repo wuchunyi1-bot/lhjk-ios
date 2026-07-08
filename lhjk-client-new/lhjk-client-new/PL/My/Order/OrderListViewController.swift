@@ -32,7 +32,6 @@ final class OrderListViewController: BaseViewController {
     private var selectedTabIndex = 0
     private var childVCs: [OrderTabViewController] = []
     private var needsInitialScroll = false
-    private var isAnimatingScroll = false
 
     private let initialTab: String?
 
@@ -57,14 +56,6 @@ final class OrderListViewController: BaseViewController {
         cv.delegate = self
         cv.register(OrderTabCell.self, forCellWithReuseIdentifier: OrderTabCell.reuseId)
         return cv
-    }()
-
-    /// 选中指示条
-    private let indicatorBar: UIView = {
-        let v = UIView()
-        v.backgroundColor = .fdPrimary
-        v.layer.cornerRadius = 1.5
-        return v
     }()
 
     private let containerView = UIView()
@@ -110,8 +101,6 @@ final class OrderListViewController: BaseViewController {
             make.edges.equalToSuperview()
         }
 
-        tabContainer.addSubview(indicatorBar)
-
         // 子 VC 容器
         view.addSubview(containerView)
         containerView.snp.makeConstraints { make in
@@ -126,15 +115,8 @@ final class OrderListViewController: BaseViewController {
         // 首次 layout 后滚动到初始 Tab
         if needsInitialScroll {
             needsInitialScroll = false
-            isAnimatingScroll = true
             tabCollectionView.scrollToItem(at: IndexPath(item: selectedTabIndex, section: 0), at: .centeredHorizontally, animated: false)
             tabCollectionView.layoutIfNeeded()
-            isAnimatingScroll = false
-        }
-
-        // 滚动动画期间不更新指示条（由 scrollViewDidScroll 处理）
-        if !isAnimatingScroll {
-            updateIndicatorBar(animated: false)
         }
 
         // 确保当前选中的子 VC 已添加（首次 layout 后）
@@ -212,31 +194,6 @@ final class OrderListViewController: BaseViewController {
         currentChildVC?.endAppearanceTransition()
     }
 
-    // MARK: - Indicator Bar
-
-    private func updateIndicatorBar(animated: Bool) {
-        let indexPath = IndexPath(item: selectedTabIndex, section: 0)
-        guard let attrs = tabCollectionView.layoutAttributesForItem(at: indexPath) else { return }
-
-        // 把 cell frame 从 collectionView 坐标系转换到 tabCollectionView 的 superview（tabContainer）坐标系
-        let cellFrameInCV = attrs.frame
-        let converted = tabCollectionView.convert(cellFrameInCV, to: tabCollectionView.superview)
-
-        let barWidth: CGFloat = 20
-        let barX = converted.midX - barWidth / 2
-        let barY = converted.maxY - 3
-
-        let update = {
-            self.indicatorBar.frame = CGRect(x: barX, y: barY, width: barWidth, height: 3)
-        }
-
-        if animated {
-            UIView.animate(withDuration: 0.25, animations: update)
-        } else {
-            update()
-        }
-    }
-
     // MARK: - Actions
 
     private func selectTab(at index: Int) {
@@ -246,24 +203,11 @@ final class OrderListViewController: BaseViewController {
         // 1. 更新 Cell 外观
         tabCollectionView.reloadData()
 
-        // 2. 滚动 Tab 到可见区域（动画期间由 scrollViewDidScroll 驱动指示条）
-        isAnimatingScroll = true
+        // 2. 滚动 Tab 到可见区域
         tabCollectionView.scrollToItem(at: IndexPath(item: index, section: 0), at: .centeredHorizontally, animated: true)
 
         // 3. 切换子 VC
         showChildVC(at: index)
-    }
-
-    // MARK: - Scroll Delegate（驱动指示条跟随滚动动画）
-
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        guard isAnimatingScroll else { return }
-        updateIndicatorBar(animated: false)
-    }
-
-    func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
-        isAnimatingScroll = false
-        updateIndicatorBar(animated: false)
     }
 }
 

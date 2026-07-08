@@ -1,22 +1,14 @@
 import UIKit
 import SnapKit
+import Combine
 
 /// 我的卡券 / 兑换记录页
-///
-/// 参考 funde-client: prototype/src/views/me/MyVouchersView.vue
-///
-/// 布局:
-///   UISegmentedControl (sticky 顶部): 全部 / 未使用 / 已激活 / 已过期
-///   UITableView: VoucherCell 列表
-///   底部"获取更多三好卡健康服务"入口
 final class VoucherListViewController: BaseViewController {
 
-    // MARK: - State
+    // MARK: - ViewModel
 
-    private let service = VoucherService.shared
-    private var allVouchers: [MVoucher] = []
-    private var filteredVouchers: [MVoucher] = []
-    private var activeTab: Int = 0 // 0=全部, 1=未使用, 2=已激活, 3=已过期
+    private let viewModel = VoucherListViewModel()
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - UI
 
@@ -24,12 +16,10 @@ final class VoucherListViewController: BaseViewController {
         let sc = UISegmentedControl(items: ["全部", "未使用", "已激活", "已过期"])
         sc.selectedSegmentIndex = 0
         sc.setTitleTextAttributes([
-            .font: UIFont.fdCaptionSemibold,
-            .foregroundColor: UIColor.fdSubtext,
+            .font: UIFont.fdCaptionSemibold, .foregroundColor: UIColor.fdSubtext,
         ], for: .normal)
         sc.setTitleTextAttributes([
-            .font: UIFont.fdCaptionSemibold,
-            .foregroundColor: UIColor.white,
+            .font: UIFont.fdCaptionSemibold, .foregroundColor: UIColor.white,
         ], for: .selected)
         sc.selectedSegmentTintColor = .fdPrimary
         sc.addTarget(self, action: #selector(tabChanged(_:)), for: .valueChanged)
@@ -65,7 +55,6 @@ final class VoucherListViewController: BaseViewController {
             make.centerX.equalToSuperview()
             make.centerY.equalToSuperview().offset(-40)
         }
-
         let label = UILabel()
         label.text = "暂无相关卡券"
         label.font = .fdCaption
@@ -79,7 +68,6 @@ final class VoucherListViewController: BaseViewController {
         return v
     }()
 
-    /// 底部"获取更多"入口
     private lazy var getMoreView: UIView = {
         let container = UIView()
         container.backgroundColor = .fdSurface
@@ -112,18 +100,13 @@ final class VoucherListViewController: BaseViewController {
 
         [icon, label, arrow].forEach(container.addSubview)
         icon.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.centerY.equalToSuperview()
-            make.size.equalTo(18)
+            make.leading.equalToSuperview().offset(16); make.centerY.equalToSuperview(); make.size.equalTo(18)
         }
         label.snp.makeConstraints { make in
-            make.leading.equalTo(icon.snp.trailing).offset(8)
-            make.centerY.equalToSuperview()
+            make.leading.equalTo(icon.snp.trailing).offset(8); make.centerY.equalToSuperview()
         }
         arrow.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-16)
-            make.centerY.equalToSuperview()
-            make.size.equalTo(14)
+            make.trailing.equalToSuperview().offset(-16); make.centerY.equalToSuperview(); make.size.equalTo(14)
         }
         return container
     }()
@@ -133,17 +116,15 @@ final class VoucherListViewController: BaseViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
-        loadData()
+        viewModel.loadData()
     }
 
     override func setupUI() {
         title = "我的卡券"
         view.backgroundColor = .fdBg
 
-        // Segment container (sticky)
         view.addSubview(segmentContainer)
         segmentContainer.addSubview(segmentControl)
-
         segmentContainer.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
@@ -154,7 +135,6 @@ final class VoucherListViewController: BaseViewController {
             make.leading.trailing.equalToSuperview().inset(16)
         }
 
-        // Table view
         view.addSubview(tableView)
         tableView.snp.makeConstraints { make in
             make.top.equalTo(segmentContainer.snp.bottom)
@@ -162,7 +142,6 @@ final class VoucherListViewController: BaseViewController {
             make.bottom.equalToSuperview()
         }
 
-        // Empty view
         view.addSubview(emptyView)
         emptyView.snp.makeConstraints { make in
             make.top.equalTo(segmentContainer.snp.bottom)
@@ -170,7 +149,6 @@ final class VoucherListViewController: BaseViewController {
         }
         emptyView.isHidden = true
 
-        // Get more button (table footer)
         let footerContainer = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: 60))
         footerContainer.addSubview(getMoreView)
         getMoreView.snp.makeConstraints { make in
@@ -179,45 +157,33 @@ final class VoucherListViewController: BaseViewController {
             make.height.equalTo(48)
         }
         tableView.tableFooterView = footerContainer
+
+        bindViewModel()
     }
 
-    // MARK: - Data
+    // MARK: - Binding
 
-    private func loadData() {
-        allVouchers = service.getVouchers()
-        filterVouchers()
-    }
+    override func bindViewModel() {
+        viewModel.$isEmpty
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] empty in
+                self?.tableView.isHidden = empty
+                self?.emptyView.isHidden = !empty
+            }
+            .store(in: &cancellables)
 
-    private func filterVouchers() {
-        switch activeTab {
-        case 0:
-            filteredVouchers = allVouchers
-        case 1:
-            filteredVouchers = allVouchers.filter { $0.status == .unused }
-        case 2:
-            filteredVouchers = allVouchers.filter { $0.status == .activated }
-        case 3:
-            filteredVouchers = allVouchers.filter { $0.status == .expired }
-        default:
-            filteredVouchers = allVouchers
-        }
-        updateDisplay()
-    }
-
-    private func updateDisplay() {
-        let isEmpty = filteredVouchers.isEmpty
-        tableView.isHidden = isEmpty
-        emptyView.isHidden = !isEmpty
-        if !isEmpty {
-            tableView.reloadData()
-        }
+        viewModel.$filteredVouchers
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.tableView.reloadData()
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Actions
 
     @objc private func tabChanged(_ sender: UISegmentedControl) {
-        activeTab = sender.selectedSegmentIndex
-        filterVouchers()
+        viewModel.selectTab(sender.selectedSegmentIndex)
     }
 
     @objc private func getMoreTapped() {
@@ -232,20 +198,17 @@ final class VoucherListViewController: BaseViewController {
 // MARK: - UITableViewDataSource
 
 extension VoucherListViewController: UITableViewDataSource {
-
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return filteredVouchers.count
+        viewModel.filteredVouchers.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: VoucherCell.reuseIdentifier, for: indexPath) as? VoucherCell else {
             return UITableViewCell()
         }
-        let voucher = filteredVouchers[indexPath.row]
+        let voucher = viewModel.filteredVouchers[indexPath.row]
         cell.configure(voucher: voucher)
-        cell.onActivate = { [weak self] in
-            self?.activateVoucher(voucher)
-        }
+        cell.onActivate = { [weak self] in self?.activateVoucher(voucher) }
         return cell
     }
 }
@@ -253,13 +216,12 @@ extension VoucherListViewController: UITableViewDataSource {
 // MARK: - UITableViewDelegate
 
 extension VoucherListViewController: UITableViewDelegate {
-
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return UITableView.automaticDimension
+        UITableView.automaticDimension
     }
 
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 140
+        140
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

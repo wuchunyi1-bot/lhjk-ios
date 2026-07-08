@@ -4,18 +4,18 @@ import RongIMLibCore
 
 /// IM 业务服务 — 会话 / 消息 / 通知管理
 ///
-/// 会话列表优先从融云 SDK 获取真实数据，融云未连接时 fallback 到 mock 数据
+/// 会话列表从融云 SDK + 后端 API 获取真实数据，无 fallback mock
 final class IMService {
 
     static let shared = IMService()
 
     private var conversations: [Conversation] = []
-    private var notifications: [AppNotification] = AppNotification.mockData()
+    private var notifications: [AppNotification] = []
     private var messagesStore: [String: [ChatMessage]] = [:]
 
     private var cancellables = Set<AnyCancellable>()
 
-    /// 是否已完成过会话列表加载（含 mock fallback），用于避免重复 HTTP 请求
+    /// 是否已完成过会话列表加载，用于避免重复 HTTP 请求
     private(set) var hasLoadedConversations = false
 
     /// 会话已读状态变更（conversationId），用于会话列表局部刷新
@@ -82,7 +82,6 @@ final class IMService {
     /// 1. `GET /mobile/v1/session/getGroup` 获取群组元数据
     /// 2. 用 groupId 列表调融云 `getConversations` 批量查询本地会话
     /// 3. 匹配上融云的在前展示（按 sentTime 倒序），未匹配的 GroupVO 在后展示
-    /// 失败时 fallback 到 mock 数据
     func loadConversations() async -> [Conversation] {
         let isConnected = RongCloudManager.shared.connectionStatus == .connected
 
@@ -98,19 +97,16 @@ final class IMService {
                 }
                 groupDict = dict
             } else {
-                conversations = Conversation.mockData()
                 hasLoadedConversations = true
                 notifyUnreadCountChanged()
                 return conversations
             }
         } catch {
-            conversations = Conversation.mockData()
             hasLoadedConversations = true
             notifyUnreadCountChanged()
             return conversations
         }
         guard !groupDict.isEmpty else {
-            conversations = Conversation.mockData()
             hasLoadedConversations = true
             notifyUnreadCountChanged()
             return conversations
@@ -153,8 +149,6 @@ final class IMService {
 
             let list = matchedList + unmatchedList
             conversations = list
-        } else {
-            conversations = Conversation.mockData()
         }
 
         hasLoadedConversations = true
@@ -163,9 +157,6 @@ final class IMService {
     }
 
     func getConversations() -> [Conversation] {
-        if conversations.isEmpty {
-            conversations = Conversation.mockData()
-        }
         return conversations
     }
 
@@ -312,12 +303,8 @@ final class IMService {
         return (sorted, newTimestamp, isRemaining)
     }
 
-    /// 同步获取缓存消息（若缓存为空则 fallback 到 mock）
+    /// 同步获取缓存消息
     func getMessages(conversationId: String) -> [ChatMessage] {
-        let cached = messagesStore[conversationId]
-        if cached == nil || cached?.isEmpty == true {
-            messagesStore[conversationId] = ChatMessage.mockMessages(for: conversationId)
-        }
         return messagesStore[conversationId] ?? []
     }
 

@@ -1,20 +1,14 @@
 import UIKit
 import SnapKit
+import Combine
 
 /// 收货地址列表页
-///
-/// TableView 列表展示所有收货地址，支持：
-/// - 查看地址列表（默认地址置顶）
-/// - 新增地址（导航栏按钮）
-/// - 编辑地址（点击编辑按钮）
-/// - 删除地址（点击删除按钮，确认弹窗）
-/// - 空状态引导
 final class AddressListViewController: BaseViewController {
 
-    // MARK: - State
+    // MARK: - ViewModel
 
-    private var addresses: [MAddress] = []
-    private var isLoading = true
+    private let viewModel = AddressListViewModel()
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - UI
 
@@ -86,7 +80,6 @@ final class AddressListViewController: BaseViewController {
         title = "收货地址"
         view.backgroundColor = .fdBg
 
-        // 导航栏右侧新增按钮
         let addBarButton = UIBarButtonItem(
             image: UIImage(systemName: "plus"),
             style: .plain,
@@ -97,60 +90,55 @@ final class AddressListViewController: BaseViewController {
         navigationItem.rightBarButtonItem = addBarButton
 
         view.addSubview(tableView)
-        tableView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
+        tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         view.addSubview(emptyView)
-        emptyView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
+        emptyView.snp.makeConstraints { $0.edges.equalToSuperview() }
         emptyView.isHidden = true
 
         view.addSubview(loadingIndicator)
-        loadingIndicator.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-        }
+        loadingIndicator.snp.makeConstraints { $0.center.equalToSuperview() }
+
+        bindViewModel()
     }
 
-    // MARK: - Data Loading
+    // MARK: - Binding
 
-    private func loadAddresses() {
-        if isLoading {
-            loadingIndicator.startAnimating()
-            tableView.isHidden = true
-            emptyView.isHidden = true
-        }
-
-        Task {
-            do {
-                let data = try await AddressService.shared.getAddressList()
-                await MainActor.run {
-                    var list = data.records ?? []
-                    // 默认地址置顶
-                    list.sort { ($0.isDefault == 1) && ($1.isDefault != 1) }
-                    self.addresses = list
-                    self.isLoading = false
-                    self.loadingIndicator.stopAnimating()
-                    self.updateDisplay()
-                }
-            } catch {
-                await MainActor.run {
-                    self.isLoading = false
-                    self.loadingIndicator.stopAnimating()
-                    self.updateDisplay()
-                    self.showToast("加载失败: \(error.localizedDescription)")
+    override func bindViewModel() {
+        viewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] loading in
+                if loading {
+                    self?.loadingIndicator.startAnimating()
+                    self?.tableView.isHidden = true
+                    self?.emptyView.isHidden = true
+                } else {
+                    self?.loadingIndicator.stopAnimating()
                 }
             }
-        }
+            .store(in: &cancellables)
+
+        viewModel.$isEmpty
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] empty in
+                self?.tableView.isHidden = empty
+                self?.emptyView.isHidden = !empty
+            }
+            .store(in: &cancellables)
+
+        viewModel.$addresses
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.tableView.reloadData()
+            }
+            .store(in: &cancellables)
     }
 
-    private func updateDisplay() {
-        let isEmpty = addresses.isEmpty
-        tableView.isHidden = isEmpty
-        emptyView.isHidden = !isEmpty
-        if !isEmpty {
-            tableView.reloadData()
+    // MARK: - Data
+
+    private func loadAddresses() {
+        Task {
+            await viewModel.loadAddresses()
         }
     }
 
@@ -167,32 +155,24 @@ final class AddressListViewController: BaseViewController {
 
     private func deleteAddress(_ address: MAddress, at indexPath: IndexPath) {
         guard let id = address.id else { return }
-
         let alert = UIAlertController(
-            title: "确认删除",
-            message: "删除后不可恢复，确定要删除该收货地址吗？",
+            title: "确认删除", message: "删除后不可恢复，确定要删除该收货地址吗？",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "取消", style: .cancel))
         alert.addAction(UIAlertAction(title: "删除", style: .destructive) { [weak self] _ in
-            self?.performDelete(id: id, at: indexPath)
+            self?.performDelete(id: id)
         })
         present(alert, animated: true)
     }
 
-    private func performDelete(id: Int64, at indexPath: IndexPath) {
+    private func performDelete(id: Int64) {
         Task {
             do {
-                try await AddressService.shared.deleteAddress(id: id)
-                await MainActor.run {
-                    self.addresses.remove(at: indexPath.row)
-                    self.updateDisplay()
-                    self.showToast("已删除")
-                }
+                try await viewModel.deleteAddress(id: id)
+                await MainActor.run { self.showToast("已删除") }
             } catch {
-                await MainActor.run {
-                    self.showToast("删除失败: \(error.localizedDescription)")
-                }
+                await MainActor.run { self.showToast("删除失败: \(error.localizedDescription)") }
             }
         }
     }
@@ -211,23 +191,18 @@ final class AddressListViewController: BaseViewController {
 // MARK: - UITableViewDataSource
 
 extension AddressListViewController: UITableViewDataSource {
-
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return addresses.count
+        viewModel.addresses.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: AddressCell.reuseIdentifier, for: indexPath) as? AddressCell else {
             return UITableViewCell()
         }
-        let address = addresses[indexPath.row]
+        let address = viewModel.addresses[indexPath.row]
         cell.configure(address: address)
-        cell.onEdit = { [weak self] in
-            self?.editAddress(address)
-        }
-        cell.onDelete = { [weak self] in
-            self?.deleteAddress(address, at: indexPath)
-        }
+        cell.onEdit = { [weak self] in self?.editAddress(address) }
+        cell.onDelete = { [weak self] in self?.deleteAddress(address, at: indexPath) }
         return cell
     }
 }
@@ -235,17 +210,16 @@ extension AddressListViewController: UITableViewDataSource {
 // MARK: - UITableViewDelegate
 
 extension AddressListViewController: UITableViewDelegate {
-
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return UITableView.automaticDimension
+        UITableView.automaticDimension
     }
 
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 120
+        120
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        editAddress(addresses[indexPath.row])
+        editAddress(viewModel.addresses[indexPath.row])
     }
 }

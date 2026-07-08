@@ -34,7 +34,7 @@ final class UserService: UserServiceProtocol {
             .postAsync(path: "/mobile/v1/users/updateCurrentProfile", parameters: params, responseType: APIResponse<SUsers>.self)
 
         guard response.isSuccess else {
-            print("[UserService] updateCurrentProfile ✗ code=\(response.code) msg=\(response.msg)")
+            print("[UserService] updateCurrentProfile ✗ code=\(response.code) msg=\(response.msg ?? "")")
             throw UserServiceError.saveFailed(response.msg ?? "")
         }
 
