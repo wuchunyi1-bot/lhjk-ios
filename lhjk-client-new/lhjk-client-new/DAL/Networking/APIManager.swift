@@ -9,7 +9,8 @@ enum APIEnvironment: String {
     case staging
     case production
 
-    var baseURL: URL {
+    /// 网关根地址（OAuth 等不走 /mobile 前缀的接口）
+    var gatewayURL: URL {
         switch self {
         case .development:
             return URL(string: "http://gateway-dev.lianhaojiankang.com")!
@@ -18,6 +19,11 @@ enum APIEnvironment: String {
         case .production:
             return URL(string: "https://api.lhjk.com")!
         }
+    }
+
+    /// 业务 API 根地址（含 /mobile 前缀）
+    var baseURL: URL {
+        gatewayURL.appendingPathComponent("mobile")
     }
 }
 
@@ -60,6 +66,15 @@ final class APIManager {
         config.timeoutIntervalForResource = 60
         return config
     }()
+
+    // MARK: - URL Building
+
+    /// 拼接请求 URL；`useGatewayRoot = true` 时走网关根路径（如 `/auth/oauth2/*`）
+    func makeURL(for path: String, useGatewayRoot: Bool = false) -> URL {
+        let cleanPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
+        let base = useGatewayRoot ? environment.gatewayURL : environment.baseURL
+        return base.appendingPathComponent(cleanPath)
+    }
 
     // MARK: - Initialization
 
@@ -193,8 +208,7 @@ final class APIManager {
         responseType: T.Type,
         progressHandler: ((Double) -> Void)? = nil
     ) -> AnyPublisher<T, APIError> {
-        let cleanPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
-        let url = environment.baseURL.appendingPathComponent(cleanPath)
+        let url = makeURL(for: path)
 
         return session.upload(
             multipartFormData: { formData in
@@ -236,9 +250,7 @@ final class APIManager {
         parameters: [String: Any]?,
         responseType: T.Type
     ) -> AnyPublisher<T, APIError> {
-        // 去除 path 前导 `/`，防止 appendingPathComponent 吞掉 baseURL 的路径前缀
-        let cleanPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
-        let url = environment.baseURL.appendingPathComponent(cleanPath)
+        let url = makeURL(for: path)
 
         let encoding: ParameterEncoding = {
             switch method {

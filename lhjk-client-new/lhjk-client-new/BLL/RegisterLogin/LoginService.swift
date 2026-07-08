@@ -74,7 +74,7 @@ final class LoginService: LoginServiceProtocol {
 
         let response: APIResponse<SMSResponse> = try await APIManager.shared
             .publicGetAsync(
-                path: "/mobile/v1/mobileVerification/sendVerificationCode",
+                path: "/v1/mobileVerification/sendVerificationCode",
                 parameters: params,
                 responseType: APIResponse<SMSResponse>.self
             )
@@ -105,7 +105,8 @@ final class LoginService: LoginServiceProtocol {
             .publicPostFormURLEncodedAsync(
                 path: "/auth/oauth2/token",
                 parameters: params,
-                responseType: APIResponse<TokenResponse>.self
+                responseType: APIResponse<TokenResponse>.self,
+                useGatewayRoot: true
             )
 
         guard response.isSuccess, let token = response.data else {
@@ -150,7 +151,8 @@ final class LoginService: LoginServiceProtocol {
             .publicPostFormURLEncodedAsync(
                 path: "/auth/oauth2/token",
                 parameters: params,
-                responseType: APIResponse<TokenResponse>.self
+                responseType: APIResponse<TokenResponse>.self,
+                useGatewayRoot: true
             )
 
         guard response.isSuccess, let token = response.data else {
@@ -222,7 +224,8 @@ final class LoginService: LoginServiceProtocol {
             let response: APIResponse<EmptyResponse> = try await APIManager.shared.deleteAsync(
                 path: "/auth/oauth2/logout",
                 parameters: nil,
-                responseType: APIResponse<EmptyResponse>.self
+                responseType: APIResponse<EmptyResponse>.self,
+                useGatewayRoot: true
             )
             print("[LoginService] logout ✓ code=\(response.code) msg=\(response.msg ?? "nil")")
         } catch {

@@ -1,27 +1,14 @@
 import UIKit
 import SnapKit
+import Combine
 
 /// 注销账户页
-/// PRD: 02_用户_我的设置_v1.0 §5.6
-/// 原型: funde-client prototype/src/views/me/settings/CancelAccountView.vue
-///
-/// 布局:
-///   警告头部（⚠️ 注销后，您将放弃以下资产和权益）
-///   5 个影响说明卡片（账户信息 / 服务权益 / 交易记录 / 服务记录 / 健康数据）
-///   底部红色"申请注销"按钮
-///
-/// 流程:
-///   点击申请注销 → 检查未完成订单 → 拦截/确认弹窗 → 清除登录态 → 结果页
 final class CancelAccountViewController: BaseViewController {
 
-    // MARK: - Step
+    // MARK: - ViewModel
 
-    private enum Step {
-        case notice, result
-    }
-
-    private var step: Step = .notice
-    private var isSubmitting = false
+    private let viewModel = CancelAccountViewModel()
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Cancel impact items
 
@@ -33,10 +20,7 @@ final class CancelAccountViewController: BaseViewController {
         ("健康数据", "各项身体数据将被清空，无法恢复。"),
     ]
 
-    /// 拦截注销的订单状态
-    private let unfinishedOrderStatuses: Set<String> = ["pending_use", "in_progress", "pending_review"]
-
-    // MARK: - UI (notice)
+    // MARK: - UI
 
     private let scrollView = UIScrollView()
     private var submitBtn: UIButton!
@@ -45,7 +29,13 @@ final class CancelAccountViewController: BaseViewController {
 
     // MARK: - Lifecycle
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        dumpLayout()
+    }
+
     override func setupUI() {
+        print("[CancelAccountVC] setupUI called")
         title = "注销账户"
         view.backgroundColor = .fdBg
 
@@ -54,14 +44,16 @@ final class CancelAccountViewController: BaseViewController {
 
         let contentView = UIView()
         scrollView.addSubview(contentView)
-        contentView.snp.makeConstraints { $0.edges.width.equalToSuperview() }
+        contentView.snp.makeConstraints { make in
+            make.top.leading.trailing.width.equalToSuperview()
+        }
 
         // MARK: Notice Step
 
         noticeContainer = UIView()
         contentView.addSubview(noticeContainer)
         noticeContainer.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
+            make.top.leading.trailing.bottom.equalToSuperview()
         }
 
         // Warning header
@@ -117,16 +109,7 @@ final class CancelAccountViewController: BaseViewController {
             previousCard = card
         }
 
-        // Submit button area (fixed at bottom)
-        let bottomArea = UIView()
-        noticeContainer.addSubview(bottomArea)
-        bottomArea.snp.makeConstraints { make in
-            make.top.equalTo((previousCard ?? warningView).snp.bottom).offset(24)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-32)
-            make.height.equalTo(54)
-        }
-
+        // Submit button
         submitBtn = UIButton(type: .system)
         submitBtn.setTitle("申请注销", for: .normal)
         submitBtn.titleLabel?.font = .fdBodyBold
@@ -134,9 +117,13 @@ final class CancelAccountViewController: BaseViewController {
         submitBtn.backgroundColor = UIColor(hexString: "#D93025")
         submitBtn.layer.cornerRadius = 27
         submitBtn.addTarget(self, action: #selector(handleCancelAccount), for: .touchUpInside)
-        bottomArea.addSubview(submitBtn)
+        print("[CancelAccountVC] button target-action set, submitBtn=\(submitBtn!)")
+        noticeContainer.addSubview(submitBtn)
         submitBtn.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
+            make.top.equalTo((previousCard ?? warningView).snp.bottom).offset(24)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview().offset(-32)
+            make.height.equalTo(54)
         }
 
         // MARK: Result Step
@@ -146,7 +133,6 @@ final class CancelAccountViewController: BaseViewController {
         contentView.addSubview(resultContainer)
         resultContainer.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview()
-            make.bottom.equalToSuperview()
         }
 
         let checkIcon = UIImageView(image: UIImage(systemName: "checkmark.circle.fill"))
@@ -181,6 +167,40 @@ final class CancelAccountViewController: BaseViewController {
             make.top.equalTo(resultTitle.snp.bottom).offset(12)
             make.leading.trailing.equalToSuperview().inset(24)
         }
+    }
+
+    // MARK: - Binding
+
+    override func bindViewModel() {
+        print("[CancelAccountVC] bindViewModel called, submitBtn=\(submitBtn != nil ? "set" : "nil")")
+        viewModel.$isSubmitting
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] submitting in
+                self?.submitBtn.isEnabled = !submitting
+                self?.submitBtn.setTitle(submitting ? "处理中..." : "申请注销", for: .normal)
+                self?.submitBtn.alpha = submitting ? 0.6 : 1.0
+            }
+            .store(in: &cancellables)
+
+        viewModel.$isSuccess
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] success in
+                guard success else { return }
+                self?.noticeContainer.isHidden = true
+                self?.resultContainer.isHidden = false
+                self?.title = ""
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    Router.shared.setRoot("/login")
+                }
+            }
+            .store(in: &cancellables)
+
+        viewModel.toastPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] msg in
+                self?.showToast(msg)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Card Builder
@@ -220,20 +240,14 @@ final class CancelAccountViewController: BaseViewController {
     // MARK: - Cancel Flow
 
     @objc private func handleCancelAccount() {
-        guard !isSubmitting else { return }
+        print("[CancelAccountVC] handleCancelAccount tapped, isSubmitting=\(viewModel.isSubmitting)")
+        guard !viewModel.isSubmitting else { return }
 
-        // Check for unfinished orders (V1.0: default allow if no order service available)
-        if hasUnfinishedOrders() {
+        if viewModel.hasUnfinishedOrders() {
             showUnfinishedOrdersAlert()
         } else {
             showCancelConfirmation()
         }
-    }
-
-    private func hasUnfinishedOrders() -> Bool {
-        // V1.0: 当前无订单服务，默认无未完成订单，允许进入注销确认
-        // 后续接入订单服务后，检查 status ∈ {pending_use, in_progress, pending_review}
-        return false
     }
 
     private func showUnfinishedOrdersAlert() {
@@ -243,7 +257,7 @@ final class CancelAccountViewController: BaseViewController {
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "我知道了", style: .cancel))
-        alert.addAction(UIAlertAction(title: "查看订单", style: .default) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: "查看订单", style: .default) { _ in
             Router.shared.push("/orders")
         })
         present(alert, animated: true)
@@ -257,37 +271,82 @@ final class CancelAccountViewController: BaseViewController {
         )
         alert.addAction(UIAlertAction(title: "取消", style: .cancel))
         alert.addAction(UIAlertAction(title: "确定注销", style: .destructive) { [weak self] _ in
-            self?.performCancellation()
+            self?.viewModel.cancelAccount()
         })
         present(alert, animated: true)
     }
 
-    private func performCancellation() {
-        isSubmitting = true
-        submitBtn.isEnabled = false
-        submitBtn.setTitle("处理中...", for: .normal)
-        submitBtn.alpha = 0.6
+    // MARK: - Toast
 
-        // Simulate processing delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
-            guard let self else { return }
-
-            // Call logout API then clear auth state
-            Task {
-                await LoginService.shared.logout()
-                LoginService.shared.clearSession()
-            }
-            UserManager.shared.clear()
-            // Show result
-            self.noticeContainer.isHidden = true
-            self.resultContainer.isHidden = false
-            self.step = .result
-            self.title = ""
-
-            // Redirect after 2 seconds
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                Router.shared.setRoot("/login")
-            }
+    private func showToast(_ message: String) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        present(alert, animated: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            alert.dismiss(animated: true)
         }
     }
+
+    // MARK: - Debug
+
+    private func dumpLayout() {
+        let svFrame = scrollView.frame
+        let svBounds = scrollView.bounds
+        let svContent = scrollView.contentSize
+        let svInset = scrollView.adjustedContentInset
+
+        print("[DEBUG] ========== Layout Dump ==========")
+        print("[DEBUG] view.bounds      = \(view.bounds)")
+        print("[DEBUG] view.safeAreaInsets = \(view.safeAreaInsets)")
+        print("[DEBUG] scrollView.frame = \(svFrame)")
+        print("[DEBUG] scrollView.bounds = \(svBounds)")
+        print("[DEBUG] scrollView.contentSize = \(svContent)")
+        print("[DEBUG] scrollView.contentInset = \(svInset)")
+        print("[DEBUG] scrollView.clipsToBounds = \(scrollView.clipsToBounds)")
+
+        // Walk the hierarchy from scrollView down to submitBtn
+        var views: [String] = []
+        var current: UIView? = submitBtn
+        while let v = current, v != view {
+            let frameInParent = v.frame
+            let frameInWindow = v.convert(v.bounds, to: nil)
+            let name = v == submitBtn ? "submitBtn" :
+                       v == noticeContainer ? "noticeContainer" :
+                       v == resultContainer ? "resultContainer" :
+                       v.superview == scrollView ? "contentView" :
+                       v == scrollView ? "scrollView" : "subview"
+            views.append("[DEBUG] \(name).frame=\(frameInParent) inWindow=\(frameInWindow) userInteraction=\(v.isUserInteractionEnabled)")
+            current = v.superview
+        }
+        for line in views.reversed() {
+            print(line)
+        }
+
+        // Hit test the button's center
+        let btnCenterInView = submitBtn.convert(submitBtn.bounds.center, to: view)
+        let btnInScrollView = submitBtn.convert(submitBtn.bounds, to: scrollView)
+        print("[DEBUG] submitBtn center in view = \(btnCenterInView)")
+        print("[DEBUG] submitBtn center in scrollView = \(btnInScrollView)")
+        print("[DEBUG] submitBtn center inside scrollView.bounds = \(scrollView.bounds.contains(btnInScrollView))")
+        print("[DEBUG] submitBtn center inside scrollView contentSize = \(CGRect(origin: .zero, size: svContent).contains(btnInScrollView))")
+
+        // Hit test at button center
+        if let hitView = view.hitTest(btnCenterInView, with: nil) {
+            print("[DEBUG] hitTest at btn center -> \(type(of: hitView))")
+            if hitView == submitBtn {
+                print("[DEBUG] ✅ hitTest correctly hits submitBtn")
+            } else {
+                print("[DEBUG] ❌ hitTest hits \(type(of: hitView)) instead of submitBtn")
+            }
+        } else {
+            print("[DEBUG] ❌ hitTest at btn center returned nil")
+        }
+
+        print("[DEBUG] submitBtn.isEnabled = \(submitBtn.isEnabled)")
+        print("[DEBUG] submitBtn.isUserInteractionEnabled = \(submitBtn.isUserInteractionEnabled)")
+        print("[DEBUG] ====================================")
+    }
+}
+
+private extension CGRect {
+    var center: CGPoint { CGPoint(x: midX, y: midY) }
 }

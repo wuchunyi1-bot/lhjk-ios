@@ -5,9 +5,9 @@ import Foundation
 /// 收货地址管理服务 — 提供地址的增删改查能力
 ///
 /// 封装三个后端接口：
-/// - `GET  /mobile/v1/address/getAddressList` — 分页查询地址列表
-/// - `POST /mobile/v1/address/saveOrUpdateAddress` — 新增/修改地址
-/// - `DELETE /mobile/v1/address/deleteAddressById` — 根据 ID 删除地址
+/// - `GET  /v1/address/getAddressList` — 分页查询地址列表
+/// - `POST /v1/address/saveOrUpdateAddress` — 新增/修改地址
+/// - `DELETE /v1/address/deleteAddressById` — 根据 ID 删除地址
 final class AddressService {
 
     // MARK: - Singleton
@@ -41,7 +41,7 @@ final class AddressService {
 
         let response: APIResponse<PaginatedAddressData> = try await APIManager.shared
             .getAsync(
-                path: "/mobile/v1/address/getAddressList",
+                path: "/v1/address/getAddressList",
                 parameters: params,
                 responseType: APIResponse<PaginatedAddressData>.self
             )
@@ -78,7 +78,7 @@ final class AddressService {
 
         let response: APIResponse<EmptyResponse> = try await APIManager.shared
             .postAsync(
-                path: "/mobile/v1/address/saveOrUpdateAddress",
+                path: "/v1/address/saveOrUpdateAddress",
                 parameters: params,
                 responseType: APIResponse<EmptyResponse>.self
             )
@@ -100,7 +100,7 @@ final class AddressService {
 
         let response: APIResponse<EmptyResponse> = try await APIManager.shared
             .deleteAsync(
-                path: "/mobile/v1/address/deleteAddressById",
+                path: "/v1/address/deleteAddressById",
                 parameters: ["id": String(id)],
                 responseType: APIResponse<EmptyResponse>.self
             )

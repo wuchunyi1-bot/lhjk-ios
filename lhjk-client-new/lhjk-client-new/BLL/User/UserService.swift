@@ -2,7 +2,7 @@ import Foundation
 
 /// 用户信息服务
 ///
-/// 封装 `POST /mobile/v1/users/updateCurrentProfile` 和 `GET /v1/users/getCurrentUserBaseInfo`
+/// 封装 `POST /v1/users/updateCurrentProfile` 和 `GET /v1/users/getCurrentUserBaseInfo`
 final class UserService: UserServiceProtocol {
 
     // MARK: - Singleton
@@ -31,7 +31,7 @@ final class UserService: UserServiceProtocol {
         print("[UserService] updateCurrentProfile → params: \(params)")
 
         let response: APIResponse<SUsers> = try await APIManager.shared
-            .postAsync(path: "/mobile/v1/users/updateCurrentProfile", parameters: params, responseType: APIResponse<SUsers>.self)
+            .postAsync(path: "/v1/users/updateCurrentProfile", parameters: params, responseType: APIResponse<SUsers>.self)
 
         guard response.isSuccess else {
             print("[UserService] updateCurrentProfile ✗ code=\(response.code) msg=\(response.msg ?? "")")
@@ -46,7 +46,7 @@ final class UserService: UserServiceProtocol {
         print("[UserService] getCurrentUserBaseInfo")
 
         let response: APIResponse<SUsers> = try await APIManager.shared
-            .getAsync(path: "/mobile/v1/users/getCurrentUserBaseInfo", parameters: nil, responseType: APIResponse<SUsers>.self)
+            .getAsync(path: "/v1/users/getCurrentUserBaseInfo", parameters: nil, responseType: APIResponse<SUsers>.self)
 
         guard response.isSuccess else {
             print("[UserService] getCurrentUserBaseInfo ✗ code=\(response.code) msg=\(response.msg ?? "")")
@@ -72,7 +72,7 @@ final class UserService: UserServiceProtocol {
         let dto = ResetPasswordByMobileDTO(mobile: mobile, newPwd: newPwd, checkCode: checkCode)
 
         let response: APIResponse<EmptyResponse> = try await APIManager.shared
-            .postAsync(path: "/mobile/v1/users/resetPasswordByMobile", parameters: dto.asDict(), responseType: APIResponse<EmptyResponse>.self)
+            .postAsync(path: "/v1/users/resetPasswordByMobile", parameters: dto.asDict(), responseType: APIResponse<EmptyResponse>.self)
 
         guard response.isSuccess else {
             print("[UserService] resetPasswordByMobile ✗ code=\(response.code)")
@@ -88,7 +88,7 @@ final class UserService: UserServiceProtocol {
         if let code = checkCode { params["checkCode"] = code }
 
         let response: APIResponse<EmptyResponse> = try await APIManager.shared
-            .postFormURLEncodedAsync(path: "/mobile/v1/users/changePassword", parameters: params, responseType: APIResponse<EmptyResponse>.self)
+            .postFormURLEncodedAsync(path: "/v1/users/changePassword", parameters: params, responseType: APIResponse<EmptyResponse>.self)
 
         guard response.isSuccess else {
             print("[UserService] changePassword ✗ code=\(response.code)")
@@ -104,7 +104,7 @@ final class UserService: UserServiceProtocol {
         if let code = checkCode { params["checkCode"] = code }
 
         let response: APIResponse<EmptyResponse> = try await APIManager.shared
-            .postFormURLEncodedAsync(path: "/mobile/v1/users/changeMobile", parameters: params, responseType: APIResponse<EmptyResponse>.self)
+            .postFormURLEncodedAsync(path: "/v1/users/changeMobile", parameters: params, responseType: APIResponse<EmptyResponse>.self)
 
         guard response.isSuccess else {
             print("[UserService] changeMobile ✗ code=\(response.code)")
@@ -113,12 +113,27 @@ final class UserService: UserServiceProtocol {
         print("[UserService] changeMobile ✓")
     }
 
+    // MARK: - 注销用户
+
+    func cancelCurrentUser() async throws {
+        print("[UserService] cancelCurrentUser")
+
+        let response: APIResponse<EmptyResponse> = try await APIManager.shared
+            .postAsync(path: "/v1/users/cancelCurrentUser", parameters: nil, responseType: APIResponse<EmptyResponse>.self)
+
+        guard response.isSuccess else {
+            print("[UserService] cancelCurrentUser ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw UserServiceError.cancelFailed(response.msg ?? "")
+        }
+        print("[UserService] cancelCurrentUser ✓")
+    }
+
     func changeCurrentPassword(oldPwd: String, newPwd: String) async throws {
         print("[UserService] changeCurrentPassword")
         let dto = ChangeCurrentPasswordDTO(oldPwd: oldPwd, newPwd: newPwd)
 
         let response: APIResponse<EmptyResponse> = try await APIManager.shared
-            .postAsync(path: "/mobile/v1/users/changeCurrentPassword", parameters: dto.asDict(), responseType: APIResponse<EmptyResponse>.self)
+            .postAsync(path: "/v1/users/changeCurrentPassword", parameters: dto.asDict(), responseType: APIResponse<EmptyResponse>.self)
 
         guard response.isSuccess else {
             print("[UserService] changeCurrentPassword ✗ code=\(response.code)")
@@ -149,6 +164,7 @@ enum UserServiceError: Error, LocalizedError {
     case passwordResetFailed(String)
     case passwordChangeFailed(String)
     case mobileChangeFailed(String)
+    case cancelFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -157,6 +173,7 @@ enum UserServiceError: Error, LocalizedError {
         case .passwordResetFailed(let msg): return msg.isEmpty ? "密码重置失败" : msg
         case .passwordChangeFailed(let msg): return msg.isEmpty ? "密码修改失败" : msg
         case .mobileChangeFailed(let msg): return msg.isEmpty ? "手机号修改失败" : msg
+        case .cancelFailed(let msg): return msg.isEmpty ? "注销失败，请稍后重试" : msg
         }
     }
 }

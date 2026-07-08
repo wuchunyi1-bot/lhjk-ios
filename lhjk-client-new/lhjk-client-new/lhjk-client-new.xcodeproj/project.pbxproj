@@ -54,6 +54,9 @@
 		A586B4332FFDFE3D00305F98 /* MyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A586B4312FFDFE3D00305F98 /* MyViewModel.swift */; };
 		A586B4362FFDFEA400305F98 /* AddressListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A586B4342FFDFEA400305F98 /* AddressListViewModel.swift */; };
 		A586B4392FFDFEB000305F98 /* VoucherListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A586B4372FFDFEB000305F98 /* VoucherListViewModel.swift */; };
+		A586B43B2FFE018400305F98 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A586B43A2FFE018400305F98 /* AppContainer.swift */; };
+		A586B43E2FFE06DB00305F98 /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A586B43C2FFE06DB00305F98 /* LoginViewModel.swift */; };
+		A586B4412FFE217300305F98 /* CancelAccountViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A586B43F2FFE217300305F98 /* CancelAccountViewModel.swift */; };
 		A58C72C62FEE2FEF003B405C /* NotificationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58C72C52FEE2FEF003B405C /* NotificationsViewController.swift */; };
 		A58C72C72FEE2FEF003B405C /* MessagesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58C72C42FEE2FEF003B405C /* MessagesViewController.swift */; };
 		A58C72CE2FEE3056003B405C /* ServiceCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58C72CB2FEE3056003B405C /* ServiceCardCell.swift */; };
@@ -253,6 +256,9 @@
 		A586B4312FFDFE3D00305F98 /* MyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyViewModel.swift; sourceTree = "<group>"; };
 		A586B4342FFDFEA400305F98 /* AddressListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressListViewModel.swift; sourceTree = "<group>"; };
 		A586B4372FFDFEB000305F98 /* VoucherListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoucherListViewModel.swift; sourceTree = "<group>"; };
+		A586B43A2FFE018400305F98 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppContainer.swift; path = DAL/AppContainer.swift; sourceTree = "<group>"; };
+		A586B43C2FFE06DB00305F98 /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
+		A586B43F2FFE217300305F98 /* CancelAccountViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancelAccountViewModel.swift; sourceTree = "<group>"; };
 		A58C72C42FEE2FEF003B405C /* MessagesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesViewController.swift; sourceTree = "<group>"; };
 		A58C72C52FEE2FEF003B405C /* NotificationsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsViewController.swift; sourceTree = "<group>"; };
 		A58C72C82FEE3056003B405C /* AIWeeklyReportCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWeeklyReportCell.swift; sourceTree = "<group>"; };
@@ -473,6 +479,7 @@
 		80323DB75D4CB2E15619DDBB /* DAL */ = {
 			isa = PBXGroup;
 			children = (
+				A586B43A2FFE018400305F98 /* AppContainer.swift */,
 				A59BAAE22FF3A4490005BEA9 /* FileManager */,
 				A59BAADD2FF3A2290005BEA9 /* Media */,
 				A55AB3372FED1E5C00CC3A35 /* OSS */,
@@ -627,6 +634,22 @@
 			path = ViewModels;
 			sourceTree = "<group>";
 		};
+		A586B43D2FFE06DB00305F98 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A586B43C2FFE06DB00305F98 /* LoginViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A586B4402FFE217300305F98 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A586B43F2FFE217300305F98 /* CancelAccountViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
 		A590FB192FEA2F6E0056EF52 /* User */ = {
 			isa = PBXGroup;
 			children = (
@@ -736,6 +759,7 @@
 		A590FB462FEA2F6E0056EF52 /* Security */ = {
 			isa = PBXGroup;
 			children = (
+				A586B4402FFE217300305F98 /* ViewModels */,
 				A590FD872FEA96190056EF52 /* SecuritySettingsViewController.swift */,
 				A590FB402FEA2F6E0056EF52 /* ChangePhoneViewController.swift */,
 				A590FB412FEA2F6E0056EF52 /* PasswordSetupViewController.swift */,
@@ -897,6 +921,7 @@
 		A590FBB72FEA82980056EF52 /* RegisterLogin */ = {
 			isa = PBXGroup;
 			children = (
+				A586B43D2FFE06DB00305F98 /* ViewModels */,
 				A590FBAD2FEA82980056EF52 /* Components */,
 				A590FBB12FEA82980056EF52 /* ForgotPassword */,
 				A590FBB52FEA82980056EF52 /* Onboarding */,
@@ -1694,6 +1719,7 @@
 				A590FBCF2FEA82980056EF52 /* SpO2ViewController.swift in Sources */,
 				A590FBD12FEA82980056EF52 /* OptionChipView.swift in Sources */,
 				A590FBD32FEA82980056EF52 /* SleepViewController.swift in Sources */,
+				A586B43B2FFE018400305F98 /* AppContainer.swift in Sources */,
 				A590FBD62FEA82980056EF52 /* BloodSugarViewController.swift in Sources */,
 				A590FBD92FEA82980056EF52 /* HealthVitalMetricsCell.swift in Sources */,
 				A590FBDA2FEA82980056EF52 /* ServiceViewController.swift in Sources */,
@@ -1722,6 +1748,7 @@
 				A590FBF72FEA82980056EF52 /* MetricsViewController.swift in Sources */,
 				A5B54B3F2FEE51E5009AB072 /* ConversationListViewController.swift in Sources */,
 				A5B54B402FEE51E5009AB072 /* NotificationListViewController.swift in Sources */,
+				A586B43E2FFE06DB00305F98 /* LoginViewModel.swift in Sources */,
 				A55AB3382FED1E5C00CC3A35 /* OSSManager.swift in Sources */,
 				A55AB3392FED1E5C00CC3A35 /* OSSModels.swift in Sources */,
 				A590FBF82FEA82980056EF52 /* ChatViewController.swift in Sources */,
@@ -1774,6 +1801,7 @@
 				A590FDA62FEA96190056EF52 /* FamilyViewController.swift in Sources */,
 				A590FDA72FEA96190056EF52 /* DietPlanViewController.swift in Sources */,
 				A590FDA82FEA96190056EF52 /* NotificationSettingsViewController.swift in Sources */,
+				A586B4412FFE217300305F98 /* CancelAccountViewModel.swift in Sources */,
 				A590FC012FEA82980056EF52 /* FundusViewController.swift in Sources */,
 				A590FC032FEA82980056EF52 /* HealthRecordModels.swift in Sources */,
 				A590FC042FEA82980056EF52 /* HomeServiceBannerCell.swift in Sources */,

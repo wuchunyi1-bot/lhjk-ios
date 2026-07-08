@@ -113,7 +113,7 @@ struct SUsers: Codable {
 
 /// Onboarding 完成后提交的用户数据子集
 ///
-/// 对应 `POST /mobile/v1/users/updateCurrentProfile` 请求体
+/// 对应 `POST /v1/users/updateCurrentProfile` 请求体
 /// 所有字段均为 Optional，按需发送非空值
 struct SUsersOnboardingPayload: Encodable {
     /// 手机号（当前登录账号）

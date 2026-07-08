@@ -5,7 +5,7 @@ import Foundation
 /// 订单管理服务 — 提供订单列表查询能力
 ///
 /// 封装后端接口：
-/// - `GET /mobile/v1/order/getAppOrderList` — 分页查询用户订单列表
+/// - `GET /v1/order/getAppOrderList` — 分页查询用户订单列表
 final class OrderService {
 
     // MARK: - Singleton
@@ -45,7 +45,7 @@ final class OrderService {
 
         let response: APIResponse<PaginatedOrderData> = try await APIManager.shared
             .getAsync(
-                path: "/mobile/v1/order/getAppOrderList",
+                path: "/v1/order/getAppOrderList",
                 parameters: params,
                 responseType: APIResponse<PaginatedOrderData>.self
             )

@@ -79,7 +79,7 @@ final class IMService {
     }
 
     /// 两步合并加载会话列表：
-    /// 1. `GET /mobile/v1/session/getGroup` 获取群组元数据
+    /// 1. `GET /v1/session/getGroup` 获取群组元数据
     /// 2. 用 groupId 列表调融云 `getConversations` 批量查询本地会话
     /// 3. 匹配上融云的在前展示（按 sentTime 倒序），未匹配的 GroupVO 在后展示
     func loadConversations() async -> [Conversation] {
@@ -89,7 +89,7 @@ final class IMService {
         let groupDict: [String: GroupVO]
         do {
             let response: GroupListResponse = try await APIManager.shared
-                .getAsync(path: "/mobile/v1/session/getGroup", parameters: nil, responseType: GroupListResponse.self)
+                .getAsync(path: "/v1/session/getGroup", parameters: nil, responseType: GroupListResponse.self)
             if response.isSuccess, let data = response.data {
                 var dict: [String: GroupVO] = [:]
                 for g in data {

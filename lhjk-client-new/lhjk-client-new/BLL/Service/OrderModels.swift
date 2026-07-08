@@ -146,7 +146,7 @@ extension MOrder: Decodable {
 
 // MARK: - 订单分页数据
 
-/// 分页订单列表数据，对应 `GET /mobile/v1/order/getAppOrderList` 的 `data` 字段
+/// 分页订单列表数据，对应 `GET /v1/order/getAppOrderList` 的 `data` 字段
 struct PaginatedOrderData: Decodable {
     let totalRecords: Int?
     let pageSize: Int?

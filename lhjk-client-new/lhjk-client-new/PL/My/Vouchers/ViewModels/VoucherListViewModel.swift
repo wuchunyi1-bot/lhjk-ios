@@ -16,7 +16,7 @@ final class VoucherListViewModel: ObservableObject {
 
     // MARK: - Init
 
-    init(voucherService: VoucherService = .shared) {
+    init(voucherService: VoucherService = AppContainer.shared.voucherService) {
         self.voucherService = voucherService
     }
 

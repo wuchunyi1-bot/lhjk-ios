@@ -47,7 +47,7 @@ final class MyViewModel: ObservableObject {
 
     // MARK: - Init
 
-    init(userManager: UserManager = .shared) {
+    init(userManager: UserManager = AppContainer.shared.userManager) {
         self.userManager = userManager
 
         self.stats = Self.defaultStats

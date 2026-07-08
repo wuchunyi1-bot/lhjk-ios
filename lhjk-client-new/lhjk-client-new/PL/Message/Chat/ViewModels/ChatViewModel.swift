@@ -42,9 +42,9 @@ final class ChatViewModel: ObservableObject {
     // MARK: - Init
 
     init(conversationId: String,
-         imService: IMService = .shared,
-         rongCloudManager: RongCloudManager = .shared,
-         rongCloudMessageDelegate: RongCloudMessageDelegate = .shared) {
+         imService: IMService = AppContainer.shared.imService,
+         rongCloudManager: RongCloudManager = AppContainer.shared.rongCloudManager,
+         rongCloudMessageDelegate: RongCloudMessageDelegate = AppContainer.shared.rongCloudMessageDelegate) {
         self.conversationId = conversationId
         self.imService = imService
         self.rongCloudManager = rongCloudManager

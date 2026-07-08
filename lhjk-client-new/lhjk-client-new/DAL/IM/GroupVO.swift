@@ -1,6 +1,6 @@
 import Foundation
 
-/// `GET /mobile/v1/session/getGroup` 返回的群组模型
+/// `GET /v1/session/getGroup` 返回的群组模型
 struct GroupVO: Decodable {
     let sessionId: String?       // 后端返回 String
     let groupId: String?         // 后端返回 String
@@ -21,5 +21,5 @@ struct GroupVO: Decodable {
     let labelType: Int?          // 后端返回 Int (nullable)
 }
 
-/// `GET /mobile/v1/session/getGroup` 响应
+/// `GET /v1/session/getGroup` 响应
 typealias GroupListResponse = APIResponse<[GroupVO]>

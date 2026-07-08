@@ -15,7 +15,7 @@ final class AddressListViewModel: ObservableObject {
 
     // MARK: - Init
 
-    init(addressService: AddressService = .shared) {
+    init(addressService: AddressService = AppContainer.shared.addressService) {
         self.addressService = addressService
     }
 

@@ -75,7 +75,7 @@ struct MAddress: Codable {
 
 // MARK: - 地址分页数据
 
-/// 分页地址列表数据，对应 `GET /mobile/v1/address/getAddressList` 的 `data` 字段
+/// 分页地址列表数据，对应 `GET /v1/address/getAddressList` 的 `data` 字段
 struct PaginatedAddressData: Decodable {
     /// 总记录数
     let totalRecords: Int?
@@ -99,7 +99,7 @@ struct PaginatedAddressData: Decodable {
 
 // MARK: - 地址保存请求体 (Encodable)
 
-/// 新增/修改地址请求体，对应 `POST /mobile/v1/address/saveOrUpdateAddress`
+/// 新增/修改地址请求体，对应 `POST /v1/address/saveOrUpdateAddress`
 struct AddressSavePayload: Encodable {
     /// 主键（修改时传入，新增时为 nil）
     var id: Int64?

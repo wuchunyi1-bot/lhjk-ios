@@ -23,7 +23,7 @@ enum RCConnectionStatus: Int {
 
 // MARK: - Token 响应模型
 
-/// `POST /mobile/v1/account/addRongImAccount` 返回的 data 字段
+/// `POST /v1/account/addRongImAccount` 返回的 data 字段
 private struct RongCloudTokenResponse: Decodable {
     let token: String?
 }
@@ -656,7 +656,7 @@ final class RongCloudManager {
 
     /// 调后端获取 Token，失败重试 1 次
     private func fetchTokenWithRetry() async {
-        print("[RongCloud] fetchToken → calling POST /mobile/v1/account/addRongImAccount")
+        print("[RongCloud] fetchToken → calling POST /v1/account/addRongImAccount")
 
         let token = await fetchTokenOnce()
         if let token = token {
@@ -681,7 +681,7 @@ final class RongCloudManager {
         do {
             let response: APIResponse<RongCloudTokenResponse> = try await APIManager.shared
                 .postAsync(
-                    path: "/mobile/v1/account/addRongImAccount",
+                    path: "/v1/account/addRongImAccount",
                     parameters: nil,
                     responseType: APIResponse<RongCloudTokenResponse>.self
                 )

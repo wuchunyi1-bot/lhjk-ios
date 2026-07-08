@@ -6,24 +6,22 @@ import Foundation
 
 extension APIManager {
 
-    private func makeURL(_ path: String) -> URL {
-        let clean = path.hasPrefix("/") ? String(path.dropFirst()) : path
-        return environment.baseURL.appendingPathComponent(clean)
-    }
-
     // MARK: Public (Unauthenticated)
 
     func publicGetAsync<T: Decodable>(
         path: String, parameters: [String: Any]? = nil, responseType: T.Type
     ) async throws -> T {
-        let url = makeURL(path)
+        let url = makeURL(for: path)
         return try await request(url: url, method: .get, parameters: parameters, encoding: URLEncoding.default, session: publicSession)
     }
 
     func publicPostFormURLEncodedAsync<T: Decodable>(
-        path: String, parameters: [String: Any]? = nil, responseType: T.Type
+        path: String,
+        parameters: [String: Any]? = nil,
+        responseType: T.Type,
+        useGatewayRoot: Bool = false
     ) async throws -> T {
-        let url = makeURL(path)
+        let url = makeURL(for: path, useGatewayRoot: useGatewayRoot)
         return try await request(url: url, method: .post, parameters: parameters, encoding: URLEncoding.httpBody, session: publicSession)
     }
 
@@ -32,7 +30,7 @@ extension APIManager {
     func getAsync<T: Decodable>(
         path: String, parameters: [String: Any]? = nil, responseType: T.Type
     ) async throws -> T {
-        let url = makeURL(path)
+        let url = makeURL(for: path)
         print("[APIManager] GET \(url)")
         return try await request(url: url, method: .get, parameters: parameters, encoding: URLEncoding.default, session: session)
     }
@@ -40,7 +38,7 @@ extension APIManager {
     func postAsync<T: Decodable>(
         path: String, parameters: [String: Any]? = nil, responseType: T.Type
     ) async throws -> T {
-        let url = makeURL(path)
+        let url = makeURL(for: path)
         print("[APIManager] POST \(url)")
         return try await request(url: url, method: .post, parameters: parameters, encoding: JSONEncoding.default, session: session)
     }
@@ -49,7 +47,7 @@ extension APIManager {
     func postFormURLEncodedAsync<T: Decodable>(
         path: String, parameters: [String: Any]? = nil, responseType: T.Type
     ) async throws -> T {
-        let url = makeURL(path)
+        let url = makeURL(for: path)
         print("[APIManager] POST(urlenc) \(url)")
         return try await request(url: url, method: .post, parameters: parameters, encoding: URLEncoding.default, session: session)
     }
@@ -57,15 +55,18 @@ extension APIManager {
     func putAsync<T: Decodable>(
         path: String, parameters: [String: Any]? = nil, responseType: T.Type
     ) async throws -> T {
-        let url = makeURL(path)
+        let url = makeURL(for: path)
         print("[APIManager] PUT \(url)")
         return try await request(url: url, method: .put, parameters: parameters, encoding: JSONEncoding.default, session: session)
     }
 
     func deleteAsync<T: Decodable>(
-        path: String, parameters: [String: Any]? = nil, responseType: T.Type
+        path: String,
+        parameters: [String: Any]? = nil,
+        responseType: T.Type,
+        useGatewayRoot: Bool = false
     ) async throws -> T {
-        let url = makeURL(path)
+        let url = makeURL(for: path, useGatewayRoot: useGatewayRoot)
         print("[APIManager] DELETE \(url)")
         return try await request(url: url, method: .delete, parameters: parameters, encoding: URLEncoding.default, session: session)
     }

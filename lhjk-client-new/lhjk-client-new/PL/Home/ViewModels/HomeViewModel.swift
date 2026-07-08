@@ -54,7 +54,7 @@ final class HomeViewModel: ObservableObject {
 
     // MARK: - Init
 
-    init(userManager: UserManager = .shared) {
+    init(userManager: UserManager = AppContainer.shared.userManager) {
         self.userManager = userManager
 
         // 默认值（用户信息未加载时的占位）

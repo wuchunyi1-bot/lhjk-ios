@@ -17,8 +17,8 @@ final class ConversationListViewModel: ObservableObject {
 
     // MARK: - Init
 
-    init(imService: IMService = .shared,
-         rongCloudManager: RongCloudManager = .shared) {
+    init(imService: IMService = AppContainer.shared.imService,
+         rongCloudManager: RongCloudManager = AppContainer.shared.rongCloudManager) {
         self.imService = imService
         self.rongCloudManager = rongCloudManager
         setupSubscriptions()

@@ -30,7 +30,7 @@ final class OSSManager {
 
         let response: APIResponse<CosSignVo> = try await APIManager.shared
             .getAsync(
-                path: "/mobile/v1/cos/getCosSign",
+                path: "/v1/cos/getCosSign",
                 parameters: ["folderName": folderName, "ext": ext],
                 responseType: APIResponse<CosSignVo>.self
             )
