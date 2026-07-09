@@ -14,13 +14,16 @@ open lhjk-client-new.xcworkspace
 # Build: select scheme "lhjk-client-new" → target iOS 15.0+ device/simulator
 ```
 
-After adding, removing, or moving any `.swift` file, regenerate the Xcode project:
+### 新增 / 移动 / 删除 Swift 文件
 
-```bash
-ruby generate_project.rb
-```
+**不要**修改 `project.pbxproj` 或运行任何自动生成脚本。文件写入磁盘后，在回复中**列出路径并提示开发者**手动加入 Xcode：
 
-This script scans all `.swift` files under `lhjk-client-new/` and rebuilds `project.pbxproj`. Without this step, new files won't appear in Xcode's file navigator or compile.
+1. 打开 `lhjk-client-new.xcworkspace`
+2. 在对应分组（`PL` / `BLL` / `DAL` / `Other`）右键 → **Add Files to "lhjk-client-new"...**
+3. 选中文件，**Add to targets: lhjk-client-new** 勾选
+4. 编译验证
+
+未加入工程的文件不会参与编译，会出现找不到类型的错误。
 
 ## Architecture: Three-Layer (PL → BLL → DAL)
 

@@ -1,0 +1,2009 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+
+/* Begin PBXBuildFile section */
+		0000000000000000000000D6 /* Pods_lhjk_client_new.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0000000000000000000001B4 /* Pods_lhjk_client_new.framework */; };
+		0000000000000000000000D6 /* BluetoothService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000001; };
+		0000000000000000000000D7 /* HealthRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000002; };
+		0000000000000000000000D8 /* HomeRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000003; };
+		0000000000000000000000D9 /* IMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000004; };
+		0000000000000000000000DA /* MessageRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000005; };
+		0000000000000000000000DB /* AddressModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000006; };
+		0000000000000000000000DC /* AddressService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000007; };
+		0000000000000000000000DD /* MyRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000008; };
+		0000000000000000000000DE /* VoucherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000009; };
+		0000000000000000000000DF /* VoucherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000A; };
+		0000000000000000000000E0 /* LoginModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000B; };
+		0000000000000000000000E1 /* LoginService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000C; };
+		0000000000000000000000E2 /* LoginServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000D; };
+		0000000000000000000000E3 /* RegisterLoginRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000E; };
+		0000000000000000000000E4 /* ColumnContentModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000F; };
+		0000000000000000000000E5 /* ColumnContentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000010; };
+		0000000000000000000000E6 /* DictionaryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000011; };
+		0000000000000000000000E7 /* DictionaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000012; };
+		0000000000000000000000E8 /* HospitalPackageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000013; };
+		0000000000000000000000E9 /* OrderModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000014; };
+		0000000000000000000000EA /* OrderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000015; };
+		0000000000000000000000EB /* PaymentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000016; };
+		0000000000000000000000EC /* ServiceCatalogService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000017; };
+		0000000000000000000000ED /* ServiceModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000018; };
+		0000000000000000000000EE /* ServiceRecommendModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000019; };
+		0000000000000000000000EF /* ServiceRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000001A; };
+		0000000000000000000000F0 /* UserManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000001B; };
+		0000000000000000000000F1 /* UserModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000001C; };
+		0000000000000000000000F2 /* UserRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000001D; };
+		0000000000000000000000F3 /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000001E; };
+		0000000000000000000000F4 /* UserServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000001F; };
+		0000000000000000000000F5 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000020; };
+		0000000000000000000000F6 /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000021; };
+		0000000000000000000000F7 /* BluetoothModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000022; };
+		0000000000000000000000F8 /* ECGChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000023; };
+		0000000000000000000000F9 /* ECGDataBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000024; };
+		0000000000000000000000FA /* ECGSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000025; };
+		0000000000000000000000FB /* FileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000026; };
+		0000000000000000000000FC /* Conversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000027; };
+		0000000000000000000000FD /* FileMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000028; };
+		0000000000000000000000FE /* SysNotifyMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000029; };
+		0000000000000000000000FF /* VideoMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000002A; };
+		000000000000000000000100 /* GroupVO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000002B; };
+		000000000000000000000101 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000002C; };
+		000000000000000000000102 /* RongCloudManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000002D; };
+		000000000000000000000103 /* RongCloudMessageDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000002E; };
+		000000000000000000000104 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000002F; };
+		000000000000000000000105 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000030; };
+		000000000000000000000106 /* APIManager+Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000031; };
+		000000000000000000000107 /* APIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000032; };
+		000000000000000000000108 /* APIResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000033; };
+		000000000000000000000109 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000034; };
+		00000000000000000000010A /* OAuthAuthenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000035; };
+		00000000000000000000010B /* OAuthCredential.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000036; };
+		00000000000000000000010C /* OSSManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000037; };
+		00000000000000000000010D /* OSSModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000038; };
+		00000000000000000000010E /* AlipayChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000039; };
+		00000000000000000000010F /* PaymentOrder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000003A; };
+		000000000000000000000110 /* PaymentProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000003B; };
+		000000000000000000000111 /* WechatPayChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000003C; };
+		000000000000000000000112 /* RouteSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000003D; };
+		000000000000000000000113 /* Router.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000003E; };
+		000000000000000000000114 /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000003F; };
+		000000000000000000000115 /* UserDefaultsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000040; };
+		000000000000000000000116 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000041; };
+		000000000000000000000117 /* BaseNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000042; };
+		000000000000000000000118 /* BaseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000043; };
+		000000000000000000000119 /* PlaceholderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000044; };
+		00000000000000000000011A /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000045; };
+		00000000000000000000011B /* DebugLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000046; };
+		00000000000000000000011C /* DGCharts+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000047; };
+		00000000000000000000011D /* UIButton+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000048; };
+		00000000000000000000011E /* UIColor+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000049; };
+		00000000000000000000011F /* UIColor+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000004A; };
+		000000000000000000000120 /* UIFont+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000004B; };
+		000000000000000000000121 /* UIView+Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000004C; };
+		000000000000000000000122 /* UIView+Shadow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000004D; };
+		000000000000000000000123 /* UIViewController+Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000004E; };
+		000000000000000000000124 /* BLLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000004F; };
+		000000000000000000000125 /* DALProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000050; };
+		000000000000000000000126 /* PLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000051; };
+		000000000000000000000127 /* RootTabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000052; };
+		000000000000000000000128 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000053; };
+		000000000000000000000129 /* HealthArchiveCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000054; };
+		00000000000000000000012A /* HealthQuickEntriesCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000055; };
+		00000000000000000000012B /* HealthScoreCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000056; };
+		00000000000000000000012C /* HealthVitalMetricsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000057; };
+		00000000000000000000012D /* MetricCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000058; };
+		00000000000000000000012E /* PeripheralCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000059; };
+		00000000000000000000012F /* HealthViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000005A; };
+		000000000000000000000130 /* BloodPressureViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000005B; };
+		000000000000000000000131 /* BloodSugarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000005C; };
+		000000000000000000000132 /* MetricRulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000005D; };
+		000000000000000000000133 /* DigestiveViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000005E; };
+		000000000000000000000134 /* EcgViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000005F; };
+		000000000000000000000135 /* ExerciseFoodViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000060; };
+		000000000000000000000136 /* FundusViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000061; };
+		000000000000000000000137 /* HeartRateViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000062; };
+		000000000000000000000138 /* MetricAddViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000063; };
+		000000000000000000000139 /* MetricsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000064; };
+		00000000000000000000013A /* SleepViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000065; };
+		00000000000000000000013B /* SpO2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000066; };
+		00000000000000000000013C /* WeightViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000067; };
+		00000000000000000000013D /* HealthRecordBodyCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000068; };
+		00000000000000000000013E /* HealthRecordHistoryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000069; };
+		00000000000000000000013F /* HealthRecordLifestyleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000006A; };
+		000000000000000000000140 /* HealthRecordMetricRowCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000006B; };
+		000000000000000000000141 /* HealthRecordUserInfoCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000006C; };
+		000000000000000000000142 /* BodyFigureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000006D; };
+		000000000000000000000143 /* RiskBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000006E; };
+		000000000000000000000144 /* HealthRecordModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000006F; };
+		000000000000000000000145 /* HealthRecordViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000070; };
+		000000000000000000000146 /* HomeArticleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000071; };
+		000000000000000000000147 /* HomeHeroCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000072; };
+		000000000000000000000148 /* HomeQuickActionsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000073; };
+		000000000000000000000149 /* HomeServiceBannerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000074; };
+		00000000000000000000014A /* HomeTaskCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000075; };
+		00000000000000000000014B /* HomeTeamCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000076; };
+		00000000000000000000014C /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000077; };
+		00000000000000000000014D /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000078; };
+		00000000000000000000014E /* ConversationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000079; };
+		00000000000000000000014F /* NotificationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000007A; };
+		000000000000000000000150 /* AIWeeklyReportCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000007B; };
+		000000000000000000000151 /* CenteredTipCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000007C; };
+		000000000000000000000152 /* FileBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000007D; };
+		000000000000000000000153 /* ImageBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000007E; };
+		000000000000000000000154 /* MealAnalysisCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000007F; };
+		000000000000000000000155 /* ServiceCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000080; };
+		000000000000000000000156 /* SysNotifyCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000081; };
+		000000000000000000000157 /* SystemMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000082; };
+		000000000000000000000158 /* TextBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000083; };
+		000000000000000000000159 /* VideoBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000084; };
+		00000000000000000000015A /* VoiceBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000085; };
+		00000000000000000000015B /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000086; };
+		00000000000000000000015C /* MessageActionMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000087; };
+		00000000000000000000015D /* QuotePreviewBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000088; };
+		00000000000000000000015E /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000089; };
+		00000000000000000000015F /* ConversationListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000008A; };
+		000000000000000000000160 /* MessagesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000008B; };
+		000000000000000000000161 /* NotificationListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000008C; };
+		000000000000000000000162 /* NotificationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000008D; };
+		000000000000000000000163 /* ConversationListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000008E; };
+		000000000000000000000164 /* AddressEditViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000008F; };
+		000000000000000000000165 /* AddressListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000090; };
+		000000000000000000000166 /* AddressCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000091; };
+		000000000000000000000167 /* AddressListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000092; };
+		000000000000000000000168 /* AppointmentsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000093; };
+		000000000000000000000169 /* DevicesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000094; };
+		00000000000000000000016A /* DietPlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000095; };
+		00000000000000000000016B /* FamilyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000096; };
+		00000000000000000000016C /* HealthEvaluationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000097; };
+		00000000000000000000016D /* StageReportCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000098; };
+		00000000000000000000016E /* WeeklyReportCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000099; };
+		00000000000000000000016F /* HealthReportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000009A; };
+		000000000000000000000170 /* MeFuncRowCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000009B; };
+		000000000000000000000171 /* MeMembershipCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000009C; };
+		000000000000000000000172 /* MeServiceFulfillmentCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000009D; };
+		000000000000000000000173 /* MeStatsStripCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000009E; };
+		000000000000000000000174 /* FuncRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000009F; };
+		000000000000000000000175 /* SectionTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000A0; };
+		000000000000000000000176 /* StageMetricsCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000A1; };
+		000000000000000000000177 /* MyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000A2; };
+		000000000000000000000178 /* MyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000A3; };
+		000000000000000000000179 /* MembershipViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000A4; };
+		00000000000000000000017A /* MonitoringPlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000A5; };
+		00000000000000000000017B /* OrderCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000A6; };
+		00000000000000000000017C /* OrderListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000A7; };
+		00000000000000000000017D /* OrderTabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000A8; };
+		00000000000000000000017E /* PointsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000A9; };
+		00000000000000000000017F /* PolicyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000AA; };
+		000000000000000000000180 /* ProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000AB; };
+		000000000000000000000181 /* AboutSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000AC; };
+		000000000000000000000182 /* AccessibilitySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000AD; };
+		000000000000000000000183 /* SettingsToggleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000AE; };
+		000000000000000000000184 /* NotificationSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000AF; };
+		000000000000000000000185 /* PrivacySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000B0; };
+		000000000000000000000186 /* CancelAccountViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000B1; };
+		000000000000000000000187 /* ChangePhoneViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000B2; };
+		000000000000000000000188 /* PasswordSetupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000B3; };
+		000000000000000000000189 /* SecuritySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000B4; };
+		00000000000000000000018A /* CancelAccountViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000B5; };
+		00000000000000000000018B /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000B6; };
+		00000000000000000000018C /* VoucherCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000B7; };
+		00000000000000000000018D /* VoucherListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000B8; };
+		00000000000000000000018E /* VoucherListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000B9; };
+		00000000000000000000018F /* AgreementCheckboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000BA; };
+		000000000000000000000190 /* BrandHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000BB; };
+		000000000000000000000191 /* CaptchaVerifyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000BC; };
+		000000000000000000000192 /* LoginFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000BD; };
+		000000000000000000000193 /* NotificationGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000BE; };
+		000000000000000000000194 /* OptionChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000BF; };
+		000000000000000000000195 /* PhoneBindingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000C0; };
+		000000000000000000000196 /* PrivacyPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000C1; };
+		000000000000000000000197 /* VerifyCodeButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000C2; };
+		000000000000000000000198 /* ForgotPasswordViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000C3; };
+		000000000000000000000199 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000C4; };
+		00000000000000000000019A /* OnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000C5; };
+		00000000000000000000019B /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000C6; };
+		00000000000000000000019C /* ActivateBannerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000C7; };
+		00000000000000000000019D /* HealthPackageCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000C8; };
+		00000000000000000000019E /* HealthPackageCategoryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000C9; };
+		00000000000000000000019F /* ServiceBannerCarouselCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000CA; };
+		0000000000000000000001A0 /* ServiceHubHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000CB; };
+		0000000000000000000001A1 /* HealthMallViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000CC; };
+		0000000000000000000001A2 /* ServicePackageSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000CD; };
+		0000000000000000000001A3 /* PaymentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000CE; };
+		0000000000000000000001A4 /* ServiceListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000CF; };
+		0000000000000000000001A5 /* ServiceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000D0; };
+		0000000000000000000001A6 /* ServicePackageSearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000D1; };
+		0000000000000000000001A7 /* ServiceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000D2; };
+		0000000000000000000001BB /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000D4; };
+		0000000000000000000001BC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000D5; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0000000000000000000001AE /* lhjk-client-new.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "lhjk-client-new.app"; sourceTree = "BUILT_PRODUCTS_DIR"; };
+		0000000000000000000001B4 /* Pods_lhjk_client_new.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "Pods_lhjk_client_new.framework"; sourceTree = "BUILT_PRODUCTS_DIR"; };
+0000000000000000000001B0 /* Pods-lhjk-client-new.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new.debug.xcconfig"; sourceTree = "<group>"; };
+0000000000000000000001B1 /* Pods-lhjk-client-new.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new.release.xcconfig"; sourceTree = "<group>"; };
+		000000000000000000000001 /* BluetoothService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BluetoothService.swift"; sourceTree = "<group>"; };
+		000000000000000000000002 /* HealthRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthRoutes.swift"; sourceTree = "<group>"; };
+		000000000000000000000003 /* HomeRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HomeRoutes.swift"; sourceTree = "<group>"; };
+		000000000000000000000004 /* IMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "IMService.swift"; sourceTree = "<group>"; };
+		000000000000000000000005 /* MessageRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MessageRoutes.swift"; sourceTree = "<group>"; };
+		000000000000000000000006 /* AddressModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AddressModels.swift"; sourceTree = "<group>"; };
+		000000000000000000000007 /* AddressService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AddressService.swift"; sourceTree = "<group>"; };
+		000000000000000000000008 /* MyRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MyRoutes.swift"; sourceTree = "<group>"; };
+		000000000000000000000009 /* VoucherModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VoucherModels.swift"; sourceTree = "<group>"; };
+		00000000000000000000000A /* VoucherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VoucherService.swift"; sourceTree = "<group>"; };
+		00000000000000000000000B /* LoginModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LoginModels.swift"; sourceTree = "<group>"; };
+		00000000000000000000000C /* LoginService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LoginService.swift"; sourceTree = "<group>"; };
+		00000000000000000000000D /* LoginServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LoginServiceProtocol.swift"; sourceTree = "<group>"; };
+		00000000000000000000000E /* RegisterLoginRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RegisterLoginRoutes.swift"; sourceTree = "<group>"; };
+		00000000000000000000000F /* ColumnContentModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColumnContentModels.swift"; sourceTree = "<group>"; };
+		000000000000000000000010 /* ColumnContentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColumnContentService.swift"; sourceTree = "<group>"; };
+		000000000000000000000011 /* DictionaryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DictionaryModels.swift"; sourceTree = "<group>"; };
+		000000000000000000000012 /* DictionaryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DictionaryService.swift"; sourceTree = "<group>"; };
+		000000000000000000000013 /* HospitalPackageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HospitalPackageService.swift"; sourceTree = "<group>"; };
+		000000000000000000000014 /* OrderModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OrderModels.swift"; sourceTree = "<group>"; };
+		000000000000000000000015 /* OrderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OrderService.swift"; sourceTree = "<group>"; };
+		000000000000000000000016 /* PaymentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PaymentService.swift"; sourceTree = "<group>"; };
+		000000000000000000000017 /* ServiceCatalogService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ServiceCatalogService.swift"; sourceTree = "<group>"; };
+		000000000000000000000018 /* ServiceModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ServiceModels.swift"; sourceTree = "<group>"; };
+		000000000000000000000019 /* ServiceRecommendModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ServiceRecommendModels.swift"; sourceTree = "<group>"; };
+		00000000000000000000001A /* ServiceRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ServiceRoutes.swift"; sourceTree = "<group>"; };
+		00000000000000000000001B /* UserManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserManager.swift"; sourceTree = "<group>"; };
+		00000000000000000000001C /* UserModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserModels.swift"; sourceTree = "<group>"; };
+		00000000000000000000001D /* UserRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserRoutes.swift"; sourceTree = "<group>"; };
+		00000000000000000000001E /* UserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserService.swift"; sourceTree = "<group>"; };
+		00000000000000000000001F /* UserServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserServiceProtocol.swift"; sourceTree = "<group>"; };
+		000000000000000000000020 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppContainer.swift"; sourceTree = "<group>"; };
+		000000000000000000000021 /* BluetoothManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BluetoothManager.swift"; sourceTree = "<group>"; };
+		000000000000000000000022 /* BluetoothModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BluetoothModels.swift"; sourceTree = "<group>"; };
+		000000000000000000000023 /* ECGChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ECGChartView.swift"; sourceTree = "<group>"; };
+		000000000000000000000024 /* ECGDataBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ECGDataBuffer.swift"; sourceTree = "<group>"; };
+		000000000000000000000025 /* ECGSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ECGSimulator.swift"; sourceTree = "<group>"; };
+		000000000000000000000026 /* FileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileManager.swift"; sourceTree = "<group>"; };
+		000000000000000000000027 /* Conversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Conversation.swift"; sourceTree = "<group>"; };
+		000000000000000000000028 /* FileMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileMessage.swift"; sourceTree = "<group>"; };
+		000000000000000000000029 /* SysNotifyMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SysNotifyMessage.swift"; sourceTree = "<group>"; };
+		00000000000000000000002A /* VideoMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VideoMessage.swift"; sourceTree = "<group>"; };
+		00000000000000000000002B /* GroupVO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GroupVO.swift"; sourceTree = "<group>"; };
+		00000000000000000000002C /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Message.swift"; sourceTree = "<group>"; };
+		00000000000000000000002D /* RongCloudManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RongCloudManager.swift"; sourceTree = "<group>"; };
+		00000000000000000000002E /* RongCloudMessageDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RongCloudMessageDelegate.swift"; sourceTree = "<group>"; };
+		00000000000000000000002F /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AudioRecorder.swift"; sourceTree = "<group>"; };
+		000000000000000000000030 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIError.swift"; sourceTree = "<group>"; };
+		000000000000000000000031 /* APIManager+Async.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIManager+Async.swift"; sourceTree = "<group>"; };
+		000000000000000000000032 /* APIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIManager.swift"; sourceTree = "<group>"; };
+		000000000000000000000033 /* APIResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIResponse.swift"; sourceTree = "<group>"; };
+		000000000000000000000034 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NetworkMonitor.swift"; sourceTree = "<group>"; };
+		000000000000000000000035 /* OAuthAuthenticator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OAuthAuthenticator.swift"; sourceTree = "<group>"; };
+		000000000000000000000036 /* OAuthCredential.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OAuthCredential.swift"; sourceTree = "<group>"; };
+		000000000000000000000037 /* OSSManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OSSManager.swift"; sourceTree = "<group>"; };
+		000000000000000000000038 /* OSSModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OSSModels.swift"; sourceTree = "<group>"; };
+		000000000000000000000039 /* AlipayChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AlipayChannel.swift"; sourceTree = "<group>"; };
+		00000000000000000000003A /* PaymentOrder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PaymentOrder.swift"; sourceTree = "<group>"; };
+		00000000000000000000003B /* PaymentProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PaymentProtocol.swift"; sourceTree = "<group>"; };
+		00000000000000000000003C /* WechatPayChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WechatPayChannel.swift"; sourceTree = "<group>"; };
+		00000000000000000000003D /* RouteSetup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RouteSetup.swift"; sourceTree = "<group>"; };
+		00000000000000000000003E /* Router.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Router.swift"; sourceTree = "<group>"; };
+		00000000000000000000003F /* DatabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DatabaseManager.swift"; sourceTree = "<group>"; };
+		000000000000000000000040 /* UserDefaultsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserDefaultsManager.swift"; sourceTree = "<group>"; };
+		000000000000000000000041 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate.swift"; sourceTree = "<group>"; };
+		000000000000000000000042 /* BaseNavigationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BaseNavigationController.swift"; sourceTree = "<group>"; };
+		000000000000000000000043 /* BaseViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BaseViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000044 /* PlaceholderViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PlaceholderViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000045 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000046 /* DebugLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DebugLogger.swift"; sourceTree = "<group>"; };
+		000000000000000000000047 /* DGCharts+Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DGCharts+Theme.swift"; sourceTree = "<group>"; };
+		000000000000000000000048 /* UIButton+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIButton+Funde.swift"; sourceTree = "<group>"; };
+		000000000000000000000049 /* UIColor+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIColor+Hex.swift"; sourceTree = "<group>"; };
+		00000000000000000000004A /* UIColor+Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIColor+Theme.swift"; sourceTree = "<group>"; };
+		00000000000000000000004B /* UIFont+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIFont+Funde.swift"; sourceTree = "<group>"; };
+		00000000000000000000004C /* UIView+Layout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+Layout.swift"; sourceTree = "<group>"; };
+		00000000000000000000004D /* UIView+Shadow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+Shadow.swift"; sourceTree = "<group>"; };
+		00000000000000000000004E /* UIViewController+Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+Alert.swift"; sourceTree = "<group>"; };
+		00000000000000000000004F /* BLLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BLLProtocol.swift"; sourceTree = "<group>"; };
+		000000000000000000000050 /* DALProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DALProtocol.swift"; sourceTree = "<group>"; };
+		000000000000000000000051 /* PLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PLProtocol.swift"; sourceTree = "<group>"; };
+		000000000000000000000052 /* RootTabBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RootTabBarController.swift"; sourceTree = "<group>"; };
+		000000000000000000000053 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SceneDelegate.swift"; sourceTree = "<group>"; };
+		000000000000000000000054 /* HealthArchiveCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthArchiveCardCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000055 /* HealthQuickEntriesCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthQuickEntriesCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000056 /* HealthScoreCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthScoreCardCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000057 /* HealthVitalMetricsCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthVitalMetricsCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000058 /* MetricCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MetricCardCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000059 /* PeripheralCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PeripheralCell.swift"; sourceTree = "<group>"; };
+		00000000000000000000005A /* HealthViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthViewController.swift"; sourceTree = "<group>"; };
+		00000000000000000000005B /* BloodPressureViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BloodPressureViewController.swift"; sourceTree = "<group>"; };
+		00000000000000000000005C /* BloodSugarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BloodSugarViewController.swift"; sourceTree = "<group>"; };
+		00000000000000000000005D /* MetricRulerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MetricRulerView.swift"; sourceTree = "<group>"; };
+		00000000000000000000005E /* DigestiveViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DigestiveViewController.swift"; sourceTree = "<group>"; };
+		00000000000000000000005F /* EcgViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EcgViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000060 /* ExerciseFoodViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ExerciseFoodViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000061 /* FundusViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FundusViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000062 /* HeartRateViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HeartRateViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000063 /* MetricAddViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MetricAddViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000064 /* MetricsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MetricsViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000065 /* SleepViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SleepViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000066 /* SpO2ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SpO2ViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000067 /* WeightViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WeightViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000068 /* HealthRecordBodyCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthRecordBodyCardCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000069 /* HealthRecordHistoryCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthRecordHistoryCell.swift"; sourceTree = "<group>"; };
+		00000000000000000000006A /* HealthRecordLifestyleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthRecordLifestyleCell.swift"; sourceTree = "<group>"; };
+		00000000000000000000006B /* HealthRecordMetricRowCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthRecordMetricRowCell.swift"; sourceTree = "<group>"; };
+		00000000000000000000006C /* HealthRecordUserInfoCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthRecordUserInfoCell.swift"; sourceTree = "<group>"; };
+		00000000000000000000006D /* BodyFigureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BodyFigureView.swift"; sourceTree = "<group>"; };
+		00000000000000000000006E /* RiskBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RiskBarView.swift"; sourceTree = "<group>"; };
+		00000000000000000000006F /* HealthRecordModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthRecordModels.swift"; sourceTree = "<group>"; };
+		000000000000000000000070 /* HealthRecordViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthRecordViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000071 /* HomeArticleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HomeArticleCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000072 /* HomeHeroCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HomeHeroCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000073 /* HomeQuickActionsCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HomeQuickActionsCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000074 /* HomeServiceBannerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HomeServiceBannerCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000075 /* HomeTaskCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HomeTaskCardCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000076 /* HomeTeamCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HomeTeamCardCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000077 /* HomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HomeViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000078 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HomeViewModel.swift"; sourceTree = "<group>"; };
+		000000000000000000000079 /* ConversationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConversationCell.swift"; sourceTree = "<group>"; };
+		00000000000000000000007A /* NotificationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationCell.swift"; sourceTree = "<group>"; };
+		00000000000000000000007B /* AIWeeklyReportCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIWeeklyReportCell.swift"; sourceTree = "<group>"; };
+		00000000000000000000007C /* CenteredTipCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CenteredTipCell.swift"; sourceTree = "<group>"; };
+		00000000000000000000007D /* FileBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileBubbleCell.swift"; sourceTree = "<group>"; };
+		00000000000000000000007E /* ImageBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ImageBubbleCell.swift"; sourceTree = "<group>"; };
+		00000000000000000000007F /* MealAnalysisCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MealAnalysisCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000080 /* ServiceCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ServiceCardCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000081 /* SysNotifyCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SysNotifyCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000082 /* SystemMessageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SystemMessageCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000083 /* TextBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TextBubbleCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000084 /* VideoBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VideoBubbleCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000085 /* VoiceBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VoiceBubbleCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000086 /* ChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChatViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000087 /* MessageActionMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MessageActionMenu.swift"; sourceTree = "<group>"; };
+		000000000000000000000088 /* QuotePreviewBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QuotePreviewBar.swift"; sourceTree = "<group>"; };
+		000000000000000000000089 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChatViewModel.swift"; sourceTree = "<group>"; };
+		00000000000000000000008A /* ConversationListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConversationListViewController.swift"; sourceTree = "<group>"; };
+		00000000000000000000008B /* MessagesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MessagesViewController.swift"; sourceTree = "<group>"; };
+		00000000000000000000008C /* NotificationListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationListViewController.swift"; sourceTree = "<group>"; };
+		00000000000000000000008D /* NotificationsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationsViewController.swift"; sourceTree = "<group>"; };
+		00000000000000000000008E /* ConversationListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConversationListViewModel.swift"; sourceTree = "<group>"; };
+		00000000000000000000008F /* AddressEditViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AddressEditViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000090 /* AddressListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AddressListViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000091 /* AddressCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AddressCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000092 /* AddressListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AddressListViewModel.swift"; sourceTree = "<group>"; };
+		000000000000000000000093 /* AppointmentsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppointmentsViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000094 /* DevicesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DevicesViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000095 /* DietPlanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DietPlanViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000096 /* FamilyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FamilyViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000097 /* HealthEvaluationsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthEvaluationsViewController.swift"; sourceTree = "<group>"; };
+		000000000000000000000098 /* StageReportCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StageReportCell.swift"; sourceTree = "<group>"; };
+		000000000000000000000099 /* WeeklyReportCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WeeklyReportCell.swift"; sourceTree = "<group>"; };
+		00000000000000000000009A /* HealthReportViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthReportViewController.swift"; sourceTree = "<group>"; };
+		00000000000000000000009B /* MeFuncRowCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MeFuncRowCell.swift"; sourceTree = "<group>"; };
+		00000000000000000000009C /* MeMembershipCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MeMembershipCardCell.swift"; sourceTree = "<group>"; };
+		00000000000000000000009D /* MeServiceFulfillmentCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MeServiceFulfillmentCell.swift"; sourceTree = "<group>"; };
+		00000000000000000000009E /* MeStatsStripCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MeStatsStripCell.swift"; sourceTree = "<group>"; };
+		00000000000000000000009F /* FuncRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FuncRowView.swift"; sourceTree = "<group>"; };
+		0000000000000000000000A0 /* SectionTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SectionTitleView.swift"; sourceTree = "<group>"; };
+		0000000000000000000000A1 /* StageMetricsCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StageMetricsCardView.swift"; sourceTree = "<group>"; };
+		0000000000000000000000A2 /* MyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MyViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000A3 /* MyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MyViewModel.swift"; sourceTree = "<group>"; };
+		0000000000000000000000A4 /* MembershipViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MembershipViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000A5 /* MonitoringPlanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MonitoringPlanViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000A6 /* OrderCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OrderCardCell.swift"; sourceTree = "<group>"; };
+		0000000000000000000000A7 /* OrderListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OrderListViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000A8 /* OrderTabViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OrderTabViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000A9 /* PointsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PointsViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000AA /* PolicyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PolicyViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000AB /* ProfileViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProfileViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000AC /* AboutSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AboutSettingsViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000AD /* AccessibilitySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AccessibilitySettingsViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000AE /* SettingsToggleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsToggleCell.swift"; sourceTree = "<group>"; };
+		0000000000000000000000AF /* NotificationSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationSettingsViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000B0 /* PrivacySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrivacySettingsViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000B1 /* CancelAccountViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CancelAccountViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000B2 /* ChangePhoneViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangePhoneViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000B3 /* PasswordSetupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PasswordSetupViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000B4 /* SecuritySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SecuritySettingsViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000B5 /* CancelAccountViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CancelAccountViewModel.swift"; sourceTree = "<group>"; };
+		0000000000000000000000B6 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000B7 /* VoucherCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VoucherCell.swift"; sourceTree = "<group>"; };
+		0000000000000000000000B8 /* VoucherListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VoucherListViewModel.swift"; sourceTree = "<group>"; };
+		0000000000000000000000B9 /* VoucherListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VoucherListViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000BA /* AgreementCheckboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AgreementCheckboxView.swift"; sourceTree = "<group>"; };
+		0000000000000000000000BB /* BrandHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BrandHeaderView.swift"; sourceTree = "<group>"; };
+		0000000000000000000000BC /* CaptchaVerifyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CaptchaVerifyView.swift"; sourceTree = "<group>"; };
+		0000000000000000000000BD /* LoginFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LoginFieldView.swift"; sourceTree = "<group>"; };
+		0000000000000000000000BE /* NotificationGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationGuideView.swift"; sourceTree = "<group>"; };
+		0000000000000000000000BF /* OptionChipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OptionChipView.swift"; sourceTree = "<group>"; };
+		0000000000000000000000C0 /* PhoneBindingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PhoneBindingView.swift"; sourceTree = "<group>"; };
+		0000000000000000000000C1 /* PrivacyPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrivacyPromptView.swift"; sourceTree = "<group>"; };
+		0000000000000000000000C2 /* VerifyCodeButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VerifyCodeButton.swift"; sourceTree = "<group>"; };
+		0000000000000000000000C3 /* ForgotPasswordViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ForgotPasswordViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000C4 /* LoginViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LoginViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000C5 /* OnboardingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000C6 /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LoginViewModel.swift"; sourceTree = "<group>"; };
+		0000000000000000000000C7 /* ActivateBannerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ActivateBannerCell.swift"; sourceTree = "<group>"; };
+		0000000000000000000000C8 /* HealthPackageCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthPackageCardCell.swift"; sourceTree = "<group>"; };
+		0000000000000000000000C9 /* HealthPackageCategoryCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthPackageCategoryCell.swift"; sourceTree = "<group>"; };
+		0000000000000000000000CA /* ServiceBannerCarouselCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ServiceBannerCarouselCell.swift"; sourceTree = "<group>"; };
+		0000000000000000000000CB /* ServiceHubHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ServiceHubHeaderView.swift"; sourceTree = "<group>"; };
+		0000000000000000000000CC /* HealthMallViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthMallViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000CD /* ServicePackageSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ServicePackageSearchViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000CE /* PaymentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PaymentViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000CF /* ServiceListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ServiceListViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000D0 /* ServiceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ServiceViewController.swift"; sourceTree = "<group>"; };
+		0000000000000000000000D1 /* ServicePackageSearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ServicePackageSearchViewModel.swift"; sourceTree = "<group>"; };
+		0000000000000000000000D2 /* ServiceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ServiceViewModel.swift"; sourceTree = "<group>"; };
+		0000000000000000000000D3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info.plist"; sourceTree = "<group>"; };
+		0000000000000000000000D4 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = "LaunchScreen.storyboard"; sourceTree = "<group>"; };
+		0000000000000000000000D5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		0000000000000000000001B9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000001AE,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001BA /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000001B4,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001B1 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000001B0 /* Pods-lhjk-client-new.debug.xcconfig */,
+				0000000000000000000001B1 /* Pods-lhjk-client-new.release.xcconfig */,
+			);
+			name = Pods;
+			path = "../Pods";
+			sourceTree = "<group>";
+		};
+		0000000000000000000001BD /* BLL */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000001BE,
+				0000000000000000000001BF,
+				0000000000000000000001C0,
+				0000000000000000000001C1,
+				0000000000000000000001C2,
+				0000000000000000000001C3,
+				0000000000000000000001C4,
+			);
+			path = BLL;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001BE /* Health */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000001,
+				000000000000000000000002,
+			);
+			path = Health;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001BF /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000003,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001C0 /* Message */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000004,
+				000000000000000000000005,
+			);
+			path = Message;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001C1 /* My */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000006,
+				000000000000000000000007,
+				000000000000000000000008,
+				000000000000000000000009,
+				00000000000000000000000A,
+			);
+			path = My;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001C2 /* RegisterLogin */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000000B,
+				00000000000000000000000C,
+				00000000000000000000000D,
+				00000000000000000000000E,
+			);
+			path = RegisterLogin;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001C3 /* Service */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000000F,
+				000000000000000000000010,
+				000000000000000000000011,
+				000000000000000000000012,
+				000000000000000000000013,
+				000000000000000000000014,
+				000000000000000000000015,
+				000000000000000000000016,
+				000000000000000000000017,
+				000000000000000000000018,
+				000000000000000000000019,
+				00000000000000000000001A,
+			);
+			path = Service;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001C4 /* User */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000001B,
+				00000000000000000000001C,
+				00000000000000000000001D,
+				00000000000000000000001E,
+				00000000000000000000001F,
+			);
+			path = User;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001C5 /* DAL */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000020,
+				0000000000000000000001C6,
+				0000000000000000000001C7,
+				0000000000000000000001C8,
+				0000000000000000000001C9,
+				0000000000000000000001CB,
+				0000000000000000000001CC,
+				0000000000000000000001CD,
+				0000000000000000000001CE,
+				0000000000000000000001CF,
+				0000000000000000000001D0,
+			);
+			path = DAL;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001C6 /* Bluetooth */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000021,
+				000000000000000000000022,
+			);
+			path = Bluetooth;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001C7 /* ECG */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000023,
+				000000000000000000000024,
+				000000000000000000000025,
+			);
+			path = ECG;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001C8 /* FileManager */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000026,
+			);
+			path = FileManager;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001C9 /* IM */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000027,
+				00000000000000000000002B,
+				00000000000000000000002C,
+				00000000000000000000002D,
+				00000000000000000000002E,
+				0000000000000000000001CA,
+			);
+			path = IM;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001CA /* CustomMessages */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000028,
+				000000000000000000000029,
+				00000000000000000000002A,
+			);
+			path = CustomMessages;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001CB /* Media */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000002F,
+			);
+			path = Media;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001CC /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000030,
+				000000000000000000000031,
+				000000000000000000000032,
+				000000000000000000000033,
+				000000000000000000000034,
+				000000000000000000000035,
+				000000000000000000000036,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001CD /* OSS */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000037,
+				000000000000000000000038,
+			);
+			path = OSS;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001CE /* Payment */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000039,
+				00000000000000000000003A,
+				00000000000000000000003B,
+				00000000000000000000003C,
+			);
+			path = Payment;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001CF /* Router */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000003D,
+				00000000000000000000003E,
+			);
+			path = Router;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001D0 /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000003F,
+				000000000000000000000040,
+			);
+			path = Storage;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001D1 /* Other */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000041,
+				000000000000000000000052,
+				000000000000000000000053,
+				0000000000000000000001D2,
+				0000000000000000000001DC,
+			);
+			path = Other;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001D2 /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000046,
+				0000000000000000000001D3,
+				0000000000000000000001D4,
+				0000000000000000000001DB,
+			);
+			path = Common;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001D3 /* Base */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000042,
+				000000000000000000000043,
+				000000000000000000000044,
+				000000000000000000000045,
+			);
+			path = Base;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001D4 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000001D5,
+				0000000000000000000001D6,
+				0000000000000000000001D7,
+				0000000000000000000001D8,
+				0000000000000000000001D9,
+				0000000000000000000001DA,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001D5 /* DGCharts */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000047,
+			);
+			path = DGCharts;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001D6 /* UIButton */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000048,
+			);
+			path = UIButton;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001D7 /* UIColor */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000049,
+				00000000000000000000004A,
+			);
+			path = UIColor;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001D8 /* UIFont */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000004B,
+			);
+			path = UIFont;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001D9 /* UIView */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000004C,
+				00000000000000000000004D,
+			);
+			path = UIView;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001DA /* UIViewController */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000004E,
+			);
+			path = UIViewController;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001DB /* Protocols */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000004F,
+				000000000000000000000050,
+				000000000000000000000051,
+			);
+			path = Protocols;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001DC /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000D3,
+				0000000000000000000000D4,
+				0000000000000000000000D5,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001DD /* PL */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000001DE,
+				0000000000000000000001E5,
+				0000000000000000000001E8,
+				0000000000000000000001EF,
+				00000000000000000000020C,
+				000000000000000000000211,
+			);
+			path = PL;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001DE /* Health */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000005A,
+				0000000000000000000001DF,
+				0000000000000000000001E0,
+				0000000000000000000001E2,
+			);
+			path = Health;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001DF /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000054,
+				000000000000000000000055,
+				000000000000000000000056,
+				000000000000000000000057,
+				000000000000000000000058,
+				000000000000000000000059,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001E0 /* Metrics */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000005B,
+				00000000000000000000005C,
+				00000000000000000000005E,
+				00000000000000000000005F,
+				000000000000000000000060,
+				000000000000000000000061,
+				000000000000000000000062,
+				000000000000000000000063,
+				000000000000000000000064,
+				000000000000000000000065,
+				000000000000000000000066,
+				000000000000000000000067,
+				0000000000000000000001E1,
+			);
+			path = Metrics;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001E1 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000005D,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001E2 /* Record */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000006F,
+				000000000000000000000070,
+				0000000000000000000001E3,
+				0000000000000000000001E4,
+			);
+			path = Record;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001E3 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000068,
+				000000000000000000000069,
+				00000000000000000000006A,
+				00000000000000000000006B,
+				00000000000000000000006C,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001E4 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000006D,
+				00000000000000000000006E,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001E5 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000077,
+				0000000000000000000001E6,
+				0000000000000000000001E7,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001E6 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000071,
+				000000000000000000000072,
+				000000000000000000000073,
+				000000000000000000000074,
+				000000000000000000000075,
+				000000000000000000000076,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001E7 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000078,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001E8 /* Message */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000008A,
+				00000000000000000000008B,
+				00000000000000000000008C,
+				00000000000000000000008D,
+				0000000000000000000001E9,
+				0000000000000000000001EA,
+				0000000000000000000001EE,
+			);
+			path = Message;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001E9 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000079,
+				00000000000000000000007A,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001EA /* Chat */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000086,
+				0000000000000000000001EB,
+				0000000000000000000001EC,
+				0000000000000000000001ED,
+			);
+			path = Chat;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001EB /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000007B,
+				00000000000000000000007C,
+				00000000000000000000007D,
+				00000000000000000000007E,
+				00000000000000000000007F,
+				000000000000000000000080,
+				000000000000000000000081,
+				000000000000000000000082,
+				000000000000000000000083,
+				000000000000000000000084,
+				000000000000000000000085,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001EC /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000087,
+				000000000000000000000088,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001ED /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000089,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001EE /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000008E,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001EF /* My */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000001F0,
+				0000000000000000000001F3,
+				0000000000000000000001F4,
+				0000000000000000000001F5,
+				0000000000000000000001F6,
+				0000000000000000000001F7,
+				0000000000000000000001F8,
+				0000000000000000000001FA,
+				0000000000000000000001FE,
+				0000000000000000000001FF,
+				000000000000000000000200,
+				000000000000000000000202,
+				000000000000000000000203,
+				000000000000000000000204,
+				000000000000000000000205,
+				000000000000000000000209,
+			);
+			path = My;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001F0 /* Address */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000008F,
+				000000000000000000000090,
+				0000000000000000000001F1,
+				0000000000000000000001F2,
+			);
+			path = Address;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001F1 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000091,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001F2 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000092,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001F3 /* Appointments */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000093,
+			);
+			path = Appointments;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001F4 /* Devices */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000094,
+			);
+			path = Devices;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001F5 /* DietPlan */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000095,
+			);
+			path = DietPlan;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001F6 /* Family */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000096,
+			);
+			path = Family;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001F7 /* HealthEvaluations */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000097,
+			);
+			path = HealthEvaluations;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001F8 /* HealthReport */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000009A,
+				0000000000000000000001F9,
+			);
+			path = HealthReport;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001F9 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000098,
+				000000000000000000000099,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001FA /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000A2,
+				0000000000000000000001FB,
+				0000000000000000000001FC,
+				0000000000000000000001FD,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001FB /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000009B,
+				00000000000000000000009C,
+				00000000000000000000009D,
+				00000000000000000000009E,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001FC /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000009F,
+				0000000000000000000000A0,
+				0000000000000000000000A1,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001FD /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000A3,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001FE /* Membership */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000A4,
+			);
+			path = Membership;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001FF /* MonitoringPlan */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000A5,
+			);
+			path = MonitoringPlan;
+			sourceTree = "<group>";
+		};
+		000000000000000000000200 /* Order */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000A7,
+				0000000000000000000000A8,
+				000000000000000000000201,
+			);
+			path = Order;
+			sourceTree = "<group>";
+		};
+		000000000000000000000201 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000A6,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		000000000000000000000202 /* Points */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000A9,
+			);
+			path = Points;
+			sourceTree = "<group>";
+		};
+		000000000000000000000203 /* Policy */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000AA,
+			);
+			path = Policy;
+			sourceTree = "<group>";
+		};
+		000000000000000000000204 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000AB,
+			);
+			path = Profile;
+			sourceTree = "<group>";
+		};
+		000000000000000000000205 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000AC,
+				0000000000000000000000AD,
+				0000000000000000000000AF,
+				0000000000000000000000B0,
+				0000000000000000000000B6,
+				000000000000000000000206,
+				000000000000000000000207,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		000000000000000000000206 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000AE,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		000000000000000000000207 /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000B1,
+				0000000000000000000000B2,
+				0000000000000000000000B3,
+				0000000000000000000000B4,
+				000000000000000000000208,
+			);
+			path = Security;
+			sourceTree = "<group>";
+		};
+		000000000000000000000208 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000B5,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		000000000000000000000209 /* Vouchers */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000B9,
+				00000000000000000000020A,
+				00000000000000000000020B,
+			);
+			path = Vouchers;
+			sourceTree = "<group>";
+		};
+		00000000000000000000020A /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000B7,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		00000000000000000000020B /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000B8,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		00000000000000000000020C /* RegisterLogin */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000C4,
+				00000000000000000000020D,
+				00000000000000000000020E,
+				00000000000000000000020F,
+				000000000000000000000210,
+			);
+			path = RegisterLogin;
+			sourceTree = "<group>";
+		};
+		00000000000000000000020D /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000BA,
+				0000000000000000000000BB,
+				0000000000000000000000BC,
+				0000000000000000000000BD,
+				0000000000000000000000BE,
+				0000000000000000000000BF,
+				0000000000000000000000C0,
+				0000000000000000000000C1,
+				0000000000000000000000C2,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		00000000000000000000020E /* ForgotPassword */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000C3,
+			);
+			path = ForgotPassword;
+			sourceTree = "<group>";
+		};
+		00000000000000000000020F /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000C5,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		000000000000000000000210 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000C6,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		000000000000000000000211 /* Service */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000D0,
+				000000000000000000000212,
+				000000000000000000000213,
+				000000000000000000000214,
+				000000000000000000000215,
+				000000000000000000000216,
+				000000000000000000000217,
+			);
+			path = Service;
+			sourceTree = "<group>";
+		};
+		000000000000000000000212 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000C7,
+				0000000000000000000000C8,
+				0000000000000000000000C9,
+				0000000000000000000000CA,
+				0000000000000000000000CB,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		000000000000000000000213 /* HealthMall */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000CC,
+			);
+			path = HealthMall;
+			sourceTree = "<group>";
+		};
+		000000000000000000000214 /* PackageSearch */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000CD,
+			);
+			path = PackageSearch;
+			sourceTree = "<group>";
+		};
+		000000000000000000000215 /* Payment */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000CE,
+			);
+			path = Payment;
+			sourceTree = "<group>";
+		};
+		000000000000000000000216 /* ServiceList */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000CF,
+			);
+			path = ServiceList;
+			sourceTree = "<group>";
+		};
+		000000000000000000000217 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000D1,
+				0000000000000000000000D2,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		0000000000000000000001B8 /* lhjk-client-new */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000001DD,
+				0000000000000000000001BD,
+				0000000000000000000001C5,
+				0000000000000000000001D1,
+				0000000000000000000001B9,
+				0000000000000000000001BA,
+				0000000000000000000001B1,
+			);
+			name = "lhjk-client-new";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0000000000000000000001AD /* lhjk-client-new */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0000000000000000000001B3 /* Build configuration list for PBXNativeTarget "lhjk-client-new" */;
+			buildPhases = (
+				F55478F0DA8F4367E801C506 /* [CP] Check Pods Manifest.lock */,
+				0000000000000000000001AA /* Sources */,
+				0000000000000000000001AC /* Frameworks */,
+				0000000000000000000001AB /* Resources */,
+				86AAD0ABF411C9CC8B5AA507 /* [CP] Embed Pods Frameworks */,
+				4FF9C782B676F1DE62EABBD4 /* [CP] Copy Pods Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "lhjk-client-new";
+			productName = "lhjk-client-new";
+			productReference = 0000000000000000000001AE /* lhjk-client-new.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		0000000000000000000001AF /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1620;
+				LastUpgradeCheck = 1620;
+				TargetAttributes = {
+					0000000000000000000001AD = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 0000000000000000000001B2 /* Build configuration list for PBXProject "lhjk-client-new" */;
+			compatibilityVersion = "Xcode 16.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 0000000000000000000001B8;
+			productRefGroup = 0000000000000000000001B9 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0000000000000000000001AD /* lhjk-client-new */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0000000000000000000001AA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0000000000000000000000D6 /* BluetoothService.swift in Sources */,
+				0000000000000000000000D7 /* HealthRoutes.swift in Sources */,
+				0000000000000000000000D8 /* HomeRoutes.swift in Sources */,
+				0000000000000000000000D9 /* IMService.swift in Sources */,
+				0000000000000000000000DA /* MessageRoutes.swift in Sources */,
+				0000000000000000000000DB /* AddressModels.swift in Sources */,
+				0000000000000000000000DC /* AddressService.swift in Sources */,
+				0000000000000000000000DD /* MyRoutes.swift in Sources */,
+				0000000000000000000000DE /* VoucherModels.swift in Sources */,
+				0000000000000000000000DF /* VoucherService.swift in Sources */,
+				0000000000000000000000E0 /* LoginModels.swift in Sources */,
+				0000000000000000000000E1 /* LoginService.swift in Sources */,
+				0000000000000000000000E2 /* LoginServiceProtocol.swift in Sources */,
+				0000000000000000000000E3 /* RegisterLoginRoutes.swift in Sources */,
+				0000000000000000000000E4 /* ColumnContentModels.swift in Sources */,
+				0000000000000000000000E5 /* ColumnContentService.swift in Sources */,
+				0000000000000000000000E6 /* DictionaryModels.swift in Sources */,
+				0000000000000000000000E7 /* DictionaryService.swift in Sources */,
+				0000000000000000000000E8 /* HospitalPackageService.swift in Sources */,
+				0000000000000000000000E9 /* OrderModels.swift in Sources */,
+				0000000000000000000000EA /* OrderService.swift in Sources */,
+				0000000000000000000000EB /* PaymentService.swift in Sources */,
+				0000000000000000000000EC /* ServiceCatalogService.swift in Sources */,
+				0000000000000000000000ED /* ServiceModels.swift in Sources */,
+				0000000000000000000000EE /* ServiceRecommendModels.swift in Sources */,
+				0000000000000000000000EF /* ServiceRoutes.swift in Sources */,
+				0000000000000000000000F0 /* UserManager.swift in Sources */,
+				0000000000000000000000F1 /* UserModels.swift in Sources */,
+				0000000000000000000000F2 /* UserRoutes.swift in Sources */,
+				0000000000000000000000F3 /* UserService.swift in Sources */,
+				0000000000000000000000F4 /* UserServiceProtocol.swift in Sources */,
+				0000000000000000000000F5 /* AppContainer.swift in Sources */,
+				0000000000000000000000F6 /* BluetoothManager.swift in Sources */,
+				0000000000000000000000F7 /* BluetoothModels.swift in Sources */,
+				0000000000000000000000F8 /* ECGChartView.swift in Sources */,
+				0000000000000000000000F9 /* ECGDataBuffer.swift in Sources */,
+				0000000000000000000000FA /* ECGSimulator.swift in Sources */,
+				0000000000000000000000FB /* FileManager.swift in Sources */,
+				0000000000000000000000FC /* Conversation.swift in Sources */,
+				0000000000000000000000FD /* FileMessage.swift in Sources */,
+				0000000000000000000000FE /* SysNotifyMessage.swift in Sources */,
+				0000000000000000000000FF /* VideoMessage.swift in Sources */,
+				000000000000000000000100 /* GroupVO.swift in Sources */,
+				000000000000000000000101 /* Message.swift in Sources */,
+				000000000000000000000102 /* RongCloudManager.swift in Sources */,
+				000000000000000000000103 /* RongCloudMessageDelegate.swift in Sources */,
+				000000000000000000000104 /* AudioRecorder.swift in Sources */,
+				000000000000000000000105 /* APIError.swift in Sources */,
+				000000000000000000000106 /* APIManager+Async.swift in Sources */,
+				000000000000000000000107 /* APIManager.swift in Sources */,
+				000000000000000000000108 /* APIResponse.swift in Sources */,
+				000000000000000000000109 /* NetworkMonitor.swift in Sources */,
+				00000000000000000000010A /* OAuthAuthenticator.swift in Sources */,
+				00000000000000000000010B /* OAuthCredential.swift in Sources */,
+				00000000000000000000010C /* OSSManager.swift in Sources */,
+				00000000000000000000010D /* OSSModels.swift in Sources */,
+				00000000000000000000010E /* AlipayChannel.swift in Sources */,
+				00000000000000000000010F /* PaymentOrder.swift in Sources */,
+				000000000000000000000110 /* PaymentProtocol.swift in Sources */,
+				000000000000000000000111 /* WechatPayChannel.swift in Sources */,
+				000000000000000000000112 /* RouteSetup.swift in Sources */,
+				000000000000000000000113 /* Router.swift in Sources */,
+				000000000000000000000114 /* DatabaseManager.swift in Sources */,
+				000000000000000000000115 /* UserDefaultsManager.swift in Sources */,
+				000000000000000000000116 /* AppDelegate.swift in Sources */,
+				000000000000000000000117 /* BaseNavigationController.swift in Sources */,
+				000000000000000000000118 /* BaseViewController.swift in Sources */,
+				000000000000000000000119 /* PlaceholderViewController.swift in Sources */,
+				00000000000000000000011A /* WebViewController.swift in Sources */,
+				00000000000000000000011B /* DebugLogger.swift in Sources */,
+				00000000000000000000011C /* DGCharts+Theme.swift in Sources */,
+				00000000000000000000011D /* UIButton+Funde.swift in Sources */,
+				00000000000000000000011E /* UIColor+Hex.swift in Sources */,
+				00000000000000000000011F /* UIColor+Theme.swift in Sources */,
+				000000000000000000000120 /* UIFont+Funde.swift in Sources */,
+				000000000000000000000121 /* UIView+Layout.swift in Sources */,
+				000000000000000000000122 /* UIView+Shadow.swift in Sources */,
+				000000000000000000000123 /* UIViewController+Alert.swift in Sources */,
+				000000000000000000000124 /* BLLProtocol.swift in Sources */,
+				000000000000000000000125 /* DALProtocol.swift in Sources */,
+				000000000000000000000126 /* PLProtocol.swift in Sources */,
+				000000000000000000000127 /* RootTabBarController.swift in Sources */,
+				000000000000000000000128 /* SceneDelegate.swift in Sources */,
+				000000000000000000000129 /* HealthArchiveCardCell.swift in Sources */,
+				00000000000000000000012A /* HealthQuickEntriesCell.swift in Sources */,
+				00000000000000000000012B /* HealthScoreCardCell.swift in Sources */,
+				00000000000000000000012C /* HealthVitalMetricsCell.swift in Sources */,
+				00000000000000000000012D /* MetricCardCell.swift in Sources */,
+				00000000000000000000012E /* PeripheralCell.swift in Sources */,
+				00000000000000000000012F /* HealthViewController.swift in Sources */,
+				000000000000000000000130 /* BloodPressureViewController.swift in Sources */,
+				000000000000000000000131 /* BloodSugarViewController.swift in Sources */,
+				000000000000000000000132 /* MetricRulerView.swift in Sources */,
+				000000000000000000000133 /* DigestiveViewController.swift in Sources */,
+				000000000000000000000134 /* EcgViewController.swift in Sources */,
+				000000000000000000000135 /* ExerciseFoodViewController.swift in Sources */,
+				000000000000000000000136 /* FundusViewController.swift in Sources */,
+				000000000000000000000137 /* HeartRateViewController.swift in Sources */,
+				000000000000000000000138 /* MetricAddViewController.swift in Sources */,
+				000000000000000000000139 /* MetricsViewController.swift in Sources */,
+				00000000000000000000013A /* SleepViewController.swift in Sources */,
+				00000000000000000000013B /* SpO2ViewController.swift in Sources */,
+				00000000000000000000013C /* WeightViewController.swift in Sources */,
+				00000000000000000000013D /* HealthRecordBodyCardCell.swift in Sources */,
+				00000000000000000000013E /* HealthRecordHistoryCell.swift in Sources */,
+				00000000000000000000013F /* HealthRecordLifestyleCell.swift in Sources */,
+				000000000000000000000140 /* HealthRecordMetricRowCell.swift in Sources */,
+				000000000000000000000141 /* HealthRecordUserInfoCell.swift in Sources */,
+				000000000000000000000142 /* BodyFigureView.swift in Sources */,
+				000000000000000000000143 /* RiskBarView.swift in Sources */,
+				000000000000000000000144 /* HealthRecordModels.swift in Sources */,
+				000000000000000000000145 /* HealthRecordViewController.swift in Sources */,
+				000000000000000000000146 /* HomeArticleCell.swift in Sources */,
+				000000000000000000000147 /* HomeHeroCell.swift in Sources */,
+				000000000000000000000148 /* HomeQuickActionsCell.swift in Sources */,
+				000000000000000000000149 /* HomeServiceBannerCell.swift in Sources */,
+				00000000000000000000014A /* HomeTaskCardCell.swift in Sources */,
+				00000000000000000000014B /* HomeTeamCardCell.swift in Sources */,
+				00000000000000000000014C /* HomeViewController.swift in Sources */,
+				00000000000000000000014D /* HomeViewModel.swift in Sources */,
+				00000000000000000000014E /* ConversationCell.swift in Sources */,
+				00000000000000000000014F /* NotificationCell.swift in Sources */,
+				000000000000000000000150 /* AIWeeklyReportCell.swift in Sources */,
+				000000000000000000000151 /* CenteredTipCell.swift in Sources */,
+				000000000000000000000152 /* FileBubbleCell.swift in Sources */,
+				000000000000000000000153 /* ImageBubbleCell.swift in Sources */,
+				000000000000000000000154 /* MealAnalysisCell.swift in Sources */,
+				000000000000000000000155 /* ServiceCardCell.swift in Sources */,
+				000000000000000000000156 /* SysNotifyCell.swift in Sources */,
+				000000000000000000000157 /* SystemMessageCell.swift in Sources */,
+				000000000000000000000158 /* TextBubbleCell.swift in Sources */,
+				000000000000000000000159 /* VideoBubbleCell.swift in Sources */,
+				00000000000000000000015A /* VoiceBubbleCell.swift in Sources */,
+				00000000000000000000015B /* ChatViewController.swift in Sources */,
+				00000000000000000000015C /* MessageActionMenu.swift in Sources */,
+				00000000000000000000015D /* QuotePreviewBar.swift in Sources */,
+				00000000000000000000015E /* ChatViewModel.swift in Sources */,
+				00000000000000000000015F /* ConversationListViewController.swift in Sources */,
+				000000000000000000000160 /* MessagesViewController.swift in Sources */,
+				000000000000000000000161 /* NotificationListViewController.swift in Sources */,
+				000000000000000000000162 /* NotificationsViewController.swift in Sources */,
+				000000000000000000000163 /* ConversationListViewModel.swift in Sources */,
+				000000000000000000000164 /* AddressEditViewController.swift in Sources */,
+				000000000000000000000165 /* AddressListViewController.swift in Sources */,
+				000000000000000000000166 /* AddressCell.swift in Sources */,
+				000000000000000000000167 /* AddressListViewModel.swift in Sources */,
+				000000000000000000000168 /* AppointmentsViewController.swift in Sources */,
+				000000000000000000000169 /* DevicesViewController.swift in Sources */,
+				00000000000000000000016A /* DietPlanViewController.swift in Sources */,
+				00000000000000000000016B /* FamilyViewController.swift in Sources */,
+				00000000000000000000016C /* HealthEvaluationsViewController.swift in Sources */,
+				00000000000000000000016D /* StageReportCell.swift in Sources */,
+				00000000000000000000016E /* WeeklyReportCell.swift in Sources */,
+				00000000000000000000016F /* HealthReportViewController.swift in Sources */,
+				000000000000000000000170 /* MeFuncRowCell.swift in Sources */,
+				000000000000000000000171 /* MeMembershipCardCell.swift in Sources */,
+				000000000000000000000172 /* MeServiceFulfillmentCell.swift in Sources */,
+				000000000000000000000173 /* MeStatsStripCell.swift in Sources */,
+				000000000000000000000174 /* FuncRowView.swift in Sources */,
+				000000000000000000000175 /* SectionTitleView.swift in Sources */,
+				000000000000000000000176 /* StageMetricsCardView.swift in Sources */,
+				000000000000000000000177 /* MyViewController.swift in Sources */,
+				000000000000000000000178 /* MyViewModel.swift in Sources */,
+				000000000000000000000179 /* MembershipViewController.swift in Sources */,
+				00000000000000000000017A /* MonitoringPlanViewController.swift in Sources */,
+				00000000000000000000017B /* OrderCardCell.swift in Sources */,
+				00000000000000000000017C /* OrderListViewController.swift in Sources */,
+				00000000000000000000017D /* OrderTabViewController.swift in Sources */,
+				00000000000000000000017E /* PointsViewController.swift in Sources */,
+				00000000000000000000017F /* PolicyViewController.swift in Sources */,
+				000000000000000000000180 /* ProfileViewController.swift in Sources */,
+				000000000000000000000181 /* AboutSettingsViewController.swift in Sources */,
+				000000000000000000000182 /* AccessibilitySettingsViewController.swift in Sources */,
+				000000000000000000000183 /* SettingsToggleCell.swift in Sources */,
+				000000000000000000000184 /* NotificationSettingsViewController.swift in Sources */,
+				000000000000000000000185 /* PrivacySettingsViewController.swift in Sources */,
+				000000000000000000000186 /* CancelAccountViewController.swift in Sources */,
+				000000000000000000000187 /* ChangePhoneViewController.swift in Sources */,
+				000000000000000000000188 /* PasswordSetupViewController.swift in Sources */,
+				000000000000000000000189 /* SecuritySettingsViewController.swift in Sources */,
+				00000000000000000000018A /* CancelAccountViewModel.swift in Sources */,
+				00000000000000000000018B /* SettingsViewController.swift in Sources */,
+				00000000000000000000018C /* VoucherCell.swift in Sources */,
+				00000000000000000000018D /* VoucherListViewModel.swift in Sources */,
+				00000000000000000000018E /* VoucherListViewController.swift in Sources */,
+				00000000000000000000018F /* AgreementCheckboxView.swift in Sources */,
+				000000000000000000000190 /* BrandHeaderView.swift in Sources */,
+				000000000000000000000191 /* CaptchaVerifyView.swift in Sources */,
+				000000000000000000000192 /* LoginFieldView.swift in Sources */,
+				000000000000000000000193 /* NotificationGuideView.swift in Sources */,
+				000000000000000000000194 /* OptionChipView.swift in Sources */,
+				000000000000000000000195 /* PhoneBindingView.swift in Sources */,
+				000000000000000000000196 /* PrivacyPromptView.swift in Sources */,
+				000000000000000000000197 /* VerifyCodeButton.swift in Sources */,
+				000000000000000000000198 /* ForgotPasswordViewController.swift in Sources */,
+				000000000000000000000199 /* LoginViewController.swift in Sources */,
+				00000000000000000000019A /* OnboardingViewController.swift in Sources */,
+				00000000000000000000019B /* LoginViewModel.swift in Sources */,
+				00000000000000000000019C /* ActivateBannerCell.swift in Sources */,
+				00000000000000000000019D /* HealthPackageCardCell.swift in Sources */,
+				00000000000000000000019E /* HealthPackageCategoryCell.swift in Sources */,
+				00000000000000000000019F /* ServiceBannerCarouselCell.swift in Sources */,
+				0000000000000000000001A0 /* ServiceHubHeaderView.swift in Sources */,
+				0000000000000000000001A1 /* HealthMallViewController.swift in Sources */,
+				0000000000000000000001A2 /* ServicePackageSearchViewController.swift in Sources */,
+				0000000000000000000001A3 /* PaymentViewController.swift in Sources */,
+				0000000000000000000001A4 /* ServiceListViewController.swift in Sources */,
+				0000000000000000000001A5 /* ServiceViewController.swift in Sources */,
+				0000000000000000000001A6 /* ServicePackageSearchViewModel.swift in Sources */,
+				0000000000000000000001A7 /* ServiceViewModel.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0000000000000000000001AB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0000000000000000000001BB /* LaunchScreen.storyboard in Resources */,
+				0000000000000000000001BC /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0000000000000000000001AC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0000000000000000000000D6 /* Pods_lhjk_client_new.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+F55478F0DA8F4367E801C506 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-lhjk-client-new-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+86AAD0ABF411C9CC8B5AA507 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new-frameworks.sh",
+				"${BUILT_PRODUCTS_DIR}/Alamofire/Alamofire.framework",
+				"${BUILT_PRODUCTS_DIR}/DGCharts/DGCharts.framework",
+				"${BUILT_PRODUCTS_DIR}/FMDB/FMDB.framework",
+				"${BUILT_PRODUCTS_DIR}/Kingfisher/Kingfisher.framework",
+				"${BUILT_PRODUCTS_DIR}/SnapKit/SnapKit.framework",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/ChatRoom/RongChatRoom.framework/RongChatRoom",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/ContactCard/RongContactCard.framework/RongContactCard",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/CustomerService/RongCustomerService.framework/RongCustomerService",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/Discussion/RongDiscussion.framework/RongDiscussion",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/IMKit/RongIMKit.framework/RongIMKit",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/IMLib/RongIMLib.framework/RongIMLib",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/IMLibCore/RongIMLibCore.framework/RongIMLibCore",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/Location/RongLocation.framework/RongLocation",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/LocationKit/RongLocationKit.framework/RongLocationKit",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/PublicService/RongPublicService.framework/RongPublicService",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/RongSticker/RongSticker.framework/RongSticker",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/Sight/RongSight.framework/RongSight",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Alamofire.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/DGCharts.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FMDB.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Kingfisher.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SnapKit.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongChatRoom.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongContactCard.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongCustomerService.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongDiscussion.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongIMKit.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongIMLib.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongIMLibCore.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongLocation.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongLocationKit.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongPublicService.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongSticker.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongSight.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+4FF9C782B676F1DE62EABBD4 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new-resources.sh",
+				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RongCloud.bundle",
+				"${PODS_ROOT}/RongCloudIM/RongCloudIM/en.lproj",
+				"${PODS_ROOT}/RongCloudIM/RongCloudIM/zh-Hans.lproj",
+				"${PODS_ROOT}/RongCloudIM/RongCloudIM/ar.lproj",
+				"${PODS_ROOT}/RongCloudIM/RongCloudIM/Emoji.plist",
+				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RCColor.plist",
+				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RCConfig.plist",
+				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RongSticker.bundle",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RongCloud.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/en.lproj",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/zh-Hans.lproj",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ar.lproj",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/Emoji.plist",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RCColor.plist",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RCConfig.plist",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RongSticker.bundle",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0000000000000000000001B4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		0000000000000000000001B5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		0000000000000000000001B6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0000000000000000000001B0 /* Pods-lhjk-client-new.debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Other/Resources/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.lhjk.client.new;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		0000000000000000000001B7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0000000000000000000001B1 /* Pods-lhjk-client-new.release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Other/Resources/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.lhjk.client.new;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0000000000000000000001B2 /* Build configuration list for PBXProject "lhjk-client-new" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0000000000000000000001B4 /* Debug */,
+				0000000000000000000001B5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0000000000000000000001B3 /* Build configuration list for PBXNativeTarget "lhjk-client-new" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0000000000000000000001B6 /* Debug */,
+				0000000000000000000001B7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 0000000000000000000001AF /* Project object */;
+}

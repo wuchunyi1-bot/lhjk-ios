@@ -1,6 +1,17 @@
 import Alamofire
 import Foundation
 
+// MARK: - OAuth Token Response
+
+/// OAuth2 Token 接口响应（`POST /auth/oauth2/token`）
+struct OAuthTokenResponse: Decodable {
+    let accessToken: String
+    let refreshToken: String
+    let expiresIn: Int
+    let tokenType: String?
+    let scope: String?
+}
+
 // MARK: - OAuth Credential
 
 /// Token 凭证模型，遵循 Alamofire 的 AuthenticationCredential 协议
@@ -20,8 +31,9 @@ struct OAuthCredential: AuthenticationCredential {
 
     // MARK: - AuthenticationCredential
 
-    /// 是否需要刷新：当前时间距过期不足 5 分钟时即视为需刷新，留出缓冲窗口
-    var requiresRefresh: Bool {
-        Date() > expiration.addingTimeInterval(-5 * 60)
-    }
+    /// 是否需要刷新
+    ///
+    /// 后端当前未提供 refresh_token 刷新接口，始终返回 false。
+    /// Token 过期后由服务端返回 401，业务层引导用户重新登录。
+    var requiresRefresh: Bool { false }
 }

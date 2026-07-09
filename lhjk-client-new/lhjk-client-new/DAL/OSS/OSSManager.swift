@@ -25,8 +25,9 @@ final class OSSManager {
     ///   - mimeType: 文件 MIME 类型（如 `"image/jpeg"`），必须与后端签名时一致
     /// - Returns: 上传后的可访问 URL（优先 CDN 域名）
     func upload(data: Data, folderName: String, ext: String, mimeType: String) async throws -> String {
-        // Step 1: 从后端获取 OSS 预签名上传 URL
-        print("[OSSManager] → getting signed URL, folder=\(folderName) ext=\(ext)")
+        DebugLogger.logCall(module: "OSSManager", function: "upload", params: [
+            "folderName": folderName, "ext": ext, "mimeType": mimeType, "size": data.count,
+        ])
 
         let response: APIResponse<CosSignVo> = try await APIManager.shared
             .getAsync(
@@ -37,19 +38,15 @@ final class OSSManager {
 
         guard response.isSuccess, let signData = response.data else {
             let msg = response.msg ?? "获取上传签名失败"
-            print("[OSSManager] ✗ sign failed: \(msg)")
             throw OSSError.signFailed(msg)
         }
 
         guard let signUrl = signData.signUrl, !signUrl.isEmpty else {
-            print("[OSSManager] ✗ signUrl is empty")
             throw OSSError.signFailed("签名 URL 为空")
         }
 
-        print("[OSSManager] ✓ got signed URL, fundeUrl=\(signData.fundeUrl ?? "nil")")
-
         // Step 2: PUT 文件到 OSS（签名 URL 已含认证，无需额外 Header）
-        print("[OSSManager] ↑ uploading \(data.count) bytes to OSS")
+        DebugLogger.logHTTPRequest(method: "PUT", url: signUrl, bodySize: data.count)
 
         guard let url = URL(string: signUrl) else {
             throw OSSError.invalidURL(signUrl)
@@ -68,7 +65,7 @@ final class OSSManager {
               (200...299).contains(statusResponse.statusCode) else {
             let code = (httpResponse as? HTTPURLResponse)?.statusCode ?? -1
             let body = String(data: respData, encoding: .utf8) ?? ""
-            print("[OSSManager] ✗ upload failed, HTTP \(code) body=\(body)")
+            DebugLogger.logHTTPResponse(url: signUrl, statusCode: code, body: body)
             throw OSSError.uploadFailed(code)
         }
 
@@ -76,7 +73,8 @@ final class OSSManager {
         let finalUrl = signData.fundeUrl
             ?? signUrl.components(separatedBy: "?").first
             ?? signUrl
-        print("[OSSManager] ✓ upload success, url=\(finalUrl)")
+        DebugLogger.logHTTPResponse(url: signUrl, statusCode: statusResponse.statusCode)
+        DebugLogger.logReturn(module: "OSSManager", function: "upload", value: finalUrl)
         return finalUrl
     }
 }

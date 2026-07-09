@@ -1,13 +1,6 @@
 import UIKit
 import SnapKit
 
-// MARK: - Data
-
-fileprivate struct MallProduct {
-    let id: String; let name: String; let desc: String; let price: String; let unit: String
-    let tag: String; let accent: UIColor; let category: String
-}
-
 // MARK: - Cell
 
 fileprivate final class MallProductCell: UICollectionViewCell {
@@ -96,17 +89,7 @@ private var kMallIdKey: UInt8 = 0
 final class HealthMallViewController: BaseViewController {
 
     private let categories = ["全部", "营养补充", "功能食品", "健康器械"]
-    private let allProducts: [MallProduct] = [
-        MallProduct(id: "m001", name: "德好·控糖益生菌", desc: "餐后血糖平稳配方", price: "¥128", unit: "60粒/盒", tag: "热销", accent: .fdPrimary, category: "营养补充"),
-        MallProduct(id: "m002", name: "深海鱼油软胶囊", desc: "EPA+DHA 心脑血管养护", price: "¥98", unit: "90粒/瓶", tag: "", accent: UIColor(hexString: "#2C7BB0"), category: "营养补充"),
-        MallProduct(id: "m003", name: "膳食纤维复合粉", desc: "助消化·促代谢·饱腹感", price: "¥76", unit: "30袋/盒", tag: "推荐", accent: UIColor(hexString: "#1F9A6B"), category: "功能食品"),
-        MallProduct(id: "m004", name: "辅酶Q10胶囊", desc: "心肌细胞能量代谢支持", price: "¥168", unit: "60粒/瓶", tag: "", accent: UIColor(hexString: "#D6602B"), category: "营养补充"),
-        MallProduct(id: "m005", name: "维生素D3+K2", desc: "钙吸收协同·骨骼强健", price: "¥88", unit: "120粒/瓶", tag: "", accent: UIColor(hexString: "#B47300"), category: "营养补充"),
-        MallProduct(id: "m006", name: "乳清蛋白质粉", desc: "肌肉维持·体重管理首选", price: "¥218", unit: "500g/罐", tag: "精选", accent: UIColor(hexString: "#7B5E9F"), category: "功能食品"),
-        MallProduct(id: "m007", name: "血压臂式监测仪", desc: "医疗级精准·家庭自测", price: "¥298", unit: "1台", tag: "", accent: UIColor(hexString: "#3D6FB8"), category: "健康器械"),
-        MallProduct(id: "m008", name: "德康·抗氧化套装", desc: "白藜芦醇+虾青素+葡萄籽", price: "¥368", unit: "3瓶组合", tag: "套装", accent: UIColor(hexString: "#5C8DC9"), category: "营养补充"),
-        MallProduct(id: "m009", name: "血糖连续监测贴", desc: "免扎针14天连续监测", price: "¥186", unit: "2片/盒", tag: "新品", accent: UIColor(hexString: "#1A7A6E"), category: "健康器械"),
-    ]
+    private let allProducts: [MallProduct]
 
     private var activeCategory = "全部"
     private var filteredProducts: [MallProduct] { activeCategory == "全部" ? allProducts : allProducts.filter { $0.category == activeCategory } }
@@ -142,6 +125,13 @@ final class HealthMallViewController: BaseViewController {
         l.font = .fdMicro; l.textColor = .fdMuted; l.textAlignment = .center
         return l
     }()
+
+    init(catalogService: ServiceCatalogService = AppContainer.shared.serviceCatalogService) {
+        allProducts = catalogService.loadMallProducts()
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
 
     override func viewDidLoad() { super.viewDidLoad(); title = "富德优选" }
 

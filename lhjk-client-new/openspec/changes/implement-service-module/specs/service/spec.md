@@ -24,60 +24,294 @@
 
 ## 1. Services Hub (`/services`) — Phase 1 优先
 
-### Layout
+> **Source of Truth**: `new/funde-code/funde/funde-client` → `prototype/src/views/services/ServicesView.vue`
+> **PRD 参考**: `docs/page-specs/services-hub.page.yaml` + `docs/v0.1/pages/services/index.md`
+> **Mock（仅推荐区/机构）**: `prototype/src/mock/services.json` — **轮播与 9 宫格已接 API，不再使用 Mock**
+>
+> **iOS 对齐决策（2026-07 修订）**: Hub 以用户指定的 **Vue 原型** 为准实现轮播 Banner、9 宫格、推荐区等；PRD 中标注「暂不做」的限时活动 Banner 在 Vue 已落地，iOS 同步实现 `van-swipe` 轮播（3.6s 自动播放）。
+
+### Intent
+
+服务 Tab 根页面。Vue 原型布局：
+
+| 优先级 | Region | 说明 |
+|--------|--------|------|
+| P0 | service-banner-swipe | 运营 Banner 轮播（`GET columnContent/getByCode`） |
+| P0 | product-matrix | 德系 9 宫格（`POST dictionary/getDictionaryByParentId2`）→ `/services/list` + `code` |
+| P0 | recommend-section | 推荐服务健康包列表 + 类目筛选 |
+| P0 | activate-banner | 三好卡兑换提示条（PRD 补充，Vue 暂未含）→ `/activate` |
+| P1 | featured-packages | 精选服务包弱化卡（PRD 保留） |
+| P1 | medical-assist | 就医协助引导卡 |
+| P1 | mall-preview | 富德优选预览（≤6 件） |
+
+**Phase 1 已实现**: 机构顶栏、Banner 轮播、9 宫格、推荐服务（类目筛选 + 健康包列表）、三好卡提示条。
+
+### Layout（对齐 page-spec）
+
 ```
 ┌──────────────────────────────────────────┐
-│  Custom Topbar: "健康服务"               │
+│  tableHeaderView: "健康服务"              │
 │  "德系健康管理 · 9 大产品线"              │
 ├──────────────────────────────────────────┤
-│  Section 0: Featured Service Cards       │
-│  ┌ 德好·慢病逆转  [进行中]      ┐        │
-│  │ 三好共管 · 12周专属方案       │        │
-│  │ [12周] [咨询] [用药指导]      │        │
-│  │ ¥2,980/年        [查看进度]   │        │
-│  ├──────────────────────────────┤        │
-│  │ 德尊·长寿医学  [为您推荐]     │        │
-│  │ ...                          │        │
-│  └──────────────────────────────┘        │
+│  S0: ActivateBannerCell (条件显示)        │
 ├──────────────────────────────────────────┤
-│  Section 1: Medical Assist Card          │
-│  🏥 就医协助服务              [申请]     │
-│  三甲挂号 · 陪诊 · 绿通转诊              │
+│  S1: ServiceBannerCarouselCell            │
+│  van-swipe 3 张 Banner，高 172pt，3.6s 自动播放 │
 ├──────────────────────────────────────────┤
-│  Section 2: 德系产品矩阵 (3×3 grid)      │
-│  [德康] [德好] [德护]                    │
-│  [德元] [德愈] [德医]                    │
-│  [德甄] [德际] [德尊]                    │
+│  S2: FeaturedCardCell × N (弱化高度)    │
+│  德好 [进行中] 查看进度 → /orders         │
+│  德尊 [为您推荐] 了解详情 → /services/detail│
 ├──────────────────────────────────────────┤
-│  Section 3: 富德优选 (2×N grid, 6 items) │
-│  [商品1] [商品2]                          │
-│  [商品3] [商品4]                          │
-│  [商品5] [商品6]                          │
+│  S2: MedicalAssistCell                   │
+│  🏥 就医协助  [了解详情] → medical-assist │
+├──────────────────────────────────────────┤
+│  S3: MatrixGridCell (3×3)                │
+│  header: "德系产品矩阵"                   │
+├──────────────────────────────────────────┤
+│  S4: MallGridCell (2×N, max 6)          │
+│  header: "富德优选" + "查看全部 ›" → /mall │
 └──────────────────────────────────────────┘
 ```
 
 ### TableView Sections & Cells
 
-| Section | Cell | Reuse ID | Rows | 说明 |
-|---------|------|----------|------|------|
-| 0 | `FeaturedCardCell` | `FeaturedCardCell` | 2 | 推荐套餐卡片，高亮卡有渐变 bg + 装饰 blob |
-| 1 | `MedicalAssistCell` | `MedicalAssistCell` | 1 | 就医协助引导卡，icon + 描述 + tags + 申请按钮 |
-| 2 | `MatrixGridCell` | `MatrixGridCell` | 1 | 9 格产品矩阵，内嵌 3×3 grid |
-| 3 | `MallGridCell` | `MallGridCell` | 1 | 富德优选商品，内嵌 2×N grid，最多 6 项 |
+| Section | Cell | Rows | 条件 |
+|---------|------|------|------|
+| 0 | `ActivateBannerCell` | 1 | `VoucherService.isCardActivated == false` |
+| 1 | `ServiceBannerCarouselCell` | 1 | `banners` 非空 |
+| 2 | `FeaturedCardCell` | `featured.count` | 始终 |
+| 3 | `MedicalAssistCell` | 1 | 始终 |
+| 4 | `MatrixGridCell` | 1 | 始终 |
+| 5 | `MallGridCell` | 1 | `mallPreview` 非空 |
 
-### Section Headers
-- Section 2: "德系产品矩阵" + "了解品牌故事 ›"
-- Section 3: "富德优选" + "查看全部 ›"
+Section index 随 `showActivateBanner` 动态偏移；`numberOfSections` 固定 6。
 
-### Key Specs
-- Featured card: 48pt code 方块 + name + status badge + benefits tags + mono price + footer button
-- Highlight card: warm gradient bg `#FFF7F1→#FFE9DC` + decorative blob 100pt
-- Matrix tile: 44pt icon (colored accent bg) + name + desc + tier, 3 columns
-- Mall card: 90pt placeholder image area + name + desc + mono price + buy button
+### Business Rules
+
+1. **三好卡提示条**: 与 `VoucherService.isCardActivated` 联动（对应 funde `stores/demo.ts cardActivated`）；已激活时隐藏整段 S0
+2. **精选卡已购** (`current == true`): badge 展示 `status`（如「进行中 · 剩 45 天」）；按钮「查看进度」→ `Router.push("/orders")`
+3. **精选卡未购**: badge「为您推荐」；按钮「了解详情」→ `Router.push("/services/detail", params: ["id": id])`
+4. **弱化视觉**: 卡片内边距 12pt（原 16pt）、code 方块 40pt（原 48pt）、去掉 highlight 装饰 blob；高亮卡仍用 `fdPrimarySoft` 浅底
+5. **就医协助**: 按钮文案「了解详情」（非「申请」）；跳转 `/services/medical-assist`（非自循环 `/services`）
+6. **产品矩阵**: 9 格静态顺序；`current == true` 显示「使用中」角标；点击 → `/services/list` + `params: ["code": code]`
+7. **富德优选**: 最多 6 件；「查看全部 ›」→ `/mall`；商品卡 → `/mall/detail` + `id`
+8. **颜色**: 优先 `UIColor.fd*`；语义色 success 用 `fdSuccess` / `fdSuccessSoft`
+
+### Architecture（Hub）
+
+```
+PL/Service/
+├── ServiceViewController.swift      # 布局 + 导航
+├── ViewModels/ServiceViewModel.swift
+└── Components/
+    ├── ActivateBannerCell.swift
+    └── ServiceBannerCarouselCell.swift
+
+BLL/Service/
+├── ServiceModels.swift              # FeaturedPackage, ProductMatrixItem, MallProduct, ServiceHubSnapshot
+├── ServiceCatalogService.swift      # Mock 数据（services.json 口径）
+└── ServiceRoutes.swift
+```
+
+- `ServiceViewModel` 注入 `ServiceCatalogService` + `VoucherService`
+- `loadHub()` 构建 `ServiceHubSnapshot` 并 `@Published`
+- 导航保留在 ViewController（与 HomeViewModel 模式一致）
+
+### Data Models (BLL)
+
+```swift
+struct FeaturedPackage {
+    let id: String; let code: String; let tag: String; let desc: String
+    let benefits: [String]; let price: String; let priceUnit: String
+    let status: String; let highlight: Bool; let current: Bool
+}
+
+struct ProductMatrixItem {
+    let code: String; let name: String; let desc: String
+    let tier: String; let accentHex: String; let current: Bool
+    var accent: UIColor { UIColor(hexString: accentHex) }
+}
+
+struct MallProduct {
+    let id: String; let name: String; let desc: String
+    let price: String; let unit: String; let tag: String
+    let accentHex: String; let category: String
+}
+
+struct ServiceHubSnapshot {
+    let showActivateBanner: Bool
+    let featured: [FeaturedPackage]
+    let matrix: [ProductMatrixItem]
+    let mallPreview: [MallProduct]
+}
+```
+
+Mock 数据来源：`services.json` 的 `matrix`、健康包列表；**轮播 Banner 已对接真实 API**（见下节）。
+
+### Hub Banner API（轮播图）
+
+> **Apifox**: [根据栏位 code 查询已绑定的展示位内容列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/484052032e0.md)
+
+#### 接口
+
+| 项 | 值 |
+|----|-----|
+| Method | `GET` |
+| Path | `/v1/columnContent/getByCode` |
+| Base | `APIManager.environment.baseURL`（即 `gateway + /mobile`） |
+| Query | `code=wechat_hospital_banner` |
+| Auth | Bearer Token（`APIManager.session`） |
+| Response | `APIResponse<[ColumnContentDTO]>` |
+
+#### DAL 模型
+
+```swift
+struct ColumnContentDTO: Decodable {
+    let id: String          // 雪花 ID，JSON 可能为 String 或 Number
+    let contentId: String
+    let contentType: Int
+    let name: String?
+    let imageUrl: String?
+    let categoryName: String?
+    let status: Int?
+}
+```
+
+#### BLL 映射
+
+- `ColumnContentService.fetchHospitalBanners()` → `GET` 上述接口
+- 过滤 `status == 1`（启用）
+- 映射为 `ServiceHubBanner`（PL 层复用现有 `ServiceBannerCarouselCell`）
+- `contentType` 跳转（来源 `c_advertisement.content_type`）：
+
+| contentType | 含义 | iOS 路由 |
+|-------------|------|----------|
+| 1 | 广告/Banner | 无跳转（仅展示） |
+| 2 | 商品单品 | `/mall/detail` + `id=contentId` |
+| 3 | 商品套餐 | `/services/pkg` + `id=contentId` |
+| 4 | 活动专题 | `/services/detail` + `id=contentId`（占位） |
+| 5 | 资讯内容 | 暂不跳转（Phase 2 资讯详情） |
+
+#### 加载策略
+
+- `ServiceViewModel.load()` 使用 `async`：推荐区仍走 `ServiceCatalogService` Mock；Banner / Matrix **并行请求 API**
+- API 失败或空列表 → Banner section `numberOfRows = 0`（隐藏轮播，不降级 Mock）
+- 图片展示：`imageUrl` 非空时用 Kingfisher 加载；否则用文字占位（`name` + `categoryName`）
+
+#### 架构
+
+```
+BLL/Service/
+├── ColumnContentService.swift    # GET /v1/columnContent/getByCode
+├── ColumnContentModels.swift     # ColumnContentDTO + 跳转映射
+└── ServiceCatalogService.swift   # buildHubSnapshot(banners:)
+```
+
+### Hub Product Matrix API（德系 9 大产品线）
+
+> **Apifox**: [查询字典信息，不分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330853e0)
+
+#### 接口
+
+| 项 | 值 |
+|----|-----|
+| Method | `POST` |
+| Path | `/v1/dictionary/getDictionaryByParentId2` |
+| Base | `APIManager.environment.baseURL`（`gateway + /mobile`） |
+| Body | `{ "parentIds": [2074711686115364864], "allStatus": true }` |
+| Auth | Bearer Token |
+| Response | `APIResponse<[SDictionary]>` — **顶层为父节点数组，产品线在 `children` 内** |
+
+#### 实际响应结构
+
+```json
+{
+  "data": [{
+    "id": "2074711686115364864",
+    "name": "商品套餐系列",
+    "children": [
+      { "name": "德康", "value": "1", "description": "健康基础", "sortId": 1, "status": 1 },
+      { "name": "德好", "value": "2", "description": "向好逆转", "sortId": 2, "status": 1 }
+    ]
+  }]
+}
+```
+
+> 解析时取 `children` 作为产品线列表，忽略父节点本身。
+
+#### DAL / BLL 模型
+
+```swift
+struct DictionaryQueryBO: Encodable {
+    let parentIds: [Int64]
+    let allStatus: Bool
+}
+
+struct SDictionary: Decodable {
+    let id: String
+    let sortId: Int?
+    let parentId: String?
+    let name: String?
+    let value: String?
+    let description: String?
+    let english: String?
+    let status: Int?
+}
+```
+
+> `id` / `parentId` 等雪花 ID 字段兼容 String / Number 解码（与 `ColumnContentDTO` 一致）。
+
+#### 字段 → `ProductMatrixItem` 映射
+
+| UI 字段 | 字典字段 | 规则 |
+|---------|----------|------|
+| `code` | `children[].name` | 产品线代码（如 `德康`、`德好`） |
+| `name` | `children[].description` | 副标题（如 `健康基础`、`向好逆转`） |
+| `desc` | — | API 无此字段，留空 |
+| `tier` | `english` | API 有值时展示，否则留空 |
+| `accentHex` | `value` | 仅 `value` 以 `#` 开头时使用；否则品牌色 `#FF7A50` |
+| `current` | — | 暂固定 `false`（用户权益接口 Phase 2 补充「使用中」角标） |
+
+- 先展开 `children`，再按 `sortId` 升序排列
+- `status == 1` 才展示（启用）；`allStatus: true` 仅控制接口返回范围，UI 仍过滤禁用项
+
+#### 加载策略
+
+- `ServiceViewModel.load()` 并行请求 Banner + Matrix（`async let`）
+- Matrix API 成功 → `MatrixGridCell` 展示接口数据；失败或空列表 → 隐藏矩阵 section（不降级 Mock）
+- 点击格子 → `Router.push("/services/list", params: ["code": code])`（`code` 为产品线代码）
+
+#### 架构
+
+```
+BLL/Service/
+├── DictionaryService.swift       # POST getDictionaryByParentId2
+├── DictionaryModels.swift      # SDictionary + ProductMatrixMapper
+└── ServiceCatalogService.swift # buildHubSnapshot(banners:matrix:)
+```
+
+### Future API（其他模块仍 Mock）
+
+| Endpoint | 用途 |
+|----------|------|
+| `GET /api/services/featured` | 精选包 + 用户已购状态 |
+| ~~`GET /api/services/matrix`~~ | 已由字典接口替代 |
+| `GET /api/mall/products?limit=6` | 商城预览 |
+
+### Key Specs (UI)
+
+- Featured card: 40pt code 方块 + name + status badge + benefits tags + mono price + footer button
+- Highlight card: `fdPrimarySoft` 背景 + `fdPrimary` 边框（无大装饰 blob）
+- Medical assist: `fdPrimarySoft` 卡片 + 3 功能标签 +「了解详情」primary 按钮
+- Matrix tile: 44pt icon + name + desc + tier, 3 columns
+- Mall card: 90pt placeholder + name + desc + mono price
 
 ### Empty / Loading States
-- Matrix items without packages → show "套餐即将开放" placeholder
-- Mall empty → hide section
+
+- `cardActivated == true` → S0 隐藏
+- Matrix 某产品线无套餐 → 列表页展示「套餐即将开放」（Hub 仍显示矩阵格）
+- Mall 空 → 隐藏 S4（`numberOfRows = 0`）
+- 加载失败（后续 API）→ 骨架屏 + 下拉刷新
 
 ---
 
@@ -317,6 +551,8 @@ struct ServiceReview {
 | `/services` | `ServiceViewController` (Hub) | 1 | — |
 | `/services/list` | `ServiceListViewController` | 1 | `code: String` |
 | `/services/detail` | `ServiceDetailViewController` | 2 | `id: String` |
+| `/services/medical-assist` | `MedicalAssistViewController` (Placeholder) | 1 | — |
+| `/activate` | `VoucherListViewController` | 1 | — |
 | `/mall` | `HealthMallViewController` | 2 | — |
 | `/mall/detail` | Placeholder | 2 | `id: String` |
 
@@ -325,11 +561,12 @@ struct ServiceReview {
 ## Acceptance Checklist (Phase 1 — Hub)
 
 - [ ] Custom Topbar "健康服务" + "德系健康管理 · 9 大产品线"
-- [ ] Section 0: 2 张 featured 卡片（德好高亮渐变 + 德尊普通），code + name + badge + benefits + price + button
-- [ ] Section 1: 就医协助引导卡 + 申请按钮
-- [ ] Section 2: 德系产品矩阵 3×3 grid，每格 code + name + desc + tier
-- [ ] Section 3: 富德优选 2×N grid（6 商品），image + name + desc + price
+- [ ] S0: 三好卡兑换提示条（未激活时显示），点击 → `/activate`；已激活隐藏
+- [ ] S1: featured 卡片弱化高度；已购「查看进度」→ `/orders`；未购「了解详情」→ `/services/detail`
+- [ ] S2: 就医协助卡「了解详情」→ `/services/medical-assist`
+- [ ] S3: 德系产品矩阵 3×3，使用中角标，点击 → `/services/list` + code
+- [ ] S4: 富德优选 ≤6 商品，「查看全部 ›」→ `/mall`，商品 → `/mall/detail`
+- [ ] 数据来自 `ServiceCatalogService`（非 VC 内联 mock）
+- [ ] `ServiceViewModel` + `VoucherService.isCardActivated` 驱动 S0 显隐
 - [ ] 颜色通过 `UIColor.fd*` Token 引用
-- [ ] 所有 section header 正确显示
-- [ ] 矩阵 tile 点击 push `/services/list/:code`
-- [ ] 富德优选 "查看全部 ›" push `/mall`
+- [ ] 触摸目标 ≥ 44pt

@@ -17,7 +17,9 @@ final class VoucherService {
     // MARK: - Mock State
 
     /// 模拟激活状态（对应 funde-client stores/demo.ts 的 cardActivated）
-    private var cardActivated = false
+    private(set) var isCardActivated = false
+
+    static let cardActivationDidChange = Notification.Name("VoucherService.cardActivationDidChange")
 
     // MARK: - 查询卡券列表
 
@@ -28,13 +30,13 @@ final class VoucherService {
             MVoucher(
                 id: "v001",
                 cardNo: "SGHK-2026-0001",
-                packageName: cardActivated ? "德好·标准版" : "三好健康服务卡",
-                status: cardActivated ? .activated : .unused,
+                packageName: isCardActivated ? "德好·标准版" : "三好健康服务卡",
+                status: isCardActivated ? .activated : .unused,
                 activationDeadline: "2026/12/31",
-                activatedAt: cardActivated ? "2026/06/23" : nil,
-                validUntil: cardActivated ? "2027/06/22" : nil,
-                advisorName: cardActivated ? "王顾问" : nil,
-                daysLeft: cardActivated ? 364 : nil
+                activatedAt: isCardActivated ? "2026/06/23" : nil,
+                validUntil: isCardActivated ? "2027/06/22" : nil,
+                advisorName: isCardActivated ? "王顾问" : nil,
+                daysLeft: isCardActivated ? 364 : nil
             ),
             MVoucher(
                 id: "v002",
@@ -87,7 +89,8 @@ final class VoucherService {
 
     /// 模拟激活卡券（对应 funde-client stores/demo.ts 的 activateCard）
     func activateCard() {
-        cardActivated = true
-        print("[VoucherService] activateCard ✓ cardActivated = true")
+        isCardActivated = true
+        print("[VoucherService] activateCard ✓ isCardActivated = true")
+        NotificationCenter.default.post(name: Self.cardActivationDidChange, object: nil)
     }
 }

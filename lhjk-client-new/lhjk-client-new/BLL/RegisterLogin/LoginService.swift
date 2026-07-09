@@ -101,11 +101,11 @@ final class LoginService: LoginServiceProtocol {
             "code": code
         ]
 
-        let response: APIResponse<TokenResponse> = try await APIManager.shared
+        let response: APIResponse<OAuthTokenResponse> = try await APIManager.shared
             .publicPostFormURLEncodedAsync(
                 path: "/auth/oauth2/token",
                 parameters: params,
-                responseType: APIResponse<TokenResponse>.self,
+                responseType: APIResponse<OAuthTokenResponse>.self,
                 useGatewayRoot: true
             )
 
@@ -147,11 +147,11 @@ final class LoginService: LoginServiceProtocol {
             "password": password
         ]
 
-        let response: APIResponse<TokenResponse> = try await APIManager.shared
+        let response: APIResponse<OAuthTokenResponse> = try await APIManager.shared
             .publicPostFormURLEncodedAsync(
                 path: "/auth/oauth2/token",
                 parameters: params,
-                responseType: APIResponse<TokenResponse>.self,
+                responseType: APIResponse<OAuthTokenResponse>.self,
                 useGatewayRoot: true
             )
 

@@ -342,7 +342,12 @@ private final class LogMiddleware: RouteMiddleware {
 
     func process(_ context: RouteContext, next: @escaping (RouteContext) -> Void) {
         #if DEBUG
-        print("[Router] → \(context.path) | params: \(context.extraParameters) | transition: \(context.transition)")
+        var params: [String: Any?] = context.extraParameters.mapValues { $0 as Any? }
+        for (key, value) in context.queryParameters {
+            params[key] = value
+        }
+        params["transition"] = "\(context.transition)"
+        DebugLogger.logCall(module: "Router", function: context.path, params: params)
         #endif
         next(context)
     }

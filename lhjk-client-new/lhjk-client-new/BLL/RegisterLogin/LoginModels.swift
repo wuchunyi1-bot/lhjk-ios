@@ -23,24 +23,7 @@ struct SMSResponse: Decodable {
     let resendAfter: Int?
 }
 
-/// OAuth2 Token 响应（`POST /oauth2/token` 返回）
-struct TokenResponse: Decodable {
-    let accessToken: String
-    let refreshToken: String
-    let expiresIn: Int
-    let tokenType: String?
-    let scope: String?
-
-    enum CodingKeys: String, CodingKey {
-        case accessToken
-        case refreshToken
-        case expiresIn
-        case tokenType
-        case scope
-    }
-}
-
-/// 登录结果（BLL 层概念，由 `LoginService` 从 `TokenResponse` 转换）
+/// 登录结果（BLL 层概念，由 `LoginService` 从 `OAuthTokenResponse` 转换）
 struct LoginResult {
     let accessToken: String
     let refreshToken: String

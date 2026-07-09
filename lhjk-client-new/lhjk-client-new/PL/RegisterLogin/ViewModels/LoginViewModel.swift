@@ -159,8 +159,8 @@ final class LoginViewModel: ObservableObject {
 
         Task {
             do {
-                let result = try await loginService.loginByPhone(phone, code: code)
-                await handleLoginSuccess(phone: phone, result: result)
+                try await loginService.loginByPhone(phone, code: code)
+                await handleLoginSuccess(phone: phone)
             } catch {
                 await MainActor.run {
                     isLoggingIn = false
@@ -189,8 +189,8 @@ final class LoginViewModel: ObservableObject {
 
         Task {
             do {
-                let result = try await loginService.loginByPassword(phone, password: password)
-                await handleLoginSuccess(phone: phone, result: result)
+                try await loginService.loginByPassword(phone, password: password)
+                await handleLoginSuccess(phone: phone)
             } catch {
                 await MainActor.run {
                     isLoggingIn = false
@@ -216,15 +216,9 @@ final class LoginViewModel: ObservableObject {
 
     // MARK: - Post-Login Orchestration
 
-    private func handleLoginSuccess(phone: String, result: LoginResult) async {
-        // 持久化 Token
-        let credential = OAuthCredential(
-            accessToken: result.accessToken,
-            refreshToken: result.refreshToken,
-            expiration: Date().addingTimeInterval(3600)
-        )
+    private func handleLoginSuccess(phone: String) async {
+        // Token 已由 LoginService 根据服务端 expires_in 持久化
         await MainActor.run {
-            APIManager.shared.setCredential(credential)
             UserDefaults.standard.set(phone, forKey: "current_user_mobile")
             isLoggingIn = false
             flowStep = .notificationGuide

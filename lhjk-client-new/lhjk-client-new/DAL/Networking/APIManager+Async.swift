@@ -31,7 +31,6 @@ extension APIManager {
         path: String, parameters: [String: Any]? = nil, responseType: T.Type
     ) async throws -> T {
         let url = makeURL(for: path)
-        print("[APIManager] GET \(url)")
         return try await request(url: url, method: .get, parameters: parameters, encoding: URLEncoding.default, session: session)
     }
 
@@ -39,7 +38,6 @@ extension APIManager {
         path: String, parameters: [String: Any]? = nil, responseType: T.Type
     ) async throws -> T {
         let url = makeURL(for: path)
-        print("[APIManager] POST \(url)")
         return try await request(url: url, method: .post, parameters: parameters, encoding: JSONEncoding.default, session: session)
     }
 
@@ -48,7 +46,6 @@ extension APIManager {
         path: String, parameters: [String: Any]? = nil, responseType: T.Type
     ) async throws -> T {
         let url = makeURL(for: path)
-        print("[APIManager] POST(urlenc) \(url)")
         return try await request(url: url, method: .post, parameters: parameters, encoding: URLEncoding.default, session: session)
     }
 
@@ -56,7 +53,6 @@ extension APIManager {
         path: String, parameters: [String: Any]? = nil, responseType: T.Type
     ) async throws -> T {
         let url = makeURL(for: path)
-        print("[APIManager] PUT \(url)")
         return try await request(url: url, method: .put, parameters: parameters, encoding: JSONEncoding.default, session: session)
     }
 
@@ -67,7 +63,6 @@ extension APIManager {
         useGatewayRoot: Bool = false
     ) async throws -> T {
         let url = makeURL(for: path, useGatewayRoot: useGatewayRoot)
-        print("[APIManager] DELETE \(url)")
         return try await request(url: url, method: .delete, parameters: parameters, encoding: URLEncoding.default, session: session)
     }
 
@@ -76,22 +71,30 @@ extension APIManager {
     private func request<T: Decodable>(
         url: URL, method: HTTPMethod, parameters: [String: Any]?, encoding: ParameterEncoding, session: Session
     ) async throws -> T {
-        // 请求参数日志（query 显示 ?k=v，body 显示 |k=v）
-        let paramsDesc = parameters?.map { "\($0.key)=\($0.value)" }.joined(separator: "&") ?? "—"
-        let sep = method == .get ? "?" : " | body: "
-        print("[APIManager] → \(method.rawValue) \(url.absoluteString)\(sep)\(paramsDesc)")
+        DebugLogger.logAPIRequest(method: method.rawValue, url: url.absoluteString, parameters: parameters)
         return try await withCheckedThrowingContinuation { cont in
             var c: AnyCancellable?
             c = session.request(url, method: method, parameters: parameters, encoding: encoding)
                 .validate()
                 .publishDecodable(type: T.self, decoder: jsonDecoder)
                 .tryMap { r in
-                    if let data = r.data, let raw = String(data: data, encoding: .utf8) {
-                        print("[APIManager] ← \(url.lastPathComponent): \(raw.prefix(3000))")
-                    }
                     switch r.result {
-                    case .success(let v): return v
-                    case .failure(let e): throw APIError(from: e, data: r.data)
+                    case .success(let v):
+                        DebugLogger.logAPIResponse(
+                            url: url.absoluteString,
+                            statusCode: r.response?.statusCode,
+                            rawData: r.data,
+                            decoded: v
+                        )
+                        return v
+                    case .failure(let e):
+                        DebugLogger.logAPIResponse(
+                            url: url.absoluteString,
+                            statusCode: r.response?.statusCode,
+                            rawData: r.data,
+                            error: e
+                        )
+                        throw APIError(from: e, data: r.data)
                     }
                 }
                 .mapError { ($0 as? APIError) ?? .unknown($0) }

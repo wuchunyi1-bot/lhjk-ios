@@ -23,5 +23,5 @@
 ## 4. 验证
 
 - [ ] 4.1 编译验证：确保无编译错误
-- [ ] 4.2 运行 `ruby generate_project.rb` 将新文件纳入 Xcode 项目
+- [ ] 4.2 在 Xcode 中手动将新文件加入 `lhjk-client-new` target
 - [ ] 4.3 功能验证：短信登录、密码登录、隐私弹窗、通知引导流程完整

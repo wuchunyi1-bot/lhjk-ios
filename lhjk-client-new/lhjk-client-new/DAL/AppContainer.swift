@@ -50,6 +50,10 @@ final class AppContainer {
     private(set) lazy var imService: IMService = .shared
     private(set) lazy var addressService: AddressService = .shared
     private(set) lazy var voucherService: VoucherService = .shared
+    private(set) lazy var serviceCatalogService: ServiceCatalogService = .shared
+    private(set) lazy var columnContentService: ColumnContentService = .shared
+    private(set) lazy var dictionaryService: DictionaryService = .shared
+    private(set) lazy var hospitalPackageService: HospitalPackageService = .shared
     private(set) lazy var orderService: OrderService = .shared
     private(set) lazy var paymentService: PaymentService = .shared
     // MARK: - 存储

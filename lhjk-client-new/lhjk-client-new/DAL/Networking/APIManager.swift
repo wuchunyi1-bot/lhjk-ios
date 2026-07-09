@@ -114,6 +114,14 @@ final class APIManager {
         configureSession(with: credential)
     }
 
+    /// Token 自动刷新成功后调用：仅持久化，不重建 Session
+    ///
+    /// `AuthenticationInterceptor` 在 `refresh` 回调成功后已更新内存中的 Credential，
+    /// 此处只需写入本地存储供下次冷启动恢复。
+    func persistRefreshedCredential(_ credential: OAuthCredential) {
+        persistCredential(credential)
+    }
+
     /// 登出时调用：清除 Credential 并重建无认证 Session
     func clearCredential() {
         UserDefaults.standard.removeObject(forKey: .authAccessTokenKey)
@@ -136,12 +144,38 @@ final class APIManager {
             let refreshToken = UserDefaults.standard.string(forKey: .authRefreshTokenKey)
         else { return nil }
 
-        let expiration = UserDefaults.standard.object(forKey: .authExpirationKey) as? Date ?? Date()
-        return OAuthCredential(
+        let expiration: Date
+        if let saved = UserDefaults.standard.object(forKey: .authExpirationKey) as? Date {
+            expiration = saved
+        } else {
+            // 旧版未持久化过期时间：视为已过期，触发 refresh 流程重新获取
+            expiration = Date()
+            DebugLogger.logCall(
+                module: "APIManager",
+                function: "loadCredential",
+                params: ["warning": "auth_expiration missing, will refresh on first request"]
+            )
+        }
+
+        let credential = OAuthCredential(
             accessToken: accessToken,
             refreshToken: refreshToken,
             expiration: expiration
         )
+
+        if credential.requiresRefresh {
+            DebugLogger.logCall(
+                module: "APIManager",
+                function: "loadCredential",
+                params: [
+                    "requiresRefresh": true,
+                    "expiration": expiration,
+                    "now": Date(),
+                ]
+            )
+        }
+
+        return credential
     }
 
     // MARK: - GET
@@ -209,6 +243,10 @@ final class APIManager {
         progressHandler: ((Double) -> Void)? = nil
     ) -> AnyPublisher<T, APIError> {
         let url = makeURL(for: path)
+        let uploadParams: [String: Any] = multipartItems.reduce(into: [:]) { result, item in
+            result[item.name] = item.fileName.map { "\($0) (\(item.data.count) bytes)" } ?? "\(item.data.count) bytes"
+        }
+        DebugLogger.logAPIRequest(method: "UPLOAD", url: url.absoluteString, parameters: uploadParams)
 
         return session.upload(
             multipartFormData: { formData in
@@ -231,8 +269,20 @@ final class APIManager {
         .tryMap { response in
             switch response.result {
             case .success(let value):
+                DebugLogger.logAPIResponse(
+                    url: url.absoluteString,
+                    statusCode: response.response?.statusCode,
+                    rawData: response.data,
+                    decoded: value
+                )
                 return value
             case .failure(let afError):
+                DebugLogger.logAPIResponse(
+                    url: url.absoluteString,
+                    statusCode: response.response?.statusCode,
+                    rawData: response.data,
+                    error: afError
+                )
                 throw APIError(from: afError, data: response.data)
             }
         }
@@ -251,6 +301,7 @@ final class APIManager {
         responseType: T.Type
     ) -> AnyPublisher<T, APIError> {
         let url = makeURL(for: path)
+        DebugLogger.logAPIRequest(method: method.rawValue, url: url.absoluteString, parameters: parameters)
 
         let encoding: ParameterEncoding = {
             switch method {
@@ -272,8 +323,20 @@ final class APIManager {
         .tryMap { response in
             switch response.result {
             case .success(let value):
+                DebugLogger.logAPIResponse(
+                    url: url.absoluteString,
+                    statusCode: response.response?.statusCode,
+                    rawData: response.data,
+                    decoded: value
+                )
                 return value
             case .failure(let afError):
+                DebugLogger.logAPIResponse(
+                    url: url.absoluteString,
+                    statusCode: response.response?.statusCode,
+                    rawData: response.data,
+                    error: afError
+                )
                 throw APIError(from: afError, data: response.data)
             }
         }
@@ -354,39 +417,17 @@ struct EmptyResponse: Decodable {}
 
 // MARK: - 日志监控
 
-/// 请求/响应日志事件监控
+/// 请求/响应日志事件监控（补充 APIManager 未覆盖的低层细节，如 Header）
 final class LogMonitor: EventMonitor {
 
     func request(_ request: Request, didCreateURLRequest urlRequest: URLRequest) {
-        print("[API] → \(urlRequest.httpMethod ?? "?") \(urlRequest.url?.absoluteString ?? "")")
+        guard DebugLogger.isEnabled else { return }
         if let headers = urlRequest.allHTTPHeaderFields, !headers.isEmpty {
-            print("[API] Headers: \(headers)")
-        }
-        if let body = urlRequest.httpBody {
-            if let str = String(data: body, encoding: .utf8) {
-                print("[API] Body(raw): \(str)")
-            } else {
-                print("[API] Body: \(body.count) bytes")
+            var safeHeaders = headers
+            for key in headers.keys where key.lowercased() == "authorization" {
+                safeHeaders[key] = "Bearer ****"
             }
-        }
-    }
-
-    func request(_ request: Request, didParseResponse response: AFDataResponse<some Sendable>) {
-        if let httpResponse = response.response {
-            print("[API] ← \(httpResponse.statusCode) \(httpResponse.url?.absoluteString ?? "")")
-        }
-        if let data = response.data {
-            if let str = String(data: data, encoding: .utf8) {
-                print("[API] Response(raw): \(str.prefix(2000))")
-            } else {
-                print("[API] Response: \(data.count) bytes")
-            }
-        }
-        if let error = response.error {
-            print("[API] Error: \(error.localizedDescription)")
-            if let afError = error.asAFError {
-                print("[API] AFError: \(afError)")
-            }
+            print("[API]   Headers: \(safeHeaders)")
         }
     }
 }

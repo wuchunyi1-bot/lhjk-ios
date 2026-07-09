@@ -158,3 +158,9 @@
 #### Scenario: 请求失败处理
 - **WHEN** `DELETE /oauth2/logout` 请求失败（网络异常、服务端错误等）
 - **THEN** 系统静默忽略错误（fire-and-forget），不阻塞本地登出流程，不向用户展示错误提示
+
+---
+
+### Requirement: Request Parameters Must Be Real（请求参数真实性）
+
+`APIManager` 发出的请求参数 SHALL NOT 包含 mock 数据或未经验证的后端 id 占位符。详见 `openspec/specs/project-architecture/spec.md` — **No Mock Data in Network Requests**。

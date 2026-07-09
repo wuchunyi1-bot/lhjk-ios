@@ -109,9 +109,33 @@ AI 可以读写业务代码（`PL/`、`BLL/`、`DAL/`、`Other/` 下的 `.swift`
 - **WHEN** 业务代码需要引入新的第三方库
 - **THEN** AI 应告知开发者需要在 Podfile 中添加的依赖项，由开发者手动编辑 Podfile 并执行 `pod install`
 
+#### Scenario: 新增或移动 Swift 源文件
+- **WHEN** AI 或开发者新增了 `.swift` 文件（或移动/重命名）
+- **THEN** AI **不得**修改 `project.pbxproj` 或运行自动生成脚本
+- **AND** AI 必须在完成代码后**提示开发者**在 Xcode 中手动 **Add Files to "lhjk-client-new"**，勾选 target `lhjk-client-new`，并列出待添加的文件路径
+
 #### Scenario: AI 尝试修改配置
 - **WHEN** AI 尝试编辑配置类文件（`.xcodeproj`、`Podfile`、`Info.plist` 等）
 - **THEN** AI 必须停止操作，转为给出操作建议让开发者手动执行
+
+---
+
+### Requirement: No Mock Data in Network Requests（网络请求禁用 Mock）
+
+BLL / DAL 构建并发出的 **API 请求参数**（Query、Body、Path 变量）SHALL NOT 包含 mock 数据、本地占位 id 或未从真实接口/用户输入获得的假值。
+
+#### Scenario: 模块已接真实 API
+- **WHEN** 某业务模块的部分能力已对接后端接口（如服务首页推荐套包、字典 Tab）
+- **THEN** 该模块内与已接能力相关的 mock 列表/假 id **必须删除**
+- **AND** UI 在暂无后端数据时展示空态或占位文案，**不得**用 mock 数据填充请求或冒充接口结果
+
+#### Scenario: 可选参数无真实值
+- **WHEN** 接口参数可选（如 `hospitalId`）且当前无后端提供的有效值
+- **THEN** **不传**该参数，不得用 mock 机构 id 等占位值代替
+
+#### Scenario: 尚未接 API 的页面
+- **WHEN** 某页面仍无后端接口
+- **THEN** mock 仅可用于 PL 层纯展示原型，**禁止**进入 `APIManager` 请求参数
 
 ---
 
@@ -161,6 +185,24 @@ lhjk-client/
 #### Scenario: PL 与 BLL 的模块对应
 - **WHEN** PL 层某业务模块需要调用业务逻辑
 - **THEN** 该模块调用 BLL 层同名业务模块下的 Service，确保 PL 与 BLL 的业务模块一一对应
+
+---
+
+### Requirement: Module Ownership Confirmation（模块归属确认）
+
+系统 SHALL 将业务代码严格归属到对应业务模块目录。**服务 Tab 即商城模块**（`PL/Service`、`BLL/Service`），与健康模块（`PL/Health`、`BLL/Health`）平级，不得混放。
+
+#### Scenario: 开发前确认模块归属
+- **WHEN** AI 或开发者在开始编写/移动代码前，无法从需求明确判断功能属于哪个业务模块（如健康 vs 服务/商城 vs 我的）
+- **THEN** **必须先向用户确认**目标模块，再创建文件或修改代码；不得默认猜测或临时放入相近模块
+
+#### Scenario: 跨模块能力
+- **WHEN** 多个 Tab 需要复用同一 BLL 能力（如字典、套包列表）
+- **THEN** 代码放在**拥有该业务能力**的模块下（如商城套包 → `BLL/Service`），其他模块通过 BLL 接口调用，不得复制到另一模块目录
+
+#### Scenario: 错误归属示例
+- **WHEN** 服务首页「推荐服务」、医院套包 API 等商城能力
+- **THEN** 必须位于 `BLL/Service/` 与 `PL/Service/`，**禁止**放入 `BLL/Health/` 或 `PL/Health/`
 
 ---
 

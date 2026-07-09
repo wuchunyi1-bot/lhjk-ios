@@ -114,8 +114,11 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
             make.bottom.equalToSuperview().offset(-8)
         }
 
-        // Size the header
-        let size = header.systemLayoutSizeFitting(CGSize(width: view.bounds.width, height: UIView.layoutFittingCompressedSize.height), withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel)
+        let size = header.systemLayoutSizeFitting(
+            CGSize(width: view.bounds.width, height: UIView.layoutFittingCompressedSize.height),
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel
+        )
         header.frame.size = size
         return header
     }

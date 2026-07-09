@@ -1,0 +1,156 @@
+import Foundation
+
+// MARK: - 医院套包服务 (BLL / 服务·商城模块)
+
+/// 商城套包 — `GET /v1/hospitalPackage/getEnabledHospitalPackagePage`
+///
+/// 同一接口，两种入参场景：
+/// - **推荐服务**：`packageMainCategory` 必传
+/// - **搜索套餐**：`name` 必传（关键字）
+/// - 两种场景若有 `hospitalId` 则一并传递
+///
+/// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/484150836e0
+final class HospitalPackageService {
+
+    static let shared = HospitalPackageService()
+
+    private init() {}
+
+    // MARK: - 推荐服务（按类目）
+
+    func fetchRecommendPackages(
+        packageMainCategory: String,
+        hospitalId: String? = nil,
+        pageNum: Int = 1,
+        pageSize: Int = 10
+    ) async throws -> PaginatedHospitalPackageData {
+        guard let category = Self.nonEmpty(packageMainCategory) else {
+            throw HospitalPackageServiceError.missingPackageMainCategory
+        }
+
+        var params: [String: Any] = [
+            "packageMainCategory": category,
+            "pageNum": String(pageNum),
+            "pageSize": String(pageSize),
+        ]
+        if let hospitalId = Self.apiHospitalId(hospitalId) {
+            params["hospitalId"] = hospitalId
+        }
+
+        return try await requestPackages(params: params)
+    }
+
+    /// 推荐服务类目 → UI 模型（服务首页首屏第一页）
+    func fetchPackageItems(
+        category: ServiceRecommendCategory,
+        hospitalId: String? = nil,
+        pageNum: Int = 1,
+        pageSize: Int = 10
+    ) async throws -> [HealthPackageItem] {
+        guard let packageMainCategory = category.packageMainCategory else {
+            throw HospitalPackageServiceError.missingPackageMainCategory
+        }
+
+        let page = try await fetchRecommendPackages(
+            packageMainCategory: packageMainCategory,
+            hospitalId: hospitalId,
+            pageNum: pageNum,
+            pageSize: pageSize
+        )
+        return mapPackageItems(page.records)
+    }
+
+    // MARK: - 搜索套餐（按关键字）
+
+    func searchPackages(
+        keyword: String,
+        hospitalId: String? = nil,
+        pageNum: Int = 1,
+        pageSize: Int = 10
+    ) async throws -> PaginatedHospitalPackageData {
+        guard let name = Self.nonEmpty(keyword) else {
+            throw HospitalPackageServiceError.missingSearchKeyword
+        }
+
+        var params: [String: Any] = [
+            "name": name,
+            "pageNum": String(pageNum),
+            "pageSize": String(pageSize),
+        ]
+        if let hospitalId = Self.apiHospitalId(hospitalId) {
+            params["hospitalId"] = hospitalId
+        }
+
+        return try await requestPackages(params: params)
+    }
+
+    /// 搜索关键字 → UI 模型
+    func searchPackageItems(
+        keyword: String,
+        hospitalId: String? = nil,
+        pageNum: Int = 1,
+        pageSize: Int = 10
+    ) async throws -> [HealthPackageItem] {
+        let page = try await searchPackages(
+            keyword: keyword,
+            hospitalId: hospitalId,
+            pageNum: pageNum,
+            pageSize: pageSize
+        )
+        return mapPackageItems(page.records)
+    }
+
+    // MARK: - Private
+
+    private func requestPackages(params: [String: Any]) async throws -> PaginatedHospitalPackageData {
+        let response: APIResponse<PaginatedHospitalPackageData> = try await APIManager.shared.getAsync(
+            path: "/v1/hospitalPackage/getEnabledHospitalPackagePage",
+            parameters: params,
+            responseType: APIResponse<PaginatedHospitalPackageData>.self
+        )
+
+        guard response.isSuccess else {
+            throw HospitalPackageServiceError.requestFailed(response.msg ?? "获取套包列表失败")
+        }
+
+        return response.data ?? PaginatedHospitalPackageData(
+            totalRecords: 0,
+            pageSize: (params["pageSize"] as? String).flatMap(Int.init) ?? 10,
+            totalPages: 0,
+            currentPage: (params["pageNum"] as? String).flatMap(Int.init) ?? 1,
+            records: []
+        )
+    }
+
+    private func mapPackageItems(_ records: [HospitalPackagePageVO]?) -> [HealthPackageItem] {
+        (records ?? []).enumerated().map { index, vo in
+            HospitalPackageMapper.toPackageItem(vo, index: index)
+        }
+    }
+
+    private static func nonEmpty(_ value: String?) -> String? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
+            return nil
+        }
+        return trimmed
+    }
+
+    /// 套包 API `hospitalId`：须为后端 `Long` 的纯数字字符串；mock 机构 id 等不传
+    static func apiHospitalId(_ value: String?) -> String? {
+        ServiceCatalogService.validApiHospitalId(value)
+    }
+}
+
+enum HospitalPackageServiceError: LocalizedError {
+    case missingPackageMainCategory
+    case missingSearchKeyword
+    case requestFailed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .missingPackageMainCategory: return "缺少 packageMainCategory"
+        case .missingSearchKeyword: return "请输入搜索关键字"
+        case .requestFailed(let message): return message
+        }
+    }
+}
