@@ -201,6 +201,34 @@
 		A5A6F5432FFF7E720065C921 /* ConversationListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5412FFF7E720065C921 /* ConversationListViewModel.swift */; };
 		A5A6F5452FFF7EBE0065C921 /* OrderTabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5442FFF7EBE0065C921 /* OrderTabViewController.swift */; };
 		A5A6F5482FFF7EFC0065C921 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5462FFF7EFC0065C921 /* AudioRecorder.swift */; };
+		A5A6F54F2FFF8DE00065C921 /* ECGStatCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F54D2FFF8DE00065C921 /* ECGStatCell.swift */; };
+		A5A6F5502FFF8DE00065C921 /* ECGRecordCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F54A2FFF8DE00065C921 /* ECGRecordCell.swift */; };
+		A5A6F5512FFF8DE00065C921 /* ECGBannerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5492FFF8DE00065C921 /* ECGBannerCell.swift */; };
+		A5A6F5522FFF8DE00065C921 /* ECGResultCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F54B2FFF8DE00065C921 /* ECGResultCardCell.swift */; };
+		A5A6F5532FFF8DE00065C921 /* ECGSegmentCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F54C2FFF8DE00065C921 /* ECGSegmentCell.swift */; };
+		A5A6F5542FFF8DE00065C921 /* ECGTrendCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F54E2FFF8DE00065C921 /* ECGTrendCell.swift */; };
+		A5A6F5582FFF8E160065C921 /* FamilyMemberCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5552FFF8E160065C921 /* FamilyMemberCell.swift */; };
+		A5A6F5592FFF8E160065C921 /* FamilyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5572FFF8E160065C921 /* FamilyModels.swift */; };
+		A5A6F55E2FFF8E420065C921 /* MembershipModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F55D2FFF8E420065C921 /* MembershipModels.swift */; };
+		A5A6F55F2FFF8E420065C921 /* UpgradePlanCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F55B2FFF8E420065C921 /* UpgradePlanCell.swift */; };
+		A5A6F5602FFF8E420065C921 /* BenefitListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F55A2FFF8E420065C921 /* BenefitListCell.swift */; };
+		A5A6F5662FFF8E5D0065C921 /* PointsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5652FFF8E5D0065C921 /* PointsModels.swift */; };
+		A5A6F5672FFF8E5D0065C921 /* PointRecordCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5622FFF8E5D0065C921 /* PointRecordCell.swift */; };
+		A5A6F5682FFF8E5D0065C921 /* BadgeGridCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5612FFF8E5D0065C921 /* BadgeGridCell.swift */; };
+		A5A6F5692FFF8E5D0065C921 /* ProgressBadgeCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5632FFF8E5D0065C921 /* ProgressBadgeCell.swift */; };
+		A5A6F56B2FFF8E720065C921 /* OrderTabCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F56A2FFF8E720065C921 /* OrderTabCell.swift */; };
+		A5A6F56D2FFF8E880065C921 /* MallProductCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F56C2FFF8E880065C921 /* MallProductCell.swift */; };
+		A5A6F5722FFF8EA30065C921 /* PackageCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5702FFF8EA30065C921 /* PackageCardCell.swift */; };
+		A5A6F5732FFF8EA30065C921 /* BenefitTagCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F56E2FFF8EA30065C921 /* BenefitTagCell.swift */; };
+		A5A6F5742FFF8EA30065C921 /* PackageHeaderCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5712FFF8EA30065C921 /* PackageHeaderCell.swift */; };
+		A5A6F5752FFF8EA30065C921 /* CategoryNavCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F56F2FFF8EA30065C921 /* CategoryNavCell.swift */; };
+		A5A6F5772FFF8EAD0065C921 /* ServiceListModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5762FFF8EAD0065C921 /* ServiceListModels.swift */; };
+		A5A6F57A2FFF8EE80065C921 /* SelfSizingCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5792FFF8EE80065C921 /* SelfSizingCollectionView.swift */; };
+		A5A6F57B2FFF8EE80065C921 /* LeftAlignedFlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5782FFF8EE80065C921 /* LeftAlignedFlowLayout.swift */; };
+		A5A6F57E2FFF8F300065C921 /* NotificationCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F57C2FFF8F300065C921 /* NotificationCardCell.swift */; };
+		A5A6F57F2FFF8F300065C921 /* TeamBannerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F57D2FFF8F300065C921 /* TeamBannerCell.swift */; };
+		A5A6F5842FFF927B0065C921 /* MatrixGridCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5822FFF927B0065C921 /* MatrixGridCell.swift */; };
+		A5A6F5882FFF9C5C0065C921 /* ServiceHubCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5872FFF9C5C0065C921 /* ServiceHubCacheService.swift */; };
 		A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */; };
 		A952E20047557E6F1D7EE0AF /* Pods_lhjk_client_new.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */; };
 		A97FF7EF73364502F99C2EC4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FACC28499C23F3853EBBF10 /* AppDelegate.swift */; };
@@ -420,6 +448,34 @@
 		A5A6F5412FFF7E720065C921 /* ConversationListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListViewModel.swift; sourceTree = "<group>"; };
 		A5A6F5442FFF7EBE0065C921 /* OrderTabViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderTabViewController.swift; sourceTree = "<group>"; };
 		A5A6F5462FFF7EFC0065C921 /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
+		A5A6F5492FFF8DE00065C921 /* ECGBannerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGBannerCell.swift; sourceTree = "<group>"; };
+		A5A6F54A2FFF8DE00065C921 /* ECGRecordCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGRecordCell.swift; sourceTree = "<group>"; };
+		A5A6F54B2FFF8DE00065C921 /* ECGResultCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGResultCardCell.swift; sourceTree = "<group>"; };
+		A5A6F54C2FFF8DE00065C921 /* ECGSegmentCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGSegmentCell.swift; sourceTree = "<group>"; };
+		A5A6F54D2FFF8DE00065C921 /* ECGStatCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGStatCell.swift; sourceTree = "<group>"; };
+		A5A6F54E2FFF8DE00065C921 /* ECGTrendCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGTrendCell.swift; sourceTree = "<group>"; };
+		A5A6F5552FFF8E160065C921 /* FamilyMemberCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyMemberCell.swift; sourceTree = "<group>"; };
+		A5A6F5572FFF8E160065C921 /* FamilyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyModels.swift; sourceTree = "<group>"; };
+		A5A6F55A2FFF8E420065C921 /* BenefitListCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenefitListCell.swift; sourceTree = "<group>"; };
+		A5A6F55B2FFF8E420065C921 /* UpgradePlanCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpgradePlanCell.swift; sourceTree = "<group>"; };
+		A5A6F55D2FFF8E420065C921 /* MembershipModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MembershipModels.swift; sourceTree = "<group>"; };
+		A5A6F5612FFF8E5D0065C921 /* BadgeGridCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgeGridCell.swift; sourceTree = "<group>"; };
+		A5A6F5622FFF8E5D0065C921 /* PointRecordCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointRecordCell.swift; sourceTree = "<group>"; };
+		A5A6F5632FFF8E5D0065C921 /* ProgressBadgeCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBadgeCell.swift; sourceTree = "<group>"; };
+		A5A6F5652FFF8E5D0065C921 /* PointsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointsModels.swift; sourceTree = "<group>"; };
+		A5A6F56A2FFF8E720065C921 /* OrderTabCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderTabCell.swift; sourceTree = "<group>"; };
+		A5A6F56C2FFF8E880065C921 /* MallProductCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MallProductCell.swift; sourceTree = "<group>"; };
+		A5A6F56E2FFF8EA30065C921 /* BenefitTagCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenefitTagCell.swift; sourceTree = "<group>"; };
+		A5A6F56F2FFF8EA30065C921 /* CategoryNavCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryNavCell.swift; sourceTree = "<group>"; };
+		A5A6F5702FFF8EA30065C921 /* PackageCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageCardCell.swift; sourceTree = "<group>"; };
+		A5A6F5712FFF8EA30065C921 /* PackageHeaderCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageHeaderCell.swift; sourceTree = "<group>"; };
+		A5A6F5762FFF8EAD0065C921 /* ServiceListModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceListModels.swift; sourceTree = "<group>"; };
+		A5A6F5782FFF8EE80065C921 /* LeftAlignedFlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeftAlignedFlowLayout.swift; sourceTree = "<group>"; };
+		A5A6F5792FFF8EE80065C921 /* SelfSizingCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelfSizingCollectionView.swift; sourceTree = "<group>"; };
+		A5A6F57C2FFF8F300065C921 /* NotificationCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCardCell.swift; sourceTree = "<group>"; };
+		A5A6F57D2FFF8F300065C921 /* TeamBannerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamBannerCell.swift; sourceTree = "<group>"; };
+		A5A6F5822FFF927B0065C921 /* MatrixGridCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixGridCell.swift; sourceTree = "<group>"; };
+		A5A6F5872FFF9C5C0065C921 /* ServiceHubCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ServiceHubCacheService.swift; path = BLL/Service/ServiceHubCacheService.swift; sourceTree = "<group>"; };
 		A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIFont+Funde.swift"; sourceTree = "<group>"; };
 		A8B0D2D90AC6467582FAAE9C /* MessageRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MessageRoutes.swift; path = BLL/Message/MessageRoutes.swift; sourceTree = "<group>"; };
 		AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OAuthCredential.swift; path = DAL/Networking/OAuthCredential.swift; sourceTree = "<group>"; };
@@ -603,6 +659,12 @@
 		A590FC252FEA91170056EF52 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
+				A5A6F5492FFF8DE00065C921 /* ECGBannerCell.swift */,
+				A5A6F54A2FFF8DE00065C921 /* ECGRecordCell.swift */,
+				A5A6F54B2FFF8DE00065C921 /* ECGResultCardCell.swift */,
+				A5A6F54C2FFF8DE00065C921 /* ECGSegmentCell.swift */,
+				A5A6F54D2FFF8DE00065C921 /* ECGStatCell.swift */,
+				A5A6F54E2FFF8DE00065C921 /* ECGTrendCell.swift */,
 			);
 			path = Cells;
 			sourceTree = "<group>";
@@ -707,6 +769,8 @@
 		A590FC4E2FEA91170056EF52 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
+				A5A6F57C2FFF8F300065C921 /* NotificationCardCell.swift */,
+				A5A6F57D2FFF8F300065C921 /* TeamBannerCell.swift */,
 				A5A6F4EC2FFF7B930065C921 /* NotificationCell.swift */,
 				A590FC4C2FEA91170056EF52 /* ConversationCell.swift */,
 			);
@@ -766,6 +830,8 @@
 		A590FC602FEA91170056EF52 /* Family */ = {
 			isa = PBXGroup;
 			children = (
+				A5A6F5562FFF8E160065C921 /* Cells */,
+				A5A6F5572FFF8E160065C921 /* FamilyModels.swift */,
 				A590FC5F2FEA91170056EF52 /* FamilyViewController.swift */,
 			);
 			path = Family;
@@ -832,6 +898,8 @@
 		A590FC742FEA91170056EF52 /* Membership */ = {
 			isa = PBXGroup;
 			children = (
+				A5A6F55C2FFF8E420065C921 /* Cells */,
+				A5A6F55D2FFF8E420065C921 /* MembershipModels.swift */,
 				A590FC732FEA91170056EF52 /* MembershipViewController.swift */,
 			);
 			path = Membership;
@@ -848,6 +916,7 @@
 		A590FC782FEA91170056EF52 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
+				A5A6F56A2FFF8E720065C921 /* OrderTabCell.swift */,
 				A590FC772FEA91170056EF52 /* OrderCardCell.swift */,
 			);
 			path = Cells;
@@ -866,6 +935,8 @@
 		A590FC7C2FEA91170056EF52 /* Points */ = {
 			isa = PBXGroup;
 			children = (
+				A5A6F5642FFF8E5D0065C921 /* Cells */,
+				A5A6F5652FFF8E5D0065C921 /* PointsModels.swift */,
 				A590FC7B2FEA91170056EF52 /* PointsViewController.swift */,
 			);
 			path = Points;
@@ -1013,6 +1084,7 @@
 		A590FC9F2FEA91170056EF52 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
+				A5A6F56C2FFF8E880065C921 /* MallProductCell.swift */,
 			);
 			path = Cells;
 			sourceTree = "<group>";
@@ -1061,6 +1133,10 @@
 		A590FCA72FEA91170056EF52 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
+				A5A6F56E2FFF8EA30065C921 /* BenefitTagCell.swift */,
+				A5A6F56F2FFF8EA30065C921 /* CategoryNavCell.swift */,
+				A5A6F5702FFF8EA30065C921 /* PackageCardCell.swift */,
+				A5A6F5712FFF8EA30065C921 /* PackageHeaderCell.swift */,
 			);
 			path = Cells;
 			sourceTree = "<group>";
@@ -1068,6 +1144,8 @@
 		A590FCA82FEA91170056EF52 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A5A6F5782FFF8EE80065C921 /* LeftAlignedFlowLayout.swift */,
+				A5A6F5792FFF8EE80065C921 /* SelfSizingCollectionView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -1075,6 +1153,7 @@
 		A590FCAA2FEA91170056EF52 /* ServiceList */ = {
 			isa = PBXGroup;
 			children = (
+				A5A6F5762FFF8EAD0065C921 /* ServiceListModels.swift */,
 				A590FCA72FEA91170056EF52 /* Cells */,
 				A590FCA82FEA91170056EF52 /* Components */,
 				A590FCA92FEA91170056EF52 /* ServiceListViewController.swift */,
@@ -1085,6 +1164,7 @@
 		A590FCAC2FEA91170056EF52 /* Service */ = {
 			isa = PBXGroup;
 			children = (
+				A5A6F5832FFF927B0065C921 /* Cells */,
 				A5A6F4D42FFF7AE80065C921 /* Components */,
 				A5A6F4CD2FFF7ACB0065C921 /* PackageSearch */,
 				A5A6F4C92FFF7AB80065C921 /* ViewModels */,
@@ -1370,6 +1450,41 @@
 			path = DAL/Media;
 			sourceTree = "<group>";
 		};
+		A5A6F5562FFF8E160065C921 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A5A6F5552FFF8E160065C921 /* FamilyMemberCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A5A6F55C2FFF8E420065C921 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A5A6F55A2FFF8E420065C921 /* BenefitListCell.swift */,
+				A5A6F55B2FFF8E420065C921 /* UpgradePlanCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A5A6F5642FFF8E5D0065C921 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A5A6F5612FFF8E5D0065C921 /* BadgeGridCell.swift */,
+				A5A6F5622FFF8E5D0065C921 /* PointRecordCell.swift */,
+				A5A6F5632FFF8E5D0065C921 /* ProgressBadgeCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A5A6F5832FFF927B0065C921 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A5A6F5822FFF927B0065C921 /* MatrixGridCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
 		A5BFCA372FE38EF1008DA1DF /* UIFont */ = {
 			isa = PBXGroup;
 			children = (
@@ -1428,6 +1543,7 @@
 		C4193BC7FCD37A9D67D93F74 /* Service */ = {
 			isa = PBXGroup;
 			children = (
+				A5A6F5872FFF9C5C0065C921 /* ServiceHubCacheService.swift */,
 				A5A6F4A92FFF7A720065C921 /* ColumnContentModels.swift */,
 				A5A6F4AA2FFF7A720065C921 /* ColumnContentService.swift */,
 				A5A6F4AB2FFF7A720065C921 /* DictionaryModels.swift */,
@@ -1785,6 +1901,8 @@
 				A590FCB72FEA91170056EF52 /* PointsViewController.swift in Sources */,
 				A590FCB82FEA91170056EF52 /* MeMembershipCardCell.swift in Sources */,
 				A590FCB92FEA91170056EF52 /* HealthScoreCardCell.swift in Sources */,
+				A5A6F5582FFF8E160065C921 /* FamilyMemberCell.swift in Sources */,
+				A5A6F5592FFF8E160065C921 /* FamilyModels.swift in Sources */,
 				A5A6F5452FFF7EBE0065C921 /* OrderTabViewController.swift in Sources */,
 				A590FCBA2FEA91170056EF52 /* LoginViewController.swift in Sources */,
 				A590FCBB2FEA91170056EF52 /* HealthRecordHistoryCell.swift in Sources */,
@@ -1806,6 +1924,7 @@
 				A590FCC92FEA91170056EF52 /* MeServiceFulfillmentCell.swift in Sources */,
 				A590FCCA2FEA91170056EF52 /* OrderListViewController.swift in Sources */,
 				A590FCCB2FEA91170056EF52 /* StageReportCell.swift in Sources */,
+				A5A6F5772FFF8EAD0065C921 /* ServiceListModels.swift in Sources */,
 				A590FCCC2FEA91170056EF52 /* ExerciseFoodViewController.swift in Sources */,
 				A590FCCD2FEA91170056EF52 /* ConversationListViewController.swift in Sources */,
 				A590FCCE2FEA91170056EF52 /* FuncRowView.swift in Sources */,
@@ -1825,6 +1944,11 @@
 				A590FCD92FEA91170056EF52 /* HealthEvaluationsViewController.swift in Sources */,
 				A590FCDA2FEA91170056EF52 /* ChatViewController.swift in Sources */,
 				A590FCDB2FEA91170056EF52 /* HealthReportViewController.swift in Sources */,
+				A5A6F5662FFF8E5D0065C921 /* PointsModels.swift in Sources */,
+				A5A6F5842FFF927B0065C921 /* MatrixGridCell.swift in Sources */,
+				A5A6F5672FFF8E5D0065C921 /* PointRecordCell.swift in Sources */,
+				A5A6F5682FFF8E5D0065C921 /* BadgeGridCell.swift in Sources */,
+				A5A6F5692FFF8E5D0065C921 /* ProgressBadgeCell.swift in Sources */,
 				A5A6F4CE2FFF7ACB0065C921 /* ServicePackageSearchViewController.swift in Sources */,
 				A590FCDC2FEA91170056EF52 /* MetricsViewController.swift in Sources */,
 				A590FCDD2FEA91170056EF52 /* MetricCardCell.swift in Sources */,
@@ -1833,10 +1957,20 @@
 				A5A6F4E32FFF7B3D0065C921 /* SecuritySettingsViewController.swift in Sources */,
 				A5A6F4E42FFF7B3D0065C921 /* CancelAccountViewModel.swift in Sources */,
 				A5A6F4E52FFF7B3D0065C921 /* PasswordSetupViewController.swift in Sources */,
+				A5A6F5882FFF9C5C0065C921 /* ServiceHubCacheService.swift in Sources */,
 				A590FCDF2FEA91170056EF52 /* SettingsToggleCell.swift in Sources */,
 				A590FCE02FEA91170056EF52 /* SleepViewController.swift in Sources */,
 				A590FCE12FEA91170056EF52 /* OptionChipView.swift in Sources */,
 				A590FCE22FEA91170056EF52 /* HealthRecordLifestyleCell.swift in Sources */,
+				A5A6F54F2FFF8DE00065C921 /* ECGStatCell.swift in Sources */,
+				A5A6F5502FFF8DE00065C921 /* ECGRecordCell.swift in Sources */,
+				A5A6F5512FFF8DE00065C921 /* ECGBannerCell.swift in Sources */,
+				A5A6F5522FFF8DE00065C921 /* ECGResultCardCell.swift in Sources */,
+				A5A6F55E2FFF8E420065C921 /* MembershipModels.swift in Sources */,
+				A5A6F55F2FFF8E420065C921 /* UpgradePlanCell.swift in Sources */,
+				A5A6F5602FFF8E420065C921 /* BenefitListCell.swift in Sources */,
+				A5A6F5532FFF8DE00065C921 /* ECGSegmentCell.swift in Sources */,
+				A5A6F5542FFF8DE00065C921 /* ECGTrendCell.swift in Sources */,
 				A590FCE32FEA91170056EF52 /* DigestiveViewController.swift in Sources */,
 				A5A6F4C12FFF7A8B0065C921 /* VoucherService.swift in Sources */,
 				A5A6F4C22FFF7A8B0065C921 /* AddressModels.swift in Sources */,
@@ -1852,6 +1986,8 @@
 				A590FCE82FEA91170056EF52 /* HeartRateViewController.swift in Sources */,
 				A590FCE92FEA91170056EF52 /* HomeTaskCardCell.swift in Sources */,
 				A5A6F5142FFF7BFE0065C921 /* AddressListViewModel.swift in Sources */,
+				A5A6F57A2FFF8EE80065C921 /* SelfSizingCollectionView.swift in Sources */,
+				A5A6F57B2FFF8EE80065C921 /* LeftAlignedFlowLayout.swift in Sources */,
 				A5A6F5152FFF7BFE0065C921 /* AddressListViewController.swift in Sources */,
 				A5A6F5162FFF7BFE0065C921 /* AddressCell.swift in Sources */,
 				A5A6F5172FFF7BFE0065C921 /* AddressEditViewController.swift in Sources */,
@@ -1883,6 +2019,8 @@
 				A590FD012FEA91170056EF52 /* MetricRulerView.swift in Sources */,
 				A5A6F4D52FFF7AE80065C921 /* ActivateBannerCell.swift in Sources */,
 				A5A6F4D62FFF7AE80065C921 /* HealthPackageCategoryCell.swift in Sources */,
+				A5A6F57E2FFF8F300065C921 /* NotificationCardCell.swift in Sources */,
+				A5A6F57F2FFF8F300065C921 /* TeamBannerCell.swift in Sources */,
 				A5A6F4D72FFF7AE80065C921 /* ServiceHubHeaderView.swift in Sources */,
 				A5A6F4D82FFF7AE80065C921 /* HealthPackageCardCell.swift in Sources */,
 				A5A6F4D92FFF7AE80065C921 /* ServiceBannerCarouselCell.swift in Sources */,
@@ -1902,6 +2040,7 @@
 				A5917D092FDFC8EF00878961 /* UIView+Layout.swift in Sources */,
 				A5917D0A2FDFC8EF00878961 /* UIColor+Theme.swift in Sources */,
 				A5917D0B2FDFC8EF00878961 /* UIButton+Funde.swift in Sources */,
+				A5A6F56B2FFF8E720065C921 /* OrderTabCell.swift in Sources */,
 				A5917D0C2FDFC8EF00878961 /* DGCharts+Theme.swift in Sources */,
 				678D746E713E617DA4218CF8 /* BaseViewController.swift in Sources */,
 				E9F251651FF71AEBC2DF03F3 /* BLLProtocol.swift in Sources */,
@@ -1933,10 +2072,15 @@
 				A5A6F5052FFF7BBD0065C921 /* VoiceBubbleCell.swift in Sources */,
 				A5A6F5062FFF7BBD0065C921 /* QuotePreviewBar.swift in Sources */,
 				A5A6F5072FFF7BBD0065C921 /* SystemMessageCell.swift in Sources */,
+				A5A6F5722FFF8EA30065C921 /* PackageCardCell.swift in Sources */,
+				A5A6F5732FFF8EA30065C921 /* BenefitTagCell.swift in Sources */,
+				A5A6F5742FFF8EA30065C921 /* PackageHeaderCell.swift in Sources */,
+				A5A6F5752FFF8EA30065C921 /* CategoryNavCell.swift in Sources */,
 				A5A6F5082FFF7BBD0065C921 /* MealAnalysisCell.swift in Sources */,
 				A5A6F5092FFF7BBD0065C921 /* VideoBubbleCell.swift in Sources */,
 				A5A6F50A2FFF7BBD0065C921 /* FileBubbleCell.swift in Sources */,
 				A5A6F50B2FFF7BBD0065C921 /* ChatViewModel.swift in Sources */,
+				A5A6F56D2FFF8E880065C921 /* MallProductCell.swift in Sources */,
 				A5A6F5482FFF7EFC0065C921 /* AudioRecorder.swift in Sources */,
 				A5A6F50C2FFF7BBD0065C921 /* AIWeeklyReportCell.swift in Sources */,
 				C93572D0D1BE419981086975 /* MessageRoutes.swift in Sources */,

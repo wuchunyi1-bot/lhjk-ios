@@ -12,335 +12,12 @@ private enum ECGSection: Int, CaseIterable {
     case recordsList
 }
 
-// MARK: - Card Position (用于卡片组首尾圆角)
-
-private enum CardPosition {
+/// 卡片组首尾圆角位置（趋势图、记录列表等复用 cell 时使用）
+enum EcgCardPosition {
     case first, middle, last, single
 }
 
-// MARK: - Reuse IDs
-
-private let kBanCell = "banner", kResCell = "result", kSegCell = "segment"
-private let kTrdCell = "trend",  kStaCell = "stat",   kRecCell = "record"
-
-// ============================================================================
-// MARK: - Cells
-// ============================================================================
-
-// MARK: Bluetooth Banner
-
-private final class ECGBannerCell: UITableViewCell {
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        selectionStyle = .none
-        backgroundColor = .clear; contentView.backgroundColor = .clear
-
-        let wrap = UIView()
-        wrap.backgroundColor = UIColor(hexString: "#EBF5FB")
-        wrap.layer.cornerRadius = 10
-        contentView.addSubview(wrap)
-        wrap.snp.makeConstraints { $0.left.right.equalToSuperview().inset(16); $0.top.bottom.equalToSuperview() }
-
-        let icon = UIImageView(image: UIImage(systemName: "bluetooth"))
-        icon.tintColor = UIColor(hexString: "#3d6fb8")
-        wrap.addSubview(icon)
-        icon.snp.makeConstraints { $0.left.equalToSuperview().offset(12); $0.centerY.equalToSuperview(); $0.size.equalTo(18) }
-
-        let lbl = UILabel(); lbl.text = "ECG 设备未连接"
-        lbl.font = .fdCaption; lbl.textColor = UIColor(hexString: "#3d6fb8")
-        wrap.addSubview(lbl)
-        lbl.snp.makeConstraints { $0.left.equalTo(icon.snp.right).offset(8); $0.centerY.equalToSuperview() }
-
-        let arrow = UIImageView(image: UIImage(systemName: "chevron.right"))
-        arrow.tintColor = UIColor(hexString: "#3d6fb8").withAlphaComponent(0.5)
-        wrap.addSubview(arrow)
-        arrow.snp.makeConstraints { $0.right.equalToSuperview().offset(-12); $0.centerY.equalToSuperview(); $0.size.equalTo(14) }
-    }
-    required init?(coder: NSCoder) { fatalError() }
-}
-
-// MARK: Result Card
-
-private final class ECGResultCardCell: UITableViewCell {
-    let waveView = ECGChartView()
-    private let gradient = CAGradientLayer()
-    private weak var cardContainer: UIView?
-
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        selectionStyle = .none
-        backgroundColor = .clear; contentView.backgroundColor = .clear
-
-        // 卡片容器（16pt 水平边距）
-        let card = UIView()
-        cardContainer = card
-        card.layer.cornerRadius = 20; card.clipsToBounds = true
-        contentView.addSubview(card)
-        card.snp.makeConstraints { $0.left.right.equalToSuperview().inset(16); $0.top.bottom.equalToSuperview() }
-
-        gradient.colors = [UIColor(hexString: "#1a5276").cgColor, UIColor(hexString: "#2e86c1").cgColor]
-        gradient.startPoint = CGPoint(x: 0, y: 0); gradient.endPoint = CGPoint(x: 1, y: 1)
-        card.layer.insertSublayer(gradient, at: 0)
-
-        let edge = 18.0
-        let badge = tag("最新报告", bg: UIColor.white.withAlphaComponent(0.2), fg: .white)
-        let time = UILabel(); time.text = "本月 12 日"
-        time.font = .fdCaption; time.textColor = UIColor.white.withAlphaComponent(0.75)
-
-        let c = UILabel(); c.text = "窦性心律 · 正常心电图"
-        c.font = UIFont.fdFont(ofSize: 20, weight: .bold); c.textColor = .white
-
-        let h = UILabel(); h.text = "心率：76 bpm"
-        h.font = .fdBody; h.textColor = UIColor.white.withAlphaComponent(0.85)
-
-        // 波形
-        waveView.gridLineColor = UIColor.white.withAlphaComponent(0.14)
-        waveView.gridThinLineWidth = 0.3; waveView.gridBoldLineWidth = 0.6
-        waveView.smallSquareSize = 4; waveView.squaresPerLargeSquare = 5
-        waveView.waveformColor = UIColor(hexString: "#7DD6A0")
-        waveView.waveformLineWidth = 1.2; waveView.paperSpeed = 25
-        waveView.verticalRange = -1.5...1.5; waveView.pointSpacing = 0.4
-        waveView.trailingMargin = 16
-        waveView.layer.cornerRadius = 12
-        waveView.backgroundColor = UIColor.white.withAlphaComponent(0.05)
-
-        [badge, time, c, h, waveView].forEach { card.addSubview($0) }
-        badge.snp.makeConstraints { $0.top.leading.equalToSuperview().inset(edge) }
-        time.snp.makeConstraints { $0.centerY.equalTo(badge); $0.trailing.equalToSuperview().offset(-edge) }
-        c.snp.makeConstraints { $0.top.equalTo(badge.snp.bottom).offset(8); $0.leading.equalToSuperview().inset(edge) }
-        h.snp.makeConstraints { $0.top.equalTo(c.snp.bottom).offset(4); $0.leading.equalToSuperview().inset(edge) }
-        waveView.snp.makeConstraints { make in
-            make.top.equalTo(h.snp.bottom).offset(14)
-            make.leading.trailing.equalToSuperview().inset(edge)
-            make.height.equalTo(150)
-            make.bottom.equalToSuperview().offset(-edge)
-        }
-    }
-    required init?(coder: NSCoder) { fatalError() }
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        if let card = cardContainer { gradient.frame = card.bounds }
-    }
-
-    private func tag(_ t: String, bg: UIColor, fg: UIColor) -> UIView {
-        let v = UIView(); v.backgroundColor = bg; v.layer.cornerRadius = 999
-        let l = UILabel(); l.text = t; l.font = .fdMicro; l.textColor = fg
-        v.addSubview(l); l.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }
-        return v
-    }
-}
-
-// MARK: Segment
-
-private final class ECGSegmentCell: UITableViewCell {
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        selectionStyle = .none
-        backgroundColor = .clear; contentView.backgroundColor = .clear
-
-        let seg = UISegmentedControl(items: ["日", "周", "月"]); seg.selectedSegmentIndex = 2
-        seg.selectedSegmentTintColor = .fdPrimary; seg.backgroundColor = .fdBg2
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.fdCaptionSemibold], for: .selected)
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.fdCaption], for: .normal)
-        contentView.addSubview(seg)
-        seg.snp.makeConstraints { $0.top.equalToSuperview(); $0.leading.trailing.equalToSuperview().inset(16); $0.height.equalTo(36) }
-
-        let (l, rng, r) = (UIButton(type: .system), UILabel(), UIButton(type: .system))
-        [l, r].forEach { b in b.setTitleColor(.fdSubtext, for: .normal); b.titleLabel?.font = UIFont.fdFont(ofSize: 18, weight: .medium) }
-        l.setTitle("‹", for: .normal); r.setTitle("›", for: .normal)
-        rng.text = "04/01 – 05/17"; rng.font = .fdCaption; rng.textColor = .fdSubtext
-
-        [l, rng, r].forEach { contentView.addSubview($0) }
-        l.snp.makeConstraints { $0.left.equalToSuperview().offset(16); $0.top.equalTo(seg.snp.bottom).offset(10); $0.bottom.equalToSuperview().offset(-4) }
-        rng.snp.makeConstraints { $0.centerX.equalToSuperview(); $0.centerY.equalTo(l) }
-        r.snp.makeConstraints { $0.right.equalToSuperview().offset(-16); $0.centerY.equalTo(l) }
-    }
-    required init?(coder: NSCoder) { fatalError() }
-}
-
-// MARK: Trend Bar
-
-private final class ECGTrendCell: UITableViewCell {
-    private let cardBg = UIView()
-    private let titleLbl = UILabel()
-    private let dateLbl = UILabel(), barBg = UIView(), barFill = UIView(), valLbl = UILabel()
-    private let tagWrap = UIView(), divider = UIView()
-
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        selectionStyle = .none
-        backgroundColor = .clear; contentView.backgroundColor = .clear
-
-        cardBg.backgroundColor = .fdSurface; cardBg.layer.cornerRadius = 18
-        contentView.addSubview(cardBg)
-        cardBg.snp.makeConstraints { $0.left.right.equalToSuperview().inset(16); $0.top.bottom.equalToSuperview() }
-
-        titleLbl.font = .fdCaptionSemibold; titleLbl.textColor = .fdSubtext
-        titleLbl.text = "历次测量心率趋势"
-
-        dateLbl.font = .fdCaption; dateLbl.textColor = .fdSubtext; dateLbl.textAlignment = .right
-        barBg.backgroundColor = .fdBg2; barBg.layer.cornerRadius = 4
-        barFill.backgroundColor = UIColor(hexString: "#2E86C1"); barFill.layer.cornerRadius = 4
-        valLbl.font = .fdCaptionSemibold; valLbl.textColor = .fdText
-        divider.backgroundColor = .fdBorder
-
-        barBg.addSubview(barFill)
-        [titleLbl, dateLbl, barBg, valLbl, tagWrap, divider].forEach { cardBg.addSubview($0) }
-
-        titleLbl.snp.makeConstraints { $0.top.equalToSuperview().offset(14); $0.left.equalToSuperview().offset(16) }
-        dateLbl.snp.makeConstraints { $0.left.equalToSuperview().offset(16); $0.width.equalTo(44) }
-        barBg.snp.makeConstraints { $0.left.equalTo(dateLbl.snp.right).offset(8); $0.height.equalTo(8) }
-        barFill.snp.makeConstraints { $0.left.top.bottom.equalToSuperview() }
-        valLbl.snp.makeConstraints { $0.left.equalTo(barBg.snp.right).offset(8); $0.width.equalTo(52) }
-        tagWrap.snp.makeConstraints { $0.right.equalToSuperview().offset(-16) }
-        divider.snp.makeConstraints { $0.left.equalToSuperview().offset(16); $0.right.equalToSuperview().offset(-16); $0.bottom.equalToSuperview(); $0.height.equalTo(1) }
-    }
-    required init?(coder: NSCoder) { fatalError() }
-
-    func configure(date: String, hr: Int, conclusion: String, position: CardPosition) {
-        let isFirst = (position == .first || position == .single)
-        titleLbl.isHidden = !isFirst
-
-        dateLbl.text = date; valLbl.text = "\(hr) bpm"
-        barFill.snp.remakeConstraints { $0.left.top.bottom.equalToSuperview(); $0.width.equalTo(barBg).multipliedBy(min(Double(hr) / 120.0, 1.0)) }
-
-        tagWrap.subviews.forEach { $0.removeFromSuperview() }
-        let t = _tag(conclusion, bg: UIColor(hexString: "#F0FAF4"), fg: UIColor(hexString: "#52B96A"))
-        tagWrap.addSubview(t); t.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-        // 动态约束：第一行 bar 在 title 下方，其他行 bar 居中
-        if isFirst {
-            dateLbl.snp.remakeConstraints { $0.left.equalToSuperview().offset(16); $0.top.equalTo(titleLbl.snp.bottom).offset(10); $0.width.equalTo(44); $0.bottom.equalToSuperview().offset(-10) }
-            barBg.snp.remakeConstraints { $0.left.equalTo(dateLbl.snp.right).offset(8); $0.centerY.equalTo(dateLbl); $0.height.equalTo(8) }
-        } else {
-            dateLbl.snp.remakeConstraints { $0.left.equalToSuperview().offset(16); $0.centerY.equalToSuperview(); $0.width.equalTo(44) }
-            barBg.snp.remakeConstraints { $0.left.equalTo(dateLbl.snp.right).offset(8); $0.centerY.equalToSuperview(); $0.height.equalTo(8) }
-        }
-        valLbl.snp.remakeConstraints { $0.left.equalTo(barBg.snp.right).offset(8); $0.centerY.equalTo(dateLbl); $0.width.equalTo(52) }
-        tagWrap.snp.remakeConstraints { $0.right.equalToSuperview().offset(-16); $0.centerY.equalTo(dateLbl) }
-
-        switch position {
-        case .first:  cardBg.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]; divider.isHidden = false
-        case .middle: cardBg.layer.maskedCorners = []; divider.isHidden = false
-        case .last:   cardBg.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]; divider.isHidden = true
-        case .single: cardBg.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]; divider.isHidden = true
-        }
-    }
-
-    private func _tag(_ t: String, bg: UIColor, fg: UIColor) -> UIView {
-        let v = UIView(); v.backgroundColor = bg; v.layer.cornerRadius = 999
-        let l = UILabel(); l.text = t; l.font = .fdMicro; l.textColor = fg
-        v.addSubview(l); l.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }
-        return v
-    }
-}
-
-// MARK: Stat Panel
-
-private final class ECGStatCell: UITableViewCell {
-    private let cardBg = UIView()
-
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        selectionStyle = .none
-        backgroundColor = .clear; contentView.backgroundColor = .clear
-
-        cardBg.backgroundColor = .fdSurface; cardBg.layer.cornerRadius = 18
-        contentView.addSubview(cardBg)
-        cardBg.snp.makeConstraints { $0.left.right.equalToSuperview().inset(16); $0.top.bottom.equalToSuperview() }
-
-        let stack = UIStackView(); stack.axis = .horizontal; stack.alignment = .center; stack.distribution = .fillEqually
-        cardBg.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
-
-        func item(_ val: String, _ lbl: String, _ c: UIColor = .fdText) -> UIView {
-            let v = UIView()
-            let vl = UILabel(); vl.text = val; vl.font = UIFont.fdFont(ofSize: 28, weight: .bold); vl.textColor = c; vl.textAlignment = .center
-            let ll = UILabel(); ll.text = lbl; ll.font = .fdMicro; ll.textColor = .fdSubtext; ll.textAlignment = .center; ll.numberOfLines = 2
-            v.addSubview(vl); v.addSubview(ll)
-            vl.snp.makeConstraints { $0.top.centerX.equalToSuperview(); $0.height.equalTo(34) }
-            ll.snp.makeConstraints { $0.top.equalTo(vl.snp.bottom).offset(2); $0.centerX.bottom.equalToSuperview() }
-            return v
-        }
-        func div() -> UIView { let d = UIView(); d.backgroundColor = .fdBorder; d.snp.makeConstraints { $0.width.equalTo(1); $0.height.equalTo(40) }; return d }
-
-        stack.addArrangedSubview(item("76", "最近心率\n(bpm)"))
-        stack.addArrangedSubview(div())
-        stack.addArrangedSubview(item("5", "历史测量\n(次)"))
-        stack.addArrangedSubview(div())
-        stack.addArrangedSubview(item("正常", "心律状态", UIColor(hexString: "#52B96A")))
-    }
-    required init?(coder: NSCoder) { fatalError() }
-}
-
-// MARK: Record Row
-
-private final class ECGRecordCell: UITableViewCell {
-    private let cardBg = UIView()
-    private let headerBar = UIView(), headerLbl = UILabel()
-    private let timeLbl = UILabel(), valueLbl = UILabel(), srcTag = UILabel(), divider = UIView()
-
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        selectionStyle = .none
-        backgroundColor = .clear; contentView.backgroundColor = .clear
-
-        cardBg.backgroundColor = .fdSurface; cardBg.layer.cornerRadius = 18
-        contentView.addSubview(cardBg)
-        cardBg.snp.makeConstraints { $0.left.right.equalToSuperview().inset(16); $0.top.bottom.equalToSuperview() }
-
-        headerBar.backgroundColor = UIColor(hexString: "#2E86C1"); headerBar.layer.cornerRadius = 2
-        headerLbl.text = "心电记录"; headerLbl.font = .fdBodySemibold; headerLbl.textColor = .fdSubtext
-
-        timeLbl.font = .fdCaption; timeLbl.textColor = .fdText
-        valueLbl.font = .fdBodySemibold; valueLbl.textColor = .fdText
-        srcTag.font = .fdMicro; srcTag.textAlignment = .center; srcTag.layer.cornerRadius = 999; srcTag.clipsToBounds = true
-        divider.backgroundColor = .fdBorder
-
-        [headerBar, headerLbl, timeLbl, valueLbl, srcTag, divider].forEach { cardBg.addSubview($0) }
-        headerBar.snp.makeConstraints { $0.left.equalToSuperview().offset(16); $0.width.equalTo(3); $0.height.equalTo(16) }
-        headerLbl.snp.makeConstraints { $0.left.equalTo(headerBar.snp.right).offset(8); $0.centerY.equalTo(headerBar) }
-        timeLbl.snp.makeConstraints { $0.left.equalToSuperview().offset(16) }
-        valueLbl.snp.makeConstraints { $0.left.equalToSuperview().offset(16) }
-        srcTag.snp.makeConstraints { $0.right.equalToSuperview().offset(-16); $0.width.equalTo(64); $0.height.equalTo(20) }
-        divider.snp.makeConstraints { $0.left.equalToSuperview().offset(16); $0.right.equalToSuperview().offset(-16); $0.bottom.equalToSuperview(); $0.height.equalTo(1) }
-    }
-    required init?(coder: NSCoder) { fatalError() }
-
-    func configure(time: String, value: String, source: String, position: CardPosition) {
-        let isFirst = (position == .first || position == .single)
-        headerBar.isHidden = !isFirst; headerLbl.isHidden = !isFirst
-
-        timeLbl.text = time; valueLbl.text = value
-        if source == "bluetooth" {
-            srcTag.text = "蓝牙记录"; srcTag.backgroundColor = UIColor(hexString: "#E8F4FD"); srcTag.textColor = UIColor(hexString: "#3D6FB8")
-        } else {
-            srcTag.text = "手动记录"; srcTag.backgroundColor = UIColor(hexString: "#F5F5F5"); srcTag.textColor = UIColor(hexString: "#999999")
-        }
-
-        // 动态布局：第一行 header 在上方，其他行 header 隐藏
-        if isFirst {
-            headerBar.snp.remakeConstraints { $0.top.equalToSuperview().offset(14); $0.left.equalToSuperview().offset(16); $0.width.equalTo(3); $0.height.equalTo(16) }
-            headerLbl.snp.remakeConstraints { $0.left.equalTo(headerBar.snp.right).offset(8); $0.centerY.equalTo(headerBar) }
-            timeLbl.snp.remakeConstraints { $0.top.equalTo(headerBar.snp.bottom).offset(8); $0.left.equalToSuperview().offset(16) }
-        } else {
-            timeLbl.snp.remakeConstraints { $0.top.equalToSuperview().offset(12); $0.left.equalToSuperview().offset(16) }
-        }
-        valueLbl.snp.remakeConstraints { $0.top.equalTo(timeLbl.snp.bottom).offset(2); $0.left.equalToSuperview().offset(16); $0.bottom.equalToSuperview().offset(-12) }
-        srcTag.snp.remakeConstraints { $0.right.equalToSuperview().offset(-16); $0.centerY.equalToSuperview(); $0.width.equalTo(64); $0.height.equalTo(20) }
-
-        switch position {
-        case .first:  cardBg.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]; divider.isHidden = false
-        case .middle: cardBg.layer.maskedCorners = []; divider.isHidden = false
-        case .last:   cardBg.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]; divider.isHidden = true
-        case .single: cardBg.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]; divider.isHidden = true
-        }
-    }
-}
-
-// ============================================================================
 // MARK: - EcgViewController
-// ============================================================================
 
 /// 心电监测 — UITableView 架构，卡片式 section 布局。
 ///
@@ -382,12 +59,12 @@ final class EcgViewController: BaseViewController {
         tv.showsVerticalScrollIndicator = false
         tv.alwaysBounceVertical = true
         tv.contentInsetAdjustmentBehavior = .automatic
-        tv.register(ECGBannerCell.self,    forCellReuseIdentifier: kBanCell)
-        tv.register(ECGResultCardCell.self, forCellReuseIdentifier: kResCell)
-        tv.register(ECGSegmentCell.self,   forCellReuseIdentifier: kSegCell)
-        tv.register(ECGTrendCell.self,     forCellReuseIdentifier: kTrdCell)
-        tv.register(ECGStatCell.self,      forCellReuseIdentifier: kStaCell)
-        tv.register(ECGRecordCell.self,    forCellReuseIdentifier: kRecCell)
+        tv.register(ECGBannerCell.self,     forCellReuseIdentifier: ECGBannerCell.reuseID)
+        tv.register(ECGResultCardCell.self, forCellReuseIdentifier: ECGResultCardCell.reuseID)
+        tv.register(ECGSegmentCell.self,    forCellReuseIdentifier: ECGSegmentCell.reuseID)
+        tv.register(ECGTrendCell.self,      forCellReuseIdentifier: ECGTrendCell.reuseID)
+        tv.register(ECGStatCell.self,       forCellReuseIdentifier: ECGStatCell.reuseID)
+        tv.register(ECGRecordCell.self,     forCellReuseIdentifier: ECGRecordCell.reuseID)
         tv.register(UITableViewHeaderFooterView.self, forHeaderFooterViewReuseIdentifier: "hdr")
         tv.dataSource = self; tv.delegate = self
         return tv
@@ -459,34 +136,34 @@ extension EcgViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         switch ECGSection(rawValue: indexPath.section)! {
         case .bluetoothBanner:
-            return tableView.dequeueReusableCell(withIdentifier: kBanCell, for: indexPath)
+            return tableView.dequeueReusableCell(withIdentifier: ECGBannerCell.reuseID, for: indexPath)
 
         case .resultCard:
-            let cell = tableView.dequeueReusableCell(withIdentifier: kResCell, for: indexPath) as! ECGResultCardCell
+            let cell = tableView.dequeueReusableCell(withIdentifier: ECGResultCardCell.reuseID, for: indexPath) as! ECGResultCardCell
             resultCardCell = cell
             return cell
 
         case .periodTabs:
-            return tableView.dequeueReusableCell(withIdentifier: kSegCell, for: indexPath)
+            return tableView.dequeueReusableCell(withIdentifier: ECGSegmentCell.reuseID, for: indexPath)
 
         case .trendChart:
-            let cell = tableView.dequeueReusableCell(withIdentifier: kTrdCell, for: indexPath) as! ECGTrendCell
+            let cell = tableView.dequeueReusableCell(withIdentifier: ECGTrendCell.reuseID, for: indexPath) as! ECGTrendCell
             let d = trendItems[indexPath.row]
             cell.configure(date: d.date, hr: d.hr, conclusion: d.conclusion, position: cardPosition(indexPath, total: trendItems.count))
             return cell
 
         case .statsPanel:
-            return tableView.dequeueReusableCell(withIdentifier: kStaCell, for: indexPath)
+            return tableView.dequeueReusableCell(withIdentifier: ECGStatCell.reuseID, for: indexPath)
 
         case .recordsList:
-            let cell = tableView.dequeueReusableCell(withIdentifier: kRecCell, for: indexPath) as! ECGRecordCell
+            let cell = tableView.dequeueReusableCell(withIdentifier: ECGRecordCell.reuseID, for: indexPath) as! ECGRecordCell
             let r = recordItems[indexPath.row]
             cell.configure(time: r.time, value: r.value, source: r.source, position: cardPosition(indexPath, total: recordItems.count))
             return cell
         }
     }
 
-    private func cardPosition(_ ip: IndexPath, total: Int) -> CardPosition {
+    private func cardPosition(_ ip: IndexPath, total: Int) -> EcgCardPosition {
         if total == 1 { return .single }
         if ip.row == 0 { return .first }
         if ip.row == total - 1 { return .last }

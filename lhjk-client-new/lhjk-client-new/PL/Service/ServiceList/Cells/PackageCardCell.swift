@@ -1,0 +1,132 @@
+import UIKit
+import SnapKit
+
+final class PackageCardCell: UITableViewCell {
+    static let reuseID = "PackageCardCell"
+
+    private var packageId: String?
+    private var benefits: [String] = []
+    private var benefitsCV: UICollectionView?
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        selectionStyle = .none
+        backgroundColor = .clear
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    func configure(_ p: SvcPkg, accent: UIColor) {
+        packageId = p.id
+        benefits = p.benefits
+        contentView.subviews.forEach { $0.removeFromSuperview() }
+        let card = UIView()
+        card.backgroundColor = .fdSurface
+        card.layer.cornerRadius = 18
+        card.layer.shadowColor = UIColor.black.cgColor
+        card.layer.shadowOffset = CGSize(width: 0, height: 1)
+        card.layer.shadowRadius = 6
+        card.layer.shadowOpacity = 0.03
+        contentView.addSubview(card)
+        card.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 5, left: 12, bottom: 5, right: 12)) }
+
+        let name = lbl(p.name, size: 15, weight: .bold, color: .fdText)
+        let header: UIStackView = UIStackView(arrangedSubviews: [name])
+        if !p.tag.isEmpty {
+            let tag = UIView()
+            tag.backgroundColor = accent.withAlphaComponent(0.09)
+            tag.layer.cornerRadius = 999
+            let tl = lbl(p.tag, size: 10, weight: .semibold, color: accent)
+            tag.addSubview(tl)
+            tl.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 7, bottom: 2, right: 7)) }
+            header.addArrangedSubview(tag)
+            header.addArrangedSubview(UIView())
+        }
+        header.spacing = 8
+        header.alignment = .center
+
+        let sub = lbl(p.subtitle, size: 12, color: .fdSubtext)
+
+        let layout = LeftAlignedFlowLayout()
+        layout.minimumInteritemSpacing = 5
+        layout.minimumLineSpacing = 6
+        layout.sectionInset = .zero
+        layout.estimatedItemSize = CGSize(width: 40, height: 22)
+
+        let benefitsCV = SelfSizingCollectionView(frame: .zero, collectionViewLayout: layout)
+        benefitsCV.backgroundColor = .clear
+        benefitsCV.isScrollEnabled = false
+        benefitsCV.register(BenefitTagCell.self, forCellWithReuseIdentifier: BenefitTagCell.reuseID)
+        benefitsCV.dataSource = self
+        benefitsCV.delegate = self
+        self.benefitsCV = benefitsCV
+
+        let maxWidth = contentView.bounds.width - 52
+        let h = BenefitTagCell.totalHeight(for: p.benefits, maxWidth: maxWidth > 0 ? maxWidth : 270)
+        benefitsCV.fixedHeight = h
+
+        let price = lbl(p.price, size: 18, weight: .bold, color: .fdPrimary, mono: true)
+        let unit = lbl(p.priceUnit, size: 11, color: .fdSubtext)
+        let btn = UIButton(type: .system)
+        btn.setTitle("查看详情 ›", for: .normal)
+        btn.titleLabel?.font = .fdCaptionSemibold
+        btn.setTitleColor(.fdPrimary, for: .normal)
+        btn.backgroundColor = .fdPrimarySoft
+        btn.layer.cornerRadius = 10
+        btn.snp.makeConstraints { $0.height.equalTo(32); $0.width.greaterThanOrEqualTo(80) }
+        let footer = UIStackView(arrangedSubviews: [price, unit, UIView(), btn])
+        footer.spacing = 2
+        footer.alignment = .center
+        let div = UIView()
+        div.backgroundColor = .fdBorder
+
+        let stack = UIStackView(arrangedSubviews: [header, sub, benefitsCV, div, footer])
+        stack.axis = .vertical
+        stack.spacing = 0
+        stack.setCustomSpacing(4, after: header)
+        stack.setCustomSpacing(10, after: sub)
+        stack.setCustomSpacing(10, after: benefitsCV)
+        card.addSubview(stack)
+        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(14) }
+        div.snp.makeConstraints { $0.height.equalTo(1) }
+
+        btn.addTarget(self, action: #selector(tap), for: .touchUpInside)
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        packageId = nil
+        benefits = []
+        benefitsCV = nil
+    }
+
+    @objc private func tap() {
+        guard let id = packageId else { return }
+        Router.shared.push("/services/detail", params: ["id": id])
+    }
+
+    private func lbl(_ t: String, size: CGFloat, weight: UIFont.Weight = .regular, color: UIColor, mono: Bool = false) -> UILabel {
+        let l = UILabel()
+        l.text = t
+        l.textColor = color
+        l.font = mono ? .fdMonoFont(ofSize: size, weight: weight) : .fdFont(ofSize: size, weight: weight)
+        return l
+    }
+}
+
+// MARK: - UICollectionViewDataSource for benefit tags
+
+extension PackageCardCell: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int { benefits.count }
+
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: BenefitTagCell.reuseID, for: indexPath) as! BenefitTagCell
+        cell.configure(benefits[indexPath.item])
+        return cell
+    }
+
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        BenefitTagCell.size(for: benefits[indexPath.item])
+    }
+}

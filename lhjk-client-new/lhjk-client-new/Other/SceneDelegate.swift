@@ -23,6 +23,8 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             // 冷启动：恢复 IM 连接
             restoreIMConnection()
 
+            // 服务 Hub 静态预拉由 RootTabBarController 延迟触发（覆盖冷启动与登录 setRoot）
+
             // 异步检查用户信息完整性，决定是否展示 onboarding
             Task {
                 let needOnboarding = await UserManager.shared.checkNeedOnboarding()

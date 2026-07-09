@@ -54,7 +54,7 @@ final class OrderListViewController: BaseViewController {
         cv.showsHorizontalScrollIndicator = false
         cv.dataSource = self
         cv.delegate = self
-        cv.register(OrderTabCell.self, forCellWithReuseIdentifier: OrderTabCell.reuseId)
+        cv.register(OrderTabCell.self, forCellWithReuseIdentifier: OrderTabCell.reuseID)
         return cv
     }()
 
@@ -220,7 +220,7 @@ extension OrderListViewController: UICollectionViewDataSource {
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: OrderTabCell.reuseId, for: indexPath) as? OrderTabCell else {
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: OrderTabCell.reuseID, for: indexPath) as? OrderTabCell else {
             return UICollectionViewCell()
         }
         cell.configure(title: tabs[indexPath.item].title, isSelected: indexPath.item == selectedTabIndex)
@@ -254,34 +254,5 @@ extension OrderListViewController: UICollectionViewDelegateFlowLayout {
 
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
         return UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
-    }
-}
-
-// MARK: - Tab Cell
-
-private final class OrderTabCell: UICollectionViewCell {
-
-    static let reuseId = "OrderTabCell"
-
-    private let titleLabel: UILabel = {
-        let l = UILabel()
-        l.font = .fdCaptionSemibold
-        l.textAlignment = .center
-        return l
-    }()
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        contentView.addSubview(titleLabel)
-        titleLabel.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-        }
-    }
-
-    required init?(coder: NSCoder) { fatalError() }
-
-    func configure(title: String, isSelected: Bool) {
-        titleLabel.text = title
-        titleLabel.textColor = isSelected ? .fdPrimary : .fdSubtext
     }
 }

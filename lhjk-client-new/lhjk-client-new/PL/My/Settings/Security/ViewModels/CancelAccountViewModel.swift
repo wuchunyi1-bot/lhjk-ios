@@ -59,6 +59,7 @@ final class CancelAccountViewModel: ObservableObject {
                     loginService.clearSession()
                     userManager.clear()
                     imService.clear()
+                    AppContainer.shared.serviceHubCacheService.clear()
                     isSubmitting = false
                     isSuccess = true
                 }

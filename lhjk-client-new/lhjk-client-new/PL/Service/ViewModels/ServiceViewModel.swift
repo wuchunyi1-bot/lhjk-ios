@@ -1,7 +1,8 @@
 import Foundation
 import Combine
 
-/// 服务首页 ViewModel
+/// 服务首页 ViewModel — 缓存优先，对齐消息模块会话列表加载模式
+@MainActor
 final class ServiceViewModel: ObservableObject {
 
     enum Section: Int, CaseIterable {
@@ -14,56 +15,81 @@ final class ServiceViewModel: ObservableObject {
     @Published private(set) var snapshot: ServiceHubSnapshot?
     @Published private(set) var isLoading = false
 
+    private let cacheService: ServiceHubCacheService
     private let catalogService: ServiceCatalogService
-    private let columnContentService: ColumnContentService
-    private let dictionaryService: DictionaryService
-    private let hospitalPackageService: HospitalPackageService
     private let voucherService: VoucherService
     private var selectedCategoryId: String?
     private var cachedCategories: [ServiceRecommendCategory] = []
     private var cancellables = Set<AnyCancellable>()
     private var loadTask: Task<Void, Never>?
+    private var loadGeneration = 0
 
     init(
+        cacheService: ServiceHubCacheService = AppContainer.shared.serviceHubCacheService,
         catalogService: ServiceCatalogService = AppContainer.shared.serviceCatalogService,
-        columnContentService: ColumnContentService = AppContainer.shared.columnContentService,
-        dictionaryService: DictionaryService = AppContainer.shared.dictionaryService,
-        hospitalPackageService: HospitalPackageService = AppContainer.shared.hospitalPackageService,
         voucherService: VoucherService = AppContainer.shared.voucherService
     ) {
+        self.cacheService = cacheService
         self.catalogService = catalogService
-        self.columnContentService = columnContentService
-        self.dictionaryService = dictionaryService
-        self.hospitalPackageService = hospitalPackageService
         self.voucherService = voucherService
 
         NotificationCenter.default.publisher(for: VoucherService.cardActivationDidChange)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.load() }
+            .sink { [weak self] _ in self?.refreshActivateBannerOnly() }
             .store(in: &cancellables)
     }
 
     deinit { loadTask?.cancel() }
 
+    /// 缓存优先：有静态缓存先上屏，再补 packages；会话内不重复全量打网
     func load() {
-        loadTask?.cancel()
+        // 已有缓存立刻上屏，避免等待网络时整页空白
+        if let staticData = cacheService.getStatic() {
+            applyFromCache(
+                staticData: staticData,
+                packages: packagesForSelected(in: staticData.categories)
+            )
+        }
+
+        // 已有进行中的加载则复用，避免 viewWillAppear 反复 cancel 导致结果被丢弃
+        if loadTask != nil, isLoading {
+            return
+        }
+
+        let generation = beginLoad()
         loadTask = Task { [weak self] in
-            await self?.reload()
+            await self?.reloadFromCacheOrNetwork(generation: generation)
+        }
+    }
+
+    /// 下拉刷新等：绕过缓存全量重拉
+    func forceReload() {
+        let generation = beginLoad()
+        loadTask = Task { [weak self] in
+            await self?.performForceReload(generation: generation)
         }
     }
 
     func selectInstitution(id: String) {
         guard snapshot?.institutions.contains(where: { $0.id == id }) == true else { return }
-        load()
+        cacheService.invalidatePackages()
+        forceReload()
     }
 
     func selectCategory(_ title: String) {
         guard let category = cachedCategories.first(where: { $0.title == title }),
               category.id != selectedCategoryId else { return }
         selectedCategoryId = category.id
-        loadTask?.cancel()
+
+        if let cached = cacheService.cachedPackages(for: category.id),
+           let staticData = cacheService.getStatic() {
+            applyFromCache(staticData: staticData, packages: cached)
+            return
+        }
+
+        let generation = beginLoad()
         loadTask = Task { [weak self] in
-            await self?.reloadPackages(categoryId: category.id)
+            await self?.reloadPackages(category: category, generation: generation)
         }
     }
 
@@ -110,71 +136,129 @@ final class ServiceViewModel: ObservableObject {
 
     // MARK: - Private
 
-    @MainActor
-    private func reload() async {
+    private func beginLoad() -> Int {
+        loadGeneration += 1
+        loadTask?.cancel()
+        loadTask = nil
         isLoading = true
-        defer { isLoading = false }
+        return loadGeneration
+    }
 
-        async let banners = fetchBanners()
-        async let matrix = fetchMatrix()
-        async let categories = fetchCategories()
-        let resolvedBanners = await banners
-        let resolvedMatrix = await matrix
-        let resolvedCategories = await categories
-        guard !Task.isCancelled else { return }
+    private func finishLoad(_ generation: Int) {
+        guard generation == loadGeneration else { return }
+        isLoading = false
+        loadTask = nil
+    }
 
-        cachedCategories = resolvedCategories
-        let category = resolveCategory(in: resolvedCategories)
+    private func isCurrent(_ generation: Int) -> Bool {
+        generation == loadGeneration
+    }
+
+    private func reloadFromCacheOrNetwork(generation: Int) async {
+        defer { finishLoad(generation) }
+
+        let staticData = await cacheService.preloadStatic()
+        guard isCurrent(generation) else { return }
+
+        // 静态层先上屏，避免等 packages 时整页空白
+        applyFromCache(
+            staticData: staticData,
+            packages: packagesForSelected(in: staticData.categories)
+        )
+
+        cachedCategories = staticData.categories
+        let category = resolveCategory(in: staticData.categories)
+
         let packages: [HealthPackageItem]
         if let category {
-            packages = await fetchPackages(for: category)
+            packages = await cacheService.ensurePackages(
+                category: category,
+                hospitalId: catalogService.selectedApiHospitalId()
+            )
         } else {
             packages = []
         }
+        guard isCurrent(generation) else { return }
 
-        applySnapshot(
-            banners: resolvedBanners,
-            matrix: resolvedMatrix,
-            categories: resolvedCategories,
-            selectedCategoryId: category?.id ?? "",
-            packages: packages
-        )
+        applyFromCache(staticData: staticData, packages: packages)
     }
 
-    @MainActor
-    private func reloadPackages(categoryId: String) async {
-        isLoading = true
-        defer { isLoading = false }
+    private func performForceReload(generation: Int) async {
+        defer { finishLoad(generation) }
 
-        guard let category = cachedCategories.first(where: { $0.id == categoryId }) else { return }
-        let packages = await fetchPackages(for: category)
-        guard !Task.isCancelled else { return }
+        let categoryHint: ServiceRecommendCategory?
+        if let id = selectedCategoryId {
+            categoryHint = cachedCategories.first(where: { $0.id == id })
+                ?? cacheService.getStatic()?.categories.first(where: { $0.id == id })
+        } else {
+            categoryHint = cacheService.getStatic()?.categories.first
+                ?? cachedCategories.first
+        }
 
-        applySnapshot(
+        let result = await cacheService.forceReload(
+            category: categoryHint,
+            hospitalId: catalogService.selectedApiHospitalId()
+        )
+        guard isCurrent(generation) else { return }
+
+        cachedCategories = result.staticData.categories
+        if let categoryHint {
+            selectedCategoryId = categoryHint.id
+        } else {
+            selectedCategoryId = result.staticData.categories.first?.id
+        }
+        applyFromCache(staticData: result.staticData, packages: result.packages)
+    }
+
+    private func reloadPackages(category: ServiceRecommendCategory, generation: Int) async {
+        defer { finishLoad(generation) }
+
+        let packages = await cacheService.ensurePackages(
+            category: category,
+            hospitalId: catalogService.selectedApiHospitalId()
+        )
+        guard isCurrent(generation) else { return }
+
+        let staticData = cacheService.getStatic() ?? ServiceHubStaticData(
             banners: snapshot?.banners ?? [],
             matrix: snapshot?.matrix ?? [],
-            categories: cachedCategories,
-            selectedCategoryId: categoryId,
-            packages: packages
+            categories: cachedCategories
+        )
+        applyFromCache(staticData: staticData, packages: packages)
+    }
+
+    private func refreshActivateBannerOnly() {
+        guard let snapshot else {
+            load()
+            return
+        }
+        self.snapshot = catalogService.loadHubSnapshot(
+            cardActivated: voucherService.isCardActivated,
+            banners: snapshot.banners,
+            matrix: snapshot.matrix,
+            categories: snapshot.categories,
+            selectedCategoryId: snapshot.selectedCategoryId,
+            recommendedPackages: snapshot.recommendedPackages
         )
     }
 
-    @MainActor
-    private func applySnapshot(
-        banners: [ServiceHubBanner],
-        matrix: [ProductMatrixItem],
-        categories: [ServiceRecommendCategory],
-        selectedCategoryId: String,
-        packages: [HealthPackageItem]
-    ) {
+    private func applyFromCache(staticData: ServiceHubStaticData, packages: [HealthPackageItem]) {
+        cachedCategories = staticData.categories
+        let category = resolveCategory(in: staticData.categories)
         snapshot = catalogService.loadHubSnapshot(
             cardActivated: voucherService.isCardActivated,
-            banners: banners,
-            matrix: matrix,
-            categories: categories,
-            selectedCategoryId: selectedCategoryId,
+            banners: staticData.banners,
+            matrix: staticData.matrix,
+            categories: staticData.categories,
+            selectedCategoryId: category?.id ?? "",
             recommendedPackages: packages
         )
+    }
+
+    private func packagesForSelected(in categories: [ServiceRecommendCategory]) -> [HealthPackageItem] {
+        let category = resolveCategory(in: categories)
+        guard let category else { return [] }
+        return cacheService.cachedPackages(for: category.id) ?? []
     }
 
     private func resolveCategory(in categories: [ServiceRecommendCategory]) -> ServiceRecommendCategory? {
@@ -185,44 +269,5 @@ final class ServiceViewModel: ObservableObject {
         let first = categories.first
         selectedCategoryId = first?.id
         return first
-    }
-
-    private func fetchBanners() async -> [ServiceHubBanner] {
-        do {
-            return try await columnContentService.fetchHospitalBanners()
-        } catch {
-            print("[ServiceViewModel] fetchHospitalBanners failed: \(error.localizedDescription)")
-            return []
-        }
-    }
-
-    private func fetchMatrix() async -> [ProductMatrixItem] {
-        do {
-            return try await dictionaryService.fetchProductMatrix()
-        } catch {
-            print("[ServiceViewModel] fetchProductMatrix failed: \(error.localizedDescription)")
-            return []
-        }
-    }
-
-    private func fetchCategories() async -> [ServiceRecommendCategory] {
-        do {
-            return try await dictionaryService.fetchRecommendCategories()
-        } catch {
-            print("[ServiceViewModel] fetchRecommendCategories failed: \(error.localizedDescription)")
-            return []
-        }
-    }
-
-    private func fetchPackages(for category: ServiceRecommendCategory) async -> [HealthPackageItem] {
-        do {
-            return try await hospitalPackageService.fetchPackageItems(
-                category: category,
-                hospitalId: catalogService.selectedApiHospitalId()
-            )
-        } catch {
-            print("[ServiceViewModel] fetchPackageItems failed: \(error.localizedDescription)")
-            return []
-        }
     }
 }

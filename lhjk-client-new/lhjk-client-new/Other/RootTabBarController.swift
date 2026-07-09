@@ -6,12 +6,26 @@ final class RootTabBarController: UITabBarController {
 
     private var messageNav: BaseNavigationController?
     private var cancellables = Set<AnyCancellable>()
+    private var didScheduleServiceHubPreload = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupViewControllers()
         configureAppearance()
         setupBadgeSubscription()
+        scheduleServiceHubPreloadIfNeeded()
+    }
+
+    /// 冷启动 / 登录进主界面后延迟预拉服务 Hub 静态层（无 TTL；与 SceneDelegate 登录态路径共用）
+    private func scheduleServiceHubPreloadIfNeeded() {
+        guard !didScheduleServiceHubPreload else { return }
+        didScheduleServiceHubPreload = true
+        Task {
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            print("[RootTab] service hub preloadStatic → start")
+            await AppContainer.shared.serviceHubCacheService.preloadStatic()
+            print("[RootTab] service hub preloadStatic → done hasLoaded=\(AppContainer.shared.serviceHubCacheService.hasLoadedStatic)")
+        }
     }
 
     private func setupViewControllers() {
