@@ -24,8 +24,19 @@ final class UserService: UserServiceProtocol {
         if let birthday = payload.birthday { params["birthday"] = birthday }
         if let imageUrl = payload.imageUrl { params["imageUrl"] = imageUrl }
         if let nickname = payload.nickname { params["nickname"] = nickname }
+        if let email = payload.email { params["email"] = email }
+        if let career = payload.career { params["career"] = career }
+        if let education = payload.education { params["education"] = education }
+        if let idType = payload.idType { params["idType"] = idType }
+        if let idNumber = payload.idNumber { params["idNumber"] = idNumber }
+        if let nationality = payload.nationality { params["nationality"] = nationality }
+        if let ethnic = payload.ethnic { params["ethnic"] = ethnic }
         if let province = payload.province { params["province"] = province }
         if let cities = payload.cities { params["cities"] = cities }
+        if let addressProvince = payload.addressProvince { params["addressProvince"] = addressProvince }
+        if let addressCity = payload.addressCity { params["addressCity"] = addressCity }
+        if let addressArea = payload.addressArea { params["addressArea"] = addressArea }
+        if let address = payload.address { params["address"] = address }
         if let age = payload.age { params["age"] = age }
 
         print("[UserService] updateCurrentProfile → params: \(params)")

@@ -2,44 +2,95 @@ import UIKit
 import SnapKit
 import Kingfisher
 
-/// 个人信息页
-/// 参考 funde-client: prototype/src/views/me/ProfileView.vue
-/// PRD: 03_用户_我的编辑资料_v1.0
+/// 个人信息页 — 对齐 `ProfileView.vue`
 ///
-/// 卡片式布局（UIScrollView）：
-///   Card 1 — 账号资料: 头像(可点击) / 手机号(只读) / 用户昵称 / 富德 ID(可复制)
-///   Hint  — 基础资料缺失提示条（条件展示）
-///   Card 2 — 基础资料: 姓名 / 性别 / 出生日期(+年龄) / 所在城市
-///   Card 3 — 收货地址入口
+/// 居中头像 + 单卡片三组字段；可编辑项走底部 `ProfileFieldEditorSheet`
 final class ProfileViewController: BaseViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
-    // MARK: - Editable State
+    // MARK: - Field Keys
 
-    private var user: SUsers?
-    private var nickname: String = ""
-    private var name: String = ""
-    private var gender: String = ""     // "1"=男, "2"=女
-    private var birthDate: String = ""  // "yyyy-MM-dd"
-    private var city: String = ""
+    private enum FieldKey: String {
+        case name, gender, birthday, phone, email
+        case occupation, education, idType, idNumber
+        case nationality, ethnic, nativePlace, residence, district, address
+    }
 
-    // MARK: - Dynamic Labels
+    private enum FieldKind {
+        case readonly
+        case text(keyboard: UIKeyboardType, maxLength: Int)
+        case select(options: [String])
+        case date
+    }
 
-    private var avatarImageView: UIImageView?
-    private var avatarTextLabel: UILabel?
-    private var phoneLabel: UILabel?
-    private var nicknameLabel: UILabel?
-    private var fundeIdLabel: UILabel?
-    private var nameLabel: UILabel?
-    private var genderLabel: UILabel?
-    private var birthLabel: UILabel?
-    private var ageLabel: UILabel?
-    private var cityLabel: UILabel?
-    private var hintView: UIView?
+    private struct FieldDef {
+        let key: FieldKey
+        let label: String
+        let kind: FieldKind
+        let placeholder: String
+    }
+
+    private struct SectionDef {
+        let title: String
+        let fields: [FieldDef]
+    }
+
+    // MARK: - Options (对齐 ProfileView.vue)
+
+    private static let genderOptions = ["男", "女"]
+    private static let occupationOptions = ["在职人员", "学生", "自由职业", "退休", "无业"]
+    private static let educationOptions = ["小学", "初中", "高中/中专", "大专", "本科", "硕士及以上"]
+    private static let idTypeOptions = ["居民身份证", "护照", "军官证", "港澳通行证", "台胞证"]
+    private static let nationalityOptions = ["中国", "中国香港", "中国澳门", "中国台湾", "其他"]
+    private static let ethnicOptions = ["汉族", "蒙古族", "回族", "藏族", "维吾尔族", "其他"]
+    private static let provinceOptions = ["北京市", "上海市", "广东省", "江苏省", "浙江省", "四川省"]
+    private static let districtOptions = ["浦东新区", "黄浦区", "徐汇区", "长宁区", "静安区", "天河区", "越秀区"]
+
+    /// 证件类型中文 ↔ Int（1…5）
+    private static let idTypeToInt: [String: Int] = [
+        "居民身份证": 1, "护照": 2, "军官证": 3, "港澳通行证": 4, "台胞证": 5
+    ]
+    private static let idTypeFromInt: [Int: String] = [
+        1: "居民身份证", 2: "护照", 3: "军官证", 4: "港澳通行证", 5: "台胞证"
+    ]
+
+    private lazy var sections: [SectionDef] = [
+        SectionDef(title: "个人基础信息", fields: [
+            FieldDef(key: .name, label: "姓名", kind: .readonly, placeholder: "未设置"),
+            FieldDef(key: .gender, label: "性别", kind: .select(options: Self.genderOptions), placeholder: "请选择"),
+            FieldDef(key: .birthday, label: "出生日期", kind: .date, placeholder: "请选择日期"),
+            FieldDef(key: .phone, label: "手机号", kind: .readonly, placeholder: "未设置"),
+            FieldDef(key: .email, label: "邮箱", kind: .text(keyboard: .emailAddress, maxLength: 100), placeholder: "请输入邮箱"),
+        ]),
+        SectionDef(title: "身份与职业", fields: [
+            FieldDef(key: .occupation, label: "职业", kind: .select(options: Self.occupationOptions), placeholder: "请选择"),
+            FieldDef(key: .education, label: "文化程度", kind: .select(options: Self.educationOptions), placeholder: "请选择"),
+            FieldDef(key: .idType, label: "证件类型", kind: .select(options: Self.idTypeOptions), placeholder: "请选择"),
+            FieldDef(key: .idNumber, label: "证件号码", kind: .text(keyboard: .asciiCapable, maxLength: 18), placeholder: "请输入证件号码"),
+        ]),
+        SectionDef(title: "地区信息", fields: [
+            FieldDef(key: .nationality, label: "国籍", kind: .select(options: Self.nationalityOptions), placeholder: "请选择"),
+            FieldDef(key: .ethnic, label: "民族", kind: .select(options: Self.ethnicOptions), placeholder: "请选择"),
+            FieldDef(key: .nativePlace, label: "籍贯", kind: .select(options: Self.provinceOptions), placeholder: "请选择"),
+            FieldDef(key: .residence, label: "现居地", kind: .select(options: Self.provinceOptions), placeholder: "请选择"),
+            FieldDef(key: .district, label: "省/区", kind: .select(options: Self.districtOptions), placeholder: "请选择"),
+            FieldDef(key: .address, label: "详细地址", kind: .text(keyboard: .default, maxLength: 100), placeholder: "请输入详细地址"),
+        ]),
+    ]
+
+    // MARK: - State
+
+    private var values: [FieldKey: String] = [:]
+    private var valueLabels: [FieldKey: UILabel] = [:]
 
     // MARK: - UI
 
     private let scrollView = UIScrollView()
     private let contentView = UIView()
+    private let avatarSection = UIControl()
+    private let avatarImageView = UIImageView()
+    private let avatarTextLabel = UILabel()
+    private let avatarGradient = CAGradientLayer()
+    private var avatarLoading: UIActivityIndicatorView?
 
     // MARK: - Lifecycle
 
@@ -55,6 +106,11 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         loadUserProfile()
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        avatarGradient.frame = avatarImageView.bounds
+    }
+
     override func setupUI() {
         title = "个人信息"
         view.backgroundColor = .fdBg
@@ -65,279 +121,173 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         scrollView.addSubview(contentView)
         contentView.snp.makeConstraints { $0.edges.width.equalToSuperview() }
 
-        buildStaticContent()
+        buildAvatarSection()
+        buildInfoCard()
     }
 
-    // MARK: - Build Static Layout
+    // MARK: - Build
 
-    private func buildStaticContent() {
-        var lastBottom: ConstraintItem = contentView.snp.top
-
-        // ==== Card 1: 账号资料 ====
-
-        let card1Title = makeSectionTitle("账号资料")
-        contentView.addSubview(card1Title)
-        card1Title.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(8)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-        lastBottom = card1Title.snp.bottom
-
-        let card1 = buildCardContainer()
-        contentView.addSubview(card1)
-        card1.snp.makeConstraints { make in
-            make.top.equalTo(lastBottom).offset(8)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-        lastBottom = card1.snp.bottom
-
-        let card1Stack = UIStackView(); card1Stack.axis = .vertical
-        card1.addSubview(card1Stack)
-        card1Stack.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-        // Row: 头像
-        let avatarRow = UIView()
-        let avatarImg = UIImageView()
-        avatarImg.backgroundColor = .fdPrimary
-        avatarImg.layer.cornerRadius = 20
-        avatarImg.clipsToBounds = true
-        avatarImg.contentMode = .scaleAspectFill
-        avatarImg.isUserInteractionEnabled = true
-        avatarImg.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleAvatarTap)))
-        self.avatarImageView = avatarImg
-
-        let avatarChar = UILabel()
-        avatarChar.text = "我"
-        avatarChar.font = .fdFont(ofSize: 17, weight: .bold)
-        avatarChar.textColor = .white
-        avatarChar.textAlignment = .center
-        self.avatarTextLabel = avatarChar
-        avatarImg.addSubview(avatarChar)
-        avatarChar.snp.makeConstraints { $0.center.equalToSuperview() }
-
-        avatarRow.addSubview(avatarImg)
-        avatarImg.snp.makeConstraints { $0.trailing.equalToSuperview().offset(-36); $0.centerY.equalToSuperview(); $0.size.equalTo(40) }
-        addRowContent(to: avatarRow, label: "头像", valueView: avatarImg, showArrow: true, showDivider: true, action: #selector(handleAvatarTap))
-
-        card1Stack.addArrangedSubview(avatarRow)
-
-        // Row: 手机号 (read-only, no arrow)
-        let phoneLbl = UILabel(); phoneLbl.font = .fdBody; phoneLbl.textColor = .fdSubtext; phoneLbl.text = "加载中…"
-        self.phoneLabel = phoneLbl
-        card1Stack.addArrangedSubview(makeStaticRow(label: "手机号", valueView: phoneLbl, showArrow: false, showDivider: true))
-
-        // Row: 用户昵称
-        let nickLbl = UILabel(); nickLbl.font = .fdBody; nickLbl.textColor = .fdSubtext; nickLbl.text = "加载中…"
-        self.nicknameLabel = nickLbl
-        card1Stack.addArrangedSubview(makeStaticRow(label: "用户昵称", valueView: nickLbl, showArrow: true, showDivider: true, action: #selector(handleNicknameTap)))
-
-        // Row: 富德 ID
-        let fidLbl = UILabel(); fidLbl.font = .fdBody; fidLbl.textColor = .fdMuted; fidLbl.text = "加载中…"
-        self.fundeIdLabel = fidLbl
-        card1Stack.addArrangedSubview(makeStaticRow(label: "富德 ID", valueView: fidLbl, showArrow: true, showDivider: false, action: #selector(handleFundeIdTap), isCopyIcon: true))
-
-        // ==== Hint: 基础资料缺失提示 ====
-
-        let hint = buildHintView()
-        hint.isHidden = true
-        self.hintView = hint
-        contentView.addSubview(hint)
-        hint.snp.makeConstraints { make in
-            make.top.equalTo(lastBottom).offset(12)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-        lastBottom = hint.snp.bottom
-
-        // ==== Card 2: 基础资料 ====
-
-        let card2Title = makeSectionTitle("基础资料")
-        contentView.addSubview(card2Title)
-        card2Title.snp.makeConstraints { make in
-            make.top.equalTo(lastBottom).offset(16)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-        lastBottom = card2Title.snp.bottom
-
-        let card2 = buildCardContainer()
-        contentView.addSubview(card2)
-        card2.snp.makeConstraints { make in
-            make.top.equalTo(lastBottom).offset(8)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-        lastBottom = card2.snp.bottom
-
-        let card2Stack = UIStackView(); card2Stack.axis = .vertical
-        card2.addSubview(card2Stack)
-        card2Stack.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-        let nameLbl = UILabel(); nameLbl.font = .fdBody; nameLbl.textColor = .fdSubtext; nameLbl.text = "请填写"
-        self.nameLabel = nameLbl
-        card2Stack.addArrangedSubview(makeStaticRow(label: "姓名", valueView: nameLbl, showArrow: true, showDivider: true, action: #selector(handleNameTap)))
-
-        let genderLbl = UILabel(); genderLbl.font = .fdBody; genderLbl.textColor = .fdSubtext; genderLbl.text = "请选择"
-        self.genderLabel = genderLbl
-        card2Stack.addArrangedSubview(makeStaticRow(label: "性别", valueView: genderLbl, showArrow: true, showDivider: true, action: #selector(handleGenderTap)))
-
-        // 出生日期 + 年龄
-        let birthRow = UIView()
-        let birthLbl = UILabel(); birthLbl.font = .fdBody; birthLbl.textColor = .fdSubtext; birthLbl.text = "请选择"
-        self.birthLabel = birthLbl
-        let ageLbl = UILabel(); ageLbl.font = .fdCaption; ageLbl.textColor = .fdMuted; ageLbl.text = ""
-        self.ageLabel = ageLbl
-        let birthValueStack = UIStackView(arrangedSubviews: [birthLbl, ageLbl])
-        birthValueStack.axis = .horizontal; birthValueStack.spacing = 4; birthValueStack.alignment = .center
-        birthRow.addSubview(birthValueStack)
-        birthValueStack.snp.makeConstraints { $0.trailing.equalToSuperview().offset(-36); $0.centerY.equalToSuperview() }
-        addRowContent(to: birthRow, label: "出生日期", valueView: birthValueStack, showArrow: true, showDivider: true, action: #selector(handleBirthDateTap))
-        card2Stack.addArrangedSubview(birthRow)
-
-        let cityLbl = UILabel(); cityLbl.font = .fdBody; cityLbl.textColor = .fdSubtext; cityLbl.text = "请选择"
-        self.cityLabel = cityLbl
-        card2Stack.addArrangedSubview(makeStaticRow(label: "所在城市", valueView: cityLbl, showArrow: true, showDivider: false, action: #selector(handleCityTap)))
-
-        // ==== Card 3: 收货地址 ====
-
-        let card3 = buildCardContainer()
-        contentView.addSubview(card3)
-        card3.snp.makeConstraints { make in
-            make.top.equalTo(lastBottom).offset(14)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-32)
+    private func buildAvatarSection() {
+        avatarSection.addTarget(self, action: #selector(handleAvatarTap), for: .touchUpInside)
+        contentView.addSubview(avatarSection)
+        avatarSection.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(8)
+            $0.leading.trailing.equalToSuperview()
         }
 
-        let card3Stack = UIStackView(); card3Stack.axis = .vertical
-        card3.addSubview(card3Stack)
-        card3Stack.snp.makeConstraints { $0.edges.equalToSuperview() }
-        card3Stack.addArrangedSubview(makeStaticRow(label: "收货地址", valueView: UIView(), showArrow: true, showDivider: false, action: #selector(handleAddressTap)))
+        avatarGradient.colors = [
+            UIColor(hexString: "#CC4A20").cgColor,
+            UIColor(hexString: "#FF7A50").cgColor
+        ]
+        avatarGradient.startPoint = CGPoint(x: 0, y: 0)
+        avatarGradient.endPoint = CGPoint(x: 1, y: 1)
+        avatarImageView.layer.insertSublayer(avatarGradient, at: 0)
+        avatarImageView.layer.cornerRadius = 24
+        avatarImageView.clipsToBounds = true
+        avatarImageView.contentMode = .scaleAspectFill
+        avatarImageView.isUserInteractionEnabled = false
+
+        avatarTextLabel.font = .fdFont(ofSize: 34, weight: .bold)
+        avatarTextLabel.textColor = .white
+        avatarTextLabel.textAlignment = .center
+        avatarImageView.addSubview(avatarTextLabel)
+        avatarTextLabel.snp.makeConstraints { $0.center.equalToSuperview() }
+
+        let hint = UILabel()
+        hint.text = "点击更换头像"
+        hint.font = .fdCaption
+        hint.textColor = .fdSubtext
+
+        avatarSection.addSubview(avatarImageView)
+        avatarSection.addSubview(hint)
+        avatarImageView.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(16)
+            $0.centerX.equalToSuperview()
+            $0.size.equalTo(80)
+        }
+        hint.snp.makeConstraints {
+            $0.top.equalTo(avatarImageView.snp.bottom).offset(8)
+            $0.centerX.equalToSuperview()
+            $0.bottom.equalToSuperview().offset(-4)
+        }
     }
 
-    // MARK: - Row Builders
-
-    private func makeSectionTitle(_ text: String) -> UIView {
-        let v = UIView()
-        let lbl = UILabel()
-        lbl.text = text
-        lbl.font = .fdCaptionSemibold
-        lbl.textColor = .fdSubtext
-        v.addSubview(lbl)
-        lbl.snp.makeConstraints { $0.leading.trailing.equalToSuperview().inset(4); $0.top.bottom.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 0, bottom: 4, right: 0)) }
-        return v
-    }
-
-    private func buildCardContainer() -> UIView {
+    private func buildInfoCard() {
         let card = UIView()
         card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 18
+        card.layer.cornerRadius = 12
         card.layer.shadowColor = UIColor.black.cgColor
         card.layer.shadowOffset = CGSize(width: 0, height: 1)
         card.layer.shadowRadius = 6
         card.layer.shadowOpacity = 0.03
-        return card
-    }
-
-    private func buildHintView() -> UIView {
-        let v = UIView()
-        v.backgroundColor = UIColor(hexString: "#FFF3EE")
-        v.layer.cornerRadius = 12
-        v.layer.borderWidth = 1
-        v.layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.18).cgColor
-        let lbl = UILabel()
-        lbl.text = "可补充姓名、生日等信息，便于后续服务识别。"
-        lbl.font = .fdCaption
-        lbl.textColor = .fdPrimary
-        lbl.numberOfLines = 0
-        v.addSubview(lbl)
-        lbl.snp.makeConstraints { $0.edges.equalToSuperview().inset(12) }
-        return v
-    }
-
-    /// Create a standard row with label on left, valueView on right, optional chevron
-    private func makeStaticRow(label: String, valueView: UIView, showArrow: Bool, showDivider: Bool, action: Selector? = nil, isCopyIcon: Bool = false) -> UIView {
-        let row = UIView()
-        row.isUserInteractionEnabled = true
-        if let action = action {
-            row.addGestureRecognizer(UITapGestureRecognizer(target: self, action: action))
+        contentView.addSubview(card)
+        card.snp.makeConstraints {
+            $0.top.equalTo(avatarSection.snp.bottom).offset(8)
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalToSuperview().offset(-32)
         }
 
-        let titleLbl = UILabel()
-        titleLbl.text = label
-        titleLbl.font = .fdBody
-        titleLbl.textColor = .fdText
-        titleLbl.setContentHuggingPriority(.required, for: .horizontal)
+        let stack = UIStackView()
+        stack.axis = .vertical
+        card.addSubview(stack)
+        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)) }
 
-        row.addSubview(titleLbl)
-        row.addSubview(valueView)
+        for (idx, section) in sections.enumerated() {
+            let group = UIView()
+            let groupStack = UIStackView()
+            groupStack.axis = .vertical
+            group.addSubview(groupStack)
+            groupStack.snp.makeConstraints {
+                $0.top.equalToSuperview().offset(14)
+                $0.leading.trailing.equalToSuperview()
+                $0.bottom.equalToSuperview().offset(idx == sections.count - 1 ? -14 : -6)
+            }
 
-        titleLbl.snp.makeConstraints { make in
-            make.leading.equalToSuperview().inset(16)
-            make.centerY.equalToSuperview()
-            make.width.greaterThanOrEqualTo(72)
+            let title = UILabel()
+            title.text = section.title
+            title.font = .fdCaptionSemibold
+            title.textColor = .fdText
+            groupStack.addArrangedSubview(title)
+            groupStack.setCustomSpacing(6, after: title)
+
+            for field in section.fields {
+                groupStack.addArrangedSubview(makeRow(field))
+            }
+
+            if idx < sections.count - 1 {
+                let divider = UIView()
+                divider.backgroundColor = .fdBorder
+                group.addSubview(divider)
+                divider.snp.makeConstraints {
+                    $0.leading.trailing.bottom.equalToSuperview()
+                    $0.height.equalTo(1)
+                }
+            }
+
+            stack.addArrangedSubview(group)
+        }
+    }
+
+    private func makeRow(_ field: FieldDef) -> UIView {
+        let row = UIControl()
+        if case .readonly = field.kind {
+            // 只读：不响应
+        } else {
+            row.addAction(UIAction { [weak self] _ in
+                self?.openEditor(for: field)
+            }, for: .touchUpInside)
         }
 
-        if showArrow || isCopyIcon {
-            let iconName = isCopyIcon ? "doc.on.doc" : "chevron.right"
-            let icon = UIImageView(image: UIImage(systemName: iconName))
-            icon.tintColor = .fdMuted; icon.contentMode = .scaleAspectFit
-            row.addSubview(icon)
-            icon.snp.makeConstraints { $0.trailing.equalToSuperview().offset(-16); $0.centerY.equalToSuperview(); $0.size.equalTo(16) }
-            valueView.snp.makeConstraints { make in
-                make.trailing.equalTo(icon.snp.leading).offset(-8)
-                make.centerY.equalToSuperview()
-                make.leading.greaterThanOrEqualTo(titleLbl.snp.trailing).offset(12)
+        let label = UILabel()
+        label.text = field.label
+        label.font = .fdBody
+        label.textColor = .fdSubtext
+        label.setContentHuggingPriority(.required, for: .horizontal)
+
+        let value = UILabel()
+        value.font = .fdBody
+        value.textColor = .fdText
+        value.textAlignment = .right
+        value.lineBreakMode = .byTruncatingTail
+        valueLabels[field.key] = value
+
+        row.addSubview(label)
+        row.addSubview(value)
+
+        label.snp.makeConstraints {
+            $0.leading.equalToSuperview()
+            $0.centerY.equalToSuperview()
+            $0.width.equalTo(88)
+        }
+
+        if case .readonly = field.kind {
+            value.snp.makeConstraints {
+                $0.leading.equalTo(label.snp.trailing).offset(8)
+                $0.trailing.equalToSuperview()
+                $0.centerY.equalToSuperview()
             }
         } else {
-            valueView.snp.makeConstraints { make in
-                make.trailing.equalToSuperview().offset(-16)
-                make.centerY.equalToSuperview()
-                make.leading.greaterThanOrEqualTo(titleLbl.snp.trailing).offset(12)
+            let arrow = UILabel()
+            arrow.text = "›"
+            arrow.font = .fdFont(ofSize: 16, weight: .regular)
+            arrow.textColor = .fdMuted
+            row.addSubview(arrow)
+            arrow.snp.makeConstraints {
+                $0.trailing.equalToSuperview()
+                $0.centerY.equalToSuperview()
+            }
+            value.snp.makeConstraints {
+                $0.leading.equalTo(label.snp.trailing).offset(8)
+                $0.trailing.equalTo(arrow.snp.leading).offset(-6)
+                $0.centerY.equalToSuperview()
             }
         }
 
-        if showDivider {
-            let divider = UIView(); divider.backgroundColor = .fdBorder
-            row.addSubview(divider)
-            divider.snp.makeConstraints { $0.leading.equalTo(titleLbl); $0.trailing.bottom.equalToSuperview(); $0.height.equalTo(1) }
-        }
-        row.snp.makeConstraints { $0.height.equalTo(56) }
+        row.snp.makeConstraints { $0.height.equalTo(44) }
         return row
     }
 
-    /// Add label + arrow to an existing row view (used when valueView needs special layout)
-    private func addRowContent(to row: UIView, label: String, valueView: UIView, showArrow: Bool, showDivider: Bool, action: Selector) {
-        let titleLbl = UILabel()
-        titleLbl.text = label
-        titleLbl.font = .fdBody
-        titleLbl.textColor = .fdText
-        titleLbl.setContentHuggingPriority(.required, for: .horizontal)
-
-        row.addSubview(titleLbl)
-        titleLbl.snp.makeConstraints { make in
-            make.leading.equalToSuperview().inset(16)
-            make.centerY.equalToSuperview()
-            make.width.greaterThanOrEqualTo(72)
-        }
-
-        if showArrow {
-            let arrow = UIImageView(image: UIImage(systemName: "chevron.right"))
-            arrow.tintColor = .fdMuted; arrow.contentMode = .scaleAspectFit
-            row.addSubview(arrow)
-            arrow.snp.makeConstraints { $0.trailing.equalToSuperview().offset(-16); $0.centerY.equalToSuperview(); $0.size.equalTo(16) }
-        }
-
-        valueView.snp.makeConstraints { make in
-            make.leading.greaterThanOrEqualTo(titleLbl.snp.trailing).offset(12)
-            make.centerY.equalToSuperview()
-        }
-
-        if showDivider {
-            let divider = UIView(); divider.backgroundColor = .fdBorder
-            row.addSubview(divider)
-            divider.snp.makeConstraints { $0.leading.equalTo(titleLbl); $0.trailing.bottom.equalToSuperview(); $0.height.equalTo(1) }
-        }
-        row.snp.makeConstraints { $0.height.equalTo(56) }
-    }
-
-    // MARK: - Data Loading
+    // MARK: - Data
 
     private func loadUserProfile() {
         guard let user = UserManager.shared.currentUser else { return }
@@ -349,77 +299,145 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     }
 
     private func applyUserData(_ user: SUsers) {
-        self.user = user
-
-        // Avatar
         let displayName = user.chineseName ?? user.surname ?? user.nickname ?? "用户"
         let char = String(displayName.prefix(1))
+
         if let urlStr = user.imageUrl, let url = URL(string: urlStr) {
-            avatarTextLabel?.isHidden = true
-            avatarImageView?.kf.setImage(with: url)
-            avatarImageView?.backgroundColor = .clear
+            avatarTextLabel.isHidden = true
+            avatarGradient.isHidden = true
+            avatarImageView.kf.setImage(with: url)
         } else {
-            avatarTextLabel?.isHidden = false
-            avatarTextLabel?.text = char
-            avatarImageView?.backgroundColor = .fdPrimary
+            avatarImageView.image = nil
+            avatarTextLabel.isHidden = false
+            avatarTextLabel.text = char
+            avatarGradient.isHidden = false
         }
 
-        // Phone
-        phoneLabel?.text = maskPhone(user.mobile)
+        values[.name] = user.chineseName ?? user.surname ?? ""
+        values[.gender] = Self.sexDisplay(user.sex)
+        values[.birthday] = user.birthday ?? ""
+        values[.phone] = maskPhone(user.mobile)
+        values[.email] = user.email ?? ""
+        values[.occupation] = user.career ?? ""
+        values[.education] = user.education ?? ""
+        values[.idType] = Self.idTypeDisplay(user.idType)
+        values[.idNumber] = user.idNumber ?? ""
+        values[.nationality] = user.nationality ?? ""
+        values[.ethnic] = user.ethnic ?? ""
+        values[.nativePlace] = user.province ?? user.householdProvince ?? ""
+        values[.residence] = user.addressProvince ?? ""
+        values[.district] = user.addressArea ?? user.addressCity ?? ""
+        values[.address] = user.address ?? ""
 
-        // Nickname
-        nickname = user.nickname ?? ""
-        nicknameLabel?.text = nickname.isEmpty ? "用户\(user.id?.prefix(8) ?? "")" : nickname
-
-        // Funde ID
-        fundeIdLabel?.text = user.id ?? "—"
-
-        // Name
-        name = user.chineseName ?? user.surname ?? ""
-        nameLabel?.text = name.isEmpty ? "请填写" : name
-
-        // Gender
-        gender = user.sex ?? ""
-        genderLabel?.text = sexLabel(gender)
-
-        // Birth date
-        birthDate = user.birthday ?? ""
-        birthLabel?.text = birthDate.isEmpty ? "请选择" : birthDate
-        ageLabel?.text = calcAge(from: birthDate)
-
-        // City
-        city = user.addressCity ?? user.address ?? ""
-        cityLabel?.text = city.isEmpty ? "请选择" : city
-
-        // Hint
-        let incomplete = name.isEmpty || gender.isEmpty || birthDate.isEmpty || city.isEmpty
-        hintView?.isHidden = !incomplete
+        refreshAllValueLabels()
     }
 
-    // MARK: - Helpers
-
-    private func maskPhone(_ phone: String?) -> String {
-        guard let phone = phone, phone.count == 11 else { return phone ?? "未设置" }
-        return "\(phone.prefix(3))****\(phone.suffix(4))"
-    }
-
-    private func sexLabel(_ sex: String?) -> String {
-        switch sex {
-        case "1": return "男"
-        case "2": return "女"
-        default: return "请选择"
+    private func refreshAllValueLabels() {
+        for section in sections {
+            for field in section.fields {
+                applyValueLabel(field)
+            }
         }
     }
 
-    private func calcAge(from dateStr: String) -> String {
-        guard !dateStr.isEmpty else { return "" }
-        let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
-        guard let birth = fmt.date(from: dateStr) else { return "" }
-        let age = Calendar.current.dateComponents([.year], from: birth, to: Date()).year ?? 0
-        return age > 0 ? "\(age)岁" : ""
+    private func applyValueLabel(_ field: FieldDef) {
+        guard let label = valueLabels[field.key] else { return }
+        let raw = values[field.key] ?? ""
+        if raw.isEmpty {
+            label.text = field.placeholder
+            if case .readonly = field.kind {
+                label.textColor = .fdSubtext
+            } else {
+                label.textColor = .fdMuted
+            }
+        } else {
+            label.text = raw
+            label.textColor = .fdText
+        }
     }
 
-    // MARK: - Actions
+    // MARK: - Editor
+
+    private func openEditor(for field: FieldDef) {
+        let sheetKind: ProfileFieldEditorSheet.FieldKind
+        switch field.kind {
+        case .readonly:
+            return
+        case .text(let keyboard, let maxLength):
+            sheetKind = .text(keyboard: keyboard, maxLength: maxLength)
+        case .select(let options):
+            sheetKind = .select(options: options)
+        case .date:
+            sheetKind = .date
+        }
+
+        let sheet = ProfileFieldEditorSheet(
+            title: field.label,
+            kind: sheetKind,
+            current: values[field.key] ?? ""
+        )
+        sheet.onSave = { [weak self] value in
+            self?.commitField(field, value: value)
+        }
+        present(sheet, animated: true)
+    }
+
+    private func commitField(_ field: FieldDef, value: String) {
+        values[field.key] = value
+        applyValueLabel(field)
+        saveField(field, value: value)
+    }
+
+    // MARK: - Save
+
+    private func saveField(_ field: FieldDef, value: String) {
+        var payload = SUsersOnboardingPayload()
+        payload.mobile = UserDefaults.standard.string(forKey: "current_user_mobile")
+
+        switch field.key {
+        case .gender:
+            payload.sex = value == "男" ? "1" : (value == "女" ? "2" : nil)
+        case .birthday:
+            payload.birthday = value
+            payload.age = Self.age(from: value)
+        case .email:
+            payload.email = value
+        case .occupation:
+            payload.career = value
+        case .education:
+            payload.education = value
+        case .idType:
+            payload.idType = Self.idTypeToInt[value]
+        case .idNumber:
+            payload.idNumber = value
+        case .nationality:
+            payload.nationality = value
+        case .ethnic:
+            payload.ethnic = value
+        case .nativePlace:
+            payload.province = value
+        case .residence:
+            payload.addressProvince = value
+        case .district:
+            payload.addressArea = value
+        case .address:
+            payload.address = value
+        case .name, .phone:
+            return
+        }
+
+        Task {
+            do {
+                _ = try await UserService.shared.updateCurrentProfile(payload)
+                _ = await UserManager.shared.refreshUserInfo()
+                await MainActor.run { showToast("\(field.label)已保存") }
+            } catch {
+                await MainActor.run { showToast("保存失败: \(error.localizedDescription)") }
+            }
+        }
+    }
+
+    // MARK: - Avatar
 
     @objc private func handleAvatarTap() {
         let picker = UIImagePickerController()
@@ -429,201 +447,20 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         present(picker, animated: true)
     }
 
-    @objc private func handleNicknameTap() {
-        showTextEditor(title: "修改用户昵称", placeholder: "请输入用户昵称", currentValue: nickname) { [weak self] text in
-            guard let self = self else { return }
-            self.nickname = text
-            self.nicknameLabel?.text = text
-            self.updateHint()
-            self.saveProfile()
-        }
-    }
-
-    @objc private func handleFundeIdTap() {
-        guard let fid = fundeIdLabel?.text, fid != "加载中…", fid != "—" else { return }
-        UIPasteboard.general.string = fid
-        showToast("富德 ID 已复制")
-    }
-
-    @objc private func handleNameTap() {
-        showTextEditor(title: "修改姓名", placeholder: "请输入姓名", currentValue: name) { [weak self] text in
-            guard let self = self else { return }
-            self.name = text
-            self.nameLabel?.text = text
-            self.updateHint()
-            self.saveProfile()
-        }
-    }
-
-    @objc private func handleGenderTap() {
-        let alert = UIAlertController(title: "选择性别", message: nil, preferredStyle: .actionSheet)
-        alert.addAction(UIAlertAction(title: "男", style: .default) { [weak self] _ in
-            self?.gender = "1"
-            self?.genderLabel?.text = "男"
-            self?.updateHint()
-            self?.saveProfile()
-        })
-        alert.addAction(UIAlertAction(title: "女", style: .default) { [weak self] _ in
-            self?.gender = "2"
-            self?.genderLabel?.text = "女"
-            self?.updateHint()
-            self?.saveProfile()
-        })
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
-        present(alert, animated: true)
-    }
-
-    @objc private func handleBirthDateTap() {
-        let alert = UIAlertController(title: "选择出生日期\n\n\n\n\n\n\n\n\n\n", message: nil, preferredStyle: .alert)
-        let datePicker = UIDatePicker()
-        datePicker.datePickerMode = .date
-        datePicker.preferredDatePickerStyle = .wheels
-        datePicker.maximumDate = Date()
-        datePicker.minimumDate = Calendar.current.date(from: DateComponents(year: 1920, month: 1, day: 1))
-        if !birthDate.isEmpty {
-            let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
-            if let d = fmt.date(from: birthDate) { datePicker.date = d }
-        }
-        alert.view.addSubview(datePicker)
-        datePicker.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(44)
-            make.centerX.equalToSuperview()
-            make.height.equalTo(200)
-        }
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
-        alert.addAction(UIAlertAction(title: "确定", style: .default) { [weak self] _ in
-            guard let self = self else { return }
-            let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
-            let dateStr = fmt.string(from: datePicker.date)
-            self.birthDate = dateStr
-            self.birthLabel?.text = dateStr
-            self.ageLabel?.text = self.calcAge(from: dateStr)
-            self.updateHint()
-            self.saveProfile()
-        })
-        present(alert, animated: true)
-    }
-
-    @objc private func handleCityTap() {
-        let alert = UIAlertController(title: "选择所在城市", message: nil, preferredStyle: .actionSheet)
-        let cities: [(String, [String])] = [
-            ("广东省", ["深圳市", "广州市", "佛山市"]),
-            ("上海市", ["上海市"]),
-            ("北京市", ["北京市"]),
-            ("浙江省", ["杭州市", "宁波市"]),
-            ("江苏省", ["南京市", "苏州市"]),
-        ]
-        for (province, cityList) in cities {
-            for c in cityList {
-                let display = province == c ? c : "\(province) \(c)"
-                alert.addAction(UIAlertAction(title: display, style: .default) { [weak self] _ in
-                    self?.city = display
-                    self?.cityLabel?.text = display
-                    self?.updateHint()
-                    self?.saveProfile()
-                })
-            }
-        }
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
-        present(alert, animated: true)
-    }
-
-    @objc private func handleAddressTap() {
-        Router.shared.push("/me/address")
-    }
-
-    // MARK: - Save
-
-    /// 将当前编辑状态通过 API 持久化到后端
-    private func saveProfile() {
-        let mobile = UserDefaults.standard.string(forKey: "current_user_mobile")
-
-        // 解析城市为省/市
-        var province: String? = nil
-        var cityName: String? = nil
-        if !city.isEmpty {
-            let parts = city.components(separatedBy: " ")
-            if parts.count == 2 {
-                province = parts[0]
-                cityName = parts[1]
-            } else {
-                cityName = city
-            }
-        }
-
-        // 根据出生日期计算年龄
-        var age: Int? = nil
-        if !birthDate.isEmpty {
-            let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
-            if let birth = fmt.date(from: birthDate) {
-                age = Calendar.current.dateComponents([.year], from: birth, to: Date()).year
-            }
-        }
-
-        let payload = SUsersOnboardingPayload(
-            mobile: mobile,
-            chineseName: name.isEmpty ? nil : name,
-            sex: gender.isEmpty ? nil : gender,
-            birthday: birthDate.isEmpty ? nil : birthDate,
-            nickname: nickname.isEmpty ? nil : nickname,
-            province: province,
-            cities: cityName,
-            age: age,
-            medicalHistory: nil, smokingStatus: nil, exerciseFrequency: nil,
-            imageUrl: nil
-        )
-
-        Task {
-            do {
-                _ = try await UserService.shared.updateCurrentProfile(payload)
-                _ = await UserManager.shared.refreshUserInfo()
-                await MainActor.run { showToast("已保存") }
-            } catch {
-                await MainActor.run { showToast("保存失败: \(error.localizedDescription)") }
-            }
-        }
-    }
-
-    private func updateHint() {
-        let incomplete = name.isEmpty || gender.isEmpty || birthDate.isEmpty || city.isEmpty
-        hintView?.isHidden = !incomplete
-    }
-
-    // MARK: - Text Editor Helper
-
-    private func showTextEditor(title: String, placeholder: String, currentValue: String, onSave: @escaping (String) -> Void) {
-        let alert = UIAlertController(title: title, message: nil, preferredStyle: .alert)
-        alert.addTextField { tf in
-            tf.text = currentValue
-            tf.placeholder = placeholder
-        }
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
-        alert.addAction(UIAlertAction(title: "保存", style: .default) { [weak self] _ in
-            guard let text = alert.textFields?.first?.text?.trimmingCharacters(in: .whitespaces), !text.isEmpty else {
-                self?.showToast("请输入\(title.replacingOccurrences(of: "修改", with: ""))")
-                return
-            }
-            onSave(text)
-        })
-        present(alert, animated: true)
-    }
-
-    // MARK: - UIImagePickerControllerDelegate
-
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
         guard let img = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage else {
             picker.dismiss(animated: true)
             return
         }
-
-        // 立即更新本地显示
-        avatarImageView?.image = img
-        avatarImageView?.backgroundColor = .clear
-        avatarTextLabel?.isHidden = true
+        avatarImageView.image = img
+        avatarTextLabel.isHidden = true
+        avatarGradient.isHidden = true
         picker.dismiss(animated: true)
-
-        // 异步上传到 OSS 并保存到后端
         uploadAvatar(img)
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true)
     }
 
     private func uploadAvatar(_ image: UIImage) {
@@ -632,37 +469,26 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             return
         }
 
-        // 头像区域显示 loading
         let loading = UIActivityIndicatorView(style: .medium)
-        loading.color = .fdPrimary
+        loading.color = .white
         loading.startAnimating()
-        avatarImageView?.addSubview(loading)
+        avatarImageView.addSubview(loading)
         loading.snp.makeConstraints { $0.center.equalToSuperview() }
-        avatarTextLabel?.isHidden = true
+        avatarLoading = loading
 
         Task {
             do {
-                // Step 1: 上传图片到 OSS
                 let url = try await OSSManager.shared.upload(
                     data: data,
                     folderName: "common",
                     ext: "jpg",
                     mimeType: "image/jpeg"
                 )
-
-                // Step 2: 保存 imageUrl 到后端
-                let mobile = UserDefaults.standard.string(forKey: "current_user_mobile")
-                let payload = SUsersOnboardingPayload(
-                    mobile: mobile,
-                    chineseName: nil, sex: nil, birthday: nil,
-                    medicalHistory: nil, smokingStatus: nil, exerciseFrequency: nil,
-                    imageUrl: url
-                )
+                var payload = SUsersOnboardingPayload()
+                payload.mobile = UserDefaults.standard.string(forKey: "current_user_mobile")
+                payload.imageUrl = url
                 _ = try await UserService.shared.updateCurrentProfile(payload)
-
-                // Step 3: 刷新本地用户缓存
                 _ = await UserManager.shared.refreshUserInfo()
-
                 await MainActor.run {
                     loading.removeFromSuperview()
                     showToast("头像已更新")
@@ -676,11 +502,31 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         }
     }
 
-    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-        picker.dismiss(animated: true)
+    // MARK: - Helpers
+
+    private func maskPhone(_ phone: String?) -> String {
+        guard let phone, phone.count == 11 else { return phone ?? "" }
+        return "\(phone.prefix(3))****\(phone.suffix(4))"
     }
 
-    // MARK: - Toast
+    private static func sexDisplay(_ sex: String?) -> String {
+        switch sex {
+        case "1": return "男"
+        case "2": return "女"
+        default: return ""
+        }
+    }
+
+    private static func idTypeDisplay(_ type: Int?) -> String {
+        guard let type else { return "" }
+        return idTypeFromInt[type] ?? ""
+    }
+
+    private static func age(from dateStr: String) -> Int? {
+        let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
+        guard let birth = fmt.date(from: dateStr) else { return nil }
+        return Calendar.current.dateComponents([.year], from: birth, to: Date()).year
+    }
 
     private func showToast(_ message: String) {
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)

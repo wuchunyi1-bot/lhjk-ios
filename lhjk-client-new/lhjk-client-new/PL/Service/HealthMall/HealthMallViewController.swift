@@ -76,4 +76,8 @@ extension HealthMallViewController: UICollectionViewDataSource, UICollectionView
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MallProductCell.reuseID, for: indexPath) as! MallProductCell
         cell.configure(filteredProducts[indexPath.item]); return cell
     }
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let id = filteredProducts[indexPath.item].id
+        Router.shared.push("/mall/detail", params: ["id": id])
+    }
 }

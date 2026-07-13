@@ -13,6 +13,7 @@ final class MeFuncRowCell: UITableViewCell {
         let showDivider: Bool
         var showIcon: Bool = true
         var titleColor: UIColor = .fdText
+        var showChevron: Bool = true
 
         static func settingsRow(title: String, showDivider: Bool, destructive: Bool = false) -> RowData {
             RowData(icon: "", color: .clear, title: title, detail: nil,
@@ -92,6 +93,7 @@ final class MeFuncRowCell: UITableViewCell {
 
         detailLbl.text = data.detail
         detailLbl.isHidden = (data.detail == nil)
+        arrow.isHidden = !data.showChevron
 
         divider.isHidden = !data.showDivider
 

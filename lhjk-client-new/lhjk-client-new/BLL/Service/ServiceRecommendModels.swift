@@ -52,11 +52,37 @@ struct ServiceRecommendCategory: Equatable {
 
 /// `GET /v1/hospitalPackage/getEnabledHospitalPackagePage` 列表项
 struct HospitalPackagePageVO: Decodable {
+    /// 商品 / 套餐主键（详情接口 `packageId`）
+    let id: String
     let name: String?
     let imageUrl: String?
     let price: Double?
     let introduction: String?
     let recommend: Int?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, imageUrl, price, introduction, recommend
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = Self.decodeFlexibleString(c, key: .id)
+        name = try c.decodeIfPresent(String.self, forKey: .name)
+        imageUrl = try c.decodeIfPresent(String.self, forKey: .imageUrl)
+        price = try c.decodeIfPresent(Double.self, forKey: .price)
+        introduction = try c.decodeIfPresent(String.self, forKey: .introduction)
+        recommend = try c.decodeIfPresent(Int.self, forKey: .recommend)
+    }
+
+    private static func decodeFlexibleString<K: CodingKey>(
+        _ container: KeyedDecodingContainer<K>,
+        key: K
+    ) -> String {
+        if let value = try? container.decode(String.self, forKey: key) { return value }
+        if let value = try? container.decode(Int64.self, forKey: key) { return String(value) }
+        if let value = try? container.decode(Int.self, forKey: key) { return String(value) }
+        return ""
+    }
 }
 
 /// 套包分页数据
@@ -130,9 +156,10 @@ enum HospitalPackageMapper {
         let intro = nonEmpty(vo.introduction) ?? ""
         let priceText = formatPrice(vo.price)
         let badge: String? = vo.recommend == 1 ? "推荐" : nil
+        let packageId = nonEmpty(vo.id) ?? "hospital-pkg-\(index)"
 
         return HealthPackageItem(
-            id: "hospital-pkg-\(index)",
+            id: packageId,
             productCode: coverCode(from: packageName),
             name: packageName,
             subtitle: intro.isEmpty ? packageName : intro,

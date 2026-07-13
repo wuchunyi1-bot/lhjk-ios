@@ -164,7 +164,7 @@ extension ServiceViewController: UITableViewDataSource, UITableViewDelegate {
             let cell = tableView.dequeueReusableCell(withIdentifier: HealthPackageCardCell.reuseID, for: indexPath) as! HealthPackageCardCell
             if let pkg = viewModel.package(at: indexPath) {
                 cell.configure(pkg)
-                cell.onDetailTap = { Router.shared.push("/services/pkg", params: ["id": pkg.id]) }
+                cell.onDetailTap = { Router.shared.push("/services/detail", params: ["id": pkg.id]) }
             }
             return cell
         }

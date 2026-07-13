@@ -15,10 +15,13 @@ enum ServiceRoutes {
             return ServiceListViewController(productCode: code)
         }
 
-        // 套餐详情（params: id）
+        // 套餐详情 / 服务套餐详情（params: id, 可选 hospitalId）
         r.register(path: "/services/detail") { params in
-            let id = params["id"] as? String ?? ""
-            return PlaceholderViewController(title: "服务详情: \(id)")
+            let id = ServiceRoutes.stringParam(params["id"])
+            let hospitalId = ServiceCatalogService.validApiHospitalId(
+                ServiceRoutes.stringParam(params["hospitalId"]).nilIfEmpty
+            )
+            return ServicePackageDetailViewController(packageId: id, hospitalId: hospitalId)
         }
 
         // 就医协助
@@ -26,10 +29,13 @@ enum ServiceRoutes {
             PlaceholderViewController(title: "就医协助服务")
         }
 
-        // 健康包详情（params: id）
+        // 健康包详情（params: id）— 与 detail 共用同一页
         r.register(path: "/services/pkg") { params in
-            let id = params["id"] as? String ?? ""
-            return PlaceholderViewController(title: "健康包详情: \(id)")
+            let id = ServiceRoutes.stringParam(params["id"])
+            let hospitalId = ServiceCatalogService.validApiHospitalId(
+                ServiceRoutes.stringParam(params["hospitalId"]).nilIfEmpty
+            )
+            return ServicePackageDetailViewController(packageId: id, hospitalId: hospitalId)
         }
 
         // 搜索 / 购物车
@@ -39,7 +45,7 @@ enum ServiceRoutes {
             return ServicePackageSearchViewController(hospitalId: hospitalId)
         }
         r.register(path: "/services/cart") { _ in
-            PlaceholderViewController(title: "购物车")
+            ServiceCartViewController()
         }
 
         // 三好卡激活入口
@@ -52,8 +58,24 @@ enum ServiceRoutes {
 
         // 商品详情（params: id）
         r.register(path: "/mall/detail") { params in
-            let id = params["id"] as? String ?? ""
-            return PlaceholderViewController(title: "商品详情: \(id)")
+            let id = Self.stringParam(params["id"])
+            return MallProductDetailViewController(productId: id)
         }
+    }
+
+    /// 兼容 String / Int / NSNumber 路由参数
+    static func stringParam(_ value: Any?) -> String {
+        if let s = value as? String { return s }
+        if let n = value as? NSNumber { return n.stringValue }
+        if let i = value as? Int { return String(i) }
+        if let i = value as? Int64 { return String(i) }
+        return ""
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }

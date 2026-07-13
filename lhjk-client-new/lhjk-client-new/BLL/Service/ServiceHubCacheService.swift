@@ -54,6 +54,13 @@ final class ServiceHubCacheService {
         packagesByCategoryId[categoryId]
     }
 
+    /// 在已缓存的推荐套餐中按 id 查找
+    func findCachedPackage(id: String) -> HealthPackageItem? {
+        packagesByCategoryId.values
+            .flatMap { $0 }
+            .first { $0.id == id }
+    }
+
     // MARK: - Preload / Ensure
 
     /// 预拉静态层（banners / matrix / categories）。已加载则直接返回缓存；in-flight 去重。

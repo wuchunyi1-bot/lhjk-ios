@@ -3,15 +3,17 @@ import SnapKit
 import Kingfisher
 import Combine
 
-/// 我的模块 Hub 页
+/// 我的模块 Hub 页 — 对齐 funde-client MeView.vue
 final class MyViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate {
 
-    // MARK: - ViewModel
+    private enum Section: Int, CaseIterable {
+        case common
+        case health
+        case settings
+    }
 
     private let viewModel = MyViewModel()
     private var cancellables = Set<AnyCancellable>()
-
-    // MARK: - UI
 
     private lazy var tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .grouped)
@@ -20,7 +22,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         tv.showsVerticalScrollIndicator = false
         tv.dataSource = self
         tv.delegate = self
-        tv.register(MeServiceFulfillmentCell.self, forCellReuseIdentifier: MeServiceFulfillmentCell.reuseIdentifier)
+        tv.register(MeCommonActionsCell.self, forCellReuseIdentifier: MeCommonActionsCell.reuseIdentifier)
         tv.register(MeFuncRowCell.self, forCellReuseIdentifier: MeFuncRowCell.reuseIdentifier)
         tv.contentInsetAdjustmentBehavior = .never
         if #available(iOS 15.0, *) { tv.sectionHeaderTopPadding = 0 }
@@ -28,8 +30,6 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
     }()
 
     private let headerGradient = CAGradientLayer()
-
-    // MARK: - Lifecycle
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
@@ -67,6 +67,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             make.top.leading.trailing.equalToSuperview()
             make.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom)
         }
+        tableView.tableFooterView = buildLogoutFooter()
         bindViewModel()
     }
 
@@ -76,8 +77,6 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         view.setNeedsLayout()
         view.layoutIfNeeded()
     }
-
-    // MARK: - Binding
 
     override func bindViewModel() {
         viewModel.$userName
@@ -99,11 +98,14 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             }
         }
         (header.viewWithTag(202) as? UILabel)?.text = viewModel.userName
+        if let card = header.viewWithTag(300) as? MeMembershipCardView {
+            card.configure(with: viewModel)
+        }
         header.setNeedsLayout()
         header.layoutIfNeeded()
     }
 
-    // MARK: - Table Header
+    // MARK: - Header
 
     private func buildTableHeader() -> UIView {
         let header = UIView()
@@ -117,89 +119,63 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
 
         let contentPadding: CGFloat = 16
 
-        let avatarView: UIImageView = {
-            let v = UIImageView()
-            v.backgroundColor = UIColor(hexString: "#F4ECE3")
-            v.layer.cornerRadius = 32
-            v.clipsToBounds = true
-            v.contentMode = .scaleAspectFill
-            v.tag = 200
-            return v
-        }()
-        let avatarLabel: UILabel = {
-            let l = UILabel()
-            l.text = viewModel.avatarChar
-            l.font = .fdH2
-            l.textColor = UIColor(hexString: "#7B5E40")
-            l.textAlignment = .center
-            l.tag = 201
-            return l
-        }()
+        let avatarView = UIImageView()
+        avatarView.backgroundColor = UIColor(hexString: "#F4ECE3")
+        avatarView.layer.cornerRadius = 32
+        avatarView.clipsToBounds = true
+        avatarView.contentMode = .scaleAspectFill
+        avatarView.tag = 200
+
+        let avatarLabel = UILabel()
+        avatarLabel.text = viewModel.avatarChar
+        avatarLabel.font = .fdH2
+        avatarLabel.textColor = UIColor(hexString: "#7B5E40")
+        avatarLabel.textAlignment = .center
+        avatarLabel.tag = 201
         avatarView.addSubview(avatarLabel)
         avatarLabel.snp.makeConstraints { $0.center.equalToSuperview() }
 
-        let nameLabel: UILabel = {
-            let l = UILabel()
-            l.text = viewModel.userName
-            l.font = .fdH2
-            l.textColor = .fdText
-            l.tag = 202
-            return l
-        }()
+        let nameLabel = UILabel()
+        nameLabel.text = viewModel.userName
+        nameLabel.font = .fdH2
+        nameLabel.textColor = .fdText
+        nameLabel.tag = 202
 
-        let settingsBtn: UIButton = {
-            let b = UIButton(type: .system)
-            b.setImage(UIImage(systemName: "gearshape")?.applyingSymbolConfiguration(
-                UIImage.SymbolConfiguration(pointSize: 16, weight: .regular)), for: .normal)
-            b.tintColor = .fdText
-            b.backgroundColor = UIColor.white.withAlphaComponent(0.6)
-            b.layer.cornerRadius = 16
-            b.clipsToBounds = true
-            b.addTarget(self, action: #selector(pushSettings), for: .touchUpInside)
-            return b
-        }()
+        let settingsBtn = UIButton(type: .system)
+        settingsBtn.setImage(UIImage(systemName: "gearshape")?.applyingSymbolConfiguration(
+            UIImage.SymbolConfiguration(pointSize: 16, weight: .regular)), for: .normal)
+        settingsBtn.tintColor = .fdText
+        settingsBtn.backgroundColor = UIColor.white.withAlphaComponent(0.6)
+        settingsBtn.layer.cornerRadius = 16
+        settingsBtn.clipsToBounds = true
+        settingsBtn.addTarget(self, action: #selector(pushSettings), for: .touchUpInside)
 
-        let editBtn: UIButton = {
-            var cfg = UIButton.Configuration.filled()
-            cfg.title = "编辑资料"
-            cfg.image = UIImage(systemName: "chevron.right")
-            cfg.imagePlacement = .trailing
-            cfg.imagePadding = 4
-            cfg.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 12, bottom: 5, trailing: 12)
-            cfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 9, weight: .semibold)
-            cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                var outgoing = incoming; outgoing.font = .fdMicro; return outgoing
-            }
-            cfg.baseForegroundColor = .fdText2
-            cfg.background.backgroundColor = UIColor.white.withAlphaComponent(0.65)
-            cfg.background.cornerRadius = 999
-            cfg.background.strokeColor = UIColor.fdBorder
-            cfg.background.strokeWidth = 1
-            let b = UIButton(configuration: cfg)
-            b.addTarget(self, action: #selector(pushProfile), for: .touchUpInside)
-            return b
-        }()
+        let profileBtn = makePillButton(
+            title: "个人信息",
+            systemImage: "chevron.right",
+            imageTrailing: true,
+            filled: false
+        )
+        profileBtn.addTarget(self, action: #selector(pushProfile), for: .touchUpInside)
 
-        let healthBtn: UIButton = {
-            var cfg = UIButton.Configuration.filled()
-            cfg.title = "健康档案"
-            cfg.image = UIImage(systemName: "heart")
-            cfg.imagePlacement = .leading
-            cfg.imagePadding = 6
-            cfg.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 14, bottom: 5, trailing: 14)
-            cfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
-            cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                var outgoing = incoming; outgoing.font = .fdMicroSemibold; return outgoing
-            }
-            cfg.baseForegroundColor = .white
-            cfg.background.backgroundColor = .fdPrimary
-            cfg.background.cornerRadius = 999
-            let b = UIButton(configuration: cfg)
-            b.addTarget(self, action: #selector(pushHealthRecord), for: .touchUpInside)
-            return b
-        }()
+        let healthBtn = makePillButton(
+            title: "健康档案",
+            systemImage: "heart",
+            imageTrailing: false,
+            filled: true
+        )
+        healthBtn.addTarget(self, action: #selector(pushHealthProfile), for: .touchUpInside)
 
-        [avatarView, nameLabel, settingsBtn, editBtn, healthBtn].forEach(header.addSubview)
+        let membershipCard = MeMembershipCardView()
+        membershipCard.tag = 300
+        membershipCard.configure(with: viewModel)
+        membershipCard.onCardTap = { [weak self] in self?.openMembershipCard() }
+        membershipCard.onPrimaryTap = { [weak self] in self?.openMembershipAction() }
+        membershipCard.onUpgradeTap = { [weak self] in self?.openMembershipAction() }
+        membershipCard.onBenefitsTap = { Router.shared.push("/me/membership") }
+
+        [avatarView, nameLabel, settingsBtn, profileBtn, healthBtn, membershipCard].forEach(header.addSubview)
+
         avatarView.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(52)
             make.leading.equalToSuperview().offset(contentPadding + 2)
@@ -208,177 +184,188 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         nameLabel.snp.makeConstraints { make in
             make.top.equalTo(avatarView).offset(4)
             make.leading.equalTo(avatarView.snp.trailing).offset(14)
+            make.trailing.lessThanOrEqualTo(settingsBtn.snp.leading).offset(-8)
         }
         settingsBtn.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(56)
             make.trailing.equalToSuperview().offset(-contentPadding)
             make.size.equalTo(32)
         }
-        editBtn.snp.makeConstraints { make in
-            make.top.equalTo(nameLabel.snp.bottom).offset(8)
+        profileBtn.snp.makeConstraints { make in
+            make.top.equalTo(nameLabel.snp.bottom).offset(10)
             make.leading.equalTo(nameLabel)
+            make.height.greaterThanOrEqualTo(28)
         }
         healthBtn.snp.makeConstraints { make in
-            make.top.equalTo(nameLabel.snp.bottom).offset(8)
-            make.leading.equalTo(editBtn.snp.trailing).offset(8)
+            make.centerY.equalTo(profileBtn)
+            make.leading.equalTo(profileBtn.snp.trailing).offset(8)
+            make.height.greaterThanOrEqualTo(28)
         }
-
-        // Membership Card
-        let membershipCard: UIView = {
-            let card = UIView()
-            card.backgroundColor = UIColor(hexString: "#FFF7F1")
-            card.layer.cornerRadius = 18
-            card.layer.borderWidth = 1
-            card.layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.2).cgColor
-            card.isUserInteractionEnabled = true
-            card.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(pushMembership)))
-
-            let titleLbl = UILabel()
-            titleLbl.text = "会员中心"; titleLbl.font = .fdCaption; titleLbl.textColor = .fdSubtext
-            let levelLbl = UILabel()
-            levelLbl.text = viewModel.membershipLevel; levelLbl.font = .fdCaptionSemibold; levelLbl.textColor = .fdPrimary
-            let moreLbl = UILabel()
-            moreLbl.text = "查看更多 ›"; moreLbl.font = .fdCaption; moreLbl.textColor = .fdSubtext
-
-            [titleLbl, levelLbl, moreLbl].forEach(card.addSubview)
-            titleLbl.snp.makeConstraints { make in make.top.leading.equalToSuperview().inset(16) }
-            levelLbl.snp.makeConstraints { make in
-                make.top.equalTo(titleLbl.snp.bottom).offset(4)
-                make.leading.equalToSuperview().inset(16)
-                make.bottom.equalToSuperview().offset(-16)
-            }
-            moreLbl.snp.makeConstraints { make in make.centerY.equalToSuperview(); make.trailing.equalToSuperview().offset(-16) }
-            return card
-        }()
-        header.addSubview(membershipCard)
         membershipCard.snp.makeConstraints { make in
-            make.top.equalTo(editBtn.snp.bottom).offset(20)
-            make.leading.trailing.equalToSuperview().inset(contentPadding).priority(750)
-        }
-
-        // Stats Strip
-        let statsContainer: UIView = {
-            let container = UIView()
-            container.backgroundColor = UIColor.white.withAlphaComponent(0.6)
-            container.layer.cornerRadius = 14
-            let stack = UIStackView(); stack.distribution = .fillEqually
-            container.addSubview(stack)
-            stack.snp.makeConstraints { make in
-                make.edges.equalToSuperview().inset(UIEdgeInsets(top: 9, left: 0, bottom: 7, right: 0)).priority(750)
-            }
-
-            let stats = viewModel.stats
-            for (i, stat) in stats.enumerated() {
-                let col = UIView()
-                let valLbl = UILabel()
-                valLbl.text = stat.value; valLbl.textColor = stat.accent ? .fdPrimary : .fdText
-                valLbl.font = .fdH2; valLbl.textAlignment = .center
-                let lblLbl = UILabel()
-                lblLbl.text = stat.label; lblLbl.font = .fdMicro; lblLbl.textColor = .fdSubtext; lblLbl.textAlignment = .center
-                col.addSubview(valLbl); col.addSubview(lblLbl)
-                valLbl.snp.makeConstraints { make in make.top.centerX.equalToSuperview() }
-                lblLbl.snp.makeConstraints { make in
-                    make.top.equalTo(valLbl.snp.bottom).offset(4); make.centerX.bottom.equalToSuperview()
-                }
-                if i < stats.count - 1 {
-                    let divider = UIView()
-                    divider.backgroundColor = UIColor.fdPrimary.withAlphaComponent(0.12)
-                    col.addSubview(divider)
-                    divider.snp.makeConstraints { make in
-                        make.trailing.centerY.equalToSuperview(); make.width.equalTo(1); make.height.equalTo(36)
-                    }
-                }
-                col.isUserInteractionEnabled = true; col.tag = i
-                col.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(statTapped(_:))))
-                stack.addArrangedSubview(col)
-            }
-            return container
-        }()
-        header.addSubview(statsContainer)
-        statsContainer.snp.makeConstraints { make in
-            make.top.equalTo(membershipCard.snp.bottom).offset(12)
-            make.leading.trailing.equalToSuperview().inset(contentPadding).priority(750)
-            make.bottom.equalToSuperview().offset(-16)
+            make.top.equalTo(profileBtn.snp.bottom).offset(16)
+            make.leading.trailing.equalToSuperview().inset(contentPadding)
+            make.bottom.equalToSuperview().offset(-8)
         }
 
         return header
     }
 
-    // MARK: - UITableViewDataSource
-
-    func numberOfSections(in tableView: UITableView) -> Int { 2 }
-
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        section == 0 ? 1 : viewModel.functionGroups[0].rows.count
+    private func makePillButton(title: String, systemImage: String, imageTrailing: Bool, filled: Bool) -> UIButton {
+        var cfg = UIButton.Configuration.filled()
+        cfg.title = title
+        cfg.image = UIImage(systemName: systemImage)
+        cfg.imagePlacement = imageTrailing ? .trailing : .leading
+        cfg.imagePadding = imageTrailing ? 4 : 6
+        cfg.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: imageTrailing ? 10 : 12, bottom: 4, trailing: imageTrailing ? 10 : 12)
+        cfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: imageTrailing ? 9 : 11, weight: .semibold)
+        cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = filled ? .fdMicroSemibold : .fdMicro
+            return outgoing
+        }
+        if filled {
+            cfg.baseForegroundColor = .white
+            cfg.background.backgroundColor = .fdPrimary
+        } else {
+            cfg.baseForegroundColor = .fdText2
+            cfg.background.backgroundColor = UIColor.white.withAlphaComponent(0.65)
+            cfg.background.strokeColor = .fdBorder
+            cfg.background.strokeWidth = 1
+        }
+        cfg.background.cornerRadius = 999
+        return UIButton(configuration: cfg)
     }
 
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        switch indexPath.section {
-        case 0:
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: MeServiceFulfillmentCell.reuseIdentifier, for: indexPath) as? MeServiceFulfillmentCell else {
-                return UITableViewCell()
-            }
-            cell.configure(stats: viewModel.fulfillmentStats.map {
-                ($0.value, $0.label, $0.accent)
-            }, services: viewModel.services.map {
-                ($0.icon, $0.iconBg, $0.iconColorHex, $0.name, $0.status, $0.statusType, $0.detail)
-            })
-            cell.onStatTap = { [weak self] idx in
-                let tabs = ["pending_ship", "in_progress", "completed", "pending_payment"]
-                guard idx < tabs.count else { return }
-                Router.shared.push("/orders", params: ["tab": tabs[idx]])
-            }
-            cell.onServiceTap = { Router.shared.push("/orders") }
-            return cell
+    private func buildLogoutFooter() -> UIView {
+        let wrap = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 72))
+        let btn = UIButton(type: .system)
+        btn.setTitle("退出登录", for: .normal)
+        btn.setTitleColor(.fdDanger, for: .normal)
+        btn.titleLabel?.font = .fdBody
+        btn.backgroundColor = .fdSurface
+        btn.layer.cornerRadius = 14
+        btn.addTarget(self, action: #selector(handleLogout), for: .touchUpInside)
+        wrap.addSubview(btn)
+        btn.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(12)
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(48)
+        }
+        return wrap
+    }
 
-        case 1:
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: MeFuncRowCell.reuseIdentifier, for: indexPath) as? MeFuncRowCell else {
-                return UITableViewCell()
-            }
-            let group = viewModel.functionGroups[indexPath.section - 1]
-            let row = group.rows[indexPath.row]
-            cell.configure(data: MeFuncRowCell.RowData(
-                icon: row.icon, color: row.color, title: row.label, detail: row.detail,
-                showDivider: indexPath.row < group.rows.count - 1
-            ))
-            cell.onTap = { [weak self] in
-                if !row.route.isEmpty { Router.shared.push(row.route) }
-            }
-            return cell
+    // MARK: - Table
 
-        default: return UITableViewCell()
+    func numberOfSections(in tableView: UITableView) -> Int { Section.allCases.count }
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        guard let s = Section(rawValue: section) else { return 0 }
+        switch s {
+        case .common: return 1
+        case .health: return viewModel.healthManagement.rows.count
+        case .settings: return viewModel.settingsSupport.rows.count
         }
     }
 
-    // MARK: - UITableViewDelegate
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let s = Section(rawValue: indexPath.section) else { return UITableViewCell() }
+        switch s {
+        case .common:
+            let cell = tableView.dequeueReusableCell(withIdentifier: MeCommonActionsCell.reuseIdentifier, for: indexPath) as! MeCommonActionsCell
+            cell.configure(actions: viewModel.commonActions)
+            cell.onActionTap = { route in Router.shared.push(route) }
+            return cell
+
+        case .health, .settings:
+            let cell = tableView.dequeueReusableCell(withIdentifier: MeFuncRowCell.reuseIdentifier, for: indexPath) as! MeFuncRowCell
+            let group = s == .health ? viewModel.healthManagement : viewModel.settingsSupport
+            let row = group.rows[indexPath.row]
+            cell.configure(data: MeFuncRowCell.RowData(
+                icon: row.icon,
+                color: row.color,
+                title: row.label,
+                detail: row.detail,
+                showDivider: indexPath.row < group.rows.count - 1,
+                showChevron: row.route != nil
+            ))
+            cell.onTap = {
+                guard let route = row.route, !route.isEmpty else { return }
+                Router.shared.push(route)
+            }
+            return cell
+        }
+    }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        indexPath.section == 1 ? 48 : UITableView.automaticDimension
+        guard let s = Section(rawValue: indexPath.section) else { return 48 }
+        switch s {
+        case .common:
+            let rows = Int(ceil(Double(viewModel.commonActions.count) / 4.0))
+            return CGFloat(10 + 12 + rows * 72 + max(0, rows - 1) * 10)
+        case .health, .settings:
+            return 48
+        }
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        let titles = ["我的订单", "健康管理"]
-        guard section < titles.count else { return nil }
-        let container = UIView(); container.backgroundColor = .fdBg
-        let titleView = SectionTitleView(title: titles[section], more: section == 0 ? "全部订单 ›" : nil)
-        titleView.onMoreTapped = { Router.shared.push("/orders") }
+        guard let s = Section(rawValue: section) else { return nil }
+        let title: String
+        switch s {
+        case .common: title = "常用功能"
+        case .health: title = viewModel.healthManagement.title
+        case .settings: title = viewModel.settingsSupport.title
+        }
+        let container = UIView()
+        container.backgroundColor = .fdBg
+        let titleView = SectionTitleView(title: title, more: nil)
         container.addSubview(titleView)
         titleView.snp.makeConstraints { $0.leading.trailing.equalToSuperview().inset(16); $0.centerY.equalToSuperview() }
         return container
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat { 44 }
-    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat { 0.01 }
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat { 8 }
+    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        let v = UIView(); v.backgroundColor = .fdBg; return v
+    }
 
     // MARK: - Actions
 
     @objc private func pushSettings() { Router.shared.push("/me/settings") }
     @objc private func pushProfile() { Router.shared.push("/me/profile") }
-    @objc private func pushMembership() { Router.shared.push("/me/membership") }
-    @objc private func pushHealthRecord() { Router.shared.push("/health/record") }
+    @objc private func pushHealthProfile() { Router.shared.push("/me/health-profile") }
 
-    @objc private func statTapped(_ gesture: UITapGestureRecognizer) {
-        guard let idx = gesture.view?.tag, idx < viewModel.stats.count else { return }
-        Router.shared.push(viewModel.stats[idx].route)
+    private func openMembershipCard() {
+        switch viewModel.membership.status {
+        case .active, .expiring:
+            Router.shared.push("/me/membership")
+        case .notOpened, .expired:
+            openMembershipAction()
+        }
+    }
+
+    private func openMembershipAction() {
+        Router.shared.push("/me/membership/open")
+    }
+
+    @objc private func handleLogout() {
+        let alert = UIAlertController(
+            title: "确认退出登录",
+            message: "退出后需要重新登录才能使用富德健康。",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        alert.addAction(UIAlertAction(title: "退出登录", style: .destructive) { _ in
+            Task {
+                await LoginService.shared.logout()
+                LoginService.shared.clearSession()
+            }
+            IMService.shared.clear()
+            ServiceHubCacheService.shared.clear()
+            RongCloudManager.shared.disconnect()
+            UserManager.shared.clear()
+            Router.shared.setRoot("/login")
+        })
+        present(alert, animated: true)
     }
 }

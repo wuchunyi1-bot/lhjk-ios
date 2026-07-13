@@ -14,6 +14,10 @@ final class HospitalPackageService {
 
     static let shared = HospitalPackageService()
 
+    /// 临时医院 id；机构列表 API 接入后改为服务端下发
+    /// Apifox 详情接口要求必传 `hospitalId`
+    static let temporaryHospitalId = "1372444113118564352"
+
     private init() {}
 
     // MARK: - 推荐服务（按类目）
@@ -35,6 +39,8 @@ final class HospitalPackageService {
         ]
         if let hospitalId = Self.apiHospitalId(hospitalId) {
             params["hospitalId"] = hospitalId
+        } else {
+            params["hospitalId"] = Self.temporaryHospitalId
         }
 
         return try await requestPackages(params: params)
@@ -79,6 +85,8 @@ final class HospitalPackageService {
         ]
         if let hospitalId = Self.apiHospitalId(hospitalId) {
             params["hospitalId"] = hospitalId
+        } else {
+            params["hospitalId"] = Self.temporaryHospitalId
         }
 
         return try await requestPackages(params: params)
@@ -98,6 +106,37 @@ final class HospitalPackageService {
             pageSize: pageSize
         )
         return mapPackageItems(page.records)
+    }
+
+    // MARK: - 套餐详情
+
+    /// `GET /v1/hospitalPackage/getHospitalPackageDetail`
+    /// - Parameters:
+    ///   - packageId: 列表接口返回的商品 id
+    ///   - hospitalId: 默认临时常量；机构 API 接入后传入真实值
+    func fetchPackageDetail(
+        packageId: String,
+        hospitalId: String? = nil
+    ) async throws -> ServicePackageDetail {
+        guard let pkgId = Self.apiHospitalId(packageId) else {
+            throw HospitalPackageServiceError.invalidPackageId
+        }
+        let hid = Self.apiHospitalId(hospitalId) ?? Self.temporaryHospitalId
+        let response: APIResponse<HospitalPackageDetailBO> = try await APIManager.shared.getAsync(
+            path: "/v1/hospitalPackage/getHospitalPackageDetail",
+            parameters: [
+                "hospitalId": hid,
+                "packageId": pkgId,
+            ],
+            responseType: APIResponse<HospitalPackageDetailBO>.self
+        )
+        guard response.isSuccess else {
+            throw HospitalPackageServiceError.requestFailed(response.msg ?? "获取套餐详情失败")
+        }
+        guard let data = response.data else {
+            throw HospitalPackageServiceError.requestFailed("套餐详情为空")
+        }
+        return HospitalPackageDetailMapper.toServicePackageDetail(data, packageId: pkgId)
     }
 
     // MARK: - Private
@@ -139,17 +178,24 @@ final class HospitalPackageService {
     static func apiHospitalId(_ value: String?) -> String? {
         ServiceCatalogService.validApiHospitalId(value)
     }
+
+    /// 列表无机构 id 时使用临时 hospitalId，与详情接口保持一致
+    static func resolvedHospitalId(_ value: String?) -> String {
+        apiHospitalId(value) ?? temporaryHospitalId
+    }
 }
 
 enum HospitalPackageServiceError: LocalizedError {
     case missingPackageMainCategory
     case missingSearchKeyword
+    case invalidPackageId
     case requestFailed(String)
 
     var errorDescription: String? {
         switch self {
         case .missingPackageMainCategory: return "缺少 packageMainCategory"
         case .missingSearchKeyword: return "请输入搜索关键字"
+        case .invalidPackageId: return "套餐 id 无效"
         case .requestFailed(let message): return message
         }
     }

@@ -22,6 +22,7 @@ enum MyRoutes {
 
         // 占位页面（后续迭代实现）
         r.register(path: "/me/membership")  { _ in MembershipViewController() }
+        r.register(path: "/me/membership/open") { _ in PlaceholderViewController(title: "开通会员") }
         r.register(path: "/me/points")      { _ in PointsViewController() }
         r.register(path: "/me/family")      { _ in FamilyViewController() }
         r.register(path: "/me/medical-reports") { _ in PlaceholderViewController(title: "体检报告单") }
@@ -50,5 +51,9 @@ enum MyRoutes {
             return OrderListViewController(initialTab: tab)
         }
         r.register(path: "/orders/detail")  { params in PlaceholderViewController(title: "订单详情: \(params["id"] as? String ?? "")") }
+        r.register(path: "/orders/confirm") { params in
+            let id = params["id"] as? String ?? ""
+            return PlaceholderViewController(title: "确认订单: \(id)")
+        }
     }
 }

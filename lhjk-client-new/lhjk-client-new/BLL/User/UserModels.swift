@@ -109,52 +109,39 @@ struct SUsers: Codable {
     let modifyId: String?
 }
 
-// MARK: - Onboarding 提交模型 (Encodable)
+// MARK: - Onboarding / 资料提交模型 (Encodable)
 
-/// Onboarding 完成后提交的用户数据子集
+/// 提交用户资料子集 — `POST /v1/users/updateCurrentProfile`
 ///
-/// 对应 `POST /v1/users/updateCurrentProfile` 请求体
-/// 所有字段均为 Optional，按需发送非空值
+/// 所有字段均为 Optional（默认 nil），按需发送非空值
 struct SUsersOnboardingPayload: Encodable {
-    /// 手机号（当前登录账号）
-    var mobile: String?
-    /// 中文姓名（对应 `chineseName`）
-    var chineseName: String?
+    var mobile: String? = nil
+    var chineseName: String? = nil
     /// 性别："1"=男, "2"=女
-    var sex: String?
-    /// 生日，"yyyy-MM-dd" 格式
-    var birthday: String?
-    /// 用户昵称
-    var nickname: String?
-    /// 省份（籍贯）
-    var province: String?
-    /// 城市（籍贯）
-    var cities: String?
-    /// 年龄（自动计算）
-    var age: Int?
-    /// 既往病史，逗号分隔
-    var medicalHistory: String?
-    /// 吸烟情况
-    var smokingStatus: String?
-    /// 运动频率
-    var exerciseFrequency: String?
-    /// 头像 URL
-    var imageUrl: String?
-
-    enum CodingKeys: String, CodingKey {
-        case mobile
-        case chineseName
-        case sex
-        case birthday
-        case nickname
-        case province
-        case cities
-        case age
-        case medicalHistory
-        case smokingStatus
-        case exerciseFrequency
-        case imageUrl
-    }
+    var sex: String? = nil
+    var birthday: String? = nil
+    var nickname: String? = nil
+    var email: String? = nil
+    /// 职业（对应 `career`）
+    var career: String? = nil
+    var education: String? = nil
+    var idType: Int? = nil
+    var idNumber: String? = nil
+    var nationality: String? = nil
+    var ethnic: String? = nil
+    /// 籍贯省
+    var province: String? = nil
+    /// 籍贯市
+    var cities: String? = nil
+    var addressProvince: String? = nil
+    var addressCity: String? = nil
+    var addressArea: String? = nil
+    var address: String? = nil
+    var age: Int? = nil
+    var medicalHistory: String? = nil
+    var smokingStatus: String? = nil
+    var exerciseFrequency: String? = nil
+    var imageUrl: String? = nil
 }
 
 // MARK: - 密码重置 & 修改 DTO

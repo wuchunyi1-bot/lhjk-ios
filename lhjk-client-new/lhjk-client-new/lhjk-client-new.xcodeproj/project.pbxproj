@@ -28,6 +28,10 @@
 		8E749A7845EBA8C07946E821 /* Router.swift in Sources */ = {isa = PBXBuildFile; fileRef = 595A3F9A5793396375B1815B /* Router.swift */; };
 		9F5D324E0D90EB682A0A77B4 /* OAuthCredential.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */; };
 		A3AADC4D6DF2A11DC4DA077F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7A38C4AFEC723E4B6C12D675 /* LaunchScreen.storyboard */; };
+		A54CBD3F30049CB100D581AE /* CartModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD3D30049CB100D581AE /* CartModels.swift */; };
+		A54CBD4030049CB100D581AE /* CartService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD3E30049CB100D581AE /* CartService.swift */; };
+		A54CBD4530049CD600D581AE /* ServiceCartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD4130049CD600D581AE /* ServiceCartViewModel.swift */; };
+		A54CBD4630049CD600D581AE /* ServiceCartViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD4330049CD600D581AE /* ServiceCartViewController.swift */; };
 		A576A2202FE8E22E004F6070 /* ECGSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21E2FE8E22E004F6070 /* ECGSimulator.swift */; };
 		A576A2212FE8E22E004F6070 /* ECGChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21C2FE8E22E004F6070 /* ECGChartView.swift */; };
 		A576A2222FE8E22E004F6070 /* ECGDataBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21D2FE8E22E004F6070 /* ECGDataBuffer.swift */; };
@@ -229,6 +233,15 @@
 		A5A6F57F2FFF8F300065C921 /* TeamBannerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F57D2FFF8F300065C921 /* TeamBannerCell.swift */; };
 		A5A6F5842FFF927B0065C921 /* MatrixGridCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5822FFF927B0065C921 /* MatrixGridCell.swift */; };
 		A5A6F5882FFF9C5C0065C921 /* ServiceHubCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5872FFF9C5C0065C921 /* ServiceHubCacheService.swift */; };
+		A5ACE2313000C24600056C52 /* MeCommonActionsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2303000C24600056C52 /* MeCommonActionsCell.swift */; };
+		A5ACE2333000C25200056C52 /* MeMembershipCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2323000C25200056C52 /* MeMembershipCardView.swift */; };
+		A5ACE2363000CBE000056C52 /* MallProductCategoryCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2343000CBE000056C52 /* MallProductCategoryCopy.swift */; };
+		A5ACE2373000CBE000056C52 /* MallProductDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2353000CBE000056C52 /* MallProductDetailViewController.swift */; };
+		A5ACE23A3000CC8A00056C52 /* ProfileFieldEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2383000CC8A00056C52 /* ProfileFieldEditorSheet.swift */; };
+		A5ACE2403000D5C200056C52 /* ServicePackageDetailCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE23D3000D5C200056C52 /* ServicePackageDetailCopy.swift */; };
+		A5ACE2413000D5C200056C52 /* ServicePackageDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE23E3000D5C200056C52 /* ServicePackageDetailViewController.swift */; };
+		A5ACE2433000F56200056C52 /* HospitalPackageDetailModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2423000F56200056C52 /* HospitalPackageDetailModels.swift */; };
+		A5ACE2463000F57B00056C52 /* ServicePackageDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2443000F57B00056C52 /* ServicePackageDetailViewModel.swift */; };
 		A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */; };
 		A952E20047557E6F1D7EE0AF /* Pods_lhjk_client_new.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */; };
 		A97FF7EF73364502F99C2EC4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FACC28499C23F3853EBBF10 /* AppDelegate.swift */; };
@@ -275,6 +288,10 @@
 		7FFA483EDF37CE2D4BEAFA2C /* BaseViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BaseViewController.swift; path = Other/Common/Base/BaseViewController.swift; sourceTree = "<group>"; };
 		840D488A2D621EED67F49634 /* PLProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PLProtocol.swift; path = Other/Common/Protocols/PLProtocol.swift; sourceTree = "<group>"; };
 		929B2C07064774594EB5F7EC /* IMService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = IMService.swift; path = BLL/Message/IMService.swift; sourceTree = "<group>"; };
+		A54CBD3D30049CB100D581AE /* CartModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CartModels.swift; path = BLL/Service/CartModels.swift; sourceTree = "<group>"; };
+		A54CBD3E30049CB100D581AE /* CartService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CartService.swift; path = BLL/Service/CartService.swift; sourceTree = "<group>"; };
+		A54CBD4130049CD600D581AE /* ServiceCartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceCartViewModel.swift; sourceTree = "<group>"; };
+		A54CBD4330049CD600D581AE /* ServiceCartViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceCartViewController.swift; sourceTree = "<group>"; };
 		A576A21C2FE8E22E004F6070 /* ECGChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGChartView.swift; sourceTree = "<group>"; };
 		A576A21D2FE8E22E004F6070 /* ECGDataBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGDataBuffer.swift; sourceTree = "<group>"; };
 		A576A21E2FE8E22E004F6070 /* ECGSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGSimulator.swift; sourceTree = "<group>"; };
@@ -476,6 +493,15 @@
 		A5A6F57D2FFF8F300065C921 /* TeamBannerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamBannerCell.swift; sourceTree = "<group>"; };
 		A5A6F5822FFF927B0065C921 /* MatrixGridCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixGridCell.swift; sourceTree = "<group>"; };
 		A5A6F5872FFF9C5C0065C921 /* ServiceHubCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ServiceHubCacheService.swift; path = BLL/Service/ServiceHubCacheService.swift; sourceTree = "<group>"; };
+		A5ACE2303000C24600056C52 /* MeCommonActionsCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeCommonActionsCell.swift; sourceTree = "<group>"; };
+		A5ACE2323000C25200056C52 /* MeMembershipCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeMembershipCardView.swift; sourceTree = "<group>"; };
+		A5ACE2343000CBE000056C52 /* MallProductCategoryCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MallProductCategoryCopy.swift; sourceTree = "<group>"; };
+		A5ACE2353000CBE000056C52 /* MallProductDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MallProductDetailViewController.swift; sourceTree = "<group>"; };
+		A5ACE2383000CC8A00056C52 /* ProfileFieldEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileFieldEditorSheet.swift; sourceTree = "<group>"; };
+		A5ACE23D3000D5C200056C52 /* ServicePackageDetailCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicePackageDetailCopy.swift; sourceTree = "<group>"; };
+		A5ACE23E3000D5C200056C52 /* ServicePackageDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicePackageDetailViewController.swift; sourceTree = "<group>"; };
+		A5ACE2423000F56200056C52 /* HospitalPackageDetailModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HospitalPackageDetailModels.swift; path = BLL/Service/HospitalPackageDetailModels.swift; sourceTree = "<group>"; };
+		A5ACE2443000F57B00056C52 /* ServicePackageDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicePackageDetailViewModel.swift; sourceTree = "<group>"; };
 		A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIFont+Funde.swift"; sourceTree = "<group>"; };
 		A8B0D2D90AC6467582FAAE9C /* MessageRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MessageRoutes.swift; path = BLL/Message/MessageRoutes.swift; sourceTree = "<group>"; };
 		AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OAuthCredential.swift; path = DAL/Networking/OAuthCredential.swift; sourceTree = "<group>"; };
@@ -592,6 +618,23 @@
 				E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A54CBD4230049CD600D581AE /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A54CBD4130049CD600D581AE /* ServiceCartViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A54CBD4430049CD600D581AE /* Cart */ = {
+			isa = PBXGroup;
+			children = (
+				A54CBD4230049CD600D581AE /* ViewModels */,
+				A54CBD4330049CD600D581AE /* ServiceCartViewController.swift */,
+			);
+			path = Cart;
 			sourceTree = "<group>";
 		};
 		A576A21F2FE8E22E004F6070 /* ECG */ = {
@@ -866,6 +909,7 @@
 		A590FC6C2FEA91170056EF52 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
+				A5ACE2303000C24600056C52 /* MeCommonActionsCell.swift */,
 				A590FC682FEA91170056EF52 /* MeFuncRowCell.swift */,
 				A590FC692FEA91170056EF52 /* MeMembershipCardCell.swift */,
 				A590FC6A2FEA91170056EF52 /* MeServiceFulfillmentCell.swift */,
@@ -877,6 +921,7 @@
 		A590FC702FEA91170056EF52 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A5ACE2323000C25200056C52 /* MeMembershipCardView.swift */,
 				A590FC6D2FEA91170056EF52 /* FuncRowView.swift */,
 				A590FC6E2FEA91170056EF52 /* SectionTitleView.swift */,
 				A590FC6F2FEA91170056EF52 /* StageMetricsCardView.swift */,
@@ -953,6 +998,7 @@
 		A590FC802FEA91170056EF52 /* Profile */ = {
 			isa = PBXGroup;
 			children = (
+				A5ACE2393000CC8A00056C52 /* Components */,
 				A590FC7F2FEA91170056EF52 /* ProfileViewController.swift */,
 			);
 			path = Profile;
@@ -1099,6 +1145,8 @@
 		A590FCA22FEA91170056EF52 /* HealthMall */ = {
 			isa = PBXGroup;
 			children = (
+				A5ACE2343000CBE000056C52 /* MallProductCategoryCopy.swift */,
+				A5ACE2353000CBE000056C52 /* MallProductDetailViewController.swift */,
 				A590FC9F2FEA91170056EF52 /* Cells */,
 				A590FCA02FEA91170056EF52 /* Components */,
 				A590FCA12FEA91170056EF52 /* HealthMallViewController.swift */,
@@ -1164,6 +1212,8 @@
 		A590FCAC2FEA91170056EF52 /* Service */ = {
 			isa = PBXGroup;
 			children = (
+				A54CBD4430049CD600D581AE /* Cart */,
+				A5ACE23F3000D5C200056C52 /* ServicePackageDetail */,
 				A5A6F5832FFF927B0065C921 /* Cells */,
 				A5A6F4D42FFF7AE80065C921 /* Components */,
 				A5A6F4CD2FFF7ACB0065C921 /* PackageSearch */,
@@ -1485,6 +1535,32 @@
 			path = Cells;
 			sourceTree = "<group>";
 		};
+		A5ACE2393000CC8A00056C52 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A5ACE2383000CC8A00056C52 /* ProfileFieldEditorSheet.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A5ACE23F3000D5C200056C52 /* ServicePackageDetail */ = {
+			isa = PBXGroup;
+			children = (
+				A5ACE2453000F57B00056C52 /* ViewModels */,
+				A5ACE23D3000D5C200056C52 /* ServicePackageDetailCopy.swift */,
+				A5ACE23E3000D5C200056C52 /* ServicePackageDetailViewController.swift */,
+			);
+			path = ServicePackageDetail;
+			sourceTree = "<group>";
+		};
+		A5ACE2453000F57B00056C52 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A5ACE2443000F57B00056C52 /* ServicePackageDetailViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
 		A5BFCA372FE38EF1008DA1DF /* UIFont */ = {
 			isa = PBXGroup;
 			children = (
@@ -1543,6 +1619,9 @@
 		C4193BC7FCD37A9D67D93F74 /* Service */ = {
 			isa = PBXGroup;
 			children = (
+				A54CBD3D30049CB100D581AE /* CartModels.swift */,
+				A54CBD3E30049CB100D581AE /* CartService.swift */,
+				A5ACE2423000F56200056C52 /* HospitalPackageDetailModels.swift */,
 				A5A6F5872FFF9C5C0065C921 /* ServiceHubCacheService.swift */,
 				A5A6F4A92FFF7A720065C921 /* ColumnContentModels.swift */,
 				A5A6F4AA2FFF7A720065C921 /* ColumnContentService.swift */,
@@ -1856,6 +1935,8 @@
 				A5917D202FDFD7FE00878961 /* LoginService.swift in Sources */,
 				A5917D212FDFD7FE00878961 /* LoginModels.swift in Sources */,
 				A5917D222FDFD7FE00878961 /* LoginServiceProtocol.swift in Sources */,
+				A5ACE2363000CBE000056C52 /* MallProductCategoryCopy.swift in Sources */,
+				A5ACE2373000CBE000056C52 /* MallProductDetailViewController.swift in Sources */,
 				0EE2E6B7960C05819866D0E1 /* BluetoothManager.swift in Sources */,
 				5E7531B1805BDFC74CD1F8CB /* BluetoothModels.swift in Sources */,
 				1694DDA9C65C92BEE8B3AA7B /* Conversation.swift in Sources */,
@@ -1865,12 +1946,14 @@
 				A5A6F4B42FFF7A720065C921 /* ServiceRecommendModels.swift in Sources */,
 				A5A6F4B52FFF7A720065C921 /* ColumnContentService.swift in Sources */,
 				A5A6F4B62FFF7A720065C921 /* HospitalPackageService.swift in Sources */,
+				A5ACE23A3000CC8A00056C52 /* ProfileFieldEditorSheet.swift in Sources */,
 				A5A6F4B72FFF7A720065C921 /* ServiceModels.swift in Sources */,
 				A5A6F4C62FFF7AA20065C921 /* AppContainer.swift in Sources */,
 				A5A6F4B82FFF7A720065C921 /* OrderService.swift in Sources */,
 				A5A6F4B92FFF7A720065C921 /* ServiceCatalogService.swift in Sources */,
 				A5A6F4BA2FFF7A720065C921 /* DictionaryModels.swift in Sources */,
 				A5A6F4BB2FFF7A720065C921 /* DictionaryService.swift in Sources */,
+				A5ACE2433000F56200056C52 /* HospitalPackageDetailModels.swift in Sources */,
 				A5A6F4BC2FFF7A720065C921 /* ColumnContentModels.swift in Sources */,
 				A590FB1C2FEA2F6E0056EF52 /* UserModels.swift in Sources */,
 				A590FB1D2FEA2F6E0056EF52 /* UserRoutes.swift in Sources */,
@@ -1887,6 +1970,8 @@
 				1406F12781B85941BC234E2B /* OAuthAuthenticator.swift in Sources */,
 				9F5D324E0D90EB682A0A77B4 /* OAuthCredential.swift in Sources */,
 				D0C0F9A29B4ED9D6FB4A6C01 /* AlipayChannel.swift in Sources */,
+				A54CBD4530049CD600D581AE /* ServiceCartViewModel.swift in Sources */,
+				A54CBD4630049CD600D581AE /* ServiceCartViewController.swift in Sources */,
 				A590FCAD2FEA91170056EF52 /* HealthRecordViewController.swift in Sources */,
 				A590FCAE2FEA91170056EF52 /* MonitoringPlanViewController.swift in Sources */,
 				A590FCAF2FEA91170056EF52 /* PaymentViewController.swift in Sources */,
@@ -1909,6 +1994,8 @@
 				A5A6F5262FFF7CF40065C921 /* OSSManager.swift in Sources */,
 				A5A6F5272FFF7CF40065C921 /* OSSModels.swift in Sources */,
 				A590FCBC2FEA91170056EF52 /* HomeTeamCardCell.swift in Sources */,
+				A54CBD3F30049CB100D581AE /* CartModels.swift in Sources */,
+				A54CBD4030049CB100D581AE /* CartService.swift in Sources */,
 				A590FCBD2FEA91170056EF52 /* HealthRecordUserInfoCell.swift in Sources */,
 				A590FCBE2FEA91170056EF52 /* AccessibilitySettingsViewController.swift in Sources */,
 				A590FCBF2FEA91170056EF52 /* MeFuncRowCell.swift in Sources */,
@@ -1937,6 +2024,7 @@
 				A5A6F4E92FFF7B7E0065C921 /* NotificationsViewController.swift in Sources */,
 				A5A6F4EA2FFF7B7E0065C921 /* MessagesViewController.swift in Sources */,
 				A5A6F4EB2FFF7B7E0065C921 /* NotificationListViewController.swift in Sources */,
+				A5ACE2333000C25200056C52 /* MeMembershipCardView.swift in Sources */,
 				A590FCD52FEA91170056EF52 /* HealthRecordMetricRowCell.swift in Sources */,
 				A590FCD62FEA91170056EF52 /* MyViewController.swift in Sources */,
 				A590FCD72FEA91170056EF52 /* WeightViewController.swift in Sources */,
@@ -1951,6 +2039,7 @@
 				A5A6F5692FFF8E5D0065C921 /* ProgressBadgeCell.swift in Sources */,
 				A5A6F4CE2FFF7ACB0065C921 /* ServicePackageSearchViewController.swift in Sources */,
 				A590FCDC2FEA91170056EF52 /* MetricsViewController.swift in Sources */,
+				A5ACE2313000C24600056C52 /* MeCommonActionsCell.swift in Sources */,
 				A590FCDD2FEA91170056EF52 /* MetricCardCell.swift in Sources */,
 				A5A6F4E12FFF7B3D0065C921 /* ChangePhoneViewController.swift in Sources */,
 				A5A6F4E22FFF7B3D0065C921 /* CancelAccountViewController.swift in Sources */,
@@ -1982,6 +2071,8 @@
 				A5A6F5202FFF7C700065C921 /* VoucherListViewModel.swift in Sources */,
 				A590FCE52FEA91170056EF52 /* BodyFigureView.swift in Sources */,
 				A590FCE62FEA91170056EF52 /* BrandHeaderView.swift in Sources */,
+				A5ACE2403000D5C200056C52 /* ServicePackageDetailCopy.swift in Sources */,
+				A5ACE2413000D5C200056C52 /* ServicePackageDetailViewController.swift in Sources */,
 				A590FCE72FEA91170056EF52 /* AppointmentsViewController.swift in Sources */,
 				A590FCE82FEA91170056EF52 /* HeartRateViewController.swift in Sources */,
 				A590FCE92FEA91170056EF52 /* HomeTaskCardCell.swift in Sources */,
@@ -2061,6 +2152,7 @@
 				A5917CE22FDFA7C000878961 /* HomeRoutes.swift in Sources */,
 				A57D2F1E2FDC0647002E43BA /* MyRoutes.swift in Sources */,
 				A5A6F4FF2FFF7BBD0065C921 /* SysNotifyCell.swift in Sources */,
+				A5ACE2463000F57B00056C52 /* ServicePackageDetailViewModel.swift in Sources */,
 				A5A6F5352FFF7D5F0065C921 /* FileManager.swift in Sources */,
 				A5A6F5432FFF7E720065C921 /* ConversationListViewModel.swift in Sources */,
 				A5A6F5002FFF7BBD0065C921 /* ImageBubbleCell.swift in Sources */,
