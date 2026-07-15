@@ -14,6 +14,7 @@ final class WebViewController: BaseViewController {
         let wv = WKWebView(frame: .zero, configuration: config)
         wv.navigationDelegate = self
         wv.allowsBackForwardNavigationGestures = true
+        wv.scrollView.contentInsetAdjustmentBehavior = .never
         return wv
     }()
 
@@ -57,6 +58,11 @@ final class WebViewController: BaseViewController {
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+
     override func setupUI() {
         view.backgroundColor = .fdBg
 
@@ -64,7 +70,7 @@ final class WebViewController: BaseViewController {
         view.addSubview(progressView)
         view.addSubview(indicator)
 
-        webView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        webView.snp.makeConstraints { $0.edges.equalTo(view.safeAreaLayoutGuide) }
         progressView.snp.makeConstraints { make in
             make.top.leading.trailing.equalTo(view.safeAreaLayoutGuide)
             make.height.equalTo(2)

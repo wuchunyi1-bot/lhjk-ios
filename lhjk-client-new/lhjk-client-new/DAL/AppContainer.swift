@@ -58,10 +58,6 @@ final class AppContainer {
     private(set) lazy var cartService: CartService = .shared
     private(set) lazy var orderService: OrderService = .shared
     private(set) lazy var paymentService: PaymentService = .shared
-    private(set) lazy var bloodPressureService: BloodPressureService = .shared
-    private(set) lazy var bloodSugarService: BloodSugarService = .shared
-    private(set) lazy var weightService: WeightService = .shared
-    private(set) lazy var exerciseFoodService: ExerciseFoodService = .shared
     // MARK: - 存储
 
     private(set) lazy var userDefaultsManager: UserDefaultsManager = .shared

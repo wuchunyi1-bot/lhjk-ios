@@ -1,2 +1,3 @@
 name: weight-h5-migration
-status: in-progress
+status: superseded
+superseded_by: health-metrics-h5-migration

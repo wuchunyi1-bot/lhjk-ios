@@ -50,10 +50,16 @@ final class MetricsViewController: BaseViewController, UICollectionViewDataSourc
         title = "体征监测"
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+
     override func setupUI() {
         view.backgroundColor = .fdBg
         view.addSubview(collectionView)
-        collectionView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        collectionView.contentInsetAdjustmentBehavior = .never
+        collectionView.snp.makeConstraints { $0.edges.equalTo(view.safeAreaLayoutGuide) }
     }
 
     // MARK: - UICollectionViewDataSource

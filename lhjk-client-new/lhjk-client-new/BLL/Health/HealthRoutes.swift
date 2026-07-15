@@ -3,6 +3,14 @@ import Foundation
 /// 健康模块路由注册
 enum HealthRoutes {
 
+    /// 兼容历史深链的子路径；均打开同一 H5 入口，由 H5 处理内部导航
+    private static let metricSubPaths: [String: [String]] = [
+        "blood-pressure": ["manual", "history", "service", "detail"],
+        "blood-sugar": ["manual", "history", "service", "detail"],
+        "weight": ["manual", "history", "service", "detail"],
+        "exercise": ["home", "add-diet", "add-motion", "search"],
+    ]
+
     static func register() {
         let r = Router.shared
 
@@ -22,90 +30,46 @@ enum HealthRoutes {
         r.register(path: "/health/assessment/report") { _ in HealthReportViewController() }
         r.register(path: "/health/assessment/risk") { _ in PlaceholderViewController(title: "风险评估") }
 
-        // 已实现的指标详情页
-        // Hub：Funde 风格展示页 + Angel API
-        r.register(path: "/health/metrics/blood-pressure") { _ in BloodPressureViewController() }
-        r.register(path: "/health/metrics/blood-pressure/manual") { _ in BloodPressureManualViewController() }
-        r.register(path: "/health/metrics/blood-pressure/history") { _ in BloodPressureHistoryViewController() }
-        r.register(path: "/health/metrics/blood-pressure/service") { _ in BloodPressureServiceViewController() }
-        r.register(path: "/health/metrics/blood-pressure/detail") { params in
-            let monitorId = params["monitorId"] as? String
-            return BloodPressureDetailViewController(monitorId: monitorId)
-        }
-        r.register(path: "/health/metrics/blood-sugar") { _ in BloodSugarViewController() }
-        r.register(path: "/health/metrics/blood-sugar/manual") { _ in BloodSugarManualViewController() }
-        r.register(path: "/health/metrics/blood-sugar/history") { _ in BloodSugarHistoryViewController() }
-        r.register(path: "/health/metrics/blood-sugar/service") { _ in BloodSugarServiceViewController() }
-        r.register(path: "/health/metrics/blood-sugar/detail") { params in
-            let monitorId = params["monitorId"] as? String
-            let sugarId = params["sugarId"] as? String
-            return BloodSugarDetailViewController(monitorId: monitorId, sugarId: sugarId)
-        }
-        // 体重模块已整体接入 H5，App 不再承载录入/展示/详情原生页
-        // 相关原生代码暂保留，仅路由切换至 WebView
-        r.register(path: "/health/metrics/weight") { _ in
-            WebViewController(urlString: H5Config.weightPageURL.absoluteString, title: "体重")
-        }
-        r.register(path: "/health/metrics/weight/manual") { _ in
-            WebViewController(urlString: H5Config.weightPageURL.absoluteString, title: "体重")
-        }
-        r.register(path: "/health/metrics/weight/history") { _ in
-            WebViewController(urlString: H5Config.weightPageURL.absoluteString, title: "体重")
-        }
-        r.register(path: "/health/metrics/weight/service") { _ in
-            WebViewController(urlString: H5Config.weightPageURL.absoluteString, title: "体重")
-        }
-        r.register(path: "/health/metrics/weight/detail") { _ in
-            WebViewController(urlString: H5Config.weightPageURL.absoluteString, title: "体重")
-        }
-        r.register(path: "/health/metrics/heart-rate")     { _ in HeartRateViewController() }
+        registerAllMetricH5Routes(r)
+    }
 
-        r.register(path: "/health/metrics/sleep") { _ in SleepViewController() }
+    // MARK: - 体征监测 H5
 
-        r.register(path: "/health/metrics/spo2")   { _ in SpO2ViewController() }
-        r.register(path: "/health/metrics/ecg")    { _ in EcgViewController() }
-        r.register(path: "/health/metrics/fundus") { _ in FundusViewController() }
-        r.register(path: "/health/metrics/exercise") { _ in ExerciseFoodViewController() }
-        r.register(path: "/health/metrics/exercise/home") { _ in ExerciseFoodHomeViewController() }
-        r.register(path: "/health/metrics/exercise/add-diet") { params in
-            let timeType = Self.intParam(params, key: "timeType")
-            let date = params["date"] as? String ?? Self.todayDateString()
-            return ExerciseFoodAddDietViewController(timeType: timeType, dateString: date)
+    private static func registerAllMetricH5Routes(_ r: Router) {
+        for (key, title) in H5Config.metricKeys {
+            registerMetricH5(r, key: key, title: title)
+            for suffix in metricSubPaths[key] ?? [] {
+                registerMetricH5(r, key: key, title: title, pathSuffix: suffix)
+            }
         }
-        r.register(path: "/health/metrics/exercise/add-motion") { params in
-            let date = params["date"] as? String ?? Self.todayDateString()
-            return ExerciseFoodAddMotionViewController(dateString: date)
-        }
-        r.register(path: "/health/metrics/exercise/search") { params in
-            let type = Self.intParam(params, key: "type") ?? ExerciseFoodConstants.definitionTypeFood
-            return ExerciseFoodSearchViewController(type: type)
-        }
-        r.register(path: "/health/metrics/digestive") { _ in DigestiveViewController() }
 
         r.register(path: "/health/metrics/add") { params in
             let key = params["key"] as? String ?? ""
-            if key == "blood-pressure" {
-                return BloodPressureManualViewController()
-            }
-            if key == "blood-sugar" {
-                return BloodSugarManualViewController()
-            }
-            if key == "weight" {
-                return WebViewController(urlString: H5Config.weightPageURL.absoluteString, title: "体重")
-            }
-            return MetricAddViewController(metricKey: key)
+            return metricWebView(for: key)
         }
     }
 
-    private static func intParam(_ params: [String: Any], key: String) -> Int? {
-        if let value = params[key] as? Int { return value }
-        if let value = params[key] as? String { return Int(value) }
-        return nil
+    private static func registerMetricH5(
+        _ r: Router,
+        key: String,
+        title: String,
+        pathSuffix: String? = nil
+    ) {
+        let path: String
+        if let pathSuffix, !pathSuffix.isEmpty {
+            path = "/health/metrics/\(key)/\(pathSuffix)"
+        } else {
+            path = "/health/metrics/\(key)"
+        }
+        r.register(path: path) { _ in
+            metricWebView(for: key, title: title)
+        }
     }
 
-    private static func todayDateString() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: Date())
+    private static func metricWebView(for key: String, title: String? = nil) -> WebViewController {
+        WebViewController(
+            urlString: H5Config.metricPageURL(for: key).absoluteString,
+            title: title ?? H5Config.metricTitle(for: key)
+        )
     }
 }

@@ -61,11 +61,17 @@ final class HealthRecordViewController: BaseViewController, UITableViewDataSourc
         loadUserProfile()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+
     override func setupUI() {
         view.backgroundColor = .fdBg
         view.addSubview(tableView)
+        tableView.contentInsetAdjustmentBehavior = .never
         tableView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
+            make.edges.equalTo(view.safeAreaLayoutGuide)
         }
     }
 
