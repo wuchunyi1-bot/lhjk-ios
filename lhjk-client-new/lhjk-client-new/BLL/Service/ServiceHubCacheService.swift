@@ -24,6 +24,8 @@ final class ServiceHubCacheService {
 
     private var staticData: ServiceHubStaticData?
     private var packagesByCategoryId: [String: [HealthPackageItem]] = [:]
+    private var retailPreviewPackages: [HealthPackageItem]?
+    private var retailTask: Task<[HealthPackageItem], Never>?
 
     private var staticTask: Task<ServiceHubStaticData, Never>?
     private var packageTasks: [String: Task<[HealthPackageItem], Never>] = [:]
@@ -56,9 +58,49 @@ final class ServiceHubCacheService {
 
     /// 在已缓存的推荐套餐中按 id 查找
     func findCachedPackage(id: String) -> HealthPackageItem? {
-        packagesByCategoryId.values
+        if let match = retailPreviewPackages?.first(where: { $0.id == id }) {
+            return match
+        }
+        return packagesByCategoryId.values
             .flatMap { $0 }
             .first { $0.id == id }
+    }
+
+    func cachedRetailPreview() -> [HealthPackageItem]? {
+        retailPreviewPackages
+    }
+
+    /// Hub 富德优选预览（前 6 条零售套包）
+    func ensureRetailPreview(hospitalId: String?, pageSize: Int = 6) async -> [HealthPackageItem] {
+        if let retailPreviewPackages {
+            return retailPreviewPackages
+        }
+        if let retailTask {
+            return await retailTask.value
+        }
+
+        let gen = generation
+        let task = Task { [weak self] in
+            guard let self else { return [] as [HealthPackageItem] }
+            do {
+                return try await self.hospitalPackageService.fetchRetailPackageItems(
+                    hospitalId: hospitalId,
+                    pageSize: pageSize
+                )
+            } catch {
+                print("[ServiceHubCache] ensureRetailPreview failed: \(error.localizedDescription)")
+                return []
+            }
+        }
+        retailTask = task
+        let result = await task.value
+        retailTask = nil
+
+        guard gen == generation else {
+            return retailPreviewPackages ?? result
+        }
+        retailPreviewPackages = result
+        return result
     }
 
     // MARK: - Preload / Ensure
@@ -148,8 +190,12 @@ final class ServiceHubCacheService {
         staticData = nil
         hasLoadedStatic = false
         packagesByCategoryId.removeAll()
+        retailPreviewPackages = nil
+        RetailCategoryService.shared.invalidate()
         staticTask?.cancel()
         staticTask = nil
+        retailTask?.cancel()
+        retailTask = nil
         packageTasks.values.forEach { $0.cancel() }
         packageTasks.removeAll()
         print("[ServiceHubCache] cleared")
@@ -158,6 +204,10 @@ final class ServiceHubCacheService {
     /// 仅清空 packages（未来换机构时用）
     func invalidatePackages() {
         packagesByCategoryId.removeAll()
+        retailPreviewPackages = nil
+        RetailCategoryService.shared.invalidate()
+        retailTask?.cancel()
+        retailTask = nil
         packageTasks.values.forEach { $0.cancel() }
         packageTasks.removeAll()
     }

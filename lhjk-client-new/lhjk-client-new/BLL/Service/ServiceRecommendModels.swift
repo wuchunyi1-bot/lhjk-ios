@@ -31,6 +31,12 @@ struct ServiceRecommendCategory: Equatable {
         Self.nonEmpty(value)
     }
 
+    /// 套包分页接口 `packageMainCategory`（后端要求 Integer）
+    var packageMainCategoryInt: Int? {
+        guard let raw = packageMainCategory else { return nil }
+        return Int(raw)
+    }
+
     /// 套包分页接口 `packageSeries`（字典 `english`）
     var packageSeries: String? {
         Self.nonEmpty(english)

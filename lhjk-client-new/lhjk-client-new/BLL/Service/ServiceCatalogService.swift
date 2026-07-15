@@ -21,9 +21,7 @@ final class ServiceCatalogService {
         cardActivated: Bool,
         banners: [ServiceHubBanner],
         matrix: [ProductMatrixItem],
-        categories: [ServiceRecommendCategory],
-        selectedCategoryId: String,
-        recommendedPackages: [HealthPackageItem]
+        mallPreviewPackages: [HealthPackageItem]
     ) -> ServiceHubSnapshot {
         ServiceHubSnapshot(
             showActivateBanner: !cardActivated,
@@ -31,9 +29,7 @@ final class ServiceCatalogService {
             institutions: [],
             banners: banners,
             matrix: matrix,
-            categories: categories,
-            selectedCategoryId: selectedCategoryId,
-            recommendedPackages: recommendedPackages
+            mallPreviewPackages: mallPreviewPackages
         )
     }
 

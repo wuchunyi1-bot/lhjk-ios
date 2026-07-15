@@ -197,13 +197,5 @@ struct ServiceHubSnapshot {
     let institutions: [ServiceInstitution]
     let banners: [ServiceHubBanner]
     let matrix: [ProductMatrixItem]
-    let categories: [ServiceRecommendCategory]
-    let selectedCategoryId: String
-    let recommendedPackages: [HealthPackageItem]
-
-    var categoryTitles: [String] { categories.map(\.title) }
-
-    var selectedCategoryTitle: String? {
-        categories.first { $0.id == selectedCategoryId }?.title
-    }
+    let mallPreviewPackages: [HealthPackageItem]
 }

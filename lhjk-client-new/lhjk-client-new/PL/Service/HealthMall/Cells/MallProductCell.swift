@@ -79,6 +79,22 @@ final class MallProductCell: UICollectionViewCell {
         productId = nil
     }
 
+    func configure(_ item: HealthPackageItem) {
+        nameLabel.text = item.name
+        descLabel.text = item.subtitle
+        unitLabel.text = ""
+        priceLabel.text = item.price
+        priceLabel.textColor = item.accent
+        buyBtn.backgroundColor = item.accent
+        if let badge = item.badge, !badge.isEmpty {
+            tagLabel.isHidden = false
+            tagLabel.text = " \(badge) "
+        } else {
+            tagLabel.isHidden = true
+        }
+        productId = item.id
+    }
+
     func configure(_ p: MallProduct) {
         nameLabel.text = p.name
         descLabel.text = p.desc
@@ -93,6 +109,6 @@ final class MallProductCell: UICollectionViewCell {
 
     @objc private func tapBuy() {
         guard let id = productId else { return }
-        Router.shared.push("/mall/detail", params: ["id": id])
+        Router.shared.push("/services/pkg", params: ["id": id])
     }
 }

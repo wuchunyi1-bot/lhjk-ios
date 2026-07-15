@@ -102,7 +102,7 @@ final class HealthPackageCardCell: UITableViewCell {
         footer.snp.makeConstraints { $0.top.equalTo(divider.snp.bottom).offset(12); $0.leading.trailing.bottom.equalToSuperview().inset(12) }
     }
 
-    func configure(_ item: HealthPackageItem) {
+    func configure(_ item: HealthPackageItem, actionTitle: String = "了解详情") {
         coverLabel.text = item.productCode
         coverLabel.textColor = item.accent
 
@@ -116,6 +116,8 @@ final class HealthPackageCardCell: UITableViewCell {
         nameLabel.text = item.displayTitle
         descLabel.text = item.subtitle
         priceLabel.text = item.price
+
+        actionButton.setTitle(actionTitle, for: .normal)
 
         tagRow.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for tag in item.audienceTags.prefix(4) {

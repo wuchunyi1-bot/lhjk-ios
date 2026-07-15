@@ -20,7 +20,6 @@ final class ServiceViewController: BaseViewController {
         tv.register(ActivateBannerCell.self, forCellReuseIdentifier: ActivateBannerCell.reuseID)
         tv.register(ServiceBannerCarouselCell.self, forCellReuseIdentifier: ServiceBannerCarouselCell.reuseID)
         tv.register(MatrixGridCell.self, forCellReuseIdentifier: MatrixGridCell.reuseID)
-        tv.register(HealthPackageCategoryCell.self, forCellReuseIdentifier: HealthPackageCategoryCell.reuseID)
         tv.register(HealthPackageCardCell.self, forCellReuseIdentifier: HealthPackageCardCell.reuseID)
         tv.contentInsetAdjustmentBehavior = .never
         return tv
@@ -149,22 +148,11 @@ extension ServiceViewController: UITableViewDataSource, UITableViewDelegate {
             cell.onTileTap = { code in Router.shared.push("/services/list", params: ["code": code]) }
             return cell
 
-        case .recommend:
-            if viewModel.isCategoryRow(at: indexPath) {
-                let cell = tableView.dequeueReusableCell(withIdentifier: HealthPackageCategoryCell.reuseID, for: indexPath) as! HealthPackageCategoryCell
-                cell.configure(
-                    categories: snapshot.categoryTitles,
-                    selected: snapshot.selectedCategoryTitle ?? snapshot.categoryTitles.first ?? ""
-                )
-                cell.onCategorySelected = { [weak self] category in
-                    self?.viewModel.selectCategory(category)
-                }
-                return cell
-            }
+        case .mallPreview:
             let cell = tableView.dequeueReusableCell(withIdentifier: HealthPackageCardCell.reuseID, for: indexPath) as! HealthPackageCardCell
             if let pkg = viewModel.package(at: indexPath) {
-                cell.configure(pkg)
-                cell.onDetailTap = { Router.shared.push("/services/detail", params: ["id": pkg.id]) }
+                cell.configure(pkg, actionTitle: "购买")
+                cell.onDetailTap = { Router.shared.push("/services/pkg", params: ["id": pkg.id]) }
             }
             return cell
         }
@@ -179,8 +167,8 @@ extension ServiceViewController: UITableViewDataSource, UITableViewDelegate {
               let title = viewModel.sectionTitle(for: s) else { return spacingHeader(height: 8) }
 
         let header = SectionTitleView(title: title, more: viewModel.sectionMore(for: s))
-        if s == .recommend {
-            header.onMoreTapped = { Router.shared.push("/services/list", params: ["code": "all"]) }
+        if s == .mallPreview {
+            header.onMoreTapped = { Router.shared.push("/mall") }
         }
         let container = UIView()
         container.backgroundColor = .fdBg

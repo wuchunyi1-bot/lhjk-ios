@@ -1,84 +1,161 @@
+import Combine
 import UIKit
 import SnapKit
 
-/// 饮食运动 — 综合页（简化版：热量环 + 营养 + 日常记录）
-/// 参考 funde-client: ExerciseFoodView.vue
+/// 饮食运动（Funde 风格 UI + Angel Doctor API）
 final class ExerciseFoodViewController: BaseViewController {
 
+    private let viewModel = ExerciseFoodFundeViewModel()
+    private var cancellables = Set<AnyCancellable>()
+
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
+    private let calCard = UIView()
+    private let calVal = UILabel()
+    private let calUnit = UILabel()
+    private let remainLabel = UILabel()
+    private let sportValue = UILabel()
+    private let sportHint = UILabel()
+
     override func setupUI() {
-        title = "饮食运动"; view.backgroundColor = .fdBg
-        let scroll = UIScrollView(); view.addSubview(scroll); scroll.snp.makeConstraints { $0.edges.equalToSuperview() }
-        let c = UIView(); scroll.addSubview(c); c.snp.makeConstraints { $0.edges.width.equalToSuperview() }
+        title = "饮食运动"
+        view.backgroundColor = .fdBg
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: "明细",
+            style: .plain,
+            target: self,
+            action: #selector(openDetailHome)
+        )
+
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+        scrollView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        contentView.snp.makeConstraints { $0.edges.width.equalToSuperview() }
         let pad: CGFloat = 16
 
-        // Calorie summary card
-        let calCard = UIView(); calCard.backgroundColor = UIColor(hexString: "#FF7A50"); calCard.layer.cornerRadius = 24
-        let calTitle = UILabel(); calTitle.text = "今日热量"; calTitle.font = .fdCaption; calTitle.textColor = UIColor.white.withAlphaComponent(0.8)
-        let calVal = UILabel(); calVal.text = "1,530"; calVal.font = .fdFont(ofSize: 42, weight: .bold); calVal.textColor = .white
-        let calUnit = UILabel(); calUnit.text = "/ 2,130 kcal"; calUnit.font = .fdBody; calUnit.textColor = UIColor.white.withAlphaComponent(0.7)
-        let remain = UILabel(); remain.text = "还可摄入 600 kcal"; remain.font = .fdCaption; remain.textColor = UIColor.white.withAlphaComponent(0.85)
-        calCard.addSubview(calTitle); calCard.addSubview(calVal); calCard.addSubview(calUnit); calCard.addSubview(remain)
-        c.addSubview(calCard)
-        calCard.snp.makeConstraints { $0.top.equalToSuperview().offset(12); $0.leading.trailing.equalToSuperview().inset(pad) }
+        calCard.backgroundColor = UIColor(hexString: "#FF7A50")
+        calCard.layer.cornerRadius = 24
+        let calTitle = UILabel()
+        calTitle.text = "今日热量"
+        calTitle.font = .fdCaption
+        calTitle.textColor = UIColor.white.withAlphaComponent(0.8)
+        calVal.font = .fdFont(ofSize: 42, weight: .bold)
+        calVal.textColor = .white
+        calVal.text = "--"
+        calUnit.font = .fdBody
+        calUnit.textColor = UIColor.white.withAlphaComponent(0.7)
+        calUnit.text = "/ -- kcal"
+        remainLabel.font = .fdCaption
+        remainLabel.textColor = UIColor.white.withAlphaComponent(0.85)
+        [calTitle, calVal, calUnit, remainLabel].forEach(calCard.addSubview)
         calTitle.snp.makeConstraints { $0.top.leading.equalToSuperview().inset(20) }
         calVal.snp.makeConstraints { $0.top.equalTo(calTitle.snp.bottom).offset(4); $0.leading.equalToSuperview().inset(20) }
         calUnit.snp.makeConstraints { $0.lastBaseline.equalTo(calVal).offset(-6); $0.leading.equalTo(calVal.snp.trailing).offset(4) }
-        remain.snp.makeConstraints { $0.top.equalTo(calVal.snp.bottom).offset(4); $0.leading.equalToSuperview().inset(20); $0.bottom.equalToSuperview().offset(-20) }
+        remainLabel.snp.makeConstraints { $0.top.equalTo(calVal.snp.bottom).offset(4); $0.leading.equalToSuperview().inset(20); $0.bottom.equalToSuperview().offset(-20) }
 
-        // Nutrition card
-        let nutCard = UIView(); nutCard.backgroundColor = .fdSurface; nutCard.layer.cornerRadius = 18; nutCard.addFundeShadow()
-        let nutTitle = UILabel(); nutTitle.text = "营养摄入"; nutTitle.font = .fdBodySemibold; nutTitle.textColor = .fdText
-        nutCard.addSubview(nutTitle); nutTitle.snp.makeConstraints { $0.top.leading.equalToSuperview().inset(16) }
-
-        let nutrients: [(String, Int, Int, UIColor)] = [
-            ("碳水化合物", 180, 306, UIColor(hexString: "#FF9F50")),
-            ("脂肪", 90, 133, UIColor(hexString: "#52B96A")),
-            ("蛋白质", 35, 41, UIColor(hexString: "#6B9FE4")),
-        ]
-        var prevNut: UIView = nutTitle
-        for (label, cur, tgt, color) in nutrients {
-            let row = UIView()
-            let l = UILabel(); l.text = label; l.font = .fdCaption; l.textColor = .fdSubtext; l.snp.makeConstraints { $0.width.equalTo(72) }
-            let barBg = UIView(); barBg.backgroundColor = .fdBorder; barBg.layer.cornerRadius = 3
-            let barFill = UIView(); barFill.backgroundColor = color; barFill.layer.cornerRadius = 3
-            barBg.addSubview(barFill)
-            let pct = UILabel(); pct.text = "\(cur) / \(tgt) g"; pct.font = .fdCaption; pct.textColor = .fdMuted; pct.textAlignment = .right; pct.snp.makeConstraints { $0.width.equalTo(80) }
-            row.addSubview(l); row.addSubview(barBg); row.addSubview(pct)
-            barBg.snp.makeConstraints { $0.centerY.equalToSuperview(); $0.height.equalTo(6) }
-            barFill.snp.makeConstraints { $0.leading.top.bottom.equalToSuperview(); $0.width.equalTo(barBg).multipliedBy(min(CGFloat(cur) / CGFloat(tgt), 1.0)) }
-            nutCard.addSubview(row)
-            row.snp.makeConstraints { make in
-                make.leading.trailing.equalToSuperview().inset(16)
-                make.top.equalTo(prevNut.snp.bottom).offset(12)
-                make.height.equalTo(20)
-                if label == "蛋白质" { make.bottom.equalToSuperview().offset(-16) }
-            }
-            row.layoutIfNeeded()
-            l.snp.makeConstraints { $0.leading.centerY.equalToSuperview() }
-            pct.snp.makeConstraints { $0.trailing.centerY.equalToSuperview() }
-            barBg.snp.makeConstraints { make in make.leading.equalTo(l.snp.trailing).offset(8); make.trailing.equalTo(pct.snp.leading).offset(-8); make.centerY.equalToSuperview(); make.height.equalTo(6) }
-            prevNut = row
-        }
-        c.addSubview(nutCard)
-        nutCard.snp.makeConstraints { $0.top.equalTo(calCard.snp.bottom).offset(12); $0.leading.trailing.equalToSuperview().inset(pad) }
-
-        // Exercise card
-        let exCard = UIView(); exCard.backgroundColor = .fdSurface; exCard.layer.cornerRadius = 18; exCard.addFundeShadow()
+        // 运动卡（无步数接口：展示运动消耗）
+        let exCard = UIView()
+        exCard.backgroundColor = .fdSurface
+        exCard.layer.cornerRadius = 18
+        exCard.addFundeShadow()
         let exTitle = UILabel(); exTitle.text = "今日运动"; exTitle.font = .fdBodySemibold; exTitle.textColor = .fdText
-        let stepsLbl = UILabel(); stepsLbl.text = "6,230 步"; stepsLbl.font = .fdH1; stepsLbl.textColor = .fdText
-        let stepsHint = UILabel(); stepsHint.text = "消耗约 280 kcal · 目标 8,000 步"; stepsHint.font = .fdCaption; stepsHint.textColor = .fdSubtext
-        exCard.addSubview(exTitle); exCard.addSubview(stepsLbl); exCard.addSubview(stepsHint)
-        c.addSubview(exCard)
-        exCard.snp.makeConstraints { $0.top.equalTo(nutCard.snp.bottom).offset(12); $0.leading.trailing.equalToSuperview().inset(pad) }
+        sportValue.font = .fdH1; sportValue.textColor = .fdText; sportValue.text = "-- kcal"
+        sportHint.font = .fdCaption; sportHint.textColor = .fdSubtext; sportHint.text = "运动消耗"
+        [exTitle, sportValue, sportHint].forEach(exCard.addSubview)
         exTitle.snp.makeConstraints { $0.top.leading.equalToSuperview().inset(16) }
-        stepsLbl.snp.makeConstraints { $0.top.equalTo(exTitle.snp.bottom).offset(8); $0.leading.equalToSuperview().inset(16) }
-        stepsHint.snp.makeConstraints { $0.top.equalTo(stepsLbl.snp.bottom).offset(4); $0.leading.equalToSuperview().inset(16); $0.bottom.equalToSuperview().offset(-16) }
+        sportValue.snp.makeConstraints { $0.top.equalTo(exTitle.snp.bottom).offset(8); $0.leading.equalToSuperview().inset(16) }
+        sportHint.snp.makeConstraints { $0.top.equalTo(sportValue.snp.bottom).offset(4); $0.leading.equalToSuperview().inset(16); $0.bottom.equalToSuperview().offset(-16) }
 
-        // AI food button
+        let dietBtn = makeActionButton(title: "记录饮食", action: #selector(addDiet))
+        let sportBtn = makeActionButton(title: "记录运动", action: #selector(addSport))
         let aiBtn = UIButton(type: .system)
-        aiBtn.setTitle("📸 AI 拍照识别食物", for: .normal)
-        aiBtn.titleLabel?.font = .fdBodySemibold; aiBtn.setTitleColor(.fdPrimary, for: .normal)
-        aiBtn.backgroundColor = .fdPrimarySoft; aiBtn.layer.cornerRadius = 14
-        c.addSubview(aiBtn); aiBtn.snp.makeConstraints { $0.top.equalTo(exCard.snp.bottom).offset(16); $0.leading.trailing.equalToSuperview().inset(pad); $0.height.equalTo(50); $0.bottom.equalToSuperview().offset(-20) }
+        aiBtn.setTitle("AI 拍照识别食物", for: .normal)
+        aiBtn.titleLabel?.font = .fdBodySemibold
+        aiBtn.setTitleColor(.fdPrimary, for: .normal)
+        aiBtn.backgroundColor = .fdPrimarySoft
+        aiBtn.layer.cornerRadius = 14
+        aiBtn.addTarget(self, action: #selector(aiTapped), for: .touchUpInside)
+
+        [calCard, exCard, dietBtn, sportBtn, aiBtn].forEach(contentView.addSubview)
+        calCard.snp.makeConstraints { $0.top.equalToSuperview().offset(12); $0.leading.trailing.equalToSuperview().inset(pad) }
+        exCard.snp.makeConstraints { $0.top.equalTo(calCard.snp.bottom).offset(12); $0.leading.trailing.equalToSuperview().inset(pad) }
+        dietBtn.snp.makeConstraints { $0.top.equalTo(exCard.snp.bottom).offset(16); $0.leading.trailing.equalToSuperview().inset(pad); $0.height.equalTo(48) }
+        sportBtn.snp.makeConstraints { $0.top.equalTo(dietBtn.snp.bottom).offset(10); $0.leading.trailing.equalToSuperview().inset(pad); $0.height.equalTo(48) }
+        aiBtn.snp.makeConstraints { $0.top.equalTo(sportBtn.snp.bottom).offset(10); $0.leading.trailing.equalToSuperview().inset(pad); $0.height.equalTo(50); $0.bottom.equalToSuperview().offset(-20) }
+    }
+
+    override func bindViewModel() {
+        viewModel.$summary
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.reloadUI() }
+            .store(in: &cancellables)
+
+        viewModel.toastMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.showToast($0) }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleChange),
+            name: .exerciseFoodRecordDidChange,
+            object: nil
+        )
+    }
+
+    deinit { NotificationCenter.default.removeObserver(self) }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        viewModel.load()
+    }
+
+    private func reloadUI() {
+        calVal.text = viewModel.intakeText
+        calUnit.text = "/ \(viewModel.targetHint) kcal"
+        remainLabel.text = "\(viewModel.remainLabel) \(viewModel.remainValue) kcal"
+        sportValue.text = "\(viewModel.sportConsume) kcal"
+    }
+
+    private func makeActionButton(title: String, action: Selector) -> UIButton {
+        let btn = UIButton(type: .system)
+        btn.setTitle(title, for: .normal)
+        btn.titleLabel?.font = .fdBodySemibold
+        btn.setTitleColor(.white, for: .normal)
+        btn.backgroundColor = .fdPrimary
+        btn.layer.cornerRadius = 14
+        btn.addTarget(self, action: action, for: .touchUpInside)
+        return btn
+    }
+
+    @objc private func handleChange() { viewModel.load() }
+
+    @objc private func openDetailHome() {
+        Router.shared.push("/health/metrics/exercise/home")
+    }
+
+    @objc private func addDiet() {
+        let formatter = DateFormatter(); formatter.dateFormat = "yyyy-MM-dd"
+        Router.shared.push("/health/metrics/exercise/add-diet", params: [
+            "timeType": 1,
+            "date": formatter.string(from: Date()),
+        ])
+    }
+
+    @objc private func addSport() {
+        let formatter = DateFormatter(); formatter.dateFormat = "yyyy-MM-dd"
+        Router.shared.push("/health/metrics/exercise/add-motion", params: [
+            "date": formatter.string(from: Date()),
+        ])
+    }
+
+    @objc private func aiTapped() {
+        showToast("拍照识别即将上线")
+    }
+
+    private func showToast(_ message: String) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        present(alert, animated: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { alert.dismiss(animated: true) }
     }
 }

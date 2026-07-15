@@ -23,17 +23,13 @@ final class HospitalPackageService {
     // MARK: - 推荐服务（按类目）
 
     func fetchRecommendPackages(
-        packageMainCategory: String,
+        packageMainCategory: Int,
         hospitalId: String? = nil,
         pageNum: Int = 1,
         pageSize: Int = 10
     ) async throws -> PaginatedHospitalPackageData {
-        guard let category = Self.nonEmpty(packageMainCategory) else {
-            throw HospitalPackageServiceError.missingPackageMainCategory
-        }
-
         var params: [String: Any] = [
-            "packageMainCategory": category,
+            "packageMainCategory": packageMainCategory,
             "pageNum": String(pageNum),
             "pageSize": String(pageSize),
         ]
@@ -53,7 +49,29 @@ final class HospitalPackageService {
         pageNum: Int = 1,
         pageSize: Int = 10
     ) async throws -> [HealthPackageItem] {
-        guard let packageMainCategory = category.packageMainCategory else {
+        guard let packageMainCategory = category.packageMainCategoryInt else {
+            throw HospitalPackageServiceError.missingPackageMainCategory
+        }
+
+        let page = try await fetchRecommendPackages(
+            packageMainCategory: packageMainCategory,
+            hospitalId: hospitalId,
+            pageNum: pageNum,
+            pageSize: pageSize
+        )
+        return mapPackageItems(page.records)
+    }
+
+    // MARK: - 富德优选（零售套包）
+
+    func fetchRetailPackageItems(
+        hospitalId: String? = nil,
+        pageNum: Int = 1,
+        pageSize: Int = 10,
+        retailCategoryService: RetailCategoryService = .shared
+    ) async throws -> [HealthPackageItem] {
+        let category = try await retailCategoryService.resolvePackageCategory()
+        guard let packageMainCategory = category.packageMainCategoryInt else {
             throw HospitalPackageServiceError.missingPackageMainCategory
         }
 

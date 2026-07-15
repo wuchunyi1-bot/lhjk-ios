@@ -1,77 +1,50 @@
 import UIKit
 import SnapKit
+import Combine
 
 /// 套餐选择页 — 双 TableView 布局
-/// 参考 funde-client: ServiceListView.vue
+/// 参考 funde-client: ServiceListView.vue（左栏健康管理类目 + 右栏套包 API）
 final class ServiceListViewController: BaseViewController {
 
-    private let productCode: String
-
-    private let matrix: [SvcMatrix] = [
-        SvcMatrix(code: "德康", name: "健康基础", desc: "亚健康·六高干预", tier: "基础", accent: UIColor(hexString: "#1F9A6B"), current: false),
-        SvcMatrix(code: "德好", name: "向好逆转", desc: "慢病逆转·达标", tier: "主推", accent: .fdPrimary, current: true),
-        SvcMatrix(code: "德护", name: "专病管护", desc: "全病程专项管护", tier: "专项", accent: UIColor(hexString: "#3D6FB8"), current: false),
-        SvcMatrix(code: "德元", name: "生命元气", desc: "肿瘤·前沿疗法", tier: "高端", accent: UIColor(hexString: "#7B5E9F"), current: false),
-        SvcMatrix(code: "德愈", name: "痊愈疑难", desc: "疑难重症·MDT", tier: "高端", accent: UIColor(hexString: "#5C8DC9"), current: false),
-        SvcMatrix(code: "德医", name: "医路通达", desc: "三甲就医·全程协助", tier: "专项", accent: UIColor(hexString: "#2C7BB0"), current: false),
-        SvcMatrix(code: "德甄", name: "甄选全球", desc: "全球特药甄选", tier: "高端", accent: UIColor(hexString: "#1A7A6E"), current: false),
-        SvcMatrix(code: "德际", name: "国际无界", desc: "境外就医服务", tier: "旗舰", accent: UIColor(hexString: "#4A6A8A"), current: false),
-        SvcMatrix(code: "德尊", name: "臻享极致", desc: "长寿·精准医学", tier: "旗舰", accent: UIColor(hexString: "#B7905F"), current: false),
-    ]
-
-    // Mock packages — filtered by productCode
-    private var allPackages: [SvcPkg] = [
-        SvcPkg(id: "dekang-s", productCode: "德康", name: "入门版", subtitle: "亚健康基础干预", price: "¥680", priceUnit: "/年", tag: "", benefits: ["健管师月度随访","六维健康测评","基础膳食建议","体征异常提醒"], audience: [], detail: ""),
-        SvcPkg(id: "dekang-m", productCode: "德康", name: "标准版", subtitle: "六高全面干预方案", price: "¥1,280", priceUnit: "/年", tag: "推荐", benefits: ["健管师双周随访","营养师膳食方案","季度1369报告","异常预警24H","绿色就医通道"], audience: [], detail: ""),
-        SvcPkg(id: "dehao-s", productCode: "德好", name: "入门版", subtitle: "慢病逆转基础方案", price: "¥1,580", priceUnit: "/年", tag: "", benefits: ["健管师周随访","主治医师月度会诊","个性化逆转方案","达标目标追踪"], audience: [], detail: ""),
-        SvcPkg(id: "dehao-m", productCode: "德好", name: "标准版", subtitle: "三好共管全程达标", price: "¥2,980", priceUnit: "/年", tag: "热销", benefits: ["主治医师+营养师+健管师三好共管","12周专属逆转方案","不限次健管咨询","季度1369报告","体检+用药全程指导"], audience: [], detail: ""),
-        SvcPkg(id: "dehao-l", productCode: "德好", name: "旗舰版", subtitle: "精准医疗个性化管理", price: "¥5,800", priceUnit: "/年", tag: "精选", benefits: ["5人专家团队","基因检测分析","精准干预方案","绿色就医通道","住院全程协助"], audience: [], detail: ""),
-        SvcPkg(id: "dehu-s", productCode: "德护", name: "专病版", subtitle: "全病程专项管护", price: "¥3,800", priceUnit: "/年", tag: "", benefits: ["专科医师全程跟诊","病程方案个性化定制","住院协助服务","复查提醒与结果解读","院外用药指导"], audience: [], detail: ""),
-        SvcPkg(id: "deyuan-s", productCode: "德元", name: "标准版", subtitle: "肿瘤全程管理", price: "面议", priceUnit: "/定制", tag: "高端", benefits: ["肿瘤专科顾问团队","前沿疗法信息支持","MDT多学科会诊协调","个案管理师全程陪伴"], audience: [], detail: ""),
-        SvcPkg(id: "deyu-s", productCode: "德愈", name: "标准版", subtitle: "疑难重症全程支持", price: "面议", priceUnit: "/定制", tag: "高端", benefits: ["疑难重症MDT专家团队","国内顶级专家资源匹配","个案管理师专属支持","二次诊疗意见服务"], audience: [], detail: ""),
-        SvcPkg(id: "deyi-s", productCode: "德医", name: "标准版", subtitle: "三甲就医全程协助", price: "¥1,980", priceUnit: "/年", tag: "", benefits: ["三甲医院挂号协助","专科医生推荐匹配","陪诊服务10次/年","体检报告解读"], audience: [], detail: ""),
-        SvcPkg(id: "deyi-m", productCode: "德医", name: "尊享版", subtitle: "全国三甲无忧就医", price: "¥3,980", priceUnit: "/年", tag: "推荐", benefits: ["全国三甲绿色通道","专属医疗协调员","不限次陪诊服务","住院全程管理"], audience: [], detail: ""),
-        SvcPkg(id: "dezhen-s", productCode: "德甄", name: "标准版", subtitle: "全球特药甄选配送", price: "面议", priceUnit: "/次起", tag: "", benefits: ["全球特效药品甄选","合规进口渠道配送","用药安全全程监测","专业用药指导"], audience: [], detail: ""),
-        SvcPkg(id: "deji-s", productCode: "德际", name: "标准版", subtitle: "境外就医全程服务", price: "面议", priceUnit: "/定制", tag: "旗舰", benefits: ["境外知名医院预约","医疗签证协助办理","全程翻译陪同","境外医疗保险协调","回国后衔接治疗"], audience: [], detail: ""),
-        SvcPkg(id: "dezun-s", productCode: "德尊", name: "旗舰版", subtitle: "长寿医学极致定制", price: "面议", priceUnit: "/定制", tag: "旗舰", benefits: ["精准抗衰老方案定制","干细胞评估与应用","长寿相关基因检测","10大防癌专项筛查","私人健康管家团队"], audience: [], detail: ""),
-    ]
-
-    private var activeCode: String
-    private var packages: [SvcPkg] { allPackages.filter { $0.productCode == activeCode } }
-    private var activeMatrix: SvcMatrix? { matrix.first { $0.code == activeCode } }
-
-    // MARK: - UI
+    private let viewModel: ServiceListViewModel
+    private var cancellables = Set<AnyCancellable>()
 
     private lazy var leftTable: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
-        tv.backgroundColor = .fdBg2; tv.separatorStyle = .none; tv.showsVerticalScrollIndicator = false
+        tv.backgroundColor = .fdBg2
+        tv.separatorStyle = .none
+        tv.showsVerticalScrollIndicator = false
         tv.register(CategoryNavCell.self, forCellReuseIdentifier: CategoryNavCell.reuseID)
-        tv.dataSource = self; tv.delegate = self; tv.tag = 0
+        tv.dataSource = self
+        tv.delegate = self
+        tv.tag = 0
         return tv
     }()
 
     private lazy var rightTable: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
-        tv.backgroundColor = .fdBg; tv.separatorStyle = .none; tv.showsVerticalScrollIndicator = false
+        tv.backgroundColor = .fdBg
+        tv.separatorStyle = .none
+        tv.showsVerticalScrollIndicator = false
         tv.register(PackageHeaderCell.self, forCellReuseIdentifier: PackageHeaderCell.reuseID)
         tv.register(PackageCardCell.self, forCellReuseIdentifier: PackageCardCell.reuseID)
-        tv.dataSource = self; tv.delegate = self; tv.tag = 1
+        tv.dataSource = self
+        tv.delegate = self
+        tv.tag = 1
         return tv
     }()
 
     init(productCode: String) {
-        self.productCode = productCode
-        self.activeCode = productCode
+        self.viewModel = ServiceListViewModel(routeCode: productCode)
         super.init(nibName: nil, bundle: nil)
     }
+
     required init?(coder: NSCoder) { fatalError() }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "选择套餐"
-        if let idx = matrix.firstIndex(where: { $0.code == activeCode }) {
-            leftTable.scrollToRow(at: IndexPath(row: idx, section: 0), at: .middle, animated: false)
-        }
+        viewModel.load()
     }
 
     override func setupUI() {
@@ -81,12 +54,43 @@ final class ServiceListViewController: BaseViewController {
 
         leftTable.snp.makeConstraints { make in
             make.top.leading.bottom.equalTo(view.safeAreaLayoutGuide)
-            make.width.equalTo(78)
+            make.width.equalTo(88)
         }
         rightTable.snp.makeConstraints { make in
             make.top.trailing.bottom.equalTo(view.safeAreaLayoutGuide)
             make.leading.equalTo(leftTable.snp.trailing)
         }
+    }
+
+    override func bindViewModel() {
+        viewModel.$categories
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] categories in
+                guard let self else { return }
+                self.leftTable.reloadData()
+                if let id = self.viewModel.activeCategoryId,
+                   let idx = categories.firstIndex(where: { $0.id == id }) {
+                    self.leftTable.scrollToRow(
+                        at: IndexPath(row: idx, section: 0),
+                        at: .middle,
+                        animated: false
+                    )
+                }
+            }
+            .store(in: &cancellables)
+
+        viewModel.$packages
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.rightTable.reloadData() }
+            .store(in: &cancellables)
+
+        viewModel.$activeCategoryId
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.leftTable.reloadData()
+                self?.rightTable.reloadData()
+            }
+            .store(in: &cancellables)
     }
 }
 
@@ -95,46 +99,62 @@ final class ServiceListViewController: BaseViewController {
 extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return tableView.tag == 0 ? matrix.count : (packages.isEmpty ? 2 : packages.count + 1) // +1 for header
+        if tableView.tag == 0 {
+            return viewModel.categories.count
+        }
+        let count = viewModel.packages.count
+        return count == 0 ? 2 : count + 1
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if tableView.tag == 0 {
             let cell = tableView.dequeueReusableCell(withIdentifier: CategoryNavCell.reuseID, for: indexPath) as! CategoryNavCell
-            let m = matrix[indexPath.row]
-            cell.configure(m, active: m.code == activeCode)
+            let category = viewModel.categories[indexPath.row]
+            cell.configure(title: category.title, active: category.id == viewModel.activeCategoryId)
             return cell
         }
 
         if indexPath.row == 0 {
             let cell = tableView.dequeueReusableCell(withIdentifier: PackageHeaderCell.reuseID, for: indexPath) as! PackageHeaderCell
-            if let m = activeMatrix { cell.configure(m) }
+            if let category = viewModel.activeCategory {
+                cell.configure(categoryTitle: category.title, description: category.description)
+            }
             return cell
         }
 
-        if packages.isEmpty {
+        if viewModel.packages.isEmpty {
             let cell = UITableViewCell()
-            cell.selectionStyle = .none; cell.backgroundColor = .clear
-            let label = UILabel(); label.text = "🚧\n套餐即将开放\n敬请期待"; label.font = .fdBody; label.textColor = .fdSubtext
-            label.textAlignment = .center; label.numberOfLines = 0
-            cell.contentView.addSubview(label); label.snp.makeConstraints { $0.center.equalToSuperview() }
+            cell.selectionStyle = .none
+            cell.backgroundColor = .clear
+            let label = UILabel()
+            label.text = "🚧\n套餐即将开放\n敬请期待"
+            label.font = .fdBody
+            label.textColor = .fdSubtext
+            label.textAlignment = .center
+            label.numberOfLines = 0
+            cell.contentView.addSubview(label)
+            label.snp.makeConstraints { $0.center.equalToSuperview() }
             return cell
         }
 
         let cell = tableView.dequeueReusableCell(withIdentifier: PackageCardCell.reuseID, for: indexPath) as! PackageCardCell
-        let pkg = packages[indexPath.row - 1]
-        cell.configure(pkg, accent: activeMatrix?.accent ?? .fdPrimary)
+        let pkg = viewModel.packages[indexPath.row - 1]
+        cell.configure(pkg)
         return cell
     }
 
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { UITableView.automaticDimension }
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        UITableView.automaticDimension
+    }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if tableView.tag == 0 {
-            activeCode = matrix[indexPath.row].code
-            leftTable.reloadData()
-            rightTable.reloadData()
+            let category = viewModel.categories[indexPath.row]
+            viewModel.selectCategory(id: category.id)
             rightTable.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: false)
+        } else if indexPath.row > 0, !viewModel.packages.isEmpty {
+            let pkg = viewModel.packages[indexPath.row - 1]
+            Router.shared.push("/services/pkg", params: ["id": pkg.id])
         }
     }
 }

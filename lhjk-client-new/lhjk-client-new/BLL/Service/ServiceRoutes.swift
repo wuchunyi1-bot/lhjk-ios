@@ -9,9 +9,9 @@ enum ServiceRoutes {
         // Hub
         r.register(path: "/services") { _ in ServiceViewController() }
 
-        // 套餐列表（params: code）
+        // 套餐列表（params: code — 健康管理类目名或德系产品线 code）
         r.register(path: "/services/list") { params in
-            let code = params["code"] as? String ?? "德好"
+            let code = params["code"] as? String ?? ""
             return ServiceListViewController(productCode: code)
         }
 
@@ -56,10 +56,13 @@ enum ServiceRoutes {
         // 富德优选
         r.register(path: "/mall") { _ in HealthMallViewController() }
 
-        // 商品详情（params: id）
+        // 商品详情（params: id）— 与套餐详情统一
         r.register(path: "/mall/detail") { params in
             let id = Self.stringParam(params["id"])
-            return MallProductDetailViewController(productId: id)
+            let hospitalId = ServiceCatalogService.validApiHospitalId(
+                ServiceRoutes.stringParam(params["hospitalId"]).nilIfEmpty
+            )
+            return ServicePackageDetailViewController(packageId: id, hospitalId: hospitalId)
         }
     }
 

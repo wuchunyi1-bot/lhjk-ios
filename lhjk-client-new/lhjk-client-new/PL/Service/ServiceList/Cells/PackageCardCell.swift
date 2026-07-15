@@ -16,6 +16,65 @@ final class PackageCardCell: UITableViewCell {
 
     required init?(coder: NSCoder) { fatalError() }
 
+    func configure(_ item: HealthPackageItem) {
+        packageId = item.id
+        benefits = item.audienceTags
+        contentView.subviews.forEach { $0.removeFromSuperview() }
+        let accent = item.accent
+        let card = UIView()
+        card.backgroundColor = .fdSurface
+        card.layer.cornerRadius = 18
+        card.layer.shadowColor = UIColor.black.cgColor
+        card.layer.shadowOffset = CGSize(width: 0, height: 1)
+        card.layer.shadowRadius = 6
+        card.layer.shadowOpacity = 0.03
+        contentView.addSubview(card)
+        card.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 5, left: 12, bottom: 5, right: 12)) }
+
+        let name = lbl(item.name, size: 15, weight: .bold, color: .fdText)
+        let header: UIStackView = UIStackView(arrangedSubviews: [name])
+        if let badge = item.badge, !badge.isEmpty {
+            let tag = UIView()
+            tag.backgroundColor = accent.withAlphaComponent(0.09)
+            tag.layer.cornerRadius = 999
+            let tl = lbl(badge, size: 10, weight: .semibold, color: accent)
+            tag.addSubview(tl)
+            tl.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 7, bottom: 2, right: 7)) }
+            header.addArrangedSubview(tag)
+            header.addArrangedSubview(UIView())
+        }
+        header.spacing = 8
+        header.alignment = .center
+
+        let sub = lbl(item.subtitle, size: 12, color: .fdSubtext)
+
+        let price = lbl(item.price, size: 18, weight: .bold, color: .fdPrimary, mono: true)
+        let unit = lbl("元起", size: 11, color: .fdSubtext)
+        let btn = UIButton(type: .system)
+        btn.setTitle("查看详情 ›", for: .normal)
+        btn.titleLabel?.font = .fdCaptionSemibold
+        btn.setTitleColor(.fdPrimary, for: .normal)
+        btn.backgroundColor = .fdPrimarySoft
+        btn.layer.cornerRadius = 10
+        btn.snp.makeConstraints { $0.height.equalTo(32); $0.width.greaterThanOrEqualTo(80) }
+        let footer = UIStackView(arrangedSubviews: [price, unit, UIView(), btn])
+        footer.spacing = 2
+        footer.alignment = .center
+        let div = UIView()
+        div.backgroundColor = .fdBorder
+
+        let stack = UIStackView(arrangedSubviews: [header, sub, div, footer])
+        stack.axis = .vertical
+        stack.spacing = 0
+        stack.setCustomSpacing(4, after: header)
+        stack.setCustomSpacing(10, after: sub)
+        card.addSubview(stack)
+        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(14) }
+        div.snp.makeConstraints { $0.height.equalTo(1) }
+
+        btn.addTarget(self, action: #selector(tap), for: .touchUpInside)
+    }
+
     func configure(_ p: SvcPkg, accent: UIColor) {
         packageId = p.id
         benefits = p.benefits
@@ -102,7 +161,7 @@ final class PackageCardCell: UITableViewCell {
 
     @objc private func tap() {
         guard let id = packageId else { return }
-        Router.shared.push("/services/detail", params: ["id": id])
+        Router.shared.push("/services/pkg", params: ["id": id])
     }
 
     private func lbl(_ t: String, size: CGFloat, weight: UIFont.Weight = .regular, color: UIColor, mono: Bool = false) -> UILabel {
