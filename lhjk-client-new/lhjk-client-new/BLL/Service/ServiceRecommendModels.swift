@@ -138,6 +138,23 @@ struct CategoryServiceListVO: Decodable {
     }
 }
 
+enum CategoryServiceListMapper {
+
+    static func toServiceListCategories(_ items: [CategoryServiceListVO]) -> [ServiceListCategory] {
+        items.compactMap { vo in
+            let id = vo.id.trimmingCharacters(in: .whitespacesAndNewlines)
+            let title = vo.serviceName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard !id.isEmpty, !title.isEmpty else { return nil }
+            let imageUrl = vo.imgUrl?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return ServiceListCategory(
+                id: id,
+                title: title,
+                imageUrl: imageUrl?.isEmpty == false ? imageUrl : nil
+            )
+        }
+    }
+}
+
 enum HospitalPackageCategoryType {
     /// 医院服务
     static let hospitalService = 1

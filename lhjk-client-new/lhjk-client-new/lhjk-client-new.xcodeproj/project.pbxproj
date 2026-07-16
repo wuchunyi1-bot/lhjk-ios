@@ -32,6 +32,7 @@
 		A53EF9D430088E0900ED9E5A /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EF9D230088E0900ED9E5A /* LocationManager.swift */; };
 		A53EF9D630088E2C00ED9E5A /* AddressEditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EF9D530088E2C00ED9E5A /* AddressEditViewModel.swift */; };
 		A53EFC0F3008CEAE00ED9E5A /* MallCategoryTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EFC0E3008CEAE00ED9E5A /* MallCategoryTabBar.swift */; };
+		A53EFC113008DB2900ED9E5A /* ServiceInstitutionCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EFC103008DB2900ED9E5A /* ServiceInstitutionCardView.swift */; };
 		A54CBD3F30049CB100D581AE /* CartModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD3D30049CB100D581AE /* CartModels.swift */; };
 		A54CBD4030049CB100D581AE /* CartService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD3E30049CB100D581AE /* CartService.swift */; };
 		A54CBD4530049CD600D581AE /* ServiceCartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD4130049CD600D581AE /* ServiceCartViewModel.swift */; };
@@ -289,6 +290,7 @@
 		A53EF9D230088E0900ED9E5A /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		A53EF9D530088E2C00ED9E5A /* AddressEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressEditViewModel.swift; sourceTree = "<group>"; };
 		A53EFC0E3008CEAE00ED9E5A /* MallCategoryTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MallCategoryTabBar.swift; sourceTree = "<group>"; };
+		A53EFC103008DB2900ED9E5A /* ServiceInstitutionCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceInstitutionCardView.swift; sourceTree = "<group>"; };
 		A54CBD3D30049CB100D581AE /* CartModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CartModels.swift; path = BLL/Service/CartModels.swift; sourceTree = "<group>"; };
 		A54CBD3E30049CB100D581AE /* CartService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CartService.swift; path = BLL/Service/CartService.swift; sourceTree = "<group>"; };
 		A54CBD4130049CD600D581AE /* ServiceCartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceCartViewModel.swift; sourceTree = "<group>"; };
@@ -1188,6 +1190,7 @@
 		A590FCA82FEA91170056EF52 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A53EFC103008DB2900ED9E5A /* ServiceInstitutionCardView.swift */,
 				A5A6F5782FFF8EE80065C921 /* LeftAlignedFlowLayout.swift */,
 				A5A6F5792FFF8EE80065C921 /* SelfSizingCollectionView.swift */,
 			);
@@ -2005,6 +2008,7 @@
 				A590FCC42FEA91170056EF52 /* HealthRecordModels.swift in Sources */,
 				A590FCC52FEA91170056EF52 /* HealthQuickEntriesCell.swift in Sources */,
 				A590FCC62FEA91170056EF52 /* MembershipViewController.swift in Sources */,
+				A53EFC113008DB2900ED9E5A /* ServiceInstitutionCardView.swift in Sources */,
 				A590FCC72FEA91170056EF52 /* SectionTitleView.swift in Sources */,
 				A590FCC82FEA91170056EF52 /* HealthVitalMetricsCell.swift in Sources */,
 				A590FCC92FEA91170056EF52 /* MeServiceFulfillmentCell.swift in Sources */,

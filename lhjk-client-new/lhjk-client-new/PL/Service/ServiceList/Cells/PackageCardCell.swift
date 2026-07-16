@@ -20,24 +20,23 @@ final class PackageCardCell: UITableViewCell {
         packageId = item.id
         benefits = item.audienceTags
         contentView.subviews.forEach { $0.removeFromSuperview() }
-        let accent = item.accent
         let card = UIView()
         card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 18
+        card.layer.cornerRadius = 16
         card.layer.shadowColor = UIColor.black.cgColor
         card.layer.shadowOffset = CGSize(width: 0, height: 1)
         card.layer.shadowRadius = 6
         card.layer.shadowOpacity = 0.03
         contentView.addSubview(card)
-        card.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 5, left: 12, bottom: 5, right: 12)) }
+        card.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 12, bottom: 12, right: 12)) }
 
         let name = lbl(item.name, size: 15, weight: .bold, color: .fdText)
         let header: UIStackView = UIStackView(arrangedSubviews: [name])
-        if let badge = item.badge, !badge.isEmpty {
+        if let badge = item.badge, !badge.isEmpty, badge != "无" {
             let tag = UIView()
-            tag.backgroundColor = accent.withAlphaComponent(0.09)
+            tag.backgroundColor = UIColor.fdPrimarySoft
             tag.layer.cornerRadius = 999
-            let tl = lbl(badge, size: 10, weight: .semibold, color: accent)
+            let tl = lbl(badge, size: 10, weight: .semibold, color: .fdPrimary)
             tag.addSubview(tl)
             tl.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 7, bottom: 2, right: 7)) }
             header.addArrangedSubview(tag)
@@ -48,28 +47,26 @@ final class PackageCardCell: UITableViewCell {
 
         let sub = lbl(item.subtitle, size: 12, color: .fdSubtext)
 
-        let price = lbl(item.price, size: 18, weight: .bold, color: .fdPrimary, mono: true)
-        let unit = lbl("元起", size: 11, color: .fdSubtext)
+        let price = lbl(item.price, size: 15, weight: .bold, color: .fdPrimary, mono: true)
         let btn = UIButton(type: .system)
         btn.setTitle("查看详情 ›", for: .normal)
         btn.titleLabel?.font = .fdCaptionSemibold
         btn.setTitleColor(.fdPrimary, for: .normal)
-        btn.backgroundColor = .fdPrimarySoft
-        btn.layer.cornerRadius = 10
-        btn.snp.makeConstraints { $0.height.equalTo(32); $0.width.greaterThanOrEqualTo(80) }
-        let footer = UIStackView(arrangedSubviews: [price, unit, UIView(), btn])
-        footer.spacing = 2
+        btn.backgroundColor = .clear
+        btn.snp.makeConstraints { $0.height.equalTo(36); $0.width.greaterThanOrEqualTo(88) }
+        let footer = UIStackView(arrangedSubviews: [price, UIView(), btn])
         footer.alignment = .center
-        let div = UIView()
-        div.backgroundColor = .fdBorder
+
+        let div = DashedSeparatorView()
 
         let stack = UIStackView(arrangedSubviews: [header, sub, div, footer])
         stack.axis = .vertical
         stack.spacing = 0
         stack.setCustomSpacing(4, after: header)
-        stack.setCustomSpacing(10, after: sub)
+        stack.setCustomSpacing(12, after: sub)
+        stack.setCustomSpacing(12, after: div)
         card.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(14) }
+        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(12) }
         div.snp.makeConstraints { $0.height.equalTo(1) }
 
         btn.addTarget(self, action: #selector(tap), for: .touchUpInside)
@@ -170,6 +167,29 @@ final class PackageCardCell: UITableViewCell {
         l.textColor = color
         l.font = mono ? .fdMonoFont(ofSize: size, weight: weight) : .fdFont(ofSize: size, weight: weight)
         return l
+    }
+}
+
+// MARK: - Dashed separator
+
+private final class DashedSeparatorView: UIView {
+    private let shape = CAShapeLayer()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .clear
+        shape.strokeColor = UIColor.fdBorder.cgColor
+        shape.lineWidth = 1
+        shape.lineDashPattern = [4, 3]
+        layer.addSublayer(shape)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        shape.frame = bounds
+        shape.path = UIBezierPath(rect: bounds).cgPath
     }
 }
 

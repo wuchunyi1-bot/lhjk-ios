@@ -2,12 +2,15 @@ import UIKit
 import SnapKit
 import Combine
 
-/// 套餐选择页 — 双 TableView 布局
-/// 参考 funde-client: ServiceListView.vue（左栏健康管理类目 + 右栏套包 API）
+/// 套餐选择页 — 对齐 funde-client `ServiceListView.vue`
 final class ServiceListViewController: BaseViewController {
 
     private let viewModel: ServiceListViewModel
     private var cancellables = Set<AnyCancellable>()
+
+    private let institutionCard = ServiceInstitutionCardView()
+    private let layoutContainer = UIView()
+    private let topDivider = UIView()
 
     private lazy var leftTable: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
@@ -26,12 +29,17 @@ final class ServiceListViewController: BaseViewController {
         tv.backgroundColor = .fdBg
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
-        tv.register(PackageHeaderCell.self, forCellReuseIdentifier: PackageHeaderCell.reuseID)
         tv.register(PackageCardCell.self, forCellReuseIdentifier: PackageCardCell.reuseID)
         tv.dataSource = self
         tv.delegate = self
         tv.tag = 1
         return tv
+    }()
+
+    private let loadingIndicator: UIActivityIndicatorView = {
+        let spinner = UIActivityIndicatorView(style: .medium)
+        spinner.hidesWhenStopped = true
+        return spinner
     }()
 
     init(productCode: String) {
@@ -44,21 +52,73 @@ final class ServiceListViewController: BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "选择套餐"
+        setupNavigationItems()
+        institutionCard.configure(viewModel.institution)
         viewModel.load()
+    }
+
+    private func setupNavigationItems() {
+        let searchItem = UIBarButtonItem(
+            image: UIImage(systemName: "magnifyingglass"),
+            style: .plain,
+            target: self,
+            action: #selector(openSearch)
+        )
+        let cartItem = UIBarButtonItem(
+            image: UIImage(systemName: "cart"),
+            style: .plain,
+            target: self,
+            action: #selector(openCart)
+        )
+        navigationItem.rightBarButtonItems = [cartItem, searchItem]
+    }
+
+    @objc private func openSearch() {
+        Router.shared.push("/services/search", params: ["hospitalId": viewModel.searchHospitalId])
+    }
+
+    @objc private func openCart() {
+        Router.shared.push("/services/cart")
     }
 
     override func setupUI() {
         view.backgroundColor = .fdBg
-        view.addSubview(leftTable)
-        view.addSubview(rightTable)
+        topDivider.backgroundColor = .fdBorder
 
-        leftTable.snp.makeConstraints { make in
-            make.top.leading.bottom.equalTo(view.safeAreaLayoutGuide)
-            make.width.equalTo(88)
+        view.addSubview(institutionCard)
+        view.addSubview(topDivider)
+        view.addSubview(layoutContainer)
+        layoutContainer.addSubview(leftTable)
+        layoutContainer.addSubview(rightTable)
+        view.addSubview(loadingIndicator)
+
+        institutionCard.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.leading.trailing.equalToSuperview()
         }
-        rightTable.snp.makeConstraints { make in
-            make.top.trailing.bottom.equalTo(view.safeAreaLayoutGuide)
-            make.leading.equalTo(leftTable.snp.trailing)
+        topDivider.snp.makeConstraints {
+            $0.top.equalTo(institutionCard.snp.bottom)
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(1)
+        }
+        layoutContainer.snp.makeConstraints {
+            $0.top.equalTo(topDivider.snp.bottom)
+            $0.leading.trailing.bottom.equalTo(view.safeAreaLayoutGuide)
+        }
+        leftTable.snp.makeConstraints {
+            $0.top.leading.bottom.equalToSuperview()
+            $0.width.equalTo(78)
+        }
+        rightTable.snp.makeConstraints {
+            $0.top.trailing.bottom.equalToSuperview()
+            $0.leading.equalTo(leftTable.snp.trailing)
+        }
+        loadingIndicator.snp.makeConstraints {
+            $0.center.equalTo(rightTable)
+        }
+
+        institutionCard.onSwitchTap = {
+            // 机构列表 API 接入后跳转选择页
         }
     }
 
@@ -88,7 +148,17 @@ final class ServiceListViewController: BaseViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.leftTable.reloadData()
-                self?.rightTable.reloadData()
+            }
+            .store(in: &cancellables)
+
+        viewModel.$isLoadingPackages
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                if isLoading {
+                    self?.loadingIndicator.startAnimating()
+                } else {
+                    self?.loadingIndicator.stopAnimating()
+                }
             }
             .store(in: &cancellables)
     }
@@ -102,23 +172,17 @@ extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate 
         if tableView.tag == 0 {
             return viewModel.categories.count
         }
-        let count = viewModel.packages.count
-        return count == 0 ? 2 : count + 1
+        return viewModel.packages.isEmpty ? 1 : viewModel.packages.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if tableView.tag == 0 {
-            let cell = tableView.dequeueReusableCell(withIdentifier: CategoryNavCell.reuseID, for: indexPath) as! CategoryNavCell
+            let cell = tableView.dequeueReusableCell(
+                withIdentifier: CategoryNavCell.reuseID,
+                for: indexPath
+            ) as! CategoryNavCell
             let category = viewModel.categories[indexPath.row]
             cell.configure(title: category.title, active: category.id == viewModel.activeCategoryId)
-            return cell
-        }
-
-        if indexPath.row == 0 {
-            let cell = tableView.dequeueReusableCell(withIdentifier: PackageHeaderCell.reuseID, for: indexPath) as! PackageHeaderCell
-            if let category = viewModel.activeCategory {
-                cell.configure(categoryTitle: category.title, description: category.description)
-            }
             return cell
         }
 
@@ -127,24 +191,30 @@ extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate 
             cell.selectionStyle = .none
             cell.backgroundColor = .clear
             let label = UILabel()
-            label.text = "🚧\n套餐即将开放\n敬请期待"
+            label.text = "暂无套餐"
             label.font = .fdBody
             label.textColor = .fdSubtext
             label.textAlignment = .center
-            label.numberOfLines = 0
             cell.contentView.addSubview(label)
-            label.snp.makeConstraints { $0.center.equalToSuperview() }
+            label.snp.makeConstraints {
+                $0.center.equalToSuperview()
+                $0.leading.trailing.equalToSuperview().inset(24)
+                $0.top.bottom.equalToSuperview().inset(48)
+            }
             return cell
         }
 
-        let cell = tableView.dequeueReusableCell(withIdentifier: PackageCardCell.reuseID, for: indexPath) as! PackageCardCell
-        let pkg = viewModel.packages[indexPath.row - 1]
-        cell.configure(pkg)
+        let cell = tableView.dequeueReusableCell(
+            withIdentifier: PackageCardCell.reuseID,
+            for: indexPath
+        ) as! PackageCardCell
+        cell.configure(viewModel.packages[indexPath.row])
         return cell
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        UITableView.automaticDimension
+        if tableView.tag == 0 { return 52 }
+        return UITableView.automaticDimension
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -152,8 +222,8 @@ extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate 
             let category = viewModel.categories[indexPath.row]
             viewModel.selectCategory(id: category.id)
             rightTable.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: false)
-        } else if indexPath.row > 0, !viewModel.packages.isEmpty {
-            let pkg = viewModel.packages[indexPath.row - 1]
+        } else if !viewModel.packages.isEmpty {
+            let pkg = viewModel.packages[indexPath.row]
             Router.shared.push("/services/pkg", params: ["id": pkg.id])
         }
     }

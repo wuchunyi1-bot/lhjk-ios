@@ -77,7 +77,9 @@ final class HospitalPackageService {
         hospitalId: String? = nil
     ) async throws -> [CategoryServiceListVO] {
         var params: [String: Any] = ["type": type]
-        if let hospitalId = Self.apiHospitalId(hospitalId) {
+        if type == HospitalPackageCategoryType.hospitalService {
+            params["hospitalId"] = Self.resolvedHospitalId(hospitalId)
+        } else if let hospitalId = Self.apiHospitalId(hospitalId) {
             params["hospitalId"] = hospitalId
         }
 
@@ -93,6 +95,49 @@ final class HospitalPackageService {
 
         return response.data ?? []
     }
+
+    // MARK: - 医院服务（选择套餐）
+
+    /// 医院服务业务分类（`type = 1`，须传 `hospitalId`）
+    func fetchHospitalServiceCategoryList(hospitalId: String? = nil) async throws -> [CategoryServiceListVO] {
+        try await fetchCategoryServiceListByType(
+            type: HospitalPackageCategoryType.hospitalService,
+            hospitalId: hospitalId
+        )
+    }
+
+    func fetchHospitalServicePackages(
+        categoryServiceId: String,
+        hospitalId: String? = nil,
+        pageNum: Int = 1,
+        pageSize: Int = 10
+    ) async throws -> PaginatedHospitalPackageData {
+        let hid = Self.resolvedHospitalId(hospitalId)
+        let params: [String: Any] = [
+            "categoryServiceId": categoryServiceId,
+            "hospitalId": hid,
+            "pageNum": String(pageNum),
+            "pageSize": String(pageSize),
+        ]
+        return try await requestPackages(params: params)
+    }
+
+    func fetchHospitalServicePackageItems(
+        categoryServiceId: String,
+        hospitalId: String? = nil,
+        pageNum: Int = 1,
+        pageSize: Int = 10
+    ) async throws -> [HealthPackageItem] {
+        let page = try await fetchHospitalServicePackages(
+            categoryServiceId: categoryServiceId,
+            hospitalId: hospitalId,
+            pageNum: pageNum,
+            pageSize: pageSize
+        )
+        return mapPackageItems(page.records)
+    }
+
+    // MARK: - 富德优选（零售套包）
 
     func fetchRetailPackages(
         categoryServiceId: String = "",
