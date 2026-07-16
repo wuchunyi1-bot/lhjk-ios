@@ -2,15 +2,21 @@ import UIKit
 import SnapKit
 import Kingfisher
 
-/// 服务首页 Banner 轮播 — 数据来自 `GET /v1/columnContent/getByCode`
+/// 服务首页 Banner 轮播 — 仅展示图片，自动轮播单向无限循环（不回退滚动）
+/// 数据来自 `GET /v1/columnContent/getByCode`；间隔 3.6s 对齐 funde `van-swipe :autoplay="3600"`
 final class ServiceBannerCarouselCell: UITableViewCell {
 
     static let reuseID = "ServiceBannerCarouselCell"
+
+    /// 逻辑页复制倍数，用于始终向右滚动实现循环
+    private static let loopMultiplier = 200
 
     var onBannerTap: ((ServiceHubBanner) -> Void)?
 
     private var banners: [ServiceHubBanner] = []
     private var autoScrollTimer: Timer?
+    /// 当前逻辑下标（落在 `[0, banners.count * loopMultiplier)`）
+    private var logicalIndex = 0
 
     private lazy var collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
@@ -68,16 +74,63 @@ final class ServiceBannerCarouselCell: UITableViewCell {
         pageControl.numberOfPages = banners.count
         pageControl.currentPage = 0
         collectionView.reloadData()
-        collectionView.setContentOffset(.zero, animated: false)
-        startAutoScroll()
+
+        guard banners.count > 1 else {
+            logicalIndex = 0
+            collectionView.setContentOffset(.zero, animated: false)
+            stopAutoScroll()
+            return
+        }
+
+        // 从中间一组开始，便于向两侧手势滑动，自动播始终 +1
+        logicalIndex = banners.count * (Self.loopMultiplier / 2)
+        DispatchQueue.main.async { [weak self] in
+            self?.scrollToLogicalIndex(self?.logicalIndex ?? 0, animated: false)
+            self?.startAutoScroll()
+        }
+    }
+
+    private var totalItemCount: Int {
+        guard banners.count > 1 else { return banners.count }
+        return banners.count * Self.loopMultiplier
+    }
+
+    private func realIndex(for logical: Int) -> Int {
+        guard !banners.isEmpty else { return 0 }
+        let count = banners.count
+        let mod = logical % count
+        return mod >= 0 ? mod : mod + count
+    }
+
+    private func scrollToLogicalIndex(_ index: Int, animated: Bool) {
+        guard collectionView.bounds.width > 0, totalItemCount > 0 else { return }
+        let clamped = max(0, min(index, totalItemCount - 1))
+        logicalIndex = clamped
+        let offset = CGPoint(x: CGFloat(clamped) * collectionView.bounds.width, y: 0)
+        collectionView.setContentOffset(offset, animated: animated)
+        pageControl.currentPage = realIndex(for: clamped)
+    }
+
+    /// 越界时无动画跳回中间等价页，避免从最后一张滚回第一张产生「往回走」
+    private func normalizePositionIfNeeded() {
+        guard banners.count > 1 else { return }
+        let count = banners.count
+        let middleBase = count * (Self.loopMultiplier / 2)
+        let real = realIndex(for: logicalIndex)
+        if logicalIndex < count || logicalIndex >= totalItemCount - count {
+            logicalIndex = middleBase + real
+            scrollToLogicalIndex(logicalIndex, animated: false)
+        }
     }
 
     private func startAutoScroll() {
         stopAutoScroll()
         guard banners.count > 1 else { return }
-        autoScrollTimer = Timer.scheduledTimer(withTimeInterval: 3.6, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 3.6, repeats: true) { [weak self] _ in
             self?.advancePage()
         }
+        RunLoop.main.add(timer, forMode: .common)
+        autoScrollTimer = timer
     }
 
     private func stopAutoScroll() {
@@ -87,10 +140,8 @@ final class ServiceBannerCarouselCell: UITableViewCell {
 
     private func advancePage() {
         guard banners.count > 1, collectionView.bounds.width > 0 else { return }
-        let next = (pageControl.currentPage + 1) % banners.count
-        let offset = CGPoint(x: CGFloat(next) * collectionView.bounds.width, y: 0)
-        collectionView.setContentOffset(offset, animated: true)
-        pageControl.currentPage = next
+        normalizePositionIfNeeded()
+        scrollToLogicalIndex(logicalIndex + 1, animated: true)
     }
 }
 
@@ -99,12 +150,12 @@ final class ServiceBannerCarouselCell: UITableViewCell {
 extension ServiceBannerCarouselCell: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        banners.count
+        totalItemCount
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: BannerSlideCell.reuseID, for: indexPath) as! BannerSlideCell
-        cell.configure(banners[indexPath.item])
+        cell.configure(banners[realIndex(for: indexPath.item)])
         return cell
     }
 
@@ -113,7 +164,7 @@ extension ServiceBannerCarouselCell: UICollectionViewDataSource, UICollectionVie
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        onBannerTap?(banners[indexPath.item])
+        onBannerTap?(banners[realIndex(for: indexPath.item)])
     }
 
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
@@ -121,21 +172,24 @@ extension ServiceBannerCarouselCell: UICollectionViewDataSource, UICollectionVie
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        updateCurrentPage()
+        syncLogicalIndexFromOffset()
+        normalizePositionIfNeeded()
         startAutoScroll()
     }
 
     func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
-        updateCurrentPage()
+        syncLogicalIndexFromOffset()
+        normalizePositionIfNeeded()
     }
 
-    private func updateCurrentPage() {
+    private func syncLogicalIndexFromOffset() {
         guard collectionView.bounds.width > 0 else { return }
-        pageControl.currentPage = Int(round(collectionView.contentOffset.x / collectionView.bounds.width))
+        logicalIndex = Int(round(collectionView.contentOffset.x / collectionView.bounds.width))
+        pageControl.currentPage = realIndex(for: logicalIndex)
     }
 }
 
-// MARK: - Slide Cell
+// MARK: - Slide Cell（仅 Banner 图）
 
 private final class BannerSlideCell: UICollectionViewCell {
 
@@ -150,54 +204,14 @@ private final class BannerSlideCell: UICollectionViewCell {
         return iv
     }()
 
-    private let textContainer = UIView()
-    private let codeBg = UIView()
-    private let codeLbl = UILabel()
-    private let iconLbl = UILabel()
-    private let titleLbl = UILabel()
-    private let subtitleLbl = UILabel()
-
     override init(frame: CGRect) {
         super.init(frame: frame)
         card.layer.cornerRadius = 16
         card.clipsToBounds = true
         contentView.addSubview(card)
         card.snp.makeConstraints { $0.edges.equalToSuperview() }
-
         card.addSubview(bannerImageView)
         bannerImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-        card.addSubview(textContainer)
-        textContainer.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-        codeBg.layer.cornerRadius = 14
-        codeLbl.font = .fdH3
-        codeLbl.textAlignment = .center
-        codeBg.addSubview(codeLbl)
-        codeLbl.snp.makeConstraints { $0.center.equalToSuperview() }
-        codeBg.snp.makeConstraints { $0.size.equalTo(44) }
-
-        iconLbl.font = .systemFont(ofSize: 36)
-        iconLbl.text = "🏥"
-        iconLbl.isHidden = true
-
-        titleLbl.font = .fdBodyBold
-        titleLbl.textColor = .fdText
-        titleLbl.numberOfLines = 2
-        subtitleLbl.font = .fdCaption
-        subtitleLbl.textColor = .fdText2
-        subtitleLbl.numberOfLines = 2
-
-        let textStack = UIStackView(arrangedSubviews: [titleLbl, subtitleLbl])
-        textStack.axis = .vertical
-        textStack.spacing = 6
-        textStack.alignment = .leading
-
-        let header = UIStackView(arrangedSubviews: [codeBg, iconLbl, textStack])
-        header.spacing = 12
-        header.alignment = .top
-        textContainer.addSubview(header)
-        header.snp.makeConstraints { $0.leading.trailing.equalToSuperview().inset(16); $0.centerY.equalToSuperview() }
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -210,32 +224,10 @@ private final class BannerSlideCell: UICollectionViewCell {
 
     func configure(_ banner: ServiceHubBanner) {
         if banner.hasImage, let urlString = banner.imageUrl, let url = URL(string: urlString) {
-            bannerImageView.isHidden = false
-            textContainer.isHidden = true
             bannerImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
-            card.backgroundColor = .fdBg2
-            card.layer.borderWidth = 0
         } else {
-            bannerImageView.isHidden = true
-            textContainer.isHidden = false
-            card.backgroundColor = banner.background
-            card.layer.borderWidth = 1
-            card.layer.borderColor = banner.accent.withAlphaComponent(0.2).cgColor
-
-            if let code = banner.codeLabel, !code.isEmpty {
-                codeBg.isHidden = false
-                iconLbl.isHidden = true
-                codeBg.backgroundColor = banner.accent
-                codeLbl.text = code
-                codeLbl.textColor = .white
-            } else {
-                codeBg.isHidden = true
-                iconLbl.isHidden = true
-            }
-
-            titleLbl.text = banner.title
-            subtitleLbl.text = banner.subtitle
-            subtitleLbl.isHidden = banner.subtitle.isEmpty
+            bannerImageView.image = nil
+            bannerImageView.backgroundColor = banner.background
         }
     }
 }

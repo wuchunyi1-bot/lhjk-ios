@@ -263,7 +263,7 @@ extension UIColor {
 
 ### 13. 展示判断：checkNeedOnboarding()
 
-**选择 (2026-06-25 新增)**: 不再使用本地 `fd_onboarded` 标记，改为 `UserManager.checkNeedOnboarding()` 异步调用 `getUserByParam` API，检查返回的 `chineseName`、`sex`、`birthday` 是否都存在非空值。
+**选择 (2026-07-16 修订)**: 门禁主体为登录 token 返回的 `userInfo`（持久化 `loginUserInfo`），检查 `chineseName`、`sex`、`birthday`、`hospitalId`。**不再**调用 `getCurrentUserBaseInfo`。详见 `onboarding-login-userinfo`。
 
 **理由**: 本地 flag 无法应对服务端数据被清空/回滚的场景。API 数据是真实的用户状态，比本地缓存更可靠。`fd_onboarded` 已从代码中完全移除。
 

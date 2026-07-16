@@ -416,19 +416,21 @@
 ---
 
 ### Requirement: Post-Login Navigation
-登录成功后 SHALL 通过 `UserManager.checkNeedOnboarding()` 异步判断是否需要展示引导页，基于 `getUserByParam` API 返回数据完整性做决策。
+登录成功后 SHALL 通过 `UserManager.checkNeedOnboarding()` 判断是否需要展示引导页。**门禁只读登录 `userInfo`（`loginUserInfo`）**；App 业务资料通过并行的 `fetchUserInfo()` → `getCurrentUserBaseInfo` 写入 `currentUser`。两套数据同时存在、互不替代。
 
 #### Scenario: 登录成功
 - **WHEN** 登录成功后
-- **THEN** 调用 `UserManager.shared.checkNeedOnboarding()` → 内部通过 `refreshUserInfo()` 获取 `SUsers` 数据，检查 `chineseName`、`sex`、`birthday` 是否都存在非空值
-- **WHEN** 三个字段全部非空 → 数据完整，不展示 onboarding，进入 `/home`
-- **WHEN** 任一个字段为空或 nil → 数据不完整，展示 `/onboarding`
-- **WHEN** API 请求失败 → fallback 到 `UserDefaults` 缓存的 `SUsers` 数据做同样判断；无缓存时默认不展示（不阻塞用户）
-- **AND** `UserManager.checkNeedOnboarding()` 内部将拉取结果缓存到 `currentUser` 并标记 `hasFetched = true`，避免后续 `fetchUserInfo()` 重复请求
+- **THEN** 若 token `data.userInfo` 非空，持久化为 `loginUserInfo`
+- **AND** 本地 `checkNeedOnboarding()` 检查 `chineseName`、`sex`、`birthday`、`hospitalId`
+- **AND** 并行调用 `fetchUserInfo()` 拉取详情到 `currentUser`（与门禁无关）
+- **WHEN** 门禁四字段全部非空 → 不展示 onboarding
+- **WHEN** 任一字段为空 → 展示 `/onboarding`
+- **AND** 门禁 MUST NOT 调用 `getCurrentUserBaseInfo`
 
 #### Scenario: App 冷启动
 - **WHEN** SceneDelegate 检测到本地已存 token
-- **THEN** 设置 `RootTabBarController` 后异步调用 `checkNeedOnboarding()`，按结果决定是否 `present /onboarding`
+- **THEN** 并行：`checkNeedOnboarding()`（loginUserInfo）+ `fetchUserInfo()`（详情）
+- **AND** 按门禁结果决定是否 `present /onboarding`
 
 #### Scenario: redirect/deeplink **[DEFERRED]**
 > **状态**: 延迟到后续迭代。登录过期回跳等场景暂不实现 redirect 参数携带。
@@ -443,7 +445,7 @@
 #### Scenario: 引导触发条件
 - **WHEN** `UserManager.checkNeedOnboarding()` 判定需要引导
 - **THEN** 全屏 present `OnboardingViewController`（`modalPresentationStyle = .fullScreen`）
-- **设计原则**：判断依据为 `getUserByParam` API 返回的 `chineseName`、`sex`、`birthday` 是否都存在非空值。不依赖本地 `fd_onboarded` 标记（已移除）
+- **设计原则**：判断依据为登录 `userInfo` 的 `chineseName`、`sex`、`birthday`、`hospitalId`。不依赖本地 `fd_onboarded` 标记（已移除）；不依赖信息详情 API
 
 #### Scenario: 页面布局
 - **WHEN** OnboardingViewController 渲染

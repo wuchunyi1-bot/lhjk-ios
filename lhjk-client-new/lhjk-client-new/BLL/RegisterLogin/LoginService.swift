@@ -128,6 +128,8 @@ final class LoginService: LoginServiceProtocol {
         storedToken = token.accessToken
         storedRefreshToken = token.refreshToken
 
+        UserManager.shared.applyLoginUserInfo(token.userInfo)
+
         return LoginResult(
             accessToken: token.accessToken,
             refreshToken: token.refreshToken
@@ -170,6 +172,8 @@ final class LoginService: LoginServiceProtocol {
         APIManager.shared.setCredential(credential)
         storedToken = token.accessToken
         storedRefreshToken = token.refreshToken
+
+        UserManager.shared.applyLoginUserInfo(token.userInfo)
 
         return LoginResult(accessToken: token.accessToken, refreshToken: token.refreshToken)
     }

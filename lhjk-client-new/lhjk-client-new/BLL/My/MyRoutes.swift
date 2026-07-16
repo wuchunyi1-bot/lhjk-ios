@@ -43,7 +43,8 @@ enum MyRoutes {
         r.register(path: "/me/address")          { _ in AddressListViewController() }
         r.register(path: "/me/address/edit")     { params in
             let address = params["address"] as? MAddress
-            return AddressEditViewController(address: address)
+            let count = params["existingAddressCount"] as? Int ?? 0
+            return AddressEditViewController(address: address, existingAddressCount: count)
         }
         r.register(path: "/me/health-profile")   { _ in PlaceholderViewController(title: "健康档案") }
         r.register(path: "/orders")          { params in

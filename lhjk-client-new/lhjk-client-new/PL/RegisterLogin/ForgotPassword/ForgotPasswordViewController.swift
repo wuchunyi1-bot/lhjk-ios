@@ -184,8 +184,19 @@ final class ForgotPasswordViewController: BaseViewController {
         showCaptchaVerify { [weak self] token in
             guard let self = self else { return }
             self.captchaToken = token
-            self.codeButton.startCountdown()
-            self.showToast("验证码已发送")
+            Task {
+                do {
+                    _ = try await LoginService.shared.sendVerificationCode(to: phone, type: .resetPassword)
+                    await MainActor.run {
+                        self.codeButton.startCountdown()
+                        self.showToast("验证码已发送")
+                    }
+                } catch {
+                    await MainActor.run {
+                        self.showToast(error.localizedDescription)
+                    }
+                }
+            }
         }
     }
 

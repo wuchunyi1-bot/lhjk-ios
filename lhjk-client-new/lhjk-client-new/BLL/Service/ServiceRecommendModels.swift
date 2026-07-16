@@ -108,6 +108,43 @@ struct PaginatedHospitalPackageData: Decodable {
     }
 }
 
+// MARK: - 零售业务分类
+
+/// `GET /v1/hospitalPackage/getCategoryServiceListByType` 列表项
+struct CategoryServiceListVO: Decodable {
+    let id: String
+    let serviceName: String?
+    let imgUrl: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, serviceName, imgUrl
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = Self.decodeFlexibleString(c, key: .id)
+        serviceName = try c.decodeIfPresent(String.self, forKey: .serviceName)
+        imgUrl = try c.decodeIfPresent(String.self, forKey: .imgUrl)
+    }
+
+    private static func decodeFlexibleString<K: CodingKey>(
+        _ container: KeyedDecodingContainer<K>,
+        key: K
+    ) -> String {
+        if let value = try? container.decode(String.self, forKey: key) { return value }
+        if let value = try? container.decode(Int64.self, forKey: key) { return String(value) }
+        if let value = try? container.decode(Int.self, forKey: key) { return String(value) }
+        return ""
+    }
+}
+
+enum HospitalPackageCategoryType {
+    /// 医院服务
+    static let hospitalService = 1
+    /// 零售类（富德优选）
+    static let retail = 2
+}
+
 // MARK: - 映射
 
 enum ServiceRecommendCategoryMapper {
@@ -173,7 +210,8 @@ enum HospitalPackageMapper {
             badge: badge,
             accentHex: "#FF7A50",
             audienceTags: [],
-            sortRank: index
+            sortRank: index,
+            imageUrl: nonEmpty(vo.imageUrl)
         )
     }
 

@@ -25,17 +25,22 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
             // 服务 Hub 静态预拉由 RootTabBarController 延迟触发（覆盖冷启动与登录 setRoot）
 
-            // 异步检查用户信息完整性，决定是否展示 onboarding
+            // 两套数据并行、互不依赖：
+            // 1) 本地 loginUserInfo → Onboarding 门禁
+            // 2) 网络 getCurrentUserBaseInfo → App 业务 currentUser
             Task {
-                let needOnboarding = await UserManager.shared.checkNeedOnboarding()
+                async let profile: SUsers? = UserManager.shared.fetchUserInfo()
+                let needOnboarding = UserManager.shared.checkNeedOnboarding()
+                _ = await profile
+
                 await MainActor.run {
                     if needOnboarding {
-                        print("[SceneDelegate] data incomplete → presenting onboarding")
+                        print("[SceneDelegate] loginUserInfo incomplete → presenting onboarding")
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             Router.shared.present("/onboarding")
                         }
                     } else {
-                        print("[SceneDelegate] data complete → skip onboarding")
+                        print("[SceneDelegate] onboarding skip; profile fetch done")
                     }
                 }
             }

@@ -29,6 +29,9 @@
 		9F5D324E0D90EB682A0A77B4 /* OAuthCredential.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */; };
 		A3AADC4D6DF2A11DC4DA077F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7A38C4AFEC723E4B6C12D675 /* LaunchScreen.storyboard */; };
 		A528D7B130078E1C005B0CA7 /* H5Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = A528D7B030078E1C005B0CA7 /* H5Config.swift */; };
+		A53EF9D430088E0900ED9E5A /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EF9D230088E0900ED9E5A /* LocationManager.swift */; };
+		A53EF9D630088E2C00ED9E5A /* AddressEditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EF9D530088E2C00ED9E5A /* AddressEditViewModel.swift */; };
+		A53EFC0F3008CEAE00ED9E5A /* MallCategoryTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EFC0E3008CEAE00ED9E5A /* MallCategoryTabBar.swift */; };
 		A54CBD3F30049CB100D581AE /* CartModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD3D30049CB100D581AE /* CartModels.swift */; };
 		A54CBD4030049CB100D581AE /* CartService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD3E30049CB100D581AE /* CartService.swift */; };
 		A54CBD4530049CD600D581AE /* ServiceCartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD4130049CD600D581AE /* ServiceCartViewModel.swift */; };
@@ -154,7 +157,6 @@
 		A5A6F4CA2FFF7AB80065C921 /* ServicePackageSearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4C72FFF7AB80065C921 /* ServicePackageSearchViewModel.swift */; };
 		A5A6F4CB2FFF7AB80065C921 /* ServiceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4C82FFF7AB80065C921 /* ServiceViewModel.swift */; };
 		A5A6F4CE2FFF7ACB0065C921 /* ServicePackageSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4CC2FFF7ACB0065C921 /* ServicePackageSearchViewController.swift */; };
-		A5A6F4D52FFF7AE80065C921 /* ActivateBannerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4CF2FFF7AE80065C921 /* ActivateBannerCell.swift */; };
 		A5A6F4D62FFF7AE80065C921 /* HealthPackageCategoryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4D12FFF7AE80065C921 /* HealthPackageCategoryCell.swift */; };
 		A5A6F4D72FFF7AE80065C921 /* ServiceHubHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4D32FFF7AE80065C921 /* ServiceHubHeaderView.swift */; };
 		A5A6F4D82FFF7AE80065C921 /* HealthPackageCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4D02FFF7AE80065C921 /* HealthPackageCardCell.swift */; };
@@ -284,6 +286,9 @@
 		840D488A2D621EED67F49634 /* PLProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PLProtocol.swift; path = Other/Common/Protocols/PLProtocol.swift; sourceTree = "<group>"; };
 		929B2C07064774594EB5F7EC /* IMService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = IMService.swift; path = BLL/Message/IMService.swift; sourceTree = "<group>"; };
 		A528D7B030078E1C005B0CA7 /* H5Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = H5Config.swift; path = Other/Common/H5Config.swift; sourceTree = "<group>"; };
+		A53EF9D230088E0900ED9E5A /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
+		A53EF9D530088E2C00ED9E5A /* AddressEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressEditViewModel.swift; sourceTree = "<group>"; };
+		A53EFC0E3008CEAE00ED9E5A /* MallCategoryTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MallCategoryTabBar.swift; sourceTree = "<group>"; };
 		A54CBD3D30049CB100D581AE /* CartModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CartModels.swift; path = BLL/Service/CartModels.swift; sourceTree = "<group>"; };
 		A54CBD3E30049CB100D581AE /* CartService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CartService.swift; path = BLL/Service/CartService.swift; sourceTree = "<group>"; };
 		A54CBD4130049CD600D581AE /* ServiceCartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceCartViewModel.swift; sourceTree = "<group>"; };
@@ -409,7 +414,6 @@
 		A5A6F4C72FFF7AB80065C921 /* ServicePackageSearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicePackageSearchViewModel.swift; sourceTree = "<group>"; };
 		A5A6F4C82FFF7AB80065C921 /* ServiceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceViewModel.swift; sourceTree = "<group>"; };
 		A5A6F4CC2FFF7ACB0065C921 /* ServicePackageSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicePackageSearchViewController.swift; sourceTree = "<group>"; };
-		A5A6F4CF2FFF7AE80065C921 /* ActivateBannerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivateBannerCell.swift; sourceTree = "<group>"; };
 		A5A6F4D02FFF7AE80065C921 /* HealthPackageCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthPackageCardCell.swift; sourceTree = "<group>"; };
 		A5A6F4D12FFF7AE80065C921 /* HealthPackageCategoryCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthPackageCategoryCell.swift; sourceTree = "<group>"; };
 		A5A6F4D22FFF7AE80065C921 /* ServiceBannerCarouselCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceBannerCarouselCell.swift; sourceTree = "<group>"; };
@@ -587,6 +591,7 @@
 		80323DB75D4CB2E15619DDBB /* DAL */ = {
 			isa = PBXGroup;
 			children = (
+				A53EF9D330088E0900ED9E5A /* Location */,
 				A5A6F5472FFF7EFC0065C921 /* Media */,
 				A5A6F5342FFF7D5F0065C921 /* FileManager */,
 				A5A6F5252FFF7CF40065C921 /* OSS */,
@@ -609,6 +614,15 @@
 				E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A53EF9D330088E0900ED9E5A /* Location */ = {
+			isa = PBXGroup;
+			children = (
+				A53EF9D230088E0900ED9E5A /* LocationManager.swift */,
+			);
+			name = Location;
+			path = DAL/Location;
 			sourceTree = "<group>";
 		};
 		A54CBD4230049CD600D581AE /* ViewModels */ = {
@@ -1119,6 +1133,7 @@
 		A590FCA02FEA91170056EF52 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A53EFC0E3008CEAE00ED9E5A /* MallCategoryTabBar.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -1295,7 +1310,6 @@
 		A5A6F4D42FFF7AE80065C921 /* Components */ = {
 			isa = PBXGroup;
 			children = (
-				A5A6F4CF2FFF7AE80065C921 /* ActivateBannerCell.swift */,
 				A5A6F4D02FFF7AE80065C921 /* HealthPackageCardCell.swift */,
 				A5A6F4D12FFF7AE80065C921 /* HealthPackageCategoryCell.swift */,
 				A5A6F4D22FFF7AE80065C921 /* ServiceBannerCarouselCell.swift */,
@@ -1370,6 +1384,7 @@
 		A5A6F5102FFF7BFE0065C921 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				A53EF9D530088E2C00ED9E5A /* AddressEditViewModel.swift */,
 				A5A6F50F2FFF7BFE0065C921 /* AddressListViewModel.swift */,
 			);
 			path = ViewModels;
@@ -2005,6 +2020,7 @@
 				A590FCD42FEA91170056EF52 /* HealthRecordBodyCardCell.swift in Sources */,
 				A5A6F4E92FFF7B7E0065C921 /* NotificationsViewController.swift in Sources */,
 				A5A6F4EA2FFF7B7E0065C921 /* MessagesViewController.swift in Sources */,
+				A53EFC0F3008CEAE00ED9E5A /* MallCategoryTabBar.swift in Sources */,
 				A5A6F4EB2FFF7B7E0065C921 /* NotificationListViewController.swift in Sources */,
 				A5ACE2333000C25200056C52 /* MeMembershipCardView.swift in Sources */,
 				A590FCD52FEA91170056EF52 /* HealthRecordMetricRowCell.swift in Sources */,
@@ -2087,7 +2103,6 @@
 				A5A6F53D2FFF7E340065C921 /* HomeViewModel.swift in Sources */,
 				A590FCFE2FEA91170056EF52 /* NotificationSettingsViewController.swift in Sources */,
 				A590FCFF2FEA91170056EF52 /* AboutSettingsViewController.swift in Sources */,
-				A5A6F4D52FFF7AE80065C921 /* ActivateBannerCell.swift in Sources */,
 				A5A6F4D62FFF7AE80065C921 /* HealthPackageCategoryCell.swift in Sources */,
 				A5A6F57E2FFF8F300065C921 /* NotificationCardCell.swift in Sources */,
 				A5A6F57F2FFF8F300065C921 /* TeamBannerCell.swift in Sources */,
@@ -2121,6 +2136,7 @@
 				59AB481874792A6D2327D4DB /* PLProtocol.swift in Sources */,
 				C8C2F63AA4929D219BE2AE0C /* RootTabBarController.swift in Sources */,
 				625D4BF5B8323C4730A5B48E /* SceneDelegate.swift in Sources */,
+				A53EF9D430088E0900ED9E5A /* LocationManager.swift in Sources */,
 				D0DF85E8760C6773E9B32743 /* RouteSetup.swift in Sources */,
 				D4D3CF9A74172D4C53A40241 /* PlaceholderViewController.swift in Sources */,
 				E7E5276C54E35414EB42377A /* HealthRoutes.swift in Sources */,
@@ -2134,6 +2150,7 @@
 				A57D2F1E2FDC0647002E43BA /* MyRoutes.swift in Sources */,
 				A5A6F4FF2FFF7BBD0065C921 /* SysNotifyCell.swift in Sources */,
 				A5ACE2463000F57B00056C52 /* ServicePackageDetailViewModel.swift in Sources */,
+				A53EF9D630088E2C00ED9E5A /* AddressEditViewModel.swift in Sources */,
 				A5A6F5352FFF7D5F0065C921 /* FileManager.swift in Sources */,
 				A5A6F5432FFF7E720065C921 /* ConversationListViewModel.swift in Sources */,
 				A5A6F5002FFF7BBD0065C921 /* ImageBubbleCell.swift in Sources */,

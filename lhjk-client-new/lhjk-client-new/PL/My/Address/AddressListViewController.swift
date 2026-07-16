@@ -145,12 +145,17 @@ final class AddressListViewController: BaseViewController {
     // MARK: - Actions
 
     @objc private func addAddress() {
-        Router.shared.push("/me/address/edit")
+        Router.shared.push("/me/address/edit", params: [
+            "existingAddressCount": viewModel.addresses.count
+        ])
     }
 
     private func editAddress(_ address: MAddress) {
         guard address.id != nil else { return }
-        Router.shared.push("/me/address/edit", params: ["address": address])
+        Router.shared.push("/me/address/edit", params: [
+            "address": address,
+            "existingAddressCount": viewModel.addresses.count
+        ])
     }
 
     private func deleteAddress(_ address: MAddress, at indexPath: IndexPath) {

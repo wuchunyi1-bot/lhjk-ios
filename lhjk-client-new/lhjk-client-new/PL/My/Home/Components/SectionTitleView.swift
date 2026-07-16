@@ -9,8 +9,8 @@ final class SectionTitleView: UIView {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdBodySemibold
-        label.textColor = .fdSubtext
+        label.font = .fdH3
+        label.textColor = .fdText
         return label
     }()
 

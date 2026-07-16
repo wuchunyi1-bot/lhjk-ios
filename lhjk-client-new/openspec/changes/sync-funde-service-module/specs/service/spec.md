@@ -2,14 +2,53 @@
 
 ## MODIFIED Requirements
 
+### Requirement: 服务首页顶栏（对齐 funde ServicesView.vue）
+
+服务 Tab 顶栏 SHALL 固定展示左侧文案与右侧购物车，**不得**展示搜索入口或机构切换。
+
+#### Scenario: 左侧文案
+- **WHEN** 服务首页展示
+- **THEN** 左侧主标题为「健康服务」
+- **AND** 副标题为「德系健康管理 · 9 大产品线」
+
+#### Scenario: 购物车
+- **WHEN** 用户点击右上角购物车图标
+- **THEN** 跳转 `/services/cart`
+
+#### Scenario: 无搜索
+- **WHEN** 服务首页展示
+- **THEN** 顶栏不展示搜索按钮；套餐搜索入口不在 Hub 顶栏（可在列表页等其他入口）
+
+---
+
+### Requirement: 服务首页 Banner 轮播
+
+运营 Banner 区域 SHALL **仅**展示图片轮播（无文案叠加卡），自动播放单向循环。
+
+#### Scenario: 仅 Banner 图
+- **WHEN** Banner 有图片 URL
+- **THEN** 仅展示圆角图片，不叠加 code / 标题 / 副标题文案层
+- **WHEN** 无图片
+- **THEN** 展示纯色占位底，仍不叠加文案控件
+
+#### Scenario: 自动轮播单向循环
+- **WHEN** Banner 数量 > 1
+- **THEN** 每 3.6s 向下一张滚动
+- **AND** 从最后一张切到第一张时 MUST 继续向前滚动（无限循环），MUST NOT 反向回滚整段
+
+#### Scenario: 指示器
+- **WHEN** Banner 数量 > 1
+- **THEN** 展示页码指示器，当前页为品牌主色
+
+---
+
 ### Requirement: 服务首页 Hub 布局（对齐 funde-client 2026-07）
 
 服务 Tab 根页面区块顺序：
 
-1. 三好卡兑换提示条（未激活时）
-2. 运营 Banner 轮播（`columnContent/getByCode`）
-3. 德系 9 宫格（字典 parentId `2074711686115364864`）
-4. **富德优选**预览（非「推荐服务」Tab）
+1. 运营 Banner 轮播（`columnContent/getByCode`，仅图片）
+2. 德系 9 宫格（字典 parentId `2074711686115364864`）
+3. **富德优选**预览（非「推荐服务」Tab）
 
 #### Scenario: 富德优选预览
 
@@ -96,3 +135,11 @@
 **Reason**: funde-client Hub 已改为「富德优选」固定预览，类目 Tab 移至套餐列表页左栏。
 
 **Migration**: iOS 删除 Hub 上 `HealthPackageCategoryCell` 与 `selectCategory` 逻辑；字典 parentId `2074711807339139072` 改由列表页消费。
+
+### Requirement: 服务首页顶栏搜索 / 机构切换
+
+**Reason**: funde `ServicesView.vue` 与 page-spec 明确 Hub 无搜索、固定「健康服务」文案；搜索入口不在服务首页顶栏。
+
+### Requirement: 服务首页三好卡 ActivateBanner
+
+**Reason**: 对齐当前 funde Hub，去掉 `ActivateBannerCell` / `showActivateBanner`。

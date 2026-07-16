@@ -25,7 +25,8 @@ final class ServiceHubCacheService {
     private var staticData: ServiceHubStaticData?
     private var packagesByCategoryId: [String: [HealthPackageItem]] = [:]
     private var retailPreviewPackages: [HealthPackageItem]?
-    private var retailTask: Task<[HealthPackageItem], Never>?
+    private var retailTotalPages: Int = 1
+    private var retailTask: Task<(packages: [HealthPackageItem], totalPages: Int), Never>?
 
     private var staticTask: Task<ServiceHubStaticData, Never>?
     private var packageTasks: [String: Task<[HealthPackageItem], Never>] = [:]
@@ -70,26 +71,36 @@ final class ServiceHubCacheService {
         retailPreviewPackages
     }
 
-    /// Hub 富德优选预览（前 6 条零售套包）
-    func ensureRetailPreview(hospitalId: String?, pageSize: Int = 6) async -> [HealthPackageItem] {
-        if let retailPreviewPackages {
-            return retailPreviewPackages
+    /// `loadMore` 成功后同步会话缓存，避免 Tab 切回或 `/mall` 只读到首屏
+    func updateRetailPreview(packages: [HealthPackageItem], totalPages: Int) {
+        retailPreviewPackages = packages
+        retailTotalPages = max(1, totalPages)
+    }
+
+    /// Hub 富德优选预览（前 10 条零售套包）
+    func ensureRetailPreview(hospitalId: String?, pageSize: Int = 10) async -> (packages: [HealthPackageItem], totalPages: Int) {
+        if let retailPreviewPackages, !retailPreviewPackages.isEmpty {
+            return (retailPreviewPackages, retailTotalPages)
         }
         if let retailTask {
             return await retailTask.value
         }
 
         let gen = generation
-        let task = Task { [weak self] in
-            guard let self else { return [] as [HealthPackageItem] }
+        let task = Task { [weak self] () -> (packages: [HealthPackageItem], totalPages: Int) in
+            guard let self else { return ([], 1) }
             do {
-                return try await self.hospitalPackageService.fetchRetailPackageItems(
-                    hospitalId: hospitalId,
+                let pageData = try await self.hospitalPackageService.fetchRetailPackages(
+                    pageNum: 1,
                     pageSize: pageSize
                 )
+                let items = (pageData.records ?? []).enumerated().map { index, vo in
+                    HospitalPackageMapper.toPackageItem(vo, index: index)
+                }
+                return (items, pageData.totalPages ?? 1)
             } catch {
                 print("[ServiceHubCache] ensureRetailPreview failed: \(error.localizedDescription)")
-                return []
+                return ([], 1)
             }
         }
         retailTask = task
@@ -97,9 +108,10 @@ final class ServiceHubCacheService {
         retailTask = nil
 
         guard gen == generation else {
-            return retailPreviewPackages ?? result
+            return (retailPreviewPackages ?? result.packages, retailTotalPages)
         }
-        retailPreviewPackages = result
+        retailPreviewPackages = result.packages
+        retailTotalPages = result.totalPages
         return result
     }
 
@@ -191,6 +203,7 @@ final class ServiceHubCacheService {
         hasLoadedStatic = false
         packagesByCategoryId.removeAll()
         retailPreviewPackages = nil
+        retailTotalPages = 1
         RetailCategoryService.shared.invalidate()
         staticTask?.cancel()
         staticTask = nil
@@ -205,6 +218,7 @@ final class ServiceHubCacheService {
     func invalidatePackages() {
         packagesByCategoryId.removeAll()
         retailPreviewPackages = nil
+        retailTotalPages = 1
         RetailCategoryService.shared.invalidate()
         retailTask?.cancel()
         retailTask = nil

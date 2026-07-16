@@ -17,7 +17,6 @@ final class ServiceViewController: BaseViewController {
         tv.showsVerticalScrollIndicator = false
         tv.dataSource = self
         tv.delegate = self
-        tv.register(ActivateBannerCell.self, forCellReuseIdentifier: ActivateBannerCell.reuseID)
         tv.register(ServiceBannerCarouselCell.self, forCellReuseIdentifier: ServiceBannerCarouselCell.reuseID)
         tv.register(MatrixGridCell.self, forCellReuseIdentifier: MatrixGridCell.reuseID)
         tv.register(HealthPackageCardCell.self, forCellReuseIdentifier: HealthPackageCardCell.reuseID)
@@ -51,57 +50,55 @@ final class ServiceViewController: BaseViewController {
             $0.bottom.equalTo(view.safeAreaLayoutGuide)
         }
 
-        // 默认顶栏文案，避免 snapshot 未到前只剩 chevron
-        hubHeader.configure(institutionName: "服务", showsInstitutionPicker: false)
-
-        hubHeader.onInstitutionTap = { [weak self] in self?.presentInstitutionPicker() }
-        hubHeader.onSearchTap = { [weak self] in self?.openSearch() }
         hubHeader.onCartTap = { Router.shared.push("/services/cart") }
     }
 
     override func bindViewModel() {
         viewModel.$snapshot
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] snapshot in
-                guard let self, let snapshot else { return }
-                self.hubHeader.configure(
-                    institutionName: snapshot.institution.name,
-                    showsInstitutionPicker: snapshot.institutions.count > 1
-                )
-                self.tableView.reloadData()
+            .sink { [weak self] _ in
+                self?.tableView.reloadData()
+                self?.updateFooterView()
+            }
+            .store(in: &cancellables)
+
+        Publishers.CombineLatest(viewModel.$isLoadingMore, viewModel.$hasMore)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateFooterView()
             }
             .store(in: &cancellables)
     }
 
+    private func updateFooterView() {
+        if viewModel.isLoadingMore {
+            let container = UIView(frame: CGRect(x: 0, y: 0, width: tableView.bounds.width, height: 50))
+            let spinner = UIActivityIndicatorView(style: .medium)
+            spinner.startAnimating()
+            container.addSubview(spinner)
+            spinner.snp.makeConstraints { make in
+                make.center.equalToSuperview()
+            }
+            tableView.tableFooterView = container
+        } else if !viewModel.hasMore && (viewModel.snapshot?.mallPreviewPackages.count ?? 0) > 0 {
+            let container = UIView(frame: CGRect(x: 0, y: 0, width: tableView.bounds.width, height: 50))
+            let label = UILabel()
+            label.text = "没有更多数据了"
+            label.font = .fdCaption
+            label.textColor = .fdMuted
+            label.textAlignment = .center
+            container.addSubview(label)
+            label.snp.makeConstraints { make in
+                make.center.equalToSuperview()
+            }
+            tableView.tableFooterView = container
+        } else {
+            tableView.tableFooterView = nil
+        }
+    }
+
     private func sectionKind(at index: Int) -> ServiceViewModel.Section? {
         ServiceViewModel.Section(rawValue: index)
-    }
-
-    private func presentInstitutionPicker() {
-        guard let snapshot = viewModel.snapshot, snapshot.institutions.count > 1 else { return }
-        let sheet = UIAlertController(title: "选择服务机构", message: nil, preferredStyle: .actionSheet)
-        for institution in snapshot.institutions {
-            let title = institution.id == snapshot.institution.id
-                ? "✓ \(institution.name)"
-                : institution.name
-            sheet.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
-                self?.viewModel.selectInstitution(id: institution.id)
-            })
-        }
-        sheet.addAction(UIAlertAction(title: "取消", style: .cancel))
-        if let popover = sheet.popoverPresentationController {
-            popover.sourceView = hubHeader
-            popover.sourceRect = CGRect(x: 20, y: 0, width: 200, height: 44)
-        }
-        present(sheet, animated: true)
-    }
-
-    private func openSearch() {
-        var params: [String: Any] = [:]
-        if let hospitalId = ServiceCatalogService.validApiHospitalId(viewModel.snapshot?.institution.hospitalId) {
-            params["hospitalId"] = hospitalId
-        }
-        Router.shared.push("/services/search", params: params)
     }
 }
 
@@ -124,11 +121,6 @@ extension ServiceViewController: UITableViewDataSource, UITableViewDelegate {
         }
 
         switch s {
-        case .activateBanner:
-            let cell = tableView.dequeueReusableCell(withIdentifier: ActivateBannerCell.reuseID, for: indexPath) as! ActivateBannerCell
-            cell.onTap = { Router.shared.push("/activate") }
-            return cell
-
         case .bannerCarousel:
             let cell = tableView.dequeueReusableCell(withIdentifier: ServiceBannerCarouselCell.reuseID, for: indexPath) as! ServiceBannerCarouselCell
             cell.configure(snapshot.banners)
@@ -190,5 +182,18 @@ extension ServiceViewController: UITableViewDataSource, UITableViewDelegate {
         let v = UIView()
         v.snp.makeConstraints { $0.height.equalTo(height) }
         return v
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        guard viewModel.hasMore, !viewModel.isLoadingMore else { return }
+
+        let threshold: CGFloat = 100
+        let contentHeight = scrollView.contentSize.height
+        let frameHeight = scrollView.frame.size.height
+        let contentOffset = scrollView.contentOffset.y
+
+        if contentHeight > 0, contentOffset + frameHeight >= contentHeight - threshold {
+            viewModel.loadMore()
+        }
     }
 }

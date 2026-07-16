@@ -467,6 +467,13 @@ final class OnboardingViewController: BaseViewController {
         Task {
             do {
                 try await UserService.shared.updateCurrentProfile(payload)
+                UserManager.shared.patchLoginUserInfo(
+                    chineseName: nameText,
+                    sex: selectedGender == "男" ? "1" : "2",
+                    birthday: birthdayStr
+                )
+                // 业务侧 currentUser 与门禁 loginUserInfo 分开刷新
+                _ = await UserManager.shared.refreshUserInfo()
                 await MainActor.run {
                     UserDefaults.standard.set(20, forKey: "fd_archive_progress")
                     if !nameText.isEmpty {

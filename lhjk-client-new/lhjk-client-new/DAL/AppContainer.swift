@@ -41,6 +41,7 @@ final class AppContainer {
     private(set) lazy var rongCloudManager: RongCloudManager = .shared
     private(set) lazy var rongCloudMessageDelegate: RongCloudMessageDelegate = .shared
     private(set) lazy var bluetoothManager: BluetoothManager = .shared
+    private(set) lazy var locationManager: LocationManager = .shared
 
     // MARK: - 业务服务
 

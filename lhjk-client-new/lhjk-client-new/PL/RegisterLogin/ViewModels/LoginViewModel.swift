@@ -227,8 +227,10 @@ final class LoginViewModel: ObservableObject {
         // 连接 IM
         rongCloudManager.fetchTokenAndConnect()
 
-        // 检查是否需要 onboarding
-        let needOnboarding = await userManager.checkNeedOnboarding()
+        // 并行：门禁只用 loginUserInfo；业务资料拉 getCurrentUserBaseInfo
+        async let profile: SUsers? = userManager.fetchUserInfo()
+        let needOnboarding = userManager.checkNeedOnboarding()
+        _ = await profile
 
         await MainActor.run {
             navigateToHomePublisher.send()

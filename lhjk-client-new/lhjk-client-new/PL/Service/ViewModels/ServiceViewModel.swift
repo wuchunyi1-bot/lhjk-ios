@@ -6,7 +6,6 @@ import Combine
 final class ServiceViewModel: ObservableObject {
 
     enum Section: Int, CaseIterable {
-        case activateBanner
         case bannerCarousel
         case matrix
         case mallPreview
@@ -14,37 +13,40 @@ final class ServiceViewModel: ObservableObject {
 
     @Published private(set) var snapshot: ServiceHubSnapshot?
     @Published private(set) var isLoading = false
+    @Published private(set) var currentPage = 1
+    @Published private(set) var totalPages = 1
+    @Published private(set) var isLoadingMore = false
+    @Published private(set) var hasMore = true
 
     private let cacheService: ServiceHubCacheService
     private let catalogService: ServiceCatalogService
-    private let voucherService: VoucherService
-    private var cancellables = Set<AnyCancellable>()
+    private let hospitalPackageService: HospitalPackageService
     private var loadTask: Task<Void, Never>?
     private var loadGeneration = 0
 
     init(
         cacheService: ServiceHubCacheService = AppContainer.shared.serviceHubCacheService,
         catalogService: ServiceCatalogService = AppContainer.shared.serviceCatalogService,
-        voucherService: VoucherService = AppContainer.shared.voucherService
+        hospitalPackageService: HospitalPackageService = AppContainer.shared.hospitalPackageService
     ) {
         self.cacheService = cacheService
         self.catalogService = catalogService
-        self.voucherService = voucherService
-
-        NotificationCenter.default.publisher(for: VoucherService.cardActivationDidChange)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.refreshActivateBannerOnly() }
-            .store(in: &cancellables)
+        self.hospitalPackageService = hospitalPackageService
     }
 
     deinit { loadTask?.cancel() }
 
     func load() {
         if let staticData = cacheService.getStatic() {
-            applyFromCache(
-                staticData: staticData,
-                mallPreview: cacheService.cachedRetailPreview() ?? []
-            )
+            let preview = snapshot?.mallPreviewPackages
+                ?? cacheService.cachedRetailPreview()
+                ?? []
+            applyFromCache(staticData: staticData, mallPreview: preview)
+        }
+
+        // 已加载富德优选数据时，Tab 切回不重置分页
+        if snapshot?.mallPreviewPackages.isEmpty == false {
+            return
         }
 
         if loadTask != nil, isLoading { return }
@@ -71,8 +73,6 @@ final class ServiceViewModel: ObservableObject {
     func rowCount(for section: Section) -> Int {
         guard let snapshot else { return 0 }
         switch section {
-        case .activateBanner:
-            return snapshot.showActivateBanner ? 1 : 0
         case .bannerCarousel:
             return snapshot.banners.isEmpty ? 0 : 1
         case .matrix:
@@ -84,7 +84,7 @@ final class ServiceViewModel: ObservableObject {
 
     func sectionTitle(for section: Section) -> String? {
         switch section {
-        case .matrix: return "德系9大产品线"
+        case .matrix: return "德系产品"
         case .mallPreview: return "富德优选"
         default: return nil
         }
@@ -133,13 +133,16 @@ final class ServiceViewModel: ObservableObject {
             mallPreview: cacheService.cachedRetailPreview() ?? []
         )
 
-        let mallPreview = await cacheService.ensureRetailPreview(
+        let result = await cacheService.ensureRetailPreview(
             hospitalId: catalogService.selectedApiHospitalId(),
-            pageSize: 6
+            pageSize: 10
         )
         guard isCurrent(generation) else { return }
 
-        applyFromCache(staticData: staticData, mallPreview: mallPreview)
+        applyFromCache(staticData: staticData, mallPreview: result.packages)
+        currentPage = 1
+        totalPages = result.totalPages
+        hasMore = currentPage < totalPages
     }
 
     private func performForceReload(generation: Int) async {
@@ -149,31 +152,69 @@ final class ServiceViewModel: ObservableObject {
         let staticData = await cacheService.preloadStatic()
         guard isCurrent(generation) else { return }
 
-        let mallPreview = await cacheService.ensureRetailPreview(
+        let result = await cacheService.ensureRetailPreview(
             hospitalId: catalogService.selectedApiHospitalId(),
-            pageSize: 6
+            pageSize: 10
         )
         guard isCurrent(generation) else { return }
 
-        applyFromCache(staticData: staticData, mallPreview: mallPreview)
+        applyFromCache(staticData: staticData, mallPreview: result.packages)
+        currentPage = 1
+        totalPages = result.totalPages
+        hasMore = currentPage < totalPages
     }
 
-    private func refreshActivateBannerOnly() {
-        guard let snapshot else {
-            load()
-            return
+    func loadMore() {
+        guard !isLoadingMore, !isLoading, hasMore, let currentSnapshot = snapshot else { return }
+        isLoadingMore = true
+
+        let generation = loadGeneration
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let nextPage = self.currentPage + 1
+
+                let pageData = try await self.hospitalPackageService.fetchRetailPackages(
+                    pageNum: nextPage,
+                    pageSize: 10
+                )
+
+                guard self.isCurrent(generation) else { return }
+
+                let newItems = (pageData.records ?? []).enumerated().map { index, vo in
+                    HospitalPackageMapper.toPackageItem(vo, index: (nextPage - 1) * 10 + index)
+                }
+
+                let updatedPackages = currentSnapshot.mallPreviewPackages + newItems
+                let resolvedTotalPages = pageData.totalPages ?? self.totalPages
+                let resolvedCurrentPage = pageData.currentPage ?? nextPage
+                let stillHasMore = !newItems.isEmpty && resolvedCurrentPage < resolvedTotalPages
+
+                self.currentPage = resolvedCurrentPage
+                self.totalPages = resolvedTotalPages
+                self.hasMore = stillHasMore
+                self.isLoadingMore = false
+
+                self.cacheService.updateRetailPreview(
+                    packages: updatedPackages,
+                    totalPages: resolvedTotalPages
+                )
+                self.snapshot = ServiceHubSnapshot(
+                    institution: currentSnapshot.institution,
+                    institutions: currentSnapshot.institutions,
+                    banners: currentSnapshot.banners,
+                    matrix: currentSnapshot.matrix,
+                    mallPreviewPackages: updatedPackages
+                )
+            } catch {
+                print("[ServiceVM] loadMore failed: \(error.localizedDescription)")
+                self.isLoadingMore = false
+            }
         }
-        self.snapshot = catalogService.loadHubSnapshot(
-            cardActivated: voucherService.isCardActivated,
-            banners: snapshot.banners,
-            matrix: snapshot.matrix,
-            mallPreviewPackages: snapshot.mallPreviewPackages
-        )
     }
 
     private func applyFromCache(staticData: ServiceHubStaticData, mallPreview: [HealthPackageItem]) {
         snapshot = catalogService.loadHubSnapshot(
-            cardActivated: voucherService.isCardActivated,
             banners: staticData.banners,
             matrix: staticData.matrix,
             mallPreviewPackages: mallPreview

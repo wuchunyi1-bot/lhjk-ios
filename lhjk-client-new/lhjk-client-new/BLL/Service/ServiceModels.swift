@@ -23,6 +23,7 @@ struct HealthPackageItem {
     let accentHex: String
     let audienceTags: [String]
     let sortRank: Int
+    let imageUrl: String?
 
     var accent: UIColor { UIColor(hexString: accentHex) }
     var displayTitle: String { "\(productCode) · \(name)" }
@@ -192,7 +193,6 @@ struct ServiceHubBanner {
 
 /// 服务首页一次性加载的数据快照
 struct ServiceHubSnapshot {
-    let showActivateBanner: Bool
     let institution: ServiceInstitution
     let institutions: [ServiceInstitution]
     let banners: [ServiceHubBanner]

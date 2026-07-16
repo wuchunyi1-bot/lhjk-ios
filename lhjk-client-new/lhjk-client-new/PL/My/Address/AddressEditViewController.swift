@@ -1,30 +1,17 @@
 import UIKit
 import SnapKit
+import Combine
 
 /// 收货地址编辑页（新增 / 修改）
 ///
-/// 表单包含：收货人、手机号、所在地区（省/市/区）、详细地址、邮政编码、是否默认地址
-/// - 新增模式：不传 `address`，表单为空，标题为"新增地址"
-/// - 修改模式：传入 `address`，直接填充表单（无网络请求），标题为"编辑地址"
-///
-/// 参考 funde-client 地址编辑表单交互
+/// 对齐 funde-client AddressEditView + PRD 04：收货人、手机号、所在地区+定位、详细地址、默认地址。
+/// 保存接口不变：`POST /v1/address/saveOrUpdateAddress`。
 final class AddressEditViewController: BaseViewController {
 
-    // MARK: - Mode
+    // MARK: - ViewModel
 
-    private let existingAddress: MAddress?
-    private var isEditMode: Bool { existingAddress != nil }
-
-    // MARK: - Form State
-
-    private var nameText: String = ""
-    private var mobileText: String = ""
-    private var provinceText: String = ""
-    private var cityText: String = ""
-    private var areaText: String = ""
-    private var addressText: String = ""
-    private var codeText: String = ""
-    private var isDefault: Bool = false
+    private let viewModel: AddressEditViewModel
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - UI
 
@@ -37,13 +24,65 @@ final class AddressEditViewController: BaseViewController {
 
     private let contentView = UIView()
 
-    private lazy var nameField: UITextField = makeTextField(placeholder: "收货人姓名")
-    private lazy var mobileField: UITextField = makeTextField(placeholder: "手机号码", keyboardType: .numberPad)
-    private lazy var provinceField: UITextField = makeTextField(placeholder: "省份")
-    private lazy var cityField: UITextField = makeTextField(placeholder: "城市")
-    private lazy var areaField: UITextField = makeTextField(placeholder: "区/县")
-    private lazy var addressField: UITextField = makeTextField(placeholder: "详细地址（街道、门牌号等）")
-    private lazy var codeField: UITextField = makeTextField(placeholder: "邮政编码（选填）", keyboardType: .numberPad)
+    private lazy var nameField = makeTextField(placeholder: "请输入收货人姓名")
+    private lazy var mobileField = makeTextField(placeholder: "请输入收货人手机号码", keyboardType: .numberPad)
+
+    private let regionValueLabel: UILabel = {
+        let l = UILabel()
+        l.font = .fdBody
+        l.textColor = .fdMuted
+        l.textAlignment = .right
+        l.numberOfLines = 2
+        l.text = "请选择省、市、区"
+        return l
+    }()
+
+    private lazy var locateButton: UIButton = {
+        var cfg = UIButton.Configuration.filled()
+        cfg.title = "定位"
+        cfg.image = UIImage(systemName: "location")
+        cfg.imagePadding = 2
+        cfg.baseForegroundColor = .fdPrimary
+        cfg.baseBackgroundColor = UIColor.fdPrimary.withAlphaComponent(0.12)
+        cfg.cornerStyle = .capsule
+        cfg.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10)
+        cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = .fdCaptionSemibold
+            return outgoing
+        }
+        let b = UIButton(configuration: cfg)
+        b.addTarget(self, action: #selector(locateTapped), for: .touchUpInside)
+        return b
+    }()
+
+    private lazy var locateSpinner: UIActivityIndicatorView = {
+        let i = UIActivityIndicatorView(style: .medium)
+        i.color = .fdPrimary
+        i.hidesWhenStopped = true
+        return i
+    }()
+
+    private lazy var addressTextView: UITextView = {
+        let tv = UITextView()
+        tv.font = .fdBody
+        tv.textColor = .fdText
+        tv.backgroundColor = .clear
+        tv.textContainerInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
+        tv.isScrollEnabled = false
+        tv.delegate = self
+        return tv
+    }()
+
+    private let addressPlaceholderLabel: UILabel = {
+        let l = UILabel()
+        l.text = "小区楼栋、门牌号、村等"
+        l.font = .fdBody
+        l.textColor = .fdMuted
+        return l
+    }()
+
+    private lazy var codeField = makeTextField(placeholder: "邮政编码（选填）", keyboardType: .numberPad)
 
     private lazy var defaultSwitch: UISwitch = {
         let s = UISwitch()
@@ -52,9 +91,19 @@ final class AddressEditViewController: BaseViewController {
         return s
     }()
 
+    private let defaultHintLabel: UILabel = {
+        let l = UILabel()
+        l.text = "第一个地址将自动设为默认地址"
+        l.font = .fdCaption
+        l.textColor = .fdSubtext
+        l.numberOfLines = 0
+        l.isHidden = true
+        return l
+    }()
+
     private lazy var saveButton: UIButton = {
         var cfg = UIButton.Configuration.filled()
-        cfg.title = "保存"
+        cfg.title = "保存地址"
         cfg.baseForegroundColor = .white
         cfg.baseBackgroundColor = .fdPrimary
         cfg.cornerStyle = .large
@@ -70,8 +119,8 @@ final class AddressEditViewController: BaseViewController {
 
     // MARK: - Init
 
-    init(address: MAddress? = nil) {
-        self.existingAddress = address
+    init(address: MAddress? = nil, existingAddressCount: Int = 0) {
+        self.viewModel = AddressEditViewModel(address: address, existingAddressCount: existingAddressCount)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -85,25 +134,22 @@ final class AddressEditViewController: BaseViewController {
     }
 
     override func setupUI() {
-        title = isEditMode ? "编辑地址" : "新增地址"
+        title = viewModel.navigationTitle
         view.backgroundColor = .fdBg
 
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
-
-        scrollView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        scrollView.snp.makeConstraints { $0.edges.equalTo(view.safeAreaLayoutGuide) }
         contentView.snp.makeConstraints { $0.edges.width.equalToSuperview() }
 
-        // 构建表单
-        var lastBottom = buildFormFields()
-        lastBottom = buildDefaultRow(lastBottom)
-        lastBottom = buildSaveButton(lastBottom)
-
+        let last = buildContent()
         contentView.snp.makeConstraints { make in
-            make.bottom.equalTo(lastBottom).offset(32)
+            make.bottom.equalTo(last).offset(32)
         }
 
-        // 键盘通知
+        applyInitialForm()
+        setupKeyboardDismiss()
+
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(keyboardWillShow(_:)),
@@ -116,143 +162,280 @@ final class AddressEditViewController: BaseViewController {
             name: UIResponder.keyboardWillHideNotification,
             object: nil
         )
-
-        // 点击空白收起键盘
-        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
-        tap.cancelsTouchesInView = false
-        view.addGestureRecognizer(tap)
-
-        // 编辑模式：直接填充表单
-        if let addr = existingAddress {
-            fillForm(with: addr)
-        }
     }
 
-    // MARK: - Form Builder
-
-    private func buildFormFields() -> ConstraintItem {
-        let fields: [(String, UITextField)] = [
-            ("收货人", nameField),
-            ("手机号", mobileField),
-            ("省份", provinceField),
-            ("城市", cityField),
-            ("区/县", areaField),
-            ("详细地址", addressField),
-            ("邮政编码", codeField),
-        ]
-
-        var last: ConstraintItem = contentView.snp.top
-
-        for (index, (label, field)) in fields.enumerated() {
-            let row = makeFormRow(label: label, field: field, isLast: index == fields.count - 1)
-            contentView.addSubview(row)
-            row.snp.makeConstraints { make in
-                make.top.equalTo(last).offset(index == 0 ? 8 : 0)
-                make.leading.trailing.equalToSuperview().inset(16).priority(750)
+    override func bindViewModel() {
+        viewModel.$isLocating
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] locating in
+                self?.locateButton.isEnabled = !locating
+                if locating {
+                    self?.locateSpinner.startAnimating()
+                } else {
+                    self?.locateSpinner.stopAnimating()
+                }
             }
-            last = row.snp.bottom
-        }
+            .store(in: &cancellables)
 
-        return last
+        viewModel.$isSaving
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] saving in
+                self?.saveButton.isEnabled = !saving
+                self?.saveButton.configuration?.showsActivityIndicator = saving
+            }
+            .store(in: &cancellables)
+
+        Publishers.CombineLatest3(viewModel.$province, viewModel.$city, viewModel.$area)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _, _, _ in
+                self?.refreshRegionLabel()
+            }
+            .store(in: &cancellables)
+
+        viewModel.$address
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] text in
+                guard let self else { return }
+                if self.addressTextView.text != text {
+                    self.addressTextView.text = text
+                }
+                self.addressPlaceholderLabel.isHidden = !text.isEmpty
+            }
+            .store(in: &cancellables)
+
+        viewModel.toastMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] message in
+                self?.showToast(message)
+            }
+            .store(in: &cancellables)
+
+        viewModel.saveSucceeded
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.navigationController?.popViewController(animated: true)
+            }
+            .store(in: &cancellables)
     }
 
-    private func buildDefaultRow(_ lastBottom: ConstraintItem) -> ConstraintItem {
-        let row = UIView()
-        row.backgroundColor = .fdSurface
-        row.layer.cornerRadius = 14
+    // MARK: - Build UI
 
-        let titleLabel = UILabel()
-        titleLabel.text = "设为默认地址"
-        titleLabel.font = .fdBody
-        titleLabel.textColor = .fdText
+    private func buildContent() -> ConstraintItem {
+        var last = contentView.snp.top
 
-        row.addSubview(titleLabel)
-        row.addSubview(defaultSwitch)
+        let infoTitle = sectionTitle("收货信息")
+        contentView.addSubview(infoTitle)
+        infoTitle.snp.makeConstraints { make in
+            make.top.equalTo(last).offset(12)
+            make.leading.trailing.equalToSuperview().inset(16)
+        }
+        last = infoTitle.snp.bottom
 
-        titleLabel.snp.makeConstraints { make in
+        let card = UIView()
+        card.backgroundColor = .fdSurface
+        card.layer.cornerRadius = 14
+        contentView.addSubview(card)
+        card.snp.makeConstraints { make in
+            make.top.equalTo(last).offset(8)
+            make.leading.trailing.equalToSuperview().inset(16)
+        }
+
+        let nameRow = makeLabeledRow(title: "收货人", content: nameField)
+        let mobileRow = makeLabeledRow(title: "手机号", content: mobileField)
+        let regionRow = makeRegionRow()
+        let detailRow = makeDetailRow()
+        let codeRow = makeLabeledRow(title: "邮政编码", content: codeField, showDivider: false)
+
+        let stack = UIStackView(arrangedSubviews: [nameRow, mobileRow, regionRow, detailRow, codeRow])
+        stack.axis = .vertical
+        card.addSubview(stack)
+        stack.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        last = card.snp.bottom
+
+        let defaultTitle = sectionTitle("默认设置")
+        contentView.addSubview(defaultTitle)
+        defaultTitle.snp.makeConstraints { make in
+            make.top.equalTo(last).offset(16)
+            make.leading.trailing.equalToSuperview().inset(16)
+        }
+        last = defaultTitle.snp.bottom
+
+        let defaultCard = UIView()
+        defaultCard.backgroundColor = .fdSurface
+        defaultCard.layer.cornerRadius = 14
+        contentView.addSubview(defaultCard)
+        defaultCard.snp.makeConstraints { make in
+            make.top.equalTo(last).offset(8)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.height.equalTo(52)
+        }
+
+        let defaultLabel = UILabel()
+        defaultLabel.text = "设为默认地址"
+        defaultLabel.font = .fdBody
+        defaultLabel.textColor = .fdText
+        defaultCard.addSubview(defaultLabel)
+        defaultCard.addSubview(defaultSwitch)
+        defaultLabel.snp.makeConstraints { make in
             make.leading.equalToSuperview().inset(16)
             make.centerY.equalToSuperview()
         }
         defaultSwitch.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-16)
+            make.trailing.equalToSuperview().inset(16)
             make.centerY.equalToSuperview()
         }
-        row.snp.makeConstraints { $0.height.equalTo(52) }
+        last = defaultCard.snp.bottom
 
-        contentView.addSubview(row)
-        row.snp.makeConstraints { make in
-            make.top.equalTo(lastBottom).offset(14)
-            make.leading.trailing.equalToSuperview().inset(16).priority(750)
+        contentView.addSubview(defaultHintLabel)
+        defaultHintLabel.snp.makeConstraints { make in
+            make.top.equalTo(last).offset(8)
+            make.leading.trailing.equalToSuperview().inset(16)
         }
+        last = defaultHintLabel.snp.bottom
 
-        return row.snp.bottom
-    }
-
-    private func buildSaveButton(_ lastBottom: ConstraintItem) -> ConstraintItem {
         contentView.addSubview(saveButton)
         saveButton.snp.makeConstraints { make in
-            make.top.equalTo(lastBottom).offset(24)
-            make.leading.trailing.equalToSuperview().inset(16).priority(750)
+            make.top.equalTo(last).offset(24)
+            make.leading.trailing.equalToSuperview().inset(16)
             make.height.equalTo(48)
         }
         return saveButton.snp.bottom
     }
 
-    // MARK: - Row Builder
+    private func sectionTitle(_ text: String) -> UILabel {
+        let l = UILabel()
+        l.text = text
+        l.font = .fdCaptionSemibold
+        l.textColor = .fdSubtext
+        return l
+    }
 
-    private func makeFormRow(label: String, field: UITextField, isLast: Bool) -> UIView {
+    private func makeLabeledRow(title: String, content: UIView, showDivider: Bool = true) -> UIView {
         let row = UIView()
-        row.backgroundColor = .fdSurface
+        row.snp.makeConstraints { $0.height.equalTo(52) }
 
         let titleLabel = UILabel()
-        titleLabel.text = label
+        titleLabel.text = title
         titleLabel.font = .fdBody
         titleLabel.textColor = .fdText
         titleLabel.setContentHuggingPriority(.required, for: .horizontal)
 
-        field.textAlignment = .right
-        field.delegate = self
+        row.addSubview(titleLabel)
+        row.addSubview(content)
+        titleLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview().inset(16)
+            make.centerY.equalToSuperview()
+            make.width.equalTo(72)
+        }
+        content.snp.makeConstraints { make in
+            make.leading.equalTo(titleLabel.snp.trailing).offset(8)
+            make.trailing.equalToSuperview().inset(16)
+            make.centerY.equalToSuperview()
+        }
+
+        if showDivider {
+            addDivider(to: row, leading: titleLabel)
+        }
+        return row
+    }
+
+    private func makeRegionRow() -> UIView {
+        let row = UIView()
+        row.snp.makeConstraints { $0.height.greaterThanOrEqualTo(52) }
+
+        let titleLabel = UILabel()
+        titleLabel.text = "所在地区"
+        titleLabel.font = .fdBody
+        titleLabel.textColor = .fdText
+
+        let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
+        chevron.tintColor = .fdMuted
+        chevron.contentMode = .scaleAspectFit
+        chevron.setContentHuggingPriority(.required, for: .horizontal)
 
         row.addSubview(titleLabel)
-        row.addSubview(field)
+        row.addSubview(regionValueLabel)
+        row.addSubview(locateButton)
+        row.addSubview(locateSpinner)
+        row.addSubview(chevron)
 
         titleLabel.snp.makeConstraints { make in
             make.leading.equalToSuperview().inset(16)
             make.centerY.equalToSuperview()
-            make.width.equalTo(80)
+            make.width.equalTo(72)
         }
-        field.snp.makeConstraints { make in
-            make.leading.equalTo(titleLabel.snp.trailing).offset(12)
-            make.trailing.equalToSuperview().offset(-16)
+        locateButton.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().inset(16)
             make.centerY.equalToSuperview()
+            make.height.equalTo(32)
+        }
+        locateSpinner.snp.makeConstraints { make in
+            make.center.equalTo(locateButton)
+        }
+        chevron.snp.makeConstraints { make in
+            make.trailing.equalTo(locateButton.snp.leading).offset(-8)
+            make.centerY.equalToSuperview()
+            make.size.equalTo(12)
+        }
+        regionValueLabel.snp.makeConstraints { make in
+            make.leading.equalTo(titleLabel.snp.trailing).offset(8)
+            make.trailing.equalTo(chevron.snp.leading).offset(-6)
+            make.top.bottom.equalToSuperview().inset(12)
         }
 
-        // 首行加圆角顶部
-        if label == "收货人" {
-            row.layer.cornerRadius = 14
-            row.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        }
+        let tap = UITapGestureRecognizer(target: self, action: #selector(regionRowTapped))
+        tap.cancelsTouchesInView = false
+        tap.delegate = self
+        row.addGestureRecognizer(tap)
+        row.isUserInteractionEnabled = true
 
-        // 末行加圆角底部 + 无分割线
-        if isLast {
-            // 如果只有普通字段行，给末行加底部圆角
-            if label == "邮政编码" {
-                row.layer.cornerRadius = 14
-                row.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
-            }
-        } else {
-            let divider = UIView()
-            divider.backgroundColor = .fdBorder
-            row.addSubview(divider)
-            divider.snp.makeConstraints { make in
-                make.leading.equalTo(titleLabel)
-                make.trailing.bottom.equalToSuperview()
-                make.height.equalTo(1)
-            }
-        }
-
-        row.snp.makeConstraints { $0.height.equalTo(52) }
+        addDivider(to: row, leading: titleLabel)
         return row
+    }
+
+    private func makeDetailRow() -> UIView {
+        let row = UIView()
+
+        let titleLabel = UILabel()
+        titleLabel.text = "详细地址"
+        titleLabel.font = .fdBody
+        titleLabel.textColor = .fdText
+
+        row.addSubview(titleLabel)
+        row.addSubview(addressTextView)
+        row.addSubview(addressPlaceholderLabel)
+
+        titleLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview().inset(16)
+            make.top.equalToSuperview().inset(14)
+            make.width.equalTo(72)
+        }
+        addressTextView.snp.makeConstraints { make in
+            make.leading.equalTo(titleLabel.snp.trailing).offset(4)
+            make.trailing.equalToSuperview().inset(12)
+            make.top.equalToSuperview().inset(4)
+            make.bottom.equalToSuperview().inset(4)
+            make.height.greaterThanOrEqualTo(72)
+        }
+        addressPlaceholderLabel.snp.makeConstraints { make in
+            make.leading.equalTo(addressTextView).offset(5)
+            make.top.equalTo(addressTextView).offset(8)
+        }
+
+        addDivider(to: row, leading: titleLabel)
+        return row
+    }
+
+    private func addDivider(to row: UIView, leading: UIView) {
+        let divider = UIView()
+        divider.backgroundColor = .fdBorder
+        row.addSubview(divider)
+        divider.snp.makeConstraints { make in
+            make.leading.equalTo(leading)
+            make.trailing.bottom.equalToSuperview()
+            make.height.equalTo(1.0 / UIScreen.main.scale)
+        }
     }
 
     private func makeTextField(placeholder: String, keyboardType: UIKeyboardType = .default) -> UITextField {
@@ -260,111 +443,99 @@ final class AddressEditViewController: BaseViewController {
         tf.placeholder = placeholder
         tf.font = .fdBody
         tf.textColor = .fdText
+        tf.textAlignment = .right
         tf.keyboardType = keyboardType
         tf.returnKeyType = .next
         tf.clearButtonMode = .whileEditing
+        tf.addTarget(self, action: #selector(textFieldChanged(_:)), for: .editingChanged)
         return tf
     }
 
-    // MARK: - Fill Form
-
-    private func fillForm(with address: MAddress) {
-        nameField.text = address.name
-        mobileField.text = address.mobile
-        provinceField.text = address.province
-        cityField.text = address.city
-        areaField.text = address.area
-        addressField.text = address.address
-        codeField.text = address.code
-        defaultSwitch.isOn = address.isDefaultAddress
-
-        nameText = address.name ?? ""
-        mobileText = address.mobile ?? ""
-        provinceText = address.province ?? ""
-        cityText = address.city ?? ""
-        areaText = address.area ?? ""
-        addressText = address.address ?? ""
-        codeText = address.code ?? ""
-        isDefault = address.isDefaultAddress
+    private func applyInitialForm() {
+        nameField.text = viewModel.name
+        mobileField.text = viewModel.mobile
+        addressTextView.text = viewModel.address
+        addressPlaceholderLabel.isHidden = !viewModel.address.isEmpty
+        codeField.text = viewModel.code
+        defaultSwitch.isOn = viewModel.isDefault
+        defaultSwitch.isEnabled = viewModel.isDefaultSwitchEnabled
+        defaultHintLabel.isHidden = viewModel.isDefaultSwitchEnabled
+        refreshRegionLabel()
     }
 
-    // MARK: - Validation
-
-    private func validate() -> String? {
-        if nameText.trimmingCharacters(in: .whitespaces).isEmpty {
-            return "请填写收货人姓名"
+    private func refreshRegionLabel() {
+        let text = viewModel.regionDisplayText
+        if text.isEmpty {
+            regionValueLabel.text = "请选择省、市、区"
+            regionValueLabel.textColor = .fdMuted
+        } else {
+            regionValueLabel.text = text
+            regionValueLabel.textColor = .fdText
         }
-        if mobileText.trimmingCharacters(in: .whitespaces).isEmpty {
-            return "请填写手机号码"
-        }
-        let mobile = mobileText.trimmingCharacters(in: .whitespaces)
-        if mobile.count != 11 || !mobile.allSatisfy({ $0.isNumber }) {
-            return "请输入正确的手机号码"
-        }
-        if provinceText.trimmingCharacters(in: .whitespaces).isEmpty {
-            return "请填写省份"
-        }
-        if cityText.trimmingCharacters(in: .whitespaces).isEmpty {
-            return "请填写城市"
-        }
-        if areaText.trimmingCharacters(in: .whitespaces).isEmpty {
-            return "请填写区/县"
-        }
-        if addressText.trimmingCharacters(in: .whitespaces).isEmpty {
-            return "请填写详细地址"
-        }
-        return nil
     }
 
-    // MARK: - Save
+    private func setupKeyboardDismiss() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tap.cancelsTouchesInView = false
+        view.addGestureRecognizer(tap)
+    }
 
-    @objc private func saveTapped() {
-        view.endEditing(true)
+    // MARK: - Actions
 
-        if let error = validate() {
-            showToast(error)
-            return
-        }
-
-        let payload = AddressSavePayload(
-            id: existingAddress?.id,
-            name: nameText.trimmingCharacters(in: .whitespaces),
-            mobile: mobileText.trimmingCharacters(in: .whitespaces),
-            isDefault: isDefault ? 1 : 0,
-            province: provinceText.trimmingCharacters(in: .whitespaces),
-            city: cityText.trimmingCharacters(in: .whitespaces),
-            area: areaText.trimmingCharacters(in: .whitespaces),
-            address: addressText.trimmingCharacters(in: .whitespaces),
-            code: codeText.trimmingCharacters(in: .whitespaces).isEmpty ? nil : codeText.trimmingCharacters(in: .whitespaces)
-        )
-
-        saveButton.isEnabled = false
-        saveButton.configuration?.showsActivityIndicator = true
-
-        Task {
-            do {
-                try await AddressService.shared.saveOrUpdateAddress(payload)
-                await MainActor.run {
-                    self.saveButton.isEnabled = true
-                    self.saveButton.configuration?.showsActivityIndicator = false
-                    self.showToast(isEditMode ? "地址已更新" : "地址已保存")
-                    // 延迟 pop，让用户看到提示
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                        self.navigationController?.popViewController(animated: true)
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    self.saveButton.isEnabled = true
-                    self.saveButton.configuration?.showsActivityIndicator = false
-                    self.showToast("保存失败: \(error.localizedDescription)")
-                }
-            }
+    @objc private func textFieldChanged(_ field: UITextField) {
+        let text = field.text ?? ""
+        switch field {
+        case nameField: viewModel.name = text
+        case mobileField: viewModel.mobile = text
+        case codeField: viewModel.code = text
+        default: break
         }
     }
 
     @objc private func defaultSwitchChanged(_ sender: UISwitch) {
-        isDefault = sender.isOn
+        viewModel.isDefault = sender.isOn
+    }
+
+    @objc private func locateTapped() {
+        view.endEditing(true)
+        Task { await viewModel.locate() }
+    }
+
+    @objc private func regionRowTapped() {
+        presentRegionEditor()
+    }
+
+    @objc private func saveTapped() {
+        view.endEditing(true)
+        Task { await viewModel.save() }
+    }
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+
+    private func presentRegionEditor() {
+        let alert = UIAlertController(title: "编辑所在地区", message: "请填写省、市、区", preferredStyle: .alert)
+        alert.addTextField { [weak self] tf in
+            tf.placeholder = "省份"
+            tf.text = self?.viewModel.province
+        }
+        alert.addTextField { [weak self] tf in
+            tf.placeholder = "城市"
+            tf.text = self?.viewModel.city
+        }
+        alert.addTextField { [weak self] tf in
+            tf.placeholder = "区/县"
+            tf.text = self?.viewModel.area
+        }
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        alert.addAction(UIAlertAction(title: "确定", style: .default) { [weak self] _ in
+            guard let fields = alert.textFields, fields.count >= 3 else { return }
+            self?.viewModel.province = fields[0].text ?? ""
+            self?.viewModel.city = fields[1].text ?? ""
+            self?.viewModel.area = fields[2].text ?? ""
+        })
+        present(alert, animated: true)
     }
 
     // MARK: - Keyboard
@@ -381,10 +552,6 @@ final class AddressEditViewController: BaseViewController {
         scrollView.scrollIndicatorInsets = .zero
     }
 
-    @objc private func dismissKeyboard() {
-        view.endEditing(true)
-    }
-
     // MARK: - Toast
 
     private func showToast(_ message: String) {
@@ -396,31 +563,19 @@ final class AddressEditViewController: BaseViewController {
     }
 }
 
-// MARK: - UITextFieldDelegate
+// MARK: - UITextViewDelegate
 
-extension AddressEditViewController: UITextFieldDelegate {
-
-    func textFieldDidEndEditing(_ textField: UITextField) {
-        let text = textField.text ?? ""
-        switch textField {
-        case nameField: nameText = text
-        case mobileField: mobileText = text
-        case provinceField: provinceText = text
-        case cityField: cityText = text
-        case areaField: areaText = text
-        case addressField: addressText = text
-        case codeField: codeText = text
-        default: break
-        }
+extension AddressEditViewController: UITextViewDelegate {
+    func textViewDidChange(_ textView: UITextView) {
+        viewModel.address = textView.text ?? ""
+        addressPlaceholderLabel.isHidden = !(textView.text ?? "").isEmpty
     }
+}
 
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        let fields: [UITextField] = [nameField, mobileField, provinceField, cityField, areaField, addressField, codeField]
-        if let index = fields.firstIndex(of: textField), index + 1 < fields.count {
-            fields[index + 1].becomeFirstResponder()
-        } else {
-            textField.resignFirstResponder()
-        }
-        return true
+// MARK: - UIGestureRecognizerDelegate
+
+extension AddressEditViewController: UIGestureRecognizerDelegate {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        !(touch.view is UIControl) && !(touch.view?.isDescendant(of: locateButton) ?? false)
     }
 }

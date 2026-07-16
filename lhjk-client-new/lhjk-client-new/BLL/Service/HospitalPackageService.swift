@@ -63,21 +63,75 @@ final class HospitalPackageService {
     }
 
     // MARK: - 富德优选（零售套包）
+    // 零售分页 Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487882770e0
+    // 业务分类 Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487882771e0
 
-    func fetchRetailPackageItems(
-        hospitalId: String? = nil,
-        pageNum: Int = 1,
-        pageSize: Int = 10,
-        retailCategoryService: RetailCategoryService = .shared
-    ) async throws -> [HealthPackageItem] {
-        let category = try await retailCategoryService.resolvePackageCategory()
-        guard let packageMainCategory = category.packageMainCategoryInt else {
-            throw HospitalPackageServiceError.missingPackageMainCategory
+    /// 零售类业务分类 Tab（`type = 2`）
+    func fetchRetailCategoryList() async throws -> [CategoryServiceListVO] {
+        try await fetchCategoryServiceListByType(type: HospitalPackageCategoryType.retail)
+    }
+
+    /// `GET /v1/hospitalPackage/getCategoryServiceListByType`
+    func fetchCategoryServiceListByType(
+        type: Int,
+        hospitalId: String? = nil
+    ) async throws -> [CategoryServiceListVO] {
+        var params: [String: Any] = ["type": type]
+        if let hospitalId = Self.apiHospitalId(hospitalId) {
+            params["hospitalId"] = hospitalId
         }
 
-        let page = try await fetchRecommendPackages(
-            packageMainCategory: packageMainCategory,
-            hospitalId: hospitalId,
+        let response: APIResponse<[CategoryServiceListVO]> = try await APIManager.shared.getAsync(
+            path: "/v1/hospitalPackage/getCategoryServiceListByType",
+            parameters: params,
+            responseType: APIResponse<[CategoryServiceListVO]>.self
+        )
+
+        guard response.isSuccess else {
+            throw HospitalPackageServiceError.requestFailed(response.msg ?? "获取业务分类失败")
+        }
+
+        return response.data ?? []
+    }
+
+    func fetchRetailPackages(
+        categoryServiceId: String = "",
+        pageNum: Int = 1,
+        pageSize: Int = 10
+    ) async throws -> PaginatedHospitalPackageData {
+        let params: [String: Any] = [
+            "categoryServiceId": categoryServiceId,
+            "pageNum": String(pageNum),
+            "pageSize": String(pageSize),
+        ]
+
+        let response: APIResponse<PaginatedHospitalPackageData> = try await APIManager.shared.getAsync(
+            path: "/v1/hospitalPackage/getEnabledRetailHospitalPackagePage",
+            parameters: params,
+            responseType: APIResponse<PaginatedHospitalPackageData>.self
+        )
+
+        guard response.isSuccess else {
+            throw HospitalPackageServiceError.requestFailed(response.msg ?? "获取零售套包列表失败")
+        }
+
+        return response.data ?? PaginatedHospitalPackageData(
+            totalRecords: 0,
+            pageSize: pageSize,
+            totalPages: 0,
+            currentPage: pageNum,
+            records: []
+        )
+    }
+
+    func fetchRetailPackageItems(
+        categoryServiceId: String = "",
+        hospitalId: String? = nil,
+        pageNum: Int = 1,
+        pageSize: Int = 10
+    ) async throws -> [HealthPackageItem] {
+        let page = try await fetchRetailPackages(
+            categoryServiceId: categoryServiceId,
             pageNum: pageNum,
             pageSize: pageSize
         )

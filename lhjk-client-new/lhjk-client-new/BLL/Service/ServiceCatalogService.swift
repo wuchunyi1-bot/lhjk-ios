@@ -18,13 +18,11 @@ final class ServiceCatalogService {
     // MARK: - Hub
 
     func loadHubSnapshot(
-        cardActivated: Bool,
         banners: [ServiceHubBanner],
         matrix: [ProductMatrixItem],
         mallPreviewPackages: [HealthPackageItem]
     ) -> ServiceHubSnapshot {
         ServiceHubSnapshot(
-            showActivateBanner: !cardActivated,
             institution: Self.placeholderInstitution,
             institutions: [],
             banners: banners,
