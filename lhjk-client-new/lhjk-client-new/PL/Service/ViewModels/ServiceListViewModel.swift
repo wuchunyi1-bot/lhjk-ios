@@ -25,25 +25,44 @@ final class ServiceListViewModel: ObservableObject {
     private let initialRouteCode: String
     private let hospitalPackageService: HospitalPackageService
     private let catalogService: ServiceCatalogService
+    private let selectionStore: InstitutionSelectionStore
     private var loadTask: Task<Void, Never>?
     private var packagesTask: Task<Void, Never>?
     private var loadGeneration = 0
+    private var institutionObserver: NSObjectProtocol?
 
     private let packagePageSize = 50
 
     init(
         routeCode: String,
         hospitalPackageService: HospitalPackageService = .shared,
-        catalogService: ServiceCatalogService = AppContainer.shared.serviceCatalogService
+        catalogService: ServiceCatalogService = AppContainer.shared.serviceCatalogService,
+        selectionStore: InstitutionSelectionStore = AppContainer.shared.institutionSelectionStore
     ) {
         self.initialRouteCode = routeCode.trimmingCharacters(in: .whitespacesAndNewlines)
         self.hospitalPackageService = hospitalPackageService
         self.catalogService = catalogService
+        self.selectionStore = selectionStore
+        refreshInstitutionDisplay()
+
+        institutionObserver = NotificationCenter.default.addObserver(
+            forName: InstitutionSelectionStore.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.refreshInstitutionDisplay()
+                self?.load()
+            }
+        }
     }
 
     deinit {
         loadTask?.cancel()
         packagesTask?.cancel()
+        if let institutionObserver {
+            NotificationCenter.default.removeObserver(institutionObserver)
+        }
     }
 
     func load() {
@@ -51,6 +70,7 @@ final class ServiceListViewModel: ObservableObject {
         loadGeneration += 1
         let generation = loadGeneration
         isLoadingCategories = true
+        refreshInstitutionDisplay()
         loadTask = Task { [weak self] in
             await self?.performLoad(generation: generation)
         }
@@ -70,12 +90,28 @@ final class ServiceListViewModel: ObservableObject {
     // MARK: - Private
 
     private var resolvedHospitalId: String {
+        if let selected = selectionStore.selectedHospitalId {
+            return selected
+        }
         if let userHospitalId = AppContainer.shared.userManager.loginUserInfo?.hospitalId,
            let valid = HospitalPackageService.apiHospitalId(userHospitalId) {
             return valid
         }
         return catalogService.selectedApiHospitalId()
             ?? HospitalPackageService.temporaryHospitalId
+    }
+
+    private func refreshInstitutionDisplay() {
+        if let selected = selectionStore.selected {
+            institution = ServiceListInstitutionDisplay(
+                name: selected.name,
+                typeLabel: selected.typeLabel,
+                address: selected.fullAddress.isEmpty ? "地址待补充" : selected.fullAddress,
+                distance: "已选择"
+            )
+        } else {
+            institution = .default
+        }
     }
 
     private func performLoad(generation: Int) async {

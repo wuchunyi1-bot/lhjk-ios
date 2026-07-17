@@ -15,13 +15,20 @@ enum ServiceRoutes {
             return ServiceListViewController(productCode: code)
         }
 
-        // 套餐详情 / 服务套餐详情（params: id, 可选 hospitalId）
+        // 套餐详情 / 服务套餐详情（params: id, 可选 hospitalId / categoryServiceId）
         r.register(path: "/services/detail") { params in
             let id = ServiceRoutes.stringParam(params["id"])
             let hospitalId = ServiceCatalogService.validApiHospitalId(
                 ServiceRoutes.stringParam(params["hospitalId"]).nilIfEmpty
             )
-            return ServicePackageDetailViewController(packageId: id, hospitalId: hospitalId)
+            let categoryServiceId = ServiceCatalogService.validApiHospitalId(
+                ServiceRoutes.stringParam(params["categoryServiceId"]).nilIfEmpty
+            )
+            return ServicePackageDetailViewController(
+                packageId: id,
+                hospitalId: hospitalId,
+                categoryServiceId: categoryServiceId
+            )
         }
 
         // 就医协助
@@ -35,10 +42,17 @@ enum ServiceRoutes {
             let hospitalId = ServiceCatalogService.validApiHospitalId(
                 ServiceRoutes.stringParam(params["hospitalId"]).nilIfEmpty
             )
-            return ServicePackageDetailViewController(packageId: id, hospitalId: hospitalId)
+            let categoryServiceId = ServiceCatalogService.validApiHospitalId(
+                ServiceRoutes.stringParam(params["categoryServiceId"]).nilIfEmpty
+            )
+            return ServicePackageDetailViewController(
+                packageId: id,
+                hospitalId: hospitalId,
+                categoryServiceId: categoryServiceId
+            )
         }
 
-        // 搜索 / 购物车
+        // 搜索 / 购物车 / 切换机构
         r.register(path: "/services/search") { params in
             let raw = params["hospitalId"] as? String ?? params["institution"] as? String
             let hospitalId = ServiceCatalogService.validApiHospitalId(raw)
@@ -46,6 +60,11 @@ enum ServiceRoutes {
         }
         r.register(path: "/services/cart") { _ in
             ServiceCartViewController()
+        }
+        r.register(path: "/services/institution") { params in
+            let selectedId = ServiceRoutes.stringParam(params["selectedId"]).nilIfEmpty
+                ?? ServiceRoutes.stringParam(params["id"]).nilIfEmpty
+            return InstitutionSelectViewController(selectedId: selectedId)
         }
 
         // 三好卡激活入口
@@ -62,7 +81,14 @@ enum ServiceRoutes {
             let hospitalId = ServiceCatalogService.validApiHospitalId(
                 ServiceRoutes.stringParam(params["hospitalId"]).nilIfEmpty
             )
-            return ServicePackageDetailViewController(packageId: id, hospitalId: hospitalId)
+            let categoryServiceId = ServiceCatalogService.validApiHospitalId(
+                ServiceRoutes.stringParam(params["categoryServiceId"]).nilIfEmpty
+            )
+            return ServicePackageDetailViewController(
+                packageId: id,
+                hospitalId: hospitalId,
+                categoryServiceId: categoryServiceId
+            )
         }
     }
 

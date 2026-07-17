@@ -117,9 +117,19 @@ final class ServiceListViewController: BaseViewController {
             $0.center.equalTo(rightTable)
         }
 
-        institutionCard.onSwitchTap = {
-            // 机构列表 API 接入后跳转选择页
+        institutionCard.onSwitchTap = { [weak self] in
+            guard let self else { return }
+            var params: [String: Any] = ["source": "services"]
+            if let id = InstitutionSelectionStore.shared.selected?.id {
+                params["selectedId"] = id
+            }
+            Router.shared.push("/services/institution", params: params)
         }
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        institutionCard.configure(viewModel.institution)
     }
 
     override func bindViewModel() {
@@ -159,6 +169,13 @@ final class ServiceListViewController: BaseViewController {
                 } else {
                     self?.loadingIndicator.stopAnimating()
                 }
+            }
+            .store(in: &cancellables)
+
+        viewModel.$institution
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] display in
+                self?.institutionCard.configure(display)
             }
             .store(in: &cancellables)
     }
@@ -208,7 +225,10 @@ extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate 
             withIdentifier: PackageCardCell.reuseID,
             for: indexPath
         ) as! PackageCardCell
-        cell.configure(viewModel.packages[indexPath.row])
+        cell.configure(
+            viewModel.packages[indexPath.row],
+            categoryServiceId: viewModel.activeCategoryId
+        )
         return cell
     }
 
@@ -224,7 +244,11 @@ extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate 
             rightTable.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: false)
         } else if !viewModel.packages.isEmpty {
             let pkg = viewModel.packages[indexPath.row]
-            Router.shared.push("/services/pkg", params: ["id": pkg.id])
+            var params: [String: Any] = ["id": pkg.id]
+            if let categoryId = viewModel.activeCategoryId, !categoryId.isEmpty {
+                params["categoryServiceId"] = categoryId
+            }
+            Router.shared.push("/services/pkg", params: params)
         }
     }
 }

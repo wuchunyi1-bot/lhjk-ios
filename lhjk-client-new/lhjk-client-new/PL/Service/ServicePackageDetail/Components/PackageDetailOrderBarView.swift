@@ -7,6 +7,8 @@ final class PackageDetailOrderBarView: UIView {
     var onOrder: (() -> Void)?
 
     private let payableLabel = UILabel()
+    private let cartButton = UIButton(type: .system)
+    private let orderButton = UIButton(type: .system)
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -17,6 +19,13 @@ final class PackageDetailOrderBarView: UIView {
 
     func setPayableText(_ text: String) {
         payableLabel.text = text
+    }
+
+    func setActionsEnabled(_ enabled: Bool) {
+        cartButton.isEnabled = enabled
+        orderButton.isEnabled = enabled
+        cartButton.alpha = enabled ? 1 : 0.5
+        orderButton.alpha = enabled ? 1 : 0.5
     }
 
     func attach(to parent: UIView, below scrollView: UIView) {
@@ -49,30 +58,28 @@ final class PackageDetailOrderBarView: UIView {
         priceStack.axis = .vertical
         priceStack.spacing = 2
 
-        let cart = UIButton(type: .system)
-        cart.setTitle("加入购物车", for: .normal)
-        cart.setTitleColor(.fdPrimary, for: .normal)
-        cart.titleLabel?.font = .fdBody
-        cart.layer.cornerRadius = 22
-        cart.layer.borderWidth = 1
-        cart.layer.borderColor = UIColor.fdPrimary.cgColor
-        cart.contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
-        cart.addTarget(self, action: #selector(tapCart), for: .touchUpInside)
+        cartButton.setTitle("加入购物车", for: .normal)
+        cartButton.setTitleColor(.fdPrimary, for: .normal)
+        cartButton.titleLabel?.font = .fdBody
+        cartButton.layer.cornerRadius = 22
+        cartButton.layer.borderWidth = 1
+        cartButton.layer.borderColor = UIColor.fdPrimary.cgColor
+        cartButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
+        cartButton.addTarget(self, action: #selector(tapCart), for: .touchUpInside)
 
-        let order = UIButton(type: .system)
-        order.setTitle("立即下单", for: .normal)
-        order.setTitleColor(.white, for: .normal)
-        order.titleLabel?.font = .fdBodySemibold
-        order.backgroundColor = .fdPrimary
-        order.layer.cornerRadius = 22
-        order.contentEdgeInsets = UIEdgeInsets(top: 0, left: 18, bottom: 0, right: 18)
-        order.addTarget(self, action: #selector(tapOrder), for: .touchUpInside)
+        orderButton.setTitle("立即下单", for: .normal)
+        orderButton.setTitleColor(.white, for: .normal)
+        orderButton.titleLabel?.font = .fdBodySemibold
+        orderButton.backgroundColor = .fdPrimary
+        orderButton.layer.cornerRadius = 22
+        orderButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 18, bottom: 0, right: 18)
+        orderButton.addTarget(self, action: #selector(tapOrder), for: .touchUpInside)
 
-        let actions = UIStackView(arrangedSubviews: [cart, order])
+        let actions = UIStackView(arrangedSubviews: [cartButton, orderButton])
         actions.axis = .horizontal
         actions.spacing = 10
-        cart.snp.makeConstraints { $0.height.equalTo(44) }
-        order.snp.makeConstraints { $0.height.equalTo(44) }
+        cartButton.snp.makeConstraints { $0.height.equalTo(44) }
+        orderButton.snp.makeConstraints { $0.height.equalTo(44) }
 
         addSubview(priceStack)
         addSubview(actions)

@@ -55,9 +55,10 @@ final class ServiceCartViewController: BaseViewController {
             .sink { [weak self] lines in
                 guard let self else { return }
                 self.tableView.reloadData()
-                self.emptyView.isHidden = !lines.isEmpty
-                self.tableView.isHidden = lines.isEmpty
-                self.bottomBar.isHidden = lines.isEmpty
+                let showEmpty = lines.isEmpty && !self.viewModel.isLoading
+                self.emptyView.isHidden = !showEmpty
+                self.tableView.isHidden = showEmpty
+                self.bottomBar.isHidden = showEmpty
             }
             .store(in: &cancellables)
 
@@ -72,6 +73,23 @@ final class ServiceCartViewController: BaseViewController {
                 self.checkoutButton.alpha = count > 0 ? 1 : 0.45
             }
             .store(in: &cancellables)
+
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+            .sink { [weak self] message in
+                self?.showToast(message)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func showToast(_ message: String) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        present(alert, animated: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            alert.dismiss(animated: true)
+        }
     }
 
     private func buildEmpty() {
@@ -159,6 +177,7 @@ final class ServiceCartViewController: BaseViewController {
     }
 
     private func confirmRemove(line: CartLineDisplay) {
+        guard !viewModel.isDeleting else { return }
         let alert = UIAlertController(
             title: "确认删除",
             message: "删除后不可恢复，确定从购物车移除「\(line.name)」？",
@@ -199,7 +218,11 @@ extension ServiceCartViewController: UITableViewDataSource, UITableViewDelegate 
     ) -> UISwipeActionsConfiguration? {
         let line = viewModel.lines[indexPath.row]
         let delete = UIContextualAction(style: .destructive, title: "删除") { [weak self] _, _, completion in
-            self?.viewModel.remove(id: line.id)
+            guard let self, !self.viewModel.isDeleting else {
+                completion(false)
+                return
+            }
+            self.viewModel.remove(id: line.id)
             completion(true)
         }
         delete.backgroundColor = .fdDanger

@@ -16,8 +16,13 @@ enum DebugLogger {
 
     private static let sensitiveKeys: Set<String> = [
         "password", "pwd", "oldpwd", "newpwd", "checkcode", "check_code",
-        "code", "secret", "client_secret", "authorization",
-        "access_token", "refresh_token", "accesstoken", "refreshtoken", "token",
+        "code", "secret", "client_secret",
+    ]
+
+    /// token 类字段在 DEBUG 日志中完整打印，便于粘贴调试（密码等仍脱敏）
+    private static let tokenKeys: Set<String> = [
+        "authorization", "access_token", "refresh_token",
+        "accesstoken", "refreshtoken", "token",
     ]
 
     // MARK: - API
@@ -157,21 +162,26 @@ enum DebugLogger {
     }
 
     private static func maskIfSensitive(key: String, value: Any) -> String {
+        if isTokenKey(key) {
+            return String(describing: value)
+        }
         if isSensitiveKey(key) {
             return "****"
-        }
-        if let str = value as? String, str.count > 8, key.lowercased().contains("token") {
-            return "\(str.prefix(8))…"
         }
         return String(describing: value)
     }
 
+    private static func isTokenKey(_ key: String) -> Bool {
+        let lowered = key.lowercased()
+        return tokenKeys.contains(lowered) || lowered.contains("token")
+    }
+
     private static func isSensitiveKey(_ key: String) -> Bool {
         let lowered = key.lowercased()
+        if isTokenKey(key) { return false }
         return sensitiveKeys.contains(lowered)
             || lowered.hasSuffix("password")
             || lowered.hasSuffix("pwd")
-            || lowered.contains("token")
             || lowered.contains("secret")
     }
 
@@ -179,14 +189,14 @@ enum DebugLogger {
         if let dict = object as? [String: Any] {
             var result: [String: Any] = [:]
             for (key, value) in dict {
-                if isSensitiveKey(key) {
+                if isTokenKey(key) {
+                    result[key] = value
+                } else if isSensitiveKey(key) {
                     result[key] = "****"
                 } else if let nested = value as? [String: Any] {
                     result[key] = maskSensitive(in: nested)
                 } else if let array = value as? [Any] {
                     result[key] = array.map { maskSensitive(in: $0) }
-                } else if let str = value as? String, str.count > 8, key.lowercased().contains("token") {
-                    result[key] = "\(str.prefix(8))…"
                 } else {
                     result[key] = value
                 }

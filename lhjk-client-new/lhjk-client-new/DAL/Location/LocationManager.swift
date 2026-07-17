@@ -66,6 +66,13 @@ final class LocationManager: NSObject {
     /// 单次定位 + 逆地理编码。按需请求 WhenInUse 授权。
     @MainActor
     func locateAndReverseGeocode() async throws -> ReverseGeocodedAddress {
+        let location = try await locateOnce()
+        return try await reverseGeocode(location)
+    }
+
+    /// 单次定位（不逆地理）。按需请求 WhenInUse 授权。
+    @MainActor
+    func locateOnce() async throws -> CLLocation {
         guard CLLocationManager.locationServicesEnabled() else {
             throw LocationServiceError.servicesDisabled
         }
@@ -96,8 +103,15 @@ final class LocationManager: NSObject {
             throw LocationServiceError.denied
         }
 
-        let location = try await requestOneShotLocation(manager: manager)
-        return try await reverseGeocode(location)
+        return try await requestOneShotLocation(manager: manager)
+    }
+
+    /// 单次定位并将坐标转为腾讯坐标系（供 searchPage 等接口上报）
+    @MainActor
+    func locateTencentCoordinate() async throws -> CLLocationCoordinate2D {
+        let location = try await locateOnce()
+        // 国内 CLLocation 按高德同系 GCJ-02 处理
+        return MapCoordinateConverter.gaodeToTencent(location.coordinate)
     }
 
     // MARK: - Private helpers

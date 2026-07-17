@@ -6,6 +6,7 @@ final class MallProductCell: UICollectionViewCell {
     static let reuseID = "MallProductCell"
 
     private var productId: String?
+    private var categoryServiceId: String?
     private let imgArea = UIView()
     private let coverImageView = UIImageView()
     private let placeholderLabel = UILabel()
@@ -107,12 +108,13 @@ final class MallProductCell: UICollectionViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         productId = nil
+        categoryServiceId = nil
         coverImageView.kf.cancelDownloadTask()
         coverImageView.image = nil
         placeholderLabel.isHidden = false
     }
 
-    func configure(_ item: HealthPackageItem) {
+    func configure(_ item: HealthPackageItem, categoryServiceId: String? = nil) {
         nameLabel.text = item.name
         descLabel.text = item.subtitle
         priceLabel.text = item.price
@@ -141,9 +143,10 @@ final class MallProductCell: UICollectionViewCell {
         }
 
         productId = item.id
+        self.categoryServiceId = categoryServiceId
     }
 
-    func configure(_ p: MallProduct) {
+    func configure(_ p: MallProduct, categoryServiceId: String? = nil) {
         nameLabel.text = p.name
         descLabel.text = p.desc
         priceLabel.text = p.price
@@ -154,10 +157,15 @@ final class MallProductCell: UICollectionViewCell {
         coverImageView.image = nil
         placeholderLabel.isHidden = false
         productId = p.id
+        self.categoryServiceId = categoryServiceId
     }
 
     @objc private func tapBuy() {
         guard let id = productId else { return }
-        Router.shared.push("/services/pkg", params: ["id": id])
+        var params: [String: Any] = ["id": id]
+        if let categoryServiceId, !categoryServiceId.isEmpty {
+            params["categoryServiceId"] = categoryServiceId
+        }
+        Router.shared.push("/services/pkg", params: params)
     }
 }

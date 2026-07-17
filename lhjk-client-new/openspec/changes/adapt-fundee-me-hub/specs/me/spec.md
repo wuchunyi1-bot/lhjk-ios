@@ -36,7 +36,7 @@ Hub 底部 SHALL 提供「退出登录」按钮，行为与设置页退出一致
 #### Scenario: 确认后清理并回登录
 
 - **WHEN** 用户确认退出
-- **THEN** 调用 logout API（可失败静默）→ `clearSession` → `IMService.clear` → `ServiceHubCacheService.clear` → 断融云 → `UserManager.clear` → `Router.setRoot("/login")`
+- **THEN** 调用 logout API（可失败静默）→ `clearSession` → `IMService.clear` → `ServiceHubCacheService.clear` → `InstitutionSelectionStore.clear` → 断融云 → `UserManager.clear` → `Router.setRoot("/login")`
 
 ## MODIFIED Requirements
 

@@ -343,10 +343,15 @@ final class ServiceCatalogService {
         MallProduct(id: "m009", name: "血糖连续监测贴", desc: "免扎针14天连续监测", price: "¥186", unit: "2片/盒", tag: "新品", emoji: "📡", accentHex: "#1A7A6E", category: "健康器械"),
     ]
 
-    /// 当前选中机构的后端 `hospitalId`；机构列表接入前使用临时常量
+    /// 当前选中机构的后端 `hospitalId`
     func selectedApiHospitalId() -> String? {
-        Self.validApiHospitalId(Self.placeholderInstitution.hospitalId)
-            ?? HospitalPackageService.temporaryHospitalId
+        if let id = InstitutionSelectionStore.shared.selectedHospitalId {
+            return id
+        }
+        if let id = Self.validApiHospitalId(Self.placeholderInstitution.hospitalId) {
+            return id
+        }
+        return HospitalPackageService.temporaryHospitalId
     }
 
     /// 仅当值为非空纯数字字符串时才可作为 API `hospitalId`（后端 `Long`）

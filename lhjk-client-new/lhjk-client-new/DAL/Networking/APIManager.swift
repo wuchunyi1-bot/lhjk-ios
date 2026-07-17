@@ -423,12 +423,24 @@ final class LogMonitor: EventMonitor {
     func request(_ request: Request, didCreateURLRequest urlRequest: URLRequest) {
         guard DebugLogger.isEnabled else { return }
         if let headers = urlRequest.allHTTPHeaderFields, !headers.isEmpty {
-            var safeHeaders = headers
-            for key in headers.keys where key.lowercased() == "authorization" {
-                safeHeaders[key] = "Bearer ****"
+            // DEBUG 下完整打印 Authorization，便于粘贴调试
+            print("[API]   Headers: \(headers)")
+            if let auth = headers.first(where: { $0.key.lowercased() == "authorization" })?.value {
+                printLongAuthToken(auth)
             }
-            print("[API]   Headers: \(safeHeaders)")
         }
+    }
+
+    /// 单独一行输出完整 Bearer token，方便整段复制
+    private func printLongAuthToken(_ authorization: String) {
+        let token: String
+        if authorization.lowercased().hasPrefix("bearer ") {
+            token = String(authorization.dropFirst(7))
+        } else {
+            token = authorization
+        }
+        guard !token.isEmpty else { return }
+        print("[API]   Token: \(token)")
     }
 }
 

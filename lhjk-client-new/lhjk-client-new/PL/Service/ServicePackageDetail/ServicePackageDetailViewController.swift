@@ -59,11 +59,13 @@ final class ServicePackageDetailViewController: BaseViewController {
 
     init(
         packageId: String,
-        hospitalId: String? = nil
+        hospitalId: String? = nil,
+        categoryServiceId: String? = nil
     ) {
         self.viewModel = ServicePackageDetailViewModel(
             packageId: packageId,
-            hospitalId: hospitalId
+            hospitalId: hospitalId,
+            categoryServiceId: categoryServiceId
         )
         super.init(nibName: nil, bundle: nil)
     }
@@ -137,6 +139,13 @@ final class ServicePackageDetailViewController: BaseViewController {
             .sink { [weak self] message in
                 guard let self, self.package == nil, let message, !message.isEmpty else { return }
                 self.statusLabel.text = message
+            }
+            .store(in: &cancellables)
+
+        viewModel.$isSubmitting
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] submitting in
+                self?.orderBar.setActionsEnabled(!submitting)
             }
             .store(in: &cancellables)
 
@@ -430,14 +439,99 @@ final class ServicePackageDetailViewController: BaseViewController {
     }
 
     private func tapCart() {
-        guard let pkg = package else { return }
-        AppContainer.shared.cartService.addPackage(pkg)
-        Router.shared.push("/services/cart")
+        guard package != nil, !viewModel.isSubmitting else { return }
+
+        // 本地原型套餐：不调服务端、不写本地购物车
+        guard viewModel.usesRemoteCartAPI else {
+            showToast("请选择正式套餐后再加入购物车")
+            return
+        }
+
+        let details = buildSelectedSubmitDetails()
+        guard !details.isEmpty else {
+            showToast("套餐内容配置异常")
+            return
+        }
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await self.viewModel.addToCart(selectedDetails: details)
+                await MainActor.run {
+                    self.showToast("已加入购物车") {
+                        Router.shared.push("/services/cart")
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self.showToast(error.localizedDescription)
+                }
+            }
+        }
     }
 
     private func tapOrder() {
-        let id = package?.id ?? ""
-        Router.shared.push("/orders/confirm", params: ["id": id])
+        guard let pkg = package, !viewModel.isSubmitting else { return }
+        let packageId = pkg.id
+
+        // 本地原型套餐：不调服务端
+        guard viewModel.usesRemoteCartAPI else {
+            Router.shared.push("/orders/confirm", params: ["id": packageId])
+            return
+        }
+
+        let details = buildSelectedSubmitDetails()
+        guard !details.isEmpty else {
+            showToast("套餐内容配置异常")
+            return
+        }
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await self.viewModel.purchaseNow(selectedDetails: details)
+                await MainActor.run {
+                    Router.shared.push("/orders/confirm", params: ["id": packageId])
+                }
+            } catch {
+                await MainActor.run {
+                    self.showToast(error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    /// 按当前勾选组装提交明细（必选全部 / 单选一项 / 可选已勾选）
+    private func buildSelectedSubmitDetails() -> [PackageHospitalDetailSubmitItem] {
+        guard let tier = activeTier else { return [] }
+        var items: [ServicePackageComboItem] = []
+        for group in tier.groups {
+            switch group.selectMode {
+            case .required:
+                items.append(contentsOf: group.items)
+            case .radio:
+                let index = radioPicks[group.name] ?? 0
+                if group.items.indices.contains(index) {
+                    items.append(group.items[index])
+                }
+            case .checkbox:
+                let picked = checkPicks[group.name] ?? []
+                for index in picked where group.items.indices.contains(index) {
+                    items.append(group.items[index])
+                }
+            }
+        }
+        return items.compactMap { $0.toSubmitItem() }
+    }
+
+    private func showToast(_ message: String, completion: (() -> Void)? = nil) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        present(alert, animated: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            alert.dismiss(animated: true) {
+                completion?()
+            }
+        }
     }
 }
 

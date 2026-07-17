@@ -41,6 +41,23 @@ struct ServicePackageComboItem: Equatable {
     let defaultSelected: Bool
     /// 来自父节点 `children` 的子行，UI 需缩进
     let isChild: Bool
+    /// 详情行主键（提交 `packageHospitalDetailList[].id`）
+    let detailId: String
+    /// `checkType`: 1 单选, 2 强制, 3 可选
+    let checkType: Int
+    let billingType: Int?
+    let quantityValue: Int
+    let priceValue: Double
+    /// 子项对应父明细 id
+    let parentDetailId: String?
+    let packageDetailId: String?
+    let commodityId: String?
+    let imageUrl: String?
+    let saleFlag: Int?
+    let categoryId: String?
+    let categoryName: String?
+    let groupNumber: Int?
+    let defaultCheck: Int?
 
     init(
         name: String,
@@ -48,7 +65,21 @@ struct ServicePackageComboItem: Equatable {
         unit: String,
         price: Int,
         defaultSelected: Bool = false,
-        isChild: Bool = false
+        isChild: Bool = false,
+        detailId: String = "",
+        checkType: Int = 2,
+        billingType: Int? = nil,
+        quantityValue: Int? = nil,
+        priceValue: Double? = nil,
+        parentDetailId: String? = nil,
+        packageDetailId: String? = nil,
+        commodityId: String? = nil,
+        imageUrl: String? = nil,
+        saleFlag: Int? = nil,
+        categoryId: String? = nil,
+        categoryName: String? = nil,
+        groupNumber: Int? = nil,
+        defaultCheck: Int? = nil
     ) {
         self.name = name
         self.qty = qty
@@ -56,6 +87,20 @@ struct ServicePackageComboItem: Equatable {
         self.price = price
         self.defaultSelected = defaultSelected
         self.isChild = isChild
+        self.detailId = detailId
+        self.checkType = checkType
+        self.billingType = billingType
+        self.quantityValue = quantityValue ?? Int(qty) ?? 1
+        self.priceValue = priceValue ?? Double(price)
+        self.parentDetailId = parentDetailId
+        self.packageDetailId = packageDetailId
+        self.commodityId = commodityId
+        self.imageUrl = imageUrl
+        self.saleFlag = saleFlag
+        self.categoryId = categoryId
+        self.categoryName = categoryName
+        self.groupNumber = groupNumber
+        self.defaultCheck = defaultCheck
     }
 
     var qtyLabel: String {
@@ -108,6 +153,8 @@ struct ServicePackageDetail {
     let name: String
     let subtitle: String
     let category: String
+    /// 服务类别 id（加购/下单 `categoryServiceId`）
+    let categoryServiceId: String?
     let tag: String
     let priceText: String
     let priceUnit: String
@@ -128,6 +175,7 @@ struct ServicePackageDetail {
         name: String,
         subtitle: String,
         category: String,
+        categoryServiceId: String? = nil,
         tag: String,
         priceText: String,
         priceUnit: String,
@@ -144,6 +192,7 @@ struct ServicePackageDetail {
         self.name = name
         self.subtitle = subtitle
         self.category = category
+        self.categoryServiceId = categoryServiceId
         self.tag = tag
         self.priceText = priceText
         self.priceUnit = priceUnit

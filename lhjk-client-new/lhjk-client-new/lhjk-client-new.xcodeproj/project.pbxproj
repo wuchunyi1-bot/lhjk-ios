@@ -35,7 +35,6 @@
 		A53EFC113008DB2900ED9E5A /* ServiceInstitutionCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EFC103008DB2900ED9E5A /* ServiceInstitutionCardView.swift */; };
 		A53EFC133008E2D700ED9E5A /* MallProductGridCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EFC123008E2D700ED9E5A /* MallProductGridCell.swift */; };
 		A54CBD3F30049CB100D581AE /* CartModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD3D30049CB100D581AE /* CartModels.swift */; };
-		A54CBD4030049CB100D581AE /* CartService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD3E30049CB100D581AE /* CartService.swift */; };
 		A54CBD4530049CD600D581AE /* ServiceCartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD4130049CD600D581AE /* ServiceCartViewModel.swift */; };
 		A54CBD4630049CD600D581AE /* ServiceCartViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD4330049CD600D581AE /* ServiceCartViewController.swift */; };
 		A576A2202FE8E22E004F6070 /* ECGSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21E2FE8E22E004F6070 /* ECGSimulator.swift */; };
@@ -239,6 +238,15 @@
 		A5ACE2413000D5C200056C52 /* ServicePackageDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE23E3000D5C200056C52 /* ServicePackageDetailViewController.swift */; };
 		A5ACE2433000F56200056C52 /* HospitalPackageDetailModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2423000F56200056C52 /* HospitalPackageDetailModels.swift */; };
 		A5ACE2463000F57B00056C52 /* ServicePackageDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2443000F57B00056C52 /* ServicePackageDetailViewModel.swift */; };
+		A5B1FB223009E2F80039B16C /* HospitalService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB203009E2F80039B16C /* HospitalService.swift */; };
+		A5B1FB233009E2F80039B16C /* HospitalSearchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB1F3009E2F80039B16C /* HospitalSearchModels.swift */; };
+		A5B1FB243009E2F80039B16C /* InstitutionSelectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB213009E2F80039B16C /* InstitutionSelectionStore.swift */; };
+		A5B1FB2C3009E3240039B16C /* InstitutionSelectViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB283009E3240039B16C /* InstitutionSelectViewModel.swift */; };
+		A5B1FB2D3009E3240039B16C /* InstitutionSelectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB2A3009E3240039B16C /* InstitutionSelectViewController.swift */; };
+		A5B1FB2E3009E3240039B16C /* InstitutionSelectCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB253009E3240039B16C /* InstitutionSelectCell.swift */; };
+		A5B1FB303009E3350039B16C /* MapCoordinateConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB2F3009E3350039B16C /* MapCoordinateConverter.swift */; };
+		A5B1FB33300A022F0039B16C /* ShoppingCartModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB31300A022F0039B16C /* ShoppingCartModels.swift */; };
+		A5B1FB34300A022F0039B16C /* ShoppingCartService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB32300A022F0039B16C /* ShoppingCartService.swift */; };
 		A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */; };
 		A5CF597930077AA40067A4DE /* ServiceListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597830077AA40067A4DE /* ServiceListViewModel.swift */; };
 		A5CF597A30077AA40067A4DE /* HealthMallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597730077AA40067A4DE /* HealthMallViewModel.swift */; };
@@ -294,7 +302,6 @@
 		A53EFC103008DB2900ED9E5A /* ServiceInstitutionCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceInstitutionCardView.swift; sourceTree = "<group>"; };
 		A53EFC123008E2D700ED9E5A /* MallProductGridCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MallProductGridCell.swift; sourceTree = "<group>"; };
 		A54CBD3D30049CB100D581AE /* CartModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CartModels.swift; path = BLL/Service/CartModels.swift; sourceTree = "<group>"; };
-		A54CBD3E30049CB100D581AE /* CartService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CartService.swift; path = BLL/Service/CartService.swift; sourceTree = "<group>"; };
 		A54CBD4130049CD600D581AE /* ServiceCartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceCartViewModel.swift; sourceTree = "<group>"; };
 		A54CBD4330049CD600D581AE /* ServiceCartViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceCartViewController.swift; sourceTree = "<group>"; };
 		A576A21C2FE8E22E004F6070 /* ECGChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGChartView.swift; sourceTree = "<group>"; };
@@ -498,6 +505,15 @@
 		A5ACE23E3000D5C200056C52 /* ServicePackageDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicePackageDetailViewController.swift; sourceTree = "<group>"; };
 		A5ACE2423000F56200056C52 /* HospitalPackageDetailModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HospitalPackageDetailModels.swift; path = BLL/Service/HospitalPackageDetailModels.swift; sourceTree = "<group>"; };
 		A5ACE2443000F57B00056C52 /* ServicePackageDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicePackageDetailViewModel.swift; sourceTree = "<group>"; };
+		A5B1FB1F3009E2F80039B16C /* HospitalSearchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HospitalSearchModels.swift; path = BLL/Service/HospitalSearchModels.swift; sourceTree = "<group>"; };
+		A5B1FB203009E2F80039B16C /* HospitalService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HospitalService.swift; path = BLL/Service/HospitalService.swift; sourceTree = "<group>"; };
+		A5B1FB213009E2F80039B16C /* InstitutionSelectionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = InstitutionSelectionStore.swift; path = BLL/Service/InstitutionSelectionStore.swift; sourceTree = "<group>"; };
+		A5B1FB253009E3240039B16C /* InstitutionSelectCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstitutionSelectCell.swift; sourceTree = "<group>"; };
+		A5B1FB283009E3240039B16C /* InstitutionSelectViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstitutionSelectViewModel.swift; sourceTree = "<group>"; };
+		A5B1FB2A3009E3240039B16C /* InstitutionSelectViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstitutionSelectViewController.swift; sourceTree = "<group>"; };
+		A5B1FB2F3009E3350039B16C /* MapCoordinateConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapCoordinateConverter.swift; sourceTree = "<group>"; };
+		A5B1FB31300A022F0039B16C /* ShoppingCartModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShoppingCartModels.swift; path = BLL/Service/ShoppingCartModels.swift; sourceTree = "<group>"; };
+		A5B1FB32300A022F0039B16C /* ShoppingCartService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShoppingCartService.swift; path = BLL/Service/ShoppingCartService.swift; sourceTree = "<group>"; };
 		A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIFont+Funde.swift"; sourceTree = "<group>"; };
 		A5CF597730077AA40067A4DE /* HealthMallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthMallViewModel.swift; sourceTree = "<group>"; };
 		A5CF597830077AA40067A4DE /* ServiceListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceListViewModel.swift; sourceTree = "<group>"; };
@@ -623,6 +639,7 @@
 		A53EF9D330088E0900ED9E5A /* Location */ = {
 			isa = PBXGroup;
 			children = (
+				A5B1FB2F3009E3350039B16C /* MapCoordinateConverter.swift */,
 				A53EF9D230088E0900ED9E5A /* LocationManager.swift */,
 			);
 			name = Location;
@@ -1213,6 +1230,7 @@
 		A590FCAC2FEA91170056EF52 /* Service */ = {
 			isa = PBXGroup;
 			children = (
+				A5B1FB2B3009E3240039B16C /* InstitutionSelect */,
 				A54CBD4430049CD600D581AE /* Cart */,
 				A5ACE23F3000D5C200056C52 /* ServicePackageDetail */,
 				A5A6F5832FFF927B0065C921 /* Cells */,
@@ -1567,6 +1585,40 @@
 			path = ViewModels;
 			sourceTree = "<group>";
 		};
+		A5B1FB263009E3240039B16C /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A5B1FB253009E3240039B16C /* InstitutionSelectCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A5B1FB273009E3240039B16C /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A5B1FB293009E3240039B16C /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A5B1FB283009E3240039B16C /* InstitutionSelectViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A5B1FB2B3009E3240039B16C /* InstitutionSelect */ = {
+			isa = PBXGroup;
+			children = (
+				A5B1FB263009E3240039B16C /* Cells */,
+				A5B1FB273009E3240039B16C /* Components */,
+				A5B1FB293009E3240039B16C /* ViewModels */,
+				A5B1FB2A3009E3240039B16C /* InstitutionSelectViewController.swift */,
+			);
+			path = InstitutionSelect;
+			sourceTree = "<group>";
+		};
 		A5BFCA372FE38EF1008DA1DF /* UIFont */ = {
 			isa = PBXGroup;
 			children = (
@@ -1624,9 +1676,13 @@
 		C4193BC7FCD37A9D67D93F74 /* Service */ = {
 			isa = PBXGroup;
 			children = (
+				A5B1FB31300A022F0039B16C /* ShoppingCartModels.swift */,
+				A5B1FB32300A022F0039B16C /* ShoppingCartService.swift */,
+				A5B1FB1F3009E2F80039B16C /* HospitalSearchModels.swift */,
+				A5B1FB203009E2F80039B16C /* HospitalService.swift */,
+				A5B1FB213009E2F80039B16C /* InstitutionSelectionStore.swift */,
 				A5CF597B30077C6A0067A4DE /* RetailCategoryService.swift */,
 				A54CBD3D30049CB100D581AE /* CartModels.swift */,
-				A54CBD3E30049CB100D581AE /* CartService.swift */,
 				A5ACE2423000F56200056C52 /* HospitalPackageDetailModels.swift */,
 				A5A6F5872FFF9C5C0065C921 /* ServiceHubCacheService.swift */,
 				A5A6F4A92FFF7A720065C921 /* ColumnContentModels.swift */,
@@ -1970,6 +2026,9 @@
 				A5A6F52F2FFF7D240065C921 /* GroupVO.swift in Sources */,
 				A5A6F5302FFF7D240065C921 /* VideoMessage.swift in Sources */,
 				A5A6F5312FFF7D240065C921 /* FileMessage.swift in Sources */,
+				A5B1FB2C3009E3240039B16C /* InstitutionSelectViewModel.swift in Sources */,
+				A5B1FB2D3009E3240039B16C /* InstitutionSelectViewController.swift in Sources */,
+				A5B1FB2E3009E3240039B16C /* InstitutionSelectCell.swift in Sources */,
 				A5A6F5322FFF7D240065C921 /* SysNotifyMessage.swift in Sources */,
 				0D9CCCF8E6DF5482A9FACDF0 /* APIManager.swift in Sources */,
 				CC5AFA75E6FC57E098F3107B /* NetworkMonitor.swift in Sources */,
@@ -1986,6 +2045,8 @@
 				A590FCB22FEA91170056EF52 /* SettingsViewController.swift in Sources */,
 				A5A6F5382FFF7D9B0065C921 /* LoginViewModel.swift in Sources */,
 				A590FCB32FEA91170056EF52 /* HealthViewController.swift in Sources */,
+				A5B1FB33300A022F0039B16C /* ShoppingCartModels.swift in Sources */,
+				A5B1FB34300A022F0039B16C /* ShoppingCartService.swift in Sources */,
 				A590FCB42FEA91170056EF52 /* LoginFieldView.swift in Sources */,
 				A590FCB52FEA91170056EF52 /* ServiceViewController.swift in Sources */,
 				A590FCB62FEA91170056EF52 /* StageMetricsCardView.swift in Sources */,
@@ -2001,7 +2062,6 @@
 				A5A6F5272FFF7CF40065C921 /* OSSModels.swift in Sources */,
 				A590FCBC2FEA91170056EF52 /* HomeTeamCardCell.swift in Sources */,
 				A54CBD3F30049CB100D581AE /* CartModels.swift in Sources */,
-				A54CBD4030049CB100D581AE /* CartService.swift in Sources */,
 				A590FCBD2FEA91170056EF52 /* HealthRecordUserInfoCell.swift in Sources */,
 				A590FCBE2FEA91170056EF52 /* AccessibilitySettingsViewController.swift in Sources */,
 				A590FCBF2FEA91170056EF52 /* MeFuncRowCell.swift in Sources */,
@@ -2029,6 +2089,9 @@
 				A5A6F4EA2FFF7B7E0065C921 /* MessagesViewController.swift in Sources */,
 				A53EFC0F3008CEAE00ED9E5A /* MallCategoryTabBar.swift in Sources */,
 				A5A6F4EB2FFF7B7E0065C921 /* NotificationListViewController.swift in Sources */,
+				A5B1FB223009E2F80039B16C /* HospitalService.swift in Sources */,
+				A5B1FB233009E2F80039B16C /* HospitalSearchModels.swift in Sources */,
+				A5B1FB243009E2F80039B16C /* InstitutionSelectionStore.swift in Sources */,
 				A5ACE2333000C25200056C52 /* MeMembershipCardView.swift in Sources */,
 				A590FCD52FEA91170056EF52 /* HealthRecordMetricRowCell.swift in Sources */,
 				A590FCD62FEA91170056EF52 /* MyViewController.swift in Sources */,
@@ -2076,6 +2139,7 @@
 				A580F4013004D8650014B443 /* PackageDetailCarouselView.swift in Sources */,
 				A580F4023004D8650014B443 /* PackageComboGroupView.swift in Sources */,
 				A580F4033004D8650014B443 /* DashedBorderView.swift in Sources */,
+				A5B1FB303009E3350039B16C /* MapCoordinateConverter.swift in Sources */,
 				A580F4043004D8650014B443 /* PackageDetailTierPickerView.swift in Sources */,
 				A580F4053004D8650014B443 /* ServicePackageHostedCell.swift in Sources */,
 				A580F4063004D8650014B443 /* PackageDetailCardView.swift in Sources */,

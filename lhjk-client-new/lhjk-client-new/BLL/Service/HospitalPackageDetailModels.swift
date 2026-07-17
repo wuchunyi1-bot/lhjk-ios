@@ -24,13 +24,14 @@ struct MPackageVO: Decodable {
     let recommend: Int?
     let description: String?
     let applicablePeople: String?
+    let categoryServiceId: String?
     let categoryServiceName: String?
 
     private enum CodingKeys: String, CodingKey {
         case id, name, imageUrl, packageCarousel
         case imageDetailsUrl1, imageDetailsUrl2, imageDetailsUrl3
         case introduction, price, recommend, description
-        case applicablePeople, categoryServiceName
+        case applicablePeople, categoryServiceId, categoryServiceName
     }
 
     init(from decoder: Decoder) throws {
@@ -47,6 +48,7 @@ struct MPackageVO: Decodable {
         recommend = try c.decodeIfPresent(Int.self, forKey: .recommend)
         description = try c.decodeIfPresent(String.self, forKey: .description)
         applicablePeople = try c.decodeIfPresent(String.self, forKey: .applicablePeople)
+        categoryServiceId = HospitalPackageID.decodeOptional(c, key: .categoryServiceId)
         categoryServiceName = try c.decodeIfPresent(String.self, forKey: .categoryServiceName)
     }
 }
@@ -57,7 +59,7 @@ struct PackageHospitalDetailListBO: Decodable {
     let packageHospitalDetailList: [PackageHospitalDetailBO]?
 }
 
-/// 套餐明细行
+/// 套餐明细行（详情响应 / 加购提交共用字段）
 struct PackageHospitalDetailBO: Decodable {
     let id: String
     let name: String?
@@ -67,35 +69,65 @@ struct PackageHospitalDetailBO: Decodable {
     let checkType: Int?
     let defaultCheck: Int?
     let categoryName: String?
+    let categoryId: String?
     let imageUrl: String?
+    let parentId: String?
+    let packageDetailId: String?
+    let commodityId: String?
+    let saleFlag: Int?
     let children: [PackageHospitalDetailBO]?
 
     private enum CodingKeys: String, CodingKey {
         case id, name, quantity, price, billingType, checkType
-        case defaultCheck, categoryName, imageUrl, children
+        case defaultCheck, categoryName, categoryId, imageUrl
+        case parentId, packageDetailId, commodityId, saleFlag, children
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = HospitalPackageID.decode(c, key: .id)
         name = try c.decodeIfPresent(String.self, forKey: .name)
-        quantity = try c.decodeIfPresent(Int.self, forKey: .quantity)
+        quantity = HospitalPackageInt.decodeIfPresent(c, key: .quantity)
         price = try c.decodeIfPresent(Double.self, forKey: .price)
-        billingType = try c.decodeIfPresent(Int.self, forKey: .billingType)
-        checkType = try c.decodeIfPresent(Int.self, forKey: .checkType)
-        defaultCheck = try c.decodeIfPresent(Int.self, forKey: .defaultCheck)
+        billingType = HospitalPackageInt.decodeIfPresent(c, key: .billingType)
+        checkType = HospitalPackageInt.decodeIfPresent(c, key: .checkType)
+        defaultCheck = HospitalPackageInt.decodeIfPresent(c, key: .defaultCheck)
         categoryName = try c.decodeIfPresent(String.self, forKey: .categoryName)
+        categoryId = HospitalPackageID.decodeOptional(c, key: .categoryId)
         imageUrl = try c.decodeIfPresent(String.self, forKey: .imageUrl)
+        parentId = HospitalPackageID.decodeOptional(c, key: .parentId)
+        packageDetailId = HospitalPackageID.decodeOptional(c, key: .packageDetailId)
+        commodityId = HospitalPackageID.decodeOptional(c, key: .commodityId)
+        saleFlag = HospitalPackageInt.decodeIfPresent(c, key: .saleFlag)
         children = try c.decodeIfPresent([PackageHospitalDetailBO].self, forKey: .children)
     }
 }
 
 enum HospitalPackageID {
     static func decode<K: CodingKey>(_ container: KeyedDecodingContainer<K>, key: K) -> String {
-        if let value = try? container.decode(String.self, forKey: key) { return value }
-        if let value = try? container.decode(Int64.self, forKey: key) { return String(value) }
-        if let value = try? container.decode(Int.self, forKey: key) { return String(value) }
-        return ""
+        decodeOptional(container, key: key) ?? ""
+    }
+
+    static func decodeOptional<K: CodingKey>(_ container: KeyedDecodingContainer<K>, key: K) -> String? {
+        if let value = try? container.decodeIfPresent(String.self, forKey: key),
+           !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return value
+        }
+        if let value = try? container.decodeIfPresent(Int64.self, forKey: key) { return String(value) }
+        if let value = try? container.decodeIfPresent(Int.self, forKey: key) { return String(value) }
+        return nil
+    }
+}
+
+enum HospitalPackageInt {
+    static func decodeIfPresent<K: CodingKey>(_ container: KeyedDecodingContainer<K>, key: K) -> Int? {
+        if let value = try? container.decodeIfPresent(Int.self, forKey: key) { return value }
+        if let value = try? container.decodeIfPresent(Int64.self, forKey: key) { return Int(value) }
+        if let value = try? container.decodeIfPresent(String.self, forKey: key),
+           let int = Int(value.trimmingCharacters(in: .whitespacesAndNewlines)) {
+            return int
+        }
+        return nil
     }
 }
 
@@ -140,6 +172,7 @@ enum HospitalPackageDetailMapper {
             name: name,
             subtitle: subtitle.isEmpty ? "综合健康管理服务" : subtitle,
             category: nonEmpty(info?.categoryServiceName) ?? "健康管理",
+            categoryServiceId: nonEmpty(info?.categoryServiceId),
             tag: tag,
             priceText: priceText,
             priceUnit: priceValue > 0 ? "元起" : "面议",
@@ -190,8 +223,9 @@ enum HospitalPackageDetailMapper {
         guard !parents.isEmpty else { return nil }
 
         // 父行 + children 子行均保留；子行标记 isChild（对齐 funde parentGoodsId 缩进）
-        let rows: [(bo: PackageHospitalDetailBO, isChild: Bool)] = parents.flatMap { parent in
-            [(parent, false)] + (parent.children ?? []).map { ($0, true) }
+        let rows: [(bo: PackageHospitalDetailBO, isChild: Bool, parentId: String?)] = parents.flatMap { parent in
+            [(parent, false, parent.parentId)]
+                + (parent.children ?? []).map { ($0, true, parent.id) }
         }
         guard !rows.isEmpty else { return nil }
 
@@ -210,7 +244,21 @@ enum HospitalPackageDetailMapper {
                 unit: unit,
                 price: price,
                 defaultSelected: row.bo.defaultCheck == 1,
-                isChild: row.isChild
+                isChild: row.isChild,
+                detailId: row.bo.id,
+                checkType: row.bo.checkType ?? checkType,
+                billingType: row.bo.billingType,
+                quantityValue: row.bo.quantity ?? 1,
+                priceValue: row.bo.price ?? Double(price),
+                parentDetailId: row.parentId,
+                packageDetailId: row.bo.packageDetailId,
+                commodityId: row.bo.commodityId,
+                imageUrl: row.bo.imageUrl,
+                saleFlag: row.bo.saleFlag,
+                categoryId: row.bo.categoryId,
+                categoryName: row.bo.categoryName,
+                groupNumber: fallbackNumber,
+                defaultCheck: row.bo.defaultCheck
             )
         }
 

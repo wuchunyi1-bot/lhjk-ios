@@ -152,12 +152,21 @@ extension HealthMallViewController: UICollectionViewDataSource, UICollectionView
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MallProductCell.reuseID, for: indexPath) as! MallProductCell
-        cell.configure(viewModel.products[indexPath.item])
+        let categoryId = viewModel.selectedTab.categoryServiceId
+        cell.configure(
+            viewModel.products[indexPath.item],
+            categoryServiceId: categoryId.isEmpty ? nil : categoryId
+        )
         return cell
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let id = viewModel.products[indexPath.item].id
-        Router.shared.push("/services/pkg", params: ["id": id])
+        var params: [String: Any] = ["id": id]
+        let categoryId = viewModel.selectedTab.categoryServiceId
+        if !categoryId.isEmpty {
+            params["categoryServiceId"] = categoryId
+        }
+        Router.shared.push("/services/pkg", params: params)
     }
 }

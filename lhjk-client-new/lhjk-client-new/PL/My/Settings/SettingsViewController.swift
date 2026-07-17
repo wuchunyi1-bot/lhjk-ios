@@ -302,6 +302,7 @@ final class SettingsViewController: BaseViewController {
             }
             IMService.shared.clear()
             ServiceHubCacheService.shared.clear()
+            InstitutionSelectionStore.shared.clear()
             RongCloudManager.shared.disconnect()
             UserManager.shared.clear()
             Router.shared.setRoot("/login")

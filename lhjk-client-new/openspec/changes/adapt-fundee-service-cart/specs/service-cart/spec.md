@@ -33,19 +33,20 @@
 
 ### Requirement: 删除商品
 
-对齐 PRD「滑动删除/垃圾桶图标」；Vue `CartView.vue` 尚未实现，iOS 先行补齐。
+对齐 PRD「滑动删除/垃圾桶图标」，走服务端删除接口。
 
 #### Scenario: 垃圾桶删除
 
 - **WHEN** 用户点击卡片右上角垃圾桶图标
 - **THEN** 弹出确认弹窗「删除后不可恢复，确定从购物车移除该商品？」
-- **AND** 用户确认后从本地购物车移除该条目并刷新列表与底部合计
-- **AND** 最后一项删除后展示空态
+- **AND** 用户确认后调用 `DELETE /v1/shoppingCart/deleteShoppingCart?serialNumber=`（取自该行列表字段）
+- **AND** 成功后从列表移除该条目并刷新底部合计；最后一项删除后展示空态
+- **AND** 失败 Toast `msg`，不移除
 
 #### Scenario: 滑动删除
 
 - **WHEN** 用户左滑购物车条目
-- **THEN** 展示「删除」操作；确认逻辑与垃圾桶一致（系统滑动删除直接移除，无需二次弹窗）
+- **THEN** 展示「删除」操作；确认后同样调用删除接口（系统滑动删除可不二次弹窗）
 
 ### Requirement: 结算跳转
 
@@ -63,9 +64,18 @@
 
 #### Scenario: 套餐详情加入
 
-- **WHEN** 用户在套餐详情点击「加入购物车」
-- **THEN** 将当前套餐写入本地购物车（同 `targetId` 则 quantity +1）
-- **AND** 跳转 `/services/cart`
+- **WHEN** 用户在套餐详情点击「加入购物车」且套餐为有效数字 id
+- **THEN** 仅调用 `saveShoppingCartOrPurchase`（flag=2）
+- **AND** **不得**写入本地 UserDefaults / mock 购物车
+- **AND** 成功后跳转 `/services/cart`，由 `getShoppingCartList` 拉取展示
+
+### Requirement: 列表数据源
+
+#### Scenario: 服务端列表
+
+- **WHEN** 用户打开 `/services/cart`
+- **THEN** 调用 `GET /v1/shoppingCart/getShoppingCartList`
+- **AND** 空列表展示空态，**不得**注入原型 seed
 
 ### Requirement: 入口
 
