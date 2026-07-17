@@ -2,7 +2,7 @@ import UIKit
 import SnapKit
 import Combine
 
-/// 服务套餐详情 — 对齐图示；数据优先 `getHospitalPackageDetail`
+/// 服务套餐详情 — 三段式：Banner / 简介 / 权益+详情连续楼层
 final class ServicePackageDetailViewController: BaseViewController {
 
     private let viewModel: ServicePackageDetailViewModel
@@ -11,36 +11,50 @@ final class ServicePackageDetailViewController: BaseViewController {
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let orderBar = PackageDetailOrderBarView()
     private let statusLabel = UILabel()
+    private let floatingTabBar = PackageDetailTabBarView()
 
-    private let tabBarView = PackageDetailTabBarView()
     private var carouselView: PackageDetailCarouselView?
     private let infoView = PackageDetailInfoView()
+    private let floorsView = PackageDetailFloorsView()
     private var tierPickerView: PackageDetailTierPickerView?
-    private let detailCardView = PackageDetailCardView()
     private var autoScrollTimer: Timer?
 
     private enum TableRow: Equatable {
         case carousel
         case info
         case tier
-        case tabBar
-        case comboGroup(ServicePackageComboGroup)
-        case detail
+        case floors
     }
 
     private var activeTab: PackageDetailTab = .content
     private var tierIndex = 0
     private var rows: [TableRow] = []
-    /// 单选组：groupName → 选中下标（第 0 项锁定）
     private var radioPicks: [String: Int] = [:]
-    /// 多选组：groupName → 选中下标集合
     private var checkPicks: [String: Set<Int>] = [:]
+    private var floorsRowY: CGFloat = 0
+    private var isScrollingToFloor = false
+
+    /// floors cell 顶部 inset，与 cellForRow 保持一致
+    private let floorsCellTopInset: CGFloat = 14
+    /// 浮动 Tab 与楼层内容之间的间距
+    private let stickyTabGap: CGFloat = 4
+    private let floatingTabHeight: CGFloat = 44
 
     private var package: ServicePackageDetail? { viewModel.package }
 
     private var activeTier: ServicePackageTier? {
         guard let package, package.tiers.indices.contains(tierIndex) else { return nil }
         return package.tiers[tierIndex]
+    }
+
+    private var visibleGroups: [ServicePackageComboGroup] {
+        activeTier?.groups.filter { group in
+            group.selectMode != .checkbox || !group.items.isEmpty
+        } ?? []
+    }
+
+    private var hasDetailImages: Bool {
+        !(package?.detailImageURLs.isEmpty ?? true)
     }
 
     init(
@@ -65,7 +79,7 @@ final class ServicePackageDetailViewController: BaseViewController {
         tableView.backgroundColor = .clear
         tableView.separatorStyle = .none
         tableView.showsVerticalScrollIndicator = false
-        tableView.estimatedRowHeight = 120
+        tableView.estimatedRowHeight = 200
         tableView.rowHeight = UITableView.automaticDimension
         tableView.dataSource = self
         tableView.delegate = self
@@ -77,7 +91,17 @@ final class ServicePackageDetailViewController: BaseViewController {
             $0.bottom.equalTo(view.safeAreaLayoutGuide)
         }
 
-        tabBarView.delegate = self
+        floorsView.tabDelegate = self
+
+        floatingTabBar.isHidden = true
+        floatingTabBar.backgroundColor = .fdSurface
+        floatingTabBar.delegate = self
+        view.addSubview(floatingTabBar)
+        floatingTabBar.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(44)
+        }
 
         statusLabel.font = .fdBody
         statusLabel.textColor = .fdSubtext
@@ -126,6 +150,7 @@ final class ServicePackageDetailViewController: BaseViewController {
         tierPickerView = nil
         tierIndex = 0
         activeTab = .content
+        isScrollingToFloor = false
 
         resetPicks(for: pkg.tiers[tierIndex])
         carouselView = PackageDetailCarouselView(
@@ -140,13 +165,17 @@ final class ServicePackageDetailViewController: BaseViewController {
             picker.configure(tiers: pkg.tiers, selectedIndex: tierIndex, accent: pkg.accent)
             tierPickerView = picker
         }
-        detailCardView.configure(with: pkg)
+        refreshFloorsView()
         rebuildRows()
         setupOrderBar()
+        syncTabSelection(animated: false)
 
         statusLabel.isHidden = true
         tableView.isHidden = false
-        selectTab(.content, animated: false)
+        floatingTabBar.isHidden = true
+        tableView.reloadData()
+        view.layoutIfNeeded()
+        updateFloorsRowY()
         startAutoScroll()
         refreshPayable()
     }
@@ -165,29 +194,33 @@ final class ServicePackageDetailViewController: BaseViewController {
         }
         var next: [TableRow] = [.carousel, .info]
         if tierPickerView != nil { next.append(.tier) }
-        next.append(.tabBar)
-        switch activeTab {
-        case .content:
-            for group in activeTier?.groups ?? [] {
-                next.append(.comboGroup(group))
-            }
-        case .detail:
-            next.append(.detail)
-        }
+        next.append(.floors)
         rows = next
     }
 
-    private func reloadTableContent() {
-        rebuildRows()
-        tableView.reloadData()
+    private func refreshFloorsView() {
+        guard let package else { return }
+        floorsView.configure(
+            package: package,
+            groups: visibleGroups,
+            radioPicks: radioPicks,
+            checkPicks: checkPicks,
+            makeGroupView: { [weak self] group in
+                self?.makeComboGroupView(group) ?? PackageComboGroupView()
+            }
+        )
     }
 
-    private func selectTab(_ tab: PackageDetailTab, animated: Bool) {
-        activeTab = tab
-        tabBarView.select(tab, animated: animated)
-        rebuildRows()
-        tableView.reloadData()
-        if !animated { view.layoutIfNeeded() }
+    private func reloadFloorsContent(heightMayChange: Bool = false) {
+        // 勾选仅改选中态，高度不变；勿 reloadRows，否则托管 floorsView 行高会塌缩。
+        refreshFloorsView()
+        floorsView.setNeedsLayout()
+        floorsView.layoutIfNeeded()
+        if heightMayChange {
+            tableView.beginUpdates()
+            tableView.endUpdates()
+        }
+        updateFloorsRowY()
     }
 
     private func resetPicks(for tier: ServicePackageTier) {
@@ -196,12 +229,16 @@ final class ServicePackageDetailViewController: BaseViewController {
         for group in tier.groups {
             switch group.selectMode {
             case .radio:
-                let preferred = group.items.enumerated().first { $0.offset > 0 && $0.element.defaultSelected }?.offset
-                radios[group.name] = preferred ?? (group.items.count > 1 ? 1 : 0)
+                let preferred = group.items.enumerated().first { $0.element.defaultSelected }?.offset
+                let lowest = group.items.enumerated().min {
+                    $0.element.price < $1.element.price
+                }?.offset ?? 0
+                radios[group.name] = preferred ?? lowest
             case .checkbox:
-                checks[group.name] = Set(
-                    group.items.enumerated().compactMap { $0.element.defaultSelected ? $0.offset : nil }
-                )
+                let picked = group.items.enumerated().compactMap { idx, item -> Int? in
+                    item.defaultSelected ? idx : nil
+                }
+                checks[group.name] = Set(picked)
             case .required:
                 break
             }
@@ -220,7 +257,7 @@ final class ServicePackageDetailViewController: BaseViewController {
         view.onRadioSelect = { [weak self] index in
             guard let self else { return }
             self.radioPicks[group.name] = index
-            self.reloadTableContent()
+            self.reloadFloorsContent()
             self.refreshPayable()
         }
         view.onCheckToggle = { [weak self] index in
@@ -228,33 +265,155 @@ final class ServicePackageDetailViewController: BaseViewController {
             var set = self.checkPicks[group.name] ?? []
             if set.contains(index) { set.remove(index) } else { set.insert(index) }
             self.checkPicks[group.name] = set
-            self.reloadTableContent()
+            self.reloadFloorsContent()
             self.refreshPayable()
         }
         return view
     }
 
+    private func selectedItemPrices() -> [Int] {
+        guard let tier = activeTier else { return [] }
+        var prices: [Int] = []
+        for group in tier.groups {
+            switch group.selectMode {
+            case .required:
+                prices.append(contentsOf: group.items.map(\.price))
+            case .radio:
+                let index = radioPicks[group.name] ?? 0
+                if group.items.indices.contains(index) {
+                    prices.append(group.items[index].price)
+                }
+            case .checkbox:
+                let picked = checkPicks[group.name] ?? []
+                for index in picked where group.items.indices.contains(index) {
+                    prices.append(group.items[index].price)
+                }
+            }
+        }
+        return prices
+    }
+
     private func refreshPayable() {
-        guard let tier = activeTier else {
+        let prices = selectedItemPrices()
+        guard !prices.isEmpty else {
             orderBar.setPayableText("—")
             return
         }
-        if tier.price == 0 && tier.priceUnit.contains("面议") {
+        if prices.allSatisfy({ $0 == 0 }), activeTier?.priceUnit.contains("面议") == true {
             orderBar.setPayableText("面议")
             return
         }
-        var total = tier.price
-        for group in tier.groups where group.selectMode == .checkbox {
-            let picked = checkPicks[group.name] ?? []
-            for i in picked where group.items.indices.contains(i) {
-                total += group.items[i].price
-            }
-        }
+        let total = prices.reduce(0, +)
+        orderBar.setPayableText("¥\(grouped(total))")
+    }
+
+    private func grouped(_ value: Int) -> String {
         let f = NumberFormatter()
         f.numberStyle = .decimal
         f.groupingSeparator = ","
-        let num = f.string(from: NSNumber(value: total)) ?? "\(total)"
-        orderBar.setPayableText("¥\(num)")
+        return f.string(from: NSNumber(value: value)) ?? "\(value)"
+    }
+
+    private func syncTabSelection(animated: Bool) {
+        floorsView.tabBarView.select(activeTab, animated: animated)
+        floatingTabBar.setDetailTabVisible(hasDetailImages)
+        floatingTabBar.select(activeTab, animated: animated)
+    }
+
+    /// 点击 Tab 时，将对应楼层锚点滚到浮动 Tab 正下方
+    private func scrollToFloor(_ tab: PackageDetailTab, animated: Bool) {
+        guard let index = rows.firstIndex(of: .floors) else { return }
+        if tab == .detail, !hasDetailImages { return }
+
+        view.layoutIfNeeded()
+        tableView.layoutIfNeeded()
+        floorsView.layoutIfNeeded()
+
+        let cellRect = tableView.rectForRow(at: IndexPath(row: index, section: 0))
+        guard let floorY = floorsView.floorMinY(for: tab) else { return }
+
+        // cell 顶 + cell topInset + 楼层在 floorsView 内的 Y − 浮动 Tab 预留高度
+        // 注意：floorMinY 不再扣 sticky，避免重复减偏移
+        let reserved = floatingTabHeight + stickyTabGap
+        let targetY = max(0, cellRect.minY + floorsCellTopInset + floorY - reserved)
+        let maxOffset = max(0, tableView.contentSize.height - tableView.bounds.height + tableView.contentInset.bottom)
+        let clampedY = min(targetY, maxOffset)
+
+        isScrollingToFloor = true
+        activeTab = tab
+        syncTabSelection(animated: true)
+        // 先显示浮动 Tab，避免滚动过程中内容被导航区遮挡观感不一致
+        floatingTabBar.isHidden = false
+        tableView.setContentOffset(CGPoint(x: 0, y: clampedY), animated: animated)
+
+        let delay = animated ? 0.4 : 0.05
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self else { return }
+            self.isScrollingToFloor = false
+            self.updateFloatingTabVisibility()
+            // 动画结束后再校正一次，消除自动行高带来的偏差
+            self.correctFloorOffsetIfNeeded(for: tab)
+        }
+    }
+
+    private func correctFloorOffsetIfNeeded(for tab: PackageDetailTab) {
+        guard let index = rows.firstIndex(of: .floors) else { return }
+        view.layoutIfNeeded()
+        tableView.layoutIfNeeded()
+        floorsView.layoutIfNeeded()
+
+        let cellRect = tableView.rectForRow(at: IndexPath(row: index, section: 0))
+        guard let floorY = floorsView.floorMinY(for: tab) else { return }
+        let reserved = floatingTabHeight + stickyTabGap
+        let targetY = max(0, cellRect.minY + floorsCellTopInset + floorY - reserved)
+        let maxOffset = max(0, tableView.contentSize.height - tableView.bounds.height + tableView.contentInset.bottom)
+        let clampedY = min(targetY, maxOffset)
+
+        if abs(tableView.contentOffset.y - clampedY) > 2 {
+            tableView.setContentOffset(CGPoint(x: 0, y: clampedY), animated: false)
+        }
+    }
+
+    private func updateFloorsRowY() {
+        guard let index = rows.firstIndex(of: .floors) else {
+            floorsRowY = .greatestFiniteMagnitude
+            return
+        }
+        floorsRowY = tableView.rectForRow(at: IndexPath(row: index, section: 0)).minY
+    }
+
+    private func updateFloatingTabVisibility() {
+        guard package != nil else {
+            floatingTabBar.isHidden = true
+            return
+        }
+        // 卡片内 Tab 顶边滚到 table 可视区顶部附近时显示浮动副本
+        let tabBarYInContent = floorsRowY + floorsCellTopInset + floorsView.tabBarView.frame.minY
+        let shouldShow = tableView.contentOffset.y + stickyTabGap >= tabBarYInContent
+        floatingTabBar.isHidden = !shouldShow
+    }
+
+    private func updateActiveTabFromScroll() {
+        guard hasDetailImages, !isScrollingToFloor else { return }
+        guard let index = rows.firstIndex(of: .floors) else { return }
+
+        view.layoutIfNeeded()
+        let cellRect = tableView.rectForRow(at: IndexPath(row: index, section: 0))
+        guard let detailFloorY = floorsView.floorMinY(for: .detail) else {
+            if activeTab != .content {
+                activeTab = .content
+                syncTabSelection(animated: true)
+            }
+            return
+        }
+
+        // 可视区顶部（扣掉浮动 Tab）越过详情锚点后切到「详情」
+        let viewportTop = tableView.contentOffset.y + floatingTabHeight + stickyTabGap
+        let detailAbsoluteY = cellRect.minY + floorsCellTopInset + detailFloorY
+        let newTab: PackageDetailTab = viewportTop >= detailAbsoluteY - 8 ? .detail : .content
+        guard newTab != activeTab else { return }
+        activeTab = newTab
+        syncTabSelection(animated: true)
     }
 
     private func startAutoScroll() {
@@ -308,16 +467,18 @@ extension ServicePackageDetailViewController: UITableViewDataSource, UITableView
             if let tierPickerView {
                 cell.host(tierPickerView, insets: UIEdgeInsets(top: 16, left: 16, bottom: 0, right: 16))
             }
-        case .tabBar:
-            cell.host(tabBarView, insets: UIEdgeInsets(top: 16, left: 16, bottom: 0, right: 16))
-        case .comboGroup(let group):
-            let box = makeComboGroupView(group)
-            let isLast = indexPath.row == rows.count - 1
-            cell.host(box, insets: UIEdgeInsets(top: 10, left: 16, bottom: isLast ? 24 : 0, right: 16))
-        case .detail:
-            cell.host(detailCardView, insets: UIEdgeInsets(top: 12, left: 16, bottom: 24, right: 16))
+        case .floors:
+            cell.host(
+                floorsView,
+                insets: UIEdgeInsets(top: floorsCellTopInset, left: 16, bottom: 24, right: 16)
+            )
         }
         return cell
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        updateFloatingTabVisibility()
+        updateActiveTabFromScroll()
     }
 }
 
@@ -326,7 +487,7 @@ extension ServicePackageDetailViewController: UITableViewDataSource, UITableView
 extension ServicePackageDetailViewController: PackageDetailTabBarViewDelegate {
 
     func tabBarView(_ view: PackageDetailTabBarView, didSelect tab: PackageDetailTab) {
-        selectTab(tab, animated: true)
+        scrollToFloor(tab, animated: true)
     }
 }
 
@@ -337,7 +498,7 @@ extension ServicePackageDetailViewController: PackageDetailTierPickerViewDelegat
         tierIndex = index
         resetPicks(for: pkg.tiers[tierIndex])
         view.configure(tiers: pkg.tiers, selectedIndex: tierIndex, accent: pkg.accent)
-        reloadTableContent()
+        reloadFloorsContent(heightMayChange: true)
         refreshPayable()
     }
 }

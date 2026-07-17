@@ -33,6 +33,7 @@
 		A53EF9D630088E2C00ED9E5A /* AddressEditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EF9D530088E2C00ED9E5A /* AddressEditViewModel.swift */; };
 		A53EFC0F3008CEAE00ED9E5A /* MallCategoryTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EFC0E3008CEAE00ED9E5A /* MallCategoryTabBar.swift */; };
 		A53EFC113008DB2900ED9E5A /* ServiceInstitutionCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EFC103008DB2900ED9E5A /* ServiceInstitutionCardView.swift */; };
+		A53EFC133008E2D700ED9E5A /* MallProductGridCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EFC123008E2D700ED9E5A /* MallProductGridCell.swift */; };
 		A54CBD3F30049CB100D581AE /* CartModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD3D30049CB100D581AE /* CartModels.swift */; };
 		A54CBD4030049CB100D581AE /* CartService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD3E30049CB100D581AE /* CartService.swift */; };
 		A54CBD4530049CD600D581AE /* ServiceCartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD4130049CD600D581AE /* ServiceCartViewModel.swift */; };
@@ -291,6 +292,7 @@
 		A53EF9D530088E2C00ED9E5A /* AddressEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressEditViewModel.swift; sourceTree = "<group>"; };
 		A53EFC0E3008CEAE00ED9E5A /* MallCategoryTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MallCategoryTabBar.swift; sourceTree = "<group>"; };
 		A53EFC103008DB2900ED9E5A /* ServiceInstitutionCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceInstitutionCardView.swift; sourceTree = "<group>"; };
+		A53EFC123008E2D700ED9E5A /* MallProductGridCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MallProductGridCell.swift; sourceTree = "<group>"; };
 		A54CBD3D30049CB100D581AE /* CartModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CartModels.swift; path = BLL/Service/CartModels.swift; sourceTree = "<group>"; };
 		A54CBD3E30049CB100D581AE /* CartService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CartService.swift; path = BLL/Service/CartService.swift; sourceTree = "<group>"; };
 		A54CBD4130049CD600D581AE /* ServiceCartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceCartViewModel.swift; sourceTree = "<group>"; };
@@ -1313,6 +1315,7 @@
 		A5A6F4D42FFF7AE80065C921 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A53EFC123008E2D700ED9E5A /* MallProductGridCell.swift */,
 				A5A6F4D02FFF7AE80065C921 /* HealthPackageCardCell.swift */,
 				A5A6F4D12FFF7AE80065C921 /* HealthPackageCategoryCell.swift */,
 				A5A6F4D22FFF7AE80065C921 /* ServiceBannerCarouselCell.swift */,
@@ -2171,6 +2174,7 @@
 				A5A6F5742FFF8EA30065C921 /* PackageHeaderCell.swift in Sources */,
 				A5A6F5752FFF8EA30065C921 /* CategoryNavCell.swift in Sources */,
 				A5A6F5082FFF7BBD0065C921 /* MealAnalysisCell.swift in Sources */,
+				A53EFC133008E2D700ED9E5A /* MallProductGridCell.swift in Sources */,
 				A5A6F5092FFF7BBD0065C921 /* VideoBubbleCell.swift in Sources */,
 				A5A6F50A2FFF7BBD0065C921 /* FileBubbleCell.swift in Sources */,
 				A5A6F50B2FFF7BBD0065C921 /* ChatViewModel.swift in Sources */,

@@ -3,13 +3,25 @@ import SnapKit
 
 final class PackageDetailInfoView: UIView {
 
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .fdSurface
+        layer.cornerRadius = 12
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = 0.06
+        layer.shadowOffset = CGSize(width: 0, height: 2)
+        layer.shadowRadius = 8
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
     func configure(with pkg: ServicePackageDetail) {
         subviews.forEach { $0.removeFromSuperview() }
 
-        let titleRow = UIStackView()
-        titleRow.axis = .horizontal
-        titleRow.spacing = 8
-        titleRow.alignment = .center
+        let titleLabel = UILabel()
+        titleLabel.font = .fdFont(ofSize: 20, weight: .heavy)
+        titleLabel.textColor = .fdText
+        titleLabel.numberOfLines = 2
 
         if !pkg.tag.isEmpty {
             let badge = UILabel()
@@ -19,69 +31,62 @@ final class PackageDetailInfoView: UIView {
             badge.backgroundColor = .fdPrimary
             badge.layer.cornerRadius = 4
             badge.clipsToBounds = true
-            titleRow.addArrangedSubview(badge)
-        }
 
-        let name = UILabel()
-        name.text = pkg.name
-        name.font = .fdFont(ofSize: 20, weight: .heavy)
-        name.textColor = .fdText
-        name.numberOfLines = 2
-        titleRow.addArrangedSubview(name)
-        addSubview(titleRow)
-        titleRow.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-        }
+            let titleRow = UIStackView(arrangedSubviews: [badge, titleLabel])
+            titleRow.axis = .horizontal
+            titleRow.spacing = 8
+            titleRow.alignment = .center
+            titleLabel.text = pkg.name
+            addSubview(titleRow)
+            titleRow.snp.makeConstraints {
+                $0.top.leading.trailing.equalToSuperview().inset(16)
+            }
 
-        let subtitle = UILabel()
-        subtitle.text = pkg.subtitle
-        subtitle.font = .fdCaption
-        subtitle.textColor = .fdSubtext
-        subtitle.numberOfLines = 2
-        subtitle.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-
-        let price = UILabel()
-        let unitSuffix = pkg.priceUnit.contains("面议") ? "" : " \(pkg.priceUnit)"
-        price.text = "\(pkg.priceText)\(unitSuffix)"
-        price.font = .fdMonoFont(ofSize: 18, weight: .bold)
-        price.textColor = .fdPrimary
-        price.setContentHuggingPriority(.required, for: .horizontal)
-
-        let mid = UIStackView(arrangedSubviews: [subtitle, price])
-        mid.axis = .horizontal
-        mid.alignment = .top
-        mid.spacing = 12
-        addSubview(mid)
-        mid.snp.makeConstraints {
-            $0.top.equalTo(titleRow.snp.bottom).offset(8)
-            $0.leading.trailing.equalToSuperview()
-        }
-
-        if pkg.tags.isEmpty {
-            mid.snp.makeConstraints { $0.bottom.equalToSuperview() }
+            let intro = makeIntroLabel(pkg.subtitle)
+            addSubview(intro)
+            intro.snp.makeConstraints {
+                $0.top.equalTo(titleRow.snp.bottom).offset(8)
+                $0.leading.trailing.equalToSuperview().inset(16)
+            }
+            addPriceRow(pkg: pkg, below: intro)
         } else {
-            let tagStack = UIStackView()
-            tagStack.axis = .horizontal
-            tagStack.spacing = 8
-            tagStack.alignment = .leading
-            for text in pkg.tags.prefix(4) {
-                let tag = UILabel()
-                let short = text.count > 4 ? String(text.prefix(4)) + "…" : text
-                tag.text = " \(short) "
-                tag.font = .fdCaptionSemibold
-                tag.textColor = .fdPrimary
-                tag.backgroundColor = UIColor.fdPrimary.withAlphaComponent(0.08)
-                tag.layer.cornerRadius = 999
-                tag.layer.borderWidth = 1
-                tag.layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.25).cgColor
-                tag.clipsToBounds = true
-                tagStack.addArrangedSubview(tag)
+            titleLabel.text = pkg.name
+            addSubview(titleLabel)
+            titleLabel.snp.makeConstraints {
+                $0.top.leading.trailing.equalToSuperview().inset(16)
             }
-            addSubview(tagStack)
-            tagStack.snp.makeConstraints {
-                $0.top.equalTo(mid.snp.bottom).offset(10)
-                $0.leading.trailing.bottom.equalToSuperview()
+
+            let intro = makeIntroLabel(pkg.subtitle)
+            addSubview(intro)
+            intro.snp.makeConstraints {
+                $0.top.equalTo(titleLabel.snp.bottom).offset(8)
+                $0.leading.trailing.equalToSuperview().inset(16)
             }
+            addPriceRow(pkg: pkg, below: intro)
+        }
+    }
+
+    private func makeIntroLabel(_ text: String) -> UILabel {
+        let intro = UILabel()
+        intro.text = text
+        intro.font = .fdBody
+        intro.textColor = .fdSubtext
+        intro.numberOfLines = 2
+        return intro
+    }
+
+    private func addPriceRow(pkg: ServicePackageDetail, below anchor: UIView) {
+        let unitSuffix = pkg.priceUnit.contains("面议") ? "" : " \(pkg.priceUnit)"
+        let price = UILabel()
+        price.text = "\(pkg.priceText)\(unitSuffix)"
+        price.font = .fdMonoFont(ofSize: 22, weight: .heavy)
+        price.textColor = .fdPrimary
+        price.textAlignment = .right
+        addSubview(price)
+        price.snp.makeConstraints {
+            $0.top.equalTo(anchor.snp.bottom).offset(12)
+            $0.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalToSuperview().inset(16)
         }
     }
 }

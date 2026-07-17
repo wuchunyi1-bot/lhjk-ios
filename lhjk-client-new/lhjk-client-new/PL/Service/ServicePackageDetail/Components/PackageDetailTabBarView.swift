@@ -17,6 +17,7 @@ final class PackageDetailTabBarView: UIView {
     private let contentButton = UIButton(type: .system)
     private let detailButton = UIButton(type: .system)
     private let indicator = UIView()
+    private let border = UIView()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -24,6 +25,14 @@ final class PackageDetailTabBarView: UIView {
     }
 
     required init?(coder: NSCoder) { fatalError() }
+
+    func setDetailTabVisible(_ visible: Bool) {
+        detailButton.isHidden = !visible
+        if !visible, detailButton.isSelected {
+            select(.content, animated: false)
+        }
+        layoutIfNeeded()
+    }
 
     func select(_ tab: PackageDetailTab, animated: Bool) {
         contentButton.isSelected = tab == .content
@@ -34,7 +43,7 @@ final class PackageDetailTabBarView: UIView {
         let target = tab == .content ? contentButton : detailButton
         indicator.snp.remakeConstraints {
             $0.bottom.equalToSuperview()
-            $0.width.equalTo(40)
+            $0.width.equalTo(32)
             $0.height.equalTo(3)
             $0.centerX.equalTo(target)
         }
@@ -44,16 +53,15 @@ final class PackageDetailTabBarView: UIView {
     }
 
     private func setupUI() {
-        let border = UIView()
         border.backgroundColor = .fdBorder
         addSubview(border)
         border.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(2)
+            $0.height.equalTo(1)
         }
 
-        configureButton(contentButton, title: "套餐内容", tag: 0)
-        configureButton(detailButton, title: "套餐详情", tag: 1)
+        configureButton(contentButton, title: "权益", tag: 0)
+        configureButton(detailButton, title: "详情", tag: 1)
         contentButton.addTarget(self, action: #selector(tabTapped(_:)), for: .touchUpInside)
         detailButton.addTarget(self, action: #selector(tabTapped(_:)), for: .touchUpInside)
 
@@ -63,7 +71,7 @@ final class PackageDetailTabBarView: UIView {
         addSubview(stack)
         stack.snp.makeConstraints {
             $0.top.leading.trailing.equalToSuperview()
-            $0.height.equalTo(44)
+            $0.bottom.equalTo(border.snp.top).offset(-8)
         }
 
         indicator.backgroundColor = .fdPrimary
@@ -71,7 +79,7 @@ final class PackageDetailTabBarView: UIView {
         addSubview(indicator)
         indicator.snp.makeConstraints {
             $0.bottom.equalToSuperview()
-            $0.width.equalTo(40)
+            $0.width.equalTo(32)
             $0.height.equalTo(3)
             $0.centerX.equalTo(contentButton)
         }
@@ -87,5 +95,106 @@ final class PackageDetailTabBarView: UIView {
 
     @objc private func tabTapped(_ sender: UIButton) {
         delegate?.tabBarView(self, didSelect: sender.tag == 0 ? .content : .detail)
+    }
+}
+
+// MARK: - Floors
+
+/// 套餐详情下半区 — 白色卡片内：Tab + 权益楼层 + 详情楼层（连续展示）
+final class PackageDetailFloorsView: UIView {
+
+    weak var tabDelegate: PackageDetailTabBarViewDelegate?
+
+    let tabBarView = PackageDetailTabBarView()
+    /// 权益楼层锚点（供滚动定位）
+    let contentFloorAnchor = UIView()
+    /// 详情楼层锚点（供滚动定位）
+    let detailFloorAnchor = UIView()
+    private let contentStack = UIStackView()
+    private let detailView = PackageDetailCardView()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    func configure(
+        package: ServicePackageDetail,
+        groups: [ServicePackageComboGroup],
+        radioPicks: [String: Int],
+        checkPicks: [String: Set<Int>],
+        makeGroupView: (ServicePackageComboGroup) -> PackageComboGroupView
+    ) {
+        let hasDetail = !package.detailImageURLs.isEmpty
+        tabBarView.setDetailTabVisible(hasDetail)
+        detailView.configure(with: package)
+        detailFloorAnchor.isHidden = !hasDetail
+        detailView.isHidden = !hasDetail
+
+        contentStack.arrangedSubviews.forEach {
+            contentStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+        for group in groups {
+            contentStack.addArrangedSubview(makeGroupView(group))
+        }
+
+        setNeedsLayout()
+        layoutIfNeeded()
+    }
+
+    /// 楼层锚点在 floorsView 坐标系中的 minY（不含 sticky 扣减）
+    func floorMinY(for tab: PackageDetailTab) -> CGFloat? {
+        layoutIfNeeded()
+        switch tab {
+        case .content:
+            return contentFloorAnchor.convert(contentFloorAnchor.bounds, to: self).minY
+        case .detail:
+            guard !detailFloorAnchor.isHidden else { return nil }
+            return detailFloorAnchor.convert(detailFloorAnchor.bounds, to: self).minY
+        }
+    }
+
+    private func setupUI() {
+        backgroundColor = .fdSurface
+        layer.cornerRadius = 12
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = 0.06
+        layer.shadowOffset = CGSize(width: 0, height: 2)
+        layer.shadowRadius = 8
+
+        tabBarView.delegate = self
+
+        contentStack.axis = .vertical
+        contentStack.spacing = 10
+
+        let mainStack = UIStackView(arrangedSubviews: [
+            tabBarView,
+            contentFloorAnchor,
+            contentStack,
+            detailFloorAnchor,
+            detailView
+        ])
+        mainStack.axis = .vertical
+        mainStack.spacing = 0
+        mainStack.setCustomSpacing(12, after: tabBarView)
+        mainStack.setCustomSpacing(12, after: contentStack)
+        addSubview(mainStack)
+
+        tabBarView.snp.makeConstraints { $0.height.equalTo(44) }
+        contentFloorAnchor.snp.makeConstraints { $0.height.equalTo(0) }
+        detailFloorAnchor.snp.makeConstraints { $0.height.equalTo(0) }
+
+        mainStack.snp.makeConstraints {
+            $0.edges.equalToSuperview().inset(16)
+        }
+    }
+}
+
+extension PackageDetailFloorsView: PackageDetailTabBarViewDelegate {
+    func tabBarView(_ view: PackageDetailTabBarView, didSelect tab: PackageDetailTab) {
+        tabDelegate?.tabBarView(view, didSelect: tab)
     }
 }

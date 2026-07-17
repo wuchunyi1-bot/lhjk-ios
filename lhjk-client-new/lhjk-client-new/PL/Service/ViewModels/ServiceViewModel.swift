@@ -78,8 +78,12 @@ final class ServiceViewModel: ObservableObject {
         case .matrix:
             return snapshot.matrix.isEmpty ? 0 : 1
         case .mallPreview:
-            return snapshot.mallPreviewPackages.count
+            return snapshot.mallPreviewPackages.isEmpty ? 0 : 1
         }
+    }
+
+    var mallPreviewPackages: [HealthPackageItem] {
+        snapshot?.mallPreviewPackages ?? []
     }
 
     func sectionTitle(for section: Section) -> String? {
@@ -95,11 +99,6 @@ final class ServiceViewModel: ObservableObject {
         case .mallPreview: return "查看全部 ›"
         default: return nil
         }
-    }
-
-    func package(at indexPath: IndexPath) -> HealthPackageItem? {
-        guard let snapshot, snapshot.mallPreviewPackages.indices.contains(indexPath.row) else { return nil }
-        return snapshot.mallPreviewPackages[indexPath.row]
     }
 
     // MARK: - Private

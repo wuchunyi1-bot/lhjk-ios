@@ -124,7 +124,7 @@ enum HospitalPackageDetailMapper {
             ?? nonEmpty(info?.introduction)
             ?? "\(name)包含核心服务权益，购买后按套餐有效期履约。"
         let banners = resolveBanners(bo: bo, info: info, fallbackName: name)
-        let groups = (bo.packageHospitalDetailList ?? []).compactMap(mapGroup)
+        let groups = (bo.packageHospitalDetailList ?? []).flatMap(mapGroups)
         let tier = ServicePackageTier(
             id: nonEmpty(info?.id) ?? packageId,
             name: name,
@@ -157,34 +157,60 @@ enum HospitalPackageDetailMapper {
         )
     }
 
-    private static func mapGroup(_ listBO: PackageHospitalDetailListBO) -> ServicePackageComboGroup? {
+    /// 将一批明细按 checkType 拆成多个规则组，保证角标文案与控件一致
+    private static func mapGroups(_ listBO: PackageHospitalDetailListBO) -> [ServicePackageComboGroup] {
         let parents = listBO.packageHospitalDetailList ?? []
+        guard !parents.isEmpty else { return [] }
+
+        var buckets: [(checkType: Int, parents: [PackageHospitalDetailBO])] = []
+        for parent in parents {
+            let type = parent.checkType ?? 2
+            if var last = buckets.last, last.checkType == type {
+                last.parents.append(parent)
+                buckets[buckets.count - 1] = last
+            } else {
+                buckets.append((type, [parent]))
+            }
+        }
+
+        return buckets.compactMap { bucket in
+            makeGroup(
+                parents: bucket.parents,
+                checkType: bucket.checkType,
+                fallbackNumber: listBO.number
+            )
+        }
+    }
+
+    private static func makeGroup(
+        parents: [PackageHospitalDetailBO],
+        checkType: Int,
+        fallbackNumber: Int?
+    ) -> ServicePackageComboGroup? {
         guard !parents.isEmpty else { return nil }
 
-        let rows: [PackageHospitalDetailBO] = parents.flatMap { parent in
-            if let children = parent.children, !children.isEmpty {
-                return children
-            }
-            return [parent]
+        // 父行 + children 子行均保留；子行标记 isChild（对齐 funde parentGoodsId 缩进）
+        let rows: [(bo: PackageHospitalDetailBO, isChild: Bool)] = parents.flatMap { parent in
+            [(parent, false)] + (parent.children ?? []).map { ($0, true) }
         }
         guard !rows.isEmpty else { return nil }
 
-        let checkType = parents.first?.checkType ?? rows.first?.checkType ?? 2
         let mode = selectMode(checkType)
         let title = nonEmpty(parents.first?.categoryName)
             ?? nonEmpty(parents.first?.name)
-            ?? "分组\(listBO.number ?? 0)"
+            ?? "分组\(fallbackNumber ?? 0)"
 
         let items = rows.map { row -> ServicePackageComboItem in
-            let qty = row.quantity.map(String.init) ?? "1"
-            let unit = billingUnit(row.billingType)
-            let price = Int((row.price ?? 0).rounded())
+            let qty = row.bo.quantity.map(String.init) ?? "1"
+            let unit = billingUnit(row.bo.billingType)
+            let price = Int((row.bo.price ?? 0).rounded())
             return ServicePackageComboItem(
-                name: nonEmpty(row.name) ?? "服务项",
+                name: nonEmpty(row.bo.name) ?? "服务项",
                 qty: qty,
                 unit: unit,
                 price: price,
-                defaultSelected: row.defaultCheck == 1
+                defaultSelected: row.bo.defaultCheck == 1,
+                isChild: row.isChild
             )
         }
 

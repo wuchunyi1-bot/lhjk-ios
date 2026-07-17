@@ -31,7 +31,7 @@ struct HealthPackageItem {
 
 // MARK: - 套餐详情（健康包组合）
 
-/// 组合行 — 对齐 `health-packages.json` items
+/// 组合行 — 对齐 `health-packages.json` items / funde combo-row
 struct ServicePackageComboItem: Equatable {
     let name: String
     let qty: String
@@ -39,13 +39,23 @@ struct ServicePackageComboItem: Equatable {
     let price: Int
     /// `defaultCheck == 1` 时默认选中（单选/可选）
     let defaultSelected: Bool
+    /// 来自父节点 `children` 的子行，UI 需缩进
+    let isChild: Bool
 
-    init(name: String, qty: String, unit: String, price: Int, defaultSelected: Bool = false) {
+    init(
+        name: String,
+        qty: String,
+        unit: String,
+        price: Int,
+        defaultSelected: Bool = false,
+        isChild: Bool = false
+    ) {
         self.name = name
         self.qty = qty
         self.unit = unit
         self.price = price
         self.defaultSelected = defaultSelected
+        self.isChild = isChild
     }
 
     var qtyLabel: String {
@@ -65,6 +75,14 @@ enum ServicePackageSelectMode: String {
     case required = "强制"
     case radio = "单选"
     case checkbox = "多选"
+
+    var displayLabel: String {
+        switch self {
+        case .required: return "必选"
+        case .radio: return "单选"
+        case .checkbox: return "可选"
+        }
+    }
 }
 
 struct ServicePackageComboGroup: Equatable {

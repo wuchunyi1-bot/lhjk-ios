@@ -6,6 +6,9 @@ final class PackageComboGroupView: UIView {
     var onRadioSelect: ((Int) -> Void)?
     var onCheckToggle: ((Int) -> Void)?
 
+    /// 子项相对父项的左侧缩进（对齐 funde `--fd-s-6` ≈ 24pt）
+    private let childLeadingInset: CGFloat = 24
+
     func configure(
         group: ServicePackageComboGroup,
         radioPick: Int?,
@@ -19,36 +22,29 @@ final class PackageComboGroupView: UIView {
         box.layer.cornerRadius = 12
         box.clipsToBounds = true
         box.borderColor = isRequired ? UIColor(hexString: "#F0708C") : .fdBorder
-        box.dashed = isRequired
-        box.solidBorder = !isRequired
+        box.dashed = true
+        box.solidBorder = false
         addSubview(box)
         box.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        let head = UIStackView()
-        head.axis = .horizontal
-        head.spacing = 8
-        head.alignment = .center
+        // 角标必须用「容器 + 固定高度」，UILabel 直接进 UIStackView 会被压成 0 高导致不显示
+        let badge = makeRuleBadge(mode: group.selectMode)
 
-        let badge = UILabel()
-        if isRequired {
-            badge.text = " 必选 "
-            badge.backgroundColor = UIColor(hexString: "#FDE3E9")
-            badge.textColor = UIColor(hexString: "#E0436B")
-        } else {
-            badge.text = " \(group.selectMode.rawValue) "
-            badge.backgroundColor = .fdBg2
-            badge.textColor = .fdText2
+        let divider = UIView()
+        divider.backgroundColor = .fdBorder
+
+        let header = UIView()
+        header.addSubview(badge)
+        header.addSubview(divider)
+        badge.snp.makeConstraints {
+            $0.top.leading.equalToSuperview()
+            $0.height.equalTo(20)
         }
-        badge.font = .fdMicroSemibold
-        badge.layer.cornerRadius = 999
-        badge.clipsToBounds = true
-        head.addArrangedSubview(badge)
-
-        let gName = UILabel()
-        gName.text = "\(group.emoji) \(group.name)"
-        gName.font = .fdCaptionSemibold
-        gName.textColor = .fdText
-        head.addArrangedSubview(gName)
+        divider.snp.makeConstraints {
+            $0.top.equalTo(badge.snp.bottom).offset(8)
+            $0.leading.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(1)
+        }
 
         let rows = UIStackView()
         rows.axis = .vertical
@@ -66,11 +62,47 @@ final class PackageComboGroupView: UIView {
             )
         }
 
-        let stack = UIStackView(arrangedSubviews: [head, rows])
+        let stack = UIStackView(arrangedSubviews: [header, rows])
         stack.axis = .vertical
-        stack.spacing = 8
+        stack.spacing = 0
         box.addSubview(stack)
         stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(12) }
+    }
+
+    /// checkType → 必选 / 单选 / 可选
+    private func makeRuleBadge(mode: ServicePackageSelectMode) -> UIView {
+        let text: String
+        switch mode {
+        case .required: text = "必选"
+        case .radio: text = "单选"
+        case .checkbox: text = "可选"
+        }
+
+        let container = UIView()
+        container.layer.cornerRadius = 10
+        container.clipsToBounds = true
+
+        let label = UILabel()
+        label.text = text
+        label.font = .fdMicroSemibold
+        label.textAlignment = .center
+        label.numberOfLines = 1
+
+        switch mode {
+        case .required:
+            container.backgroundColor = UIColor(hexString: "#FDE3E9")
+            label.textColor = UIColor(hexString: "#E0436B")
+        case .radio, .checkbox:
+            container.backgroundColor = .fdBg2
+            label.textColor = .fdText2
+        }
+
+        container.addSubview(label)
+        label.snp.makeConstraints {
+            $0.top.bottom.equalToSuperview().inset(2)
+            $0.leading.trailing.equalToSuperview().inset(8)
+        }
+        return container
     }
 
     private func isSelected(
@@ -83,7 +115,6 @@ final class PackageComboGroupView: UIView {
         case .required:
             return true
         case .radio:
-            if index == 0 { return true }
             return radioPick == index
         case .checkbox:
             return checkPicks.contains(index)
@@ -99,8 +130,9 @@ final class PackageComboGroupView: UIView {
     ) -> UIView {
         let row = UIControl()
         row.tag = index
+        row.isEnabled = group.selectMode != .required
 
-        let ctrl = makeControl(group: group, index: index, selected: selected)
+        let ctrl = makeControl(group: group, selected: selected)
         let name = UILabel()
         name.text = item.name
         name.font = .fdBody
@@ -124,17 +156,20 @@ final class PackageComboGroupView: UIView {
         stack.alignment = .center
         stack.isUserInteractionEnabled = false
         row.addSubview(stack)
+        let leading = item.isChild ? childLeadingInset : 0
         stack.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview()
+            $0.leading.equalToSuperview().offset(leading)
+            $0.trailing.equalToSuperview()
             $0.top.bottom.equalToSuperview().inset(10)
         }
 
         if showDivider {
-            let divider = UIView()
-            divider.backgroundColor = .fdBorder
-            row.addSubview(divider)
-            divider.snp.makeConstraints {
-                $0.leading.trailing.bottom.equalToSuperview()
+            let line = UIView()
+            line.backgroundColor = .fdBorder
+            row.addSubview(line)
+            line.snp.makeConstraints {
+                $0.leading.equalToSuperview().offset(leading)
+                $0.trailing.bottom.equalToSuperview()
                 $0.height.equalTo(1)
             }
         }
@@ -142,7 +177,7 @@ final class PackageComboGroupView: UIView {
         switch group.selectMode {
         case .required:
             break
-        case .radio where index > 0:
+        case .radio:
             row.addAction(UIAction { [weak self] _ in
                 self?.onRadioSelect?(index)
             }, for: .touchUpInside)
@@ -150,18 +185,16 @@ final class PackageComboGroupView: UIView {
             row.addAction(UIAction { [weak self] _ in
                 self?.onCheckToggle?(index)
             }, for: .touchUpInside)
-        default:
-            break
         }
         return row
     }
 
-    private func makeControl(group: ServicePackageComboGroup, index: Int, selected: Bool) -> UIView {
+    private func makeControl(group: ServicePackageComboGroup, selected: Bool) -> UIView {
         let onColor = UIColor(hexString: "#EE4D6F")
         let box = UIView()
         box.snp.makeConstraints { $0.size.equalTo(20) }
 
-        let isRadio = group.selectMode == .radio && index > 0
+        let isRadio = group.selectMode == .radio
         box.layer.cornerRadius = isRadio ? 10 : 6
         box.layer.borderWidth = 1.5
 
@@ -186,6 +219,10 @@ final class PackageComboGroupView: UIView {
         } else {
             box.backgroundColor = .clear
             box.layer.borderColor = UIColor.fdBorder.cgColor
+        }
+
+        if group.selectMode == .required {
+            box.alpha = 0.85
         }
         return box
     }

@@ -11,7 +11,8 @@ enum DebugLogger {
     static var isEnabled = false
     #endif
 
-    private static let maxLogLength = 4_000
+    /// 单行 print 过长时 Xcode 控制台也会截断，分块输出以保证完整可见
+    private static let logChunkSize = 4_000
 
     private static let sensitiveKeys: Set<String> = [
         "password", "pwd", "oldpwd", "newpwd", "checkcode", "check_code",
@@ -50,14 +51,14 @@ enum DebugLogger {
 
         if let data = rawData, !data.isEmpty {
             if let raw = String(data: data, encoding: .utf8), !raw.isEmpty {
-                print("[API]   Response: \(truncate(raw))")
+                printLong("[API]   Response: ", raw)
             } else {
                 print("[API]   Response: \(data.count) bytes (binary)")
             }
         }
 
         if let decoded {
-            print("[API]   Decoded: \(formatValue(decoded))")
+            printLong("[API]   Decoded: ", formatValue(decoded, truncateOutput: false))
         }
 
         if let error {
@@ -79,7 +80,7 @@ enum DebugLogger {
         let label = URL(string: url)?.lastPathComponent ?? url
         print("[HTTP] ← HTTP \(statusCode) \(label)")
         if let body, !body.isEmpty {
-            print("[HTTP]   Response: \(truncate(body))")
+            printLong("[HTTP]   Response: ", body)
         }
     }
 
@@ -119,21 +120,40 @@ enum DebugLogger {
         return String(describing: masked)
     }
 
-    static func formatValue(_ value: Any) -> String {
+    static func formatValue(_ value: Any, truncateOutput: Bool = true) -> String {
         if let dict = value as? [String: Any] {
             return formatParameters(dict)
         }
         if let array = value as? [Any] {
-            return truncate(array.map { formatValue($0) }.joined(separator: ", "))
+            let text = array.map { formatValue($0, truncateOutput: truncateOutput) }.joined(separator: ", ")
+            return truncateOutput ? truncate(text) : text
         }
-        return truncate(String(describing: value))
+        let text = String(describing: value)
+        return truncateOutput ? truncate(text) : text
     }
 
     // MARK: - Private
 
+    private static func printLong(_ prefix: String, _ text: String) {
+        guard text.count > logChunkSize else {
+            print("\(prefix)\(text)")
+            return
+        }
+        let tag = prefix.prefix(while: { $0 != " " })
+        print("\(prefix)(\(text.count) chars, \(Int(ceil(Double(text.count) / Double(logChunkSize)))) parts)")
+        var start = text.startIndex
+        var part = 1
+        while start < text.endIndex {
+            let end = text.index(start, offsetBy: logChunkSize, limitedBy: text.endIndex) ?? text.endIndex
+            print("\(tag)     [\(part)] \(text[start..<end])")
+            start = end
+            part += 1
+        }
+    }
+
     private static func truncate(_ text: String) -> String {
-        guard text.count > maxLogLength else { return text }
-        return String(text.prefix(maxLogLength)) + "…(\(text.count) chars)"
+        guard text.count > logChunkSize else { return text }
+        return String(text.prefix(logChunkSize)) + "…(\(text.count) chars)"
     }
 
     private static func maskIfSensitive(key: String, value: Any) -> String {

@@ -19,7 +19,7 @@ final class ServiceViewController: BaseViewController {
         tv.delegate = self
         tv.register(ServiceBannerCarouselCell.self, forCellReuseIdentifier: ServiceBannerCarouselCell.reuseID)
         tv.register(MatrixGridCell.self, forCellReuseIdentifier: MatrixGridCell.reuseID)
-        tv.register(HealthPackageCardCell.self, forCellReuseIdentifier: HealthPackageCardCell.reuseID)
+        tv.register(MallProductGridCell.self, forCellReuseIdentifier: MallProductGridCell.reuseID)
         tv.contentInsetAdjustmentBehavior = .never
         return tv
     }()
@@ -141,10 +141,20 @@ extension ServiceViewController: UITableViewDataSource, UITableViewDelegate {
             return cell
 
         case .mallPreview:
-            let cell = tableView.dequeueReusableCell(withIdentifier: HealthPackageCardCell.reuseID, for: indexPath) as! HealthPackageCardCell
-            if let pkg = viewModel.package(at: indexPath) {
-                cell.configure(pkg, actionTitle: "购买")
-                cell.onDetailTap = { Router.shared.push("/services/pkg", params: ["id": pkg.id]) }
+            let cell = tableView.dequeueReusableCell(
+                withIdentifier: MallProductGridCell.reuseID,
+                for: indexPath
+            ) as! MallProductGridCell
+            cell.configure(products: viewModel.mallPreviewPackages)
+            cell.onProductTap = { pkg in
+                Router.shared.push("/services/pkg", params: ["id": pkg.id])
+            }
+            cell.onContentHeightChanged = { [weak self] in
+                guard let self else { return }
+                UIView.performWithoutAnimation {
+                    self.tableView.beginUpdates()
+                    self.tableView.endUpdates()
+                }
             }
             return cell
         }
