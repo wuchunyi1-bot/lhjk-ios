@@ -31,7 +31,13 @@ final class PackageDetailTabBarView: UIView {
         if !visible, detailButton.isSelected {
             select(.content, animated: false)
         }
-        layoutIfNeeded()
+        invalidateIntrinsicContentSize()
+        guard bounds.width > 0 else { return }
+        setNeedsLayout()
+    }
+
+    override var intrinsicContentSize: CGSize {
+        CGSize(width: UIView.noIntrinsicMetric, height: 44)
     }
 
     func select(_ tab: PackageDetailTab, animated: Bool) {
@@ -142,11 +148,11 @@ final class PackageDetailFloorsView: UIView {
         }
 
         setNeedsLayout()
-        layoutIfNeeded()
     }
 
     /// 楼层锚点在 floorsView 坐标系中的 minY（不含 sticky 扣减）
     func floorMinY(for tab: PackageDetailTab) -> CGFloat? {
+        guard bounds.width > 0 else { return nil }
         layoutIfNeeded()
         switch tab {
         case .content:
@@ -179,16 +185,17 @@ final class PackageDetailFloorsView: UIView {
         ])
         mainStack.axis = .vertical
         mainStack.spacing = 0
+        mainStack.isLayoutMarginsRelativeArrangement = true
+        mainStack.layoutMargins = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         mainStack.setCustomSpacing(12, after: tabBarView)
         mainStack.setCustomSpacing(12, after: contentStack)
         addSubview(mainStack)
 
-        tabBarView.snp.makeConstraints { $0.height.equalTo(44) }
         contentFloorAnchor.snp.makeConstraints { $0.height.equalTo(0) }
         detailFloorAnchor.snp.makeConstraints { $0.height.equalTo(0) }
 
         mainStack.snp.makeConstraints {
-            $0.edges.equalToSuperview().inset(16)
+            $0.edges.equalToSuperview()
         }
     }
 }

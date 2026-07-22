@@ -10,6 +10,7 @@ struct OrderSettlementBO: Decodable {
     let img: String?
     let totalPrice: Double?
     let details: [OrderSettlementDetailBO]?
+    /// 已废弃：恒为空，快递地址请读 `appOrderDetailBO`
     let address: MAddress?
     let appOrderDetailBO: OrderSettlementAppOrderBO?
     let categoryServiceId: String?
@@ -56,30 +57,47 @@ struct OrderSettlementBO: Decodable {
     /// 是否支持快递发货
     var supportsExpress: Bool { orderExpress == 1 }
 
-    /// 套餐金额（商品金额，元，取整）
+    /// 套餐金额（商品金额，元）
     /// 优先 `commodityPrice`；缺省时用 `totalPrice` 减运费、再退到订单应付减运费
-    var packageAmountYuan: Int {
-        if let v = commodityPrice { return max(0, Int(v.rounded())) }
+    var packageAmountYuan: Double {
+        if let v = commodityPrice { return max(0, v) }
         if let total = totalPrice {
-            return max(0, Int((total - (expressAmount ?? 0)).rounded()))
+            return max(0, total - (expressAmount ?? 0))
         }
         if let payable = appOrderDetailBO?.payable {
-            return max(0, Int((payable - (expressAmount ?? 0)).rounded()))
+            return max(0, payable - (expressAmount ?? 0))
         }
         return 0
     }
 
-    /// 运费（元，取整）
-    var expressAmountYuan: Int {
-        max(0, Int((expressAmount ?? 0).rounded()))
+    /// 运费（元）
+    var expressAmountYuan: Double {
+        max(0, expressAmount ?? 0)
     }
 
-    /// 应付金额（元，取整）
+    /// 应付金额（元）
     /// 优先 `totalPrice`；缺省时退到 `appOrderDetailBO.payable`；再退到 套餐金额 + 运费
-    var payableAmountYuan: Int {
-        if let v = totalPrice { return max(0, Int(v.rounded())) }
-        if let v = appOrderDetailBO?.payable { return max(0, Int(v.rounded())) }
+    var payableAmountYuan: Double {
+        if let v = totalPrice { return max(0, v) }
+        if let v = appOrderDetailBO?.payable { return max(0, v) }
         return max(0, packageAmountYuan + expressAmountYuan)
+    }
+
+    /// 优惠券抵扣金额（元）— 统一取结算根级 `amount`
+    var couponDiscountYuan: Double {
+        guard let v = amount else { return 0 }
+        return max(0, v)
+    }
+
+    /// 当前订单取货方式：1 快递 / 0 上门自提
+    var resolvedTypeOrder: Int {
+        appOrderDetailBO?.typeOrder ?? 0
+    }
+
+    var resolvedCouponTakeId: Int64? {
+        guard let raw = couponTakeId?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !raw.isEmpty else { return nil }
+        return Int64(raw)
     }
 
     var resolvedHospitalId: String? {
@@ -136,6 +154,10 @@ struct OrderSettlementAppOrderBO: Decodable {
     let price: Double?
     /// 取货方式 1 快递 0 自提
     let typeOrder: Int?
+    /// 优惠券抵扣金额
+    let couponAmount: Double?
+    /// 已绑定优惠券领用列表
+    let couponTakeList: [OrderSettlementCouponTakeBO]?
     /// 收件人 / 提货人
     let receiver: String?
     /// 收件人 / 提货人电话
@@ -145,7 +167,7 @@ struct OrderSettlementAppOrderBO: Decodable {
 
     private enum CodingKeys: String, CodingKey {
         case id, packageId, hospitalId, hospitalName, packageDescription
-        case payable, price, typeOrder, receiver, phone, address
+        case payable, price, typeOrder, couponAmount, couponTakeList, receiver, phone, address
     }
 
     init(from decoder: Decoder) throws {
@@ -158,6 +180,8 @@ struct OrderSettlementAppOrderBO: Decodable {
         payable = Self.decodeFlexibleDouble(c, key: .payable)
         price = Self.decodeFlexibleDouble(c, key: .price)
         typeOrder = HospitalPackageInt.decodeIfPresent(c, key: .typeOrder)
+        couponAmount = Self.decodeFlexibleDouble(c, key: .couponAmount)
+        couponTakeList = try c.decodeIfPresent([OrderSettlementCouponTakeBO].self, forKey: .couponTakeList)
         receiver = try c.decodeIfPresent(String.self, forKey: .receiver)
         phone = try c.decodeIfPresent(String.self, forKey: .phone)
         address = try c.decodeIfPresent(String.self, forKey: .address)
@@ -182,6 +206,28 @@ struct OrderSettlementAppOrderBO: Decodable {
             return Double(s.trimmingCharacters(in: .whitespacesAndNewlines))
         }
         return nil
+    }
+}
+
+/// 结算内嵌优惠券领用摘要
+struct OrderSettlementCouponTakeBO: Decodable {
+    let id: Int64?
+    let name: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        if let v = try? c.decodeIfPresent(Int64.self, forKey: .id) {
+            id = v
+        } else if let s = try? c.decodeIfPresent(String.self, forKey: .id) {
+            id = Int64(s.trimmingCharacters(in: .whitespacesAndNewlines))
+        } else {
+            id = nil
+        }
+        name = try c.decodeIfPresent(String.self, forKey: .name)
     }
 }
 
@@ -232,7 +278,7 @@ struct OrderSettlementDetailBO: Decodable {
             name: name,
             qty: "\(qty)",
             unit: Self.billingUnit(billingType),
-            price: max(0, Int((price ?? 0).rounded()))
+            price: max(0, price ?? 0)
         )
     }
 

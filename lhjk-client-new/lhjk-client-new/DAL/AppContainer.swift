@@ -60,6 +60,7 @@ final class AppContainer {
     private(set) lazy var serviceHubCacheService: ServiceHubCacheService = .shared
     private(set) lazy var shoppingCartService: ShoppingCartService = .shared
     private(set) lazy var orderService: OrderService = .shared
+    private(set) lazy var couponService: CouponService = .shared
     private(set) lazy var paymentService: PaymentService = .shared
     // MARK: - 存储
 

@@ -1,5 +1,25 @@
 import UIKit
 
+// MARK: - 金额展示
+
+enum ServicePackageMoney {
+    static func yen(_ value: Double) -> String {
+        let safe = max(0, value)
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+        formatter.groupingSeparator = ","
+        let num = formatter.string(from: NSNumber(value: safe))
+            ?? String(format: "%.2f", safe)
+        return "¥\(num)"
+    }
+
+    static func yenText(_ value: Double) -> String {
+        value > 0 ? yen(value) : "面议"
+    }
+}
+
 // MARK: - 服务机构
 
 /// 服务机构，对应 `ServicesView.vue` → `serviceInstitutions`
@@ -36,7 +56,7 @@ struct ServicePackageComboItem: Equatable {
     let name: String
     let qty: String
     let unit: String
-    let price: Int
+    let price: Double
     /// `defaultCheck == 1` 时默认选中（单选/可选）
     let defaultSelected: Bool
     /// 来自父节点 `children` 的子行，UI 需缩进
@@ -63,7 +83,7 @@ struct ServicePackageComboItem: Equatable {
         name: String,
         qty: String,
         unit: String,
-        price: Int,
+        price: Double,
         defaultSelected: Bool = false,
         isChild: Bool = false,
         detailId: String = "",
@@ -91,7 +111,7 @@ struct ServicePackageComboItem: Equatable {
         self.checkType = checkType
         self.billingType = billingType
         self.quantityValue = quantityValue ?? Int(qty) ?? 1
-        self.priceValue = priceValue ?? Double(price)
+        self.priceValue = priceValue ?? price
         self.parentDetailId = parentDetailId
         self.packageDetailId = packageDetailId
         self.commodityId = commodityId
@@ -108,11 +128,7 @@ struct ServicePackageComboItem: Equatable {
     }
 
     var priceLabel: String {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.groupingSeparator = ","
-        let num = f.string(from: NSNumber(value: price)) ?? "\(price)"
-        return "¥\(num)"
+        ServicePackageMoney.yen(priceValue)
     }
 }
 /// 组合分组选择模式
@@ -158,7 +174,7 @@ struct ServicePackageTier: Equatable {
     let id: String
     let name: String
     let priceLabel: String
-    let price: Int
+    let price: Double
     let priceUnit: String
     let groups: [ServicePackageComboGroup]
 }

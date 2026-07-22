@@ -33,45 +33,80 @@
 #### Scenario: 响应映射
 
 - **WHEN** 接口成功返回 `ShoppingCartPackageDetailMobileBO`
-- **THEN** 用于展示：`packageName`、`details`、`commodityPrice`/`totalPrice`、`expressAmount`、`orderExpress`、`wechat`/`alipay`、`address`、`description` 等
+- **THEN** 用于展示：`packageName`、`details`、`commodityPrice`/`totalPrice`、`expressAmount`、`orderExpress`、`wechat`/`alipay`、`description`、`amount`（优惠券抵扣）、`couponTakeId` 等
+- **AND** 结算根级 `address` 字段**已废弃**（恒为空），**禁止**用于快递地址展示；快递地址**仅**读 `appOrderDetailBO.receiver`/`phone`/`address`
 - **AND** `orderExpress`：`1` = 支持快递；其它 = 仅医院自提
 - **AND** 自提用的 `hospitalId` 优先取 `appOrderDetailBO.hospitalId`（缺省再回退本地已选机构）
 
-### Requirement: 收货方式（默认自提）
+### Requirement: 收货方式（按 typeOrder 初始化）
 
-确认订单页 SHALL **展示收货方式**区域。
+确认订单页 SHALL **展示收货方式**区域，初始选中态由结算 `appOrderDetailBO.typeOrder` 决定。
 
 #### Scenario: 默认与选项
 
-- **WHEN** 用户进入确认订单页
-- **THEN** 默认选中「机构自提」
+- **WHEN** 用户进入确认订单页且结算成功
+- **THEN** 收货方式初始值由 `appOrderDetailBO.typeOrder` 决定：`1` = 快递配送，`0` = 机构自提
+- **AND** **禁止**写死默认「机构自提」
 - **AND** 收货方式按钮顺序自左向右为「机构自提」「快递配送」
 - **WHEN** 结算 `orderExpress == 1`
-- **THEN** 展示「机构自提」「快递配送」可切换；默认仍为机构自提
+- **THEN** 展示「机构自提」「快递配送」可切换
 - **WHEN** `orderExpress != 1`
 - **THEN** **仅**可选「机构自提」（隐藏快递按钮）
+
+#### Scenario: 切换收货方式
+
+- **WHEN** 用户切换到「机构自提」
+- **THEN** 调用 `POST /v1/order/updateOrderDelivery`，**仅**传 `orderId` + `typeOrder=0`
+- **AND** 成功后重新调用 `getOrderSettlement` 刷新确认页金额/地址/优惠券等
+- **WHEN** 用户切换到「快递配送」且当前**无**快递地址信息
+- **THEN** 仅本地切换 UI，**不调用** `updateOrderDelivery`
+- **WHEN** 用户切换到「快递配送」且结算/本地已有快递地址
+- **THEN** 调用 `updateOrderDelivery` 传 `orderId`、`typeOrder=1` 及地址字段，成功后刷新 `getOrderSettlement`
 
 #### Scenario: 快递地址
 
 - **WHEN** 当前为快递配送
 - **THEN** 展示收货地址卡
-- **AND** 地址来源**仅**取结算 `appOrderDetailBO` 中的 `receiver`/`phone`/`address`，且仅当 `appOrderDetailBO.typeOrder == 1`（快递）且 `hasDeliveryAddress` 为真时展示
-- **AND** `appOrderDetailBO` 只承载快递配送地址；**机构自提地址永远不在 `appOrderDetailBO` 中**，机构地址由 `hospital/getById` 单独获取
+- **AND** 地址来源**仅**取 `appOrderDetailBO` 中的 `receiver`/`phone`/`address`（**禁止**读取与 `appOrderDetailBO` 平级的根级 `address`，该字段已废弃且恒为空）
+- **AND** 上述字段任一非空即构造展示地址，**禁止**再附加 `typeOrder` 等额外判断拦截展示
+- **AND** 在「快递配送」Tab 下展示该地址卡；`appOrderDetailBO` 只承载快递配送地址，机构自提地址由 `hospital/getById` 获取
 - **WHEN** `appOrderDetailBO` 无快递地址信息
 - **THEN** 快递地址卡展示**空态**（「请选择收货地址」入口 + chevron），**禁止**回退展示机构自提地址
 - **AND** 点击入口跳转 `/me/address`（`selectMode=true`）
 - **AND** **本页禁止**调用获取地址列表接口；地址列表由 `/me/address` 自行加载
 - **WHEN** 用户在地址列表选中一条地址
 - **THEN** 回调 `onSelect(address)` 返回确认页，并调用 `POST /v1/order/updateOrderDelivery`（[Apifox](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/490169536e0.md)）绑定：`orderId`、`typeOrder=1`、`addressId`、`receiver`、`phone`、`address`（JSON body）
-- **AND** 成功后乐观更新地址卡并 Toast「已选择收货地址」；失败回滚原地址并 Toast 错误
+- **AND** 成功后刷新 `getOrderSettlement` 并 Toast「已选择收货地址」；失败回滚原地址并 Toast 错误
 - **WHEN** 快递且无有效地址时点「立即支付」
 - **THEN** Toast「请选择收货地址」，不提交
 
-#### Scenario: 切换收货方式不同步后端
+### Requirement: 优惠券选择
 
-- **WHEN** 用户在「机构自提」「快递配送」间切换
-- **THEN** 仅本地切换 UI，**不调用** `updateOrderDelivery`
-- **AND** `updateOrderDelivery` **仅**在用户从地址列表选中地址后调用一次（绑定快递地址 + `typeOrder=1`）
+确认订单页 SHALL 支持优惠券选择与绑定，对齐 funde `OrderConfirmView` 底部弹层交互。
+
+#### Scenario: 查询可用优惠券
+
+- **WHEN** 用户点击「优惠券」行
+- **THEN** 调用 `GET /v1/couponTake/getCouponTakeList`（移动端领用列表；需 `couponTakeId` 供绑定）
+- **AND** Query 仅传 `pageNum`、`pageSize`（按当前登录用户查询可用券，与订单/商品无关）
+- **AND** 参考优惠券模板列表：[getCouponList](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330755e0.md)
+- **AND** 自底部弹出选择面板：标题「选择优惠券」、副标题、右上角「不使用」、券列表、底部「完成」
+- **WHEN** 无可用券
+- **THEN** 展示「暂无可用优惠券」
+
+#### Scenario: 绑定 / 解绑优惠券
+
+- **WHEN** 用户选择一张券并点「完成」，或点「不使用」
+- **THEN** 调用 `POST /v1/couponTake/bindCouponTake`（[Apifox](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330751e0.md)）
+- **AND** Body 必传 `orderId`；选券时传 `couponTakeId`，不使用时不传 `couponTakeId`
+- **AND** 成功后重新调用 `getOrderSettlement` 刷新套餐金额、运费、优惠券抵扣、应付金额
+- **AND** 优惠券行与费用明细「优惠券抵扣」**统一**取结算响应根级 `amount` 字段，**禁止** `Int` 四舍五入
+
+#### Scenario: 结算刷新
+
+- **WHEN** `updateOrderDelivery` 或 `bindCouponTake` 成功
+- **THEN** **必须**再次调用 `getOrderSettlement(orderId)` 作为确认页唯一金额/优惠数据源
+- **AND** 刷新后回显 `typeOrder`、快递地址、优惠券抵扣与应付金额
 
 ### Requirement: 机构自提地址
 
@@ -100,18 +135,25 @@
 #### Scenario: 金额取值
 
 - **WHEN** 结算返回 `commodityPrice`
-- **THEN** 套餐金额 = `commodityPrice`（取整）
+- **THEN** 套餐金额 = `commodityPrice`
 - **WHEN** `commodityPrice` 缺省
 - **THEN** 退回 `totalPrice` − `expressAmount`；再退回 `appOrderDetailBO.payable` − `expressAmount`
-- **AND** 套餐卡片右上角金额、费用明细「套餐金额」行均展示该值，**不得**为空或恒为 ¥0
+- **AND** 套餐卡片右上角金额、费用明细「套餐金额」行均展示该值（保留小数，禁止取整）
 
 #### Scenario: 应付金额
 
 - **WHEN** 结算返回 `totalPrice`
-- **THEN** 应付金额 = `totalPrice`（取整）
+- **THEN** 应付金额 = `totalPrice`
 - **WHEN** `totalPrice` 缺省
 - **THEN** 退回 `appOrderDetailBO.payable`；再退回 套餐金额 + 运费
-- **AND** 底部「立即支付」与费用明细「应付金额」一致
+- **AND** 底部「立即支付」与费用明细「应付金额」一致（保留小数，禁止取整）
+
+#### Scenario: 优惠券抵扣金额
+
+- **WHEN** 渲染费用明细「优惠券抵扣」或优惠券行摘要
+- **THEN** 抵扣金额 = 结算响应根级 `amount`；未绑券或无抵扣时为 0
+- **AND** 确认订单页所有金额展示**保留原始小数**（通常两位），**禁止** `Int` 四舍五入
+- **AND** 优惠券列表弹层中单张券的抵扣展示亦取该券对象的 `amount` 字段
 
 ### Requirement: 订单备注
 
@@ -147,5 +189,5 @@
 
 ## 参考
 
-- saveShoppingCartOrPurchase / getOrderSettlement / getById / updateOrderDescription / updateOrderDelivery Apifox
+- saveShoppingCartOrPurchase / getOrderSettlement / getById / updateOrderDescription / updateOrderDelivery / getCouponTakeList / bindCouponTake Apifox
 - funde `OrderConfirmView.vue`、PRD-605

@@ -37,6 +37,9 @@
 		A54CBD3F30049CB100D581AE /* CartModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD3D30049CB100D581AE /* CartModels.swift */; };
 		A54CBD4530049CD600D581AE /* ServiceCartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD4130049CD600D581AE /* ServiceCartViewModel.swift */; };
 		A54CBD4630049CD600D581AE /* ServiceCartViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD4330049CD600D581AE /* ServiceCartViewController.swift */; };
+		A56120A830106CC600505C32 /* CouponModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120A630106CC600505C32 /* CouponModels.swift */; };
+		A56120A930106CC600505C32 /* CouponService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120A730106CC600505C32 /* CouponService.swift */; };
+		A56120AB30106CE900505C32 /* OrderCouponPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120AA30106CE900505C32 /* OrderCouponPickerSheet.swift */; };
 		A56E24BC300DC19E001B3614 /* PackageOrderDraftStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56E24BB300DC19E001B3614 /* PackageOrderDraftStore.swift */; };
 		A56E24C2300DC1CD001B3614 /* OrderConfirmViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56E24BF300DC1CD001B3614 /* OrderConfirmViewController.swift */; };
 		A56E24C3300DC1CD001B3614 /* OrderConfirmComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56E24BD300DC1CD001B3614 /* OrderConfirmComponents.swift */; };
@@ -310,6 +313,9 @@
 		A54CBD3D30049CB100D581AE /* CartModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CartModels.swift; path = BLL/Service/CartModels.swift; sourceTree = "<group>"; };
 		A54CBD4130049CD600D581AE /* ServiceCartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceCartViewModel.swift; sourceTree = "<group>"; };
 		A54CBD4330049CD600D581AE /* ServiceCartViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceCartViewController.swift; sourceTree = "<group>"; };
+		A56120A630106CC600505C32 /* CouponModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CouponModels.swift; path = BLL/Service/CouponModels.swift; sourceTree = "<group>"; };
+		A56120A730106CC600505C32 /* CouponService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CouponService.swift; path = BLL/Service/CouponService.swift; sourceTree = "<group>"; };
+		A56120AA30106CE900505C32 /* OrderCouponPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OrderCouponPickerSheet.swift; path = Confirm/Components/OrderCouponPickerSheet.swift; sourceTree = "<group>"; };
 		A56E24BB300DC19E001B3614 /* PackageOrderDraftStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PackageOrderDraftStore.swift; path = BLL/Service/PackageOrderDraftStore.swift; sourceTree = "<group>"; };
 		A56E24BD300DC1CD001B3614 /* OrderConfirmComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderConfirmComponents.swift; sourceTree = "<group>"; };
 		A56E24BF300DC1CD001B3614 /* OrderConfirmViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OrderConfirmViewController.swift; path = Confirm/OrderConfirmViewController.swift; sourceTree = "<group>"; };
@@ -1017,6 +1023,7 @@
 		A590FC7A2FEA91170056EF52 /* Order */ = {
 			isa = PBXGroup;
 			children = (
+				A56120AA30106CE900505C32 /* OrderCouponPickerSheet.swift */,
 				A56E24BE300DC1CD001B3614 /* Components */,
 				A56E24BF300DC1CD001B3614 /* OrderConfirmViewController.swift */,
 				A56E24C1300DC1CD001B3614 /* ViewModels */,
@@ -1709,6 +1716,8 @@
 		C4193BC7FCD37A9D67D93F74 /* Service */ = {
 			isa = PBXGroup;
 			children = (
+				A56120A630106CC600505C32 /* CouponModels.swift */,
+				A56120A730106CC600505C32 /* CouponService.swift */,
 				A5ADE05A300F572800CA598F /* OHospitalModels.swift */,
 				A5ADE05B300F572800CA598F /* OrderSettlementModels.swift */,
 				A56E24BB300DC19E001B3614 /* PackageOrderDraftStore.swift */,
@@ -2034,6 +2043,7 @@
 				A5917D212FDFD7FE00878961 /* LoginModels.swift in Sources */,
 				A5917D222FDFD7FE00878961 /* LoginServiceProtocol.swift in Sources */,
 				A5ACE2363000CBE000056C52 /* MallProductCategoryCopy.swift in Sources */,
+				A56120AB30106CE900505C32 /* OrderCouponPickerSheet.swift in Sources */,
 				A5ACE2373000CBE000056C52 /* MallProductDetailViewController.swift in Sources */,
 				0EE2E6B7960C05819866D0E1 /* BluetoothManager.swift in Sources */,
 				5E7531B1805BDFC74CD1F8CB /* BluetoothModels.swift in Sources */,
@@ -2068,6 +2078,8 @@
 				A5A6F5322FFF7D240065C921 /* SysNotifyMessage.swift in Sources */,
 				0D9CCCF8E6DF5482A9FACDF0 /* APIManager.swift in Sources */,
 				CC5AFA75E6FC57E098F3107B /* NetworkMonitor.swift in Sources */,
+				A56120A830106CC600505C32 /* CouponModels.swift in Sources */,
+				A56120A930106CC600505C32 /* CouponService.swift in Sources */,
 				1406F12781B85941BC234E2B /* OAuthAuthenticator.swift in Sources */,
 				9F5D324E0D90EB682A0A77B4 /* OAuthCredential.swift in Sources */,
 				D0C0F9A29B4ED9D6FB4A6C01 /* AlipayChannel.swift in Sources */,

@@ -22,8 +22,12 @@ final class ServicePackageHostedCell: UITableViewCell {
             hostedView = view
             contentView.addSubview(view)
         }
+        // bottom 用较低优先级，避免 UITableView 自适应行高时临时 44pt 高度与内容冲突
         view.snp.remakeConstraints {
-            $0.edges.equalToSuperview().inset(insets)
+            $0.top.equalToSuperview().offset(insets.top)
+            $0.leading.equalToSuperview().offset(insets.left)
+            $0.trailing.equalToSuperview().offset(-insets.right)
+            $0.bottom.equalToSuperview().offset(-insets.bottom).priority(.init(999))
         }
     }
 }

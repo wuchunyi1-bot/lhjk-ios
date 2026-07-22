@@ -223,8 +223,6 @@ final class ServicePackageDetailViewController: BaseViewController {
     private func reloadFloorsContent(heightMayChange: Bool = false) {
         // 勾选仅改选中态，高度不变；勿 reloadRows，否则托管 floorsView 行高会塌缩。
         refreshFloorsView()
-        floorsView.setNeedsLayout()
-        floorsView.layoutIfNeeded()
         if heightMayChange {
             tableView.beginUpdates()
             tableView.endUpdates()
@@ -281,12 +279,12 @@ final class ServicePackageDetailViewController: BaseViewController {
         return view
     }
 
-    private func selectedItemPrices() -> [Int] {
+    private func selectedItemPrices() -> [Double] {
         guard let tier = activeTier else { return [] }
-        var prices: [Int] = []
+        var prices: [Double] = []
         for group in tier.groups {
             for index in selectedSubtreeIndices(in: group) {
-                prices.append(group.items[index].price)
+                prices.append(group.items[index].priceValue)
             }
         }
         return prices
@@ -320,14 +318,7 @@ final class ServicePackageDetailViewController: BaseViewController {
             return
         }
         let total = prices.reduce(0, +)
-        orderBar.setPayableText("¥\(grouped(total))")
-    }
-
-    private func grouped(_ value: Int) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.groupingSeparator = ","
-        return f.string(from: NSNumber(value: value)) ?? "\(value)"
+        orderBar.setPayableText(ServicePackageMoney.yen(total))
     }
 
     private func syncTabSelection(animated: Bool) {
@@ -348,18 +339,17 @@ final class ServicePackageDetailViewController: BaseViewController {
         let cellRect = tableView.rectForRow(at: IndexPath(row: index, section: 0))
         guard let floorY = floorsView.floorMinY(for: tab) else { return }
 
-        // cell 顶 + cell topInset + 楼层在 floorsView 内的 Y − 浮动 Tab 预留高度
-        // 注意：floorMinY 不再扣 sticky，避免重复减偏移
-        let reserved = floatingTabHeight + stickyTabGap
-        let targetY = max(0, cellRect.minY + floorsCellTopInset + floorY - reserved)
+        let targetY = floorScrollOffset(
+            cellRect: cellRect,
+            floorY: floorY,
+            contentOffsetY: tableView.contentOffset.y
+        )
         let maxOffset = max(0, tableView.contentSize.height - tableView.bounds.height + tableView.contentInset.bottom)
         let clampedY = min(targetY, maxOffset)
 
         isScrollingToFloor = true
         activeTab = tab
         syncTabSelection(animated: true)
-        // 先显示浮动 Tab，避免滚动过程中内容被导航区遮挡观感不一致
-        floatingTabBar.isHidden = false
         tableView.setContentOffset(CGPoint(x: 0, y: clampedY), animated: animated)
 
         let delay = animated ? 0.4 : 0.05
@@ -380,14 +370,31 @@ final class ServicePackageDetailViewController: BaseViewController {
 
         let cellRect = tableView.rectForRow(at: IndexPath(row: index, section: 0))
         guard let floorY = floorsView.floorMinY(for: tab) else { return }
-        let reserved = floatingTabHeight + stickyTabGap
-        let targetY = max(0, cellRect.minY + floorsCellTopInset + floorY - reserved)
+        let targetY = floorScrollOffset(
+            cellRect: cellRect,
+            floorY: floorY,
+            contentOffsetY: tableView.contentOffset.y
+        )
         let maxOffset = max(0, tableView.contentSize.height - tableView.bounds.height + tableView.contentInset.bottom)
         let clampedY = min(targetY, maxOffset)
 
         if abs(tableView.contentOffset.y - clampedY) > 2 {
             tableView.setContentOffset(CGPoint(x: 0, y: clampedY), animated: false)
         }
+    }
+
+    /// 楼层锚点滚到可视区顶部；仅当目标位置已越过卡片内 Tab 时才为浮动 Tab 预留高度
+    private func floorScrollOffset(
+        cellRect: CGRect,
+        floorY: CGFloat,
+        contentOffsetY: CGFloat
+    ) -> CGFloat {
+        let tabBarYInContent = floorsRowY + floorsCellTopInset + floorsView.tabBarView.frame.minY
+        let rawTargetY = cellRect.minY + floorsCellTopInset + floorY
+        let willShowFloating = rawTargetY - stickyTabGap >= tabBarYInContent
+            || contentOffsetY + stickyTabGap >= tabBarYInContent
+        let reserved = willShowFloating ? (floatingTabHeight + stickyTabGap) : 0
+        return max(0, rawTargetY - reserved)
     }
 
     private func updateFloorsRowY() {

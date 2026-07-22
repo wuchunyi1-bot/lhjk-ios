@@ -7,14 +7,14 @@ struct PackageOrderDraftItem: Codable, Equatable {
     var name: String
     var qty: String
     var unit: String
-    var price: Int
+    var price: Double
 }
 
 struct PackageOrderDraft: Codable, Equatable {
     var packageId: String
     var packageName: String
     var subtitle: String
-    var amount: Int
+    var amount: Double
     var selectedItems: [PackageOrderDraftItem]
     var hospitalId: String?
     var hospitalName: String?
@@ -28,7 +28,7 @@ struct PackageOrderDraft: Codable, Equatable {
     var serialNumber: Int?
     var updatedAt: TimeInterval
 
-    var payableAmount: Int { max(0, amount) }
+    var payableAmount: Double { max(0, amount) }
 
     var orderIdInt64: Int64? {
         guard let raw = orderId?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
@@ -97,10 +97,10 @@ extension PackageOrderDraft {
         orderId: String? = nil
     ) -> PackageOrderDraft {
         let items = selectedItems.map {
-            PackageOrderDraftItem(name: $0.name, qty: $0.qty, unit: $0.unit, price: $0.price)
+            PackageOrderDraftItem(name: $0.name, qty: $0.qty, unit: $0.unit, price: $0.priceValue)
         }
         let amount = items.map(\.price).reduce(0, +)
-        let fallback = package.tiers.first?.price ?? 0
+        let fallback = Double(package.tiers.first?.price ?? 0)
         return PackageOrderDraft(
             packageId: package.id,
             packageName: package.name,
@@ -128,13 +128,13 @@ extension PackageOrderDraft {
             packageId: line.targetId,
             packageName: line.name,
             subtitle: line.subtitle,
-            amount: line.lineTotal,
+            amount: Double(line.lineTotal),
             selectedItems: [
                 PackageOrderDraftItem(
                     name: line.name,
                     qty: "\(qty)",
                     unit: "份",
-                    price: line.lineTotal
+                    price: Double(line.lineTotal)
                 )
             ],
             hospitalId: line.hospitalId,
@@ -151,13 +151,14 @@ extension PackageOrderDraft {
 
     /// 商城商品详情「立即购买」最小快照
     static func fromMallProduct(id: String, name: String, subtitle: String, amount: Int, orderId: String? = nil) -> PackageOrderDraft {
-        PackageOrderDraft(
+        let price = Double(amount)
+        return PackageOrderDraft(
             packageId: id,
             packageName: name,
             subtitle: subtitle,
-            amount: amount,
+            amount: price,
             selectedItems: [
-                PackageOrderDraftItem(name: name, qty: "1", unit: "件", price: amount)
+                PackageOrderDraftItem(name: name, qty: "1", unit: "件", price: price)
             ],
             hospitalId: nil,
             hospitalName: nil,

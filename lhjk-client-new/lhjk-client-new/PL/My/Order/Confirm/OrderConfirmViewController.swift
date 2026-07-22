@@ -221,7 +221,11 @@ final class OrderConfirmViewController: BaseViewController {
             value: remarkText.isEmpty ? "选填" : remarkText,
             placeholder: remarkText.isEmpty
         )
-        couponRow.configure(title: "优惠券", value: "暂无可用", placeholder: true)
+        couponRow.configure(
+            title: "优惠券",
+            value: viewModel.couponSummaryText,
+            placeholder: viewModel.couponDiscount == 0
+        )
         benefitRow.configure(title: "权益卡", value: "暂无可用", placeholder: true)
 
         feeView.configure(
@@ -250,7 +254,28 @@ final class OrderConfirmViewController: BaseViewController {
     }
 
     @objc private func tapCoupon() {
-        showToast("暂无可用优惠券")
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let coupons = try await self.viewModel.fetchCouponOptions()
+                await MainActor.run {
+                    let sheet = OrderCouponPickerSheet(
+                        coupons: coupons,
+                        selectedTakeId: self.viewModel.selectedCouponTakeId
+                    )
+                    sheet.onSelect = { [weak self] takeId in
+                        self?.viewModel.bindCoupon(takeId: takeId)
+                    }
+                    self.present(sheet, animated: true)
+                }
+            } catch {
+                await MainActor.run {
+                    self.showToast(error.localizedDescription.isEmpty
+                        ? "查询优惠券失败"
+                        : error.localizedDescription)
+                }
+            }
+        }
     }
 
     @objc private func tapBenefit() {

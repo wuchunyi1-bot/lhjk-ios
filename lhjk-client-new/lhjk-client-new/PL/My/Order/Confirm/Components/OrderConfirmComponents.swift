@@ -286,7 +286,7 @@ final class OrderConfirmPackageView: UIView {
     func configure(
         name: String,
         subtitle: String,
-        amount: Int,
+        amount: Double,
         items: [PackageOrderDraftItem],
         canExpand: Bool,
         expanded: Bool,
@@ -427,11 +427,11 @@ final class OrderConfirmFeeView: UIView {
     required init?(coder: NSCoder) { fatalError() }
 
     func configure(
-        packageAmount: Int,
-        shipping: Int,
-        coupon: Int,
-        benefit: Int,
-        payable: Int
+        packageAmount: Double,
+        shipping: Double,
+        coupon: Double,
+        benefit: Double,
+        payable: Double
     ) {
         stack.arrangedSubviews.forEach {
             stack.removeArrangedSubview($0)
@@ -613,11 +613,11 @@ final class OrderConfirmSubmitBar: UIView {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    func configure(amount: Int, submitting: Bool) {
+    func configure(amount: Double, submitting: Bool) {
         priceLabel.text = OrderConfirmMoney.yen(amount)
         payButton.isEnabled = !submitting
         payButton.alpha = submitting ? 0.6 : 1
-        payButton.setTitle(submitting ? "提交中..." : (amount == 0 ? "确认下单" : "立即支付"), for: .normal)
+        payButton.setTitle(submitting ? "提交中..." : (amount <= 0 ? "确认下单" : "立即支付"), for: .normal)
     }
 
     @objc private func tapPay() { onPay?() }
@@ -626,11 +626,15 @@ final class OrderConfirmSubmitBar: UIView {
 // MARK: - Money
 
 enum OrderConfirmMoney {
-    static func yen(_ value: Int) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.groupingSeparator = ","
-        let num = f.string(from: NSNumber(value: value)) ?? "\(value)"
+    static func yen(_ value: Double) -> String {
+        let safe = max(0, value)
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+        formatter.groupingSeparator = ","
+        let num = formatter.string(from: NSNumber(value: safe))
+            ?? String(format: "%.2f", safe)
         return "¥\(num)"
     }
 }

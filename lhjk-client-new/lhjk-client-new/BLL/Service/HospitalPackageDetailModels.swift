@@ -143,8 +143,8 @@ enum HospitalPackageDetailMapper {
         let info = bo.packageInfo
         let name = nonEmpty(info?.name) ?? "套餐详情"
         let subtitle = nonEmpty(info?.introduction) ?? nonEmpty(info?.description) ?? ""
-        let priceValue = Int((info?.price ?? 0).rounded())
-        let priceText = priceValue > 0 ? "¥\(grouped(priceValue))" : "面议"
+        let priceValue = max(0, info?.price ?? 0)
+        let priceText = ServicePackageMoney.yenText(priceValue)
         let tag: String = {
             switch info?.recommend {
             case 1: return "推荐"
@@ -237,19 +237,19 @@ enum HospitalPackageDetailMapper {
         let items = rows.map { row -> ServicePackageComboItem in
             let qty = row.bo.quantity.map(String.init) ?? "1"
             let unit = billingUnit(row.bo.billingType)
-            let price = Int((row.bo.price ?? 0).rounded())
+            let priceValue = max(0, row.bo.price ?? 0)
             return ServicePackageComboItem(
                 name: nonEmpty(row.bo.name) ?? "服务项",
                 qty: qty,
                 unit: unit,
-                price: price,
+                price: priceValue,
                 defaultSelected: row.bo.defaultCheck == 1,
                 isChild: row.isChild,
                 detailId: row.bo.id,
                 checkType: row.bo.checkType ?? checkType,
                 billingType: row.bo.billingType,
                 quantityValue: row.bo.quantity ?? 1,
-                priceValue: row.bo.price ?? Double(price),
+                priceValue: priceValue,
                 parentDetailId: row.parentId,
                 packageDetailId: row.bo.packageDetailId,
                 commodityId: row.bo.commodityId,
@@ -333,12 +333,5 @@ enum HospitalPackageDetailMapper {
             return nil
         }
         return trimmed
-    }
-
-    private static func grouped(_ value: Int) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.groupingSeparator = ","
-        return f.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 }

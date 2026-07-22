@@ -20,6 +20,8 @@ final class ServiceViewController: BaseViewController {
         tv.register(ServiceBannerCarouselCell.self, forCellReuseIdentifier: ServiceBannerCarouselCell.reuseID)
         tv.register(MatrixGridCell.self, forCellReuseIdentifier: MatrixGridCell.reuseID)
         tv.register(MallProductGridCell.self, forCellReuseIdentifier: MallProductGridCell.reuseID)
+        tv.estimatedRowHeight = 120
+        tv.rowHeight = UITableView.automaticDimension
         tv.contentInsetAdjustmentBehavior = .never
         return tv
     }()
@@ -159,7 +161,23 @@ extension ServiceViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        UITableView.automaticDimension
+        guard let section = sectionKind(at: indexPath.section), section == .mallPreview else {
+            return UITableView.automaticDimension
+        }
+        let count = viewModel.mallPreviewPackages.count
+        guard count > 0 else { return UITableView.automaticDimension }
+        let width = tableView.bounds.width > 0 ? tableView.bounds.width : UIScreen.main.bounds.width
+        return MallProductGridCell.gridHeight(productCount: count, containerWidth: width)
+    }
+
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        guard let section = sectionKind(at: indexPath.section), section == .mallPreview else {
+            return UITableView.automaticDimension
+        }
+        let count = viewModel.mallPreviewPackages.count
+        guard count > 0 else { return 120 }
+        let width = tableView.bounds.width > 0 ? tableView.bounds.width : UIScreen.main.bounds.width
+        return MallProductGridCell.gridHeight(productCount: count, containerWidth: width)
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {

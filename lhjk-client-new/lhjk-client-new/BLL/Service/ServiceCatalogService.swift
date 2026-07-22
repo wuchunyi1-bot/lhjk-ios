@@ -66,7 +66,7 @@ final class ServiceCatalogService {
 
     private static func mapHealthPackage(_ item: HealthPackageItem, matrix: [ProductMatrixItem]) -> ServicePackageDetail {
         let accent = matrix.first { $0.code == item.productCode }?.accentHex ?? item.accentHex
-        let priceValue = parsePriceInt(item.price)
+        let priceValue = parsePriceDouble(item.price)
         let tags = item.audienceTags.isEmpty
             ? (item.badge.map { [$0] } ?? ["健康管理"])
             : item.audienceTags
@@ -99,8 +99,8 @@ final class ServiceCatalogService {
         let priceText: String = {
             if item.price.contains("面议") { return "面议" }
             if item.price.hasPrefix("¥") { return item.price }
-            if priceValue > 0 { return "¥\(grouped(priceValue))" }
-            return "¥1,980"
+            if priceValue > 0 { return ServicePackageMoney.yen(priceValue) }
+            return ServicePackageMoney.yen(1980)
         }()
         return ServicePackageDetail(
             id: item.id,
@@ -119,15 +119,13 @@ final class ServiceCatalogService {
         )
     }
 
-    private static func parsePriceInt(_ raw: String) -> Int {
-        Int(raw.filter(\.isNumber)) ?? 0
+    private static func parsePriceDouble(_ raw: String) -> Double {
+        let digits = raw.filter { $0.isNumber || $0 == "." }
+        return Double(digits) ?? 0
     }
 
-    private static func grouped(_ value: Int) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.groupingSeparator = ","
-        return f.string(from: NSNumber(value: value)) ?? "\(value)"
+    private static func groupedYen(_ value: Double) -> String {
+        ServicePackageMoney.yen(value)
     }
 
     // MARK: - Prototype Service Packages (delete when package detail API lands)
@@ -269,7 +267,7 @@ final class ServiceCatalogService {
         ),
     ]
 
-    private static func defaultRequiredGroup(archivePrice: Int) -> [ServicePackageComboGroup] {
+    private static func defaultRequiredGroup(archivePrice: Double) -> [ServicePackageComboGroup] {
         [
             ServicePackageComboGroup(
                 name: "核心服务",
@@ -287,13 +285,13 @@ final class ServiceCatalogService {
     }
 
     private static func makeTier(
-        _ id: String, _ name: String, _ price: Int, _ unit: String,
+        _ id: String, _ name: String, _ price: Double, _ unit: String,
         _ groups: [ServicePackageComboGroup]
     ) -> ServicePackageTier {
         ServicePackageTier(
             id: id,
             name: name,
-            priceLabel: price == 0 ? "面议" : "\(grouped(price))\(unit.contains("面议") ? "" : unit)",
+            priceLabel: price == 0 ? "面议" : "\(groupedYen(price))\(unit.contains("面议") ? "" : unit)",
             price: price,
             priceUnit: unit,
             groups: groups
@@ -302,11 +300,11 @@ final class ServiceCatalogService {
 
     private static func makePackage(
         id: String, code: String, name: String, subtitle: String,
-        category: String, tag: String, price: Int, priceUnit: String,
+        category: String, tag: String, price: Double, priceUnit: String,
         tags: [String], detail: String, tiers: [ServicePackageTier]
     ) -> ServicePackageDetail {
         let accent = matrixAccent[code] ?? "#FF7A50"
-        let priceText = price == 0 ? "面议" : "¥\(grouped(price))"
+        let priceText = price == 0 ? "面议" : groupedYen(price)
         return ServicePackageDetail(
             id: id,
             productCode: code,

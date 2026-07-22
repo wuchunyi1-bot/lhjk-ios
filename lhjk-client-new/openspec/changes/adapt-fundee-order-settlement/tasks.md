@@ -13,6 +13,7 @@
 - [x] 2.3 `HospitalService.getById`
 - [x] 2.4 `OrderService.updateOrderDescription`
 - [x] 2.5 `OrderService.updateOrderDelivery`（绑定快递地址）
+- [x] 2.6 `CouponService.getCouponTakeList` + `bindCouponTake`
 
 ## 3. UI
 
@@ -20,3 +21,5 @@
 - [x] 3.2 `OrderRemarkEditorSheet` 底部备注弹层
 - [x] 3.3 快递地址：结算 `appOrderDetailBO` 优先展示，无则入口跳 `/me/address` 选择后绑定
 - [x] 3.4 `AddressListViewController` 选择模式（`selectMode` + `onSelect`）
+- [x] 3.5 收货方式按 `typeOrder` 初始化；切换自提/快递按规则调 `updateOrderDelivery` 后刷新结算
+- [x] 3.6 `OrderCouponPickerSheet` 优惠券选择与绑定后刷新结算

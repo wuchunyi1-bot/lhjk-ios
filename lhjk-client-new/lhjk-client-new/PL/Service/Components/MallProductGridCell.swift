@@ -34,7 +34,7 @@ final class MallProductGridCell: UITableViewCell {
         contentView.backgroundColor = .fdBg
         contentView.addSubview(collectionView)
         collectionView.snp.makeConstraints {
-            $0.edges.equalToSuperview()
+            $0.top.leading.trailing.equalToSuperview()
             collectionHeightConstraint = $0.height.equalTo(1).constraint
         }
     }
@@ -56,20 +56,43 @@ final class MallProductGridCell: UITableViewCell {
         refreshLayoutIfNeeded()
     }
 
+    override func systemLayoutSizeFitting(
+        _ targetSize: CGSize,
+        withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority,
+        verticalFittingPriority: UILayoutPriority
+    ) -> CGSize {
+        let width = resolvedContainerWidth(from: targetSize.width)
+        guard width > 0 else {
+            return super.systemLayoutSizeFitting(
+                targetSize,
+                withHorizontalFittingPriority: horizontalFittingPriority,
+                verticalFittingPriority: verticalFittingPriority
+            )
+        }
+        applyCollectionHeight(for: width, notifyTableView: false)
+        return CGSize(width: width, height: lastAppliedHeight)
+    }
+
     func configure(products: [HealthPackageItem]) {
         self.products = products
         needsContentReload = true
-        lastAppliedHeight = 0
+        let width = resolvedContainerWidth(from: contentView.bounds.width)
+        applyCollectionHeight(for: width, notifyTableView: false)
         setNeedsLayout()
-        layoutIfNeeded()
     }
 
-    private func refreshLayoutIfNeeded() {
-        let width = contentView.bounds.width
+    private func resolvedContainerWidth(from proposedWidth: CGFloat) -> CGFloat {
+        if proposedWidth > 0 { return proposedWidth }
+        if contentView.bounds.width > 0 { return contentView.bounds.width }
+        if bounds.width > 0 { return bounds.width }
+        return UIScreen.main.bounds.width
+    }
+
+    private func applyCollectionHeight(for width: CGFloat, notifyTableView: Bool) {
         guard width > 0 else { return }
 
-        let widthChanged = abs(width - lastLayoutWidth) > 0.5
-        if widthChanged {
+        let targetHeight = Self.gridHeight(productCount: products.count, containerWidth: width)
+        if abs(width - lastLayoutWidth) > 0.5 {
             lastLayoutWidth = width
             collectionView.setCollectionViewLayout(Self.makeGridLayout(containerWidth: width), animated: false)
             needsContentReload = true
@@ -80,23 +103,42 @@ final class MallProductGridCell: UITableViewCell {
             needsContentReload = false
         }
 
-        guard !products.isEmpty else {
-            if lastAppliedHeight != 0 {
-                lastAppliedHeight = 0
-                collectionHeightConstraint?.update(offset: 0)
-                onContentHeightChanged?()
-            }
+        guard abs(targetHeight - lastAppliedHeight) > 0.5 else { return }
+
+        lastAppliedHeight = targetHeight
+        collectionHeightConstraint?.update(offset: max(targetHeight, 0))
+        if notifyTableView {
+            onContentHeightChanged?()
+        }
+    }
+
+    private func refreshLayoutIfNeeded() {
+        let width = contentView.bounds.width
+        guard width > 0, !products.isEmpty else { return }
+
+        if abs(width - lastLayoutWidth) > 0.5 {
+            applyCollectionHeight(for: width, notifyTableView: lastAppliedHeight > 0)
             return
         }
 
         collectionView.layoutIfNeeded()
-
         let measuredHeight = collectionView.collectionViewLayout.collectionViewContentSize.height
         guard measuredHeight > 0, abs(measuredHeight - lastAppliedHeight) > 0.5 else { return }
 
         lastAppliedHeight = measuredHeight
         collectionHeightConstraint?.update(offset: measuredHeight)
         onContentHeightChanged?()
+    }
+
+    /// 双列网格总高度（含 section 内边距与行间距）
+    static func gridHeight(productCount: Int, containerWidth: CGFloat) -> CGFloat {
+        guard productCount > 0, containerWidth > 0 else { return 0 }
+        let itemHeight = itemSize(for: containerWidth).height
+        let rowCount = (productCount + 1) / 2
+        let sectionVerticalInset: CGFloat = 24
+        let interRowSpacing: CGFloat = 10
+        let rows = CGFloat(rowCount)
+        return sectionVerticalInset + rows * itemHeight + max(0, rows - 1) * interRowSpacing
     }
 
     private static func makeGridLayout(containerWidth: CGFloat) -> UICollectionViewCompositionalLayout {

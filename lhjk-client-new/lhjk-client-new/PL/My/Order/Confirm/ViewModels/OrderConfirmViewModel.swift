@@ -11,6 +11,14 @@ enum OrderFulfillmentMethod: String {
         case .selfPickup: return "机构自提"
         }
     }
+
+    /// 后端 `typeOrder`：1 快递 / 0 上门自提
+    var typeOrderValue: Int {
+        switch self {
+        case .express: return 1
+        case .selfPickup: return 0
+        }
+    }
 }
 
 enum OrderPayMethod: String, CaseIterable {
@@ -31,10 +39,10 @@ final class OrderConfirmViewModel: ObservableObject {
     @Published private(set) var draft: PackageOrderDraft?
     @Published private(set) var isLoading = false
     @Published private(set) var isSubmitting = false
+    @Published private(set) var isSyncing = false
     @Published private(set) var errorMessage: String?
     @Published private(set) var toastMessage: String?
     @Published var contentExpanded = false
-    /// 默认机构自提
     @Published var fulfillment: OrderFulfillmentMethod = .selfPickup
     @Published var payMethod: OrderPayMethod = .wechat
     @Published var remark = ""
@@ -42,9 +50,12 @@ final class OrderConfirmViewModel: ObservableObject {
     @Published private(set) var supportsExpress = false
     @Published private(set) var supportsWechat = true
     @Published private(set) var supportsAlipay = true
-    @Published private(set) var settlementExpressFee = 0
-    @Published private(set) var settlementPayable = 0
-    @Published private(set) var settlementPackageAmount = 0
+    @Published private(set) var settlementExpressFee: Double = 0
+    @Published private(set) var settlementPayable: Double = 0
+    @Published private(set) var settlementPackageAmount: Double = 0
+    @Published private(set) var settlementCouponDiscount: Double = 0
+    @Published private(set) var selectedCouponTakeId: Int64?
+    @Published private(set) var selectedCouponName = ""
     @Published private(set) var hospitalDetail: OHospital?
     @Published var navigateBack = false
     @Published var navigateToOrders = false
@@ -53,27 +64,30 @@ final class OrderConfirmViewModel: ObservableObject {
     private let serialNumber: Int?
     private let hospitalService: HospitalService
     private let orderService: OrderService
+    private let couponService: CouponService
     private let institutionStore: InstitutionSelectionStore
     private var loadTask: Task<Void, Never>?
     private var fallbackHospitalName: String?
+    private var latestSettlement: OrderSettlementBO?
 
     init(
         orderId: Int64,
         serialNumber: Int? = nil,
         hospitalService: HospitalService = AppContainer.shared.hospitalService,
         orderService: OrderService = AppContainer.shared.orderService,
+        couponService: CouponService = AppContainer.shared.couponService,
         institutionStore: InstitutionSelectionStore = AppContainer.shared.institutionSelectionStore
     ) {
         self.orderId = orderId
         self.serialNumber = serialNumber
         self.hospitalService = hospitalService
         self.orderService = orderService
+        self.couponService = couponService
         self.institutionStore = institutionStore
     }
 
     deinit { loadTask?.cancel() }
 
-    /// 始终展示收货方式
     var showsFulfillment: Bool { true }
 
     var needsExpressAddress: Bool {
@@ -96,17 +110,24 @@ final class OrderConfirmViewModel: ObservableObject {
         (draft?.selectedItems.count ?? 0) > 3
     }
 
-    var packageAmount: Int { settlementPackageAmount }
+    var packageAmount: Double { settlementPackageAmount }
 
-    var shippingFee: Int {
+    var shippingFee: Double {
         fulfillment == .express ? settlementExpressFee : 0
     }
 
-    var couponDiscount: Int { 0 }
-    var benefitDiscount: Int { 0 }
+    var couponDiscount: Double { settlementCouponDiscount }
+    var benefitDiscount: Double { 0 }
 
-    var payableAmount: Int {
+    var payableAmount: Double {
         max(0, settlementPayable)
+    }
+
+    var couponSummaryText: String {
+        if settlementCouponDiscount > 0 {
+            return "已优惠 \(OrderConfirmMoney.yen(settlementCouponDiscount))"
+        }
+        return "请选择"
     }
 
     var pickupName: String {
@@ -142,8 +163,15 @@ final class OrderConfirmViewModel: ObservableObject {
 
     func selectFulfillment(_ method: OrderFulfillmentMethod) {
         if method == .express, !supportsExpress { return }
+        guard method != fulfillment else { return }
+
+        let previous = fulfillment
         fulfillment = method
-        // 切换收货方式不调用后端；仅在选择收货地址后才调用 updateOrderDelivery
+
+        Task { [weak self] in
+            guard let self else { return }
+            await self.syncFulfillmentChange(from: previous, to: method)
+        }
     }
 
     func updateRemark(_ text: String) {
@@ -200,6 +228,47 @@ final class OrderConfirmViewModel: ObservableObject {
         navigateToOrders = false
     }
 
+    // MARK: - 优惠券
+
+    func fetchCouponOptions() async throws -> [CouponTakeItem] {
+        try await couponService.getCouponTakeList()
+    }
+
+    func bindCoupon(takeId: Int64?) {
+        Task { [weak self] in
+            guard let self else { return }
+            await self.performBindCoupon(takeId: takeId)
+        }
+    }
+
+    // MARK: - 配送地址绑定
+
+    func bindDelivery(address: MAddress) {
+        let previous = deliveryAddress
+        deliveryAddress = address
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await self.orderService.updateOrderDelivery(
+                    orderId: self.orderId,
+                    typeOrder: 1,
+                    addressId: address.id,
+                    receiver: address.name,
+                    phone: address.mobile,
+                    address: address.fullAddress
+                )
+                await self.refreshSettlement(showToast: "已选择收货地址")
+            } catch {
+                await MainActor.run {
+                    self.deliveryAddress = previous
+                    self.toastMessage = error.localizedDescription.isEmpty
+                        ? "保存配送信息失败"
+                        : error.localizedDescription
+                }
+            }
+        }
+    }
+
     // MARK: - Private
 
     private func performLoad() async {
@@ -211,14 +280,19 @@ final class OrderConfirmViewModel: ObservableObject {
             hospitalDetail = nil
             fallbackHospitalName = nil
             draft = nil
-            fulfillment = .selfPickup
         }
 
-        let settlement: OrderSettlementBO
         do {
-            settlement = try await orderService.getOrderSettlement(
+            let settlement = try await orderService.getOrderSettlement(
                 orderId: orderId,
                 serialNumber: serialNumber
+            )
+            await MainActor.run {
+                applySettlement(settlement)
+                isLoading = false
+            }
+            await loadHospitalDetail(
+                hospitalId: settlement.resolvedHospitalId ?? institutionStore.selectedHospitalId
             )
         } catch {
             await MainActor.run {
@@ -231,31 +305,129 @@ final class OrderConfirmViewModel: ObservableObject {
                     self?.navigateBack = true
                 }
             }
-            return
         }
+    }
 
-        let display = Self.makeDisplayDraft(from: settlement, orderId: orderId, serialNumber: serialNumber)
+    private func refreshSettlement(showToast message: String? = nil) async {
+        await MainActor.run { isSyncing = true }
 
-        await MainActor.run {
-            draft = display
-            supportsExpress = settlement.supportsExpress
-            settlementExpressFee = settlement.expressAmountYuan
-            settlementPackageAmount = settlement.packageAmountYuan
-            settlementPayable = settlement.payableAmountYuan
-            fallbackHospitalName = settlement.resolvedHospitalName
-            if let remarkText = settlement.description?.trimmingCharacters(in: .whitespacesAndNewlines),
-               !remarkText.isEmpty {
-                remark = remarkText
+        do {
+            let settlement = try await orderService.getOrderSettlement(
+                orderId: orderId,
+                serialNumber: serialNumber
+            )
+            await MainActor.run {
+                applySettlement(settlement)
+                if let message { toastMessage = message }
+                isSyncing = false
             }
-            applyPayFlags(wechat: settlement.wechat, alipay: settlement.alipay)
-            fulfillment = .selfPickup
-            deliveryAddress = Self.deliveryAddress(from: settlement)
-            isLoading = false
+        } catch {
+            await MainActor.run {
+                toastMessage = error.localizedDescription.isEmpty
+                    ? "刷新订单信息失败"
+                    : error.localizedDescription
+                isSyncing = false
+            }
+        }
+    }
+
+    private func syncFulfillmentChange(
+        from previous: OrderFulfillmentMethod,
+        to method: OrderFulfillmentMethod
+    ) async {
+        switch method {
+        case .selfPickup:
+            await MainActor.run { isSyncing = true }
+            do {
+                try await orderService.updateOrderDelivery(
+                    orderId: orderId,
+                    typeOrder: 0
+                )
+                await refreshSettlement()
+            } catch {
+                await MainActor.run {
+                    fulfillment = previous
+                    toastMessage = error.localizedDescription.isEmpty
+                        ? "切换收货方式失败"
+                        : error.localizedDescription
+                }
+            }
+            await MainActor.run { isSyncing = false }
+
+        case .express:
+            guard let addr = deliveryAddress else { return }
+            await MainActor.run { isSyncing = true }
+            do {
+                try await orderService.updateOrderDelivery(
+                    orderId: orderId,
+                    typeOrder: 1,
+                    addressId: addr.id,
+                    receiver: addr.name,
+                    phone: addr.mobile,
+                    address: addr.fullAddress
+                )
+                await refreshSettlement()
+            } catch {
+                await MainActor.run {
+                    fulfillment = previous
+                    toastMessage = error.localizedDescription.isEmpty
+                        ? "切换收货方式失败"
+                        : error.localizedDescription
+                }
+            }
+            await MainActor.run { isSyncing = false }
+        }
+    }
+
+    private func performBindCoupon(takeId: Int64?) async {
+        await MainActor.run { isSyncing = true }
+        do {
+            try await couponService.bindCouponTake(orderId: orderId, couponTakeId: takeId)
+            let toast = takeId == nil ? "已取消优惠券" : "已选择优惠券"
+            await refreshSettlement(showToast: toast)
+        } catch {
+            await MainActor.run {
+                toastMessage = error.localizedDescription.isEmpty
+                    ? "绑定优惠券失败"
+                    : error.localizedDescription
+            }
+        }
+        await MainActor.run { isSyncing = false }
+    }
+
+    private func applySettlement(_ settlement: OrderSettlementBO) {
+        latestSettlement = settlement
+        draft = Self.makeDisplayDraft(
+            from: settlement,
+            orderId: orderId,
+            serialNumber: serialNumber
+        )
+        supportsExpress = settlement.supportsExpress
+        settlementExpressFee = settlement.expressAmountYuan
+        settlementPackageAmount = settlement.packageAmountYuan
+        settlementPayable = settlement.payableAmountYuan
+        settlementCouponDiscount = settlement.couponDiscountYuan
+        selectedCouponTakeId = settlement.resolvedCouponTakeId
+        selectedCouponName = resolveCouponName(from: settlement)
+        fallbackHospitalName = settlement.resolvedHospitalName
+
+        if let remarkText = settlement.description?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !remarkText.isEmpty {
+            remark = remarkText
         }
 
-        await loadHospitalDetail(
-            hospitalId: settlement.resolvedHospitalId ?? institutionStore.selectedHospitalId
-        )
+        applyPayFlags(wechat: settlement.wechat, alipay: settlement.alipay)
+        fulfillment = Self.fulfillment(from: settlement)
+        deliveryAddress = Self.deliveryAddress(from: settlement)
+    }
+
+    private func resolveCouponName(from settlement: OrderSettlementBO) -> String {
+        let fromList = settlement.appOrderDetailBO?.couponTakeList?
+            .first(where: { $0.id == settlement.resolvedCouponTakeId })?
+            .name?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !fromList.isEmpty { return fromList }
+        return settlementCouponDiscount > 0 ? "优惠券" : ""
     }
 
     private func loadHospitalDetail(hospitalId: String?) async {
@@ -280,37 +452,6 @@ final class OrderConfirmViewModel: ObservableObject {
         }
     }
 
-    // MARK: - 配送地址绑定
-
-    /// 选择地址后绑定到订单（typeOrder=1 快递）
-    func bindDelivery(address: MAddress) {
-        let previous = deliveryAddress
-        deliveryAddress = address
-        Task { [weak self] in
-            guard let self else { return }
-            do {
-                try await self.orderService.updateOrderDelivery(
-                    orderId: self.orderId,
-                    typeOrder: 1,
-                    addressId: address.id,
-                    receiver: address.name,
-                    phone: address.mobile,
-                    address: address.fullAddress
-                )
-                await MainActor.run {
-                    self.toastMessage = "已选择收货地址"
-                }
-            } catch {
-                await MainActor.run {
-                    self.deliveryAddress = previous
-                    self.toastMessage = error.localizedDescription.isEmpty
-                        ? "保存配送信息失败"
-                        : error.localizedDescription
-                }
-            }
-        }
-    }
-
     private func applyPayFlags(wechat: Bool?, alipay: Bool?) {
         let w = wechat ?? true
         let a = alipay ?? true
@@ -323,12 +464,15 @@ final class OrderConfirmViewModel: ObservableObject {
         }
     }
 
-    /// 从结算 `appOrderDetailBO` 构造展示用快递地址；仅 `typeOrder=1`（快递）且带地址信息时返回
-    /// 机构自提地址不在 `appOrderDetailBO`，由 `hospital/getById` 单独获取
+    private static func fulfillment(from settlement: OrderSettlementBO) -> OrderFulfillmentMethod {
+        guard settlement.supportsExpress, settlement.resolvedTypeOrder == 1 else {
+            return .selfPickup
+        }
+        return .express
+    }
+
     private static func deliveryAddress(from settlement: OrderSettlementBO) -> MAddress? {
-        guard let order = settlement.appOrderDetailBO,
-              order.typeOrder == 1,
-              order.hasDeliveryAddress else {
+        guard let order = settlement.appOrderDetailBO, order.hasDeliveryAddress else {
             return nil
         }
         return MAddress(
