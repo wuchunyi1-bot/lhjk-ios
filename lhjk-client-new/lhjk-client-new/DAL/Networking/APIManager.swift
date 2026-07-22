@@ -415,6 +415,48 @@ extension APIError {
 /// 空响应体（用于不需要解析返回值的请求）
 struct EmptyResponse: Decodable {}
 
+/// 接口 `data` 为标量 id（JSON number / 数字字符串）；空对象或无法解析时 `value == nil`
+struct APIDataID: Decodable {
+    let value: Int64?
+
+    private struct AnyKey: CodingKey {
+        var stringValue: String
+        init?(stringValue: String) { self.stringValue = stringValue }
+        var intValue: Int?
+        init?(intValue: Int) { self.intValue = intValue; self.stringValue = "\(intValue)" }
+    }
+
+    init(from decoder: Decoder) throws {
+        if let container = try? decoder.singleValueContainer() {
+            if container.decodeNil() {
+                value = nil
+                return
+            }
+            if let v = try? container.decode(Int64.self) {
+                value = v
+                return
+            }
+            if let v = try? container.decode(Int.self) {
+                value = Int64(v)
+                return
+            }
+            if let v = try? container.decode(Double.self) {
+                value = Int64(v)
+                return
+            }
+            if let s = try? container.decode(String.self) {
+                value = Int64(s.trimmingCharacters(in: .whitespacesAndNewlines))
+                return
+            }
+            value = nil
+            return
+        }
+        // data 偶发为空对象 `{}`：消费后视为无 id
+        _ = try? decoder.container(keyedBy: AnyKey.self)
+        value = nil
+    }
+}
+
 // MARK: - 日志监控
 
 /// 请求/响应日志事件监控（补充 APIManager 未覆盖的低层细节，如 Header）

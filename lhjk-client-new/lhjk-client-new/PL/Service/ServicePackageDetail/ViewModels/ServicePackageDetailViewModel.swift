@@ -55,17 +55,19 @@ final class ServicePackageDetailViewModel: ObservableObject {
         try await submit(flag: .addToCart, selectedDetails: selectedDetails)
     }
 
-    /// 立即下单：`flag = 1`
-    func purchaseNow(selectedDetails: [PackageHospitalDetailSubmitItem]) async throws {
+    /// 立即下单：`flag = 1`，返回订单 id（供确认页拉结算）
+    @discardableResult
+    func purchaseNow(selectedDetails: [PackageHospitalDetailSubmitItem]) async throws -> Int64 {
         try await submit(flag: .purchaseNow, selectedDetails: selectedDetails)
     }
 
     // MARK: - Private
 
+    @discardableResult
     private func submit(
         flag: ShoppingCartActionFlag,
         selectedDetails: [PackageHospitalDetailSubmitItem]
-    ) async throws {
+    ) async throws -> Int64 {
         guard !selectedDetails.isEmpty else {
             throw ShoppingCartServiceError.emptyDetails
         }
@@ -89,8 +91,15 @@ final class ServicePackageDetailViewModel: ObservableObject {
                 flag: flag.rawValue,
                 packageHospitalDetailList: selectedDetails
             )
-            _ = try await shoppingCartService.saveShoppingCartOrPurchase(request)
+            let orderId = try await shoppingCartService.saveShoppingCartOrPurchase(request)
             await MainActor.run { isSubmitting = false }
+            if flag == .purchaseNow {
+                guard let orderId, orderId > 0 else {
+                    throw ShoppingCartServiceError.missingOrderId
+                }
+                return orderId
+            }
+            return orderId ?? 0
         } catch {
             await MainActor.run { isSubmitting = false }
             throw error

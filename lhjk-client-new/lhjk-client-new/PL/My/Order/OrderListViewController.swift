@@ -3,28 +3,31 @@ import SnapKit
 
 /// 全部订单列表 — 容器 VC
 ///
-/// 管理横向滚动 Tab 栏 + 10 个 OrderTabViewController 子 VC。
-/// 每个子 VC 拥有独立的 TableView 和数据缓存，仅首次加载时请求 API。
+/// 管理横向滚动 Tab + 8 个 OrderTabViewController（对齐 funde OrderListView）。
 final class OrderListViewController: BaseViewController {
 
-    // MARK: - Tab 定义
+    // MARK: - Tab 定义（funde 顺序）
 
     private struct TabItem {
         let title: String
-        let status: Int?       // nil = 全部
+        /// 单状态筛选；与 statusList 互斥
+        let status: Int?
+        /// 多状态筛选，如退款/售后 `6,9`
+        let statusList: String?
+        /// 路由 / query key
+        let routeKey: String
+        let emptyText: String
     }
 
     private let tabs: [TabItem] = [
-        TabItem(title: "全部",       status: nil),
-        TabItem(title: "待付款",     status: 1),
-        TabItem(title: "待发货",     status: 2),
-        TabItem(title: "待收货",     status: 3),
-        TabItem(title: "使用中",     status: 4),
-        TabItem(title: "已完成",     status: 5),
-        TabItem(title: "退款/售后",  status: 6),
-        TabItem(title: "已逾期",     status: 7),
-        TabItem(title: "已取消",     status: 8),
-        TabItem(title: "退款审核中", status: 9),
+        TabItem(title: "全部", status: nil, statusList: nil, routeKey: "all", emptyText: "暂无订单"),
+        TabItem(title: "待支付", status: 1, statusList: nil, routeKey: "pending_payment", emptyText: "暂无订单"),
+        TabItem(title: "待发货", status: 2, statusList: nil, routeKey: "paid_pending_delivery", emptyText: "暂无订单"),
+        TabItem(title: "待收货", status: 3, statusList: nil, routeKey: "pending_receipt", emptyText: "暂无待收货订单"),
+        TabItem(title: "使用中", status: 4, statusList: nil, routeKey: "in_progress", emptyText: "暂无使用中订单"),
+        TabItem(title: "已逾期", status: 7, statusList: nil, routeKey: "overdue", emptyText: "暂无已逾期订单"),
+        TabItem(title: "退款/售后", status: nil, statusList: "6,9", routeKey: "after_sale", emptyText: "暂无退款/售后记录"),
+        TabItem(title: "已完成", status: 5, statusList: nil, routeKey: "completed", emptyText: "暂无已完成订单"),
     ]
 
     // MARK: - State
@@ -62,20 +65,30 @@ final class OrderListViewController: BaseViewController {
 
     // MARK: - Lifecycle
 
-    // 禁止自动转发，手动管理子 VC 生命周期
     override var shouldAutomaticallyForwardAppearanceMethods: Bool { false }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "我的订单"
 
-        // 解析初始 Tab
-        let tabMapping: [String: Int] = [
-            "pending_payment": 1, "pending_ship": 2, "pending_receive": 3,
-            "in_progress": 4, "completed": 5, "refund": 6,
-            "overdue": 7, "cancelled": 8, "refund_review": 9,
+        // funde query keys + 兼容旧 key
+        let tabMapping: [String: String] = [
+            "all": "all",
+            "pending_payment": "pending_payment",
+            "paid_pending_delivery": "paid_pending_delivery",
+            "pending_ship": "paid_pending_delivery",
+            "pending_receipt": "pending_receipt",
+            "pending_receive": "pending_receipt",
+            "pending_receipt_in_progress": "pending_receipt",
+            "in_progress": "in_progress",
+            "overdue": "overdue",
+            "after_sale": "after_sale",
+            "refund": "after_sale",
+            "completed": "completed",
         ]
-        if let tab = initialTab, let idx = tabMapping[tab] {
+        if let tab = initialTab,
+           let key = tabMapping[tab],
+           let idx = tabs.firstIndex(where: { $0.routeKey == key }) {
             selectedTabIndex = idx
             needsInitialScroll = true
         }
@@ -86,7 +99,6 @@ final class OrderListViewController: BaseViewController {
     override func setupUI() {
         view.backgroundColor = .fdBg
 
-        // Tab 栏容器
         let tabContainer = UIView()
         tabContainer.backgroundColor = .fdBg
         view.addSubview(tabContainer)
@@ -101,7 +113,6 @@ final class OrderListViewController: BaseViewController {
             make.edges.equalToSuperview()
         }
 
-        // 子 VC 容器
         view.addSubview(containerView)
         containerView.snp.makeConstraints { make in
             make.top.equalTo(tabContainer.snp.bottom)
@@ -112,14 +123,16 @@ final class OrderListViewController: BaseViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
 
-        // 首次 layout 后滚动到初始 Tab
         if needsInitialScroll {
             needsInitialScroll = false
-            tabCollectionView.scrollToItem(at: IndexPath(item: selectedTabIndex, section: 0), at: .centeredHorizontally, animated: false)
+            tabCollectionView.scrollToItem(
+                at: IndexPath(item: selectedTabIndex, section: 0),
+                at: .centeredHorizontally,
+                animated: false
+            )
             tabCollectionView.layoutIfNeeded()
         }
 
-        // 确保当前选中的子 VC 已添加（首次 layout 后）
         if currentChildVC == nil {
             showChildVC(at: selectedTabIndex)
         }
@@ -129,25 +142,25 @@ final class OrderListViewController: BaseViewController {
 
     private func buildChildVCs() {
         childVCs = tabs.map { tab in
-            OrderTabViewController(status: tab.status)
+            OrderTabViewController(
+                status: tab.status,
+                statusList: tab.statusList,
+                emptyText: tab.emptyText
+            )
         }
     }
 
-    /// 当前正在显示的子 VC（用于 appearance 管理）
     private var currentChildVC: OrderTabViewController?
 
-    /// 显示指定索引的子 VC，手动触发生命周期
     private func showChildVC(at index: Int) {
         guard index >= 0, index < childVCs.count else { return }
         let isVisible = isViewLoaded && view.window != nil
 
-        // 旧子 VC：viewWillDisappear + viewDidDisappear
         if let old = currentChildVC, isVisible {
             old.beginAppearanceTransition(false, animated: false)
             old.endAppearanceTransition()
         }
 
-        // 移除旧子 VC
         for vc in children {
             vc.willMove(toParent: nil)
             vc.view.removeFromSuperview()
@@ -155,7 +168,6 @@ final class OrderListViewController: BaseViewController {
             vc.didMove(toParent: nil)
         }
 
-        // 添加新子 VC
         let child = childVCs[index]
         child.willMove(toParent: self)
         addChild(child)
@@ -166,14 +178,12 @@ final class OrderListViewController: BaseViewController {
         child.didMove(toParent: self)
         currentChildVC = child
 
-        // 新子 VC：viewWillAppear + viewDidAppear
         if isVisible {
             child.beginAppearanceTransition(true, animated: false)
             child.endAppearanceTransition()
         }
     }
 
-    // 父 VC appearance 变化时，转发给当前子 VC
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         currentChildVC?.beginAppearanceTransition(true, animated: animated)
@@ -194,19 +204,15 @@ final class OrderListViewController: BaseViewController {
         currentChildVC?.endAppearanceTransition()
     }
 
-    // MARK: - Actions
-
     private func selectTab(at index: Int) {
         guard index != selectedTabIndex else { return }
         selectedTabIndex = index
-
-        // 1. 更新 Cell 外观
         tabCollectionView.reloadData()
-
-        // 2. 滚动 Tab 到可见区域
-        tabCollectionView.scrollToItem(at: IndexPath(item: index, section: 0), at: .centeredHorizontally, animated: true)
-
-        // 3. 切换子 VC
+        tabCollectionView.scrollToItem(
+            at: IndexPath(item: index, section: 0),
+            at: .centeredHorizontally,
+            animated: true
+        )
         showChildVC(at: index)
     }
 }
@@ -216,11 +222,14 @@ final class OrderListViewController: BaseViewController {
 extension OrderListViewController: UICollectionViewDataSource {
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return tabs.count
+        tabs.count
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: OrderTabCell.reuseID, for: indexPath) as? OrderTabCell else {
+        guard let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: OrderTabCell.reuseID,
+            for: indexPath
+        ) as? OrderTabCell else {
             return UICollectionViewCell()
         }
         cell.configure(title: tabs[indexPath.item].title, isSelected: indexPath.item == selectedTabIndex)
@@ -241,18 +250,26 @@ extension OrderListViewController: UICollectionViewDelegate {
 
 extension OrderListViewController: UICollectionViewDelegateFlowLayout {
 
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        sizeForItemAt indexPath: IndexPath
+    ) -> CGSize {
         let title = tabs[indexPath.item].title
         let width = title.boundingRect(
             with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: 30),
             options: .usesLineFragmentOrigin,
             attributes: [.font: UIFont.fdCaptionSemibold],
             context: nil
-        ).width + 16 // 左右各 8pt padding
+        ).width + 16
         return CGSize(width: ceil(width), height: 30)
     }
 
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        return UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        insetForSectionAt section: Int
+    ) -> UIEdgeInsets {
+        UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
     }
 }

@@ -5,7 +5,7 @@ import Foundation
 /// 商城订单状态枚举，对应后端 status 字段（1-9）
 /// 注意：与 DAL/Payment/PaymentOrder.swift 的 `OrderStatus`（支付状态）区分
 enum AppOrderStatus: Int {
-    case pendingPayment = 1   // 待付款
+    case pendingPayment = 1   // 待支付
     case pendingShip = 2      // 待发货
     case pendingReceive = 3   // 待收货
     case inProgress = 4       // 使用中
@@ -15,10 +15,10 @@ enum AppOrderStatus: Int {
     case cancelled = 8        // 已取消
     case refundReview = 9     // 退款审核中
 
-    /// 状态显示文本
+    /// 状态显示文本（对齐 funde 列表文案）
     var label: String {
         switch self {
-        case .pendingPayment: return "待付款"
+        case .pendingPayment: return "待支付"
         case .pendingShip:    return "待发货"
         case .pendingReceive: return "待收货"
         case .inProgress:     return "使用中"
@@ -85,14 +85,19 @@ struct MOrder {
         orderStatus?.label ?? "未知"
     }
 
-    /// 格式化的价格文本
+    /// 格式化的价格文本（优先应付）
     var priceText: String {
-        guard let price = price else { return "¥0" }
+        displayAmountText
+    }
+
+    /// 列表金额：优先 `payable`，否则 `price`
+    var displayAmountText: String {
+        let amount = payable ?? price ?? 0
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.maximumFractionDigits = 2
         formatter.minimumFractionDigits = 0
-        let formatted = formatter.string(from: NSNumber(value: price)) ?? String(format: "%.2f", price)
+        let formatted = formatter.string(from: NSNumber(value: amount)) ?? String(format: "%.2f", amount)
         return "¥\(formatted)"
     }
 

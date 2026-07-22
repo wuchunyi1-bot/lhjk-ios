@@ -238,14 +238,13 @@ final class ServicePackageDetailViewController: BaseViewController {
         for group in tier.groups {
             switch group.selectMode {
             case .radio:
-                let preferred = group.items.enumerated().first { $0.element.defaultSelected }?.offset
-                let lowest = group.items.enumerated().min {
-                    $0.element.price < $1.element.price
-                }?.offset ?? 0
-                radios[group.name] = preferred ?? lowest
+                // 单选：默认选中第一个父项
+                radios[group.name] = group.firstParentIndex
             case .checkbox:
+                // 可选：父项按 defaultCheck == 1 初始化，用户可取消
                 let picked = group.items.enumerated().compactMap { idx, item -> Int? in
-                    item.defaultSelected ? idx : nil
+                    guard !item.isChild else { return nil }
+                    return (item.defaultCheck == 1 || item.defaultSelected) ? idx : nil
                 }
                 checks[group.name] = Set(picked)
             case .required:
@@ -265,12 +264,14 @@ final class ServicePackageDetailViewController: BaseViewController {
         )
         view.onRadioSelect = { [weak self] index in
             guard let self else { return }
+            guard group.items.indices.contains(index), !group.items[index].isChild else { return }
             self.radioPicks[group.name] = index
             self.reloadFloorsContent()
             self.refreshPayable()
         }
         view.onCheckToggle = { [weak self] index in
             guard let self else { return }
+            guard group.items.indices.contains(index), !group.items[index].isChild else { return }
             var set = self.checkPicks[group.name] ?? []
             if set.contains(index) { set.remove(index) } else { set.insert(index) }
             self.checkPicks[group.name] = set
@@ -284,22 +285,28 @@ final class ServicePackageDetailViewController: BaseViewController {
         guard let tier = activeTier else { return [] }
         var prices: [Int] = []
         for group in tier.groups {
-            switch group.selectMode {
-            case .required:
-                prices.append(contentsOf: group.items.map(\.price))
-            case .radio:
-                let index = radioPicks[group.name] ?? 0
-                if group.items.indices.contains(index) {
-                    prices.append(group.items[index].price)
-                }
-            case .checkbox:
-                let picked = checkPicks[group.name] ?? []
-                for index in picked where group.items.indices.contains(index) {
-                    prices.append(group.items[index].price)
-                }
+            for index in selectedSubtreeIndices(in: group) {
+                prices.append(group.items[index].price)
             }
         }
         return prices
+    }
+
+    /// 已选父项及其子项下标（父选中则子项一并计入）
+    private func selectedSubtreeIndices(in group: ServicePackageComboGroup) -> [Int] {
+        switch group.selectMode {
+        case .required:
+            return Array(group.items.indices)
+        case .radio:
+            let parent = radioPicks[group.name] ?? group.firstParentIndex
+            return group.subtreeIndices(forParentAt: parent)
+        case .checkbox:
+            let picked = checkPicks[group.name] ?? []
+            return picked
+                .filter { group.items.indices.contains($0) && !group.items[$0].isChild }
+                .sorted()
+                .flatMap { group.subtreeIndices(forParentAt: $0) }
+        }
     }
 
     private func refreshPayable() {
@@ -473,14 +480,16 @@ final class ServicePackageDetailViewController: BaseViewController {
     private func tapOrder() {
         guard let pkg = package, !viewModel.isSubmitting else { return }
         let packageId = pkg.id
+        let selectedItems = buildSelectedComboItems()
 
-        // 本地原型套餐：不调服务端
+        // 本地原型套餐：无服务端订单 id，无法拉结算
         guard viewModel.usesRemoteCartAPI else {
-            Router.shared.push("/orders/confirm", params: ["id": packageId])
+            saveOrderDraft(package: pkg, selectedItems: selectedItems)
+            showToast("请使用正式套餐下单")
             return
         }
 
-        let details = buildSelectedSubmitDetails()
+        let details = selectedItems.compactMap { $0.toSubmitItem() }
         guard !details.isEmpty else {
             showToast("套餐内容配置异常")
             return
@@ -489,9 +498,9 @@ final class ServicePackageDetailViewController: BaseViewController {
         Task { [weak self] in
             guard let self else { return }
             do {
-                try await self.viewModel.purchaseNow(selectedDetails: details)
+                let orderId = try await self.viewModel.purchaseNow(selectedDetails: details)
                 await MainActor.run {
-                    Router.shared.push("/orders/confirm", params: ["id": packageId])
+                    Router.shared.push("/orders/confirm", params: ["orderId": String(orderId)])
                 }
             } catch {
                 await MainActor.run {
@@ -501,27 +510,34 @@ final class ServicePackageDetailViewController: BaseViewController {
         }
     }
 
-    /// 按当前勾选组装提交明细（必选全部 / 单选一项 / 可选已勾选）
-    private func buildSelectedSubmitDetails() -> [PackageHospitalDetailSubmitItem] {
+    /// 按当前勾选组装展示/提交用明细（父选中则含子项）
+    private func buildSelectedComboItems() -> [ServicePackageComboItem] {
         guard let tier = activeTier else { return [] }
         var items: [ServicePackageComboItem] = []
         for group in tier.groups {
-            switch group.selectMode {
-            case .required:
-                items.append(contentsOf: group.items)
-            case .radio:
-                let index = radioPicks[group.name] ?? 0
-                if group.items.indices.contains(index) {
-                    items.append(group.items[index])
-                }
-            case .checkbox:
-                let picked = checkPicks[group.name] ?? []
-                for index in picked where group.items.indices.contains(index) {
-                    items.append(group.items[index])
-                }
+            for index in selectedSubtreeIndices(in: group) {
+                items.append(group.items[index])
             }
         }
-        return items.compactMap { $0.toSubmitItem() }
+        return items
+    }
+
+    private func saveOrderDraft(package: ServicePackageDetail, selectedItems: [ServicePackageComboItem]) {
+        let institution = AppContainer.shared.institutionSelectionStore.selected
+        let draft = PackageOrderDraft.fromPackageDetail(
+            package: package,
+            selectedItems: selectedItems,
+            hospitalId: institution?.id ?? AppContainer.shared.institutionSelectionStore.selectedHospitalId,
+            hospitalName: institution?.name,
+            hospitalAddress: institution?.fullAddress,
+            categoryServiceId: package.categoryServiceId
+        )
+        PackageOrderDraftStore.shared.save(draft)
+    }
+
+    /// 按当前勾选组装提交明细（必选全部 / 单选一项 / 可选已勾选）
+    private func buildSelectedSubmitDetails() -> [PackageHospitalDetailSubmitItem] {
+        buildSelectedComboItems().compactMap { $0.toSubmitItem() }
     }
 
     private func showToast(_ message: String, completion: (() -> Void)? = nil) {

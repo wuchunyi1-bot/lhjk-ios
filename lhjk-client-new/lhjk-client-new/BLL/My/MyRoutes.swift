@@ -40,7 +40,11 @@ enum MyRoutes {
 
         // 新增子页面（占位）
         r.register(path: "/me/change-phone")     { _ in ChangePhoneViewController() }
-        r.register(path: "/me/address")          { _ in AddressListViewController() }
+        r.register(path: "/me/address")          { params in
+            let selectMode = (params["selectMode"] as? Bool) ?? false
+            let onSelect = params["onSelect"] as? (MAddress) -> Void
+            return AddressListViewController(selectMode: selectMode, onSelect: onSelect)
+        }
         r.register(path: "/me/address/edit")     { params in
             let address = params["address"] as? MAddress
             let count = params["existingAddressCount"] as? Int ?? 0
@@ -53,8 +57,20 @@ enum MyRoutes {
         }
         r.register(path: "/orders/detail")  { params in PlaceholderViewController(title: "订单详情: \(params["id"] as? String ?? "")") }
         r.register(path: "/orders/confirm") { params in
-            let id = params["id"] as? String ?? ""
-            return PlaceholderViewController(title: "确认订单: \(id)")
+            let orderIdRaw = (params["orderId"] as? String)
+                ?? (params["orderId"] as? NSNumber)?.stringValue
+                ?? ""
+            guard let orderId = Int64(orderIdRaw.trimmingCharacters(in: .whitespacesAndNewlines)),
+                  orderId > 0 else {
+                return PlaceholderViewController(title: "订单信息缺失")
+            }
+            let serial: Int? = {
+                if let s = params["serialNumber"] as? String { return Int(s) }
+                if let n = params["serialNumber"] as? NSNumber { return n.intValue }
+                if let i = params["serialNumber"] as? Int { return i }
+                return nil
+            }()
+            return OrderConfirmViewController(orderId: orderId, serialNumber: serial)
         }
     }
 }

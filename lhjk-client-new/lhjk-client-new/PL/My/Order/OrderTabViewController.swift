@@ -11,8 +11,11 @@ final class OrderTabViewController: BaseViewController {
 
     // MARK: - Config
 
-    /// Tab 对应的 API 状态筛选（nil=全部）
+    /// 单状态筛选（nil 且无 statusList = 全部）
     let statusFilter: Int?
+    /// 多状态筛选（如退款/售后 `6,9`）
+    let statusListFilter: String?
+    let emptyText: String
 
     // MARK: - State
 
@@ -30,8 +33,16 @@ final class OrderTabViewController: BaseViewController {
         tv.register(OrderCardCell.self, forCellReuseIdentifier: OrderCardCell.reuseIdentifier)
         tv.dataSource = self
         tv.delegate = self
-        tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
+        tv.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 16, right: 0)
         return tv
+    }()
+
+    private lazy var emptyLabel: UILabel = {
+        let label = UILabel()
+        label.font = .fdCaption
+        label.textColor = .fdMuted
+        label.textAlignment = .center
+        return label
     }()
 
     private lazy var emptyView: UIView = {
@@ -45,15 +56,11 @@ final class OrderTabViewController: BaseViewController {
             make.centerY.equalToSuperview().offset(-20)
             make.size.equalTo(48)
         }
-        let label = UILabel()
-        label.text = "暂无订单"
-        label.font = .fdCaption
-        label.textColor = .fdMuted
-        label.textAlignment = .center
-        v.addSubview(label)
-        label.snp.makeConstraints { make in
+        v.addSubview(emptyLabel)
+        emptyLabel.snp.makeConstraints { make in
             make.top.equalTo(icon.snp.bottom).offset(12)
             make.centerX.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(24)
         }
         return v
     }()
@@ -67,8 +74,10 @@ final class OrderTabViewController: BaseViewController {
 
     // MARK: - Init
 
-    init(status: Int? = nil) {
+    init(status: Int? = nil, statusList: String? = nil, emptyText: String = "暂无订单") {
         self.statusFilter = status
+        self.statusListFilter = statusList
+        self.emptyText = emptyText
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -78,6 +87,7 @@ final class OrderTabViewController: BaseViewController {
 
     override func setupUI() {
         view.backgroundColor = .fdBg
+        emptyLabel.text = emptyText
 
         view.addSubview(tableView)
         tableView.snp.makeConstraints { make in
@@ -98,7 +108,6 @@ final class OrderTabViewController: BaseViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // 仅首次加载
         if !hasLoaded {
             loadOrders()
         }
@@ -106,7 +115,6 @@ final class OrderTabViewController: BaseViewController {
 
     // MARK: - Public
 
-    /// 强制刷新（如订单状态变更后调用）
     func refresh() {
         hasLoaded = false
         loadOrders()
@@ -125,7 +133,8 @@ final class OrderTabViewController: BaseViewController {
         Task {
             do {
                 let data = try await OrderService.shared.getOrderList(
-                    status: statusFilter
+                    status: statusListFilter == nil ? statusFilter : nil,
+                    statusList: statusListFilter
                 )
                 await MainActor.run {
                     self.orders = data.records ?? []
@@ -156,7 +165,22 @@ final class OrderTabViewController: BaseViewController {
         }
     }
 
-    // MARK: - Toast
+    private func handleAction(_ action: OrderListCardAction, order: MOrder) {
+        switch action {
+        case .pay:
+            pushConfirm(order: order)
+        default:
+            showToast("功能即将开放")
+        }
+    }
+
+    private func pushConfirm(order: MOrder) {
+        guard let id = order.id, id > 0 else {
+            showToast("订单信息缺失")
+            return
+        }
+        Router.shared.push("/orders/confirm", params: ["orderId": String(id)])
+    }
 
     private func showToast(_ message: String) {
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
@@ -172,14 +196,21 @@ final class OrderTabViewController: BaseViewController {
 extension OrderTabViewController: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return orders.count
+        orders.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: OrderCardCell.reuseIdentifier, for: indexPath) as? OrderCardCell else {
+        guard let cell = tableView.dequeueReusableCell(
+            withIdentifier: OrderCardCell.reuseIdentifier,
+            for: indexPath
+        ) as? OrderCardCell else {
             return UITableViewCell()
         }
-        cell.configure(order: orders[indexPath.row])
+        let order = orders[indexPath.row]
+        cell.configure(order: order)
+        cell.onAction = { [weak self] action in
+            self?.handleAction(action, order: order)
+        }
         return cell
     }
 }
@@ -189,18 +220,22 @@ extension OrderTabViewController: UITableViewDataSource {
 extension OrderTabViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return UITableView.automaticDimension
+        UITableView.automaticDimension
+    }
+
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        160
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let order = orders[indexPath.row]
+        if order.orderStatus == .pendingPayment {
+            pushConfirm(order: order)
+            return
+        }
         if let id = order.id {
             Router.shared.push("/orders/detail", params: ["id": String(id)])
         }
-    }
-
-    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 130
     }
 }

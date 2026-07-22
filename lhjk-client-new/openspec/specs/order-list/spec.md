@@ -22,34 +22,32 @@
 
 ### Order Status
 
-| 值 | 说明 | UI Tab 映射 |
+| 值 | 说明 | UI 徽章文案 |
 |----|------|-------------|
-| 1 | 待付款 | 待评价（占位） |
-| 2 | 待发货 | 待使用 |
-| 3 | 待收货 | 待使用 |
+| 1 | 待支付 | 待支付 |
+| 2 | 待发货 | 待发货 |
+| 3 | 待收货 | 待收货 |
 | 4 | 使用中 | 使用中 |
 | 5 | 已完成 | 已完成 |
-| 6 | 退款/售后 | — |
-| 7 | 已逾期 | — |
-| 8 | 已取消 | — |
-| 9 | 退款审核中 | — |
+| 6 | 退款/售后 | 退款/售后 |
+| 7 | 已逾期 | 已逾期 |
+| 8 | 已取消 | 已取消（仅「全部」可见） |
+| 9 | 退款审核中 | 退款审核中（并入「退款/售后」Tab） |
 
-### UI Tab → API 筛选
+### UI Tab → API 筛选（对齐 funde 8 Tab）
 
 | Tab | API 参数 |
 |-----|---------|
 | 全部 | 不传 status |
-| 待付款 | `status=1` |
+| 待支付 | `status=1` |
 | 待发货 | `status=2` |
 | 待收货 | `status=3` |
 | 使用中 | `status=4` |
-| 已完成 | `status=5` |
-| 退款/售后 | `status=6` |
 | 已逾期 | `status=7` |
-| 已取消 | `status=8` |
-| 退款审核中 | `status=9` |
+| 退款/售后 | `statusList=6,9` |
+| 已完成 | `status=5` |
 
-Tab 使用 UICollectionView 横向滚动实现（10 个 Tab 超出 SegmentedControl 承载能力）。
+Tab 使用 UICollectionView 横向滚动；**恰好 8 个**，顺序同表。
 
 ### Response Data Model: AppOrderListBO
 
@@ -111,7 +109,7 @@ Tab 使用 UICollectionView 横向滚动实现（10 个 Tab 超出 SegmentedCont
 
 #### Scenario: 当前 Tab 无订单
 - **WHEN** 当前 Tab 下无订单数据
-- **THEN** 展示空状态图标和"暂无订单"文案
+- **THEN** 展示空状态图标与该 Tab 对应文案（退款/售后「暂无退款/售后记录」等；详见 `adapt-fundee-order-list`）
 
 ## UI Architecture
 
@@ -119,12 +117,12 @@ Tab 使用 UICollectionView 横向滚动实现（10 个 Tab 超出 SegmentedCont
 
 ```
 OrderListViewController (容器)
-├── UISegmentedControl (顶部 Tab)
-├── OrderTabViewController (子VC × 5，每个 Tab 一个)
-│   ├── UITableView
+├── UICollectionView (横向 8 Tab)
+├── OrderTabViewController (子VC × 8)
+│   ├── UITableView + OrderCardCell（机构/封面/卖点/金额/操作）
 │   ├── emptyView
 │   └── loadingIndicator
-└── containerView (子VC 切换的容器)
+└── containerView
 ```
 
 ### 数据缓存策略
@@ -140,11 +138,15 @@ BLL/Service/
 └── OrderService.swift            # 订单服务（API 调用）
 
 PL/My/Order/
-├── OrderListViewController.swift # 容器 VC（SegmentedControl + 子VC 管理）
+├── OrderListViewController.swift # 容器 VC（8 Tab + 子VC 管理）
 ├── OrderTabViewController.swift  # 子 VC（单个 Tab 的 TableView + 数据加载）
 └── Cells/
-    └── OrderCardCell.swift       # 订单卡片 Cell
+    ├── OrderTabCell.swift
+    └── OrderCardCell.swift       # 对齐 funde OrderListCard
 
 openspec/specs/order-list/
 └── spec.md                       # 本文档
+
+openspec/changes/adapt-fundee-order-list/
+└── specs/order-list/spec.md      # funde 对齐 delta
 ```

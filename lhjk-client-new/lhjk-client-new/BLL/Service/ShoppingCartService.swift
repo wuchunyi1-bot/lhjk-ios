@@ -17,18 +17,21 @@ final class ShoppingCartService {
     }
 
     /// 添加购物车（flag=2）或立即购买（flag=1）
+    /// - Returns: 成功时 `data` 为订单 id（立即购买必用）；加购也可能返回 id，可忽略
     @discardableResult
-    func saveShoppingCartOrPurchase(_ request: SaveShoppingCartRequest) async throws -> EmptyResponse? {
-        let response: APIResponse<EmptyResponse> = try await APIManager.shared.postAsync(
+    func saveShoppingCartOrPurchase(_ request: SaveShoppingCartRequest) async throws -> Int64? {
+        let response: APIResponse<APIDataID> = try await APIManager.shared.postAsync(
             path: "/v1/shoppingCart/saveShoppingCartOrPurchase",
             parameters: request.asDict(),
-            responseType: APIResponse<EmptyResponse>.self
+            responseType: APIResponse<APIDataID>.self
         )
 
         guard response.isSuccess else {
             throw ShoppingCartServiceError.requestFailed(response.msg ?? "操作失败")
         }
-        return response.data
+        let orderId = response.data?.value
+        print("[ShoppingCart] saveShoppingCartOrPurchase ✓ flag=\(request.flag) orderId=\(orderId?.description ?? "nil")")
+        return orderId
     }
 
     /// 查询购物车列表（不传 hospitalId，展示当前用户全部医疗机构下的套餐）
@@ -82,6 +85,7 @@ enum ShoppingCartServiceError: LocalizedError {
     case invalidCategoryServiceId
     case emptyDetails
     case missingSerialNumber
+    case missingOrderId
     case requestFailed(String)
 
     var errorDescription: String? {
@@ -91,6 +95,7 @@ enum ShoppingCartServiceError: LocalizedError {
         case .invalidCategoryServiceId: return "套餐类别缺失"
         case .emptyDetails: return "套餐内容配置异常"
         case .missingSerialNumber: return "无法删除该商品"
+        case .missingOrderId: return "未获取到订单号，请重试"
         case .requestFailed(let msg): return msg.isEmpty ? "操作失败" : msg
         }
     }

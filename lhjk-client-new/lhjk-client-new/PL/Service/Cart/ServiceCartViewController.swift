@@ -1,8 +1,9 @@
 import UIKit
 import SnapKit
 import Combine
+import Kingfisher
 
-/// 购物车页 — 对齐 `CartView.vue`
+/// 购物车页 — 对齐 funde `CartView.vue`：单卡结算，无底栏合计
 final class ServiceCartViewController: BaseViewController {
 
     private let viewModel: ServiceCartViewModel
@@ -10,10 +11,7 @@ final class ServiceCartViewController: BaseViewController {
 
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let emptyView = UIView()
-    private let bottomBar = UIView()
-    private let selectedLabel = UILabel()
-    private let totalLabel = UILabel()
-    private let checkoutButton = UIButton(type: .system)
+    private let loadingIndicator = UIActivityIndicatorView(style: .medium)
 
     init(viewModel: ServiceCartViewModel = ServiceCartViewModel()) {
         self.viewModel = viewModel
@@ -32,16 +30,16 @@ final class ServiceCartViewController: BaseViewController {
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(CartItemCell.self, forCellReuseIdentifier: CartItemCell.reuseID)
-        tableView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 12, right: 0)
+        tableView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 24, right: 0)
         view.addSubview(tableView)
+        tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         buildEmpty()
-        buildBottomBar()
 
-        tableView.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(bottomBar.snp.top)
-        }
+        loadingIndicator.color = .fdPrimary
+        loadingIndicator.hidesWhenStopped = true
+        view.addSubview(loadingIndicator)
+        loadingIndicator.snp.makeConstraints { $0.center.equalToSuperview() }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -51,26 +49,19 @@ final class ServiceCartViewController: BaseViewController {
 
     override func bindViewModel() {
         viewModel.$lines
+            .combineLatest(viewModel.$isLoading)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] lines in
+            .sink { [weak self] lines, loading in
                 guard let self else { return }
+                if loading {
+                    self.loadingIndicator.startAnimating()
+                } else {
+                    self.loadingIndicator.stopAnimating()
+                }
                 self.tableView.reloadData()
-                let showEmpty = lines.isEmpty && !self.viewModel.isLoading
+                let showEmpty = lines.isEmpty && !loading
                 self.emptyView.isHidden = !showEmpty
-                self.tableView.isHidden = showEmpty
-                self.bottomBar.isHidden = showEmpty
-            }
-            .store(in: &cancellables)
-
-        viewModel.$selectedCount
-            .combineLatest(viewModel.$selectedTotalText)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] count, total in
-                guard let self else { return }
-                self.selectedLabel.text = "已选 \(count) 项"
-                self.totalLabel.text = total
-                self.checkoutButton.isEnabled = count > 0
-                self.checkoutButton.alpha = count > 0 ? 1 : 0.45
+                self.tableView.isHidden = showEmpty || loading
             }
             .store(in: &cancellables)
 
@@ -82,14 +73,16 @@ final class ServiceCartViewController: BaseViewController {
                 self?.showToast(message)
             }
             .store(in: &cancellables)
-    }
 
-    private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            alert.dismiss(animated: true)
-        }
+        viewModel.$toastMessage
+            .receive(on: DispatchQueue.main)
+            .compactMap { $0 }
+            .sink { [weak self] message in
+                self?.showToast(message) {
+                    self?.viewModel.consumeToast()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     private func buildEmpty() {
@@ -97,16 +90,27 @@ final class ServiceCartViewController: BaseViewController {
         view.addSubview(emptyView)
         emptyView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
+        let card = UIView()
+        card.backgroundColor = .fdSurface
+        card.layer.cornerRadius = 16
+        emptyView.addSubview(card)
+        card.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.leading.trailing.equalToSuperview().inset(24)
+        }
+
         let icon = UIImageView(image: UIImage(systemName: "cart"))
-        icon.tintColor = .fdSubtext
+        icon.tintColor = .fdPrimary
         icon.contentMode = .scaleAspectFit
+
         let tip = UILabel()
-        tip.text = "购物车空空如也"
-        tip.font = .fdBody
-        tip.textColor = .fdSubtext
+        tip.text = "购物车还是空的"
+        tip.font = .fdBodySemibold
+        tip.textColor = .fdText
         tip.textAlignment = .center
+
         let go = UIButton(type: .system)
-        go.setTitle("去逛逛", for: .normal)
+        go.setTitle("去看看服务", for: .normal)
         go.setTitleColor(.white, for: .normal)
         go.titleLabel?.font = .fdBodySemibold
         go.backgroundColor = .fdPrimary
@@ -119,68 +123,37 @@ final class ServiceCartViewController: BaseViewController {
         stack.axis = .vertical
         stack.alignment = .center
         stack.spacing = 14
-        icon.snp.makeConstraints { $0.size.equalTo(48) }
-        emptyView.addSubview(stack)
-        stack.snp.makeConstraints { $0.center.equalToSuperview() }
-    }
-
-    private func buildBottomBar() {
-        bottomBar.backgroundColor = UIColor.fdSurface.withAlphaComponent(0.96)
-        let border = UIView()
-        border.backgroundColor = .fdBorder
-        bottomBar.addSubview(border)
-        border.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-            $0.height.equalTo(1)
-        }
-
-        selectedLabel.font = .fdCaption
-        selectedLabel.textColor = .fdSubtext
-        totalLabel.font = .fdMonoFont(ofSize: 22, weight: .heavy)
-        totalLabel.textColor = .fdPrimary
-        let left = UIStackView(arrangedSubviews: [selectedLabel, totalLabel])
-        left.axis = .vertical
-        left.spacing = 2
-
-        checkoutButton.setTitle("结算", for: .normal)
-        checkoutButton.setTitleColor(.white, for: .normal)
-        checkoutButton.titleLabel?.font = .fdBodySemibold
-        checkoutButton.backgroundColor = .fdPrimary
-        checkoutButton.layer.cornerRadius = 14
-        checkoutButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 28, bottom: 0, right: 28)
-        checkoutButton.addTarget(self, action: #selector(tapCheckoutBar), for: .touchUpInside)
-        checkoutButton.snp.makeConstraints { $0.height.equalTo(44); $0.width.greaterThanOrEqualTo(112) }
-
-        bottomBar.addSubview(left)
-        bottomBar.addSubview(checkoutButton)
-        view.addSubview(bottomBar)
-
-        bottomBar.snp.makeConstraints { $0.leading.trailing.bottom.equalToSuperview() }
-        left.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(16)
-            $0.centerY.equalTo(checkoutButton)
-        }
-        checkoutButton.snp.makeConstraints {
-            $0.trailing.equalToSuperview().offset(-16)
-            $0.top.equalToSuperview().offset(12)
-            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-14)
-        }
+        icon.snp.makeConstraints { $0.size.equalTo(40) }
+        card.addSubview(stack)
+        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(32) }
     }
 
     @objc private func tapBrowse() {
-        Router.shared.push("/mall")
+        Router.shared.push("/services")
     }
 
-    @objc private func tapCheckoutBar() {
-        guard let id = viewModel.firstSelectedTargetId else { return }
-        Router.shared.push("/orders/confirm", params: ["id": id])
+    private func checkout(line: CartLineDisplay) {
+        guard line.canCheckout else {
+            showToast("该套餐已失效")
+            return
+        }
+        let orderId = line.orderId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard let oid = Int64(orderId), oid > 0 else {
+            showToast("订单信息缺失，请重新加购")
+            return
+        }
+        var params: [String: Any] = ["orderId": String(oid)]
+        if let serial = line.serialNumber {
+            params["serialNumber"] = String(serial)
+        }
+        Router.shared.push("/orders/confirm", params: params)
     }
 
     private func confirmRemove(line: CartLineDisplay) {
         guard !viewModel.isDeleting else { return }
         let alert = UIAlertController(
             title: "确认删除",
-            message: "删除后不可恢复，确定从购物车移除「\(line.name)」？",
+            message: "确认删除该套餐「\(line.name)」？",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "取消", style: .cancel))
@@ -188,6 +161,16 @@ final class ServiceCartViewController: BaseViewController {
             self?.viewModel.remove(id: line.id)
         })
         present(alert, animated: true)
+    }
+
+    private func showToast(_ message: String, completion: (() -> Void)? = nil) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        present(alert, animated: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            alert.dismiss(animated: true) {
+                completion?()
+            }
+        }
     }
 }
 
@@ -200,16 +183,29 @@ extension ServiceCartViewController: UITableViewDataSource, UITableViewDelegate 
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: CartItemCell.reuseID, for: indexPath) as! CartItemCell
+        let cell = tableView.dequeueReusableCell(
+            withIdentifier: CartItemCell.reuseID,
+            for: indexPath
+        ) as! CartItemCell
         let line = viewModel.lines[indexPath.row]
         cell.configure(line)
-        cell.onToggle = { [weak self] in self?.viewModel.toggle(id: line.id) }
-        cell.onCheckout = { [weak self] in
-            Router.shared.push("/orders/confirm", params: ["id": line.targetId])
-            _ = self
-        }
+        cell.onCheckout = { [weak self] in self?.checkout(line: line) }
         cell.onDelete = { [weak self] in self?.confirmRemove(line: line) }
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        UITableView.automaticDimension
+    }
+
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        180
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let line = viewModel.lines[indexPath.row]
+        checkout(line: line)
     }
 
     func tableView(
@@ -222,7 +218,7 @@ extension ServiceCartViewController: UITableViewDataSource, UITableViewDelegate 
                 completion(false)
                 return
             }
-            self.viewModel.remove(id: line.id)
+            self.confirmRemove(line: line)
             completion(true)
         }
         delete.backgroundColor = .fdDanger
@@ -230,23 +226,25 @@ extension ServiceCartViewController: UITableViewDataSource, UITableViewDelegate 
     }
 }
 
-// MARK: - Cell
+// MARK: - Cell（对齐 CartView 卡片）
 
 private final class CartItemCell: UITableViewCell {
     static let reuseID = "CartItemCell"
 
-    var onToggle: (() -> Void)?
     var onCheckout: (() -> Void)?
     var onDelete: (() -> Void)?
 
     private let card = UIView()
-    private let check = UIButton(type: .system)
-    private let titleLabel = UILabel()
-    private let subtitleLabel = UILabel()
+    private let institutionIcon = UIImageView(image: UIImage(systemName: "building.2"))
+    private let institutionLabel = UILabel()
+    private let statusBadge = UILabel()
+    private let coverView = UIView()
+    private let coverImageView = UIImageView()
+    private let coverPlaceholder = UILabel()
+    private let nameLabel = UILabel()
+    private let introLabel = UILabel()
     private let priceLabel = UILabel()
     private let deleteButton = UIButton(type: .system)
-    private let metaStack = UIStackView()
-    private let cycleLabel = UILabel()
     private let settleButton = UIButton(type: .system)
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -256,7 +254,7 @@ private final class CartItemCell: UITableViewCell {
         contentView.backgroundColor = .clear
 
         card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 14
+        card.layer.cornerRadius = 16
         card.layer.shadowColor = UIColor.black.cgColor
         card.layer.shadowOpacity = 0.04
         card.layer.shadowRadius = 8
@@ -266,117 +264,173 @@ private final class CartItemCell: UITableViewCell {
             $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 16, bottom: 6, right: 16))
         }
 
-        check.layer.cornerRadius = 11
-        check.layer.borderWidth = 1
-        check.tintColor = .white
-        check.addTarget(self, action: #selector(tapCheck), for: .touchUpInside)
-        check.snp.makeConstraints { $0.size.equalTo(22) }
+        institutionIcon.tintColor = .fdMuted
+        institutionIcon.contentMode = .scaleAspectFit
+        institutionIcon.snp.makeConstraints { $0.size.equalTo(16) }
 
-        titleLabel.font = .fdFont(ofSize: 15, weight: .bold)
-        titleLabel.textColor = .fdText
-        titleLabel.numberOfLines = 2
-        subtitleLabel.font = .fdCaption
-        subtitleLabel.textColor = .fdSubtext
-        subtitleLabel.numberOfLines = 2
+        institutionLabel.font = .fdCaptionSemibold
+        institutionLabel.textColor = .fdText
+        institutionLabel.lineBreakMode = .byTruncatingTail
+
+        statusBadge.font = .fdMicroSemibold
+        statusBadge.textColor = .fdMuted
+        statusBadge.backgroundColor = .fdSurface2
+        statusBadge.layer.cornerRadius = 8
+        statusBadge.clipsToBounds = true
+        statusBadge.textAlignment = .center
+        statusBadge.isHidden = true
+        statusBadge.setContentHuggingPriority(.required, for: .horizontal)
+
+        let institutionLeft = UIStackView(arrangedSubviews: [institutionIcon, institutionLabel])
+        institutionLeft.axis = .horizontal
+        institutionLeft.spacing = 6
+        institutionLeft.alignment = .center
+
+        let institutionRow = UIStackView(arrangedSubviews: [institutionLeft, statusBadge])
+        institutionRow.axis = .horizontal
+        institutionRow.spacing = 8
+        institutionRow.alignment = .center
+
+        coverView.backgroundColor = .fdSurface2
+        coverView.layer.cornerRadius = 10
+        coverView.clipsToBounds = true
+        coverView.snp.makeConstraints { $0.size.equalTo(72) }
+
+        coverImageView.contentMode = .scaleAspectFill
+        coverImageView.clipsToBounds = true
+        coverView.addSubview(coverImageView)
+        coverImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        coverPlaceholder.text = "套餐"
+        coverPlaceholder.font = .fdCaptionSemibold
+        coverPlaceholder.textColor = .fdMuted
+        coverPlaceholder.textAlignment = .center
+        coverView.addSubview(coverPlaceholder)
+        coverPlaceholder.snp.makeConstraints { $0.center.equalToSuperview() }
+
+        nameLabel.font = .fdBodySemibold
+        nameLabel.textColor = .fdText
+        nameLabel.numberOfLines = 2
+
+        introLabel.font = .fdCaption
+        introLabel.textColor = .fdSubtext
+        introLabel.numberOfLines = 1
+        introLabel.lineBreakMode = .byTruncatingTail
+
         priceLabel.font = .fdMonoFont(ofSize: 16, weight: .heavy)
-
-        deleteButton.setImage(UIImage(systemName: "trash"), for: .normal)
-        deleteButton.tintColor = .fdMuted
-        deleteButton.addTarget(self, action: #selector(tapDelete), for: .touchUpInside)
-        deleteButton.snp.makeConstraints { $0.size.equalTo(32) }
-
-        let titleCol = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
-        titleCol.axis = .vertical
-        titleCol.spacing = 4
-
-        let head = UIStackView(arrangedSubviews: [check, titleCol, deleteButton, priceLabel])
-        head.axis = .horizontal
-        head.alignment = .top
-        head.spacing = 10
+        priceLabel.textColor = .fdPrimary
+        priceLabel.textAlignment = .right
         priceLabel.setContentHuggingPriority(.required, for: .horizontal)
+        priceLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        metaStack.axis = .vertical
-        metaStack.spacing = 10
+        let textCol = UIStackView(arrangedSubviews: [nameLabel, introLabel])
+        textCol.axis = .vertical
+        textCol.spacing = 4
 
-        cycleLabel.font = .fdCaption
-        cycleLabel.textColor = .fdSubtext
+        let mainRow = UIStackView(arrangedSubviews: [textCol, priceLabel])
+        mainRow.axis = .horizontal
+        mainRow.alignment = .top
+        mainRow.spacing = 8
+
+        let bodyRow = UIStackView(arrangedSubviews: [coverView, mainRow])
+        bodyRow.axis = .horizontal
+        bodyRow.alignment = .top
+        bodyRow.spacing = 12
+
+        deleteButton.setTitle("删除", for: .normal)
+        deleteButton.setTitleColor(.fdText2, for: .normal)
+        deleteButton.titleLabel?.font = .fdCaptionSemibold
+        deleteButton.backgroundColor = .fdSurface
+        deleteButton.layer.cornerRadius = 16
+        deleteButton.layer.borderWidth = 1
+        deleteButton.layer.borderColor = UIColor.fdBorder.cgColor
+        deleteButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
+        deleteButton.addTarget(self, action: #selector(tapDelete), for: .touchUpInside)
+        deleteButton.snp.makeConstraints { $0.height.equalTo(32) }
 
         settleButton.setTitle("去结算", for: .normal)
         settleButton.setTitleColor(.white, for: .normal)
         settleButton.titleLabel?.font = .fdCaptionSemibold
         settleButton.backgroundColor = .fdPrimary
-        settleButton.layer.cornerRadius = 14
+        settleButton.layer.cornerRadius = 16
         settleButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
         settleButton.addTarget(self, action: #selector(tapSettle), for: .touchUpInside)
-        settleButton.snp.makeConstraints { $0.height.equalTo(30) }
+        settleButton.snp.makeConstraints { $0.height.equalTo(32) }
 
-        let actions = UIStackView(arrangedSubviews: [cycleLabel, UIView(), settleButton])
+        let spacer = UIView()
+        let actions = UIStackView(arrangedSubviews: [spacer, deleteButton, settleButton])
         actions.axis = .horizontal
+        actions.spacing = 8
         actions.alignment = .center
 
-        let sep = UIView()
-        sep.backgroundColor = .fdBorder
-        sep.snp.makeConstraints { $0.height.equalTo(1) }
+        let root = UIStackView(arrangedSubviews: [institutionRow, bodyRow, actions])
+        root.axis = .vertical
+        root.spacing = 12
+        card.addSubview(root)
+        root.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
 
-        let body = UIStackView(arrangedSubviews: [head, sep, metaStack, actions])
-        body.axis = .vertical
-        body.spacing = 14
-        card.addSubview(body)
-        body.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
+        statusBadge.snp.makeConstraints {
+            $0.height.equalTo(20)
+            $0.width.greaterThanOrEqualTo(48)
+        }
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
     func configure(_ line: CartLineDisplay) {
-        titleLabel.text = line.name
-        subtitleLabel.text = line.subtitle
+        institutionLabel.text = line.displayInstitutionName
+        nameLabel.text = line.name
+        introLabel.text = line.subtitle
+        introLabel.isHidden = line.subtitle.isEmpty
         priceLabel.text = line.linePriceText
-        priceLabel.textColor = line.accent
-        cycleLabel.text = line.serviceCycle
-        card.alpha = line.selected ? 1 : 0.62
 
-        if line.selected {
-            check.backgroundColor = .fdPrimary
-            check.layer.borderColor = UIColor.fdPrimary.cgColor
-            check.setImage(UIImage(systemName: "checkmark"), for: .normal)
+        coverImageView.kf.cancelDownloadTask()
+        coverImageView.image = nil
+        if let urlString = line.imageUrl, let url = URL(string: urlString) {
+            coverPlaceholder.isHidden = true
+            coverImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
         } else {
-            check.backgroundColor = .clear
-            check.layer.borderColor = UIColor.fdBorder.cgColor
-            check.setImage(nil, for: .normal)
+            coverPlaceholder.isHidden = false
         }
 
-        metaStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        let row1 = metaRow(left: ("服务对象", line.serviceObject), right: (line.deliveryLabel, line.deliveryMethod))
-        let row2 = metaRow(left: ("数量", "\(line.quantity)"), right: ("优惠", line.couponText))
-        metaStack.addArrangedSubview(row1)
-        metaStack.addArrangedSubview(row2)
+        applyInvalidStyle(line.isInvalid, badge: line.status?.badgeText)
+        settleButton.isHidden = line.isInvalid
     }
 
-    private func metaRow(left: (String, String), right: (String, String)) -> UIView {
-        let stack = UIStackView(arrangedSubviews: [metaCell(left.0, left.1), metaCell(right.0, right.1)])
-        stack.axis = .horizontal
-        stack.distribution = .fillEqually
-        stack.spacing = 12
-        return stack
+    private func applyInvalidStyle(_ invalid: Bool, badge: String?) {
+        if invalid {
+            card.alpha = 0.62
+            card.backgroundColor = .fdSurface2
+            nameLabel.textColor = .fdMuted
+            introLabel.textColor = .fdMuted
+            priceLabel.textColor = .fdMuted
+            institutionLabel.textColor = .fdMuted
+            institutionIcon.tintColor = .fdMuted
+            statusBadge.isHidden = false
+            statusBadge.text = " \(badge ?? "已失效") "
+        } else {
+            card.alpha = 1
+            card.backgroundColor = .fdSurface
+            nameLabel.textColor = .fdText
+            introLabel.textColor = .fdSubtext
+            priceLabel.textColor = .fdPrimary
+            institutionLabel.textColor = .fdText
+            institutionIcon.tintColor = .fdMuted
+            statusBadge.isHidden = true
+            statusBadge.text = nil
+        }
     }
 
-    private func metaCell(_ label: String, _ value: String) -> UIView {
-        let l = UILabel()
-        l.text = label
-        l.font = .fdMicro
-        l.textColor = .fdMuted
-        let v = UILabel()
-        v.text = value
-        v.font = .fdCaption
-        v.textColor = .fdText
-        v.numberOfLines = 2
-        let s = UIStackView(arrangedSubviews: [l, v])
-        s.axis = .vertical
-        s.spacing = 4
-        return s
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        coverImageView.kf.cancelDownloadTask()
+        coverImageView.image = nil
+        onCheckout = nil
+        onDelete = nil
+        applyInvalidStyle(false, badge: nil)
+        settleButton.isHidden = false
     }
 
-    @objc private func tapCheck() { onToggle?() }
     @objc private func tapSettle() { onCheckout?() }
     @objc private func tapDelete() { onDelete?() }
 }

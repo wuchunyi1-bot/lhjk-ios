@@ -55,6 +55,21 @@ final class HospitalService {
             records: []
         )
     }
+
+    /// 根据医院 id 查询详情（自提地址）
+    /// - Parameter id: 医院 ID（int64）
+    func getById(id: Int64) async throws -> OHospital {
+        let response: APIResponse<OHospital> = try await APIManager.shared.getAsync(
+            path: "/v1/hospital/getById",
+            parameters: ["id": String(id)],
+            responseType: APIResponse<OHospital>.self
+        )
+
+        guard response.isSuccess, let data = response.data else {
+            throw HospitalServiceError.requestFailed(response.msg ?? "获取机构信息失败")
+        }
+        return data
+    }
 }
 
 enum HospitalServiceError: Error, LocalizedError {

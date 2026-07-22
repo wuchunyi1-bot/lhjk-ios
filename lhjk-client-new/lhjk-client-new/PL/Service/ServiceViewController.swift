@@ -49,8 +49,6 @@ final class ServiceViewController: BaseViewController {
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalTo(view.safeAreaLayoutGuide)
         }
-
-        hubHeader.onCartTap = { Router.shared.push("/services/cart") }
     }
 
     override func bindViewModel() {

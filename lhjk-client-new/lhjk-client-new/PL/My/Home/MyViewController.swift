@@ -166,16 +166,18 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         )
         healthBtn.addTarget(self, action: #selector(pushHealthProfile), for: .touchUpInside)
 
-        let membershipCard = MeMembershipCardView()
-        membershipCard.tag = 300
-        membershipCard.configure(with: viewModel)
-        membershipCard.onCardTap = { [weak self] in self?.openMembershipCard() }
-        membershipCard.onPrimaryTap = { [weak self] in self?.openMembershipAction() }
-        membershipCard.onUpgradeTap = { [weak self] in self?.openMembershipAction() }
-        membershipCard.onBenefitsTap = { Router.shared.push("/me/membership") }
+//        let membershipCard = MeMembershipCardView()
+//        membershipCard.tag = 300
+//        membershipCard.configure(with: viewModel)
+//        membershipCard.onCardTap = { [weak self] in self?.openMembershipCard() }
+//        membershipCard.onPrimaryTap = { [weak self] in self?.openMembershipAction() }
+//        membershipCard.onUpgradeTap = { [weak self] in self?.openMembershipAction() }
+//        membershipCard.onBenefitsTap = { Router.shared.push("/me/membership") }
 
-        [avatarView, nameLabel, settingsBtn, profileBtn, healthBtn, membershipCard].forEach(header.addSubview)
+//        [avatarView, nameLabel, settingsBtn, profileBtn, healthBtn, membershipCard].forEach(header.addSubview)
 
+        [avatarView, nameLabel, settingsBtn, profileBtn, healthBtn].forEach(header.addSubview)
+        
         avatarView.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(52)
             make.leading.equalToSuperview().offset(contentPadding + 2)
@@ -200,12 +202,13 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             make.centerY.equalTo(profileBtn)
             make.leading.equalTo(profileBtn.snp.trailing).offset(8)
             make.height.greaterThanOrEqualTo(28)
-        }
-        membershipCard.snp.makeConstraints { make in
-            make.top.equalTo(profileBtn.snp.bottom).offset(16)
-            make.leading.trailing.equalToSuperview().inset(contentPadding)
             make.bottom.equalToSuperview().offset(-8)
         }
+//        membershipCard.snp.makeConstraints { make in
+//            make.top.equalTo(profileBtn.snp.bottom).offset(16)
+//            make.leading.trailing.equalToSuperview().inset(contentPadding)
+//            make.bottom.equalToSuperview().offset(-8)
+//        }
 
         return header
     }

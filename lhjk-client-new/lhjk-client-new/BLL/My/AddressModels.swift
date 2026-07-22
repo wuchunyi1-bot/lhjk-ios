@@ -45,6 +45,40 @@ struct MAddress: Codable {
     /// 是否默认地址
     var isDefaultAddress: Bool { isDefault == 1 }
 
+    // MARK: - Memberwise init（从结算 appOrderDetailBO 等构造展示用地址）
+
+    init(
+        id: Int64? = nil,
+        userId: Int64? = nil,
+        name: String? = nil,
+        mobile: String? = nil,
+        isDefault: Int? = nil,
+        province: String? = nil,
+        city: String? = nil,
+        area: String? = nil,
+        address: String? = nil,
+        code: String? = nil,
+        createTime: String? = nil,
+        createId: Int64? = nil,
+        modifyTime: String? = nil,
+        modifyId: Int64? = nil
+    ) {
+        self.id = id
+        self.userId = userId
+        self.name = name
+        self.mobile = mobile
+        self.isDefault = isDefault
+        self.province = province
+        self.city = city
+        self.area = area
+        self.address = address
+        self.code = code
+        self.createTime = createTime
+        self.createId = createId
+        self.modifyTime = modifyTime
+        self.modifyId = modifyId
+    }
+
     // MARK: - 兼容 String/Int64 解码
 
     init(from decoder: Decoder) throws {

@@ -426,8 +426,17 @@ final class MallProductDetailViewController: BaseViewController {
     }
 
     @objc private func tapBuy() {
-        let id = product?.id ?? productId
-        Router.shared.push("/orders/confirm", params: ["id": id])
+        showToast("请从服务套餐下单")
+    }
+
+    // MARK: - Toast
+
+    private func showToast(_ message: String) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        present(alert, animated: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            alert.dismiss(animated: true)
+        }
     }
 }
 

@@ -37,6 +37,10 @@
 		A54CBD3F30049CB100D581AE /* CartModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD3D30049CB100D581AE /* CartModels.swift */; };
 		A54CBD4530049CD600D581AE /* ServiceCartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD4130049CD600D581AE /* ServiceCartViewModel.swift */; };
 		A54CBD4630049CD600D581AE /* ServiceCartViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD4330049CD600D581AE /* ServiceCartViewController.swift */; };
+		A56E24BC300DC19E001B3614 /* PackageOrderDraftStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56E24BB300DC19E001B3614 /* PackageOrderDraftStore.swift */; };
+		A56E24C2300DC1CD001B3614 /* OrderConfirmViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56E24BF300DC1CD001B3614 /* OrderConfirmViewController.swift */; };
+		A56E24C3300DC1CD001B3614 /* OrderConfirmComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56E24BD300DC1CD001B3614 /* OrderConfirmComponents.swift */; };
+		A56E24C4300DC1CD001B3614 /* OrderConfirmViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56E24C0300DC1CD001B3614 /* OrderConfirmViewModel.swift */; };
 		A576A2202FE8E22E004F6070 /* ECGSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21E2FE8E22E004F6070 /* ECGSimulator.swift */; };
 		A576A2212FE8E22E004F6070 /* ECGChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21C2FE8E22E004F6070 /* ECGChartView.swift */; };
 		A576A2222FE8E22E004F6070 /* ECGDataBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21D2FE8E22E004F6070 /* ECGDataBuffer.swift */; };
@@ -234,10 +238,12 @@
 		A5ACE2363000CBE000056C52 /* MallProductCategoryCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2343000CBE000056C52 /* MallProductCategoryCopy.swift */; };
 		A5ACE2373000CBE000056C52 /* MallProductDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2353000CBE000056C52 /* MallProductDetailViewController.swift */; };
 		A5ACE23A3000CC8A00056C52 /* ProfileFieldEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2383000CC8A00056C52 /* ProfileFieldEditorSheet.swift */; };
-		A5ACE2403000D5C200056C52 /* ServicePackageDetailCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE23D3000D5C200056C52 /* ServicePackageDetailCopy.swift */; };
 		A5ACE2413000D5C200056C52 /* ServicePackageDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE23E3000D5C200056C52 /* ServicePackageDetailViewController.swift */; };
 		A5ACE2433000F56200056C52 /* HospitalPackageDetailModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2423000F56200056C52 /* HospitalPackageDetailModels.swift */; };
 		A5ACE2463000F57B00056C52 /* ServicePackageDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2443000F57B00056C52 /* ServicePackageDetailViewModel.swift */; };
+		A5ADE05C300F572800CA598F /* OrderSettlementModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADE05B300F572800CA598F /* OrderSettlementModels.swift */; };
+		A5ADE05D300F572800CA598F /* OHospitalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADE05A300F572800CA598F /* OHospitalModels.swift */; };
+		A5ADE05F300F74D100CA598F /* OrderRemarkEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADE05E300F74D100CA598F /* OrderRemarkEditorSheet.swift */; };
 		A5B1FB223009E2F80039B16C /* HospitalService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB203009E2F80039B16C /* HospitalService.swift */; };
 		A5B1FB233009E2F80039B16C /* HospitalSearchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB1F3009E2F80039B16C /* HospitalSearchModels.swift */; };
 		A5B1FB243009E2F80039B16C /* InstitutionSelectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB213009E2F80039B16C /* InstitutionSelectionStore.swift */; };
@@ -304,6 +310,10 @@
 		A54CBD3D30049CB100D581AE /* CartModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CartModels.swift; path = BLL/Service/CartModels.swift; sourceTree = "<group>"; };
 		A54CBD4130049CD600D581AE /* ServiceCartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceCartViewModel.swift; sourceTree = "<group>"; };
 		A54CBD4330049CD600D581AE /* ServiceCartViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceCartViewController.swift; sourceTree = "<group>"; };
+		A56E24BB300DC19E001B3614 /* PackageOrderDraftStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PackageOrderDraftStore.swift; path = BLL/Service/PackageOrderDraftStore.swift; sourceTree = "<group>"; };
+		A56E24BD300DC1CD001B3614 /* OrderConfirmComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderConfirmComponents.swift; sourceTree = "<group>"; };
+		A56E24BF300DC1CD001B3614 /* OrderConfirmViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OrderConfirmViewController.swift; path = Confirm/OrderConfirmViewController.swift; sourceTree = "<group>"; };
+		A56E24C0300DC1CD001B3614 /* OrderConfirmViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderConfirmViewModel.swift; sourceTree = "<group>"; };
 		A576A21C2FE8E22E004F6070 /* ECGChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGChartView.swift; sourceTree = "<group>"; };
 		A576A21D2FE8E22E004F6070 /* ECGDataBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGDataBuffer.swift; sourceTree = "<group>"; };
 		A576A21E2FE8E22E004F6070 /* ECGSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGSimulator.swift; sourceTree = "<group>"; };
@@ -501,10 +511,12 @@
 		A5ACE2343000CBE000056C52 /* MallProductCategoryCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MallProductCategoryCopy.swift; sourceTree = "<group>"; };
 		A5ACE2353000CBE000056C52 /* MallProductDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MallProductDetailViewController.swift; sourceTree = "<group>"; };
 		A5ACE2383000CC8A00056C52 /* ProfileFieldEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileFieldEditorSheet.swift; sourceTree = "<group>"; };
-		A5ACE23D3000D5C200056C52 /* ServicePackageDetailCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicePackageDetailCopy.swift; sourceTree = "<group>"; };
 		A5ACE23E3000D5C200056C52 /* ServicePackageDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicePackageDetailViewController.swift; sourceTree = "<group>"; };
 		A5ACE2423000F56200056C52 /* HospitalPackageDetailModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HospitalPackageDetailModels.swift; path = BLL/Service/HospitalPackageDetailModels.swift; sourceTree = "<group>"; };
 		A5ACE2443000F57B00056C52 /* ServicePackageDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicePackageDetailViewModel.swift; sourceTree = "<group>"; };
+		A5ADE05A300F572800CA598F /* OHospitalModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OHospitalModels.swift; path = BLL/Service/OHospitalModels.swift; sourceTree = "<group>"; };
+		A5ADE05B300F572800CA598F /* OrderSettlementModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OrderSettlementModels.swift; path = BLL/Service/OrderSettlementModels.swift; sourceTree = "<group>"; };
+		A5ADE05E300F74D100CA598F /* OrderRemarkEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderRemarkEditorSheet.swift; sourceTree = "<group>"; };
 		A5B1FB1F3009E2F80039B16C /* HospitalSearchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HospitalSearchModels.swift; path = BLL/Service/HospitalSearchModels.swift; sourceTree = "<group>"; };
 		A5B1FB203009E2F80039B16C /* HospitalService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HospitalService.swift; path = BLL/Service/HospitalService.swift; sourceTree = "<group>"; };
 		A5B1FB213009E2F80039B16C /* InstitutionSelectionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = InstitutionSelectionStore.swift; path = BLL/Service/InstitutionSelectionStore.swift; sourceTree = "<group>"; };
@@ -661,6 +673,25 @@
 				A54CBD4330049CD600D581AE /* ServiceCartViewController.swift */,
 			);
 			path = Cart;
+			sourceTree = "<group>";
+		};
+		A56E24BE300DC1CD001B3614 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A5ADE05E300F74D100CA598F /* OrderRemarkEditorSheet.swift */,
+				A56E24BD300DC1CD001B3614 /* OrderConfirmComponents.swift */,
+			);
+			name = Components;
+			path = Confirm/Components;
+			sourceTree = "<group>";
+		};
+		A56E24C1300DC1CD001B3614 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A56E24C0300DC1CD001B3614 /* OrderConfirmViewModel.swift */,
+			);
+			name = ViewModels;
+			path = Confirm/ViewModels;
 			sourceTree = "<group>";
 		};
 		A576A21F2FE8E22E004F6070 /* ECG */ = {
@@ -986,6 +1017,9 @@
 		A590FC7A2FEA91170056EF52 /* Order */ = {
 			isa = PBXGroup;
 			children = (
+				A56E24BE300DC1CD001B3614 /* Components */,
+				A56E24BF300DC1CD001B3614 /* OrderConfirmViewController.swift */,
+				A56E24C1300DC1CD001B3614 /* ViewModels */,
 				A5A6F5442FFF7EBE0065C921 /* OrderTabViewController.swift */,
 				A590FC782FEA91170056EF52 /* Cells */,
 				A590FC792FEA91170056EF52 /* OrderListViewController.swift */,
@@ -1571,7 +1605,6 @@
 				A580F3F73004D8650014B443 /* Cells */,
 				A580F4003004D8650014B443 /* Components */,
 				A5ACE2453000F57B00056C52 /* ViewModels */,
-				A5ACE23D3000D5C200056C52 /* ServicePackageDetailCopy.swift */,
 				A5ACE23E3000D5C200056C52 /* ServicePackageDetailViewController.swift */,
 			);
 			path = ServicePackageDetail;
@@ -1676,6 +1709,9 @@
 		C4193BC7FCD37A9D67D93F74 /* Service */ = {
 			isa = PBXGroup;
 			children = (
+				A5ADE05A300F572800CA598F /* OHospitalModels.swift */,
+				A5ADE05B300F572800CA598F /* OrderSettlementModels.swift */,
+				A56E24BB300DC19E001B3614 /* PackageOrderDraftStore.swift */,
 				A5B1FB31300A022F0039B16C /* ShoppingCartModels.swift */,
 				A5B1FB32300A022F0039B16C /* ShoppingCartService.swift */,
 				A5B1FB1F3009E2F80039B16C /* HospitalSearchModels.swift */,
@@ -2037,6 +2073,9 @@
 				D0C0F9A29B4ED9D6FB4A6C01 /* AlipayChannel.swift in Sources */,
 				A54CBD4530049CD600D581AE /* ServiceCartViewModel.swift in Sources */,
 				A54CBD4630049CD600D581AE /* ServiceCartViewController.swift in Sources */,
+				A56E24C2300DC1CD001B3614 /* OrderConfirmViewController.swift in Sources */,
+				A56E24C3300DC1CD001B3614 /* OrderConfirmComponents.swift in Sources */,
+				A56E24C4300DC1CD001B3614 /* OrderConfirmViewModel.swift in Sources */,
 				A590FCAD2FEA91170056EF52 /* HealthRecordViewController.swift in Sources */,
 				A590FCAE2FEA91170056EF52 /* MonitoringPlanViewController.swift in Sources */,
 				A5CF597C30077C6A0067A4DE /* RetailCategoryService.swift in Sources */,
@@ -2130,7 +2169,6 @@
 				A5A6F5202FFF7C700065C921 /* VoucherListViewModel.swift in Sources */,
 				A590FCE52FEA91170056EF52 /* BodyFigureView.swift in Sources */,
 				A590FCE62FEA91170056EF52 /* BrandHeaderView.swift in Sources */,
-				A5ACE2403000D5C200056C52 /* ServicePackageDetailCopy.swift in Sources */,
 				A5ACE2413000D5C200056C52 /* ServicePackageDetailViewController.swift in Sources */,
 				A590FCE72FEA91170056EF52 /* AppointmentsViewController.swift in Sources */,
 				A590FCE92FEA91170056EF52 /* HomeTaskCardCell.swift in Sources */,
@@ -2218,6 +2256,7 @@
 				A5A6F4ED2FFF7B930065C921 /* NotificationCell.swift in Sources */,
 				A576A2222FE8E22E004F6070 /* ECGDataBuffer.swift in Sources */,
 				A5917CE22FDFA7C000878961 /* HomeRoutes.swift in Sources */,
+				A5ADE05F300F74D100CA598F /* OrderRemarkEditorSheet.swift in Sources */,
 				A57D2F1E2FDC0647002E43BA /* MyRoutes.swift in Sources */,
 				A5A6F4FF2FFF7BBD0065C921 /* SysNotifyCell.swift in Sources */,
 				A5ACE2463000F57B00056C52 /* ServicePackageDetailViewModel.swift in Sources */,
@@ -2227,6 +2266,8 @@
 				A5A6F5002FFF7BBD0065C921 /* ImageBubbleCell.swift in Sources */,
 				A5A6F5012FFF7BBD0065C921 /* TextBubbleCell.swift in Sources */,
 				A5A6F5402FFF7E510065C921 /* MyViewModel.swift in Sources */,
+				A5ADE05C300F572800CA598F /* OrderSettlementModels.swift in Sources */,
+				A5ADE05D300F572800CA598F /* OHospitalModels.swift in Sources */,
 				A5A6F5022FFF7BBD0065C921 /* ServiceCardCell.swift in Sources */,
 				A5A6F5032FFF7BBD0065C921 /* CenteredTipCell.swift in Sources */,
 				A5A6F5042FFF7BBD0065C921 /* MessageActionMenu.swift in Sources */,
@@ -2249,6 +2290,7 @@
 				631F39830B0FACBBF98B6C6F /* ServiceRoutes.swift in Sources */,
 				EF703DBA6D3A64DB74961F32 /* APIResponse.swift in Sources */,
 				3EA9A6D3AD0E682EFBCFADE3 /* APIManager+Async.swift in Sources */,
+				A56E24BC300DC19E001B3614 /* PackageOrderDraftStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

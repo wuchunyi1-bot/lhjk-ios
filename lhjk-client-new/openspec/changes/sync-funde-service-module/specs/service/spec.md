@@ -4,16 +4,17 @@
 
 ### Requirement: 服务首页顶栏（对齐 funde ServicesView.vue）
 
-服务 Tab 顶栏 SHALL 固定展示左侧文案与右侧购物车，**不得**展示搜索入口或机构切换。
+服务 Tab 顶栏 SHALL 固定展示左侧文案，**不得**展示搜索入口、机构切换或购物车。
 
 #### Scenario: 左侧文案
 - **WHEN** 服务首页展示
 - **THEN** 左侧主标题为「健康服务」
 - **AND** 副标题为「德系健康管理 · 9 大产品线」
 
-#### Scenario: 购物车
-- **WHEN** 用户点击右上角购物车图标
-- **THEN** 跳转 `/services/cart`
+#### Scenario: 无购物车
+- **WHEN** 服务首页展示
+- **THEN** 顶栏不展示购物车图标
+- **AND** 购物车入口仅保留：选择套餐页导航栏、「我的」金刚区
 
 #### Scenario: 无搜索
 - **WHEN** 服务首页展示

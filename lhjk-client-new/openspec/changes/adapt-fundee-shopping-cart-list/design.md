@@ -26,7 +26,8 @@ operationId: getShoppingCartList
 | hospitalId / hospitalName | 医院 |
 | totalQuantity / totalPrice | 数量 / 总价 |
 | introduction / imgUrl / type / categoryServiceId | 简介、图、类型、业务类别 |
-| serialNumber / createTime / status / orderId | 组编号、时间、状态、订单 |
+| serialNumber / createTime / status / orderId | 组编号、时间、状态（1已生成/2未生成/3已失效）、订单 |
+
 | userId / username / mobile | 用户信息 |
 
 加购仍走已有 `POST .../saveShoppingCartOrPurchase`（flag=2）。

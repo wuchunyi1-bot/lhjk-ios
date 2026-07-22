@@ -135,6 +135,23 @@ struct ServicePackageComboGroup: Equatable {
     let selectMode: ServicePackageSelectMode
     let emoji: String
     let items: [ServicePackageComboItem]
+
+    /// 首个父项下标（跳过子行）
+    var firstParentIndex: Int {
+        items.firstIndex(where: { !$0.isChild }) ?? 0
+    }
+
+    /// 父项及其连续子项下标（父在前，其后直到下一个父项为止的子项）
+    func subtreeIndices(forParentAt parentIndex: Int) -> [Int] {
+        guard items.indices.contains(parentIndex), !items[parentIndex].isChild else { return [] }
+        var result = [parentIndex]
+        var i = parentIndex + 1
+        while i < items.count, items[i].isChild {
+            result.append(i)
+            i += 1
+        }
+        return result
+    }
 }
 
 struct ServicePackageTier: Equatable {

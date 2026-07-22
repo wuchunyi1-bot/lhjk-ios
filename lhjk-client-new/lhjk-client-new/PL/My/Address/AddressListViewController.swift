@@ -10,6 +10,18 @@ final class AddressListViewController: BaseViewController {
     private let viewModel = AddressListViewModel()
     private var cancellables = Set<AnyCancellable>()
 
+    /// 选择模式：从确认订单页进入，点击行即选中返回
+    private let selectMode: Bool
+    private let onSelect: ((MAddress) -> Void)?
+
+    init(selectMode: Bool = false, onSelect: ((MAddress) -> Void)? = nil) {
+        self.selectMode = selectMode
+        self.onSelect = onSelect
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
     // MARK: - UI
 
     private lazy var tableView: UITableView = {
@@ -77,7 +89,7 @@ final class AddressListViewController: BaseViewController {
     }
 
     override func setupUI() {
-        title = "收货地址"
+        title = selectMode ? "选择收货地址" : "收货地址"
         view.backgroundColor = .fdBg
 
         let addBarButton = UIBarButtonItem(
@@ -225,6 +237,12 @@ extension AddressListViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        editAddress(viewModel.addresses[indexPath.row])
+        let address = viewModel.addresses[indexPath.row]
+        if selectMode {
+            onSelect?(address)
+            navigationController?.popViewController(animated: true)
+        } else {
+            editAddress(address)
+        }
     }
 }

@@ -111,6 +111,9 @@ final class PackageComboGroupView: UIView {
         radioPick: Int?,
         checkPicks: Set<Int>
     ) -> Bool {
+        let item = group.items[index]
+        // 子项无独立选中态（跟随父项，且不展示控件）
+        if item.isChild { return false }
         switch group.selectMode {
         case .required:
             return true
@@ -130,9 +133,7 @@ final class PackageComboGroupView: UIView {
     ) -> UIView {
         let row = UIControl()
         row.tag = index
-        row.isEnabled = group.selectMode != .required
 
-        let ctrl = makeControl(group: group, selected: selected)
         let name = UILabel()
         name.text = item.name
         name.font = .fdBody
@@ -150,7 +151,18 @@ final class PackageComboGroupView: UIView {
         price.setContentHuggingPriority(.required, for: .horizontal)
         price.snp.makeConstraints { $0.width.greaterThanOrEqualTo(44) }
 
-        let stack = UIStackView(arrangedSubviews: [ctrl, name, qty, price])
+        // 子项：不展示选择控件，不可点选
+        let arranged: [UIView]
+        if item.isChild {
+            arranged = [name, qty, price]
+            row.isEnabled = false
+        } else {
+            let ctrl = makeControl(group: group, selected: selected)
+            arranged = [ctrl, name, qty, price]
+            row.isEnabled = group.selectMode != .required
+        }
+
+        let stack = UIStackView(arrangedSubviews: arranged)
         stack.axis = .horizontal
         stack.spacing = 10
         stack.alignment = .center
@@ -173,6 +185,8 @@ final class PackageComboGroupView: UIView {
                 $0.height.equalTo(1)
             }
         }
+
+        guard !item.isChild else { return row }
 
         switch group.selectMode {
         case .required:

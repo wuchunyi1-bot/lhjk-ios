@@ -1,21 +1,18 @@
 import Foundation
 import Combine
 
-/// 购物车 ViewModel — 列表 / 删除走服务端
+/// 购物车 ViewModel — 列表 / 删除走服务端；仅单卡结算（无多选）
 final class ServiceCartViewModel: ObservableObject {
 
     @Published private(set) var lines: [CartLineDisplay] = []
-    @Published private(set) var selectedCount = 0
-    @Published private(set) var selectedTotalText = "¥0"
     @Published private(set) var isLoading = false
     @Published private(set) var isDeleting = false
     @Published private(set) var errorMessage: String?
+    @Published private(set) var toastMessage: String?
 
     private let shoppingCartService: ShoppingCartService
     private var loadTask: Task<Void, Never>?
     private var deleteTask: Task<Void, Never>?
-    /// 勾选态（内存）；key = line id
-    private var selectedIds: Set<String> = []
 
     init(
         shoppingCartService: ShoppingCartService = AppContainer.shared.shoppingCartService
@@ -30,12 +27,6 @@ final class ServiceCartViewModel: ObservableObject {
 
     var isEmpty: Bool { lines.isEmpty && !isLoading }
 
-    var canCheckout: Bool { selectedCount > 0 }
-
-    var firstSelectedTargetId: String? {
-        lines.first(where: \.selected)?.targetId
-    }
-
     func load() {
         loadTask?.cancel()
         loadTask = Task { [weak self] in
@@ -43,17 +34,10 @@ final class ServiceCartViewModel: ObservableObject {
         }
     }
 
-    /// 兼容旧调用名
     func reload() { load() }
 
-    func toggle(id: String) {
-        if selectedIds.contains(id) {
-            selectedIds.remove(id)
-        } else {
-            selectedIds.insert(id)
-        }
-        applySelectionToLines()
-        refreshTotals()
+    func consumeToast() {
+        toastMessage = nil
     }
 
     /// 删除购物车行（服务端 `serialNumber`）
@@ -82,10 +66,9 @@ final class ServiceCartViewModel: ObservableObject {
             try await shoppingCartService.deleteShoppingCart(serialNumber: serialNumber)
             guard !Task.isCancelled else { return }
             await MainActor.run {
-                selectedIds.remove(lineId)
                 lines.removeAll { $0.id == lineId }
                 isDeleting = false
-                refreshTotals()
+                toastMessage = "已删除"
             }
         } catch {
             guard !Task.isCancelled else { return }
@@ -109,50 +92,18 @@ final class ServiceCartViewModel: ObservableObject {
             )
             guard !Task.isCancelled else { return }
             let records = page.records ?? []
-            let mapped = records.map { ShoppingCartListMapper.toLineDisplay($0, selected: true) }
+            let mapped = records.map { ShoppingCartListMapper.toLineDisplay($0) }
             await MainActor.run {
-                let newIds = Set(mapped.map(\.id))
-                selectedIds = newIds
-                lines = mapped.map { line in
-                    var copy = line
-                    copy.selected = true
-                    return copy
-                }
+                lines = mapped
                 isLoading = false
-                refreshTotals()
             }
         } catch {
             guard !Task.isCancelled else { return }
             await MainActor.run {
                 lines = []
-                selectedIds = []
                 isLoading = false
                 errorMessage = error.localizedDescription
-                refreshTotals()
             }
         }
-    }
-
-    private func applySelectionToLines() {
-        lines = lines.map { line in
-            var copy = line
-            copy.selected = selectedIds.contains(line.id)
-            return copy
-        }
-    }
-
-    private func refreshTotals() {
-        let selected = lines.filter(\.selected)
-        selectedCount = selected.count
-        let total = selected.reduce(0) { $0 + $1.linePrice }
-        selectedTotalText = Self.formatPrice(total)
-    }
-
-    private static func formatPrice(_ value: Int) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.groupingSeparator = ","
-        let num = f.string(from: NSNumber(value: value)) ?? "\(value)"
-        return "¥\(num)"
     }
 }
