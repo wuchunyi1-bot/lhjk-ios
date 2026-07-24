@@ -28,6 +28,9 @@
 		8E749A7845EBA8C07946E821 /* Router.swift in Sources */ = {isa = PBXBuildFile; fileRef = 595A3F9A5793396375B1815B /* Router.swift */; };
 		9F5D324E0D90EB682A0A77B4 /* OAuthCredential.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */; };
 		A3AADC4D6DF2A11DC4DA077F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7A38C4AFEC723E4B6C12D675 /* LaunchScreen.storyboard */; };
+		A514288B3011AEFB00770A5E /* OrderNavigationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A514288A3011AEFB00770A5E /* OrderNavigationCoordinator.swift */; };
+		A514288D3011E1EC00770A5E /* OrderDetailStatusPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A514288C3011E1EC00770A5E /* OrderDetailStatusPresentation.swift */; };
+		A514288F3011FFE100770A5E /* OrderShipmentRecordsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A514288E3011FFE100770A5E /* OrderShipmentRecordsViewController.swift */; };
 		A528D7B130078E1C005B0CA7 /* H5Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = A528D7B030078E1C005B0CA7 /* H5Config.swift */; };
 		A53EF9D430088E0900ED9E5A /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EF9D230088E0900ED9E5A /* LocationManager.swift */; };
 		A53EF9D630088E2C00ED9E5A /* AddressEditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EF9D530088E2C00ED9E5A /* AddressEditViewModel.swift */; };
@@ -39,11 +42,22 @@
 		A54CBD4630049CD600D581AE /* ServiceCartViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBD4330049CD600D581AE /* ServiceCartViewController.swift */; };
 		A56120A830106CC600505C32 /* CouponModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120A630106CC600505C32 /* CouponModels.swift */; };
 		A56120A930106CC600505C32 /* CouponService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120A730106CC600505C32 /* CouponService.swift */; };
-		A56120AB30106CE900505C32 /* OrderCouponPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120AA30106CE900505C32 /* OrderCouponPickerSheet.swift */; };
+		A56120AD3010A2BC00505C32 /* OrderDetailModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120AC3010A2BC00505C32 /* OrderDetailModels.swift */; };
+		A56120C43010A31C00505C32 /* OrderCouponPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120B53010A31C00505C32 /* OrderCouponPickerSheet.swift */; };
+		A56120C53010A31C00505C32 /* OrderCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120B13010A31C00505C32 /* OrderCardCell.swift */; };
+		A56120C63010A31C00505C32 /* OrderDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120C03010A31C00505C32 /* OrderDetailViewController.swift */; };
+		A56120C73010A31C00505C32 /* OrderDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120BE3010A31C00505C32 /* OrderDetailViewModel.swift */; };
+		A56120C83010A31C00505C32 /* OrderConfirmViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120B83010A31C00505C32 /* OrderConfirmViewModel.swift */; };
+		A56120C93010A31C00505C32 /* OrderTabCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120B23010A31C00505C32 /* OrderTabCell.swift */; };
+		A56120CA3010A31C00505C32 /* OrderDetailComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120BC3010A31C00505C32 /* OrderDetailComponents.swift */; };
+		A56120CB3010A31C00505C32 /* OrderRemarkEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120B63010A31C00505C32 /* OrderRemarkEditorSheet.swift */; };
+		A56120CC3010A31C00505C32 /* OrderTabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120C33010A31C00505C32 /* OrderTabViewController.swift */; };
+		A56120CD3010A31C00505C32 /* OrderConfirmComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120B43010A31C00505C32 /* OrderConfirmComponents.swift */; };
+		A56120CE3010A31C00505C32 /* OrderListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120C23010A31C00505C32 /* OrderListViewController.swift */; };
+		A56120CF3010A31C00505C32 /* OrderConfirmViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120BA3010A31C00505C32 /* OrderConfirmViewController.swift */; };
+		A56120D53010B13500505C32 /* OrderCancelFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120D23010B13500505C32 /* OrderCancelFlow.swift */; };
+		A56120D63010B13500505C32 /* OrderCancelRefundSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56120D33010B13500505C32 /* OrderCancelRefundSheet.swift */; };
 		A56E24BC300DC19E001B3614 /* PackageOrderDraftStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56E24BB300DC19E001B3614 /* PackageOrderDraftStore.swift */; };
-		A56E24C2300DC1CD001B3614 /* OrderConfirmViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56E24BF300DC1CD001B3614 /* OrderConfirmViewController.swift */; };
-		A56E24C3300DC1CD001B3614 /* OrderConfirmComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56E24BD300DC1CD001B3614 /* OrderConfirmComponents.swift */; };
-		A56E24C4300DC1CD001B3614 /* OrderConfirmViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56E24C0300DC1CD001B3614 /* OrderConfirmViewModel.swift */; };
 		A576A2202FE8E22E004F6070 /* ECGSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21E2FE8E22E004F6070 /* ECGSimulator.swift */; };
 		A576A2212FE8E22E004F6070 /* ECGChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21C2FE8E22E004F6070 /* ECGChartView.swift */; };
 		A576A2222FE8E22E004F6070 /* ECGDataBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A576A21D2FE8E22E004F6070 /* ECGDataBuffer.swift */; };
@@ -90,7 +104,6 @@
 		A590FCC72FEA91170056EF52 /* SectionTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC6E2FEA91170056EF52 /* SectionTitleView.swift */; };
 		A590FCC82FEA91170056EF52 /* HealthVitalMetricsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC212FEA91170056EF52 /* HealthVitalMetricsCell.swift */; };
 		A590FCC92FEA91170056EF52 /* MeServiceFulfillmentCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC6A2FEA91170056EF52 /* MeServiceFulfillmentCell.swift */; };
-		A590FCCA2FEA91170056EF52 /* OrderListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC792FEA91170056EF52 /* OrderListViewController.swift */; };
 		A590FCCB2FEA91170056EF52 /* StageReportCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC632FEA91170056EF52 /* StageReportCell.swift */; };
 		A590FCCD2FEA91170056EF52 /* ConversationListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC572FEA91170056EF52 /* ConversationListViewController.swift */; };
 		A590FCCE2FEA91170056EF52 /* FuncRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC6D2FEA91170056EF52 /* FuncRowView.swift */; };
@@ -121,7 +134,6 @@
 		A590FCEE2FEA91170056EF52 /* VerifyCodeButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC932FEA91170056EF52 /* VerifyCodeButton.swift */; };
 		A590FCF02FEA91170056EF52 /* DietPlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC5D2FEA91170056EF52 /* DietPlanViewController.swift */; };
 		A590FCF22FEA91170056EF52 /* PhoneBindingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC912FEA91170056EF52 /* PhoneBindingView.swift */; };
-		A590FCF32FEA91170056EF52 /* OrderCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC772FEA91170056EF52 /* OrderCardCell.swift */; };
 		A590FCF42FEA91170056EF52 /* PolicyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC7D2FEA91170056EF52 /* PolicyViewController.swift */; };
 		A590FCF52FEA91170056EF52 /* HealthMallViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FCA12FEA91170056EF52 /* HealthMallViewController.swift */; };
 		A590FCF62FEA91170056EF52 /* HomeHeroCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC442FEA91170056EF52 /* HomeHeroCell.swift */; };
@@ -147,6 +159,7 @@
 		A5917D212FDFD7FE00878961 /* LoginModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D1D2FDFD7FE00878961 /* LoginModels.swift */; };
 		A5917D222FDFD7FE00878961 /* LoginServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */; };
 		A5917D242FDFD96D00878961 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D232FDFD96D00878961 /* WebViewController.swift */; };
+		A5A1FCB83013053200A519EB /* OrderStatusActionFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A1FCB73013053200A519EB /* OrderStatusActionFlow.swift */; };
 		A5A6F4B32FFF7A720065C921 /* OrderModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4AE2FFF7A720065C921 /* OrderModels.swift */; };
 		A5A6F4B42FFF7A720065C921 /* ServiceRecommendModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4B22FFF7A720065C921 /* ServiceRecommendModels.swift */; };
 		A5A6F4B52FFF7A720065C921 /* ColumnContentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4AA2FFF7A720065C921 /* ColumnContentService.swift */; };
@@ -212,7 +225,6 @@
 		A5A6F53D2FFF7E340065C921 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F53B2FFF7E340065C921 /* HomeViewModel.swift */; };
 		A5A6F5402FFF7E510065C921 /* MyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F53E2FFF7E510065C921 /* MyViewModel.swift */; };
 		A5A6F5432FFF7E720065C921 /* ConversationListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5412FFF7E720065C921 /* ConversationListViewModel.swift */; };
-		A5A6F5452FFF7EBE0065C921 /* OrderTabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5442FFF7EBE0065C921 /* OrderTabViewController.swift */; };
 		A5A6F5482FFF7EFC0065C921 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5462FFF7EFC0065C921 /* AudioRecorder.swift */; };
 		A5A6F5582FFF8E160065C921 /* FamilyMemberCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5552FFF8E160065C921 /* FamilyMemberCell.swift */; };
 		A5A6F5592FFF8E160065C921 /* FamilyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5572FFF8E160065C921 /* FamilyModels.swift */; };
@@ -223,7 +235,6 @@
 		A5A6F5672FFF8E5D0065C921 /* PointRecordCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5622FFF8E5D0065C921 /* PointRecordCell.swift */; };
 		A5A6F5682FFF8E5D0065C921 /* BadgeGridCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5612FFF8E5D0065C921 /* BadgeGridCell.swift */; };
 		A5A6F5692FFF8E5D0065C921 /* ProgressBadgeCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5632FFF8E5D0065C921 /* ProgressBadgeCell.swift */; };
-		A5A6F56B2FFF8E720065C921 /* OrderTabCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F56A2FFF8E720065C921 /* OrderTabCell.swift */; };
 		A5A6F56D2FFF8E880065C921 /* MallProductCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F56C2FFF8E880065C921 /* MallProductCell.swift */; };
 		A5A6F5722FFF8EA30065C921 /* PackageCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F5702FFF8EA30065C921 /* PackageCardCell.swift */; };
 		A5A6F5732FFF8EA30065C921 /* BenefitTagCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F56E2FFF8EA30065C921 /* BenefitTagCell.swift */; };
@@ -246,7 +257,6 @@
 		A5ACE2463000F57B00056C52 /* ServicePackageDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2443000F57B00056C52 /* ServicePackageDetailViewModel.swift */; };
 		A5ADE05C300F572800CA598F /* OrderSettlementModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADE05B300F572800CA598F /* OrderSettlementModels.swift */; };
 		A5ADE05D300F572800CA598F /* OHospitalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADE05A300F572800CA598F /* OHospitalModels.swift */; };
-		A5ADE05F300F74D100CA598F /* OrderRemarkEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADE05E300F74D100CA598F /* OrderRemarkEditorSheet.swift */; };
 		A5B1FB223009E2F80039B16C /* HospitalService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB203009E2F80039B16C /* HospitalService.swift */; };
 		A5B1FB233009E2F80039B16C /* HospitalSearchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB1F3009E2F80039B16C /* HospitalSearchModels.swift */; };
 		A5B1FB243009E2F80039B16C /* InstitutionSelectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB213009E2F80039B16C /* InstitutionSelectionStore.swift */; };
@@ -304,6 +314,9 @@
 		7FFA483EDF37CE2D4BEAFA2C /* BaseViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BaseViewController.swift; path = Other/Common/Base/BaseViewController.swift; sourceTree = "<group>"; };
 		840D488A2D621EED67F49634 /* PLProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PLProtocol.swift; path = Other/Common/Protocols/PLProtocol.swift; sourceTree = "<group>"; };
 		929B2C07064774594EB5F7EC /* IMService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = IMService.swift; path = BLL/Message/IMService.swift; sourceTree = "<group>"; };
+		A514288A3011AEFB00770A5E /* OrderNavigationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderNavigationCoordinator.swift; sourceTree = "<group>"; };
+		A514288C3011E1EC00770A5E /* OrderDetailStatusPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderDetailStatusPresentation.swift; sourceTree = "<group>"; };
+		A514288E3011FFE100770A5E /* OrderShipmentRecordsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderShipmentRecordsViewController.swift; sourceTree = "<group>"; };
 		A528D7B030078E1C005B0CA7 /* H5Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = H5Config.swift; path = Other/Common/H5Config.swift; sourceTree = "<group>"; };
 		A53EF9D230088E0900ED9E5A /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		A53EF9D530088E2C00ED9E5A /* AddressEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressEditViewModel.swift; sourceTree = "<group>"; };
@@ -315,11 +328,22 @@
 		A54CBD4330049CD600D581AE /* ServiceCartViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceCartViewController.swift; sourceTree = "<group>"; };
 		A56120A630106CC600505C32 /* CouponModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CouponModels.swift; path = BLL/Service/CouponModels.swift; sourceTree = "<group>"; };
 		A56120A730106CC600505C32 /* CouponService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CouponService.swift; path = BLL/Service/CouponService.swift; sourceTree = "<group>"; };
-		A56120AA30106CE900505C32 /* OrderCouponPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OrderCouponPickerSheet.swift; path = Confirm/Components/OrderCouponPickerSheet.swift; sourceTree = "<group>"; };
+		A56120AC3010A2BC00505C32 /* OrderDetailModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OrderDetailModels.swift; path = BLL/Service/OrderDetailModels.swift; sourceTree = "<group>"; };
+		A56120B13010A31C00505C32 /* OrderCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderCardCell.swift; sourceTree = "<group>"; };
+		A56120B23010A31C00505C32 /* OrderTabCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderTabCell.swift; sourceTree = "<group>"; };
+		A56120B43010A31C00505C32 /* OrderConfirmComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderConfirmComponents.swift; sourceTree = "<group>"; };
+		A56120B53010A31C00505C32 /* OrderCouponPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderCouponPickerSheet.swift; sourceTree = "<group>"; };
+		A56120B63010A31C00505C32 /* OrderRemarkEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderRemarkEditorSheet.swift; sourceTree = "<group>"; };
+		A56120B83010A31C00505C32 /* OrderConfirmViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderConfirmViewModel.swift; sourceTree = "<group>"; };
+		A56120BA3010A31C00505C32 /* OrderConfirmViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderConfirmViewController.swift; sourceTree = "<group>"; };
+		A56120BC3010A31C00505C32 /* OrderDetailComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderDetailComponents.swift; sourceTree = "<group>"; };
+		A56120BE3010A31C00505C32 /* OrderDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderDetailViewModel.swift; sourceTree = "<group>"; };
+		A56120C03010A31C00505C32 /* OrderDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderDetailViewController.swift; sourceTree = "<group>"; };
+		A56120C23010A31C00505C32 /* OrderListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderListViewController.swift; sourceTree = "<group>"; };
+		A56120C33010A31C00505C32 /* OrderTabViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderTabViewController.swift; sourceTree = "<group>"; };
+		A56120D23010B13500505C32 /* OrderCancelFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderCancelFlow.swift; sourceTree = "<group>"; };
+		A56120D33010B13500505C32 /* OrderCancelRefundSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderCancelRefundSheet.swift; sourceTree = "<group>"; };
 		A56E24BB300DC19E001B3614 /* PackageOrderDraftStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PackageOrderDraftStore.swift; path = BLL/Service/PackageOrderDraftStore.swift; sourceTree = "<group>"; };
-		A56E24BD300DC1CD001B3614 /* OrderConfirmComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderConfirmComponents.swift; sourceTree = "<group>"; };
-		A56E24BF300DC1CD001B3614 /* OrderConfirmViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OrderConfirmViewController.swift; path = Confirm/OrderConfirmViewController.swift; sourceTree = "<group>"; };
-		A56E24C0300DC1CD001B3614 /* OrderConfirmViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderConfirmViewModel.swift; sourceTree = "<group>"; };
 		A576A21C2FE8E22E004F6070 /* ECGChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGChartView.swift; sourceTree = "<group>"; };
 		A576A21D2FE8E22E004F6070 /* ECGDataBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGDataBuffer.swift; sourceTree = "<group>"; };
 		A576A21E2FE8E22E004F6070 /* ECGSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGSimulator.swift; sourceTree = "<group>"; };
@@ -384,8 +408,6 @@
 		A590FC712FEA91170056EF52 /* MyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyViewController.swift; sourceTree = "<group>"; };
 		A590FC732FEA91170056EF52 /* MembershipViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MembershipViewController.swift; sourceTree = "<group>"; };
 		A590FC752FEA91170056EF52 /* MonitoringPlanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoringPlanViewController.swift; sourceTree = "<group>"; };
-		A590FC772FEA91170056EF52 /* OrderCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderCardCell.swift; sourceTree = "<group>"; };
-		A590FC792FEA91170056EF52 /* OrderListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderListViewController.swift; sourceTree = "<group>"; };
 		A590FC7B2FEA91170056EF52 /* PointsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointsViewController.swift; sourceTree = "<group>"; };
 		A590FC7D2FEA91170056EF52 /* PolicyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyViewController.swift; sourceTree = "<group>"; };
 		A590FC7F2FEA91170056EF52 /* ProfileViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewController.swift; sourceTree = "<group>"; };
@@ -423,6 +445,7 @@
 		A5917D1E2FDFD7FE00878961 /* LoginService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginService.swift; sourceTree = "<group>"; };
 		A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginServiceProtocol.swift; sourceTree = "<group>"; };
 		A5917D232FDFD96D00878961 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WebViewController.swift; path = Other/Common/Base/WebViewController.swift; sourceTree = "<group>"; };
+		A5A1FCB73013053200A519EB /* OrderStatusActionFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderStatusActionFlow.swift; sourceTree = "<group>"; };
 		A5A6F4A92FFF7A720065C921 /* ColumnContentModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ColumnContentModels.swift; path = BLL/Service/ColumnContentModels.swift; sourceTree = "<group>"; };
 		A5A6F4AA2FFF7A720065C921 /* ColumnContentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ColumnContentService.swift; path = BLL/Service/ColumnContentService.swift; sourceTree = "<group>"; };
 		A5A6F4AB2FFF7A720065C921 /* DictionaryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DictionaryModels.swift; path = BLL/Service/DictionaryModels.swift; sourceTree = "<group>"; };
@@ -488,7 +511,6 @@
 		A5A6F53B2FFF7E340065C921 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		A5A6F53E2FFF7E510065C921 /* MyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyViewModel.swift; sourceTree = "<group>"; };
 		A5A6F5412FFF7E720065C921 /* ConversationListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListViewModel.swift; sourceTree = "<group>"; };
-		A5A6F5442FFF7EBE0065C921 /* OrderTabViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderTabViewController.swift; sourceTree = "<group>"; };
 		A5A6F5462FFF7EFC0065C921 /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
 		A5A6F5552FFF8E160065C921 /* FamilyMemberCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyMemberCell.swift; sourceTree = "<group>"; };
 		A5A6F5572FFF8E160065C921 /* FamilyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyModels.swift; sourceTree = "<group>"; };
@@ -499,7 +521,6 @@
 		A5A6F5622FFF8E5D0065C921 /* PointRecordCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointRecordCell.swift; sourceTree = "<group>"; };
 		A5A6F5632FFF8E5D0065C921 /* ProgressBadgeCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBadgeCell.swift; sourceTree = "<group>"; };
 		A5A6F5652FFF8E5D0065C921 /* PointsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointsModels.swift; sourceTree = "<group>"; };
-		A5A6F56A2FFF8E720065C921 /* OrderTabCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderTabCell.swift; sourceTree = "<group>"; };
 		A5A6F56C2FFF8E880065C921 /* MallProductCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MallProductCell.swift; sourceTree = "<group>"; };
 		A5A6F56E2FFF8EA30065C921 /* BenefitTagCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenefitTagCell.swift; sourceTree = "<group>"; };
 		A5A6F56F2FFF8EA30065C921 /* CategoryNavCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryNavCell.swift; sourceTree = "<group>"; };
@@ -522,7 +543,6 @@
 		A5ACE2443000F57B00056C52 /* ServicePackageDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicePackageDetailViewModel.swift; sourceTree = "<group>"; };
 		A5ADE05A300F572800CA598F /* OHospitalModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OHospitalModels.swift; path = BLL/Service/OHospitalModels.swift; sourceTree = "<group>"; };
 		A5ADE05B300F572800CA598F /* OrderSettlementModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OrderSettlementModels.swift; path = BLL/Service/OrderSettlementModels.swift; sourceTree = "<group>"; };
-		A5ADE05E300F74D100CA598F /* OrderRemarkEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderRemarkEditorSheet.swift; sourceTree = "<group>"; };
 		A5B1FB1F3009E2F80039B16C /* HospitalSearchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HospitalSearchModels.swift; path = BLL/Service/HospitalSearchModels.swift; sourceTree = "<group>"; };
 		A5B1FB203009E2F80039B16C /* HospitalService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HospitalService.swift; path = BLL/Service/HospitalService.swift; sourceTree = "<group>"; };
 		A5B1FB213009E2F80039B16C /* InstitutionSelectionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = InstitutionSelectionStore.swift; path = BLL/Service/InstitutionSelectionStore.swift; sourceTree = "<group>"; };
@@ -681,23 +701,79 @@
 			path = Cart;
 			sourceTree = "<group>";
 		};
-		A56E24BE300DC1CD001B3614 /* Components */ = {
+		A56120B33010A31C00505C32 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
-				A5ADE05E300F74D100CA598F /* OrderRemarkEditorSheet.swift */,
-				A56E24BD300DC1CD001B3614 /* OrderConfirmComponents.swift */,
+				A56120B13010A31C00505C32 /* OrderCardCell.swift */,
+				A56120B23010A31C00505C32 /* OrderTabCell.swift */,
 			);
-			name = Components;
-			path = Confirm/Components;
+			path = Cells;
 			sourceTree = "<group>";
 		};
-		A56E24C1300DC1CD001B3614 /* ViewModels */ = {
+		A56120B73010A31C00505C32 /* Components */ = {
 			isa = PBXGroup;
 			children = (
-				A56E24C0300DC1CD001B3614 /* OrderConfirmViewModel.swift */,
+				A56120B43010A31C00505C32 /* OrderConfirmComponents.swift */,
+				A56120B53010A31C00505C32 /* OrderCouponPickerSheet.swift */,
+				A56120B63010A31C00505C32 /* OrderRemarkEditorSheet.swift */,
 			);
-			name = ViewModels;
-			path = Confirm/ViewModels;
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A56120B93010A31C00505C32 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A56120B83010A31C00505C32 /* OrderConfirmViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A56120BB3010A31C00505C32 /* Confirm */ = {
+			isa = PBXGroup;
+			children = (
+				A56120B73010A31C00505C32 /* Components */,
+				A56120B93010A31C00505C32 /* ViewModels */,
+				A56120BA3010A31C00505C32 /* OrderConfirmViewController.swift */,
+			);
+			path = Confirm;
+			sourceTree = "<group>";
+		};
+		A56120BD3010A31C00505C32 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A56120BC3010A31C00505C32 /* OrderDetailComponents.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A56120BF3010A31C00505C32 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A56120BE3010A31C00505C32 /* OrderDetailViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A56120C13010A31C00505C32 /* Detail */ = {
+			isa = PBXGroup;
+			children = (
+				A514288E3011FFE100770A5E /* OrderShipmentRecordsViewController.swift */,
+				A56120BD3010A31C00505C32 /* Components */,
+				A56120BF3010A31C00505C32 /* ViewModels */,
+				A56120C03010A31C00505C32 /* OrderDetailViewController.swift */,
+			);
+			path = Detail;
+			sourceTree = "<group>";
+		};
+		A56120D43010B13500505C32 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A5A1FCB73013053200A519EB /* OrderStatusActionFlow.swift */,
+				A514288C3011E1EC00770A5E /* OrderDetailStatusPresentation.swift */,
+				A56120D23010B13500505C32 /* OrderCancelFlow.swift */,
+				A56120D33010B13500505C32 /* OrderCancelRefundSheet.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 		A576A21F2FE8E22E004F6070 /* ECG */ = {
@@ -1011,25 +1087,16 @@
 			path = MonitoringPlan;
 			sourceTree = "<group>";
 		};
-		A590FC782FEA91170056EF52 /* Cells */ = {
-			isa = PBXGroup;
-			children = (
-				A5A6F56A2FFF8E720065C921 /* OrderTabCell.swift */,
-				A590FC772FEA91170056EF52 /* OrderCardCell.swift */,
-			);
-			path = Cells;
-			sourceTree = "<group>";
-		};
 		A590FC7A2FEA91170056EF52 /* Order */ = {
 			isa = PBXGroup;
 			children = (
-				A56120AA30106CE900505C32 /* OrderCouponPickerSheet.swift */,
-				A56E24BE300DC1CD001B3614 /* Components */,
-				A56E24BF300DC1CD001B3614 /* OrderConfirmViewController.swift */,
-				A56E24C1300DC1CD001B3614 /* ViewModels */,
-				A5A6F5442FFF7EBE0065C921 /* OrderTabViewController.swift */,
-				A590FC782FEA91170056EF52 /* Cells */,
-				A590FC792FEA91170056EF52 /* OrderListViewController.swift */,
+				A514288A3011AEFB00770A5E /* OrderNavigationCoordinator.swift */,
+				A56120D43010B13500505C32 /* Components */,
+				A56120B33010A31C00505C32 /* Cells */,
+				A56120BB3010A31C00505C32 /* Confirm */,
+				A56120C13010A31C00505C32 /* Detail */,
+				A56120C23010A31C00505C32 /* OrderListViewController.swift */,
+				A56120C33010A31C00505C32 /* OrderTabViewController.swift */,
 			);
 			path = Order;
 			sourceTree = "<group>";
@@ -1716,6 +1783,7 @@
 		C4193BC7FCD37A9D67D93F74 /* Service */ = {
 			isa = PBXGroup;
 			children = (
+				A56120AC3010A2BC00505C32 /* OrderDetailModels.swift */,
 				A56120A630106CC600505C32 /* CouponModels.swift */,
 				A56120A730106CC600505C32 /* CouponService.swift */,
 				A5ADE05A300F572800CA598F /* OHospitalModels.swift */,
@@ -2041,9 +2109,9 @@
 				8DC19885FA8CBC4AD853552E /* PaymentService.swift in Sources */,
 				A5917D202FDFD7FE00878961 /* LoginService.swift in Sources */,
 				A5917D212FDFD7FE00878961 /* LoginModels.swift in Sources */,
+				A5A1FCB83013053200A519EB /* OrderStatusActionFlow.swift in Sources */,
 				A5917D222FDFD7FE00878961 /* LoginServiceProtocol.swift in Sources */,
 				A5ACE2363000CBE000056C52 /* MallProductCategoryCopy.swift in Sources */,
-				A56120AB30106CE900505C32 /* OrderCouponPickerSheet.swift in Sources */,
 				A5ACE2373000CBE000056C52 /* MallProductDetailViewController.swift in Sources */,
 				0EE2E6B7960C05819866D0E1 /* BluetoothManager.swift in Sources */,
 				5E7531B1805BDFC74CD1F8CB /* BluetoothModels.swift in Sources */,
@@ -2061,6 +2129,7 @@
 				A5A6F4B92FFF7A720065C921 /* ServiceCatalogService.swift in Sources */,
 				A5A6F4BA2FFF7A720065C921 /* DictionaryModels.swift in Sources */,
 				A5A6F4BB2FFF7A720065C921 /* DictionaryService.swift in Sources */,
+				A56120AD3010A2BC00505C32 /* OrderDetailModels.swift in Sources */,
 				A5ACE2433000F56200056C52 /* HospitalPackageDetailModels.swift in Sources */,
 				A5A6F4BC2FFF7A720065C921 /* ColumnContentModels.swift in Sources */,
 				A590FB1C2FEA2F6E0056EF52 /* UserModels.swift in Sources */,
@@ -2085,9 +2154,6 @@
 				D0C0F9A29B4ED9D6FB4A6C01 /* AlipayChannel.swift in Sources */,
 				A54CBD4530049CD600D581AE /* ServiceCartViewModel.swift in Sources */,
 				A54CBD4630049CD600D581AE /* ServiceCartViewController.swift in Sources */,
-				A56E24C2300DC1CD001B3614 /* OrderConfirmViewController.swift in Sources */,
-				A56E24C3300DC1CD001B3614 /* OrderConfirmComponents.swift in Sources */,
-				A56E24C4300DC1CD001B3614 /* OrderConfirmViewModel.swift in Sources */,
 				A590FCAD2FEA91170056EF52 /* HealthRecordViewController.swift in Sources */,
 				A590FCAE2FEA91170056EF52 /* MonitoringPlanViewController.swift in Sources */,
 				A5CF597C30077C6A0067A4DE /* RetailCategoryService.swift in Sources */,
@@ -2106,7 +2172,6 @@
 				A590FCB92FEA91170056EF52 /* HealthScoreCardCell.swift in Sources */,
 				A5A6F5582FFF8E160065C921 /* FamilyMemberCell.swift in Sources */,
 				A5A6F5592FFF8E160065C921 /* FamilyModels.swift in Sources */,
-				A5A6F5452FFF7EBE0065C921 /* OrderTabViewController.swift in Sources */,
 				A590FCBA2FEA91170056EF52 /* LoginViewController.swift in Sources */,
 				A590FCBB2FEA91170056EF52 /* HealthRecordHistoryCell.swift in Sources */,
 				A5A6F5262FFF7CF40065C921 /* OSSManager.swift in Sources */,
@@ -2125,8 +2190,9 @@
 				A53EFC113008DB2900ED9E5A /* ServiceInstitutionCardView.swift in Sources */,
 				A590FCC72FEA91170056EF52 /* SectionTitleView.swift in Sources */,
 				A590FCC82FEA91170056EF52 /* HealthVitalMetricsCell.swift in Sources */,
+				A56120D53010B13500505C32 /* OrderCancelFlow.swift in Sources */,
+				A56120D63010B13500505C32 /* OrderCancelRefundSheet.swift in Sources */,
 				A590FCC92FEA91170056EF52 /* MeServiceFulfillmentCell.swift in Sources */,
-				A590FCCA2FEA91170056EF52 /* OrderListViewController.swift in Sources */,
 				A590FCCB2FEA91170056EF52 /* StageReportCell.swift in Sources */,
 				A5A6F5772FFF8EAD0065C921 /* ServiceListModels.swift in Sources */,
 				A590FCCD2FEA91170056EF52 /* ConversationListViewController.swift in Sources */,
@@ -2208,7 +2274,6 @@
 				A590FCF02FEA91170056EF52 /* DietPlanViewController.swift in Sources */,
 				A5A6F53A2FFF7E100065C921 /* DebugLogger.swift in Sources */,
 				A590FCF22FEA91170056EF52 /* PhoneBindingView.swift in Sources */,
-				A590FCF32FEA91170056EF52 /* OrderCardCell.swift in Sources */,
 				A590FCF42FEA91170056EF52 /* PolicyViewController.swift in Sources */,
 				A590FCF52FEA91170056EF52 /* HealthMallViewController.swift in Sources */,
 				A590FCF62FEA91170056EF52 /* HomeHeroCell.swift in Sources */,
@@ -2224,6 +2289,7 @@
 				A5A6F53D2FFF7E340065C921 /* HomeViewModel.swift in Sources */,
 				A590FCFE2FEA91170056EF52 /* NotificationSettingsViewController.swift in Sources */,
 				A590FCFF2FEA91170056EF52 /* AboutSettingsViewController.swift in Sources */,
+				A514288F3011FFE100770A5E /* OrderShipmentRecordsViewController.swift in Sources */,
 				A5A6F4D62FFF7AE80065C921 /* HealthPackageCategoryCell.swift in Sources */,
 				A5A6F57E2FFF8F300065C921 /* NotificationCardCell.swift in Sources */,
 				A5A6F57F2FFF8F300065C921 /* TeamBannerCell.swift in Sources */,
@@ -2235,6 +2301,18 @@
 				D97D86F91B5A3A4D1C22DDC3 /* PaymentOrder.swift in Sources */,
 				2AB37F19E9E9BA0DCE4E2FF9 /* PaymentProtocol.swift in Sources */,
 				B0BC602D83CB797AB66DFE1F /* WechatPayChannel.swift in Sources */,
+				A56120C43010A31C00505C32 /* OrderCouponPickerSheet.swift in Sources */,
+				A56120C53010A31C00505C32 /* OrderCardCell.swift in Sources */,
+				A56120C63010A31C00505C32 /* OrderDetailViewController.swift in Sources */,
+				A56120C73010A31C00505C32 /* OrderDetailViewModel.swift in Sources */,
+				A56120C83010A31C00505C32 /* OrderConfirmViewModel.swift in Sources */,
+				A56120C93010A31C00505C32 /* OrderTabCell.swift in Sources */,
+				A56120CA3010A31C00505C32 /* OrderDetailComponents.swift in Sources */,
+				A56120CB3010A31C00505C32 /* OrderRemarkEditorSheet.swift in Sources */,
+				A56120CC3010A31C00505C32 /* OrderTabViewController.swift in Sources */,
+				A56120CD3010A31C00505C32 /* OrderConfirmComponents.swift in Sources */,
+				A56120CE3010A31C00505C32 /* OrderListViewController.swift in Sources */,
+				A56120CF3010A31C00505C32 /* OrderConfirmViewController.swift in Sources */,
 				8E749A7845EBA8C07946E821 /* Router.swift in Sources */,
 				05433145BBE114CF0C1DC08A /* DatabaseManager.swift in Sources */,
 				31C52A8BD36FA64D4C32B098 /* UserDefaultsManager.swift in Sources */,
@@ -2248,7 +2326,6 @@
 				A5917D092FDFC8EF00878961 /* UIView+Layout.swift in Sources */,
 				A5917D0A2FDFC8EF00878961 /* UIColor+Theme.swift in Sources */,
 				A5917D0B2FDFC8EF00878961 /* UIButton+Funde.swift in Sources */,
-				A5A6F56B2FFF8E720065C921 /* OrderTabCell.swift in Sources */,
 				A5917D0C2FDFC8EF00878961 /* DGCharts+Theme.swift in Sources */,
 				678D746E713E617DA4218CF8 /* BaseViewController.swift in Sources */,
 				E9F251651FF71AEBC2DF03F3 /* BLLProtocol.swift in Sources */,
@@ -2268,7 +2345,6 @@
 				A5A6F4ED2FFF7B930065C921 /* NotificationCell.swift in Sources */,
 				A576A2222FE8E22E004F6070 /* ECGDataBuffer.swift in Sources */,
 				A5917CE22FDFA7C000878961 /* HomeRoutes.swift in Sources */,
-				A5ADE05F300F74D100CA598F /* OrderRemarkEditorSheet.swift in Sources */,
 				A57D2F1E2FDC0647002E43BA /* MyRoutes.swift in Sources */,
 				A5A6F4FF2FFF7BBD0065C921 /* SysNotifyCell.swift in Sources */,
 				A5ACE2463000F57B00056C52 /* ServicePackageDetailViewModel.swift in Sources */,
@@ -2288,6 +2364,7 @@
 				A5A6F5072FFF7BBD0065C921 /* SystemMessageCell.swift in Sources */,
 				A5A6F5722FFF8EA30065C921 /* PackageCardCell.swift in Sources */,
 				A5A6F5732FFF8EA30065C921 /* BenefitTagCell.swift in Sources */,
+				A514288D3011E1EC00770A5E /* OrderDetailStatusPresentation.swift in Sources */,
 				A5A6F5742FFF8EA30065C921 /* PackageHeaderCell.swift in Sources */,
 				A5A6F5752FFF8EA30065C921 /* CategoryNavCell.swift in Sources */,
 				A5A6F5082FFF7BBD0065C921 /* MealAnalysisCell.swift in Sources */,
@@ -2296,6 +2373,7 @@
 				A5A6F50A2FFF7BBD0065C921 /* FileBubbleCell.swift in Sources */,
 				A5A6F50B2FFF7BBD0065C921 /* ChatViewModel.swift in Sources */,
 				A5A6F56D2FFF8E880065C921 /* MallProductCell.swift in Sources */,
+				A514288B3011AEFB00770A5E /* OrderNavigationCoordinator.swift in Sources */,
 				A5A6F5482FFF7EFC0065C921 /* AudioRecorder.swift in Sources */,
 				A5A6F50C2FFF7BBD0065C921 /* AIWeeklyReportCell.swift in Sources */,
 				C93572D0D1BE419981086975 /* MessageRoutes.swift in Sources */,

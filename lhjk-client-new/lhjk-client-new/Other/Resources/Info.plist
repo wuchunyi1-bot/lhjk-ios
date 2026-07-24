@@ -47,6 +47,13 @@
 		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
+			<key>h5-dev.lianhaojiankang.com</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
 			<key>gateway-dev.lianhaojiankang.com</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>

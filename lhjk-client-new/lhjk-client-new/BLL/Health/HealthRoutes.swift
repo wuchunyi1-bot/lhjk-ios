@@ -3,7 +3,7 @@ import Foundation
 /// 健康模块路由注册
 enum HealthRoutes {
 
-    /// 兼容历史深链的子路径；均打开同一 H5 入口，由 H5 处理内部导航
+    /// 兼容历史深链的子路径；映射为 H5 子页面（见 `H5Config` / OpenSpec）
     private static let metricSubPaths: [String: [String]] = [
         "blood-pressure": ["manual", "history", "service", "detail"],
         "blood-sugar": ["manual", "history", "service", "detail"],
@@ -44,8 +44,8 @@ enum HealthRoutes {
         }
 
         r.register(path: "/health/metrics/add") { params in
-            let key = params["key"] as? String ?? ""
-            return metricWebView(for: key)
+            let key = stringParam(params["key"]) ?? ""
+            return metricWebView(for: key, routeParams: params)
         }
     }
 
@@ -61,15 +61,41 @@ enum HealthRoutes {
         } else {
             path = "/health/metrics/\(key)"
         }
-        r.register(path: path) { _ in
-            metricWebView(for: key, title: title)
+        r.register(path: path) { params in
+            metricWebView(
+                for: key,
+                title: title,
+                nativeSuffix: pathSuffix,
+                routeParams: params
+            )
         }
     }
 
-    private static func metricWebView(for key: String, title: String? = nil) -> WebViewController {
-        WebViewController(
-            urlString: H5Config.metricPageURL(for: key).absoluteString,
+    private static func metricWebView(
+        for key: String,
+        title: String? = nil,
+        nativeSuffix: String? = nil,
+        routeParams: [String: Any] = [:]
+    ) -> WebViewController {
+        let url = H5Config.authenticatedMetricURL(
+            metricKey: key,
+            nativeSuffix: nativeSuffix,
+            routeParams: routeParams
+        )
+        return WebViewController(
+            urlString: url.absoluteString,
             title: title ?? H5Config.metricTitle(for: key)
         )
+    }
+
+    private static func stringParam(_ value: Any?) -> String? {
+        if let string = value as? String {
+            let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        if let number = value as? NSNumber {
+            return number.stringValue
+        }
+        return nil
     }
 }

@@ -49,15 +49,17 @@ final class ServiceCartViewController: BaseViewController {
 
     override func bindViewModel() {
         viewModel.$lines
-            .combineLatest(viewModel.$isLoading)
+            .combineLatest(viewModel.$isLoading, viewModel.$isCheckingOut)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] lines, loading in
+            .sink { [weak self] lines, loading, checkingOut in
                 guard let self else { return }
-                if loading {
+                let busy = loading || checkingOut
+                if busy {
                     self.loadingIndicator.startAnimating()
                 } else {
                     self.loadingIndicator.stopAnimating()
                 }
+                self.tableView.isUserInteractionEnabled = !checkingOut
                 self.tableView.reloadData()
                 let showEmpty = lines.isEmpty && !loading
                 self.emptyView.isHidden = !showEmpty
@@ -81,6 +83,15 @@ final class ServiceCartViewController: BaseViewController {
                 self?.showToast(message) {
                     self?.viewModel.consumeToast()
                 }
+            }
+            .store(in: &cancellables)
+
+        viewModel.$confirmRoute
+            .receive(on: DispatchQueue.main)
+            .compactMap { $0 }
+            .sink { [weak self] route in
+                self?.openConfirmOrder(route)
+                self?.viewModel.consumeConfirmRoute()
             }
             .store(in: &cancellables)
     }
@@ -109,17 +120,7 @@ final class ServiceCartViewController: BaseViewController {
         tip.textColor = .fdText
         tip.textAlignment = .center
 
-        let go = UIButton(type: .system)
-        go.setTitle("去看看服务", for: .normal)
-        go.setTitleColor(.white, for: .normal)
-        go.titleLabel?.font = .fdBodySemibold
-        go.backgroundColor = .fdPrimary
-        go.layer.cornerRadius = 22
-        go.contentEdgeInsets = UIEdgeInsets(top: 0, left: 28, bottom: 0, right: 28)
-        go.addTarget(self, action: #selector(tapBrowse), for: .touchUpInside)
-        go.snp.makeConstraints { $0.height.equalTo(44) }
-
-        let stack = UIStackView(arrangedSubviews: [icon, tip, go])
+        let stack = UIStackView(arrangedSubviews: [icon, tip])
         stack.axis = .vertical
         stack.alignment = .center
         stack.spacing = 14
@@ -128,22 +129,16 @@ final class ServiceCartViewController: BaseViewController {
         stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(32) }
     }
 
-    @objc private func tapBrowse() {
-        Router.shared.push("/services")
+    private func checkout(line: CartLineDisplay) {
+        viewModel.checkout(line: line)
     }
 
-    private func checkout(line: CartLineDisplay) {
-        guard line.canCheckout else {
-            showToast("该套餐已失效")
-            return
-        }
-        let orderId = line.orderId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard let oid = Int64(orderId), oid > 0 else {
-            showToast("订单信息缺失，请重新加购")
-            return
-        }
-        var params: [String: Any] = ["orderId": String(oid)]
-        if let serial = line.serialNumber {
+    private func openConfirmOrder(_ route: CartConfirmRoute) {
+        var params: [String: Any] = [
+            "orderId": String(route.orderId),
+            "entry": "cart",
+        ]
+        if let serial = route.serialNumber {
             params["serialNumber"] = String(serial)
         }
         Router.shared.push("/orders/confirm", params: params)
@@ -204,8 +199,6 @@ extension ServiceCartViewController: UITableViewDataSource, UITableViewDelegate 
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let line = viewModel.lines[indexPath.row]
-        checkout(line: line)
     }
 
     func tableView(

@@ -31,27 +31,40 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
 
     private let headerGradient = CAGradientLayer()
 
+    private var lastLayoutWidth: CGFloat = 0
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        if let header = tableView.tableHeaderView {
+        guard view.bounds.width > 0 else { return }
+
+        if tableView.tableHeaderView == nil {
+            tableView.tableHeaderView = buildTableHeader().sizedForTableHeader(in: view)
+        } else if let header = tableView.tableHeaderView {
             headerGradient.frame = header.bounds
+            let fitWidth = view.bounds.width
+            header.bounds.size.width = fitWidth
+            header.setNeedsLayout()
+            header.layoutIfNeeded()
             let size = header.systemLayoutSizeFitting(
-                CGSize(width: view.bounds.width, height: UIView.layoutFittingCompressedSize.height),
-                withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel
+                CGSize(width: fitWidth, height: UIView.layoutFittingCompressedSize.height),
+                withHorizontalFittingPriority: .required,
+                verticalFittingPriority: .fittingSizeLevel
             )
-            if header.frame.size.height != size.height {
-                header.frame.size = CGSize(width: view.bounds.width, height: size.height)
+            if abs(header.frame.size.height - size.height) > 0.5 || header.frame.size.width != fitWidth {
+                header.frame.size = CGSize(width: fitWidth, height: size.height)
                 tableView.tableHeaderView = header
             }
+        }
+
+        if tableView.tableFooterView == nil || abs(view.bounds.width - lastLayoutWidth) > 0.5 {
+            lastLayoutWidth = view.bounds.width
+            tableView.tableFooterView = buildLogoutFooter().sizedForTableFooter(width: view.bounds.width, height: 72)
         }
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
-        if tableView.tableHeaderView == nil {
-            tableView.tableHeaderView = buildTableHeader().sizedForTableHeader(in: view)
-        }
         viewModel.loadUserProfile()
     }
 
@@ -67,7 +80,6 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             make.top.leading.trailing.equalToSuperview()
             make.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom)
         }
-        tableView.tableFooterView = buildLogoutFooter()
         bindViewModel()
     }
 
@@ -190,19 +202,19 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         }
         settingsBtn.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(56)
-            make.trailing.equalToSuperview().offset(-contentPadding)
+            make.trailing.equalToSuperview().offset(-contentPadding).priority(UILayoutPriority(999))
             make.size.equalTo(32)
         }
         profileBtn.snp.makeConstraints { make in
             make.top.equalTo(nameLabel.snp.bottom).offset(10)
             make.leading.equalTo(nameLabel)
-            make.height.greaterThanOrEqualTo(28)
+            make.height.greaterThanOrEqualTo(28).priority(UILayoutPriority(999))
         }
         healthBtn.snp.makeConstraints { make in
             make.centerY.equalTo(profileBtn)
             make.leading.equalTo(profileBtn.snp.trailing).offset(8)
-            make.height.greaterThanOrEqualTo(28)
-            make.bottom.equalToSuperview().offset(-8)
+            make.height.greaterThanOrEqualTo(28).priority(UILayoutPriority(999))
+            make.bottom.equalToSuperview().offset(-8).priority(UILayoutPriority(999))
         }
 //        membershipCard.snp.makeConstraints { make in
 //            make.top.equalTo(profileBtn.snp.bottom).offset(16)
@@ -240,7 +252,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
     }
 
     private func buildLogoutFooter() -> UIView {
-        let wrap = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 72))
+        let wrap = UIView()
         let btn = UIButton(type: .system)
         btn.setTitle("退出登录", for: .normal)
         btn.setTitleColor(.fdDanger, for: .normal)
@@ -249,10 +261,11 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         btn.layer.cornerRadius = 14
         btn.addTarget(self, action: #selector(handleLogout), for: .touchUpInside)
         wrap.addSubview(btn)
-        btn.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(12)
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(48)
+        btn.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.equalToSuperview().offset(16)
+            make.trailing.equalToSuperview().offset(-16).priority(UILayoutPriority(999))
+            make.height.equalTo(48)
         }
         return wrap
     }

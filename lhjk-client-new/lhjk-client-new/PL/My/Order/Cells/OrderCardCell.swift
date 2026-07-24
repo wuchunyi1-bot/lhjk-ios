@@ -47,8 +47,11 @@ final class OrderCardCell: UITableViewCell {
         cardView.layer.shadowRadius = 6
         cardView.layer.shadowOpacity = 0.03
         contentView.addSubview(cardView)
-        cardView.snp.makeConstraints {
-            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 16, bottom: 6, right: 16))
+        cardView.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(6)
+            make.leading.trailing.equalToSuperview().inset(16)
+            // 低于 required，避免 TableView 临时 44pt 高度时与内容约束冲突
+            make.bottom.equalToSuperview().offset(-6).priority(UILayoutPriority(999))
         }
 
         institutionIcon.tintColor = .fdMuted
@@ -140,10 +143,28 @@ final class OrderCardCell: UITableViewCell {
         let root = UIStackView(arrangedSubviews: [topRow, bodyRow, actionsRow])
         root.axis = .vertical
         root.spacing = 12
+        root.setContentHuggingPriority(.required, for: .vertical)
+        root.setContentCompressionResistancePriority(.required, for: .vertical)
         cardView.addSubview(root)
         root.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
 
         actionsRow.isHidden = true
+    }
+
+    override func systemLayoutSizeFitting(
+        _ targetSize: CGSize,
+        withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority,
+        verticalFittingPriority: UILayoutPriority
+    ) -> CGSize {
+        let width = targetSize.width > 0 ? targetSize.width : UIScreen.main.bounds.width
+        contentView.bounds.size.width = width
+        setNeedsLayout()
+        layoutIfNeeded()
+        return contentView.systemLayoutSizeFitting(
+            CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel
+        )
     }
 
     // MARK: - Configure
@@ -192,7 +213,7 @@ final class OrderCardCell: UITableViewCell {
             $0.removeFromSuperview()
         }
 
-        let actions = OrderListCardAction.actions(for: order.orderStatus)
+        let actions = OrderListCardAction.actions(for: order.orderStatus, packageType: order.packageType)
         guard !actions.isEmpty else {
             actionsStack.superview?.isHidden = true
             return
@@ -203,15 +224,15 @@ final class OrderCardCell: UITableViewCell {
             let isPrimary = index == actions.count - 1
             let button = makeActionButton(action: action, primary: isPrimary)
             actionsStack.addArrangedSubview(button)
-            button.snp.makeConstraints { $0.height.equalTo(32) }
         }
+        setNeedsLayout()
     }
 
     private func makeActionButton(action: OrderListCardAction, primary: Bool) -> UIButton {
         let button = UIButton(type: .system)
         button.setTitle(action.title, for: .normal)
         button.titleLabel?.font = .fdCaptionSemibold
-        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
+        button.contentEdgeInsets = UIEdgeInsets(top: 7, left: 14, bottom: 7, right: 14)
         button.layer.cornerRadius = 16
         if primary {
             button.backgroundColor = .fdPrimary
@@ -237,6 +258,7 @@ final class OrderCardCell: UITableViewCell {
             actionsStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
+        actionsStack.superview?.isHidden = true
     }
 }
 
@@ -245,6 +267,7 @@ final class OrderCardCell: UITableViewCell {
 enum OrderListCardAction: Equatable {
     case cancel
     case pay
+    case confirmShip
     case confirmReceipt
     case afterSale
     case renew
@@ -254,6 +277,7 @@ enum OrderListCardAction: Equatable {
         switch self {
         case .cancel: return "取消订单"
         case .pay: return "去支付"
+        case .confirmShip: return "确认发货"
         case .confirmReceipt: return "确认收货"
         case .afterSale: return "退款/售后"
         case .renew: return "续费订单"
@@ -261,23 +285,30 @@ enum OrderListCardAction: Equatable {
         }
     }
 
-    /// 本期简化：按主状态展示按钮骨架（真实资格/API 后续）
-    static func actions(for status: AppOrderStatus?) -> [OrderListCardAction] {
+    /// 按主状态与套餐类型展示操作按钮
+    static func actions(for status: AppOrderStatus?, packageType: Int? = nil) -> [OrderListCardAction] {
         guard let status else { return [] }
         switch status {
         case .pendingPayment:
             return [.cancel, .pay]
         case .pendingShip:
-            return [.cancel]
+            return [.confirmShip, .cancel]
         case .pendingReceive:
-            return [.confirmReceipt]
-        case .inProgress:
-            return [.renew, .settle]
-        case .overdue:
-            return [.renew, .settle]
+            return [.afterSale, .confirmReceipt]
+        case .inProgress, .overdue:
+            return inProgressOrOverdueActions(packageType: packageType)
         case .completed, .refund, .cancelled, .refundReview:
             return []
         }
+    }
+
+    private static func inProgressOrOverdueActions(packageType: Int?) -> [OrderListCardAction] {
+        var actions: [OrderListCardAction] = []
+        if AppPackageType.supportsRenewal(packageType: packageType) {
+            actions.append(.renew)
+        }
+        actions.append(.settle)
+        return actions
     }
 }
 

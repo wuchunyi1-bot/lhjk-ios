@@ -12,6 +12,7 @@ final class ServicePackageDetailViewModel: ObservableObject {
     private let packageId: String
     private let hospitalId: String?
     private let categoryServiceId: String?
+    private let renewalParentOrderId: Int64?
     private let hospitalPackageService: HospitalPackageService
     private let catalogService: ServiceCatalogService
     private let shoppingCartService: ShoppingCartService
@@ -22,6 +23,7 @@ final class ServicePackageDetailViewModel: ObservableObject {
         packageId: String,
         hospitalId: String? = nil,
         categoryServiceId: String? = nil,
+        renewalParentOrderId: Int64? = nil,
         hospitalPackageService: HospitalPackageService = AppContainer.shared.hospitalPackageService,
         catalogService: ServiceCatalogService = AppContainer.shared.serviceCatalogService,
         shoppingCartService: ShoppingCartService = AppContainer.shared.shoppingCartService,
@@ -30,6 +32,7 @@ final class ServicePackageDetailViewModel: ObservableObject {
         self.packageId = packageId
         self.hospitalId = hospitalId
         self.categoryServiceId = categoryServiceId
+        self.renewalParentOrderId = renewalParentOrderId
         self.hospitalPackageService = hospitalPackageService
         self.catalogService = catalogService
         self.shoppingCartService = shoppingCartService
@@ -37,6 +40,12 @@ final class ServicePackageDetailViewModel: ObservableObject {
     }
 
     deinit { loadTask?.cancel() }
+
+    /// 续费态：路由带入原订单 id
+    var isRenewalMode: Bool {
+        guard let renewalParentOrderId, renewalParentOrderId > 0 else { return false }
+        return true
+    }
 
     /// 是否走服务端加购/下单（数字 packageId）
     var usesRemoteCartAPI: Bool {
@@ -84,13 +93,14 @@ final class ServicePackageDetailViewModel: ObservableObject {
 
         await MainActor.run { isSubmitting = true }
         do {
-            let request = SaveShoppingCartRequest(
+            var request = SaveShoppingCartRequest(
                 hospitalId: hid,
                 packageId: pkgId,
                 categoryServiceId: categoryId,
                 flag: flag.rawValue,
                 packageHospitalDetailList: selectedDetails
             )
+            request.parentId = renewalParentOrderId
             let orderId = try await shoppingCartService.saveShoppingCartOrPurchase(request)
             await MainActor.run { isSubmitting = false }
             if flag == .purchaseNow {
@@ -106,12 +116,19 @@ final class ServicePackageDetailViewModel: ObservableObject {
         }
     }
 
-    /// 已选机构 → 入参 → 临时常量
+    /// packageInfo.hospitalId → 路由入参 → 已选机构 → 临时常量
     private func resolvedHospitalId() -> String {
-        if let selected = institutionStore.selectedHospitalId {
-            return selected
+        if let fromPackage = HospitalPackageService.apiHospitalId(package?.hospitalId) {
+            return fromPackage
         }
-        return HospitalPackageService.resolvedHospitalId(hospitalId)
+        if let fromRoute = HospitalPackageService.apiHospitalId(hospitalId) {
+            return fromRoute
+        }
+        if let selected = institutionStore.selectedHospitalId,
+           let apiId = HospitalPackageService.apiHospitalId(selected) {
+            return apiId
+        }
+        return HospitalPackageService.temporaryHospitalId
     }
 
     /// 详情 packageInfo → 路由入参
@@ -133,7 +150,8 @@ final class ServicePackageDetailViewModel: ObservableObject {
             do {
                 let detail = try await hospitalPackageService.fetchPackageDetail(
                     packageId: packageId,
-                    hospitalId: hospitalId ?? institutionStore.selectedHospitalId
+                    hospitalId: hospitalId ?? institutionStore.selectedHospitalId,
+                    renewalMode: isRenewalMode
                 )
                 guard !Task.isCancelled else { return }
                 await MainActor.run {

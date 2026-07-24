@@ -128,13 +128,13 @@ extension PackageOrderDraft {
             packageId: line.targetId,
             packageName: line.name,
             subtitle: line.subtitle,
-            amount: Double(line.lineTotal),
+            amount: line.lineTotal,
             selectedItems: [
                 PackageOrderDraftItem(
                     name: line.name,
                     qty: "\(qty)",
                     unit: "份",
-                    price: Double(line.lineTotal)
+                    price: line.lineTotal
                 )
             ],
             hospitalId: line.hospitalId,

@@ -59,9 +59,12 @@ final class OrderConfirmViewModel: ObservableObject {
     @Published private(set) var hospitalDetail: OHospital?
     @Published var navigateBack = false
     @Published var navigateToOrders = false
+    @Published private(set) var orderDetail: AppOrderDetailBO?
+    @Published private(set) var availableCouponCount = 0
 
     private let orderId: Int64
     private let serialNumber: Int?
+    private let entry: OrderConfirmEntry
     private let hospitalService: HospitalService
     private let orderService: OrderService
     private let couponService: CouponService
@@ -73,6 +76,7 @@ final class OrderConfirmViewModel: ObservableObject {
     init(
         orderId: Int64,
         serialNumber: Int? = nil,
+        entry: OrderConfirmEntry = .default,
         hospitalService: HospitalService = AppContainer.shared.hospitalService,
         orderService: OrderService = AppContainer.shared.orderService,
         couponService: CouponService = AppContainer.shared.couponService,
@@ -80,6 +84,7 @@ final class OrderConfirmViewModel: ObservableObject {
     ) {
         self.orderId = orderId
         self.serialNumber = serialNumber
+        self.entry = entry
         self.hospitalService = hospitalService
         self.orderService = orderService
         self.couponService = couponService
@@ -87,6 +92,10 @@ final class OrderConfirmViewModel: ObservableObject {
     }
 
     deinit { loadTask?.cancel() }
+
+    var showsOrderListPayPresentation: Bool { entry == .orderListPay }
+
+    var selectedPaymentMethodLabel: String { payMethod.title }
 
     var showsFulfillment: Bool { true }
 
@@ -124,10 +133,17 @@ final class OrderConfirmViewModel: ObservableObject {
     }
 
     var couponSummaryText: String {
-        if settlementCouponDiscount > 0 {
-            return "已优惠 \(OrderConfirmMoney.yen(settlementCouponDiscount))"
+        if settlementCouponDiscount > 0, selectedCouponTakeId != nil {
+            return "已使用一张，共优惠\(OrderConfirmMoney.yen(settlementCouponDiscount))"
         }
-        return "请选择"
+        if availableCouponCount > 0 {
+            return "有\(availableCouponCount)张可用"
+        }
+        return "暂无可用"
+    }
+
+    var couponSummaryIsPlaceholder: Bool {
+        settlementCouponDiscount <= 0 && availableCouponCount == 0
     }
 
     var pickupName: String {
@@ -231,7 +247,12 @@ final class OrderConfirmViewModel: ObservableObject {
     // MARK: - 优惠券
 
     func fetchCouponOptions() async throws -> [CouponTakeItem] {
-        try await couponService.getCouponTakeList()
+        let hospitalId = latestSettlement?.resolvedHospitalId
+        let coupons = try await couponService.getCouponTakeList(hospitalId: hospitalId)
+        await MainActor.run {
+            availableCouponCount = coupons.count
+        }
+        return coupons
     }
 
     func bindCoupon(takeId: Int64?) {
@@ -280,13 +301,28 @@ final class OrderConfirmViewModel: ObservableObject {
             hospitalDetail = nil
             fallbackHospitalName = nil
             draft = nil
+            orderDetail = nil
         }
 
         do {
-            let settlement = try await orderService.getOrderSettlement(
-                orderId: orderId,
-                serialNumber: serialNumber
-            )
+            let settlement: OrderSettlementBO
+            if entry == .orderListPay {
+                async let settlementTask = orderService.getOrderSettlement(
+                    orderId: orderId,
+                    serialNumber: serialNumber
+                )
+                async let detailTask = orderService.getAppOrderDetail(orderId: orderId)
+                let (loadedSettlement, loadedDetail) = try await (settlementTask, detailTask)
+                settlement = loadedSettlement
+                await MainActor.run {
+                    orderDetail = loadedDetail
+                }
+            } else {
+                settlement = try await orderService.getOrderSettlement(
+                    orderId: orderId,
+                    serialNumber: serialNumber
+                )
+            }
             await MainActor.run {
                 applySettlement(settlement)
                 isLoading = false

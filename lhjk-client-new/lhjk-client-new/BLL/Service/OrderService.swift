@@ -2,11 +2,13 @@ import Foundation
 
 // MARK: - 订单服务 (BLL)
 
-/// 订单管理服务 — 提供订单列表 / 结算查询能力
+/// 订单管理服务 — 提供订单列表 / 详情 / 结算查询能力
 ///
 /// 封装后端接口：
 /// - `GET /v1/order/getAppOrderList` — 分页查询用户订单列表
+/// - `GET /v1/order/getAppOrderDetail` — 根据订单 id 查询详情
 /// - `GET /v1/order/getOrderSettlement` — 确认订单结算信息
+/// - `POST /v1/order/insertOrEdit` — 新增或编辑订单（取消 / 退款申请）
 final class OrderService {
 
     // MARK: - Singleton
@@ -58,6 +60,31 @@ final class OrderService {
 
         let data = response.data ?? PaginatedOrderData(totalRecords: 0, pageSize: pageSize, totalPages: 0, currentPage: pageNum, records: [])
         print("[OrderService] getOrderList ✓ total=\(data.totalRecords ?? 0) count=\(data.records?.count ?? 0)")
+        return data
+    }
+
+    // MARK: - 订单详情
+
+    /// 根据订单 id 查询详情
+    /// `GET /v1/order/getAppOrderDetail`
+    func getAppOrderDetail(orderId: Int64) async throws -> AppOrderDetailBO {
+        let params: [String: Any] = ["orderId": String(orderId)]
+
+        print("[OrderService] getAppOrderDetail → orderId=\(orderId)")
+
+        let response: APIResponse<AppOrderDetailBO> = try await APIManager.shared
+            .getAsync(
+                path: "/v1/order/getAppOrderDetail",
+                parameters: params,
+                responseType: APIResponse<AppOrderDetailBO>.self
+            )
+
+        guard response.isSuccess, let data = response.data else {
+            print("[OrderService] getAppOrderDetail ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw OrderServiceError.queryFailed(response.msg ?? "查询订单详情失败")
+        }
+
+        print("[OrderService] getAppOrderDetail ✓ status=\(data.status?.description ?? "nil") name=\(data.orderName ?? "")")
         return data
     }
 
@@ -162,6 +189,85 @@ final class OrderService {
             throw OrderServiceError.queryFailed(response.msg ?? "保存配送信息失败")
         }
         print("[OrderService] updateOrderDelivery ✓")
+    }
+
+    // MARK: - 取消 / 更新订单状态
+
+    /// `POST /v1/order/insertOrEdit`（JSON body）
+    func insertOrEditOrder(_ request: OrderInsertOrEditRequest) async throws {
+        let body = request.apiParameters()
+
+        print("[OrderService] insertOrEditOrder → body=\(body)")
+
+        let response: APIResponse<EmptyResponse> = try await APIManager.shared
+            .postAsync(
+                path: "/v1/order/insertOrEdit",
+                parameters: body,
+                responseType: APIResponse<EmptyResponse>.self
+            )
+
+        guard response.isSuccess else {
+            print("[OrderService] insertOrEditOrder ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw OrderServiceError.queryFailed(response.msg ?? "操作失败，请稍后重试")
+        }
+        print("[OrderService] insertOrEditOrder ✓")
+    }
+
+    /// 取消订单（status → 8）
+    func cancelOrder(orderId: Int64, hospitalId: String) async throws {
+        try await insertOrEditOrder(.cancelOrder(orderId: orderId, hospitalId: hospitalId))
+    }
+
+    /// 待支付订单取消（status → 8）
+    func cancelPendingPaymentOrder(orderId: Int64, hospitalId: String) async throws {
+        try await cancelOrder(orderId: orderId, hospitalId: hospitalId)
+    }
+
+    /// 待发货订单取消退款申请（status → 9 + remark）
+    func submitPendingShipCancelRefund(
+        orderId: Int64,
+        hospitalId: String,
+        remark: String
+    ) async throws {
+        try await insertOrEditOrder(
+            .submitPendingShipRefund(
+                orderId: orderId,
+                hospitalId: hospitalId,
+                remark: remark
+            )
+        )
+    }
+
+    /// 确认发货（status → 3 + shipmentTime）
+    func confirmShipment(orderId: Int64, hospitalId: String, shipmentTime: String? = nil) async throws {
+        let time = shipmentTime ?? OrderInsertOrEditFormats.shipmentTime()
+        try await insertOrEditOrder(
+            .confirmShipment(orderId: orderId, hospitalId: hospitalId, shipmentTime: time)
+        )
+    }
+
+    /// 确认收货（status → 4）
+    func confirmReceipt(orderId: Int64, hospitalId: String) async throws {
+        try await insertOrEditOrder(.confirmReceipt(orderId: orderId, hospitalId: hospitalId))
+    }
+
+    /// 退款/售后（status → 9 + remark）
+    func submitRefundRequest(orderId: Int64, hospitalId: String, remark: String) async throws {
+        try await insertOrEditOrder(
+            .submitRefundApplication(orderId: orderId, hospitalId: hospitalId, remark: remark)
+        )
+    }
+
+    /// 结算订单（status → 9 + remark）
+    func settleOrder(orderId: Int64, hospitalId: String, remark: String) async throws {
+        try await insertOrEditOrder(
+            .settleOrder(orderId: orderId, hospitalId: hospitalId, remark: remark)
+        )
+    }
+
+    /// 购物车去结算（status → 1 待支付）
+    func checkoutCartOrder(orderId: Int64, hospitalId: String? = nil) async throws {
+        try await insertOrEditOrder(.checkoutFromCart(orderId: orderId, hospitalId: hospitalId))
     }
 }
 

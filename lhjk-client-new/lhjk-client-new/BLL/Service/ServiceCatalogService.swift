@@ -104,6 +104,7 @@ final class ServiceCatalogService {
         }()
         return ServicePackageDetail(
             id: item.id,
+            hospitalId: item.hospitalId,
             productCode: item.productCode.isEmpty ? "德好" : item.productCode,
             name: displayName,
             subtitle: subtitle,

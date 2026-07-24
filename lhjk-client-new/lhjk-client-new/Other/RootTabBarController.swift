@@ -110,3 +110,15 @@ final class RootTabBarController: UITabBarController {
         }
     }
 }
+
+// MARK: - Tab Indices
+
+extension RootTabBarController {
+    enum Tab {
+        static let home = 0
+        static let health = 1
+        static let service = 2
+        static let message = 3
+        static let my = 4
+    }
+}

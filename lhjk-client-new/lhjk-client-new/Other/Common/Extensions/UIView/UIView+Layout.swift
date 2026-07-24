@@ -30,12 +30,25 @@ extension UIView {
     /// 为 tableHeaderView 预计算正确宽度的 frame，避免 _UITemporaryLayoutWidth == 0 导致约束冲突
     func sizedForTableHeader(in view: UIView) -> Self {
         let fitWidth = view.bounds.width > 0 ? view.bounds.width : UIScreen.main.bounds.width
+        bounds.size.width = fitWidth
+        setNeedsLayout()
+        layoutIfNeeded()
         let size = systemLayoutSizeFitting(
             CGSize(width: fitWidth, height: UIView.layoutFittingCompressedSize.height),
             withHorizontalFittingPriority: .required,
             verticalFittingPriority: .fittingSizeLevel
         )
         frame = CGRect(x: 0, y: 0, width: fitWidth, height: size.height)
+        return self
+    }
+
+    /// 为 tableFooterView 预计算正确宽度的 frame
+    func sizedForTableFooter(width: CGFloat, height: CGFloat) -> Self {
+        let fitWidth = width > 0 ? width : UIScreen.main.bounds.width
+        bounds.size = CGSize(width: fitWidth, height: height)
+        setNeedsLayout()
+        layoutIfNeeded()
+        frame = CGRect(x: 0, y: 0, width: fitWidth, height: height)
         return self
     }
 }

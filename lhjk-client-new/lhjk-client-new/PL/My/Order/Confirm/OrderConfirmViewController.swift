@@ -6,6 +6,7 @@ import Combine
 final class OrderConfirmViewController: BaseViewController {
 
     private let viewModel: OrderConfirmViewModel
+    private let entry: OrderConfirmEntry
     private var cancellables = Set<AnyCancellable>()
 
     private let scrollView = UIScrollView()
@@ -16,6 +17,8 @@ final class OrderConfirmViewController: BaseViewController {
     private let fulfillmentView = OrderConfirmFulfillmentView()
     private let addressCard = OrderConfirmCardView()
     private let addressView = OrderConfirmAddressView()
+    private let pickupCard = OrderConfirmCardView()
+    private let pickupView = OrderConfirmPickupView()
     private let packageCard = OrderConfirmCardView()
     private let packageView = OrderConfirmPackageView()
     private let remarkRow = OrderConfirmSelectRow()
@@ -23,10 +26,16 @@ final class OrderConfirmViewController: BaseViewController {
     private let benefitRow = OrderConfirmSelectRow()
     private let feeView = OrderConfirmFeeView()
     private let payMethodView = OrderConfirmPayMethodView()
+    private let statusView = OrderDetailStatusView()
+    private let infoCard = OrderDetailCardView()
+    private let infoView = OrderDetailInfoView()
     private let submitBar = OrderConfirmSubmitBar()
 
-    init(orderId: Int64, serialNumber: Int? = nil) {
-        self.viewModel = OrderConfirmViewModel(orderId: orderId, serialNumber: serialNumber)
+    private var showsOrderListPayPresentation: Bool { entry == .orderListPay }
+
+    init(orderId: Int64, serialNumber: Int? = nil, entry: OrderConfirmEntry = .default) {
+        self.entry = entry
+        self.viewModel = OrderConfirmViewModel(orderId: orderId, serialNumber: serialNumber, entry: entry)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -35,10 +44,20 @@ final class OrderConfirmViewController: BaseViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        if entry == .cartCheckout {
+            navigationController?.interactivePopGestureRecognizer?.isEnabled = false
+        }
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if entry == .cartCheckout {
+            navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+        }
     }
 
     override func setupUI() {
-        title = "确认订单"
+        title = showsOrderListPayPresentation ? "订单详情" : "确认订单"
         view.backgroundColor = .fdBg
 
         scrollView.showsVerticalScrollIndicator = false
@@ -50,26 +69,46 @@ final class OrderConfirmViewController: BaseViewController {
         contentStack.axis = .vertical
         contentStack.spacing = 12
         contentStack.isLayoutMarginsRelativeArrangement = true
-        contentStack.layoutMargins = UIEdgeInsets(top: 12, left: 16, bottom: 24, right: 16)
+        let topInset: CGFloat = showsOrderListPayPresentation ? 0 : 12
+        contentStack.layoutMargins = UIEdgeInsets(top: topInset, left: 16, bottom: 24, right: 16)
         scrollView.addSubview(contentStack)
 
         fulfillmentCard.addSubview(fulfillmentView)
         fulfillmentView.snp.makeConstraints { $0.edges.equalToSuperview() }
         addressCard.addSubview(addressView)
         addressView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        pickupCard.addSubview(pickupView)
+        pickupView.snp.makeConstraints { $0.edges.equalToSuperview() }
         packageCard.addSubview(packageView)
         packageView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        infoCard.addSubview(infoView)
+        infoView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        infoView.onOrderNumberCopied = { [weak self] in
+            self?.showToast("订单号已复制")
+        }
 
-        [
+        var sections: [UIView] = []
+        if showsOrderListPayPresentation {
+            sections.append(statusView)
+        }
+        sections += [
             fulfillmentCard,
             addressCard,
+            pickupCard,
             packageCard,
             remarkRow,
             couponRow,
             benefitRow,
             feeView,
-            payMethodView
-        ].forEach { contentStack.addArrangedSubview($0) }
+            payMethodView,
+        ]
+        if showsOrderListPayPresentation {
+            sections.append(infoCard)
+        }
+        sections.forEach { contentStack.addArrangedSubview($0) }
+        if showsOrderListPayPresentation {
+            contentStack.setCustomSpacing(4, after: statusView)
+        }
 
         submitBar.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
@@ -94,6 +133,9 @@ final class OrderConfirmViewController: BaseViewController {
         addressView.onCall = { [weak self] in
             self?.callInstitution()
         }
+        pickupView.onCall = { [weak self] in
+            self?.callInstitution()
+        }
         packageView.onToggleContent = { [weak self] in
             guard let self else { return }
             self.viewModel.contentExpanded.toggle()
@@ -107,6 +149,23 @@ final class OrderConfirmViewController: BaseViewController {
         submitBar.onPay = { [weak self] in
             self?.viewModel.submitPay()
         }
+
+        setupCartCheckoutNavigationIfNeeded()
+    }
+
+    private func setupCartCheckoutNavigationIfNeeded() {
+        guard entry == .cartCheckout else { return }
+        navigationItem.hidesBackButton = true
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            image: UIImage(systemName: "chevron.left"),
+            style: .plain,
+            target: self,
+            action: #selector(handleCartCheckoutBack)
+        )
+    }
+
+    @objc private func handleCartCheckoutBack() {
+        OrderNavigationCoordinator.navigateToMyOrdersAll(from: self)
     }
 
     override func bindViewModel() {
@@ -138,6 +197,21 @@ final class OrderConfirmViewController: BaseViewController {
             .sink { [weak self] _ in self?.render() }
             .store(in: &cancellables)
 
+        viewModel.$orderDetail
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.render() }
+            .store(in: &cancellables)
+
+        viewModel.$payMethod
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.render() }
+            .store(in: &cancellables)
+
+        viewModel.$remark
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.render() }
+            .store(in: &cancellables)
+
         viewModel.$toastMessage
             .compactMap { $0 }
             .receive(on: DispatchQueue.main)
@@ -152,8 +226,13 @@ final class OrderConfirmViewController: BaseViewController {
             .filter { $0 }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.viewModel.consumeNavigationFlags()
-                self?.navigationController?.popViewController(animated: true)
+                guard let self else { return }
+                self.viewModel.consumeNavigationFlags()
+                if self.entry == .cartCheckout {
+                    OrderNavigationCoordinator.navigateToMyOrdersAll(from: self)
+                } else {
+                    self.navigationController?.popViewController(animated: true)
+                }
             }
             .store(in: &cancellables)
 
@@ -161,8 +240,13 @@ final class OrderConfirmViewController: BaseViewController {
             .filter { $0 }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.viewModel.consumeNavigationFlags()
-                self?.replaceWithOrders()
+                guard let self else { return }
+                self.viewModel.consumeNavigationFlags()
+                if self.entry == .cartCheckout {
+                    OrderNavigationCoordinator.navigateToMyOrdersAll(from: self)
+                } else {
+                    self.replaceWithOrders()
+                }
             }
             .store(in: &cancellables)
 
@@ -193,12 +277,15 @@ final class OrderConfirmViewController: BaseViewController {
             )
         }
 
-        let showAddress = viewModel.needsExpressAddress || viewModel.needsPickupInfo
-        addressCard.isHidden = !showAddress
-        if viewModel.needsExpressAddress {
+        let showExpress = viewModel.needsExpressAddress
+        let showPickup = viewModel.needsPickupInfo
+        addressCard.isHidden = !showExpress
+        pickupCard.isHidden = !showPickup
+        if showExpress {
             addressView.configureExpress(address: viewModel.selectedAddress)
-        } else if viewModel.needsPickupInfo {
-            addressView.configurePickup(
+        }
+        if showPickup {
+            pickupView.configure(
                 name: viewModel.pickupName,
                 address: viewModel.pickupAddress,
                 showCall: !viewModel.institutionPhone.isEmpty
@@ -224,7 +311,8 @@ final class OrderConfirmViewController: BaseViewController {
         couponRow.configure(
             title: "优惠券",
             value: viewModel.couponSummaryText,
-            placeholder: viewModel.couponDiscount == 0
+            placeholder: viewModel.couponSummaryIsPlaceholder,
+            emphasis: viewModel.couponDiscount > 0
         )
         benefitRow.configure(title: "权益卡", value: "暂无可用", placeholder: true)
 
@@ -241,6 +329,25 @@ final class OrderConfirmViewController: BaseViewController {
             supportsAlipay: viewModel.supportsAlipay
         )
         submitBar.configure(amount: viewModel.payableAmount, submitting: viewModel.isSubmitting)
+
+        if showsOrderListPayPresentation {
+            statusView.configure(
+                presentation: .make(
+                    status: .pendingPayment,
+                    title: AppOrderStatus.pendingPayment.label,
+                    preferPrimaryForPending: true
+                )
+            )
+            infoCard.isHidden = viewModel.orderDetail == nil
+            if let detail = viewModel.orderDetail {
+                infoView.configure(
+                    detail: detail,
+                    remarkOverride: viewModel.remark,
+                    expandedRows: [("支付状态", "待支付")],
+                    showsExpandToggle: true
+                )
+            }
+        }
     }
 
     // MARK: - Actions
@@ -306,11 +413,13 @@ final class OrderConfirmViewController: BaseViewController {
 
     private func replaceWithOrders() {
         guard let nav = navigationController else {
-            Router.shared.push("/orders", from: self)
+            Router.shared.push("/orders", params: ["tab": "all"], from: self)
             return
         }
         var stack = nav.viewControllers.filter { !($0 is OrderConfirmViewController) }
-        stack.append(OrderListViewController())
+        let orders = OrderListViewController(initialTab: "all")
+        orders.hidesBottomBarWhenPushed = true
+        stack.append(orders)
         nav.setViewControllers(stack, animated: true)
     }
 

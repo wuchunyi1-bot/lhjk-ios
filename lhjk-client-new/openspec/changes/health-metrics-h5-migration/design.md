@@ -1,71 +1,104 @@
 ## Context
 
-体征监测 H5 与 funde-client 前端对齐，使用 hash 路由。iOS App 健康 Tab 的 Hub 卡片与「体征监测」网格页仍由原生 UIKit 渲染（mock 摘要数据），用户点击任意指标后进入内嵌 WebView。
+H5 宿主接入文档约定：
+
+```
+{baseURL}#/{路径}?token={access_token}&platform=ios&{业务参数}
+```
+
+- `token`：需登录页面必填，H5 读取后从地址栏移除
+- `platform`：建议传 `ios` / `android` / `mp`
+- 饮食运动 H5 路径为 `exercise-food`，非 App key `exercise`
+
+本期**仅健康模块体征 H5**采用 `token + platform=ios`；登录协议等其它 WebView 后续单独评估。
 
 ## Decisions
 
-### 1. 路由统一为 H5
+### 1. URL 构建（`H5Config`）
 
-| 原生路由 | 目标 |
-|---------|------|
-| `/health/metrics/{key}` | `WebViewController` → `H5Config.metricPageURL(for: key)` |
-| `/health/metrics/{key}/manual` 等子路由 | 同上（H5 内部管理子页面） |
-| `/health/metrics/add?key={key}` | 同上 |
-
-支持的 `key`（与 Hub / MetricsView 一致）：
-
-| key | 标题 | H5 hash |
-|-----|------|---------|
-| `blood-pressure` | 血压 | `#/blood-pressure` |
-| `blood-sugar` | 血糖 | `#/blood-sugar` |
-| `weight` | 体重 | `#/weight` |
-| `heart-rate` | 心率 | `#/heart-rate` |
-| `sleep` | 睡眠 | `#/sleep` |
-| `ecg` | 心电 | `#/ecg` |
-| `fundus` | 鹰瞳眼底 | `#/fundus` |
-| `exercise` | 饮食运动 | `#/exercise` |
-| `spo2` | 血氧 | `#/spo2` |
-| `digestive` | 消化道 | `#/digestive` |
-
-### 2. H5Config
+集中提供：
 
 ```swift
-enum H5Config {
-    static var environment: H5Environment = .development
-    static let metricKeys: [(key: String, title: String)]
-    static func metricPageURL(for key: String) -> URL
-    static func metricTitle(for key: String) -> String
-}
+static func authenticatedMetricURL(
+    metricKey: String,
+    nativeSuffix: String? = nil,
+    routeParams: [String: Any] = [:]
+) -> URL
 ```
 
-环境 base URL：
-- development: `http://192.168.15.249:5181`
-- staging / production: 待定正式域名
+规则：
 
-### 3. 删除原生实现
+1. `metricKey` → H5 根路径（`exercise` → `exercise-food`）
+2. `nativeSuffix` → H5 子路径（见下表）
+3. Query 固定：`token`（有则传）、`platform=ios`
+4. 业务 Query：从 `routeParams` 提取（`monitorId`、`sugarId`、`meal` 等）
 
-以下代码**全部删除**（不再保留回退）：
+`token` 来源：`UserDefaults` `auth_access_token`（与 `APIManager` 一致）。
 
-**BLL**：`BloodPressureService`、`BloodSugarService`、`WeightService`、`ExerciseFoodService` 及对应 Models；`BluetoothService`（仅体征模块使用）。
+### 2. App key → H5 path
 
-**PL**：`PL/Health/Metrics/` 下除 `MetricsViewController.swift` 外的所有 ViewController、ViewModel、Cell、Component（含血压/血糖/体重/饮食运动完整子目录，以及心率/睡眠/血氧/心电/眼底/消化道占位页、`MetricAddViewController`、`MetricRulerView`、ECG Cells）。
+| App `metricKey` | H5 hash 根路径 |
+|-----------------|---------------|
+| `blood-pressure` | `blood-pressure` |
+| `blood-sugar` | `blood-sugar` |
+| `weight` | `weight` |
+| `exercise` | `exercise-food` |
+| 其余 key | 与 key 同名（`heart-rate` → `heart-rate`，待 H5 就绪） |
 
-### 4. 保留原生部分
+### 3. 原生子路由 → H5 子路径
 
-- `HealthViewController` + `HealthVitalMetricsCell` + `MetricCardCell`（Hub 体征卡片）
-- `MetricsViewController`（体征监测网格页）
-- `WebViewController`（通用 H5 容器）
-- 健康档案、评估报告等非体征子模块
+| 原生 suffix | H5 子路径 | 额外 Query |
+|-------------|----------|-----------|
+| `manual` | `add` | — |
+| `history` | `records` | — |
+| `detail` | `detail` | `monitorId`；血糖另需 `sugarId` |
+| `service` | （无，回首页） | — |
+| `add-diet` | `add` | `meal`（默认 `breakfast`） |
+| `add-motion` | `check-in` | `monitorId` 可选 |
+| `home` / `search` | （无，回首页） | — |
 
-### 5. Info.plist ATS（开发者手动）
+示例：
 
-dev H5 为 HTTP + IP，需在 `NSAppTransportSecurity` 下添加 `NSAllowsArbitraryLoads` 或改用 HTTPS 正式域名。AI 不修改 Info.plist。
+```
+#/weight?token=xxx&platform=ios
+#/weight/detail?token=xxx&platform=ios&monitorId=2051465082076262401
+#/exercise-food/add?token=xxx&platform=ios&meal=breakfast
+```
 
-### 6. 登录态注入 H5
+### 4. 环境 Base URL
 
-Token / Cookie 注入方案待 H5 联调；当前仅加载 URL，不附带鉴权参数。
+| Environment | base URL |
+|-------------|----------|
+| development | `http://h5-dev.lianhaojiankang.com` |
+| staging | `https://staging-h5.lhjk.com` |
+| production | `https://h5.lhjk.com` |
 
-## Risks / Trade-offs
+与 `APIEnvironment` 对齐切换（本期可先手动设置 `H5Config.environment`）。
 
-- Hub / MetricsView 仍展示 mock 摘要，与 H5 内真实数据可能不一致，待后续接 Hub API
-- 删除原生代码后无法离线查看体征；全部依赖 H5 与网络
+### 5. 路由层（`HealthRoutes`）
+
+- `/health/metrics/{key}` → `authenticatedMetricURL(metricKey:key)`
+- `/health/metrics/{key}/{suffix}` → 带 `nativeSuffix` 与路由 `params`
+- `/health/metrics/add?key={key}` → 对应指标 H5 首页（或后续扩展为 `/add`）
+
+`WebViewController` 仍只负责加载最终 URL，不解析业务；**返回行为**由 `WKWebView` 历史栈驱动（`canGoBack` → `goBack`，否则 pop/dismiss）。
+
+### 6. H5 返回栈
+
+- 导航栏返回按钮与侧滑手势统一走 `handleBackNavigation()`
+- 返回时在点击/手势回调中读取 `webView.canGoBack`，无需 KVO 监听
+- 侧滑：`interactivePopGestureRecognizer.delegate` 拦截，有 H5 历史时 `goBack()` 并 `return false`
+
+### 7. 不变部分
+
+- Hub / `MetricsViewController` 入口 UI 仍为原生 mock 摘要
+- 健康档案 `/health/record` 仍走原生页（文档虽有 `#/health/record`，本期不迁）
+- 无 token 时仍打开 H5（由 H5 处理未登录）；`token` 有则必传
+
+## Risks
+
+| Risk | Mitigation |
+|------|------------|
+| dev HTTP ATS | 开发者手动配置 Info.plist |
+| 6 个未文档化指标 H5 未上线 | 仍带 token 打开，H5 自行兜底 |
+| `token` 过期 | 依赖现有 OAuth 刷新；H5 401 由 H5 处理 |

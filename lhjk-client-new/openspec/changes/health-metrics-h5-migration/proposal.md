@@ -1,38 +1,33 @@
 ## Why
 
-健康模块「体征监测」10 个指标（血压、血糖、体重、心率、睡眠、心电、鹰瞳眼底、饮食运动、血氧、消化道）已确定全部由 H5 SPA 承载。App 仅保留 Hub / 指标网格入口，点击后打开 `WebViewController`，不再维护原生详情、录入、历史等页面，也不再调用 Angel 体征 API。
+健康模块「体征监测」由 H5 SPA 承载。宿主接入文档要求打开 H5 时携带 `token` + `platform=ios`，且部分指标 H5 路径与 App `metric key` 不一致（如 `exercise` → `exercise-food`）。当前实现仅加载裸 hash URL，无法满足登录态与子页面深链。
 
 ## What Changes
 
-- 所有 `/health/metrics/{key}` 及历史子路由统一跳转 H5 hash 页 `#/{key}`
-- `/health/metrics/add?key={key}` 同样跳转对应 H5 页
-- 扩展 `H5Config`：集中管理指标 key、标题、URL
-- **删除** 体征监测相关原生 PL（ViewController / ViewModel / Cell / Component）与 BLL（Service / Models / BluetoothService）
-- 从 `AppContainer` 移除 `bloodPressureService`、`bloodSugarService`、`weightService`、`exerciseFoodService`
-- **保留** `HealthViewController`（Hub）、`MetricsViewController`（指标网格）、`MetricCardCell` 等入口 UI
+- **H5 鉴权 Query**：健康体征相关 WebView URL 统一追加 `token`（`access_token`）与 `platform=ios`
+- **环境 Base URL**：development 对齐文档 `http://h5-dev.lianhaojiankang.com`
+- **App key → H5 path 映射**：`exercise` → `exercise-food`；子路由 `manual/history/detail` 映射为 H5 `add/records/detail`
+- **子页面深链**：原生路由携带的 `monitorId`、`sugarId`、`meal` 等参数拼入 H5 query
+- **范围**：仅健康模块体征 H5；其他 WebView（协议页等）暂不改动
 
-## Supersedes
+## Supersedes / Related
 
-- `weight-h5-migration`（体重 H5 为本次变更子集）
-- `implement-blood-pressure` / `implement-blood-sugar` / `implement-weight` / `implement-exercise-food`（原生实现作废）
-- `funde-metrics-with-angel-api`（App 侧不再直连 Angel 体征 API）
+- 延续 `health-metrics-h5-migration`（Hub + WebView 骨架已完成）
+- 作废原生体征实现（已完成）
 
 ## Capabilities
 
 ### Modified Capabilities
 
-- `health-metrics`: 体征监测入口与路由改为 H5 WebView
+- `health-metrics`: H5 URL 构建、鉴权参数、路径与子路由映射
 
 ## Impact
 
-- `BLL/Health/HealthRoutes.swift`
 - `Other/Common/H5Config.swift`
-- `DAL/AppContainer.swift`
-- 删除 `PL/Health/Metrics/` 下除 `MetricsViewController.swift` 外的原生实现
-- 删除 `BLL/Health/*Service.swift`、`*Models.swift`、`BluetoothService.swift`
-- `Info.plist` ATS（开发者手动，见 design）
+- `BLL/Health/HealthRoutes.swift`
+- `openspec/changes/health-metrics-h5-migration/specs/health-metrics/spec.md`
 
 ## Reference
 
-- H5 dev base：`http://192.168.15.249:5181`
-- Hash 约定：`#/{metric-key}`，如 `#/blood-pressure`、`#/weight`
+- 宿主文档：`h5接入文档.docx`
+- Hash 形态：`{baseURL}#/{path}?token=...&platform=ios&...`

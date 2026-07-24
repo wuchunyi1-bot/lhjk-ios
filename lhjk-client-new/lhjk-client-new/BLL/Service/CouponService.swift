@@ -9,18 +9,23 @@ final class CouponService {
 
     private init() {}
 
-    /// 查询当前用户可用优惠券领用列表（与用户绑定，与商品无关）
+    /// 查询当前用户可用优惠券领用列表
     /// `GET /v1/couponTake/getCouponTakeList`
     func getCouponTakeList(
+        hospitalId: String?,
         pageNum: Int = 1,
         pageSize: Int = 50
     ) async throws -> [CouponTakeItem] {
-        let params: [String: Any] = [
+        var params: [String: Any] = [
             "pageNum": String(pageNum),
             "pageSize": String(pageSize),
         ]
+        let hospital = hospitalId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !hospital.isEmpty {
+            params["hospitalId"] = hospital
+        }
 
-        print("[CouponService] getCouponTakeList → pageNum=\(pageNum) pageSize=\(pageSize)")
+        print("[CouponService] getCouponTakeList → hospitalId=\(hospital) pageNum=\(pageNum) pageSize=\(pageSize)")
 
         let response: APIResponse<PaginatedCouponTakeData> = try await APIManager.shared.getAsync(
             path: "/v1/couponTake/getCouponTakeList",

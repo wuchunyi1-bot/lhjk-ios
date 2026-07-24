@@ -88,7 +88,7 @@
 
 - **WHEN** 用户点击「优惠券」行
 - **THEN** 调用 `GET /v1/couponTake/getCouponTakeList`（移动端领用列表；需 `couponTakeId` 供绑定）
-- **AND** Query 仅传 `pageNum`、`pageSize`（按当前登录用户查询可用券，与订单/商品无关）
+- **AND** Query 传 `pageNum`、`pageSize`、`hospitalId`（取自结算 `resolvedHospitalId`）
 - **AND** 参考优惠券模板列表：[getCouponList](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330755e0.md)
 - **AND** 自底部弹出选择面板：标题「选择优惠券」、副标题、右上角「不使用」、券列表、底部「完成」
 - **WHEN** 无可用券

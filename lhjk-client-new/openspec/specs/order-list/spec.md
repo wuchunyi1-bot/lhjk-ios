@@ -32,7 +32,7 @@
 | 6 | 退款/售后 | 退款/售后 |
 | 7 | 已逾期 | 已逾期 |
 | 8 | 已取消 | 已取消（仅「全部」可见） |
-| 9 | 退款审核中 | 退款审核中（并入「退款/售后」Tab） |
+| 9 | 退款审核中 | 退款审核中（仅在「全部」等 Tab 可见） |
 
 ### UI Tab → API 筛选（对齐 funde 8 Tab）
 
@@ -44,7 +44,7 @@
 | 待收货 | `status=3` |
 | 使用中 | `status=4` |
 | 已逾期 | `status=7` |
-| 退款/售后 | `statusList=6,9` |
+| 退款/售后 | `status=6` |
 | 已完成 | `status=5` |
 
 Tab 使用 UICollectionView 横向滚动；**恰好 8 个**，顺序同表。
@@ -63,10 +63,15 @@ Tab 使用 UICollectionView 横向滚动；**恰好 8 个**，顺序同表。
 | `doctorName` | String | 医生姓名 |
 | `packageDescription` | String | 套餐描述 |
 | `packageType` | Int | 套餐类型：1=租赁 2=售卖 3=虚拟 4=体验 |
+
+**续费按钮**：仅 `packageType == 1`（租赁套餐）且状态为使用中/已逾期时展示「续费订单」。
 | `packageImageUrl` | String | 套餐图片 |
 | `beginTime` | String | 服务开始时间 |
 | `endTime` | String | 服务结束时间 |
 | `serviceTime` | String | 服务时间 |
+| `packageId` | String | 套餐 id（续费跳转） |
+| `hospitalId` | String | 医院 id |
+| `categoryServiceId` | String | 服务类别 id |
 
 ### Paginated Response
 

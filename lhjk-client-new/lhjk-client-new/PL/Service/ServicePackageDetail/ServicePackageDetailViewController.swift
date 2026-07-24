@@ -60,12 +60,14 @@ final class ServicePackageDetailViewController: BaseViewController {
     init(
         packageId: String,
         hospitalId: String? = nil,
-        categoryServiceId: String? = nil
+        categoryServiceId: String? = nil,
+        renewalParentOrderId: Int64? = nil
     ) {
         self.viewModel = ServicePackageDetailViewModel(
             packageId: packageId,
             hospitalId: hospitalId,
-            categoryServiceId: categoryServiceId
+            categoryServiceId: categoryServiceId,
+            renewalParentOrderId: renewalParentOrderId
         )
         super.init(nibName: nil, bundle: nil)
     }
@@ -76,7 +78,7 @@ final class ServicePackageDetailViewController: BaseViewController {
 
     override func setupUI() {
         view.backgroundColor = .fdBg
-        title = "套餐详情"
+        title = viewModel.isRenewalMode ? "续费规格" : "套餐详情"
 
         tableView.backgroundColor = .clear
         tableView.separatorStyle = .none
@@ -190,7 +192,15 @@ final class ServicePackageDetailViewController: BaseViewController {
     }
 
     private func setupOrderBar() {
-        orderBar.onAddToCart = { [weak self] in self?.tapCart() }
+        orderBar.configure(renewalMode: viewModel.isRenewalMode)
+        orderBar.onAddToCart = { [weak self] in
+            guard let self else { return }
+            if self.viewModel.isRenewalMode {
+                self.navigationController?.popViewController(animated: true)
+                return
+            }
+            self.tapCart()
+        }
         orderBar.onOrder = { [weak self] in self?.tapOrder() }
         orderBar.attach(to: view, below: tableView)
         tableView.contentInset.bottom = 12

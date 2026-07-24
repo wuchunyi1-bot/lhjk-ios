@@ -6,6 +6,7 @@ final class WebViewController: BaseViewController {
 
     private let urlString: String
     private let pageTitle: String?
+    private weak var previousPopGestureDelegate: UIGestureRecognizerDelegate?
 
     // MARK: - UI
 
@@ -53,14 +54,21 @@ final class WebViewController: BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = pageTitle
+        setupBackNavigation()
 
-        // KVO 监听加载进度
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        installPopGestureDelegateIfNeeded()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        webView.stopLoading()
+        restorePopGestureDelegateIfNeeded()
     }
 
     override func setupUI() {
@@ -84,13 +92,62 @@ final class WebViewController: BaseViewController {
         webView.load(URLRequest(url: url))
     }
 
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        webView.stopLoading()
-    }
-
     deinit {
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress))
+    }
+
+    // MARK: - Back Navigation
+
+    private func setupBackNavigation() {
+        navigationItem.hidesBackButton = true
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            image: UIImage(systemName: "chevron.left"),
+            style: .plain,
+            target: self,
+            action: #selector(handleBackTapped)
+        )
+    }
+
+    private func installPopGestureDelegateIfNeeded() {
+        guard let gesture = navigationController?.interactivePopGestureRecognizer else { return }
+        if previousPopGestureDelegate == nil {
+            previousPopGestureDelegate = gesture.delegate
+        }
+        gesture.delegate = self
+        gesture.isEnabled = true
+    }
+
+    private func restorePopGestureDelegateIfNeeded() {
+        guard let gesture = navigationController?.interactivePopGestureRecognizer else { return }
+        guard gesture.delegate === self else { return }
+        gesture.delegate = previousPopGestureDelegate
+        previousPopGestureDelegate = nil
+    }
+
+    @objc private func handleBackTapped() {
+        handleBackNavigation()
+    }
+
+    private func handleBackNavigation() {
+        if webView.canGoBack {
+            webView.goBack()
+            return
+        }
+        leaveWebViewContainer()
+    }
+
+    private func leaveWebViewContainer() {
+        if let navigationController,
+           navigationController.viewControllers.count > 1,
+           navigationController.topViewController === self {
+            navigationController.popViewController(animated: true)
+            return
+        }
+        if presentingViewController != nil {
+            dismiss(animated: true)
+            return
+        }
+        navigationController?.popViewController(animated: true)
     }
 
     // MARK: - KVO
@@ -126,5 +183,24 @@ extension WebViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         indicator.stopAnimating()
+    }
+}
+
+// MARK: - UIGestureRecognizerDelegate
+
+extension WebViewController: UIGestureRecognizerDelegate {
+
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard gestureRecognizer === navigationController?.interactivePopGestureRecognizer else {
+            return true
+        }
+
+        if webView.canGoBack {
+            webView.goBack()
+            return false
+        }
+
+        let stackCount = navigationController?.viewControllers.count ?? 0
+        return stackCount > 1
     }
 }

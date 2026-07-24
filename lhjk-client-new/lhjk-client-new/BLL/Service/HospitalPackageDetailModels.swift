@@ -13,6 +13,7 @@ struct HospitalPackageDetailBO: Decodable {
 /// 套餐主信息 `MPackage`
 struct MPackageVO: Decodable {
     let id: String
+    let hospitalId: String?
     let name: String?
     let imageUrl: String?
     let packageCarousel: String?
@@ -28,7 +29,7 @@ struct MPackageVO: Decodable {
     let categoryServiceName: String?
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, imageUrl, packageCarousel
+        case id, hospitalId, name, imageUrl, packageCarousel
         case imageDetailsUrl1, imageDetailsUrl2, imageDetailsUrl3
         case introduction, price, recommend, description
         case applicablePeople, categoryServiceId, categoryServiceName
@@ -37,6 +38,7 @@ struct MPackageVO: Decodable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = HospitalPackageID.decode(c, key: .id)
+        hospitalId = HospitalPackageID.decodeOptional(c, key: .hospitalId)
         name = try c.decodeIfPresent(String.self, forKey: .name)
         imageUrl = try c.decodeIfPresent(String.self, forKey: .imageUrl)
         packageCarousel = try c.decodeIfPresent(String.self, forKey: .packageCarousel)
@@ -65,6 +67,8 @@ struct PackageHospitalDetailBO: Decodable {
     let name: String?
     let quantity: Int?
     let price: Double?
+    /// 续费金额（续费态展示与提交）
+    let reprice: Double?
     let billingType: Int?
     let checkType: Int?
     let defaultCheck: Int?
@@ -78,7 +82,7 @@ struct PackageHospitalDetailBO: Decodable {
     let children: [PackageHospitalDetailBO]?
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, quantity, price, billingType, checkType
+        case id, name, quantity, price, reprice, billingType, checkType
         case defaultCheck, categoryName, categoryId, imageUrl
         case parentId, packageDetailId, commodityId, saleFlag, children
     }
@@ -89,6 +93,7 @@ struct PackageHospitalDetailBO: Decodable {
         name = try c.decodeIfPresent(String.self, forKey: .name)
         quantity = HospitalPackageInt.decodeIfPresent(c, key: .quantity)
         price = try c.decodeIfPresent(Double.self, forKey: .price)
+        reprice = try c.decodeIfPresent(Double.self, forKey: .reprice)
         billingType = HospitalPackageInt.decodeIfPresent(c, key: .billingType)
         checkType = HospitalPackageInt.decodeIfPresent(c, key: .checkType)
         defaultCheck = HospitalPackageInt.decodeIfPresent(c, key: .defaultCheck)
@@ -138,7 +143,8 @@ enum HospitalPackageDetailMapper {
     /// `checkType`: 1 单选, 2 强制, 3 可选
     static func toServicePackageDetail(
         _ bo: HospitalPackageDetailBO,
-        packageId: String
+        packageId: String,
+        renewalMode: Bool = false
     ) -> ServicePackageDetail {
         let info = bo.packageInfo
         let name = nonEmpty(info?.name) ?? "套餐详情"
@@ -156,7 +162,7 @@ enum HospitalPackageDetailMapper {
             ?? nonEmpty(info?.introduction)
             ?? "\(name)包含核心服务权益，购买后按套餐有效期履约。"
         let banners = resolveBanners(bo: bo, info: info, fallbackName: name)
-        let groups = (bo.packageHospitalDetailList ?? []).flatMap(mapGroups)
+        let groups = (bo.packageHospitalDetailList ?? []).flatMap { mapGroups($0, renewalMode: renewalMode) }
         let tier = ServicePackageTier(
             id: nonEmpty(info?.id) ?? packageId,
             name: name,
@@ -168,6 +174,7 @@ enum HospitalPackageDetailMapper {
 
         return ServicePackageDetail(
             id: nonEmpty(info?.id) ?? packageId,
+            hospitalId: nonEmpty(info?.hospitalId),
             productCode: nonEmpty(info?.categoryServiceName) ?? "德好",
             name: name,
             subtitle: subtitle.isEmpty ? "综合健康管理服务" : subtitle,
@@ -191,7 +198,10 @@ enum HospitalPackageDetailMapper {
     }
 
     /// 将一批明细按 checkType 拆成多个规则组，保证角标文案与控件一致
-    private static func mapGroups(_ listBO: PackageHospitalDetailListBO) -> [ServicePackageComboGroup] {
+    private static func mapGroups(
+        _ listBO: PackageHospitalDetailListBO,
+        renewalMode: Bool
+    ) -> [ServicePackageComboGroup] {
         let parents = listBO.packageHospitalDetailList ?? []
         guard !parents.isEmpty else { return [] }
 
@@ -210,7 +220,8 @@ enum HospitalPackageDetailMapper {
             makeGroup(
                 parents: bucket.parents,
                 checkType: bucket.checkType,
-                fallbackNumber: listBO.number
+                fallbackNumber: listBO.number,
+                renewalMode: renewalMode
             )
         }
     }
@@ -218,7 +229,8 @@ enum HospitalPackageDetailMapper {
     private static func makeGroup(
         parents: [PackageHospitalDetailBO],
         checkType: Int,
-        fallbackNumber: Int?
+        fallbackNumber: Int?,
+        renewalMode: Bool
     ) -> ServicePackageComboGroup? {
         guard !parents.isEmpty else { return nil }
 
@@ -237,7 +249,8 @@ enum HospitalPackageDetailMapper {
         let items = rows.map { row -> ServicePackageComboItem in
             let qty = row.bo.quantity.map(String.init) ?? "1"
             let unit = billingUnit(row.bo.billingType)
-            let priceValue = max(0, row.bo.price ?? 0)
+            let rawPrice = renewalMode ? (row.bo.reprice ?? row.bo.price) : row.bo.price
+            let priceValue = max(0, rawPrice ?? 0)
             return ServicePackageComboItem(
                 name: nonEmpty(row.bo.name) ?? "服务项",
                 qty: qty,

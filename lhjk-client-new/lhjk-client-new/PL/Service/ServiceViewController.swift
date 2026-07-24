@@ -147,7 +147,7 @@ extension ServiceViewController: UITableViewDataSource, UITableViewDelegate {
             ) as! MallProductGridCell
             cell.configure(products: viewModel.mallPreviewPackages)
             cell.onProductTap = { pkg in
-                Router.shared.push("/services/pkg", params: ["id": pkg.id])
+                Router.shared.push("/services/pkg", params: pkg.packageDetailRouteParams())
             }
             cell.onContentHeightChanged = { [weak self] in
                 guard let self else { return }

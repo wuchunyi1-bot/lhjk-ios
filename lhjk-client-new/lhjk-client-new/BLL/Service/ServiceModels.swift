@@ -35,6 +35,8 @@ struct ServiceInstitution {
 /// 推荐服务健康包，对应 `health-package-source` + `services.json` packages
 struct HealthPackageItem {
     let id: String
+    /// 列表接口返回的医院 id，跳转详情 / 加购 / 下单使用
+    let hospitalId: String?
     let productCode: String
     let name: String
     let subtitle: String
@@ -47,6 +49,15 @@ struct HealthPackageItem {
 
     var accent: UIColor { UIColor(hexString: accentHex) }
     var displayTitle: String { "\(productCode) · \(name)" }
+
+    /// 跳转套餐详情路由参数
+    func packageDetailRouteParams(categoryServiceId: String? = nil) -> [String: Any] {
+        ServiceRoutes.packageDetailParams(
+            packageId: id,
+            hospitalId: hospitalId,
+            categoryServiceId: categoryServiceId
+        )
+    }
 }
 
 // MARK: - 套餐详情（健康包组合）
@@ -182,6 +193,8 @@ struct ServicePackageTier: Equatable {
 /// 服务套餐详情 — 对齐图示 + `getHospitalPackageDetail` / `HealthPackageDetailView`
 struct ServicePackageDetail {
     let id: String
+    /// 详情 `packageInfo.hospitalId`，加购 / 下单优先使用
+    let hospitalId: String?
     let productCode: String
     let name: String
     let subtitle: String
@@ -204,6 +217,7 @@ struct ServicePackageDetail {
 
     init(
         id: String,
+        hospitalId: String? = nil,
         productCode: String,
         name: String,
         subtitle: String,
@@ -221,6 +235,7 @@ struct ServicePackageDetail {
         accentHex: String
     ) {
         self.id = id
+        self.hospitalId = hospitalId
         self.productCode = productCode
         self.name = name
         self.subtitle = subtitle

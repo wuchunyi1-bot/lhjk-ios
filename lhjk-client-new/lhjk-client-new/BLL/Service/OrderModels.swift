@@ -55,6 +55,24 @@ enum AppOrderStatus: Int {
     }
 }
 
+// MARK: - 套餐类型
+
+/// 订单关联套餐类型（`packageType`）
+enum AppPackageType: Int {
+    case lease = 1       // 租赁套餐
+    case sale = 2        // 售卖套餐
+    case virtual = 3     // 虚拟套餐
+    case experience = 4  // 体验套餐
+
+    /// 仅租赁套餐支持续费
+    var supportsRenewal: Bool { self == .lease }
+
+    static func supportsRenewal(packageType: Int?) -> Bool {
+        guard let packageType, let type = AppPackageType(rawValue: packageType) else { return false }
+        return type.supportsRenewal
+    }
+}
+
 // MARK: - 订单模型
 
 /// 订单模型，对应后端 `AppOrderListBO`
@@ -73,6 +91,9 @@ struct MOrder {
     let beginTime: String?
     let endTime: String?
     let serviceTime: String?
+    let packageId: String?
+    let hospitalId: String?
+    let categoryServiceId: String?
 
     /// 订单状态枚举
     var orderStatus: AppOrderStatus? {
@@ -101,6 +122,19 @@ struct MOrder {
         return "¥\(formatted)"
     }
 
+    /// 续费跳转用 packageId
+    var resolvedPackageId: String? {
+        guard let raw = packageId?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
+            return nil
+        }
+        return raw
+    }
+
+    /// 是否展示「续费订单」（租赁套餐）
+    var canShowRenewAction: Bool {
+        AppPackageType.supportsRenewal(packageType: packageType)
+    }
+
     /// 日期范围文本
     var dateRangeText: String? {
         let start = beginTime ?? createTime
@@ -122,6 +156,7 @@ extension MOrder: Decodable {
         case id, orderName, status, payable, price, createTime
         case hospitalName, doctorName, packageDescription
         case packageType, packageImageUrl, beginTime, endTime, serviceTime
+        case packageId, hospitalId, categoryServiceId
     }
 
     init(from decoder: Decoder) throws {
@@ -140,6 +175,9 @@ extension MOrder: Decodable {
         beginTime           = try c.decodeIfPresent(String.self, forKey: .beginTime)
         endTime             = try c.decodeIfPresent(String.self, forKey: .endTime)
         serviceTime         = try c.decodeIfPresent(String.self, forKey: .serviceTime)
+        packageId           = HospitalPackageID.decodeOptional(c, key: .packageId)
+        hospitalId          = HospitalPackageID.decodeOptional(c, key: .hospitalId)
+        categoryServiceId   = HospitalPackageID.decodeOptional(c, key: .categoryServiceId)
     }
 
     private static func decodeFlexibleInt64<K: CodingKey>(_ container: KeyedDecodingContainer<K>, key: K) -> Int64? {
@@ -165,5 +203,211 @@ struct PaginatedOrderData: Decodable {
         case totalPages = "totalPage"
         case currentPage = "currPage"
         case records = "list"
+    }
+}
+
+// MARK: - 取消 / 更新订单状态
+// Apifox: POST /v1/order/insertOrEdit
+// https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330734e0.md
+
+/// `insertOrEdit` 请求体（仅传业务所需字段）
+struct OrderInsertOrEditRequest: Encodable {
+    let id: Int64
+    let hospitalId: String?
+    let status: Int
+    let remark: String?
+    let shipmentTime: String?
+    let description: String?
+    let serialNumber: Int?
+
+    init(
+        id: Int64,
+        hospitalId: String?,
+        status: Int,
+        remark: String? = nil,
+        shipmentTime: String? = nil,
+        description: String? = nil,
+        serialNumber: Int? = nil
+    ) {
+        self.id = id
+        self.hospitalId = hospitalId
+        self.status = status
+        self.remark = remark
+        self.shipmentTime = shipmentTime
+        self.description = description
+        self.serialNumber = serialNumber
+    }
+
+    /// 转为 API JSON 参数字典（`id` / `hospitalId` 为字符串）
+    func apiParameters() -> [String: Any] {
+        var body: [String: Any] = [
+            "id": String(id),
+            "status": status,
+        ]
+        if let hospitalId = hospitalId?.trimmingCharacters(in: .whitespacesAndNewlines), !hospitalId.isEmpty {
+            body["hospitalId"] = hospitalId
+        }
+        if let remark = remark?.trimmingCharacters(in: .whitespacesAndNewlines), !remark.isEmpty {
+            body["remark"] = remark
+        }
+        if let shipmentTime = shipmentTime?.trimmingCharacters(in: .whitespacesAndNewlines), !shipmentTime.isEmpty {
+            body["shipmentTime"] = shipmentTime
+        }
+        if let description = description?.trimmingCharacters(in: .whitespacesAndNewlines), !description.isEmpty {
+            body["description"] = description
+        }
+        if let serialNumber = serialNumber {
+            body["serialNumber"] = serialNumber
+        }
+        return body
+    }
+
+    /// 待支付取消 → status=8
+    static func cancelOrder(orderId: Int64, hospitalId: String, remark: String? = nil) -> OrderInsertOrEditRequest {
+        OrderInsertOrEditRequest(
+            id: orderId,
+            hospitalId: hospitalId,
+            status: AppOrderStatus.cancelled.rawValue,
+            remark: remark.map { String($0.prefix(300)) }
+        )
+    }
+
+    /// 确认发货 → status=3（待收货）
+    static func confirmShipment(
+        orderId: Int64,
+        hospitalId: String,
+        shipmentTime: String
+    ) -> OrderInsertOrEditRequest {
+        OrderInsertOrEditRequest(
+            id: orderId,
+            hospitalId: hospitalId,
+            status: AppOrderStatus.pendingReceive.rawValue,
+            shipmentTime: shipmentTime
+        )
+    }
+
+    /// 确认收货 → status=4（使用中）
+    static func confirmReceipt(orderId: Int64, hospitalId: String) -> OrderInsertOrEditRequest {
+        OrderInsertOrEditRequest(
+            id: orderId,
+            hospitalId: hospitalId,
+            status: AppOrderStatus.inProgress.rawValue
+        )
+    }
+
+    /// 退款/售后、待发货取消、结算 → status=9 + remark
+    static func submitRefundApplication(
+        orderId: Int64,
+        hospitalId: String,
+        remark: String
+    ) -> OrderInsertOrEditRequest {
+        OrderInsertOrEditRequest(
+            id: orderId,
+            hospitalId: hospitalId,
+            status: AppOrderStatus.refundReview.rawValue,
+            remark: String(remark.prefix(300))
+        )
+    }
+
+    /// 结算订单 → status=9 + remark
+    static func settleOrder(
+        orderId: Int64,
+        hospitalId: String,
+        remark: String
+    ) -> OrderInsertOrEditRequest {
+        submitRefundApplication(orderId: orderId, hospitalId: hospitalId, remark: remark)
+    }
+
+    /// 购物车去结算 → status=1（待支付）
+    static func checkoutFromCart(orderId: Int64, hospitalId: String? = nil) -> OrderInsertOrEditRequest {
+        OrderInsertOrEditRequest(
+            id: orderId,
+            hospitalId: hospitalId,
+            status: AppOrderStatus.pendingPayment.rawValue
+        )
+    }
+
+    // MARK: - 兼容旧工厂方法
+
+    static func cancelPendingPayment(orderId: Int64, hospitalId: String, remark: String? = nil) -> OrderInsertOrEditRequest {
+        cancelOrder(orderId: orderId, hospitalId: hospitalId, remark: remark)
+    }
+
+    static func submitPendingShipRefund(
+        orderId: Int64,
+        hospitalId: String,
+        remark: String
+    ) -> OrderInsertOrEditRequest {
+        submitRefundApplication(orderId: orderId, hospitalId: hospitalId, remark: remark)
+    }
+}
+
+/// insertOrEdit 时间格式
+enum OrderInsertOrEditFormats {
+    /// 确认发货时间：`yyyy-M-d H:m:s`（不补零）
+    static func shipmentTime(from date: Date = Date()) -> String {
+        let c = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
+        guard let year = c.year, let month = c.month, let day = c.day,
+              let hour = c.hour, let minute = c.minute, let second = c.second else {
+            return ""
+        }
+        return "\(year)-\(month)-\(day) \(hour):\(minute):\(second)"
+    }
+}
+
+/// 取消订单套餐预览（退款申请弹层）
+struct OrderCancelPackagePreview {
+    let name: String
+    let subtitle: String?
+    let imageURL: String?
+    let amountText: String
+}
+
+extension OrderCancelPackagePreview {
+    static func from(order: MOrder) -> OrderCancelPackagePreview {
+        OrderCancelPackagePreview(
+            name: order.orderName?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfNonempty ?? "套餐",
+            subtitle: order.packageDescription?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfNonempty,
+            imageURL: order.packageImageUrl,
+            amountText: order.displayAmountText
+        )
+    }
+
+    static func from(detail: AppOrderDetailBO) -> OrderCancelPackagePreview {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 2
+        formatter.minimumFractionDigits = 2
+        let amount = detail.paidAmount
+        let amountText = "¥\(formatter.string(from: NSNumber(value: amount)) ?? String(format: "%.2f", amount))"
+        return OrderCancelPackagePreview(
+            name: detail.orderName?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfNonempty ?? "套餐",
+            subtitle: detail.packageDescription?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfNonempty,
+            imageURL: detail.packageImageUrl,
+            amountText: amountText
+        )
+    }
+}
+
+extension Notification.Name {
+    /// 订单列表需要全量刷新（取消、支付等成功后发送）
+    static let orderListNeedsRefresh = Notification.Name("lhjk.order.listNeedsRefresh")
+}
+
+// MARK: - insertOrEdit 机构 id
+
+enum OrderInsertOrEditContext {
+    static func resolvedHospitalId(from order: MOrder) -> String? {
+        order.hospitalId?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfNonempty
+    }
+
+    static func resolvedHospitalId(from detail: AppOrderDetailBO) -> String? {
+        detail.hospitalId?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfNonempty
+    }
+}
+
+private extension String {
+    var nilIfNonempty: String? {
+        isEmpty ? nil : self
     }
 }

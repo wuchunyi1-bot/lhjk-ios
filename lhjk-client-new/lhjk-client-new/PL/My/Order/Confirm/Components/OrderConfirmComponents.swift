@@ -33,8 +33,8 @@ final class OrderConfirmFulfillmentView: UIView {
         titleLabel.font = .fdBodySemibold
         titleLabel.textColor = .fdText
 
-        configureOption(expressButton, title: "快递配送")
-        configureOption(pickupButton, title: "机构自提")
+        configureOption(expressButton, title: "快递配送", systemImage: "truck.box")
+        configureOption(pickupButton, title: "机构自提", systemImage: "storefront")
         expressButton.addTarget(self, action: #selector(tapExpress), for: .touchUpInside)
         pickupButton.addTarget(self, action: #selector(tapPickup), for: .touchUpInside)
 
@@ -60,23 +60,32 @@ final class OrderConfirmFulfillmentView: UIView {
         apply(pickupButton, active: selected == .selfPickup)
     }
 
-    private func configureOption(_ button: UIButton, title: String) {
-        button.setTitle(title, for: .normal)
-        button.titleLabel?.font = .fdCaptionSemibold
-        button.layer.cornerRadius = 8
+    private func configureOption(_ button: UIButton, title: String, systemImage: String) {
+        var config = UIButton.Configuration.plain()
+        config.title = title
+        config.image = UIImage(systemName: systemImage)
+        config.imagePadding = 4
+        config.baseForegroundColor = .fdText2
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = .fdCaptionSemibold
+            return outgoing
+        }
+        button.configuration = config
+        button.layer.cornerRadius = 22
         button.layer.borderWidth = 1
-        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
+        button.clipsToBounds = true
     }
 
     private func apply(_ button: UIButton, active: Bool) {
         if active {
             button.backgroundColor = .fdPrimarySoft
             button.layer.borderColor = UIColor.fdPrimary.cgColor
-            button.setTitleColor(.fdPrimary, for: .normal)
+            button.configuration?.baseForegroundColor = .fdPrimary
         } else {
             button.backgroundColor = .fdSurface
             button.layer.borderColor = UIColor.fdBorder.cgColor
-            button.setTitleColor(.fdText2, for: .normal)
+            button.configuration?.baseForegroundColor = .fdText2
         }
     }
 
@@ -220,6 +229,101 @@ final class OrderConfirmAddressView: UIView {
     @objc private func handleCall() { onCall?() }
 }
 
+// MARK: - 机构自提卡（对齐 funde pickup-card）
+
+final class OrderConfirmPickupView: UIView {
+
+    var onCall: (() -> Void)?
+
+    private let titleLabel = UILabel()
+    private let hintLabel = UILabel()
+    private let institutionIcon = UIImageView(image: UIImage(systemName: "building.2"))
+    private let institutionLabel = UILabel()
+    private let addressLabel = UILabel()
+    private let divider = UIView()
+    private let callRow = UIView()
+    private let callButton = UIButton(type: .system)
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+
+        titleLabel.text = "自提地址"
+        titleLabel.font = .fdBodySemibold
+        titleLabel.textColor = .fdText
+
+        hintLabel.text = "请前往以下机构领取商品/设备"
+        hintLabel.font = .fdCaption
+        hintLabel.textColor = .fdSubtext
+        hintLabel.textAlignment = .right
+        hintLabel.numberOfLines = 2
+
+        institutionIcon.tintColor = .fdText
+        institutionIcon.contentMode = .scaleAspectFit
+        institutionIcon.snp.makeConstraints { $0.size.equalTo(16) }
+
+        institutionLabel.font = .fdBodySemibold
+        institutionLabel.textColor = .fdText
+        institutionLabel.numberOfLines = 2
+
+        addressLabel.font = .fdCaption
+        addressLabel.textColor = .fdSubtext
+        addressLabel.numberOfLines = 0
+
+        divider.backgroundColor = .fdBorder
+
+        var callConfig = UIButton.Configuration.plain()
+        callConfig.title = "联系机构"
+        callConfig.image = UIImage(systemName: "phone")
+        callConfig.imagePadding = 4
+        callConfig.baseForegroundColor = .fdPrimary
+        callConfig.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = .fdCaptionSemibold
+            return outgoing
+        }
+        callButton.configuration = callConfig
+        callButton.addTarget(self, action: #selector(tapCall), for: .touchUpInside)
+
+        let head = UIStackView(arrangedSubviews: [titleLabel, hintLabel])
+        head.axis = .horizontal
+        head.spacing = 8
+        head.alignment = .top
+        hintLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        let nameRow = UIStackView(arrangedSubviews: [institutionIcon, institutionLabel])
+        nameRow.axis = .horizontal
+        nameRow.spacing = 6
+        nameRow.alignment = .top
+
+        let callRow = UIView()
+        callRow.addSubview(callButton)
+        callButton.snp.makeConstraints {
+            $0.centerX.equalToSuperview()
+            $0.top.bottom.equalToSuperview()
+            $0.height.equalTo(40)
+        }
+
+        let stack = UIStackView(arrangedSubviews: [head, nameRow, addressLabel, divider, callRow])
+        stack.axis = .vertical
+        stack.spacing = 8
+        stack.setCustomSpacing(12, after: addressLabel)
+        addSubview(stack)
+        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
+        divider.snp.makeConstraints { $0.height.equalTo(1) }
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    func configure(name: String, address: String, showCall: Bool) {
+        institutionLabel.text = name
+        addressLabel.text = address
+        callRow.isHidden = !showCall
+        divider.isHidden = !showCall
+    }
+
+    @objc private func tapCall() { onCall?() }
+}
+
 // MARK: - 套餐卡
 
 final class OrderConfirmPackageView: UIView {
@@ -355,10 +459,10 @@ final class OrderConfirmSelectRow: UIControl {
         backgroundColor = .fdSurface
         layer.cornerRadius = 12
 
-        titleLabel.font = .fdBody
+        titleLabel.font = .fdBodySemibold
         titleLabel.textColor = .fdText
 
-        valueLabel.font = .fdBodySemibold
+        valueLabel.font = .fdCaptionSemibold
         valueLabel.textColor = .fdText
         valueLabel.textAlignment = .right
         valueLabel.lineBreakMode = .byTruncatingTail
@@ -390,10 +494,40 @@ final class OrderConfirmSelectRow: UIControl {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    func configure(title: String, value: String, placeholder: Bool) {
+    func configure(title: String, value: String, placeholder: Bool, emphasis: Bool = false) {
         titleLabel.text = title
         valueLabel.text = value
-        valueLabel.textColor = placeholder ? .fdMuted : .fdText
+        if emphasis {
+            valueLabel.textColor = .fdPrimary
+        } else {
+            valueLabel.textColor = placeholder ? .fdMuted : .fdText2
+        }
+        titleLabel.font = .fdBodySemibold
+        valueLabel.font = .fdCaptionSemibold
+    }
+}
+
+// MARK: - 虚线分隔
+
+private final class OrderConfirmDashedLineView: UIView {
+    private let shape = CAShapeLayer()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        shape.strokeColor = UIColor.fdBorder.cgColor
+        shape.lineWidth = 1
+        shape.lineDashPattern = [4, 3]
+        layer.addSublayer(shape)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        shape.frame = bounds
+        shape.path = UIBezierPath(
+            rect: CGRect(x: 0, y: bounds.midY, width: bounds.width, height: 0)
+        ).cgPath
     }
 }
 
@@ -401,27 +535,55 @@ final class OrderConfirmSelectRow: UIControl {
 
 final class OrderConfirmFeeView: UIView {
 
-    private let stack = UIStackView()
+    private enum Metrics {
+        static let rowHeight: CGFloat = 40
+        static let labelFont: UIFont = .fdBody
+        static let valueFont: UIFont = .fdBody
+    }
+
+    private let card = OrderConfirmCardView()
+    private let titleLabel = UILabel()
+    private let rowsStack = UIStackView()
+    private let totalDivider = OrderConfirmDashedLineView()
+    private let totalLeft = UILabel()
+    private let totalRight = UILabel()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        let title = UILabel()
-        title.text = "费用明细"
-        title.font = .fdBodySemibold
-        title.textColor = .fdText
 
-        stack.axis = .vertical
-        stack.spacing = 10
+        titleLabel.text = "费用明细"
+        titleLabel.font = .fdBodySemibold
+        titleLabel.textColor = .fdText
 
-        let card = OrderConfirmCardView()
-        card.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
+        rowsStack.axis = .vertical
+        rowsStack.spacing = 0
 
-        let outer = UIStackView(arrangedSubviews: [title, card])
-        outer.axis = .vertical
-        outer.spacing = 8
-        addSubview(outer)
-        outer.snp.makeConstraints { $0.edges.equalToSuperview() }
+        totalLeft.text = "应付金额"
+        totalLeft.font = .fdBodySemibold
+        totalLeft.textColor = .fdText
+
+        totalRight.font = .fdNumM
+        totalRight.textColor = .fdPrimary
+        totalRight.textAlignment = .right
+
+        let totalRow = UIStackView(arrangedSubviews: [totalLeft, totalRight])
+        totalRow.axis = .horizontal
+        totalRow.alignment = .center
+        totalRow.spacing = 12
+        totalRow.snp.makeConstraints { $0.height.equalTo(Metrics.rowHeight) }
+
+        let root = UIStackView(arrangedSubviews: [titleLabel, rowsStack, totalDivider, totalRow])
+        root.axis = .vertical
+        root.spacing = 0
+        root.setCustomSpacing(8, after: titleLabel)
+        root.setCustomSpacing(12, after: rowsStack)
+        root.setCustomSpacing(12, after: totalDivider)
+
+        addSubview(card)
+        card.addSubview(root)
+        card.snp.makeConstraints { $0.edges.equalToSuperview() }
+        root.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
+        totalDivider.snp.makeConstraints { $0.height.equalTo(1) }
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -433,34 +595,35 @@ final class OrderConfirmFeeView: UIView {
         benefit: Double,
         payable: Double
     ) {
-        stack.arrangedSubviews.forEach {
-            stack.removeArrangedSubview($0)
+        rowsStack.arrangedSubviews.forEach {
+            rowsStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
-        stack.addArrangedSubview(row("套餐金额", OrderConfirmMoney.yen(packageAmount), emphasize: false))
-        stack.addArrangedSubview(row("运费", OrderConfirmMoney.yen(shipping), emphasize: false))
-        stack.addArrangedSubview(row("优惠券抵扣", "-\(OrderConfirmMoney.yen(coupon))", emphasize: false))
-        stack.addArrangedSubview(row("权益卡抵扣", "-\(OrderConfirmMoney.yen(benefit))", emphasize: false))
-
-        let total = row("应付金额", OrderConfirmMoney.yen(payable), emphasize: true)
-        stack.addArrangedSubview(total)
+        rowsStack.addArrangedSubview(row("套餐金额", OrderConfirmMoney.yen(packageAmount)))
+        rowsStack.addArrangedSubview(row("运费", OrderConfirmMoney.yen(shipping)))
+        rowsStack.addArrangedSubview(row("优惠券抵扣", "-\(OrderConfirmMoney.yen(coupon))", minusValue: coupon > 0))
+        rowsStack.addArrangedSubview(row("权益卡抵扣", "-\(OrderConfirmMoney.yen(benefit))", minusValue: benefit > 0))
+        totalRight.text = OrderConfirmMoney.yen(payable)
     }
 
-    private func row(_ title: String, _ value: String, emphasize: Bool) -> UIView {
+    private func row(_ title: String, _ value: String, minusValue: Bool = false) -> UIView {
         let left = UILabel()
         left.text = title
-        left.font = emphasize ? .fdBodySemibold : .fdCaption
-        left.textColor = .fdText2
+        left.font = Metrics.labelFont
+        left.textColor = .fdSubtext
+        left.setContentHuggingPriority(.required, for: .horizontal)
 
         let right = UILabel()
         right.text = value
-        right.font = emphasize ? .fdMonoFont(ofSize: 15, weight: .bold) : .fdCaption
-        right.textColor = emphasize ? .fdPrimary : .fdText
+        right.font = Metrics.valueFont
+        right.textColor = minusValue ? .fdSuccess : .fdText
         right.textAlignment = .right
 
         let row = UIStackView(arrangedSubviews: [left, right])
         row.axis = .horizontal
-        row.distribution = .fill
+        row.alignment = .center
+        row.spacing = 12
+        row.snp.makeConstraints { $0.height.equalTo(Metrics.rowHeight) }
         return row
     }
 }
@@ -471,32 +634,42 @@ final class OrderConfirmPayMethodView: UIView {
 
     var onSelect: ((OrderPayMethod) -> Void)?
 
-    private let wechatRow = PayMethodRow(title: "微信支付", method: .wechat)
-    private let alipayRow = PayMethodRow(title: "支付宝支付", method: .alipay)
+    private let card = OrderConfirmCardView()
+    private let titleLabel = UILabel()
+    private let wechatPill = PayMethodPill(
+        method: .wechat,
+        shortTitle: "微信",
+        iconName: "bubble.left.and.bubble.right.fill"
+    )
+    private let alipayPill = PayMethodPill(
+        method: .alipay,
+        shortTitle: "支付宝",
+        iconName: "a.circle.fill"
+    )
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        let title = UILabel()
-        title.text = "支付方式"
-        title.font = .fdBodySemibold
-        title.textColor = .fdText
 
-        wechatRow.addTarget(self, action: #selector(tapWechat), for: .touchUpInside)
-        alipayRow.addTarget(self, action: #selector(tapAlipay), for: .touchUpInside)
+        titleLabel.text = "支付方式"
+        titleLabel.font = .fdBodySemibold
+        titleLabel.textColor = .fdText
 
-        let list = UIStackView(arrangedSubviews: [wechatRow, alipayRow])
-        list.axis = .vertical
-        list.spacing = 0
+        wechatPill.addTarget(self, action: #selector(tapWechat), for: .touchUpInside)
+        alipayPill.addTarget(self, action: #selector(tapAlipay), for: .touchUpInside)
 
-        let card = OrderConfirmCardView()
-        card.addSubview(list)
-        list.snp.makeConstraints { $0.edges.equalToSuperview() }
+        let pillRow = UIStackView(arrangedSubviews: [wechatPill, alipayPill])
+        pillRow.axis = .horizontal
+        pillRow.spacing = 8
+        pillRow.distribution = .fillEqually
 
-        let outer = UIStackView(arrangedSubviews: [title, card])
-        outer.axis = .vertical
-        outer.spacing = 8
-        addSubview(outer)
-        outer.snp.makeConstraints { $0.edges.equalToSuperview() }
+        let root = UIStackView(arrangedSubviews: [titleLabel, pillRow])
+        root.axis = .vertical
+        root.spacing = 8
+
+        addSubview(card)
+        card.addSubview(root)
+        card.snp.makeConstraints { $0.edges.equalToSuperview() }
+        root.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -506,55 +679,78 @@ final class OrderConfirmPayMethodView: UIView {
         supportsWechat: Bool = true,
         supportsAlipay: Bool = true
     ) {
-        wechatRow.isHidden = !supportsWechat
-        alipayRow.isHidden = !supportsAlipay
-        wechatRow.setSelected(selected == .wechat)
-        alipayRow.setSelected(selected == .alipay)
+        wechatPill.isHidden = !supportsWechat
+        alipayPill.isHidden = !supportsAlipay
+        wechatPill.setSelected(selected == .wechat)
+        alipayPill.setSelected(selected == .alipay)
     }
 
     @objc private func tapWechat() { onSelect?(.wechat) }
     @objc private func tapAlipay() { onSelect?(.alipay) }
 }
 
-private final class PayMethodRow: UIControl {
+private final class PayMethodPill: UIControl {
+    private let dotView = UIView()
+    private let iconView = UIImageView()
     private let titleLabel = UILabel()
-    private let radio = UIView()
     let method: OrderPayMethod
 
-    init(title: String, method: OrderPayMethod) {
+    init(method: OrderPayMethod, shortTitle: String, iconName: String) {
         self.method = method
         super.init(frame: .zero)
-        titleLabel.text = title
-        titleLabel.font = .fdBody
-        titleLabel.textColor = .fdText
 
-        radio.layer.cornerRadius = 8
-        radio.layer.borderWidth = 1
-        radio.backgroundColor = .fdSurface
+        layer.cornerRadius = 22
+        layer.borderWidth = 1
+        layer.borderColor = UIColor.fdBorder.cgColor
+        backgroundColor = .fdSurface
 
-        addSubview(titleLabel)
-        addSubview(radio)
-        snp.makeConstraints { $0.height.equalTo(52) }
-        titleLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(16)
-            $0.centerY.equalToSuperview()
-        }
-        radio.snp.makeConstraints {
-            $0.trailing.equalToSuperview().offset(-16)
-            $0.centerY.equalToSuperview()
-            $0.size.equalTo(16)
-        }
+        dotView.layer.cornerRadius = 5
+        dotView.layer.borderWidth = 1
+        dotView.layer.borderColor = UIColor.fdBorderStrong.cgColor
+        dotView.backgroundColor = .fdSurface
+        dotView.isUserInteractionEnabled = false
+
+        let iconConfig = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
+        iconView.image = UIImage(systemName: iconName, withConfiguration: iconConfig)
+        iconView.tintColor = .fdText2
+        iconView.contentMode = .scaleAspectFit
+        iconView.isUserInteractionEnabled = false
+
+        titleLabel.text = shortTitle
+        titleLabel.font = .fdCaptionSemibold
+        titleLabel.textColor = .fdText2
+        titleLabel.isUserInteractionEnabled = false
+
+        let content = UIStackView(arrangedSubviews: [dotView, iconView, titleLabel])
+        content.axis = .horizontal
+        content.spacing = 6
+        content.alignment = .center
+        content.isUserInteractionEnabled = false
+
+        addSubview(content)
+        content.snp.makeConstraints { $0.center.equalToSuperview() }
+        snp.makeConstraints { $0.height.equalTo(44) }
+        dotView.snp.makeConstraints { $0.size.equalTo(10) }
+        iconView.snp.makeConstraints { $0.size.equalTo(18) }
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
     func setSelected(_ selected: Bool) {
         if selected {
-            radio.layer.borderWidth = 5
-            radio.layer.borderColor = UIColor.fdPrimary.cgColor
+            layer.borderColor = UIColor.fdPrimary.cgColor
+            backgroundColor = .fdPrimarySoft
+            dotView.layer.borderColor = UIColor.fdPrimary.cgColor
+            dotView.backgroundColor = .fdPrimary
+            iconView.tintColor = .fdPrimary
+            titleLabel.textColor = .fdPrimary
         } else {
-            radio.layer.borderWidth = 1
-            radio.layer.borderColor = UIColor.fdBorderStrong.cgColor
+            layer.borderColor = UIColor.fdBorder.cgColor
+            backgroundColor = .fdSurface
+            dotView.layer.borderColor = UIColor.fdBorderStrong.cgColor
+            dotView.backgroundColor = .fdSurface
+            iconView.tintColor = .fdText2
+            titleLabel.textColor = .fdText2
         }
     }
 }

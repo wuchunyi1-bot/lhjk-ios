@@ -6,6 +6,7 @@ final class MallProductCell: UICollectionViewCell {
     static let reuseID = "MallProductCell"
 
     private var productId: String?
+    private var hospitalId: String?
     private var categoryServiceId: String?
     private let imgArea = UIView()
     private let coverImageView = UIImageView()
@@ -108,6 +109,7 @@ final class MallProductCell: UICollectionViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         productId = nil
+        hospitalId = nil
         categoryServiceId = nil
         coverImageView.kf.cancelDownloadTask()
         coverImageView.image = nil
@@ -143,6 +145,7 @@ final class MallProductCell: UICollectionViewCell {
         }
 
         productId = item.id
+        hospitalId = item.hospitalId
         self.categoryServiceId = categoryServiceId
     }
 
@@ -157,15 +160,19 @@ final class MallProductCell: UICollectionViewCell {
         coverImageView.image = nil
         placeholderLabel.isHidden = false
         productId = p.id
+        hospitalId = nil
         self.categoryServiceId = categoryServiceId
     }
 
     @objc private func tapBuy() {
         guard let id = productId else { return }
-        var params: [String: Any] = ["id": id]
-        if let categoryServiceId, !categoryServiceId.isEmpty {
-            params["categoryServiceId"] = categoryServiceId
-        }
-        Router.shared.push("/services/pkg", params: params)
+        Router.shared.push(
+            "/services/pkg",
+            params: ServiceRoutes.packageDetailParams(
+                packageId: id,
+                hospitalId: hospitalId,
+                categoryServiceId: categoryServiceId
+            )
+        )
     }
 }

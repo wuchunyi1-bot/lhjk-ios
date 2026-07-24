@@ -233,7 +233,8 @@ final class HospitalPackageService {
     ///   - hospitalId: 默认临时常量；机构 API 接入后传入真实值
     func fetchPackageDetail(
         packageId: String,
-        hospitalId: String? = nil
+        hospitalId: String? = nil,
+        renewalMode: Bool = false
     ) async throws -> ServicePackageDetail {
         guard let pkgId = Self.apiHospitalId(packageId) else {
             throw HospitalPackageServiceError.invalidPackageId
@@ -253,7 +254,11 @@ final class HospitalPackageService {
         guard let data = response.data else {
             throw HospitalPackageServiceError.requestFailed("套餐详情为空")
         }
-        return HospitalPackageDetailMapper.toServicePackageDetail(data, packageId: pkgId)
+        return HospitalPackageDetailMapper.toServicePackageDetail(
+            data,
+            packageId: pkgId,
+            renewalMode: renewalMode
+        )
     }
 
     // MARK: - Private

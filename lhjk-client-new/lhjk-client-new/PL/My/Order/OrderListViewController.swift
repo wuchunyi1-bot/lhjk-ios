@@ -12,7 +12,7 @@ final class OrderListViewController: BaseViewController {
         let title: String
         /// 单状态筛选；与 statusList 互斥
         let status: Int?
-        /// 多状态筛选，如退款/售后 `6,9`
+        /// 多状态筛选（逗号分隔 status）
         let statusList: String?
         /// 路由 / query key
         let routeKey: String
@@ -26,7 +26,7 @@ final class OrderListViewController: BaseViewController {
         TabItem(title: "待收货", status: 3, statusList: nil, routeKey: "pending_receipt", emptyText: "暂无待收货订单"),
         TabItem(title: "使用中", status: 4, statusList: nil, routeKey: "in_progress", emptyText: "暂无使用中订单"),
         TabItem(title: "已逾期", status: 7, statusList: nil, routeKey: "overdue", emptyText: "暂无已逾期订单"),
-        TabItem(title: "退款/售后", status: nil, statusList: "6,9", routeKey: "after_sale", emptyText: "暂无退款/售后记录"),
+        TabItem(title: "退款/售后", status: 6, statusList: nil, routeKey: "after_sale", emptyText: "暂无退款/售后记录"),
         TabItem(title: "已完成", status: 5, statusList: nil, routeKey: "completed", emptyText: "暂无已完成订单"),
     ]
 
@@ -35,12 +35,14 @@ final class OrderListViewController: BaseViewController {
     private var selectedTabIndex = 0
     private var childVCs: [OrderTabViewController] = []
     private var needsInitialScroll = false
+    private var listRefreshObserver: NSObjectProtocol?
 
     private let initialTab: String?
 
     init(initialTab: String? = nil) {
         self.initialTab = initialTab
         super.init(nibName: nil, bundle: nil)
+        hidesBottomBarWhenPushed = true
     }
     required init?(coder: NSCoder) { fatalError() }
 
@@ -94,6 +96,23 @@ final class OrderListViewController: BaseViewController {
         }
 
         buildChildVCs()
+        listRefreshObserver = NotificationCenter.default.addObserver(
+            forName: .orderListNeedsRefresh,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.refreshAllTabs()
+        }
+    }
+
+    deinit {
+        if let listRefreshObserver {
+            NotificationCenter.default.removeObserver(listRefreshObserver)
+        }
+    }
+
+    private func refreshAllTabs() {
+        childVCs.forEach { $0.refresh() }
     }
 
     override func setupUI() {

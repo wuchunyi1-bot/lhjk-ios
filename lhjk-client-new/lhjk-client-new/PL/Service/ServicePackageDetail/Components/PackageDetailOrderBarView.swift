@@ -6,6 +6,7 @@ final class PackageDetailOrderBarView: UIView {
     var onAddToCart: (() -> Void)?
     var onOrder: (() -> Void)?
 
+    private let tipLabel = UILabel()
     private let payableLabel = UILabel()
     private let cartButton = UIButton(type: .system)
     private let orderButton = UIButton(type: .system)
@@ -19,6 +20,12 @@ final class PackageDetailOrderBarView: UIView {
 
     func setPayableText(_ text: String) {
         payableLabel.text = text
+    }
+
+    func configure(renewalMode: Bool) {
+        tipLabel.text = renewalMode ? "续费金额" : "应付"
+        cartButton.setTitle(renewalMode ? "取消" : "加入购物车", for: .normal)
+        orderButton.setTitle(renewalMode ? "立即续费" : "立即下单", for: .normal)
     }
 
     func setActionsEnabled(_ enabled: Bool) {
@@ -48,10 +55,10 @@ final class PackageDetailOrderBarView: UIView {
             $0.height.equalTo(1)
         }
 
-        let tip = UILabel()
-        tip.text = "应付"
+        let tip = tipLabel
         tip.font = .fdMicro
         tip.textColor = .fdSubtext
+        tip.text = "应付"
         payableLabel.font = .fdMonoFont(ofSize: 20, weight: .heavy)
         payableLabel.textColor = .fdPrimary
         let priceStack = UIStackView(arrangedSubviews: [tip, payableLabel])

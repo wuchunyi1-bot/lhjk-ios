@@ -161,12 +161,13 @@ extension HealthMallViewController: UICollectionViewDataSource, UICollectionView
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let id = viewModel.products[indexPath.item].id
-        var params: [String: Any] = ["id": id]
+        let product = viewModel.products[indexPath.item]
         let categoryId = viewModel.selectedTab.categoryServiceId
-        if !categoryId.isEmpty {
-            params["categoryServiceId"] = categoryId
-        }
-        Router.shared.push("/services/pkg", params: params)
+        Router.shared.push(
+            "/services/pkg",
+            params: product.packageDetailRouteParams(
+                categoryServiceId: categoryId.isEmpty ? nil : categoryId
+            )
+        )
     }
 }

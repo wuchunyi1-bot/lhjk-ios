@@ -244,11 +244,10 @@ extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate 
             rightTable.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: false)
         } else if !viewModel.packages.isEmpty {
             let pkg = viewModel.packages[indexPath.row]
-            var params: [String: Any] = ["id": pkg.id]
-            if let categoryId = viewModel.activeCategoryId, !categoryId.isEmpty {
-                params["categoryServiceId"] = categoryId
-            }
-            Router.shared.push("/services/pkg", params: params)
+            Router.shared.push(
+                "/services/pkg",
+                params: pkg.packageDetailRouteParams(categoryServiceId: viewModel.activeCategoryId)
+            )
         }
     }
 }

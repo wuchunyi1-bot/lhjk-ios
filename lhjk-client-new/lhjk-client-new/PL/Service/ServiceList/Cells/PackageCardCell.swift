@@ -5,6 +5,7 @@ final class PackageCardCell: UITableViewCell {
     static let reuseID = "PackageCardCell"
 
     private var packageId: String?
+    private var hospitalId: String?
     private var categoryServiceId: String?
     private var benefits: [String] = []
     private var benefitsCV: UICollectionView?
@@ -19,6 +20,7 @@ final class PackageCardCell: UITableViewCell {
 
     func configure(_ item: HealthPackageItem, categoryServiceId: String? = nil) {
         packageId = item.id
+        hospitalId = item.hospitalId
         self.categoryServiceId = categoryServiceId
         benefits = item.audienceTags
         contentView.subviews.forEach { $0.removeFromSuperview() }
@@ -154,6 +156,7 @@ final class PackageCardCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         packageId = nil
+        hospitalId = nil
         categoryServiceId = nil
         benefits = []
         benefitsCV = nil
@@ -161,11 +164,14 @@ final class PackageCardCell: UITableViewCell {
 
     @objc private func tap() {
         guard let id = packageId else { return }
-        var params: [String: Any] = ["id": id]
-        if let categoryServiceId, !categoryServiceId.isEmpty {
-            params["categoryServiceId"] = categoryServiceId
-        }
-        Router.shared.push("/services/pkg", params: params)
+        Router.shared.push(
+            "/services/pkg",
+            params: ServiceRoutes.packageDetailParams(
+                packageId: id,
+                hospitalId: hospitalId,
+                categoryServiceId: categoryServiceId
+            )
+        )
     }
 
     private func lbl(_ t: String, size: CGFloat, weight: UIFont.Weight = .regular, color: UIColor, mono: Bool = false) -> UILabel {

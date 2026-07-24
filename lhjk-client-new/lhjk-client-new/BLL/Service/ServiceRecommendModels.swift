@@ -60,6 +60,8 @@ struct ServiceRecommendCategory: Equatable {
 struct HospitalPackagePageVO: Decodable {
     /// 商品 / 套餐主键（详情接口 `packageId`）
     let id: String
+    /// 所属医院 id（详情 / 加购 / 下单必传）
+    let hospitalId: String?
     let name: String?
     let imageUrl: String?
     let price: Double?
@@ -67,12 +69,13 @@ struct HospitalPackagePageVO: Decodable {
     let recommend: Int?
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, imageUrl, price, introduction, recommend
+        case id, hospitalId, name, imageUrl, price, introduction, recommend
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = Self.decodeFlexibleString(c, key: .id)
+        hospitalId = Self.decodeFlexibleOptionalString(c, key: .hospitalId)
         name = try c.decodeIfPresent(String.self, forKey: .name)
         imageUrl = try c.decodeIfPresent(String.self, forKey: .imageUrl)
         price = try c.decodeIfPresent(Double.self, forKey: .price)
@@ -84,10 +87,20 @@ struct HospitalPackagePageVO: Decodable {
         _ container: KeyedDecodingContainer<K>,
         key: K
     ) -> String {
-        if let value = try? container.decode(String.self, forKey: key) { return value }
-        if let value = try? container.decode(Int64.self, forKey: key) { return String(value) }
-        if let value = try? container.decode(Int.self, forKey: key) { return String(value) }
-        return ""
+        decodeFlexibleOptionalString(container, key: key) ?? ""
+    }
+
+    private static func decodeFlexibleOptionalString<K: CodingKey>(
+        _ container: KeyedDecodingContainer<K>,
+        key: K
+    ) -> String? {
+        if let value = try? container.decodeIfPresent(String.self, forKey: key),
+           !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return value
+        }
+        if let value = try? container.decodeIfPresent(Int64.self, forKey: key) { return String(value) }
+        if let value = try? container.decodeIfPresent(Int.self, forKey: key) { return String(value) }
+        return nil
     }
 }
 
@@ -220,6 +233,7 @@ enum HospitalPackageMapper {
 
         return HealthPackageItem(
             id: packageId,
+            hospitalId: nonEmpty(vo.hospitalId),
             productCode: coverCode(from: packageName),
             name: packageName,
             subtitle: intro.isEmpty ? packageName : intro,

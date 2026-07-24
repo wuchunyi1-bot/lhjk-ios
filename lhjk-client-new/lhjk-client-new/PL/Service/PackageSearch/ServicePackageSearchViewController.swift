@@ -185,7 +185,9 @@ extension ServicePackageSearchViewController: UITableViewDataSource, UITableView
         ) as! HealthPackageCardCell
         let pkg = viewModel.packages[indexPath.row]
         cell.configure(pkg)
-        cell.onDetailTap = { Router.shared.push("/services/detail", params: ["id": pkg.id]) }
+        cell.onDetailTap = {
+            Router.shared.push("/services/detail", params: pkg.packageDetailRouteParams())
+        }
         return cell
     }
 

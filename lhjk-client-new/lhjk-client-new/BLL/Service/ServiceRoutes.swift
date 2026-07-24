@@ -15,20 +15,9 @@ enum ServiceRoutes {
             return ServiceListViewController(productCode: code)
         }
 
-        // 套餐详情 / 服务套餐详情（params: id, 可选 hospitalId / categoryServiceId）
+        // 套餐详情 / 服务套餐详情（params: id, 可选 hospitalId / categoryServiceId / orderId 续费）
         r.register(path: "/services/detail") { params in
-            let id = ServiceRoutes.stringParam(params["id"])
-            let hospitalId = ServiceCatalogService.validApiHospitalId(
-                ServiceRoutes.stringParam(params["hospitalId"]).nilIfEmpty
-            )
-            let categoryServiceId = ServiceCatalogService.validApiHospitalId(
-                ServiceRoutes.stringParam(params["categoryServiceId"]).nilIfEmpty
-            )
-            return ServicePackageDetailViewController(
-                packageId: id,
-                hospitalId: hospitalId,
-                categoryServiceId: categoryServiceId
-            )
+            ServiceRoutes.makePackageDetailViewController(params: params)
         }
 
         // 就医协助
@@ -38,18 +27,7 @@ enum ServiceRoutes {
 
         // 健康包详情（params: id）— 与 detail 共用同一页
         r.register(path: "/services/pkg") { params in
-            let id = ServiceRoutes.stringParam(params["id"])
-            let hospitalId = ServiceCatalogService.validApiHospitalId(
-                ServiceRoutes.stringParam(params["hospitalId"]).nilIfEmpty
-            )
-            let categoryServiceId = ServiceCatalogService.validApiHospitalId(
-                ServiceRoutes.stringParam(params["categoryServiceId"]).nilIfEmpty
-            )
-            return ServicePackageDetailViewController(
-                packageId: id,
-                hospitalId: hospitalId,
-                categoryServiceId: categoryServiceId
-            )
+            ServiceRoutes.makePackageDetailViewController(params: params)
         }
 
         // 搜索 / 购物车 / 切换机构
@@ -77,19 +55,47 @@ enum ServiceRoutes {
 
         // 商品详情（params: id）— 与套餐详情统一
         r.register(path: "/mall/detail") { params in
-            let id = Self.stringParam(params["id"])
-            let hospitalId = ServiceCatalogService.validApiHospitalId(
-                ServiceRoutes.stringParam(params["hospitalId"]).nilIfEmpty
-            )
-            let categoryServiceId = ServiceCatalogService.validApiHospitalId(
-                ServiceRoutes.stringParam(params["categoryServiceId"]).nilIfEmpty
-            )
-            return ServicePackageDetailViewController(
-                packageId: id,
-                hospitalId: hospitalId,
-                categoryServiceId: categoryServiceId
-            )
+            ServiceRoutes.makePackageDetailViewController(params: params)
         }
+    }
+
+    static func makePackageDetailViewController(params: [String: Any]) -> ServicePackageDetailViewController {
+        let id = stringParam(params["id"])
+        let hospitalId = ServiceCatalogService.validApiHospitalId(
+            stringParam(params["hospitalId"]).nilIfEmpty
+        )
+        let categoryServiceId = ServiceCatalogService.validApiHospitalId(
+            stringParam(params["categoryServiceId"]).nilIfEmpty
+        )
+        let renewalRaw = stringParam(params["orderId"]).nilIfEmpty
+            ?? stringParam(params["renewFrom"]).nilIfEmpty
+        let renewalParentOrderId = renewalRaw.flatMap { Int64($0) }
+        return ServicePackageDetailViewController(
+            packageId: id,
+            hospitalId: hospitalId,
+            categoryServiceId: categoryServiceId,
+            renewalParentOrderId: renewalParentOrderId
+        )
+    }
+
+    /// 套包列表 → 详情路由参数（`id` 必填，其余可选）
+    static func packageDetailParams(
+        packageId: String,
+        hospitalId: String? = nil,
+        categoryServiceId: String? = nil,
+        renewalOrderId: Int64? = nil
+    ) -> [String: Any] {
+        var params: [String: Any] = ["id": packageId]
+        if let hospitalId = ServiceCatalogService.validApiHospitalId(hospitalId) {
+            params["hospitalId"] = hospitalId
+        }
+        if let categoryServiceId = ServiceCatalogService.validApiHospitalId(categoryServiceId) {
+            params["categoryServiceId"] = categoryServiceId
+        }
+        if let renewalOrderId, renewalOrderId > 0 {
+            params["orderId"] = String(renewalOrderId)
+        }
+        return params
     }
 
     /// 兼容 String / Int / NSNumber 路由参数

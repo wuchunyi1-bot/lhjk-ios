@@ -52,10 +52,31 @@ enum MyRoutes {
         }
         r.register(path: "/me/health-profile")   { _ in PlaceholderViewController(title: "健康档案") }
         r.register(path: "/orders")          { params in
-            let tab = params["tab"] as? String
+            let tab = (params["tab"] as? String) ?? "all"
             return OrderListViewController(initialTab: tab)
         }
-        r.register(path: "/orders/detail")  { params in PlaceholderViewController(title: "订单详情: \(params["id"] as? String ?? "")") }
+        r.register(path: "/orders/detail") { params in
+            let raw = (params["id"] as? String)
+                ?? (params["orderId"] as? String)
+                ?? (params["id"] as? NSNumber)?.stringValue
+                ?? (params["orderId"] as? NSNumber)?.stringValue
+                ?? ""
+            guard let orderId = Int64(raw.trimmingCharacters(in: .whitespacesAndNewlines)), orderId > 0 else {
+                return PlaceholderViewController(title: "订单信息缺失")
+            }
+            return OrderDetailViewController(orderId: orderId)
+        }
+        r.register(path: "/orders/shipment-records") { params in
+            let raw = (params["orderId"] as? String)
+                ?? (params["orderId"] as? NSNumber)?.stringValue
+                ?? ""
+            guard let orderId = Int64(raw.trimmingCharacters(in: .whitespacesAndNewlines)), orderId > 0 else {
+                return PlaceholderViewController(title: "订单信息缺失")
+            }
+            let type = (params["type"] as? String)?.lowercased() ?? "express"
+            let isPickup = type == "pickup"
+            return OrderShipmentRecordsViewController(orderId: orderId, isPickup: isPickup)
+        }
         r.register(path: "/orders/confirm") { params in
             let orderIdRaw = (params["orderId"] as? String)
                 ?? (params["orderId"] as? NSNumber)?.stringValue
@@ -70,7 +91,8 @@ enum MyRoutes {
                 if let i = params["serialNumber"] as? Int { return i }
                 return nil
             }()
-            return OrderConfirmViewController(orderId: orderId, serialNumber: serial)
+            let entry = OrderConfirmEntry(routeValue: params["entry"] as? String)
+            return OrderConfirmViewController(orderId: orderId, serialNumber: serial, entry: entry)
         }
     }
 }
