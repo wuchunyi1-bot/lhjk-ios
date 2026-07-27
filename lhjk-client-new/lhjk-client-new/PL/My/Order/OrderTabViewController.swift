@@ -336,10 +336,7 @@ extension OrderTabViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
         guard orders.indices.contains(indexPath.row) else { return 200 }
-        let hasActions = !OrderListCardAction.actions(
-            for: orders[indexPath.row].orderStatus,
-            packageType: orders[indexPath.row].packageType
-        ).isEmpty
+        let hasActions = !OrderListCardAction.actions(for: orders[indexPath.row]).isEmpty
         return hasActions ? 210 : 160
     }
 

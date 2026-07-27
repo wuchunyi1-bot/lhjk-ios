@@ -10,6 +10,7 @@ enum ShoppingCartActionFlag: Int {
 }
 
 /// `POST /v1/shoppingCart/saveShoppingCartOrPurchase` 请求体 `SaveShoppingCartVO`
+/// 文档必填：`hospitalId`、`packageId`；续费时传 `parentId`
 struct SaveShoppingCartRequest: Encodable {
     let hospitalId: Int64
     let packageId: Int64

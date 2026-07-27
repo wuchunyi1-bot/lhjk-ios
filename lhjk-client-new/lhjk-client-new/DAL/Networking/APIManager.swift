@@ -13,7 +13,7 @@ enum APIEnvironment: String {
     var gatewayURL: URL {
         switch self {
         case .development:
-            return URL(string: "http://gateway-dev.lianhaojiankang.com")!
+            return URL(string: "https://gateway-dev.lianhaojiankang.com")!
         case .staging:
             return URL(string: "https://staging-api.lhjk.com")!
         case .production:

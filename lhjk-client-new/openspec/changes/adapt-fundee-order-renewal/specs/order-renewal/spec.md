@@ -2,23 +2,33 @@
 
 ### Requirement: 续费入口导航
 
-「使用中」「已逾期」订单在满足 `packageType` 条件时，SHALL 在列表卡片与订单详情展示「续费订单」，点击后进入套餐详情续费态。
+「使用中」「已逾期」订单在满足续费资格时，SHALL 在列表卡片与订单详情展示「续费订单」，点击后进入套餐详情续费态。
 
-#### Scenario: packageType 展示规则
+字段以 Apifox 为准：
+- 列表：[getAppOrderList](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330738e0.md) → `AppOrderListBO.renewed`
+- 加购/续费下单：[saveShoppingCartOrPurchase](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330718e0.md) → `parentId`
 
-| `packageType` | 含义 | 是否展示「续费订单」 |
-|---------------|------|---------------------|
-| `1` | 租赁套餐 | **是** |
+#### Scenario: packageType 基础条件
+
+| `packageType` | 含义 | 可否续费 |
+|---------------|------|---------|
+| `1` | 租赁套餐（综合服务） | 满足其余资格时可 |
 | `2` | 售卖套餐 | 否 |
 | `3` | 虚拟套餐 | 否 |
 | `4` | 体验套餐 | 否 |
 | 缺失 / 未知 | — | 否 |
 
-- **WHEN** 订单 `status` 为使用中（4）或已逾期（7）
-- **AND** `packageType == 1`
-- **THEN** 列表卡片与详情底栏展示「续费订单」
-- **WHEN** `packageType` 为 2 / 3 / 4 或缺失
-- **THEN** **不得**展示「续费订单」（「结算订单」规则不变）
+#### Scenario: 续费资格（对齐 Apifox `renewed`）
+
+须**同时**满足：
+
+1. `packageType == 1`
+2. `renewed == 1`（文档：1 允许续租，0 不允许；缺失视为不允许）
+3. 状态为使用中（4），或已逾期（7）且由 `endTime` 推算的逾期天数 ∈ **[0, 5]**
+
+逾期天数用 `endTime` 相对当前日历日推算；无法推算则**不展示**续费。
+
+**禁止**依赖未在文档声明的字段：`overdueDays`、`renewalEligible`、`renewedOnce`、`renewPendingChildId`。
 
 #### Scenario: 从订单列表续费
 
@@ -69,7 +79,7 @@
 - **WHEN** 用户点击「立即续费」且已选明细有效
 - **THEN** `flag = 1`
 - **AND** Body 传 `parentId` = 路由带入的 `orderId`
-- **AND** 其余必填字段与普通立即下单一致
+- **AND** 其余字段对齐 `SaveShoppingCartVO`（必填 `hospitalId`、`packageId`）
 - **AND** 成功后进入 `/orders/confirm`，params 含返回的 `orderId`
 
 #### Scenario: 续费态不加购

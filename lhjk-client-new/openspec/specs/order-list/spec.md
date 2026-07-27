@@ -51,9 +51,12 @@ Tab 使用 UICollectionView 横向滚动；**恰好 8 个**，顺序同表。
 
 ### Response Data Model: AppOrderListBO
 
+文档：[getAppOrderList](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330738e0.md)
+
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `id` | Int64 | 订单 ID |
+| `parentId` | Int64 | 关联父订单 id |
 | `orderName` | String | 订单产品名称 |
 | `status` | Int | 订单状态（1-9） |
 | `payable` | Double | 应付金额 |
@@ -63,27 +66,36 @@ Tab 使用 UICollectionView 横向滚动；**恰好 8 个**，顺序同表。
 | `doctorName` | String | 医生姓名 |
 | `packageDescription` | String | 套餐描述 |
 | `packageType` | Int | 套餐类型：1=租赁 2=售卖 3=虚拟 4=体验 |
-
-**续费按钮**：仅 `packageType == 1`（租赁套餐）且状态为使用中/已逾期时展示「续费订单」。
 | `packageImageUrl` | String | 套餐图片 |
 | `beginTime` | String | 服务开始时间 |
 | `endTime` | String | 服务结束时间 |
 | `serviceTime` | String | 服务时间 |
-| `packageId` | String | 套餐 id（续费跳转） |
-| `hospitalId` | String | 医院 id |
-| `categoryServiceId` | String | 服务类别 id |
+| `packageId` | Int64 | 套餐 id（续费跳转） |
+| `hospitalId` | Int64 | 医院 id |
+| `renewed` | Int | **1=允许续租，0=不允许** |
+
+**续费按钮**：仅 `packageType == 1`（租赁），且：
+- `renewed == 1`
+- 使用中；或已逾期且由 `endTime` 推算的逾期天数 ∈ [0, 5]
+- 文档**无** `overdueDays` / `renewalEligible` / `renewedOnce` / `renewPendingChildId`，客户端不得自造这些请求/响应字段
+
+**退款/售后按钮（已完成 Tab）**：仅 `packageType == 2`（售卖）或 `4`（体验）时展示。列表文档无 `refundId`；是否已退款以详情 `refundId` 为准（列表入口可能仍展示，详情侧隐藏）。
+
+**待发货**：用户侧仅「取消订单」，不展示「确认发货」。
+
+**确认收货终态**：客户端提交确认收货后刷新；是否进入已完成由后端处理。
 
 ### Paginated Response
 
-后端分页字段名（非驼峰）需 `CodingKeys` 映射：
+Apifox 标准分页为中文 key，解码时同时兼容英文别名：
 
-| API 字段 | 模型属性 |
-|---------|---------|
-| `totalCount` | `totalRecords` |
-| `pageSize` | `pageSize` |
-| `totalPage` | `totalPages` |
-| `currPage` | `currentPage` |
-| `list` | `records` |
+| API 字段（中文） | 英文别名 | 模型属性 |
+|---------|---------|---------|
+| `总记录数` | `totalCount` | `totalRecords` |
+| `每页记录数` | `pageSize` | `pageSize` |
+| `总页数` | `totalPage` | `totalPages` |
+| `当前页数` | `currPage` | `currentPage` |
+| `数据集合` | `list` | `records` |
 
 ## Requirements
 

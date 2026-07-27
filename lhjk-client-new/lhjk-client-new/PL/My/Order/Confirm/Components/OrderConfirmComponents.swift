@@ -760,10 +760,13 @@ private final class PayMethodPill: UIControl {
 final class OrderConfirmSubmitBar: UIView {
 
     var onPay: (() -> Void)?
+    var onCancel: (() -> Void)?
 
     private let label = UILabel()
     private let priceLabel = UILabel()
+    private let cancelButton = UIButton(type: .system)
     private let payButton = UIButton(type: .system)
+    private let actionsStack = UIStackView()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -780,6 +783,17 @@ final class OrderConfirmSubmitBar: UIView {
         priceLabel.font = .fdMonoFont(ofSize: 20, weight: .heavy)
         priceLabel.textColor = .fdPrimary
 
+        cancelButton.setTitle("取消订单", for: .normal)
+        cancelButton.titleLabel?.font = .fdBodySemibold
+        cancelButton.setTitleColor(.fdText2, for: .normal)
+        cancelButton.backgroundColor = .fdSurface
+        cancelButton.layer.cornerRadius = 22
+        cancelButton.layer.borderWidth = 1
+        cancelButton.layer.borderColor = UIColor.fdBorder.cgColor
+        cancelButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 18, bottom: 0, right: 18)
+        cancelButton.addTarget(self, action: #selector(tapCancel), for: .touchUpInside)
+        cancelButton.isHidden = true
+
         payButton.setTitle("立即支付", for: .normal)
         payButton.titleLabel?.font = .fdBodySemibold
         payButton.setTitleColor(.white, for: .normal)
@@ -788,20 +802,30 @@ final class OrderConfirmSubmitBar: UIView {
         payButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 28, bottom: 0, right: 28)
         payButton.addTarget(self, action: #selector(tapPay), for: .touchUpInside)
 
+        actionsStack.axis = .horizontal
+        actionsStack.spacing = 10
+        actionsStack.alignment = .center
+        actionsStack.addArrangedSubview(cancelButton)
+        actionsStack.addArrangedSubview(payButton)
+
         let copy = UIStackView(arrangedSubviews: [label, priceLabel])
         copy.axis = .vertical
         copy.spacing = 2
 
         addSubview(copy)
-        addSubview(payButton)
+        addSubview(actionsStack)
         copy.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(16)
             $0.centerY.equalTo(payButton)
+            $0.trailing.lessThanOrEqualTo(actionsStack.snp.leading).offset(-12)
         }
-        payButton.snp.makeConstraints {
+        actionsStack.snp.makeConstraints {
             $0.trailing.equalToSuperview().offset(-16)
             $0.top.equalToSuperview().offset(12)
             $0.bottom.equalTo(safeAreaLayoutGuide.snp.bottom).offset(-14)
+        }
+        cancelButton.snp.makeConstraints { $0.height.equalTo(44) }
+        payButton.snp.makeConstraints {
             $0.height.equalTo(44)
             $0.width.greaterThanOrEqualTo(120)
         }
@@ -809,14 +833,31 @@ final class OrderConfirmSubmitBar: UIView {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    func configure(amount: Double, submitting: Bool) {
+    func configure(
+        amount: Double,
+        submitting: Bool,
+        showsCancel: Bool = false,
+        payTitle: String? = nil
+    ) {
         priceLabel.text = OrderConfirmMoney.yen(amount)
+        cancelButton.isHidden = !showsCancel
+        cancelButton.isEnabled = !submitting
+        cancelButton.alpha = submitting ? 0.6 : 1
         payButton.isEnabled = !submitting
         payButton.alpha = submitting ? 0.6 : 1
-        payButton.setTitle(submitting ? "提交中..." : (amount <= 0 ? "确认下单" : "立即支付"), for: .normal)
+        let resolvedPayTitle: String
+        if submitting {
+            resolvedPayTitle = "提交中..."
+        } else if let payTitle {
+            resolvedPayTitle = payTitle
+        } else {
+            resolvedPayTitle = amount <= 0 ? "确认下单" : "立即支付"
+        }
+        payButton.setTitle(resolvedPayTitle, for: .normal)
     }
 
     @objc private func tapPay() { onPay?() }
+    @objc private func tapCancel() { onCancel?() }
 }
 
 // MARK: - Money

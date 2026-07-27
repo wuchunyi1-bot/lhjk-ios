@@ -67,17 +67,97 @@ enum AppPackageType: Int {
     /// 仅租赁套餐支持续费
     var supportsRenewal: Bool { self == .lease }
 
+    /// 售卖（电商零售）、体验套餐可申请普通退款/售后
+    var supportsAfterSale: Bool {
+        self == .sale || self == .experience
+    }
+
     static func supportsRenewal(packageType: Int?) -> Bool {
         guard let packageType, let type = AppPackageType(rawValue: packageType) else { return false }
         return type.supportsRenewal
+    }
+
+    static func supportsAfterSale(packageType: Int?) -> Bool {
+        guard let packageType, let type = AppPackageType(rawValue: packageType) else { return false }
+        return type.supportsAfterSale
+    }
+}
+
+// MARK: - 续费资格
+// Apifox `AppOrderListBO.renewed` / `AppOrderDetailBO.renewed`：1 允许续租，0 不允许
+
+enum AppOrderRenewalRules {
+    /// 已逾期可续费窗口：第 0～5 天（含）；天数由列表/详情 `endTime` 推算（接口无 overdueDays）
+    static let overdueRenewalMaxDays = 5
+
+    /// `renewed == 1` 允许续租；`0` / 缺失均不允许
+    static func isRenewalAllowed(renewed: Int?) -> Bool {
+        renewed == 1
+    }
+
+    static func canShowRenew(
+        packageType: Int?,
+        status: AppOrderStatus?,
+        renewed: Int?,
+        endTime: String?
+    ) -> Bool {
+        guard AppPackageType.supportsRenewal(packageType: packageType) else { return false }
+        guard isRenewalAllowed(renewed: renewed) else { return false }
+        guard let status else { return false }
+
+        switch status {
+        case .inProgress:
+            return true
+        case .overdue:
+            guard let days = overdueDaysComputed(from: endTime) else { return false }
+            return days >= 0 && days <= overdueRenewalMaxDays
+        default:
+            return false
+        }
+    }
+
+    /// 用服务结束日推算逾期天数（日历日）；无法解析返回 nil
+    static func overdueDaysComputed(from endTime: String?) -> Int? {
+        guard let end = parseFlexibleDate(endTime) else { return nil }
+        let calendar = Calendar.current
+        let startOfEnd = calendar.startOfDay(for: end)
+        let startOfToday = calendar.startOfDay(for: Date())
+        let components = calendar.dateComponents([.day], from: startOfEnd, to: startOfToday)
+        return components.day
+    }
+
+    private static func parseFlexibleDate(_ raw: String?) -> Date? {
+        guard let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
+            return nil
+        }
+        let formats = [
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd HH:mm",
+            "yyyy-MM-dd",
+            "yyyy/MM/dd HH:mm:ss",
+            "yyyy/MM/dd",
+            "yyyy-M-d H:m:s",
+            "yyyy-M-d",
+        ]
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        for format in formats {
+            formatter.dateFormat = format
+            if let date = formatter.date(from: trimmed) { return date }
+        }
+        if let iso = ISO8601DateFormatter().date(from: trimmed) { return iso }
+        return nil
     }
 }
 
 // MARK: - 订单模型
 
 /// 订单模型，对应后端 `AppOrderListBO`
+/// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330738e0.md
 struct MOrder {
     let id: Int64?
+    let parentId: Int64?
     let orderName: String?
     let status: Int?
     let payable: Double?
@@ -93,7 +173,10 @@ struct MOrder {
     let serviceTime: String?
     let packageId: String?
     let hospitalId: String?
+    /// 列表文档未声明；若后端额外下发则解码，供续费跳转
     let categoryServiceId: String?
+    /// 1 允许续租，0 不允许（`AppOrderListBO.renewed`）
+    let renewed: Int?
 
     /// 订单状态枚举
     var orderStatus: AppOrderStatus? {
@@ -130,9 +213,23 @@ struct MOrder {
         return raw
     }
 
-    /// 是否展示「续费订单」（租赁套餐）
+    /// 是否展示「续费订单」
     var canShowRenewAction: Bool {
-        AppPackageType.supportsRenewal(packageType: packageType)
+        AppOrderRenewalRules.canShowRenew(
+            packageType: packageType,
+            status: orderStatus,
+            renewed: renewed,
+            endTime: endTime
+        )
+    }
+
+    /// 列表无退款字段；退款历史以详情 `refundId` 为准。列表侧仅按套餐类型展示入口。
+    var hasRefundHistory: Bool { false }
+
+    /// 是否展示「退款/售后」
+    var canShowAfterSaleAction: Bool {
+        guard AppPackageType.supportsAfterSale(packageType: packageType) else { return false }
+        return !hasRefundHistory
     }
 
     /// 日期范围文本
@@ -153,24 +250,25 @@ struct MOrder {
 extension MOrder: Decodable {
 
     enum CodingKeys: String, CodingKey {
-        case id, orderName, status, payable, price, createTime
+        case id, parentId, orderName, status, payable, price, createTime
         case hospitalName, doctorName, packageDescription
         case packageType, packageImageUrl, beginTime, endTime, serviceTime
-        case packageId, hospitalId, categoryServiceId
+        case packageId, hospitalId, categoryServiceId, renewed
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id                  = Self.decodeFlexibleInt64(c, key: .id)
+        parentId            = Self.decodeFlexibleInt64(c, key: .parentId)
         orderName           = try c.decodeIfPresent(String.self, forKey: .orderName)
-        status              = try c.decodeIfPresent(Int.self, forKey: .status)
+        status              = HospitalPackageInt.decodeIfPresent(c, key: .status)
         payable             = try c.decodeIfPresent(Double.self, forKey: .payable)
         price               = try c.decodeIfPresent(Double.self, forKey: .price)
         createTime          = try c.decodeIfPresent(String.self, forKey: .createTime)
         hospitalName        = try c.decodeIfPresent(String.self, forKey: .hospitalName)
         doctorName          = try c.decodeIfPresent(String.self, forKey: .doctorName)
         packageDescription  = try c.decodeIfPresent(String.self, forKey: .packageDescription)
-        packageType         = try c.decodeIfPresent(Int.self, forKey: .packageType)
+        packageType         = HospitalPackageInt.decodeIfPresent(c, key: .packageType)
         packageImageUrl     = try c.decodeIfPresent(String.self, forKey: .packageImageUrl)
         beginTime           = try c.decodeIfPresent(String.self, forKey: .beginTime)
         endTime             = try c.decodeIfPresent(String.self, forKey: .endTime)
@@ -178,6 +276,7 @@ extension MOrder: Decodable {
         packageId           = HospitalPackageID.decodeOptional(c, key: .packageId)
         hospitalId          = HospitalPackageID.decodeOptional(c, key: .hospitalId)
         categoryServiceId   = HospitalPackageID.decodeOptional(c, key: .categoryServiceId)
+        renewed             = HospitalPackageInt.decodeIfPresent(c, key: .renewed)
     }
 
     private static func decodeFlexibleInt64<K: CodingKey>(_ container: KeyedDecodingContainer<K>, key: K) -> Int64? {
@@ -190,6 +289,7 @@ extension MOrder: Decodable {
 // MARK: - 订单分页数据
 
 /// 分页订单列表数据，对应 `GET /v1/order/getAppOrderList` 的 `data` 字段
+/// Apifox 标准分页字段为中文 key，同时兼容英文别名
 struct PaginatedOrderData: Decodable {
     let totalRecords: Int?
     let pageSize: Int?
@@ -203,6 +303,39 @@ struct PaginatedOrderData: Decodable {
         case totalPages = "totalPage"
         case currentPage = "currPage"
         case records = "list"
+        case totalRecordsCN = "总记录数"
+        case pageSizeCN = "每页记录数"
+        case totalPagesCN = "总页数"
+        case currentPageCN = "当前页数"
+        case recordsCN = "数据集合"
+    }
+
+    init(
+        totalRecords: Int? = nil,
+        pageSize: Int? = nil,
+        totalPages: Int? = nil,
+        currentPage: Int? = nil,
+        records: [MOrder]? = nil
+    ) {
+        self.totalRecords = totalRecords
+        self.pageSize = pageSize
+        self.totalPages = totalPages
+        self.currentPage = currentPage
+        self.records = records
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        totalRecords = (try? c.decodeIfPresent(Int.self, forKey: .totalRecords))
+            ?? (try? c.decodeIfPresent(Int.self, forKey: .totalRecordsCN))
+        pageSize = (try? c.decodeIfPresent(Int.self, forKey: .pageSize))
+            ?? (try? c.decodeIfPresent(Int.self, forKey: .pageSizeCN))
+        totalPages = (try? c.decodeIfPresent(Int.self, forKey: .totalPages))
+            ?? (try? c.decodeIfPresent(Int.self, forKey: .totalPagesCN))
+        currentPage = (try? c.decodeIfPresent(Int.self, forKey: .currentPage))
+            ?? (try? c.decodeIfPresent(Int.self, forKey: .currentPageCN))
+        records = (try? c.decodeIfPresent([MOrder].self, forKey: .records))
+            ?? (try? c.decodeIfPresent([MOrder].self, forKey: .recordsCN))
     }
 }
 
@@ -210,7 +343,8 @@ struct PaginatedOrderData: Decodable {
 // Apifox: POST /v1/order/insertOrEdit
 // https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330734e0.md
 
-/// `insertOrEdit` 请求体（仅传业务所需字段）
+/// `insertOrEdit` 请求体（`MOrder` 子集，仅传业务所需字段）
+/// Apifox schema：`id` / `hospitalId` 为 int64；客户端按线上兼容以字符串编码
 struct OrderInsertOrEditRequest: Encodable {
     let id: Int64
     let hospitalId: String?

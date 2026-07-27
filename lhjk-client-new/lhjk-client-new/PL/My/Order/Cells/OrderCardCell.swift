@@ -213,7 +213,7 @@ final class OrderCardCell: UITableViewCell {
             $0.removeFromSuperview()
         }
 
-        let actions = OrderListCardAction.actions(for: order.orderStatus, packageType: order.packageType)
+        let actions = OrderListCardAction.actions(for: order)
         guard !actions.isEmpty else {
             actionsStack.superview?.isHidden = true
             return
@@ -285,26 +285,88 @@ enum OrderListCardAction: Equatable {
         }
     }
 
-    /// 按主状态与套餐类型展示操作按钮
-    static func actions(for status: AppOrderStatus?, packageType: Int? = nil) -> [OrderListCardAction] {
+    /// 按订单状态、套餐类型与退款历史展示操作按钮（对齐 PRD 3.4 / 5.8）
+    static func actions(for order: MOrder) -> [OrderListCardAction] {
+        actions(
+            for: order.orderStatus,
+            packageType: order.packageType,
+            hasRefundHistory: order.hasRefundHistory,
+            canRenew: order.canShowRenewAction
+        )
+    }
+
+    static func actions(
+        for status: AppOrderStatus?,
+        packageType: Int? = nil,
+        hasRefundHistory: Bool = false,
+        canRenew: Bool = false
+    ) -> [OrderListCardAction] {
         guard let status else { return [] }
         switch status {
         case .pendingPayment:
             return [.cancel, .pay]
         case .pendingShip:
-            return [.confirmShip, .cancel]
+            return [.cancel]
         case .pendingReceive:
-            return [.afterSale, .confirmReceipt]
-        case .inProgress, .overdue:
-            return inProgressOrOverdueActions(packageType: packageType)
-        case .completed, .refund, .cancelled, .refundReview:
+            return pendingReceiveActions(packageType: packageType, hasRefundHistory: hasRefundHistory)
+        case .inProgress:
+            return inProgressActions(
+                packageType: packageType,
+                hasRefundHistory: hasRefundHistory,
+                canRenew: canRenew
+            )
+        case .overdue:
+            return overdueActions(packageType: packageType, canRenew: canRenew)
+        case .completed:
+            return completedActions(packageType: packageType, hasRefundHistory: hasRefundHistory)
+        case .refund, .cancelled, .refundReview:
             return []
         }
     }
 
-    private static func inProgressOrOverdueActions(packageType: Int?) -> [OrderListCardAction] {
+    private static func pendingReceiveActions(packageType: Int?, hasRefundHistory: Bool) -> [OrderListCardAction] {
         var actions: [OrderListCardAction] = []
-        if AppPackageType.supportsRenewal(packageType: packageType) {
+        if AppPackageType.supportsAfterSale(packageType: packageType), !hasRefundHistory {
+            actions.append(.afterSale)
+        }
+        actions.append(.confirmReceipt)
+        return actions
+    }
+
+    private static func inProgressActions(
+        packageType: Int?,
+        hasRefundHistory: Bool,
+        canRenew: Bool
+    ) -> [OrderListCardAction] {
+        guard let type = packageType.flatMap({ AppPackageType(rawValue: $0) }) else {
+            return []
+        }
+        switch type {
+        case .experience:
+            return hasRefundHistory ? [] : [.afterSale]
+        case .lease:
+            return leaseRenewSettleActions(canRenew: canRenew)
+        case .sale, .virtual:
+            return []
+        }
+    }
+
+    private static func overdueActions(packageType: Int?, canRenew: Bool) -> [OrderListCardAction] {
+        guard AppPackageType(rawValue: packageType ?? -1) == .lease else { return [] }
+        return leaseRenewSettleActions(canRenew: canRenew)
+    }
+
+    /// 已完成：仅售卖(电商零售)、体验套餐且未退款过可申请（PRD 5.8.1）
+    private static func completedActions(packageType: Int?, hasRefundHistory: Bool) -> [OrderListCardAction] {
+        guard AppPackageType.supportsAfterSale(packageType: packageType), !hasRefundHistory else {
+            return []
+        }
+        return [.afterSale]
+    }
+
+    private static func leaseRenewSettleActions(canRenew: Bool) -> [OrderListCardAction] {
+        var actions: [OrderListCardAction] = []
+        if canRenew {
             actions.append(.renew)
         }
         actions.append(.settle)

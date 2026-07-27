@@ -95,6 +95,9 @@ final class OrderConfirmViewModel: ObservableObject {
 
     var showsOrderListPayPresentation: Bool { entry == .orderListPay }
 
+    /// 当前结算订单 id（取消等操作）
+    var currentOrderId: Int64 { orderId }
+
     var selectedPaymentMethodLabel: String { payMethod.title }
 
     var showsFulfillment: Bool { true }

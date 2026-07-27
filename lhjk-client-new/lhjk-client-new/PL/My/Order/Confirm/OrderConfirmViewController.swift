@@ -149,6 +149,9 @@ final class OrderConfirmViewController: BaseViewController {
         submitBar.onPay = { [weak self] in
             self?.viewModel.submitPay()
         }
+        submitBar.onCancel = { [weak self] in
+            self?.handlePendingPaymentCancel()
+        }
 
         setupCartCheckoutNavigationIfNeeded()
     }
@@ -328,7 +331,12 @@ final class OrderConfirmViewController: BaseViewController {
             supportsWechat: viewModel.supportsWechat,
             supportsAlipay: viewModel.supportsAlipay
         )
-        submitBar.configure(amount: viewModel.payableAmount, submitting: viewModel.isSubmitting)
+        submitBar.configure(
+            amount: viewModel.payableAmount,
+            submitting: viewModel.isSubmitting,
+            showsCancel: showsOrderListPayPresentation,
+            payTitle: showsOrderListPayPresentation ? "去支付" : nil
+        )
 
         if showsOrderListPayPresentation {
             statusView.configure(
@@ -387,6 +395,23 @@ final class OrderConfirmViewController: BaseViewController {
 
     @objc private func tapBenefit() {
         showToast("暂无可用权益卡")
+    }
+
+    private func handlePendingPaymentCancel() {
+        guard showsOrderListPayPresentation else { return }
+        let onSuccess: (OrderCancelFlow.Result) -> Void = { [weak self] _ in
+            self?.navigationController?.popViewController(animated: true)
+        }
+        if let detail = viewModel.orderDetail {
+            OrderCancelFlow.start(from: self, detail: detail, onSuccess: onSuccess)
+            return
+        }
+        OrderCancelFlow.startPendingPaymentCancel(
+            from: self,
+            orderId: viewModel.currentOrderId,
+            hospitalId: nil,
+            onSuccess: onSuccess
+        )
     }
 
     private func callInstitution() {

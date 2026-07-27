@@ -43,16 +43,19 @@ struct AppOrderDetailBO: Decodable {
     let packageId: String?
     let hospitalId: String?
     let categoryServiceId: String?
+    /// 1 允许续租，0 不允许（`AppOrderDetailBO.renewed`）
+    let renewed: Int?
+    let parentId: Int64?
 
     private enum CodingKeys: String, CodingKey {
-        case id, orderName, status, payable, price, paymentType, paymentNo, createTime
+        case id, parentId, orderName, status, payable, price, paymentType, paymentNo, createTime
         case hospitalName, doctorName, packageDescription, packageType, packageImageUrl
         case typeOrder, address, receiver, phone, expressAmount, couponAmount
         case description, logisticsNumber, logisticsVendor, logisticsChineseName
         case shipmentTime, beginTime, endTime, serviceTime
         case shoppingCartPackageDetailList
         case refundId, refundReasons, refuseReasons, refundApplyTime, applyRefund, refundApplyChannel
-        case packageId, hospitalId, categoryServiceId
+        case packageId, hospitalId, categoryServiceId, renewed
     }
 
     init(from decoder: Decoder) throws {
@@ -94,6 +97,8 @@ struct AppOrderDetailBO: Decodable {
         packageId = HospitalPackageID.decodeOptional(c, key: .packageId)
         hospitalId = HospitalPackageID.decodeOptional(c, key: .hospitalId)
         categoryServiceId = HospitalPackageID.decodeOptional(c, key: .categoryServiceId)
+        renewed = Self.decodeFlexibleInt(c, key: .renewed)
+        parentId = Self.decodeFlexibleInt64(c, key: .parentId)
     }
 
     var resolvedPackageId: String? {
@@ -103,9 +108,28 @@ struct AppOrderDetailBO: Decodable {
         return raw
     }
 
-    /// 是否展示「续费订单」（租赁套餐）
+    /// 是否展示「续费订单」
     var canShowRenewAction: Bool {
-        AppPackageType.supportsRenewal(packageType: packageType)
+        AppOrderRenewalRules.canShowRenew(
+            packageType: packageType,
+            status: orderStatus,
+            renewed: renewed,
+            endTime: endTime
+        )
+    }
+
+    /// 是否已发生退款（完成后隐藏再次申请）
+    var hasRefundHistory: Bool {
+        if let refundId, refundId > 0 { return true }
+        if let applyRefund, applyRefund > 0, orderStatus == .completed { return true }
+        return false
+    }
+
+    /// 是否展示「退款/售后」
+    var canShowAfterSaleAction: Bool {
+        guard AppPackageType.supportsAfterSale(packageType: packageType) else { return false }
+        if isInAfterSaleFlow { return false }
+        return !hasRefundHistory
     }
 
     var orderStatus: AppOrderStatus? {

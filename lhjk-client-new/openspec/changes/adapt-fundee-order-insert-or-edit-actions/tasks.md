@@ -12,3 +12,4 @@
 - [x] 3.1 `OrderCancelFlow` 传 hospitalId、refundReasons
 - [x] 3.2 `OrderStatusActionFlow`：确认收货 / 结算
 - [x] 3.3 列表与详情操作入口
+- [x] 3.4 用户侧待发货仅「取消订单」（移除「确认发货」入口）；PRD 3.4 操作矩阵写入 spec

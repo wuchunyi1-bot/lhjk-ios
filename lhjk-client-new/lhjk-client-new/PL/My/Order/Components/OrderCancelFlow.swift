@@ -44,6 +44,25 @@ enum OrderCancelFlow {
         )
     }
 
+    /// 待支付取消（确认页详情未就绪时）
+    static func startPendingPaymentCancel(
+        from presenter: UIViewController,
+        orderId: Int64,
+        hospitalId: String? = nil,
+        onSuccess: @escaping (Result) -> Void
+    ) {
+        guard orderId > 0 else {
+            showToast("订单信息缺失", on: presenter)
+            return
+        }
+        confirmPendingPaymentCancel(
+            from: presenter,
+            orderId: orderId,
+            hospitalId: hospitalId,
+            onSuccess: onSuccess
+        )
+    }
+
     // MARK: - Private
 
     private static func start(
