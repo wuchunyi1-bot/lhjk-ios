@@ -19,12 +19,7 @@ final class OrderDetailViewModel: ObservableObject {
 
     var bottomActions: [OrderListCardAction] {
         guard let detail else { return [] }
-        return OrderListCardAction.actions(
-            for: detail.orderStatus,
-            packageType: detail.packageType,
-            hasRefundHistory: detail.hasRefundHistory,
-            canRenew: detail.canShowRenewAction
-        )
+        return OrderListCardAction.actions(for: detail)
     }
 
     var visibleContentLines: [OrderDetailPackageLineBO] {

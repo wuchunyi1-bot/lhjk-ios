@@ -1,7 +1,8 @@
 import UIKit
 import SnapKit
 
-/// 去退货底部抽屉 — 对齐 funde `OrderReturnDialog.vue`（接口未出，仅 UI + 校验）
+/// 去退货底部抽屉 — 对齐 funde `OrderReturnDialog.vue`
+/// 提交：`POST /v1/orderClearing/submitReturnGoods`
 final class OrderReturnGoodsSheet: UIViewController {
 
     enum Method: Equatable {
@@ -15,10 +16,11 @@ final class OrderReturnGoodsSheet: UIViewController {
         let trackingNo: String?
     }
 
-    /// 校验通过后回调；当前无接口时由调用方决定是否 Toast
+    /// 校验通过后回调；调用方负责网络提交
     var onSubmit: ((Submission) -> Void)?
 
     private let returnAddressText: String
+    private var isSubmitting = false
 
     private let dimView = UIView()
     private let panel = UIView()
@@ -56,6 +58,14 @@ final class OrderReturnGoodsSheet: UIViewController {
         buildUI()
         applyMethodSelection(nil)
         updateLogisticsCompanyTitle()
+    }
+
+    func setSubmitting(_ submitting: Bool) {
+        isSubmitting = submitting
+        submitButton.isEnabled = !submitting
+        submitButton.alpha = submitting ? 0.6 : 1
+        cancelButton.isEnabled = !submitting
+        submitButton.setTitle(submitting ? "提交中…" : "提交", for: .normal)
     }
 
     // MARK: - UI
@@ -285,15 +295,18 @@ final class OrderReturnGoodsSheet: UIViewController {
     // MARK: - Actions
 
     @objc private func selectSelfDelivery() {
+        guard !isSubmitting else { return }
         view.endEditing(true)
         applyMethodSelection(.selfDelivery)
     }
 
     @objc private func selectExpress() {
+        guard !isSubmitting else { return }
         applyMethodSelection(.expressReturn)
     }
 
     @objc private func pickLogisticsCompany() {
+        guard !isSubmitting else { return }
         let sheet = UIAlertController(title: "选择物流名称", message: nil, preferredStyle: .actionSheet)
         for name in logisticsCompanies {
             sheet.addAction(UIAlertAction(title: name, style: .default) { [weak self] _ in
@@ -310,11 +323,13 @@ final class OrderReturnGoodsSheet: UIViewController {
     }
 
     @objc private func dismissSheet() {
+        guard !isSubmitting else { return }
         view.endEditing(true)
         dismiss(animated: true)
     }
 
     @objc private func submit() {
+        guard !isSubmitting else { return }
         view.endEditing(true)
         guard let method = selectedMethod else {
             presentToast("请选择退货方式")
@@ -337,7 +352,7 @@ final class OrderReturnGoodsSheet: UIViewController {
         }
     }
 
-    private func presentToast(_ message: String) {
+    func presentToast(_ message: String) {
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
         present(alert, animated: true)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak alert] in
@@ -356,35 +371,110 @@ extension OrderReturnGoodsSheet: UITextFieldDelegate {
 // MARK: - Flow
 
 enum OrderReturnGoodsFlow {
-    static func present(from presenter: UIViewController, order: MOrder) {
-        let address = order.hospitalName.map { "\($0)（送回地址待接口下发）" }
-        let sheet = OrderReturnGoodsSheet(returnAddress: address)
-        sheet.onSubmit = { [weak presenter, weak sheet] _ in
-            sheet?.dismiss(animated: true) {
-                presenter.map { showPendingAPIToast(on: $0) }
-            }
+
+    static func present(
+        from presenter: UIViewController,
+        order: MOrder,
+        onSuccess: (() -> Void)? = nil
+    ) {
+        guard let refundId = order.refundId, refundId > 0 else {
+            showToast(on: presenter, message: "退款单信息缺失，暂无法退货")
+            return
         }
-        presenter.present(sheet, animated: true)
+        let address = order.hospitalName.map { "\($0)" }
+        presentSheet(
+            from: presenter,
+            refundId: refundId,
+            returnAddress: address,
+            onSuccess: onSuccess
+        )
     }
 
-    static func present(from presenter: UIViewController, detail: AppOrderDetailBO) {
+    static func present(
+        from presenter: UIViewController,
+        detail: AppOrderDetailBO,
+        onSuccess: (() -> Void)? = nil
+    ) {
+        guard let refundId = detail.refundId, refundId > 0 else {
+            showToast(on: presenter, message: "退款单信息缺失，暂无法退货")
+            return
+        }
         let address = [
             detail.hospitalName,
             detail.address,
         ]
             .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
             .first { !$0.isEmpty }
-        let sheet = OrderReturnGoodsSheet(returnAddress: address)
-        sheet.onSubmit = { [weak presenter, weak sheet] _ in
-            sheet?.dismiss(animated: true) {
-                presenter.map { showPendingAPIToast(on: $0) }
-            }
+        presentSheet(
+            from: presenter,
+            refundId: refundId,
+            returnAddress: address,
+            onSuccess: onSuccess
+        )
+    }
+
+    private static func presentSheet(
+        from presenter: UIViewController,
+        refundId: Int64,
+        returnAddress: String?,
+        onSuccess: (() -> Void)?
+    ) {
+        let sheet = OrderReturnGoodsSheet(returnAddress: returnAddress)
+        sheet.onSubmit = { [weak presenter, weak sheet] submission in
+            guard let presenter, let sheet else { return }
+            submit(
+                from: presenter,
+                sheet: sheet,
+                refundId: refundId,
+                submission: submission,
+                onSuccess: onSuccess
+            )
         }
         presenter.present(sheet, animated: true)
     }
 
-    private static func showPendingAPIToast(on presenter: UIViewController) {
-        let alert = UIAlertController(title: nil, message: "退货提交接口即将开放", preferredStyle: .alert)
+    private static func submit(
+        from presenter: UIViewController,
+        sheet: OrderReturnGoodsSheet,
+        refundId: Int64,
+        submission: OrderReturnGoodsSheet.Submission,
+        onSuccess: (() -> Void)?
+    ) {
+        let dto: ReturnGoodsSubmitDTO
+        switch submission.method {
+        case .selfDelivery:
+            dto = .selfDelivery(refundId: refundId)
+        case .expressReturn:
+            guard let company = submission.logisticsCompany, let tracking = submission.trackingNo else {
+                sheet.presentToast("请完善物流信息")
+                return
+            }
+            dto = .express(refundId: refundId, logisticsName: company, logisticsId: tracking)
+        }
+
+        sheet.setSubmitting(true)
+        Task {
+            do {
+                try await OrderService.shared.submitReturnGoods(dto)
+                await MainActor.run {
+                    sheet.setSubmitting(false)
+                    sheet.dismiss(animated: true) {
+                        NotificationCenter.default.post(name: .orderListNeedsRefresh, object: nil)
+                        onSuccess?()
+                        showToast(on: presenter, message: "退货信息已提交")
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    sheet.setSubmitting(false)
+                    sheet.presentToast(error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    private static func showToast(on presenter: UIViewController, message: String) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
         presenter.present(alert, animated: true)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             alert.dismiss(animated: true)

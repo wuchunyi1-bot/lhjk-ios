@@ -211,6 +211,10 @@ final class ProfileFieldEditorSheet: UIViewController {
             showToast("请填写\(fieldTitle)")
             return
         }
+        if fieldTitle == "姓名", value.count < 2 {
+            showToast("请输入真实姓名")
+            return
+        }
         if fieldTitle == "邮箱", !value.contains("@") {
             showToast("请输入正确的邮箱格式")
             return

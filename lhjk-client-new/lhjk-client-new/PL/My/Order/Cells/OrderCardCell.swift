@@ -272,7 +272,7 @@ enum OrderListCardAction: Equatable {
     case afterSale
     case renew
     case settle
-    /// 退款审核通过后的退货处理（接口未出，先 UI）
+    /// 退款审核通过后的退货处理
     case returnGoods
 
     var title: String {
@@ -294,7 +294,18 @@ enum OrderListCardAction: Equatable {
             for: order.orderStatus,
             packageType: order.packageType,
             hasRefundHistory: order.hasRefundHistory,
-            canRenew: order.canShowRenewAction
+            canRenew: order.canShowRenewAction,
+            canReturnGoods: order.canShowReturnGoodsAction
+        )
+    }
+
+    static func actions(for detail: AppOrderDetailBO) -> [OrderListCardAction] {
+        actions(
+            for: detail.orderStatus,
+            packageType: detail.packageType,
+            hasRefundHistory: detail.hasRefundHistory,
+            canRenew: detail.canShowRenewAction,
+            canReturnGoods: detail.canShowReturnGoodsAction
         )
     }
 
@@ -302,7 +313,8 @@ enum OrderListCardAction: Equatable {
         for status: AppOrderStatus?,
         packageType: Int? = nil,
         hasRefundHistory: Bool = false,
-        canRenew: Bool = false
+        canRenew: Bool = false,
+        canReturnGoods: Bool = false
     ) -> [OrderListCardAction] {
         guard let status else { return [] }
         switch status {
@@ -323,8 +335,7 @@ enum OrderListCardAction: Equatable {
         case .completed:
             return completedActions(packageType: packageType, hasRefundHistory: hasRefundHistory)
         case .refund:
-            // 履约行资格待接口字段；退款/售后列表先统一展示入口
-            return [.returnGoods]
+            return canReturnGoods ? [.returnGoods] : []
         case .cancelled, .refundReview:
             return []
         }

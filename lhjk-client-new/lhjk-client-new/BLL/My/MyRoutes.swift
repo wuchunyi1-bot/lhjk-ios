@@ -19,6 +19,7 @@ enum MyRoutes {
         r.register(path: "/me/diet-plan")        { _ in DietPlanViewController() }
         r.register(path: "/me/monitoring-plan")  { _ in MonitoringPlanViewController() }
         r.register(path: "/me/health-evaluations") { _ in HealthEvaluationsViewController() }
+        r.register(path: "/me/health-assessment") { _ in PlaceholderViewController(title: "健康评估") }
 
         // 占位页面（后续迭代实现）
         r.register(path: "/me/membership")  { _ in MembershipViewController() }
@@ -34,6 +35,28 @@ enum MyRoutes {
         r.register(path: "/me/settings/security")       { _ in SecuritySettingsViewController() }
         r.register(path: "/me/settings/about")          { _ in AboutSettingsViewController() }
         r.register(path: "/me/settings/cancel-account") { _ in CancelAccountViewController() }
+        r.register(path: "/me/settings/agreement-center") { _ in AgreementCenterViewController() }
+
+        // 安全中心三级页（对齐 Vue `/me/settings/security/*`）
+        r.register(path: "/me/settings/security/change-phone") { _ in ChangePhoneViewController() }
+        r.register(path: "/me/settings/security/password") { _ in
+            let vc = PasswordSetupViewController()
+            let phone = UserManager.shared.currentUser?.mobile
+                ?? UserDefaults.standard.string(forKey: "current_user_mobile")
+                ?? ""
+            vc.mode = .loggedIn(phone: phone)
+            return vc
+        }
+        r.register(path: "/me/settings/security/wechat") { _ in WechatAuthorizationViewController() }
+        r.register(path: "/me/settings/security/cancel-account") { _ in CancelAccountViewController() }
+
+        // 协议详情（协议与说明 / 登录链路共用）
+        r.register(path: "/auth/agreement/user") { _ in AgreementDetailViewController(docType: "user") }
+        r.register(path: "/auth/agreement/privacy") { _ in AgreementDetailViewController(docType: "privacy") }
+        r.register(path: "/auth/agreement/consent") { _ in AgreementDetailViewController(docType: "consent") }
+        r.register(path: "/auth/agreement/personal-info") { _ in AgreementDetailViewController(docType: "personal-info") }
+        r.register(path: "/auth/agreement/third-party-sharing") { _ in AgreementDetailViewController(docType: "third-party-sharing") }
+        r.register(path: "/auth/agreement/benefit-card") { _ in AgreementDetailViewController(docType: "benefit-card") }
 
         // 卡券（params: 可选 tab=coupon|benefit）
         r.register(path: "/me/vouchers") { params in
@@ -54,7 +77,12 @@ enum MyRoutes {
             let count = params["existingAddressCount"] as? Int ?? 0
             return AddressEditViewController(address: address, existingAddressCount: count)
         }
-        r.register(path: "/me/health-profile")   { _ in PlaceholderViewController(title: "健康档案") }
+        r.register(path: "/me/health-profile") { _ in
+            WebViewController(
+                urlString: H5Config.healthRecordPageURL.absoluteString,
+                title: "健康档案"
+            )
+        }
         r.register(path: "/orders")          { params in
             let tab = (params["tab"] as? String) ?? "all"
             return OrderListViewController(initialTab: tab)

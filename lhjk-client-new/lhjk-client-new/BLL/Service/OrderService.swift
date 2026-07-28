@@ -2,13 +2,14 @@ import Foundation
 
 // MARK: - 订单服务 (BLL)
 
-/// 订单管理服务 — 提供订单列表 / 详情 / 结算查询能力
+/// 订单管理服务 — 提供订单列表 / 详情 / 结算 / 退货提交能力
 ///
 /// 封装后端接口：
 /// - `GET /v1/order/getAppOrderList` — 分页查询用户订单列表
 /// - `GET /v1/order/getAppOrderDetail` — 根据订单 id 查询详情
 /// - `GET /v1/order/getOrderSettlement` — 确认订单结算信息
 /// - `POST /v1/order/insertOrEdit` — 新增或编辑订单（取消 / 退款申请）
+/// - `POST /v1/orderClearing/submitReturnGoods` — 提交退货信息
 final class OrderService {
 
     // MARK: - Singleton
@@ -268,6 +269,31 @@ final class OrderService {
     /// 购物车去结算（status → 1 待支付）
     func checkoutCartOrder(orderId: Int64, hospitalId: String? = nil) async throws {
         try await insertOrEditOrder(.checkoutFromCart(orderId: orderId, hospitalId: hospitalId))
+    }
+
+    // MARK: - 提交退货信息
+
+    /// `POST /v1/orderClearing/submitReturnGoods`
+    /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/493050735e0.md
+    func submitReturnGoods(_ dto: ReturnGoodsSubmitDTO) async throws {
+        guard dto.refundId > 0 else {
+            throw OrderServiceError.queryFailed("退款单信息缺失")
+        }
+        let body = dto.apiParameters()
+        print("[OrderService] submitReturnGoods → body=\(body)")
+
+        let response: APIResponse<EmptyResponse> = try await APIManager.shared
+            .postAsync(
+                path: "/v1/orderClearing/submitReturnGoods",
+                parameters: body,
+                responseType: APIResponse<EmptyResponse>.self
+            )
+
+        guard response.isSuccess else {
+            print("[OrderService] submitReturnGoods ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw OrderServiceError.queryFailed(response.msg ?? "提交退货失败，请稍后重试")
+        }
+        print("[OrderService] submitReturnGoods ✓ refundId=\(dto.refundId)")
     }
 }
 

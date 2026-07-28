@@ -3,13 +3,12 @@ import SnapKit
 import Kingfisher
 import Combine
 
-/// 我的模块 Hub 页 — 对齐 funde-client MeView.vue
+/// 我的模块 Hub 页 — 对齐 MeView.vue（无健康大会员）
 final class MyViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate {
 
     private enum Section: Int, CaseIterable {
         case common
         case health
-        case settings
     }
 
     private let viewModel = MyViewModel()
@@ -67,6 +66,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         navigationController?.setNavigationBarHidden(true, animated: animated)
         viewModel.loadUserProfile()
         viewModel.refreshVoucherBadge()
+        tableView.reloadData()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -96,6 +96,11 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.refreshHeader() }
             .store(in: &cancellables)
+
+        viewModel.$commonActions
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.tableView.reloadData() }
+            .store(in: &cancellables)
     }
 
     private func refreshHeader() {
@@ -111,9 +116,6 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             }
         }
         (header.viewWithTag(202) as? UILabel)?.text = viewModel.userName
-        if let card = header.viewWithTag(300) as? MeMembershipCardView {
-            card.configure(with: viewModel)
-        }
         header.setNeedsLayout()
         header.layoutIfNeeded()
     }
@@ -179,18 +181,8 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         )
         healthBtn.addTarget(self, action: #selector(pushHealthProfile), for: .touchUpInside)
 
-//        let membershipCard = MeMembershipCardView()
-//        membershipCard.tag = 300
-//        membershipCard.configure(with: viewModel)
-//        membershipCard.onCardTap = { [weak self] in self?.openMembershipCard() }
-//        membershipCard.onPrimaryTap = { [weak self] in self?.openMembershipAction() }
-//        membershipCard.onUpgradeTap = { [weak self] in self?.openMembershipAction() }
-//        membershipCard.onBenefitsTap = { Router.shared.push("/me/membership") }
-
-//        [avatarView, nameLabel, settingsBtn, profileBtn, healthBtn, membershipCard].forEach(header.addSubview)
-
         [avatarView, nameLabel, settingsBtn, profileBtn, healthBtn].forEach(header.addSubview)
-        
+
         avatarView.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(52)
             make.leading.equalToSuperview().offset(contentPadding + 2)
@@ -215,13 +207,8 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             make.centerY.equalTo(profileBtn)
             make.leading.equalTo(profileBtn.snp.trailing).offset(8)
             make.height.greaterThanOrEqualTo(28).priority(UILayoutPriority(999))
-            make.bottom.equalToSuperview().offset(-8).priority(UILayoutPriority(999))
+            make.bottom.equalToSuperview().offset(-16).priority(UILayoutPriority(999))
         }
-//        membershipCard.snp.makeConstraints { make in
-//            make.top.equalTo(profileBtn.snp.bottom).offset(16)
-//            make.leading.trailing.equalToSuperview().inset(contentPadding)
-//            make.bottom.equalToSuperview().offset(-8)
-//        }
 
         return header
     }
@@ -280,7 +267,6 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         switch s {
         case .common: return 1
         case .health: return viewModel.healthManagement.rows.count
-        case .settings: return viewModel.settingsSupport.rows.count
         }
     }
 
@@ -293,9 +279,9 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             cell.onActionTap = { route in Router.shared.push(route) }
             return cell
 
-        case .health, .settings:
+        case .health:
             let cell = tableView.dequeueReusableCell(withIdentifier: MeFuncRowCell.reuseIdentifier, for: indexPath) as! MeFuncRowCell
-            let group = s == .health ? viewModel.healthManagement : viewModel.settingsSupport
+            let group = viewModel.healthManagement
             let row = group.rows[indexPath.row]
             cell.configure(data: MeFuncRowCell.RowData(
                 icon: row.icon,
@@ -319,7 +305,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         case .common:
             let rows = Int(ceil(Double(viewModel.commonActions.count) / 4.0))
             return CGFloat(10 + 12 + rows * 72 + max(0, rows - 1) * 10)
-        case .health, .settings:
+        case .health:
             return 48
         }
     }
@@ -330,7 +316,6 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         switch s {
         case .common: title = "常用功能"
         case .health: title = viewModel.healthManagement.title
-        case .settings: title = viewModel.settingsSupport.title
         }
         let container = UIView()
         container.backgroundColor = .fdBg
@@ -351,19 +336,6 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
     @objc private func pushSettings() { Router.shared.push("/me/settings") }
     @objc private func pushProfile() { Router.shared.push("/me/profile") }
     @objc private func pushHealthProfile() { Router.shared.push("/me/health-profile") }
-
-    private func openMembershipCard() {
-        switch viewModel.membership.status {
-        case .active, .expiring:
-            Router.shared.push("/me/membership")
-        case .notOpened, .expired:
-            openMembershipAction()
-        }
-    }
-
-    private func openMembershipAction() {
-        Router.shared.push("/me/membership/open")
-    }
 
     @objc private func handleLogout() {
         let alert = UIAlertController(

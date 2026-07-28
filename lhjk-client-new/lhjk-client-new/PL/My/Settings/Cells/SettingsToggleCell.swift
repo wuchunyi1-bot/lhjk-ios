@@ -57,7 +57,9 @@ final class SettingsToggleCell: UIView {
         super.init(frame: .zero)
 
         titleLabel.text = model.title
+        titleLabel.font = .fdBodySemibold
         subtitleLabel.text = model.subtitle
+        subtitleLabel.font = .fdFont(ofSize: 11, weight: .regular)
         toggle.isOn = model.isOn
         divider.isHidden = !showDivider
 

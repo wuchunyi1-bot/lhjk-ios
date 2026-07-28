@@ -166,6 +166,14 @@ SHALL 在 `HealthViewController` 展示体征卡片；点击跳转 `/health/metr
 ## Deferred
 
 - Hub / MetricsView 摘要接真实 API
-- 健康档案 `#/health/record` 迁移
 - 体温 `#/temperature`（Hub 暂无入口）
 - H5 ↔ App JSBridge（关闭页、刷新 Hub）
+
+## Health Record（已接入）
+
+| App 路由 | H5 |
+|----------|-----|
+| `/health/record` | `#/health/record?token&platform=ios` |
+| `/me/health-profile` | 同上 |
+
+经由 `H5Config.healthRecordPageURL` / `WebViewController`。

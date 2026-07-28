@@ -3,18 +3,18 @@
 ## 1. Spec 锁定（本变更）
 
 - [x] 1.1 proposal / design / specs：去退货资格与抽屉规则（对齐 PRD §3.3 / §3.5 / §5.7）
-- [x] 1.2 明确接口未出：禁止自造提交参数
+- [x] 1.2 对齐列表字段 `canReturnGoods` / `refundId` 与提交接口 `submitReturnGoods`
 
-## 2. UI 骨架（可先做，无网或按钮隐藏）
+## 2. UI 骨架
 
-- [ ] 2.1 抽出 `canShowReturnGoods` 资格判断（列表/详情共用；履约状态枚举占位 + TODO 对齐文档）— 当前列表先按 `status=6` 展示
-- [x] 2.2 `OrderCardCell`：`status=6` 合资格时展示「去退货」（列表先统一展示，履约行收紧待接口）
-- [ ] 2.3 `OrderDetailAfterSaleView`：合资格展示「去退货」入口；已提交后回显退货方式/物流
-- [x] 2.4 新增去退货底部抽屉：自行送回 / 快递寄回 + 校验文案（对齐 funde `OrderReturnDialog`）
+- [x] 2.1 抽出 `canShowReturnGoods` 资格判断（列表/详情共用）
+- [x] 2.2 `OrderCardCell`：合资格时展示「去退货」
+- [ ] 2.3 `OrderDetailAfterSaleView`：合资格展示「去退货」入口；已提交后回显退货方式/物流（详情底部已用 action bar；回显可后续）
+- [x] 2.4 去退货底部抽屉：自行送回 / 快递寄回 + 校验
 
-## 3. 接口接入（Apifox 发布后）
+## 3. 接口接入
 
-- [ ] 3.1 粘贴/对齐提交与回显接口文档字段（**禁止臆造**）
-- [ ] 3.2 BLL Service + 模型解码；提交成功刷新列表/详情
-- [ ] 3.3 物流名称数据源（字典或文档枚举）接入
-- [ ] 3.4 更新本 change design「Open Questions」为已决议，并 sync 主 spec
+- [x] 3.1 对齐提交文档字段（[submitReturnGoods](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/493050735e0.md)）
+- [x] 3.2 BLL `submitReturnGoods` + 模型解码；提交成功刷新列表/详情
+- [x] 3.3 物流名称：本期本地枚举（顺丰/京东/中通/圆通）
+- [x] 3.4 更新 design「Open Questions」为已决议；同步主 `order-list` spec 字段表

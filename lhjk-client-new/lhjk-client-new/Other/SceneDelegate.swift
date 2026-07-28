@@ -25,13 +25,15 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
             // 服务 Hub 静态预拉由 RootTabBarController 延迟触发（覆盖冷启动与登录 setRoot）
 
-            // 两套数据并行、互不依赖：
+            // 多套数据并行、互不依赖：
             // 1) 本地 loginUserInfo → Onboarding 门禁
             // 2) 网络 getCurrentUserBaseInfo → App 业务 currentUser
+            // 3) 网络 getOArchiveByUserId → 默认档案 defaultArchive
             Task {
                 async let profile: SUsers? = UserManager.shared.fetchUserInfo()
+                async let archive: OArchive? = UserManager.shared.fetchDefaultArchive()
                 let needOnboarding = UserManager.shared.checkNeedOnboarding()
-                _ = await profile
+                _ = await (profile, archive)
 
                 await MainActor.run {
                     if needOnboarding {
@@ -40,7 +42,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                             Router.shared.present("/onboarding")
                         }
                     } else {
-                        print("[SceneDelegate] onboarding skip; profile fetch done")
+                        print("[SceneDelegate] onboarding skip; profile & archive fetch done")
                     }
                 }
             }

@@ -92,15 +92,24 @@ final class MeMembershipCardView: UIView {
         layer.sublayers?.first(where: { $0.name == "bg" })?.frame = bounds
     }
 
-    func configure(with vm: MyViewModel) {
-        let type = vm.membershipTypeText
+    struct DisplayConfig {
+        var typeText: String = ""
+        var benefitText: String = ""
+        var dateText: String = ""
+        var primaryActionTitle: String? = nil
+        var upgradeTitle: String? = nil
+        var showsBenefitsButton: Bool = false
+    }
+
+    func configure(_ config: DisplayConfig) {
+        let type = config.typeText
         typeLabel.isHidden = type.isEmpty
         if !type.isEmpty {
             typeLabel.text = "  \(type)  "
         }
 
-        benefitLabel.text = vm.membershipBenefitText
-        let date = vm.membershipDateText
+        benefitLabel.text = config.benefitText
+        let date = config.dateText
         dateLabel.isHidden = date.isEmpty
         dateLabel.text = date
 
@@ -110,13 +119,13 @@ final class MeMembershipCardView: UIView {
         }
         actionsStack.addArrangedSubview(UIView()) // spacer
 
-        if let primary = vm.membershipPrimaryActionTitle {
+        if let primary = config.primaryActionTitle {
             actionsStack.addArrangedSubview(makeButton(title: primary, style: .primary, action: #selector(primaryTapped)))
         }
-        if let upgrade = vm.membershipUpgradeTitle {
+        if let upgrade = config.upgradeTitle {
             actionsStack.addArrangedSubview(makeButton(title: upgrade, style: .soft, action: #selector(upgradeTapped)))
         }
-        if vm.showsMembershipBenefitsButton {
+        if config.showsBenefitsButton {
             actionsStack.addArrangedSubview(makeButton(title: "我的权益", style: .soft, action: #selector(benefitsTapped)))
         }
     }

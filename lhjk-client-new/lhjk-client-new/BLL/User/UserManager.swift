@@ -5,17 +5,20 @@ import Foundation
 extension Notification.Name {
     /// 用户信息更新通知（个人信息保存后触发）
     static let userDidUpdate = Notification.Name("FDUserDidUpdate")
+    /// 默认档案更新通知（登录/冷启动拉取或主动刷新后触发）
+    static let defaultArchiveDidUpdate = Notification.Name("FDDefaultArchiveDidUpdate")
 }
 
 // MARK: - UserManager
 
 /// 用户信息管理器
 ///
-/// 两套用户数据**同时存在、职责分离**：
+/// 多套用户数据**同时存在、职责分离**：
 /// - `loginUserInfo`：登录 token 返回的 `userInfo`，**仅**用于 `checkNeedOnboarding()`
-/// - `currentUser`：`GET /v1/users/getCurrentUserBaseInfo`，供首页/我的/档案等业务读取
+/// - `currentUser`：`GET /v1/users/getCurrentUserBaseInfo`，供首页/我的等业务读取
+/// - `defaultArchive`：`GET /v1/archive/getOArchiveByUserId`，默认健康档案本地缓存
 ///
-/// 启动或登录成功后应分别：本地判门禁 + 网络拉详情（二者互不调用对方接口）。
+/// 启动或登录成功后应分别：本地判门禁 + 并行拉详情与默认档案（门禁不依赖后两者）。
 final class UserManager {
 
     // MARK: - Singleton
@@ -26,6 +29,7 @@ final class UserManager {
 
     private static let cacheKey = "cached_user_info"
     private static let loginUserInfoKey = "cached_login_user_info"
+    private static let defaultArchiveKey = "cached_default_archive"
 
     // MARK: - State
 
@@ -35,8 +39,14 @@ final class UserManager {
     /// 登录返回的 userInfo — **仅** onboarding 门禁使用，禁止当作业务资料源
     private(set) var loginUserInfo: LoginUserInfo?
 
+    /// 默认档案（`getOArchiveByUserId`）— 本地持久化，供健康相关业务读取
+    private(set) var defaultArchive: OArchive?
+
     /// 是否已完成首次详情拉取（同一生命周期内 `fetchUserInfo` 只发一次请求）
     private var hasFetched = false
+
+    /// 是否已完成首次默认档案拉取
+    private var hasFetchedArchive = false
 
     // MARK: - Init
 
@@ -50,6 +60,11 @@ final class UserManager {
            let info = try? JSONDecoder().decode(LoginUserInfo.self, from: data) {
             self.loginUserInfo = info
             print("[UserManager] loaded loginUserInfo — name=\(info.chineseName ?? "nil") hospitalId=\(info.hospitalId ?? "nil")")
+        }
+        if let data = UserDefaults.standard.data(forKey: Self.defaultArchiveKey),
+           let archive = try? JSONDecoder().decode(OArchive.self, from: data) {
+            self.defaultArchive = archive
+            print("[UserManager] loaded defaultArchive — id=\(archive.id ?? "nil") name=\(archive.chineseName ?? "nil")")
         }
     }
 
@@ -121,13 +136,57 @@ final class UserManager {
         return user
     }
 
-    /// 登出：两套缓存一并清除
+    // MARK: - 默认档案
+
+    /// 解析档案查询用的用户 ID：优先登录摘要，其次业务用户详情
+    var resolvedUserId: String? {
+        let fromLogin = loginUserInfo?.id?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !fromLogin.isEmpty { return fromLogin }
+        let fromUser = currentUser?.id?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return fromUser.isEmpty ? nil : fromUser
+    }
+
+    /// 拉取默认档案（首次发网，后续读内存）。与 `fetchUserInfo` 并行调用。
+    @discardableResult
+    func fetchDefaultArchive() async -> OArchive? {
+        if hasFetchedArchive { return defaultArchive }
+        hasFetchedArchive = true
+        return await refreshDefaultArchive()
+    }
+
+    /// 强制刷新默认档案（建档/改档后等）
+    @discardableResult
+    func refreshDefaultArchive(userId: String? = nil) async -> OArchive? {
+        let id = (userId ?? resolvedUserId)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !id.isEmpty else {
+            print("[UserManager] refreshDefaultArchive → no userId, skip")
+            return defaultArchive
+        }
+
+        print("[UserManager] refreshDefaultArchive → GET getOArchiveByUserId userId=\(id)")
+        guard let archive = try? await UserService.shared.getOArchiveByUserId(id) else {
+            print("[UserManager] refreshDefaultArchive → request failed, keeping cached data")
+            return defaultArchive
+        }
+        defaultArchive = archive
+        persistDefaultArchive(archive)
+        await MainActor.run {
+            NotificationCenter.default.post(name: .defaultArchiveDidUpdate, object: archive)
+        }
+        print("[UserManager] refreshDefaultArchive ✓ id=\(archive.id ?? "nil")")
+        return archive
+    }
+
+    /// 登出：用户详情 / 登录摘要 / 默认档案一并清除
     func clear() {
         currentUser = nil
         loginUserInfo = nil
+        defaultArchive = nil
         hasFetched = false
+        hasFetchedArchive = false
         UserDefaults.standard.removeObject(forKey: Self.cacheKey)
         UserDefaults.standard.removeObject(forKey: Self.loginUserInfoKey)
+        UserDefaults.standard.removeObject(forKey: Self.defaultArchiveKey)
         print("[UserManager] cleared")
     }
 
@@ -146,6 +205,12 @@ final class UserManager {
     private func persistLoginUserInfo(_ info: LoginUserInfo) {
         if let data = try? JSONEncoder().encode(info) {
             UserDefaults.standard.set(data, forKey: Self.loginUserInfoKey)
+        }
+    }
+
+    private func persistDefaultArchive(_ archive: OArchive) {
+        if let data = try? JSONEncoder().encode(archive) {
+            UserDefaults.standard.set(data, forKey: Self.defaultArchiveKey)
         }
     }
 }

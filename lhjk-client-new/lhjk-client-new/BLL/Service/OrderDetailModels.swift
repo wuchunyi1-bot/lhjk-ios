@@ -46,6 +46,8 @@ struct AppOrderDetailBO: Decodable {
     /// 1 允许续租，0 不允许（`AppOrderDetailBO.renewed`）
     let renewed: Int?
     let parentId: Int64?
+    /// 是否可去退货（与列表字段对齐；详情可能暂未下发）
+    let canReturnGoods: Bool?
 
     private enum CodingKeys: String, CodingKey {
         case id, parentId, orderName, status, payable, price, paymentType, paymentNo, createTime
@@ -56,6 +58,7 @@ struct AppOrderDetailBO: Decodable {
         case shoppingCartPackageDetailList
         case refundId, refundReasons, refuseReasons, refundApplyTime, applyRefund, refundApplyChannel
         case packageId, hospitalId, categoryServiceId, renewed
+        case canReturnGoods
     }
 
     init(from decoder: Decoder) throws {
@@ -99,6 +102,7 @@ struct AppOrderDetailBO: Decodable {
         categoryServiceId = HospitalPackageID.decodeOptional(c, key: .categoryServiceId)
         renewed = Self.decodeFlexibleInt(c, key: .renewed)
         parentId = Self.decodeFlexibleInt64(c, key: .parentId)
+        canReturnGoods = Self.decodeFlexibleBool(c, key: .canReturnGoods)
     }
 
     var resolvedPackageId: String? {
@@ -130,6 +134,15 @@ struct AppOrderDetailBO: Decodable {
         guard AppPackageType.supportsAfterSale(packageType: packageType) else { return false }
         if isInAfterSaleFlow { return false }
         return !hasRefundHistory
+    }
+
+    /// 是否展示「去退货」
+    var canShowReturnGoodsAction: Bool {
+        AppOrderReturnGoodsRules.canShowForDetail(
+            status: orderStatus,
+            canReturnGoods: canReturnGoods,
+            refundId: refundId
+        )
     }
 
     var orderStatus: AppOrderStatus? {
@@ -351,6 +364,20 @@ struct AppOrderDetailBO: Decodable {
         if let v = try? container.decodeIfPresent(Int.self, forKey: key) { return Double(v) }
         if let s = try? container.decodeIfPresent(String.self, forKey: key) {
             return Double(s.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        return nil
+    }
+
+    private static func decodeFlexibleBool<K: CodingKey>(
+        _ container: KeyedDecodingContainer<K>,
+        key: K
+    ) -> Bool? {
+        if let v = try? container.decodeIfPresent(Bool.self, forKey: key) { return v }
+        if let i = try? container.decodeIfPresent(Int.self, forKey: key) { return i != 0 }
+        if let s = try? container.decodeIfPresent(String.self, forKey: key) {
+            let t = s.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            if t == "true" || t == "1" { return true }
+            if t == "false" || t == "0" { return false }
         }
         return nil
     }

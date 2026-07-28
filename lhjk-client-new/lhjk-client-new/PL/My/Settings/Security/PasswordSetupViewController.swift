@@ -493,6 +493,7 @@ final class PasswordSetupViewController: BaseViewController {
                     mobile: enteredPhone, newPwd: newPwd, checkCode: code
                 )
                 await MainActor.run {
+                    UserDefaults.standard.set(true, forKey: "fd_login_password_set")
                     showToast("密码设置成功")
                     Task { await UserManager.shared.refreshUserInfo() }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in

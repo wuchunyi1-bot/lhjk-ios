@@ -73,13 +73,17 @@ Tab 使用 UICollectionView 横向滚动；**恰好 8 个**，顺序同表。
 | `packageId` | Int64 | 套餐 id（续费跳转） |
 | `hospitalId` | Int64 | 医院 id |
 | `renewed` | Int | **1=允许续租，0=不允许** |
+| `canReturnGoods` | Bool | **是否可去退货**（退款/售后处理中） |
+| `refundId` | Int64 | **退款单 ID**（提交退货 `submitReturnGoods` 必填） |
 
 **续费按钮**：仅 `packageType == 1`（租赁），且：
 - `renewed == 1`
 - 使用中；或已逾期且由 `endTime` 推算的逾期天数 ∈ [0, 5]
 - 文档**无** `overdueDays` / `renewalEligible` / `renewedOnce` / `renewPendingChildId`，客户端不得自造这些请求/响应字段
 
-**退款/售后按钮（已完成 Tab）**：仅 `packageType == 2`（售卖）或 `4`（体验）时展示。列表文档无 `refundId`；是否已退款以详情 `refundId` 为准（列表入口可能仍展示，详情侧隐藏）。
+**退款/售后按钮（已完成 Tab）**：仅 `packageType == 2`（售卖）或 `4`（体验）时展示。是否已退款以详情/列表 `refundId` 为准。
+
+**去退货按钮（退款/售后 Tab）**：`status=6` 且 `canReturnGoods == true` 且 `refundId > 0`。提交见 [submitReturnGoods](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/493050735e0.md)；细则见 `adapt-fundee-order-return-goods`。
 
 **待发货**：用户侧仅「取消订单」，不展示「确认发货」。
 

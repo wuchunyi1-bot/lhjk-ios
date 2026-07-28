@@ -280,6 +280,10 @@
 		A5C71AF630185CD6006EA79C /* CouponTabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AF230185CD6006EA79C /* CouponTabViewController.swift */; };
 		A5C71AF730185CD6006EA79C /* BenefitTabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AEF30185CD6006EA79C /* BenefitTabViewController.swift */; };
 		A5C71AF930185CF6006EA79C /* VoucherListQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AF830185CF6006EA79C /* VoucherListQuery.swift */; };
+		A5C71AFF30188F8E006EA79C /* AgreementDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AFB30188F8E006EA79C /* AgreementDetailViewController.swift */; };
+		A5C71B0030188F8E006EA79C /* AgreementCenterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AFA30188F8E006EA79C /* AgreementCenterViewController.swift */; };
+		A5C71B0130188F8E006EA79C /* SettingsHubItemRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AFD30188F8E006EA79C /* SettingsHubItemRow.swift */; };
+		A5C71B033018917A006EA79C /* WechatAuthorizationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71B023018917A006EA79C /* WechatAuthorizationViewController.swift */; };
 		A5CF597930077AA40067A4DE /* ServiceListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597830077AA40067A4DE /* ServiceListViewModel.swift */; };
 		A5CF597A30077AA40067A4DE /* HealthMallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597730077AA40067A4DE /* HealthMallViewModel.swift */; };
 		A5CF597C30077C6A0067A4DE /* RetailCategoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597B30077C6A0067A4DE /* RetailCategoryService.swift */; };
@@ -579,6 +583,10 @@
 		A5C71AF130185CD6006EA79C /* CouponListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CouponListViewController.swift; sourceTree = "<group>"; };
 		A5C71AF230185CD6006EA79C /* CouponTabViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CouponTabViewController.swift; sourceTree = "<group>"; };
 		A5C71AF830185CF6006EA79C /* VoucherListQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoucherListQuery.swift; sourceTree = "<group>"; };
+		A5C71AFA30188F8E006EA79C /* AgreementCenterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgreementCenterViewController.swift; sourceTree = "<group>"; };
+		A5C71AFB30188F8E006EA79C /* AgreementDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgreementDetailViewController.swift; sourceTree = "<group>"; };
+		A5C71AFD30188F8E006EA79C /* SettingsHubItemRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsHubItemRow.swift; sourceTree = "<group>"; };
+		A5C71B023018917A006EA79C /* WechatAuthorizationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WechatAuthorizationViewController.swift; sourceTree = "<group>"; };
 		A5CF597730077AA40067A4DE /* HealthMallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthMallViewModel.swift; sourceTree = "<group>"; };
 		A5CF597830077AA40067A4DE /* ServiceListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceListViewModel.swift; sourceTree = "<group>"; };
 		A5CF597B30077C6A0067A4DE /* RetailCategoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RetailCategoryService.swift; path = BLL/Service/RetailCategoryService.swift; sourceTree = "<group>"; };
@@ -1193,6 +1201,8 @@
 		A590FC892FEA91170056EF52 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				A5C71AFC30188F8E006EA79C /* AgreementCenter */,
+				A5C71AFE30188F8E006EA79C /* Components */,
 				A5A6F4E02FFF7B3D0065C921 /* Security */,
 				A590FC822FEA91170056EF52 /* Cells */,
 				A590FC832FEA91170056EF52 /* AboutSettingsViewController.swift */,
@@ -1517,6 +1527,7 @@
 		A5A6F4E02FFF7B3D0065C921 /* Security */ = {
 			isa = PBXGroup;
 			children = (
+				A5C71B023018917A006EA79C /* WechatAuthorizationViewController.swift */,
 				A5A6F4DB2FFF7B3D0065C921 /* ViewModels */,
 				A5A6F4DC2FFF7B3D0065C921 /* CancelAccountViewController.swift */,
 				A5A6F4DD2FFF7B3D0065C921 /* ChangePhoneViewController.swift */,
@@ -1809,6 +1820,23 @@
 				A5C71AF230185CD6006EA79C /* CouponTabViewController.swift */,
 			);
 			path = Coupon;
+			sourceTree = "<group>";
+		};
+		A5C71AFC30188F8E006EA79C /* AgreementCenter */ = {
+			isa = PBXGroup;
+			children = (
+				A5C71AFA30188F8E006EA79C /* AgreementCenterViewController.swift */,
+				A5C71AFB30188F8E006EA79C /* AgreementDetailViewController.swift */,
+			);
+			path = AgreementCenter;
+			sourceTree = "<group>";
+		};
+		A5C71AFE30188F8E006EA79C /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A5C71AFD30188F8E006EA79C /* SettingsHubItemRow.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 		A987952ACD55240446C185ED /* lhjk-client-new */ = {
@@ -2354,6 +2382,9 @@
 				A5A6F5152FFF7BFE0065C921 /* AddressListViewController.swift in Sources */,
 				A5A6F5162FFF7BFE0065C921 /* AddressCell.swift in Sources */,
 				A5A6F5172FFF7BFE0065C921 /* AddressEditViewController.swift in Sources */,
+				A5C71AFF30188F8E006EA79C /* AgreementDetailViewController.swift in Sources */,
+				A5C71B0030188F8E006EA79C /* AgreementCenterViewController.swift in Sources */,
+				A5C71B0130188F8E006EA79C /* SettingsHubItemRow.swift in Sources */,
 				A590FCEA2FEA91170056EF52 /* WeeklyReportCell.swift in Sources */,
 				A590FCEB2FEA91170056EF52 /* HomeServiceBannerCell.swift in Sources */,
 				A590FCED2FEA91170056EF52 /* RiskBarView.swift in Sources */,
@@ -2408,6 +2439,7 @@
 				8E749A7845EBA8C07946E821 /* Router.swift in Sources */,
 				05433145BBE114CF0C1DC08A /* DatabaseManager.swift in Sources */,
 				31C52A8BD36FA64D4C32B098 /* UserDefaultsManager.swift in Sources */,
+				A5C71B033018917A006EA79C /* WechatAuthorizationViewController.swift in Sources */,
 				A97FF7EF73364502F99C2EC4 /* AppDelegate.swift in Sources */,
 				A5CF597930077AA40067A4DE /* ServiceListViewModel.swift in Sources */,
 				A5CF597A30077AA40067A4DE /* HealthMallViewModel.swift in Sources */,

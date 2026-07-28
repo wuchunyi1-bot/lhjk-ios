@@ -67,6 +67,17 @@ enum H5Config {
         metricKeys.first { $0.key == key }?.title ?? "体征监测"
     }
 
+    /// 健康档案 H5：`#/health/record?token&platform=ios`
+    /// 参考宿主文档 `h5接入文档`；「我的」`/me/health-profile` 与健康 Tab `/health/record` 共用。
+    static var healthRecordPageURL: URL {
+        authenticatedPageURL(path: "health/record")
+    }
+
+    /// 构建任意 H5 鉴权 URL：`{base}#/{path}?token&platform=ios&...`
+    static func authenticatedPageURL(path: String, extraQuery: [String: String] = [:]) -> URL {
+        buildAuthenticatedURL(h5Path: path, extraQuery: extraQuery)
+    }
+
     /// 构建健康体征 H5 鉴权 URL：`{base}#/{path}?token&platform=ios&...`
     static func authenticatedMetricURL(
         metricKey: String,

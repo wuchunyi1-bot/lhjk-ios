@@ -144,6 +144,246 @@ struct SUsersOnboardingPayload: Encodable {
     var imageUrl: String? = nil
 }
 
+// MARK: - 默认档案（按用户 ID）
+
+/// `GET /v1/archive/getOArchiveByUserId` 响应 `data`
+/// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/486441727e0.md
+///
+/// 雪花 ID 字段兼容 String / Number；数值字段兼容 Int / Double。
+struct OArchive: Codable {
+    let id: String?
+    let userId: String?
+    let chineseName: String?
+    /// 状态：1 已分娩 / 0 未分娩 / 2 已转院 / 3 分娩终止 / 4 备孕中
+    let status: Int?
+    let workplace: String?
+    let hospitalId: String?
+    let businessManagerId: String?
+    let hospitalName: String?
+    /// 档案号（JSON key: `no`）
+    let archiveNo: String?
+    /// 建档来源：1 移动端 / 2 Web 后台
+    let source: Int?
+    let riskLevel: Int?
+    let emergencyContact: String?
+    let contactMobile: String?
+    /// 与本人关系：1 配偶、2 父女、3 母女、4 子女、5 其他
+    let relationship: Int?
+    let weight: Double?
+    let hipCircum: Double?
+    let waistCircum: Double?
+    let bustCircum: Double?
+    let fatContent: Double?
+    let armCircum: Double?
+    let basalMetabolicRate: Double?
+    let height: Int?
+    let bmi: Double?
+    let reviewId: String?
+    let reviewTime: String?
+    let familyChildrenNumber: Int?
+    let familyMembers: String?
+    /// 是否孕期：0 否 / 1 是
+    let whetherPregnancy: Int?
+    let pastHistory: String?
+    let familyGeneticHistory: String?
+    let medicationHistory: String?
+    let allergenHistory: String?
+    let nutrientHistory: String?
+    let bloodType: String?
+    let maritalBredHistory: String?
+    let tastePreferences: String?
+    let tabooList: String?
+    let ogtt: String?
+    let remarks: String?
+    let diabetesType: Int?
+    let firstVisit: Int?
+    let firstVisitRescheduleTime: String?
+    let motionFrequency: Int?
+    let motionDuration: Int?
+    let motionProject: String?
+    let sleepStartTime: String?
+    let sleepEndTime: String?
+    let sleepDuration: Int?
+    let sleepQuality: Int?
+    let sleepAbnormal: String?
+    let createId: String?
+    let createTime: String?
+    let modifyId: String?
+    let modifyTime: String?
+    let operatorUserId: String?
+    let businessManagerName: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, userId, chineseName, status, workplace, hospitalId
+        case businessManagerId, hospitalName, source, riskLevel
+        case emergencyContact, contactMobile, relationship
+        case weight, hipCircum, waistCircum, bustCircum, fatContent
+        case armCircum, basalMetabolicRate, height, bmi
+        case reviewId, reviewTime, familyChildrenNumber, familyMembers
+        case whetherPregnancy, pastHistory, familyGeneticHistory
+        case medicationHistory, allergenHistory, nutrientHistory
+        case bloodType, maritalBredHistory, tastePreferences, tabooList
+        case ogtt, remarks, diabetesType, firstVisit, firstVisitRescheduleTime
+        case motionFrequency, motionDuration, motionProject
+        case sleepStartTime, sleepEndTime, sleepDuration, sleepQuality, sleepAbnormal
+        case createId, createTime, modifyId, modifyTime
+        case operatorUserId, businessManagerName
+        case archiveNo = "no"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = Self.decodeFlexibleString(c, key: .id)
+        userId = Self.decodeFlexibleString(c, key: .userId)
+        chineseName = try c.decodeIfPresent(String.self, forKey: .chineseName)
+        status = Self.decodeFlexibleInt(c, key: .status)
+        workplace = try c.decodeIfPresent(String.self, forKey: .workplace)
+        hospitalId = Self.decodeFlexibleString(c, key: .hospitalId)
+        businessManagerId = Self.decodeFlexibleString(c, key: .businessManagerId)
+        hospitalName = try c.decodeIfPresent(String.self, forKey: .hospitalName)
+        archiveNo = try c.decodeIfPresent(String.self, forKey: .archiveNo)
+        source = Self.decodeFlexibleInt(c, key: .source)
+        riskLevel = Self.decodeFlexibleInt(c, key: .riskLevel)
+        emergencyContact = try c.decodeIfPresent(String.self, forKey: .emergencyContact)
+        contactMobile = try c.decodeIfPresent(String.self, forKey: .contactMobile)
+        relationship = Self.decodeFlexibleInt(c, key: .relationship)
+        weight = Self.decodeFlexibleDouble(c, key: .weight)
+        hipCircum = Self.decodeFlexibleDouble(c, key: .hipCircum)
+        waistCircum = Self.decodeFlexibleDouble(c, key: .waistCircum)
+        bustCircum = Self.decodeFlexibleDouble(c, key: .bustCircum)
+        fatContent = Self.decodeFlexibleDouble(c, key: .fatContent)
+        armCircum = Self.decodeFlexibleDouble(c, key: .armCircum)
+        basalMetabolicRate = Self.decodeFlexibleDouble(c, key: .basalMetabolicRate)
+        height = Self.decodeFlexibleInt(c, key: .height)
+        bmi = Self.decodeFlexibleDouble(c, key: .bmi)
+        reviewId = Self.decodeFlexibleString(c, key: .reviewId)
+        reviewTime = try c.decodeIfPresent(String.self, forKey: .reviewTime)
+        familyChildrenNumber = Self.decodeFlexibleInt(c, key: .familyChildrenNumber)
+        familyMembers = try c.decodeIfPresent(String.self, forKey: .familyMembers)
+        whetherPregnancy = Self.decodeFlexibleInt(c, key: .whetherPregnancy)
+        pastHistory = try c.decodeIfPresent(String.self, forKey: .pastHistory)
+        familyGeneticHistory = try c.decodeIfPresent(String.self, forKey: .familyGeneticHistory)
+        medicationHistory = try c.decodeIfPresent(String.self, forKey: .medicationHistory)
+        allergenHistory = try c.decodeIfPresent(String.self, forKey: .allergenHistory)
+        nutrientHistory = try c.decodeIfPresent(String.self, forKey: .nutrientHistory)
+        bloodType = try c.decodeIfPresent(String.self, forKey: .bloodType)
+        maritalBredHistory = try c.decodeIfPresent(String.self, forKey: .maritalBredHistory)
+        tastePreferences = try c.decodeIfPresent(String.self, forKey: .tastePreferences)
+        tabooList = try c.decodeIfPresent(String.self, forKey: .tabooList)
+        ogtt = try c.decodeIfPresent(String.self, forKey: .ogtt)
+        remarks = try c.decodeIfPresent(String.self, forKey: .remarks)
+        diabetesType = Self.decodeFlexibleInt(c, key: .diabetesType)
+        firstVisit = Self.decodeFlexibleInt(c, key: .firstVisit)
+        firstVisitRescheduleTime = try c.decodeIfPresent(String.self, forKey: .firstVisitRescheduleTime)
+        motionFrequency = Self.decodeFlexibleInt(c, key: .motionFrequency)
+        motionDuration = Self.decodeFlexibleInt(c, key: .motionDuration)
+        motionProject = try c.decodeIfPresent(String.self, forKey: .motionProject)
+        sleepStartTime = try c.decodeIfPresent(String.self, forKey: .sleepStartTime)
+        sleepEndTime = try c.decodeIfPresent(String.self, forKey: .sleepEndTime)
+        sleepDuration = Self.decodeFlexibleInt(c, key: .sleepDuration)
+        sleepQuality = Self.decodeFlexibleInt(c, key: .sleepQuality)
+        sleepAbnormal = try c.decodeIfPresent(String.self, forKey: .sleepAbnormal)
+        createId = Self.decodeFlexibleString(c, key: .createId)
+        createTime = try c.decodeIfPresent(String.self, forKey: .createTime)
+        modifyId = Self.decodeFlexibleString(c, key: .modifyId)
+        modifyTime = try c.decodeIfPresent(String.self, forKey: .modifyTime)
+        operatorUserId = Self.decodeFlexibleString(c, key: .operatorUserId)
+        businessManagerName = try c.decodeIfPresent(String.self, forKey: .businessManagerName)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(id, forKey: .id)
+        try c.encodeIfPresent(userId, forKey: .userId)
+        try c.encodeIfPresent(chineseName, forKey: .chineseName)
+        try c.encodeIfPresent(status, forKey: .status)
+        try c.encodeIfPresent(workplace, forKey: .workplace)
+        try c.encodeIfPresent(hospitalId, forKey: .hospitalId)
+        try c.encodeIfPresent(businessManagerId, forKey: .businessManagerId)
+        try c.encodeIfPresent(hospitalName, forKey: .hospitalName)
+        try c.encodeIfPresent(archiveNo, forKey: .archiveNo)
+        try c.encodeIfPresent(source, forKey: .source)
+        try c.encodeIfPresent(riskLevel, forKey: .riskLevel)
+        try c.encodeIfPresent(emergencyContact, forKey: .emergencyContact)
+        try c.encodeIfPresent(contactMobile, forKey: .contactMobile)
+        try c.encodeIfPresent(relationship, forKey: .relationship)
+        try c.encodeIfPresent(weight, forKey: .weight)
+        try c.encodeIfPresent(hipCircum, forKey: .hipCircum)
+        try c.encodeIfPresent(waistCircum, forKey: .waistCircum)
+        try c.encodeIfPresent(bustCircum, forKey: .bustCircum)
+        try c.encodeIfPresent(fatContent, forKey: .fatContent)
+        try c.encodeIfPresent(armCircum, forKey: .armCircum)
+        try c.encodeIfPresent(basalMetabolicRate, forKey: .basalMetabolicRate)
+        try c.encodeIfPresent(height, forKey: .height)
+        try c.encodeIfPresent(bmi, forKey: .bmi)
+        try c.encodeIfPresent(reviewId, forKey: .reviewId)
+        try c.encodeIfPresent(reviewTime, forKey: .reviewTime)
+        try c.encodeIfPresent(familyChildrenNumber, forKey: .familyChildrenNumber)
+        try c.encodeIfPresent(familyMembers, forKey: .familyMembers)
+        try c.encodeIfPresent(whetherPregnancy, forKey: .whetherPregnancy)
+        try c.encodeIfPresent(pastHistory, forKey: .pastHistory)
+        try c.encodeIfPresent(familyGeneticHistory, forKey: .familyGeneticHistory)
+        try c.encodeIfPresent(medicationHistory, forKey: .medicationHistory)
+        try c.encodeIfPresent(allergenHistory, forKey: .allergenHistory)
+        try c.encodeIfPresent(nutrientHistory, forKey: .nutrientHistory)
+        try c.encodeIfPresent(bloodType, forKey: .bloodType)
+        try c.encodeIfPresent(maritalBredHistory, forKey: .maritalBredHistory)
+        try c.encodeIfPresent(tastePreferences, forKey: .tastePreferences)
+        try c.encodeIfPresent(tabooList, forKey: .tabooList)
+        try c.encodeIfPresent(ogtt, forKey: .ogtt)
+        try c.encodeIfPresent(remarks, forKey: .remarks)
+        try c.encodeIfPresent(diabetesType, forKey: .diabetesType)
+        try c.encodeIfPresent(firstVisit, forKey: .firstVisit)
+        try c.encodeIfPresent(firstVisitRescheduleTime, forKey: .firstVisitRescheduleTime)
+        try c.encodeIfPresent(motionFrequency, forKey: .motionFrequency)
+        try c.encodeIfPresent(motionDuration, forKey: .motionDuration)
+        try c.encodeIfPresent(motionProject, forKey: .motionProject)
+        try c.encodeIfPresent(sleepStartTime, forKey: .sleepStartTime)
+        try c.encodeIfPresent(sleepEndTime, forKey: .sleepEndTime)
+        try c.encodeIfPresent(sleepDuration, forKey: .sleepDuration)
+        try c.encodeIfPresent(sleepQuality, forKey: .sleepQuality)
+        try c.encodeIfPresent(sleepAbnormal, forKey: .sleepAbnormal)
+        try c.encodeIfPresent(createId, forKey: .createId)
+        try c.encodeIfPresent(createTime, forKey: .createTime)
+        try c.encodeIfPresent(modifyId, forKey: .modifyId)
+        try c.encodeIfPresent(modifyTime, forKey: .modifyTime)
+        try c.encodeIfPresent(operatorUserId, forKey: .operatorUserId)
+        try c.encodeIfPresent(businessManagerName, forKey: .businessManagerName)
+    }
+
+    private static func decodeFlexibleString<K: CodingKey>(
+        _ container: KeyedDecodingContainer<K>,
+        key: K
+    ) -> String? {
+        if let s = try? container.decodeIfPresent(String.self, forKey: key) { return s }
+        if let i = try? container.decodeIfPresent(Int64.self, forKey: key) { return String(i) }
+        if let i = try? container.decodeIfPresent(Int.self, forKey: key) { return String(i) }
+        return nil
+    }
+
+    private static func decodeFlexibleInt<K: CodingKey>(
+        _ container: KeyedDecodingContainer<K>,
+        key: K
+    ) -> Int? {
+        if let i = try? container.decodeIfPresent(Int.self, forKey: key) { return i }
+        if let i = try? container.decodeIfPresent(Int64.self, forKey: key) { return Int(i) }
+        if let s = try? container.decodeIfPresent(String.self, forKey: key), let i = Int(s) { return i }
+        if let d = try? container.decodeIfPresent(Double.self, forKey: key) { return Int(d) }
+        return nil
+    }
+
+    private static func decodeFlexibleDouble<K: CodingKey>(
+        _ container: KeyedDecodingContainer<K>,
+        key: K
+    ) -> Double? {
+        if let d = try? container.decodeIfPresent(Double.self, forKey: key) { return d }
+        if let i = try? container.decodeIfPresent(Int.self, forKey: key) { return Double(i) }
+        if let i = try? container.decodeIfPresent(Int64.self, forKey: key) { return Double(i) }
+        if let s = try? container.decodeIfPresent(String.self, forKey: key), let d = Double(s) { return d }
+        return nil
+    }
+}
+
 // MARK: - 档案机构 + 基本信息（完善资料提交）
 
 /// `POST /v1/archive/saveArchiveHospital`

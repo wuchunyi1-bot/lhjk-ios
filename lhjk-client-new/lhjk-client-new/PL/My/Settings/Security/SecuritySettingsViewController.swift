@@ -1,15 +1,11 @@
 import UIKit
+import SnapKit
 
-/// 账号安全页
-/// 参考 funde-client: prototype/src/views/me/settings/SecuritySettingsView.vue
-/// PRD: 02_用户_我的设置_v1.0 §5.2
-///
-/// 橙色渐变状态卡片 + 4 个链接行：
-///   手机号 → /me/change-phone
-///   登录密码 → 验证手机号后设置/修改密码
-///   微信授权 → 绑定/解绑（确认弹窗）
-///   注销账户 → /me/settings/cancel-account
+/// 安全中心 — 对齐 PRD-202 / SecuritySettingsView.vue
 final class SecuritySettingsViewController: BaseViewController {
+
+    private let passwordSetKey = "fd_login_password_set"
+    private let wechatNicknameKey = "fd_wechat_nickname"
 
     private let scrollView = UIScrollView()
     private let contentView = UIView()
@@ -17,58 +13,16 @@ final class SecuritySettingsViewController: BaseViewController {
     private var phoneValueLabel: UILabel?
     private var passwordValueLabel: UILabel?
     private var wechatValueLabel: UILabel?
-    private var statusTitle: UILabel?
-    private var statusDesc: UILabel?
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
-        loadUserData()
-    }
-
-    private func loadUserData() {
-        guard let user = UserManager.shared.currentUser else { return }
-
-        // Phone
-        let hasPhone = user.mobile != nil && user.mobile!.count >= 11
-        phoneValueLabel?.text = maskPhone(user.mobile)
-
-        // Password
-        let hasPassword = user.pwd != nil && !(user.pwd!.isEmpty)
-        passwordValueLabel?.text = hasPassword ? "已设置" : "设置密码"
-
-        // WeChat
-        let wechatNickname = UserDefaults.standard.string(forKey: "fd_wechat_nickname")
-        let hasWechatOpenId = user.openIdWechat != nil && !(user.openIdWechat!.isEmpty)
-        if hasWechatOpenId || wechatNickname != nil {
-            wechatValueLabel?.text = wechatNickname ?? "微信用户"
-        } else {
-            wechatValueLabel?.text = "未绑定"
-        }
-
-        // Status card
-        let allSecure = hasPhone && hasPassword && (hasWechatOpenId || wechatNickname != nil)
-        statusTitle?.text = allSecure ? "账号安全状态良好" : "建议完善账号安全"
-        statusDesc?.text = allSecure
-            ? "手机号、登录密码和微信授权均已设置。"
-            : "完善以上安全设置，可提升账号安全性和登录便利性。"
-    }
-
-    @objc private func onUserUpdated() {
-        loadUserData()
-    }
-
-    private func maskPhone(_ phone: String?) -> String {
-        guard let phone = phone, phone.count == 11 else { return phone ?? "未绑定" }
-        return "\(phone.prefix(3))****\(phone.suffix(4))"
+        refreshValues()
     }
 
     override func setupUI() {
-        title = "账号安全"
+        title = "安全中心"
         view.backgroundColor = .fdBg
-
-        NotificationCenter.default.addObserver(self, selector: #selector(onUserUpdated),
-                                               name: .userDidUpdate, object: nil)
 
         scrollView.showsVerticalScrollIndicator = false
         view.addSubview(scrollView)
@@ -76,193 +30,262 @@ final class SecuritySettingsViewController: BaseViewController {
         scrollView.addSubview(contentView)
         contentView.snp.makeConstraints { $0.edges.width.equalToSuperview() }
 
-        // MARK: Status Card (orange gradient)
-
-        let statusTitleLabel = UILabel()
-        statusTitleLabel.text = "加载中…"
-        statusTitleLabel.font = .fdFont(ofSize: 19, weight: .heavy)
-        statusTitleLabel.textColor = .white
-        self.statusTitle = statusTitleLabel
-
-        let statusDescLabel = UILabel()
-        statusDescLabel.text = ""
-        statusDescLabel.font = .fdCaption
-        statusDescLabel.textColor = UIColor.white.withAlphaComponent(0.9)
-        self.statusDesc = statusDescLabel
-
-        let statusCard: UIView = {
-            let v = UIView()
-            v.layer.cornerRadius = 24
-            v.clipsToBounds = true
-            let gradient = CAGradientLayer()
-            gradient.colors = [UIColor(hexString: "#FF7A50").cgColor, UIColor(hexString: "#FFAA80").cgColor]
-            gradient.startPoint = CGPoint(x: 0, y: 0); gradient.endPoint = CGPoint(x: 1, y: 1)
-            v.layer.insertSublayer(gradient, at: 0)
-            v.layer.setValue(gradient, forKey: "statusGradient")
-            v.addSubview(statusTitleLabel); v.addSubview(statusDescLabel)
-            statusTitleLabel.snp.makeConstraints { $0.top.leading.trailing.equalToSuperview().inset(18) }
-            statusDescLabel.snp.makeConstraints { $0.top.equalTo(statusTitleLabel.snp.bottom).offset(8); $0.leading.trailing.bottom.equalToSuperview().inset(18) }
-            return v
-        }()
-
-        contentView.addSubview(statusCard)
-        statusCard.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(16)
-            make.leading.trailing.equalToSuperview().inset(16)
+        let statusSection = buildStatusSection()
+        contentView.addSubview(statusSection)
+        statusSection.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(12)
+            $0.leading.trailing.equalToSuperview()
         }
 
-        // MARK: Rows Card
+        let phoneLbl = makeValueLabel("—")
+        phoneValueLabel = phoneLbl
+        let pwdLbl = makeValueLabel("去设置")
+        passwordValueLabel = pwdLbl
+        let wechatLbl = makeValueLabel("未绑定")
+        wechatValueLabel = wechatLbl
 
-        let phoneLabel = UILabel()
-        phoneLabel.text = "加载中…"
-        phoneLabel.font = .fdCaption
-        phoneLabel.textColor = .fdSubtext
-        self.phoneValueLabel = phoneLabel
-
-        let pwdLabel = makeStaticValueLabel("去设置")
-        self.passwordValueLabel = pwdLabel
-
-        let wechatLabel = UILabel()
-        wechatLabel.text = "未绑定"
-        wechatLabel.font = .fdCaption
-        wechatLabel.textColor = .fdSubtext
-        self.wechatValueLabel = wechatLabel
-
-        let items: [(label: String, valueView: UIView, action: Selector)] = [
-            ("手机号", phoneLabel, #selector(handlePhoneTap)),
-            ("登录密码", pwdLabel, #selector(handlePasswordTap)),
-            ("微信授权", wechatLabel, #selector(handleWechatTap)),
-            ("注销账户", makeStaticValueLabel("注销后账号无法找回"), #selector(handleCancelAccountTap)),
-        ]
-
-        let card = buildCard()
-        let stack = UIStackView(); stack.axis = .vertical
-        card.addSubview(stack); stack.snp.makeConstraints { $0.edges.equalToSuperview() }
-        for (i, item) in items.enumerated() {
-            let row = makeLinkRow(label: item.label, valueView: item.valueView, showDivider: i < items.count - 1, action: item.action)
-            stack.addArrangedSubview(row)
+        let securitySection = buildListSection(
+            title: "安全设置",
+            rows: [
+                .init(label: "修改手机号", valueView: phoneLbl, valueWarn: false) {
+                    Router.shared.push("/me/settings/security/change-phone")
+                },
+                .init(label: "登录密码", valueView: pwdLbl, valueWarn: false) {
+                    Router.shared.push("/me/settings/security/password")
+                },
+                .init(label: "微信授权", valueView: wechatLbl, valueWarn: false) {
+                    Router.shared.push("/me/settings/security/wechat")
+                },
+            ]
+        )
+        contentView.addSubview(securitySection)
+        securitySection.snp.makeConstraints {
+            $0.top.equalTo(statusSection.snp.bottom).offset(14)
+            $0.leading.trailing.equalToSuperview()
         }
 
-        contentView.addSubview(card)
-        card.snp.makeConstraints { make in
-            make.top.equalTo(statusCard.snp.bottom).offset(14)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-20)
+        let cancelValue = makeValueLabel("谨慎操作")
+        cancelValue.textColor = UIColor(hexString: "#D47A58")
+        let accountSection = buildListSection(
+            title: "账号管理",
+            rows: [
+                .init(label: "注销账号", valueView: cancelValue, valueWarn: true) {
+                    Router.shared.push("/me/settings/security/cancel-account")
+                },
+            ]
+        )
+        contentView.addSubview(accountSection)
+        accountSection.snp.makeConstraints {
+            $0.top.equalTo(securitySection.snp.bottom).offset(14)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalToSuperview().offset(-24)
         }
+
+        refreshValues()
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        for sv in contentView.subviews {
-            if let gradient = sv.layer.value(forKey: "statusGradient") as? CAGradientLayer {
-                gradient.frame = sv.bounds
-            }
+    // MARK: - Status tip card
+
+    private func buildStatusSection() -> UIView {
+        let wrap = UIView()
+
+        let titleLbl = UILabel()
+        titleLbl.text = "账号状态"
+        titleLbl.font = .fdCaptionSemibold
+        titleLbl.textColor = .fdSubtext
+        wrap.addSubview(titleLbl)
+        titleLbl.snp.makeConstraints {
+            $0.top.equalToSuperview()
+            $0.leading.trailing.equalToSuperview().inset(16)
         }
+
+        let card = UIView()
+        card.backgroundColor = UIColor(hexString: "#FFF4EC")
+        card.layer.cornerRadius = 12
+        card.layer.borderWidth = 1
+        card.layer.borderColor = UIColor.fdPrimaryEdge.cgColor
+        wrap.addSubview(card)
+        card.snp.makeConstraints {
+            $0.top.equalTo(titleLbl.snp.bottom).offset(8)
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalToSuperview()
+        }
+
+        let iconBg = UIView()
+        iconBg.backgroundColor = .fdPrimarySoft
+        iconBg.layer.cornerRadius = 10
+        let icon = UIImageView(image: UIImage(systemName: "lock.shield.fill"))
+        icon.tintColor = .fdPrimary
+        icon.contentMode = .scaleAspectFit
+        iconBg.addSubview(icon)
+        icon.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.size.equalTo(18)
+        }
+
+        let tipTitle = UILabel()
+        tipTitle.text = "账号安全状态良好"
+        tipTitle.font = .fdBodySemibold
+        tipTitle.textColor = .fdText
+
+        let tipDesc = UILabel()
+        tipDesc.text = "已绑定手机号，建议定期更新登录密码，保护账号与健康数据安全。"
+        tipDesc.font = .fdFont(ofSize: 11, weight: .regular)
+        tipDesc.textColor = .fdSubtext
+        tipDesc.numberOfLines = 0
+
+        let textStack = UIStackView(arrangedSubviews: [tipTitle, tipDesc])
+        textStack.axis = .vertical
+        textStack.spacing = 3
+
+        card.addSubview(iconBg)
+        card.addSubview(textStack)
+        iconBg.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(16)
+            $0.top.equalToSuperview().offset(14)
+            $0.size.equalTo(34)
+        }
+        textStack.snp.makeConstraints {
+            $0.leading.equalTo(iconBg.snp.trailing).offset(12)
+            $0.trailing.equalToSuperview().offset(-16)
+            $0.top.equalToSuperview().offset(14)
+            $0.bottom.equalToSuperview().offset(-14)
+        }
+
+        return wrap
     }
 
-    // MARK: - Card & Row Builders
+    // MARK: - List section
 
-    private func buildCard() -> UIView {
+    private struct RowDef {
+        let label: String
+        let valueView: UIView
+        let valueWarn: Bool
+        let action: () -> Void
+    }
+
+    private func buildListSection(title: String, rows: [RowDef]) -> UIView {
+        let wrap = UIView()
+
+        let titleLbl = UILabel()
+        titleLbl.text = title
+        titleLbl.font = .fdCaptionSemibold
+        titleLbl.textColor = .fdSubtext
+        wrap.addSubview(titleLbl)
+        titleLbl.snp.makeConstraints {
+            $0.top.equalToSuperview()
+            $0.leading.trailing.equalToSuperview().inset(16)
+        }
+
         let card = UIView()
         card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 18
+        card.layer.cornerRadius = 12
         card.layer.shadowColor = UIColor.black.cgColor
         card.layer.shadowOffset = CGSize(width: 0, height: 1)
         card.layer.shadowRadius = 6
         card.layer.shadowOpacity = 0.03
-        return card
+        wrap.addSubview(card)
+        card.snp.makeConstraints {
+            $0.top.equalTo(titleLbl.snp.bottom).offset(8)
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalToSuperview()
+        }
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        card.addSubview(stack)
+        stack.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        for (idx, row) in rows.enumerated() {
+            stack.addArrangedSubview(makeRow(row, showDivider: idx < rows.count - 1))
+        }
+        return wrap
     }
 
-    private func makeStaticValueLabel(_ text: String) -> UILabel {
+    private func makeRow(_ row: RowDef, showDivider: Bool) -> UIView {
+        let control = UIControl()
+        control.addAction(UIAction { _ in row.action() }, for: .touchUpInside)
+
+        let label = UILabel()
+        label.text = row.label
+        label.font = .fdBodySemibold
+        label.textColor = .fdText
+        label.isUserInteractionEnabled = false
+
+        let arrow = UIImageView(image: UIImage(systemName: "chevron.right"))
+        arrow.tintColor = .fdMuted
+        arrow.contentMode = .scaleAspectFit
+        arrow.isUserInteractionEnabled = false
+
+        row.valueView.isUserInteractionEnabled = false
+
+        control.addSubview(label)
+        control.addSubview(row.valueView)
+        control.addSubview(arrow)
+
+        arrow.snp.makeConstraints {
+            $0.trailing.equalToSuperview().offset(-16)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(14)
+        }
+        row.valueView.snp.makeConstraints {
+            $0.trailing.equalTo(arrow.snp.leading).offset(-4)
+            $0.centerY.equalToSuperview()
+        }
+        label.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(16)
+            $0.centerY.equalToSuperview()
+            $0.trailing.lessThanOrEqualTo(row.valueView.snp.leading).offset(-8)
+        }
+
+        if showDivider {
+            let divider = UIView()
+            divider.backgroundColor = .fdBorder
+            control.addSubview(divider)
+            divider.snp.makeConstraints {
+                $0.leading.equalTo(label)
+                $0.trailing.bottom.equalToSuperview()
+                $0.height.equalTo(1)
+            }
+        }
+
+        control.snp.makeConstraints { $0.height.equalTo(52) }
+        return control
+    }
+
+    private func makeValueLabel(_ text: String) -> UILabel {
         let l = UILabel()
         l.text = text
         l.font = .fdCaption
         l.textColor = .fdSubtext
+        l.setContentCompressionResistancePriority(.required, for: .horizontal)
         return l
     }
 
-    private func makeLinkRow(label: String, valueView: UIView, showDivider: Bool, action: Selector) -> UIView {
-        let row = UIView(); row.isUserInteractionEnabled = true
-        row.addGestureRecognizer(UITapGestureRecognizer(target: self, action: action))
+    // MARK: - Data
 
-        let titleLbl = UILabel()
-        titleLbl.text = label
-        titleLbl.font = .fdBody
-        titleLbl.textColor = .fdText
+    private func refreshValues() {
+        let mobile = UserManager.shared.currentUser?.mobile
+            ?? UserDefaults.standard.string(forKey: "current_user_mobile")
+        phoneValueLabel?.text = maskPhone(mobile)
 
-        let arrow = UIImageView(image: UIImage(systemName: "chevron.right"))
-        arrow.tintColor = .fdMuted; arrow.contentMode = .scaleAspectFit
+        let passwordSet = UserDefaults.standard.bool(forKey: passwordSetKey)
+            || !(UserManager.shared.currentUser?.pwd ?? "").isEmpty
+        passwordValueLabel?.text = passwordSet ? "已设置" : "去设置"
 
-        [titleLbl, valueView, arrow].forEach(row.addSubview)
-        arrow.snp.makeConstraints { $0.trailing.equalToSuperview().offset(-16); $0.centerY.equalToSuperview(); $0.size.equalTo(16) }
-        valueView.snp.makeConstraints { $0.trailing.equalTo(arrow.snp.leading).offset(-4); $0.centerY.equalToSuperview() }
-        titleLbl.snp.makeConstraints { $0.leading.equalToSuperview().inset(16); $0.centerY.equalToSuperview(); $0.trailing.lessThanOrEqualTo(valueView.snp.leading).offset(-8) }
-
-        if showDivider {
-            let divider = UIView(); divider.backgroundColor = .fdBorder
-            row.addSubview(divider)
-            divider.snp.makeConstraints { $0.leading.equalTo(titleLbl); $0.trailing.bottom.equalToSuperview(); $0.height.equalTo(1) }
-        }
-        row.snp.makeConstraints { $0.height.equalTo(48) }
-        return row
-    }
-
-    // MARK: - Actions
-
-    @objc private func handlePhoneTap() {
-        Router.shared.push("/me/change-phone")
-    }
-
-    @objc private func handlePasswordTap() {
-        guard let phone = UserManager.shared.currentUser?.mobile, !phone.isEmpty else {
-            showToast("未获取到手机号")
-            return
-        }
-        let vc = PasswordSetupViewController()
-        vc.mode = .loggedIn(phone: phone)
-        navigationController?.pushViewController(vc, animated: true)
-    }
-
-    @objc private func handleWechatTap() {
-        let isBound: Bool = {
-            if let openId = UserManager.shared.currentUser?.openIdWechat, !openId.isEmpty { return true }
-            return UserDefaults.standard.string(forKey: "fd_wechat_nickname") != nil
-        }()
-
-        if isBound {
-            let alert = UIAlertController(
-                title: "是否解绑微信账号？",
-                message: "解绑后，将无法使用微信快速登录富德健康。",
-                preferredStyle: .alert
-            )
-            alert.addAction(UIAlertAction(title: "取消", style: .cancel))
-            alert.addAction(UIAlertAction(title: "立即解绑", style: .destructive) { [weak self] _ in
-                UserDefaults.standard.removeObject(forKey: "fd_wechat_nickname")
-                self?.wechatValueLabel?.text = "未绑定"
-                self?.showToast("微信已解绑")
-                Task { await UserManager.shared.refreshUserInfo() }
-            })
-            present(alert, animated: true)
-        } else {
-            // V1.0 过渡方案: 模拟绑定（正式产品需接入微信 SDK）
-            UserDefaults.standard.set("微信用户", forKey: "fd_wechat_nickname")
+        if let nick = UserDefaults.standard.string(forKey: wechatNicknameKey), !nick.isEmpty {
+            wechatValueLabel?.text = nick
+        } else if let openId = UserManager.shared.currentUser?.openIdWechat, !openId.isEmpty {
             wechatValueLabel?.text = "微信用户"
-            showToast("微信已绑定")
-            Task { await UserManager.shared.refreshUserInfo() }
+        } else {
+            wechatValueLabel?.text = "未绑定"
         }
     }
 
-    @objc private func handleCancelAccountTap() {
-        Router.shared.push("/me/settings/cancel-account")
-    }
-
-    // MARK: - Toast
-
-    private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            alert.dismiss(animated: true)
-        }
+    private func maskPhone(_ phone: String?) -> String {
+        guard let phone, phone.count >= 7 else { return phone?.isEmpty == false ? phone! : "未绑定" }
+        let digits = phone.filter(\.isNumber)
+        guard digits.count == 11 else { return phone }
+        return "\(digits.prefix(3))****\(digits.suffix(4))"
     }
 }

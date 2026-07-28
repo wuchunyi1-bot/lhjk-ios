@@ -92,7 +92,7 @@ static func authenticatedMetricURL(
 ### 7. 不变部分
 
 - Hub / `MetricsViewController` 入口 UI 仍为原生 mock 摘要
-- 健康档案 `/health/record` 仍走原生页（文档虽有 `#/health/record`，本期不迁）
+- 健康档案 `#/health/record` 已接入：`H5Config.healthRecordPageURL`；`/health/record` 与 `/me/health-profile` 均打开该 H5
 - 无 token 时仍打开 H5（由 H5 处理未登录）；`token` 有则必传
 
 ## Risks

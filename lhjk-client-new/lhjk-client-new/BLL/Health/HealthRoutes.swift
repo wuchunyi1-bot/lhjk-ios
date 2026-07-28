@@ -17,10 +17,15 @@ enum HealthRoutes {
         // Hub
         r.register(path: "/health") { _ in HealthViewController() }
 
-        // Sub pages
-        r.register(path: "/health/record") { _ in HealthRecordViewController() }
+        // 健康档案 → H5 `#/health/record`（宿主接入文档）
+        r.register(path: "/health/record") { _ in
+            WebViewController(
+                urlString: H5Config.healthRecordPageURL.absoluteString,
+                title: "健康档案"
+            )
+        }
 
-        // Health record sub-pages (deferred — placeholder)
+        // 原生子页路由保留（深链兼容）；主入口已迁 H5
         r.register(path: "/health/record/profile") { _ in PlaceholderViewController(title: "基础信息") }
         r.register(path: "/health/record/history") { _ in PlaceholderViewController(title: "健康史") }
         r.register(path: "/health/record/lifestyle") { _ in PlaceholderViewController(title: "生活习惯") }

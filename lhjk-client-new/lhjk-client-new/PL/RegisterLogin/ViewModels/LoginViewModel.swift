@@ -251,10 +251,11 @@ final class LoginViewModel: ObservableObject {
         // 连接 IM
         rongCloudManager.fetchTokenAndConnect()
 
-        // 并行：门禁只用 loginUserInfo；业务资料拉 getCurrentUserBaseInfo
+        // 并行：门禁只用 loginUserInfo；业务资料 + 默认档案同步拉取
         async let profile: SUsers? = userManager.fetchUserInfo()
+        async let archive: OArchive? = userManager.fetchDefaultArchive()
         let needOnboarding = userManager.checkNeedOnboarding()
-        _ = await profile
+        _ = await (profile, archive)
 
         await MainActor.run {
             navigateToHomePublisher.send()

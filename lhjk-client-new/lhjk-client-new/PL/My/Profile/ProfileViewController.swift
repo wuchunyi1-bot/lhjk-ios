@@ -27,6 +27,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         let label: String
         let kind: FieldKind
         let placeholder: String
+        var required: Bool = false
     }
 
     private struct SectionDef {
@@ -55,7 +56,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
     private lazy var sections: [SectionDef] = [
         SectionDef(title: "个人基础信息", fields: [
-            FieldDef(key: .name, label: "姓名", kind: .readonly, placeholder: "未设置"),
+            FieldDef(key: .name, label: "姓名", kind: .text(keyboard: .default, maxLength: 20), placeholder: "请输入姓名", required: true),
             FieldDef(key: .gender, label: "性别", kind: .select(options: Self.genderOptions), placeholder: "请选择"),
             FieldDef(key: .birthday, label: "出生日期", kind: .date, placeholder: "请选择日期"),
             FieldDef(key: .phone, label: "手机号", kind: .readonly, placeholder: "未设置"),
@@ -238,17 +239,41 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             }, for: .touchUpInside)
         }
 
+        // title 左对齐（必填项前缀红色 *）— 对齐 ProfileView.vue .info-row__label
         let label = UILabel()
-        label.text = field.label
         label.font = .fdBody
         label.textColor = .fdSubtext
+        label.textAlignment = .left
         label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        if field.required {
+            let attr = NSMutableAttributedString(
+                string: "*",
+                attributes: [
+                    .font: UIFont.fdBody,
+                    .foregroundColor: UIColor(hexString: "#E54D2E")
+                ]
+            )
+            attr.append(NSAttributedString(
+                string: field.label,
+                attributes: [
+                    .font: UIFont.fdBody,
+                    .foregroundColor: UIColor.fdSubtext
+                ]
+            ))
+            label.attributedText = attr
+        } else {
+            label.text = field.label
+        }
 
+        // value 右对齐并占满剩余空间 — 对齐 .info-row__value
         let value = UILabel()
         value.font = .fdBody
         value.textColor = .fdText
         value.textAlignment = .right
         value.lineBreakMode = .byTruncatingTail
+        value.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        value.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         valueLabels[field.key] = value
 
         row.addSubview(label)
@@ -271,6 +296,8 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             arrow.text = "›"
             arrow.font = .fdFont(ofSize: 16, weight: .regular)
             arrow.textColor = .fdMuted
+            arrow.setContentHuggingPriority(.required, for: .horizontal)
+            arrow.setContentCompressionResistancePriority(.required, for: .horizontal)
             row.addSubview(arrow)
             arrow.snp.makeConstraints {
                 $0.trailing.equalToSuperview()
@@ -395,6 +422,14 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         payload.mobile = UserDefaults.standard.string(forKey: "current_user_mobile")
 
         switch field.key {
+        case .name:
+            payload.chineseName = value
+            // 无头像图时同步首字兜底
+            if avatarImageView.image == nil {
+                avatarTextLabel.isHidden = false
+                avatarTextLabel.text = String(value.prefix(1))
+                avatarGradient.isHidden = false
+            }
         case .gender:
             payload.sex = value == "男" ? "1" : (value == "女" ? "2" : nil)
         case .birthday:
@@ -422,7 +457,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             payload.addressArea = value
         case .address:
             payload.address = value
-        case .name, .phone:
+        case .phone:
             return
         }
 

@@ -151,6 +151,97 @@ enum AppOrderRenewalRules {
     }
 }
 
+// MARK: - 去退货资格
+// 列表：`canReturnGoods` + `refundId`（getAppOrderList）
+// 提交：POST /v1/orderClearing/submitReturnGoods
+
+enum AppOrderReturnGoodsRules {
+    /// 列表权威：status=6 + canReturnGoods + 有效 refundId
+    static func canShow(
+        status: AppOrderStatus?,
+        canReturnGoods: Bool?,
+        refundId: Int64?
+    ) -> Bool {
+        guard status == .refund else { return false }
+        guard canReturnGoods == true else { return false }
+        guard let refundId, refundId > 0 else { return false }
+        return true
+    }
+
+    /// 详情兼容：优先 `canReturnGoods`；缺失时仅用 status=6 + refundId
+    static func canShowForDetail(
+        status: AppOrderStatus?,
+        canReturnGoods: Bool?,
+        refundId: Int64?
+    ) -> Bool {
+        guard status == .refund else { return false }
+        guard let refundId, refundId > 0 else { return false }
+        if let canReturnGoods {
+            return canReturnGoods
+        }
+        return true
+    }
+}
+
+/// `POST /v1/orderClearing/submitReturnGoods` 请求体
+/// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/493050735e0.md
+struct ReturnGoodsSubmitDTO {
+    /// 退款单 ID（必填，禁止 mock）
+    let refundId: Int64
+    /// 1 自行送回 / 2 快递送回
+    let returnMethod: Int
+    let logisticsName: String?
+    let logisticsId: String?
+    let sender: String?
+    let senderPhone: String?
+
+    func apiParameters() -> [String: Any] {
+        var body: [String: Any] = [
+            "refundId": refundId,
+            "returnMethod": returnMethod,
+        ]
+        if let logisticsName, !logisticsName.isEmpty {
+            body["logisticsName"] = String(logisticsName.prefix(10))
+        }
+        if let logisticsId, !logisticsId.isEmpty {
+            body["logisticsId"] = String(logisticsId.prefix(80))
+        }
+        if let sender, !sender.isEmpty {
+            body["sender"] = String(sender.prefix(10))
+        }
+        if let senderPhone, !senderPhone.isEmpty {
+            body["senderPhone"] = String(senderPhone.prefix(11))
+        }
+        return body
+    }
+
+    static func selfDelivery(refundId: Int64) -> ReturnGoodsSubmitDTO {
+        ReturnGoodsSubmitDTO(
+            refundId: refundId,
+            returnMethod: 1,
+            logisticsName: nil,
+            logisticsId: nil,
+            sender: nil,
+            senderPhone: nil
+        )
+    }
+
+    static func express(
+        refundId: Int64,
+        logisticsName: String,
+        logisticsId: String
+    ) -> ReturnGoodsSubmitDTO {
+        ReturnGoodsSubmitDTO(
+            refundId: refundId,
+            returnMethod: 2,
+            logisticsName: logisticsName,
+            logisticsId: logisticsId,
+            sender: nil,
+            senderPhone: nil
+        )
+    }
+}
+
 // MARK: - 订单模型
 
 /// 订单模型，对应后端 `AppOrderListBO`
@@ -177,6 +268,10 @@ struct MOrder {
     let categoryServiceId: String?
     /// 1 允许续租，0 不允许（`AppOrderListBO.renewed`）
     let renewed: Int?
+    /// 是否可去退货（`AppOrderListBO.canReturnGoods`）
+    let canReturnGoods: Bool?
+    /// 退款单 ID（提交退货用，非订单 id）
+    let refundId: Int64?
 
     /// 订单状态枚举
     var orderStatus: AppOrderStatus? {
@@ -223,8 +318,20 @@ struct MOrder {
         )
     }
 
-    /// 列表无退款字段；退款历史以详情 `refundId` 为准。列表侧仅按套餐类型展示入口。
-    var hasRefundHistory: Bool { false }
+    /// 列表侧：有有效退款单则视为已发生退款相关流程
+    var hasRefundHistory: Bool {
+        if let refundId, refundId > 0 { return true }
+        return false
+    }
+
+    /// 是否展示「去退货」：status=6 + canReturnGoods + 有效 refundId
+    var canShowReturnGoodsAction: Bool {
+        AppOrderReturnGoodsRules.canShow(
+            status: orderStatus,
+            canReturnGoods: canReturnGoods,
+            refundId: refundId
+        )
+    }
 
     /// 是否展示「退款/售后」
     var canShowAfterSaleAction: Bool {
@@ -254,6 +361,7 @@ extension MOrder: Decodable {
         case hospitalName, doctorName, packageDescription
         case packageType, packageImageUrl, beginTime, endTime, serviceTime
         case packageId, hospitalId, categoryServiceId, renewed
+        case canReturnGoods, refundId
     }
 
     init(from decoder: Decoder) throws {
@@ -277,11 +385,24 @@ extension MOrder: Decodable {
         hospitalId          = HospitalPackageID.decodeOptional(c, key: .hospitalId)
         categoryServiceId   = HospitalPackageID.decodeOptional(c, key: .categoryServiceId)
         renewed             = HospitalPackageInt.decodeIfPresent(c, key: .renewed)
+        canReturnGoods      = Self.decodeFlexibleBool(c, key: .canReturnGoods)
+        refundId            = Self.decodeFlexibleInt64(c, key: .refundId)
     }
 
     private static func decodeFlexibleInt64<K: CodingKey>(_ container: KeyedDecodingContainer<K>, key: K) -> Int64? {
         if let v = try? container.decodeIfPresent(Int64.self, forKey: key) { return v }
         if let s = try? container.decodeIfPresent(String.self, forKey: key) { return Int64(s) }
+        return nil
+    }
+
+    private static func decodeFlexibleBool<K: CodingKey>(_ container: KeyedDecodingContainer<K>, key: K) -> Bool? {
+        if let v = try? container.decodeIfPresent(Bool.self, forKey: key) { return v }
+        if let i = try? container.decodeIfPresent(Int.self, forKey: key) { return i != 0 }
+        if let s = try? container.decodeIfPresent(String.self, forKey: key) {
+            let t = s.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            if t == "true" || t == "1" { return true }
+            if t == "false" || t == "0" { return false }
+        }
         return nil
     }
 }

@@ -278,7 +278,9 @@ final class OrderTabViewController: BaseViewController {
                 self?.refresh()
             }
         case .returnGoods:
-            OrderReturnGoodsFlow.present(from: self, order: order)
+            OrderReturnGoodsFlow.present(from: self, order: order) { [weak self] in
+                self?.refresh()
+            }
         }
     }
 

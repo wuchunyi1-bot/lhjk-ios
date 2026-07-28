@@ -101,6 +101,37 @@ final class UserService: UserServiceProtocol {
         return user
     }
 
+    /// `GET /v1/archive/getOArchiveByUserId`
+    /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/486441727e0.md
+    func getOArchiveByUserId(_ userId: String) async throws -> OArchive? {
+        let trimmed = userId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            print("[UserService] getOArchiveByUserId → empty userId")
+            throw UserServiceError.queryFailed("用户 ID 无效")
+        }
+
+        print("[UserService] getOArchiveByUserId → userId=\(trimmed)")
+
+        let response: APIResponse<OArchive> = try await APIManager.shared
+            .getAsync(
+                path: "/v1/archive/getOArchiveByUserId",
+                parameters: ["userId": trimmed],
+                responseType: APIResponse<OArchive>.self
+            )
+
+        guard response.isSuccess else {
+            print("[UserService] getOArchiveByUserId ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw UserServiceError.queryFailed(response.msg ?? "")
+        }
+
+        guard let archive = response.data else {
+            print("[UserService] getOArchiveByUserId → data is null")
+            return nil
+        }
+        print("[UserService] getOArchiveByUserId ✓ id=\(archive.id ?? "nil") name=\(archive.chineseName ?? "nil") height=\(archive.height.map(String.init) ?? "nil")")
+        return archive
+    }
+
     // MARK: - 密码/手机号管理
 
     func resetPasswordByMobile(mobile: String, newPwd: String, checkCode: String) async throws {
