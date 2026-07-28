@@ -106,6 +106,8 @@ final class LoginViewController: BaseViewController {
 
     private let smsFieldsContainer = UIView()
     private let passwordFieldsContainer = UIView()
+    private let forgotFieldsContainer = UIView()
+    private let resetFieldsContainer = UIView()
 
     private let smsInnerStack: UIStackView = {
         let stack = UIStackView()
@@ -120,6 +122,72 @@ final class LoginViewController: BaseViewController {
         stack.spacing = 20
         return stack
     }()
+
+    private let forgotInnerStack: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 16
+        return stack
+    }()
+
+    private let resetInnerStack: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 16
+        return stack
+    }()
+
+    // Forgot / reset fields
+    private lazy var forgotHeadBackButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        btn.tintColor = .fdText
+        btn.addTarget(self, action: #selector(backFromForgotFlow), for: .touchUpInside)
+        return btn
+    }()
+
+    private let forgotTitleLabel: UILabel = {
+        let l = UILabel()
+        l.text = "找回密码"
+        l.font = .fdBodySemibold
+        l.textColor = .fdText
+        return l
+    }()
+
+    private let forgotDescLabel: UILabel = {
+        let l = UILabel()
+        l.text = "请输入注册手机号并完成短信验证，验证通过后可重新设置登录密码。"
+        l.font = .fdCaption
+        l.textColor = .fdSubtext
+        l.numberOfLines = 0
+        return l
+    }()
+
+    private lazy var forgotPhoneField = LoginFieldView(
+        title: "手机号", placeholder: "请输入手机号", sfSymbol: "phone"
+    )
+
+    private lazy var forgotCodeField = LoginFieldView(
+        title: "验证码", placeholder: "请输入验证码", sfSymbol: "shield"
+    )
+
+    private lazy var forgotCodeButton: VerifyCodeButton = {
+        let btn = VerifyCodeButton()
+        btn.onRequestCode = { [weak self] in self?.handleForgotRequestCode() }
+        return btn
+    }()
+
+    private lazy var resetPasswordField = LoginFieldView(
+        title: "新密码", placeholder: "请设置新密码（6-20 位）", sfSymbol: "lock",
+        rightButton: .secureToggle
+    )
+
+    private lazy var confirmPasswordField = LoginFieldView(
+        title: "确认新密码", placeholder: "请再次输入新密码", sfSymbol: "lock",
+        rightButton: .secureToggle
+    )
+
+    private var pendingConsentAction: AgreementConsentSheet.PendingAction?
 
     // Agreement checkbox
     private let agreementCheckbox = AgreementCheckboxView()
@@ -215,6 +283,24 @@ final class LoginViewController: BaseViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] msg in
                 self?.showToast(msg)
+                if msg == "密码已重置，请重新登录" {
+                    self?.passwordPhoneField.textField.text = self?.viewModel.phoneNumber
+                    self?.updateFormStepUI(animated: true)
+                }
+            }
+            .store(in: &cancellables)
+
+        viewModel.$formStep
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateFormStepUI(animated: true)
+            }
+            .store(in: &cancellables)
+
+        viewModel.$isResettingPassword
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] resetting in
+                self?.updateSubmitButton(isLoggingIn: resetting || (self?.viewModel.isLoggingIn ?? false))
             }
             .store(in: &cancellables)
 
@@ -277,6 +363,9 @@ final class LoginViewController: BaseViewController {
         prompt.onPrivacyPolicyTap = { [weak self] in
             self?.openURL(version.privacyPolicyURL, title: "隐私政策")
         }
+        prompt.onConsentTap = { [weak self] in
+            self?.openURL("https://example.com/consent", title: "健康管理服务知情同意书")
+        }
 
         view.addSubview(prompt)
         prompt.snp.makeConstraints { $0.edges.equalToSuperview() }
@@ -322,10 +411,54 @@ final class LoginViewController: BaseViewController {
         passwordFieldsContainer.addSubview(passwordInnerStack)
         passwordInnerStack.snp.makeConstraints { $0.edges.equalToSuperview() }
 
+        // Forgot fields
+        let forgotHead = UIStackView(arrangedSubviews: [forgotHeadBackButton, forgotTitleLabel])
+        forgotHead.axis = .horizontal
+        forgotHead.spacing = 8
+        forgotHead.alignment = .center
+        forgotHeadBackButton.snp.makeConstraints { $0.size.equalTo(28) }
+
+        let forgotCodeContainer = UIView()
+        forgotCodeContainer.addSubview(forgotCodeField)
+        forgotCodeField.snp.makeConstraints { $0.edges.equalToSuperview() }
+        let forgotCodeRow = UIStackView(arrangedSubviews: [forgotCodeContainer, forgotCodeButton])
+        forgotCodeRow.axis = .horizontal
+        forgotCodeRow.alignment = .bottom
+        forgotCodeRow.spacing = 10
+
+        forgotInnerStack.addArrangedSubview(forgotHead)
+        forgotInnerStack.addArrangedSubview(forgotDescLabel)
+        forgotInnerStack.addArrangedSubview(forgotPhoneField)
+        forgotInnerStack.addArrangedSubview(forgotCodeRow)
+        forgotFieldsContainer.addSubview(forgotInnerStack)
+        forgotInnerStack.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        // Reset fields
+        let resetHeadBack = UIButton(type: .system)
+        resetHeadBack.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        resetHeadBack.tintColor = .fdText
+        resetHeadBack.addTarget(self, action: #selector(backToForgotStep), for: .touchUpInside)
+        resetHeadBack.snp.makeConstraints { $0.size.equalTo(28) }
+        let resetTitle = UILabel()
+        resetTitle.text = "设置新密码"
+        resetTitle.font = .fdBodySemibold
+        resetTitle.textColor = .fdText
+        let resetHead = UIStackView(arrangedSubviews: [resetHeadBack, resetTitle])
+        resetHead.axis = .horizontal
+        resetHead.spacing = 8
+        resetHead.alignment = .center
+        resetInnerStack.addArrangedSubview(resetHead)
+        resetInnerStack.addArrangedSubview(resetPasswordField)
+        resetInnerStack.addArrangedSubview(confirmPasswordField)
+        resetFieldsContainer.addSubview(resetInnerStack)
+        resetInnerStack.snp.makeConstraints { $0.edges.equalToSuperview() }
+
         // Form stack
         contentView.addSubview(formStack)
         formStack.addArrangedSubview(smsFieldsContainer)
         formStack.addArrangedSubview(passwordFieldsContainer)
+        formStack.addArrangedSubview(forgotFieldsContainer)
+        formStack.addArrangedSubview(resetFieldsContainer)
         formStack.snp.makeConstraints { make in
             make.top.equalTo(brandHeader.snp.bottom).offset(48)
             make.leading.trailing.equalToSuperview().inset(horizontalPadding)
@@ -336,6 +469,7 @@ final class LoginViewController: BaseViewController {
         forgotPasswordButton.snp.makeConstraints { make in
             make.top.equalTo(formStack.snp.bottom).offset(10)
             make.trailing.equalTo(formStack)
+            make.height.equalTo(28)
         }
         forgotPasswordButton.isHidden = true
 
@@ -350,6 +484,9 @@ final class LoginViewController: BaseViewController {
         }
         agreementCheckbox.onPrivacyPolicyTap = { [weak self] in
             self?.openURL("https://example.com/privacy", title: "隐私政策")
+        }
+        agreementCheckbox.onConsentTap = { [weak self] in
+            self?.openURL("https://example.com/consent", title: "健康管理服务知情同意书")
         }
 
         // Submit button
@@ -368,26 +505,42 @@ final class LoginViewController: BaseViewController {
             make.bottom.equalToSuperview().offset(-32)
         }
 
-        updateModeUI(animated: false)
+        updateFormStepUI(animated: false)
     }
 
-    // MARK: - Mode Switching
+    // MARK: - Mode / Form Step
 
     private func updateModeUI(animated: Bool) {
+        updateFormStepUI(animated: animated)
+    }
+
+    private func updateFormStepUI(animated: Bool) {
+        let step = viewModel.formStep
         let isSMS = viewModel.loginMode == .sms
-
         let changes = {
-            self.smsFieldsContainer.isHidden = !isSMS
-            self.passwordFieldsContainer.isHidden = isSMS
-            self.forgotPasswordButton.isHidden = isSMS
+            let inLogin = step == .login
+            self.smsFieldsContainer.isHidden = !(inLogin && isSMS)
+            self.passwordFieldsContainer.isHidden = !(inLogin && !isSMS)
+            self.forgotFieldsContainer.isHidden = step != .forgot
+            self.resetFieldsContainer.isHidden = step != .resetPassword
 
-            let submitTitle = isSMS ? "登录 / 注册" : "密码登录"
-            self.submitButton.setTitle(submitTitle, for: .normal)
+            self.forgotPasswordButton.isHidden = !(inLogin && !isSMS)
+            self.agreementCheckbox.isHidden = !inLogin
+            self.modeSwitchButton.isHidden = !inLogin
 
-            let modeTitle = isSMS ? "使用账号密码登录" : "返回验证码登录"
-            self.modeSwitchButton.setTitle(modeTitle, for: .normal)
+            switch step {
+            case .login:
+                self.submitButton.setTitle(isSMS ? "登录 / 注册" : "密码登录", for: .normal)
+                self.modeSwitchButton.setTitle(
+                    isSMS ? "使用账号密码登录" : "返回验证码登录",
+                    for: .normal
+                )
+            case .forgot:
+                self.submitButton.setTitle("下一步", for: .normal)
+            case .resetPassword:
+                self.submitButton.setTitle("确认重置", for: .normal)
+            }
         }
-
         if animated {
             UIView.animate(withDuration: 0.25, animations: changes)
         } else {
@@ -421,10 +574,6 @@ final class LoginViewController: BaseViewController {
     // MARK: - Verification Code
 
     private func handleRequestCode() {
-        guard agreementCheckbox.isChecked else {
-            showToast("请先阅读并同意用户协议与隐私政策")
-            return
-        }
         let phone = getCurrentPhone()
         guard !phone.isEmpty else {
             showToast("请输入手机号"); return
@@ -434,8 +583,22 @@ final class LoginViewController: BaseViewController {
         }
 
         showCaptchaVerify { [weak self] token in
-            self?.viewModel.sendCodeAfterCaptcha(phone: phone, captchaToken: token)
+            self?.viewModel.sendCodeAfterCaptcha(phone: phone, captchaToken: token, type: .login)
             self?.codeButton.startCountdown()
+        }
+    }
+
+    private func handleForgotRequestCode() {
+        let phone = forgotPhoneField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        guard !phone.isEmpty else {
+            showToast("请输入手机号"); return
+        }
+        guard viewModel.validatePhone(phone) == nil else {
+            showToast("请输入正确的手机号"); return
+        }
+        showCaptchaVerify { [weak self] token in
+            self?.viewModel.sendCodeAfterCaptcha(phone: phone, captchaToken: token, type: .resetPassword)
+            self?.forgotCodeButton.startCountdown()
         }
     }
 
@@ -467,12 +630,31 @@ final class LoginViewController: BaseViewController {
     // MARK: - Submit
 
     @objc private func handleSubmit() {
-        guard !viewModel.isLoggingIn else { return }
-        guard agreementCheckbox.isChecked else {
-            showToast("请先阅读并同意用户协议与隐私政策")
-            return
-        }
+        guard !viewModel.isLoggingIn, !viewModel.isResettingPassword else { return }
 
+        switch viewModel.formStep {
+        case .forgot:
+            let phone = forgotPhoneField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+            let code = forgotCodeField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+            _ = viewModel.submitForgotCode(phone: phone, code: code)
+        case .resetPassword:
+            let phone = forgotPhoneField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+            let code = forgotCodeField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+            let pwd = resetPasswordField.textField.text ?? ""
+            let confirm = confirmPasswordField.textField.text ?? ""
+            viewModel.submitNewPassword(phone: phone, code: code, newPassword: pwd, confirmPassword: confirm)
+        case .login:
+            guard agreementCheckbox.isChecked else {
+                presentAgreementConsent(
+                    action: viewModel.loginMode == .sms ? .smsLogin : .passwordLogin
+                )
+                return
+            }
+            performLoginSubmit()
+        }
+    }
+
+    private func performLoginSubmit() {
         if viewModel.loginMode == .sms {
             let phone = getCurrentPhone()
             let code = codeField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
@@ -484,15 +666,54 @@ final class LoginViewController: BaseViewController {
         }
     }
 
+    private func presentAgreementConsent(action: AgreementConsentSheet.PendingAction) {
+        pendingConsentAction = action
+        let sheet = AgreementConsentSheet()
+        sheet.onOpenUserAgreement = { [weak self] in
+            self?.openURL("https://example.com/agreement", title: "用户协议")
+        }
+        sheet.onOpenPrivacyPolicy = { [weak self] in
+            self?.openURL("https://example.com/privacy", title: "隐私政策")
+        }
+        sheet.onOpenConsent = { [weak self] in
+            self?.openURL("https://example.com/consent", title: "健康管理服务知情同意书")
+        }
+        sheet.onLater = { [weak self] in
+            self?.pendingConsentAction = nil
+        }
+        sheet.onAgreeAndContinue = { [weak self] in
+            guard let self else { return }
+            self.agreementCheckbox.isChecked = true
+            let pending = self.pendingConsentAction
+            self.pendingConsentAction = nil
+            switch pending {
+            case .smsLogin:
+                self.viewModel.loginMode = .sms
+                self.performLoginSubmit()
+            case .passwordLogin:
+                self.viewModel.loginMode = .password
+                self.performLoginSubmit()
+            case .none:
+                break
+            }
+        }
+        present(sheet, animated: true)
+        showToast("请先阅读并同意用户协议、隐私政策与健康管理服务知情同意书")
+    }
+
     private func updateSubmitButton(isLoggingIn: Bool) {
         submitButton.isEnabled = !isLoggingIn
         submitButton.alpha = isLoggingIn ? 0.72 : 1.0
 
         if isLoggingIn {
-            submitButton.setTitle("登录中…", for: .disabled)
+            let title: String
+            switch viewModel.formStep {
+            case .resetPassword: title = "提交中…"
+            default: title = "登录中…"
+            }
+            submitButton.setTitle(title, for: .disabled)
         } else {
-            let title = viewModel.loginMode == .sms ? "登录 / 注册" : "密码登录"
-            submitButton.setTitle(title, for: .normal)
+            updateFormStepUI(animated: false)
         }
     }
 
@@ -540,15 +761,20 @@ final class LoginViewController: BaseViewController {
     // MARK: - Forgot Password
 
     @objc private func showForgotPassword() {
-        let forgotVC = ForgotPasswordViewController()
-        forgotVC.onResetSuccess = { [weak self] phone in
-            self?.passwordPhoneField.textField.text = phone
-            self?.viewModel.loginMode = .password
-            self?.updateModeUI(animated: false)
-        }
-        let nav = UINavigationController(rootViewController: forgotVC)
-        nav.modalPresentationStyle = .fullScreen
-        present(nav, animated: true)
+        let phone = passwordPhoneField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        forgotPhoneField.textField.text = phone
+        forgotCodeField.textField.text = ""
+        resetPasswordField.textField.text = ""
+        confirmPasswordField.textField.text = ""
+        viewModel.startForgotPassword(prefillPhone: phone)
+    }
+
+    @objc private func backFromForgotFlow() {
+        viewModel.backToPasswordLogin()
+    }
+
+    @objc private func backToForgotStep() {
+        viewModel.formStep = .forgot
     }
 
     // MARK: - WeChat

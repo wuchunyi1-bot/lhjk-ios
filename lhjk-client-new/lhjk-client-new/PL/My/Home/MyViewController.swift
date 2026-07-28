@@ -66,6 +66,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
         viewModel.loadUserProfile()
+        viewModel.refreshVoucherBadge()
     }
 
     override func viewWillDisappear(_ animated: Bool) {

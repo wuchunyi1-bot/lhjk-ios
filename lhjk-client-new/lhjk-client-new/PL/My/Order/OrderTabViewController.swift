@@ -277,8 +277,8 @@ final class OrderTabViewController: BaseViewController {
             OrderStatusActionFlow.settle(from: self, order: order) { [weak self] in
                 self?.refresh()
             }
-        default:
-            showToast("功能即将开放")
+        case .returnGoods:
+            OrderReturnGoodsFlow.present(from: self, order: order)
         }
     }
 

@@ -1,6 +1,13 @@
 import Foundation
 import Combine
 
+/// 登录表单子步骤（页内忘记密码）
+enum LoginFormStep {
+    case login
+    case forgot
+    case resetPassword
+}
+
 /// 登录流程步骤
 enum LoginFlowStep {
     case privacyCheck
@@ -19,10 +26,12 @@ final class LoginViewModel: ObservableObject {
     // MARK: - Published State
 
     @Published var loginMode: LoginMode = .sms
+    @Published var formStep: LoginFormStep = .login
     @Published var isLoggingIn = false
     @Published var needsPrivacyConsent = true
     @Published var phoneNumber = ""
     @Published var flowStep: LoginFlowStep = .privacyCheck
+    @Published var isResettingPassword = false
 
     // MARK: - One-shot Publishers
 
@@ -54,6 +63,21 @@ final class LoginViewModel: ObservableObject {
 
     func toggleMode() {
         loginMode = loginMode == .sms ? .password : .sms
+        formStep = .login
+    }
+
+    func startForgotPassword(prefillPhone: String) {
+        phoneNumber = prefillPhone
+        formStep = .forgot
+    }
+
+    func backToPasswordLogin() {
+        formStep = .login
+        loginMode = .password
+    }
+
+    func proceedToResetPassword() {
+        formStep = .resetPassword
     }
 
     // MARK: - Privacy
@@ -123,10 +147,10 @@ final class LoginViewModel: ObservableObject {
         flowStep = .captchaVerify(phone)
     }
 
-    func sendCodeAfterCaptcha(phone: String, captchaToken: String) {
+    func sendCodeAfterCaptcha(phone: String, captchaToken: String, type: SMSVerificationType = .login) {
         Task {
             do {
-                let response = try await loginService.sendVerificationCode(to: phone, type: .login)
+                let response = try await loginService.sendVerificationCode(to: phone, type: type)
                 smsRequestId = response.smsRequestId
                 await MainActor.run {
                     flowStep = .loginForm
@@ -251,6 +275,58 @@ final class LoginViewModel: ObservableObject {
 
     // MARK: - Forgot Password
 
+    func submitForgotCode(phone: String, code: String) -> Bool {
+        guard validatePhone(phone) == nil else {
+            toastPublisher.send("请输入正确的手机号")
+            return false
+        }
+        guard !code.isEmpty else {
+            toastPublisher.send("请输入验证码"); return false
+        }
+        guard code.count == 6 else {
+            toastPublisher.send("请输入 6 位验证码"); return false
+        }
+        phoneNumber = phone
+        proceedToResetPassword()
+        return true
+    }
+
+    func submitNewPassword(phone: String, code: String, newPassword: String, confirmPassword: String) {
+        guard !newPassword.isEmpty else {
+            toastPublisher.send("请设置新密码"); return
+        }
+        guard newPassword.count >= 6 else {
+            toastPublisher.send("新密码至少 6 位"); return
+        }
+        guard newPassword.count <= 20 else {
+            toastPublisher.send("新密码不能超过 20 位"); return
+        }
+        guard !confirmPassword.isEmpty else {
+            toastPublisher.send("请再次输入新密码"); return
+        }
+        guard newPassword == confirmPassword else {
+            toastPublisher.send("两次输入的密码不一致，请重新输入"); return
+        }
+        isResettingPassword = true
+        Task {
+            do {
+                try await loginService.resetPassword(phone: phone, code: code, newPassword: newPassword)
+                await MainActor.run {
+                    isResettingPassword = false
+                    phoneNumber = phone
+                    loginMode = .password
+                    formStep = .login
+                    toastPublisher.send("密码已重置，请重新登录")
+                }
+            } catch {
+                await MainActor.run {
+                    isResettingPassword = false
+                    toastPublisher.send(error.localizedDescription)
+                }
+            }
+        }
+    }
+
     func resetPassword(phone: String, code: String, newPassword: String) async throws {
         try await loginService.resetPassword(phone: phone, code: code, newPassword: newPassword)
     }
@@ -258,6 +334,6 @@ final class LoginViewModel: ObservableObject {
     // MARK: - Agreement Check
 
     func isAgreementChecked(_ checked: Bool) -> String? {
-        checked ? nil : "请先阅读并同意用户协议与隐私政策"
+        checked ? nil : "请先阅读并同意用户协议、隐私政策与健康管理服务知情同意书"
     }
 }

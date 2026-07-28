@@ -85,8 +85,9 @@ final class UserManager {
     /// 是否需要 Onboarding — **纯本地**，只读 `loginUserInfo`，绝不请求详情接口
     func checkNeedOnboarding() -> Bool {
         guard let info = loginUserInfo else {
+            // 无登录摘要时不拦截：后端未下发 / 尚未写入时不应强迫完善资料
             print("[UserManager] checkNeedOnboarding → no loginUserInfo, skip gate (false)")
-            return true
+            return false
         }
         let need = info.needsOnboarding
         print("[UserManager] checkNeedOnboarding → name=\(!Self.isBlank(info.chineseName)) sex=\(!Self.isBlank(info.sex)) birthday=\(!Self.isBlank(info.birthday)) hospitalId=\(!Self.isBlank(info.hospitalId)) need=\(need)")

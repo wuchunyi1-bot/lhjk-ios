@@ -81,6 +81,25 @@ final class MeCommonActionsCell: UITableViewCell {
         iconWrap.addSubview(icon)
         icon.snp.makeConstraints { $0.center.equalToSuperview(); $0.size.equalTo(20) }
 
+        if let badgeText = action.badge, !badgeText.isEmpty {
+            let badge = UILabel()
+            badge.text = badgeText
+            badge.font = .fdMicroSemibold
+            badge.textColor = .white
+            badge.textAlignment = .center
+            badge.backgroundColor = .fdPrimary
+            badge.layer.cornerRadius = 8
+            badge.clipsToBounds = true
+            badge.isUserInteractionEnabled = false
+            iconWrap.addSubview(badge)
+            badge.snp.makeConstraints { make in
+                make.top.equalToSuperview().offset(-4)
+                make.trailing.equalToSuperview().offset(8)
+                make.height.equalTo(16)
+                make.width.greaterThanOrEqualTo(16)
+            }
+        }
+
         let label = UILabel()
         label.text = action.label
         label.font = .fdMicroSemibold

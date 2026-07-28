@@ -2,7 +2,7 @@ import Foundation
 
 /// 用户信息服务
 ///
-/// 封装 `POST /v1/users/updateCurrentProfile` 和 `GET /v1/users/getCurrentUserBaseInfo`
+/// 封装用户资料 / 档案机构相关接口
 final class UserService: UserServiceProtocol {
 
     // MARK: - Singleton
@@ -51,6 +51,31 @@ final class UserService: UserServiceProtocol {
 
         print("[UserService] updateCurrentProfile ✓ id=\(response.data?.id ?? "-1")")
         return response.data
+    }
+
+    /// 完善资料：保存档案机构 + 基本信息
+    /// `POST /v1/archive/saveArchiveHospital`
+    func saveArchiveHospital(_ dto: SaveArchiveHospitalDTO) async throws {
+        var params: [String: Any] = [
+            "chineseName": dto.chineseName,
+            "sex": dto.sex,
+            "birthday": dto.birthday,
+            "hospitalId": dto.hospitalId,
+        ]
+        if let managerId = dto.businessManagerId {
+            params["businessManagerId"] = managerId
+        }
+
+        print("[UserService] saveArchiveHospital → name=\(dto.chineseName) hospitalId=\(dto.hospitalId) managerId=\(dto.businessManagerId.map(String.init) ?? "nil")")
+
+        let response: APIResponse<EmptyResponse> = try await APIManager.shared
+            .postAsync(path: "/v1/archive/saveArchiveHospital", parameters: params, responseType: APIResponse<EmptyResponse>.self)
+
+        guard response.isSuccess else {
+            print("[UserService] saveArchiveHospital ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw UserServiceError.saveFailed(response.msg ?? "")
+        }
+        print("[UserService] saveArchiveHospital ✓")
     }
 
     func getCurrentUserBaseInfo() async throws -> SUsers? {

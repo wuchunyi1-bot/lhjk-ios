@@ -195,6 +195,10 @@ final class OrderDetailViewController: BaseViewController {
                 }
                 return
             }
+            if action == .returnGoods, let detail = self.viewModel.detail {
+                OrderReturnGoodsFlow.present(from: self, detail: detail)
+                return
+            }
             self.showToast(self.viewModel.handleAction(action))
         }
     }

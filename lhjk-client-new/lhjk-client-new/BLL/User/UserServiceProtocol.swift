@@ -6,6 +6,9 @@ protocol UserServiceProtocol {
     /// - Returns: 修改后的完整用户信息
     func updateCurrentProfile(_ payload: SUsersOnboardingPayload) async throws -> SUsers?
 
+    /// 保存用户档案机构并修改基本信息（完善资料页）
+    func saveArchiveHospital(_ dto: SaveArchiveHospitalDTO) async throws
+
     /// 获取当前登录用户基础信息（通过 token 识别，无需传参）
     func getCurrentUserBaseInfo() async throws -> SUsers?
 

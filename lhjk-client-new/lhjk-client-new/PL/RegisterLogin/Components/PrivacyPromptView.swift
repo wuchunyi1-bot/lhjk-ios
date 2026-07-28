@@ -13,6 +13,7 @@ final class PrivacyPromptView: UIView {
     var onDisagree: (() -> Void)?
     var onUserAgreementTap: (() -> Void)?
     var onPrivacyPolicyTap: (() -> Void)?
+    var onConsentTap: (() -> Void)?
     var onRetry: (() -> Void)?
     var onExitApp: (() -> Void)?
 
@@ -36,7 +37,7 @@ final class PrivacyPromptView: UIView {
 
     private let descriptionLabel: UILabel = {
         let label = UILabel()
-        label.text = "为了更好地为您提供健康管理服务，我们将按照《用户协议》与《隐私政策》收集和使用您的个人信息。"
+        label.text = "为了更好地为您提供健康管理服务，我们将按照《用户协议》《隐私政策》与《健康管理服务知情同意书》收集和使用您的个人信息。"
         label.font = .fdBody
         label.textColor = .fdSubtext
         label.numberOfLines = 0
@@ -46,8 +47,8 @@ final class PrivacyPromptView: UIView {
 
     private let linksStack: UIStackView = {
         let stack = UIStackView()
-        stack.axis = .horizontal
-        stack.spacing = 16
+        stack.axis = .vertical
+        stack.spacing = 8
         stack.alignment = .center
         return stack
     }()
@@ -67,6 +68,15 @@ final class PrivacyPromptView: UIView {
         btn.titleLabel?.font = .fdCaption
         btn.setTitleColor(.fdPrimary, for: .normal)
         btn.addTarget(self, action: #selector(tapPrivacyPolicy), for: .touchUpInside)
+        return btn
+    }()
+
+    private lazy var consentButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.setTitle("《健康管理服务知情同意书》", for: .normal)
+        btn.titleLabel?.font = .fdCaption
+        btn.setTitleColor(.fdPrimary, for: .normal)
+        btn.addTarget(self, action: #selector(tapConsent), for: .touchUpInside)
         return btn
     }()
 
@@ -166,6 +176,7 @@ final class PrivacyPromptView: UIView {
         containerView.addSubview(linksStack)
         linksStack.addArrangedSubview(userAgreementButton)
         linksStack.addArrangedSubview(privacyPolicyButton)
+        linksStack.addArrangedSubview(consentButton)
         containerView.addSubview(buttonStack)
         buttonStack.addArrangedSubview(agreeButton)
         buttonStack.addArrangedSubview(disagreeButton)
@@ -255,6 +266,10 @@ final class PrivacyPromptView: UIView {
 
     @objc private func tapPrivacyPolicy() {
         onPrivacyPolicyTap?()
+    }
+
+    @objc private func tapConsent() {
+        onConsentTap?()
     }
 
     @objc private func tapRetry() {

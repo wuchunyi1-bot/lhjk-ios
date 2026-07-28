@@ -7,10 +7,10 @@
 
 ## 2. UI 骨架（可先做，无网或按钮隐藏）
 
-- [ ] 2.1 抽出 `canShowReturnGoods` 资格判断（列表/详情共用；履约状态枚举占位 + TODO 对齐文档）
-- [ ] 2.2 `OrderCardCell`：`status=6` 合资格时展示「去退货」
+- [ ] 2.1 抽出 `canShowReturnGoods` 资格判断（列表/详情共用；履约状态枚举占位 + TODO 对齐文档）— 当前列表先按 `status=6` 展示
+- [x] 2.2 `OrderCardCell`：`status=6` 合资格时展示「去退货」（列表先统一展示，履约行收紧待接口）
 - [ ] 2.3 `OrderDetailAfterSaleView`：合资格展示「去退货」入口；已提交后回显退货方式/物流
-- [ ] 2.4 新增去退货底部抽屉：自行送回 / 快递寄回 + 校验文案（对齐 funde `OrderReturnDialog`）
+- [x] 2.4 新增去退货底部抽屉：自行送回 / 快递寄回 + 校验文案（对齐 funde `OrderReturnDialog`）
 
 ## 3. 接口接入（Apifox 发布后）
 

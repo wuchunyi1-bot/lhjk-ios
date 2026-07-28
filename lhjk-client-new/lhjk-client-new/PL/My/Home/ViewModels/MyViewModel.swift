@@ -26,6 +26,8 @@ final class MyViewModel: ObservableObject {
         let color: UIColor
         let label: String
         let route: String
+        /// 角标文案（如卡券可用数）；nil 不展示
+        var badge: String? = nil
     }
 
     struct FuncRow {
@@ -66,6 +68,7 @@ final class MyViewModel: ObservableObject {
             .store(in: &cancellables)
 
         loadUserProfile()
+        refreshVoucherBadge()
     }
 
     func loadUserProfile() {
@@ -74,6 +77,21 @@ final class MyViewModel: ObservableObject {
         userName = name
         avatarChar = String(name.prefix(1))
         avatarURL = user.imageUrl
+    }
+
+    /// 刷新「我的卡券」角标
+    func refreshVoucherBadge() {
+        let badge = AppContainer.shared.voucherService.meBadgeText
+        commonActions = commonActions.map { action in
+            guard action.route == "/me/vouchers" else { return action }
+            return CommonAction(
+                icon: action.icon,
+                color: action.color,
+                label: action.label,
+                route: action.route,
+                badge: badge
+            )
+        }
     }
 
     // MARK: - Membership display

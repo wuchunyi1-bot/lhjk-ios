@@ -69,6 +69,7 @@ final class OrderDetailViewModel: ObservableObject {
         case .afterSale: return ""
         case .renew: return ""
         case .settle: return ""
+        case .returnGoods: return ""
         }
     }
 }

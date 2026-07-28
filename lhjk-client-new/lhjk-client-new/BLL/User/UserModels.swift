@@ -144,6 +144,21 @@ struct SUsersOnboardingPayload: Encodable {
     var imageUrl: String? = nil
 }
 
+// MARK: - 档案机构 + 基本信息（完善资料提交）
+
+/// `POST /v1/archive/saveArchiveHospital`
+/// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/491046480e0.md
+struct SaveArchiveHospitalDTO {
+    let chineseName: String
+    /// 性别："1"=男, "2"=女
+    let sex: String
+    /// 出生日期，优先 `yyyy-MM-dd`
+    let birthday: String
+    let hospitalId: Int64
+    /// 业务经理（医生 id），选填
+    let businessManagerId: Int64?
+}
+
 // MARK: - 密码重置 & 修改 DTO
 
 /// 手机号验证码重置密码请求体

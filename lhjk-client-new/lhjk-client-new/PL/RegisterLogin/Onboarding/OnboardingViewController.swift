@@ -1,94 +1,86 @@
 import UIKit
 import SnapKit
 
-/// 基础信息引导页 — 注册后填写姓名、出生日期、性别、所在城市
-/// 参考 funde-client: OnboardingView.vue / PRD §5.10 注册后基础信息引导
+/// 完善个人信息 — 对齐 funde `ProfileSetupView`
+/// 提交：`POST /v1/archive/saveArchiveHospital`
 final class OnboardingViewController: BaseViewController {
-
-    // MARK: - Province / City Data
-
-    private let provinces = ["广东省", "上海市", "北京市", "浙江省", "江苏省"]
-
-    private let cityMap: [String: [String]] = [
-        "广东省": ["深圳市", "广州市", "佛山市"],
-        "上海市": ["上海市"],
-        "北京市": ["北京市"],
-        "浙江省": ["杭州市", "宁波市"],
-        "江苏省": ["南京市", "苏州市"],
-    ]
 
     // MARK: - State
 
-    private var nameText: String { nameField.textField.text?.trimmingCharacters(in: .whitespaces) ?? "" }
+    private var nameText: String {
+        nameField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
     private var birthDate: Date?
     private var selectedGender = ""
-    private var selectedProvince = "广东省"
-    private var selectedCity = "深圳市"
+    private var selectedHospitalId: String?
+    private var selectedHospitalName: String?
+    private var selectedManagerId: String?
+    private var selectedManagerDisplay: String?
 
-    // MARK: - UI — Header
+    private let userService: UserService
 
-    private let badgeLabel: UILabel = {
-        let l = UILabel()
-        l.text = "1 分钟完成"
-        l.font = .fdCaptionSemibold
-        l.textColor = .fdPrimary
-        l.backgroundColor = .fdPrimarySoft
-        l.textAlignment = .center
-        l.layer.cornerRadius = 15
-        l.clipsToBounds = true
-        return l
+    // MARK: - UI — Card
+
+    private let scrollView: UIScrollView = {
+        let s = UIScrollView()
+        s.showsVerticalScrollIndicator = false
+        s.keyboardDismissMode = .onDrag
+        return s
+    }()
+
+    private let cardView: UIView = {
+        let v = UIView()
+        v.backgroundColor = .fdSurface
+        v.layer.cornerRadius = 20
+        v.layer.shadowColor = UIColor.fdText.cgColor
+        v.layer.shadowOffset = CGSize(width: 0, height: 12)
+        v.layer.shadowRadius = 24
+        v.layer.shadowOpacity = 0.10
+        return v
+    }()
+
+    private let heroIconBox: UIView = {
+        let v = UIView()
+        v.layer.cornerRadius = 16
+        v.clipsToBounds = true
+        return v
+    }()
+
+    private let heroIcon: UIImageView = {
+        let iv = UIImageView(image: UIImage(systemName: "person.crop.circle.badge.heart"))
+        iv.tintColor = .white
+        iv.contentMode = .scaleAspectFit
+        return iv
     }()
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.text = "完善基础信息"
+        l.text = "完善个人信息"
         l.font = .fdH2
         l.textColor = .fdText
+        l.textAlignment = .center
         return l
     }()
 
     private let descLabel: UILabel = {
         let l = UILabel()
-        l.text = "完善资料，开启您的专属健康管理"
+        l.text = "填写基础信息，绑定专属服务机构与业务经理"
         l.font = .fdCaption
         l.textColor = .fdSubtext
+        l.textAlignment = .center
         l.numberOfLines = 0
         return l
     }()
 
-    // MARK: - UI — Form
+    // MARK: - Fields
 
-    private lazy var nameField: LoginFieldView = {
-        let f = LoginFieldView(title: "姓名", placeholder: "请输入姓名", sfSymbol: "")
-        f.textField.addTarget(self, action: #selector(fieldChanged), for: .editingChanged)
-        return f
-    }()
+    private lazy var nameField: UITextField = makeInputField(placeholder: "请输入您的真实姓名")
 
-    // -- Birthday --
-
-    private let birthdayLabel: UILabel = {
-        let l = UILabel()
-        l.text = "出生日期"
-        l.font = .fdCaptionSemibold
-        l.textColor = .fdSubtext
-        return l
-    }()
-
-    private let birthdayShell: UIView = {
-        let v = UIView()
-        v.backgroundColor = .fdSurface
-        v.layer.borderWidth = 1
-        v.layer.borderColor = UIColor.fdBorder.cgColor
-        v.layer.cornerRadius = 12
-        return v
-    }()
+    private lazy var maleButton = makeGenderButton(title: "♂  男", tag: 1)
+    private lazy var femaleButton = makeGenderButton(title: "♀  女", tag: 2)
 
     private lazy var birthdayField: UITextField = {
-        let tf = UITextField()
-        tf.placeholder = "请选择出生日期"
-        tf.font = .fdBody
-        tf.textColor = .fdText
-        tf.borderStyle = .none
+        let tf = makeInputField(placeholder: "请选择出生日期")
         tf.tintColor = .clear
 
         let dp = UIDatePicker()
@@ -98,7 +90,6 @@ final class OnboardingViewController: BaseViewController {
         dp.addTarget(self, action: #selector(dateChanged(_:)), for: .valueChanged)
         tf.inputView = dp
 
-        // Toolbar with Done button
         let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 44))
         toolbar.items = [
             UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil),
@@ -108,216 +99,328 @@ final class OnboardingViewController: BaseViewController {
         return tf
     }()
 
-    private let ageLabel: UILabel = {
+    private let birthdayCalendarIcon: UIImageView = {
+        let iv = UIImageView(image: UIImage(systemName: "calendar"))
+        iv.tintColor = .fdPrimary
+        iv.contentMode = .scaleAspectFit
+        return iv
+    }()
+
+    private lazy var institutionButton = makePickerButton(
+        placeholder: "请选择服务机构",
+        prefixSymbol: "building.2",
+        action: #selector(openInstitutionSelect)
+    )
+
+    private lazy var managerButton = makePickerButton(
+        placeholder: "请选择业务经理",
+        prefixSymbol: "person.badge.plus",
+        action: #selector(openManagerSelect)
+    )
+
+    private let managerHintLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdCaption
-        l.textColor = .fdPrimary
-        l.isHidden = true
+        l.text = "选择后将自动绑定专属业务经理，享受一对一服务"
+        l.font = .fdMicro
+        l.textColor = .fdMuted
+        l.numberOfLines = 0
         return l
-    }()
-
-    // -- Gender --
-
-    private let genderLabel: UILabel = {
-        let l = UILabel()
-        l.text = "性别"
-        l.font = .fdCaptionSemibold
-        l.textColor = .fdSubtext
-        return l
-    }()
-
-    private lazy var maleChip = OptionChipView(label: "男")
-    private lazy var femaleChip = OptionChipView(label: "女")
-    private var genderGroup: OptionChipGroup?
-
-    // -- City --
-
-    private let cityLabel: UILabel = {
-        let l = UILabel()
-        l.text = "所在城市"
-        l.font = .fdCaptionSemibold
-        l.textColor = .fdSubtext
-        return l
-    }()
-
-    private lazy var cityButton: UIButton = {
-        let b = UIButton(type: .system)
-        b.setTitle("请选择省市", for: .normal)
-        b.setTitleColor(.fdMuted, for: .normal)
-        b.titleLabel?.font = .fdBody
-        b.backgroundColor = .fdSurface
-        b.layer.borderWidth = 1
-        b.layer.borderColor = UIColor.fdBorder.cgColor
-        b.layer.cornerRadius = 12
-        b.contentHorizontalAlignment = .leading
-        b.titleEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 0)
-        b.addTarget(self, action: #selector(showCityPicker), for: .touchUpInside)
-        return b
-    }()
-
-    // MARK: - UI — City Picker (lazy)
-
-    private var cityPickerContainer: UIView?
-    private var cityPickerView: UIPickerView?
-
-    // MARK: - UI — Footer
-
-    private let footerBar: UIView = {
-        let v = UIView()
-        v.backgroundColor = .fdBg
-        return v
     }()
 
     private lazy var saveButton: UIButton = {
         let b = UIButton(type: .system)
-        b.setTitle("保存并继续", for: .normal)
+        b.setTitle("提交信息", for: .normal)
         b.titleLabel?.font = .fdBodyBold
         b.setTitleColor(.white, for: .normal)
         b.backgroundColor = .fdPrimary
-        b.layer.cornerRadius = 18
-        b.layer.shadowColor = UIColor.fdPrimary.cgColor
-        b.layer.shadowOffset = CGSize(width: 0, height: 6)
-        b.layer.shadowRadius = 18
-        b.layer.shadowOpacity = 0.32
+        b.layer.cornerRadius = 14
         b.addTarget(self, action: #selector(saveAndContinue), for: .touchUpInside)
         return b
     }()
+
+    private let privacyLabel: UILabel = {
+        let l = UILabel()
+        l.font = .fdMicro
+        l.textColor = .fdMuted
+        l.textAlignment = .center
+        l.numberOfLines = 0
+        let icon = NSTextAttachment()
+        icon.image = UIImage(systemName: "checkmark.shield")?
+            .withTintColor(.fdMuted, renderingMode: .alwaysOriginal)
+        icon.bounds = CGRect(x: 0, y: -2, width: 12, height: 12)
+        let attr = NSMutableAttributedString(attachment: icon)
+        attr.append(NSAttributedString(string: " 您的个人信息将被严格保密，仅用于服务对接"))
+        l.attributedText = attr
+        return l
+    }()
+
+    // MARK: - Init
+
+    init(userService: UserService = AppContainer.shared.userService) {
+        self.userService = userService
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
 
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        updateGenderAppearance()
         updateSaveButtonState()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // 子页 push 时会露出导航栏；回到本页再藏掉
+        navigationController?.setNavigationBarHidden(true, animated: animated)
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        // 自动聚焦姓名输入框
         if nameText.isEmpty {
-            nameField.textField.becomeFirstResponder()
+            nameField.becomeFirstResponder()
+        }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        if heroIconBox.layer.sublayers?.contains(where: { $0 is CAGradientLayer }) != true {
+            let g = CAGradientLayer()
+            g.colors = [UIColor.fdPrimary.cgColor, UIColor.fdPrimaryDeep.cgColor]
+            g.startPoint = CGPoint(x: 0, y: 0)
+            g.endPoint = CGPoint(x: 1, y: 1)
+            g.frame = heroIconBox.bounds
+            heroIconBox.layer.insertSublayer(g, at: 0)
+        } else if let g = heroIconBox.layer.sublayers?.first(where: { $0 is CAGradientLayer }) as? CAGradientLayer {
+            g.frame = heroIconBox.bounds
         }
     }
 
     override func setupUI() {
         view.backgroundColor = .fdBg
 
-        // ScrollView
-        let scrollView = UIScrollView()
-        scrollView.showsVerticalScrollIndicator = false
-        scrollView.keyboardDismissMode = .onDrag
         view.addSubview(scrollView)
+        scrollView.addSubview(cardView)
+
         scrollView.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(view.safeAreaLayoutGuide)
+            make.edges.equalTo(view.safeAreaLayoutGuide)
+        }
+        cardView.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(24)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview().offset(-24)
+            make.width.equalTo(scrollView).offset(-32)
         }
 
-        let contentView = UIView()
-        scrollView.addSubview(contentView)
-        contentView.snp.makeConstraints { make in
-            make.edges.width.equalToSuperview()
+        // Hero
+        heroIconBox.addSubview(heroIcon)
+        heroIcon.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.size.equalTo(28)
         }
 
-        // ── Header ──
+        let heroStack = UIStackView(arrangedSubviews: [heroIconBox, titleLabel, descLabel])
+        heroStack.axis = .vertical
+        heroStack.alignment = .center
+        heroStack.spacing = 8
+        heroIconBox.snp.makeConstraints { make in make.size.equalTo(56) }
 
-        contentView.addSubview(badgeLabel)
-        badgeLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(40)
-            make.leading.equalToSuperview().offset(24)
-            make.height.equalTo(30)
-        }
+        // Form fields
+        let nameBlock = makeLabeledField(required: true, title: "姓名", content: nameField)
+        nameField.addTarget(self, action: #selector(fieldChanged), for: .editingChanged)
+        nameField.snp.makeConstraints { make in make.height.equalTo(46) }
 
-        contentView.addSubview(titleLabel)
-        titleLabel.snp.makeConstraints { make in
-            make.top.equalTo(badgeLabel.snp.bottom).offset(18)
-            make.leading.trailing.equalToSuperview().inset(24)
-        }
-
-        contentView.addSubview(descLabel)
-        descLabel.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(8)
-            make.leading.trailing.equalToSuperview().inset(24)
-        }
-
-        // ── Form ──
-
-        let formStack = UIStackView()
-        formStack.axis = .vertical
-        formStack.spacing = 18
-        contentView.addSubview(formStack)
-        formStack.snp.makeConstraints { make in
-            make.top.equalTo(descLabel.snp.bottom).offset(26)
-            make.leading.trailing.equalToSuperview().inset(24)
-        }
-
-        // 姓名
-        formStack.addArrangedSubview(nameField)
-
-        // 出生日期
-        birthdayShell.addSubview(birthdayField)
-        birthdayField.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(14)
-            make.centerY.equalToSuperview()
-        }
-        birthdayShell.snp.makeConstraints { make in
-            make.height.equalTo(52)
-        }
-
-        let birthdayStack = UIStackView(arrangedSubviews: [birthdayLabel, birthdayShell])
-        birthdayStack.axis = .vertical
-        birthdayStack.spacing = 9
-        formStack.addArrangedSubview(birthdayStack)
-
-        // 年龄提示
-        contentView.addSubview(ageLabel)
-        ageLabel.snp.makeConstraints { make in
-            make.top.equalTo(birthdayShell.snp.bottom).offset(7)
-            make.leading.equalToSuperview().offset(24)
-        }
-
-        // 性别
-        genderGroup = OptionChipGroup(chips: [maleChip, femaleChip], allowsMultipleSelection: false)
-        genderGroup?.onSelectionChanged = { [weak self] labels in
-            self?.selectedGender = labels.first ?? ""
-            self?.updateSaveButtonState()
-        }
-
-        let genderRow = UIStackView(arrangedSubviews: [maleChip, femaleChip])
-        genderRow.spacing = 12
+        let genderRow = UIStackView(arrangedSubviews: [maleButton, femaleButton])
+        genderRow.axis = .horizontal
+        genderRow.spacing = 10
         genderRow.distribution = .fillEqually
+        maleButton.snp.makeConstraints { make in make.height.equalTo(46) }
+        femaleButton.snp.makeConstraints { make in make.height.equalTo(46) }
+        let genderBlock = makeLabeledField(required: true, title: "性别", content: genderRow)
 
-        let genderStack = UIStackView(arrangedSubviews: [genderLabel, genderRow])
-        genderStack.axis = .vertical
-        genderStack.spacing = 9
-        formStack.addArrangedSubview(genderStack)
-
-        // 所在城市
-        cityButton.snp.makeConstraints { make in
-            make.height.equalTo(52)
+        let birthdayShell = UIView()
+        birthdayShell.addSubview(birthdayField)
+        birthdayShell.addSubview(birthdayCalendarIcon)
+        birthdayField.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 40, height: 1))
+        birthdayField.rightViewMode = .always
+        birthdayField.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.height.equalTo(46)
         }
-
-        let cityStack = UIStackView(arrangedSubviews: [cityLabel, cityButton])
-        cityStack.axis = .vertical
-        cityStack.spacing = 9
-        formStack.addArrangedSubview(cityStack)
-
-        formStack.snp.makeConstraints { make in
-            make.bottom.equalToSuperview().offset(-100)
-        }
-
-        // ── Footer ──
-
-        view.addSubview(footerBar)
-        footerBar.addSubview(saveButton)
-        footerBar.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(view.safeAreaLayoutGuide)
-            make.height.equalTo(82)
-        }
-        saveButton.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(24)
+        birthdayCalendarIcon.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().inset(14)
             make.centerY.equalToSuperview()
-            make.height.equalTo(54)
+            make.size.equalTo(18)
         }
+        let birthdayBlock = makeLabeledField(required: true, title: "出生日期", content: birthdayShell)
+
+        let divider = makeDivider()
+
+        institutionButton.snp.makeConstraints { make in make.height.equalTo(46) }
+        let institutionBlock = makeLabeledField(required: true, title: "所属机构", content: institutionButton)
+
+        managerButton.snp.makeConstraints { make in make.height.equalTo(46) }
+        let managerLabelRow = makeOptionalLabel(title: "业务经理")
+        let managerBlock = UIStackView(arrangedSubviews: [managerLabelRow, managerButton, managerHintLabel])
+        managerBlock.axis = .vertical
+        managerBlock.spacing = 8
+
+        let formStack = UIStackView(arrangedSubviews: [
+            nameBlock, genderBlock, birthdayBlock, divider, institutionBlock, managerBlock,
+        ])
+        formStack.axis = .vertical
+        formStack.spacing = 14
+
+        saveButton.snp.makeConstraints { make in make.height.equalTo(48) }
+
+        let content = UIStackView(arrangedSubviews: [heroStack, formStack, saveButton, privacyLabel])
+        content.axis = .vertical
+        content.spacing = 18
+        content.setCustomSpacing(16, after: heroStack)
+        content.setCustomSpacing(18, after: formStack)
+        content.setCustomSpacing(12, after: saveButton)
+
+        cardView.addSubview(content)
+        content.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 20, left: 18, bottom: 18, right: 18))
+        }
+    }
+
+    // MARK: - Builders
+
+    private func makeInputField(placeholder: String) -> UITextField {
+        let tf = UITextField()
+        tf.placeholder = placeholder
+        tf.font = .fdBody
+        tf.textColor = .fdText
+        tf.borderStyle = .none
+        tf.backgroundColor = .fdSurface2
+        tf.layer.borderWidth = 1
+        tf.layer.borderColor = UIColor.fdPrimaryEdge.cgColor
+        tf.layer.cornerRadius = 12
+        tf.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 14, height: 1))
+        tf.leftViewMode = .always
+        tf.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 14, height: 1))
+        tf.rightViewMode = .always
+        return tf
+    }
+
+    private func makeGenderButton(title: String, tag: Int) -> UIButton {
+        let b = UIButton(type: .system)
+        b.setTitle(title, for: .normal)
+        b.titleLabel?.font = .fdBody
+        b.tag = tag
+        b.layer.cornerRadius = 12
+        b.layer.borderWidth = 1
+        b.addTarget(self, action: #selector(genderTapped(_:)), for: .touchUpInside)
+        return b
+    }
+
+    private func makePickerButton(placeholder: String, prefixSymbol: String, action: Selector) -> UIButton {
+        let b = UIButton(type: .system)
+        b.setTitle(placeholder, for: .normal)
+        b.setTitleColor(.fdMuted, for: .normal)
+        b.titleLabel?.font = .fdBody
+        b.titleLabel?.lineBreakMode = .byTruncatingTail
+        b.backgroundColor = .fdSurface
+        b.layer.borderWidth = 1
+        b.layer.borderColor = UIColor.fdBorder.cgColor
+        b.layer.cornerRadius = 12
+        b.contentHorizontalAlignment = .leading
+        b.titleEdgeInsets = UIEdgeInsets(top: 0, left: 36, bottom: 0, right: 36)
+        b.addTarget(self, action: action, for: .touchUpInside)
+
+        let prefix = UIImageView(image: UIImage(systemName: prefixSymbol))
+        prefix.tintColor = .fdMuted
+        prefix.contentMode = .scaleAspectFit
+        prefix.tag = 101
+        b.addSubview(prefix)
+        prefix.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(12)
+            make.centerY.equalToSuperview()
+            make.size.equalTo(16)
+        }
+
+        let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
+        chevron.tintColor = .fdMuted
+        chevron.contentMode = .scaleAspectFit
+        b.addSubview(chevron)
+        chevron.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().inset(12)
+            make.centerY.equalToSuperview()
+            make.size.equalTo(14)
+        }
+        return b
+    }
+
+    private func makeRequiredLabel(title: String) -> UILabel {
+        let l = UILabel()
+        let attr = NSMutableAttributedString(
+            string: "*",
+            attributes: [.font: UIFont.fdBodySemibold, .foregroundColor: UIColor.fdDanger]
+        )
+        attr.append(NSAttributedString(
+            string: title,
+            attributes: [.font: UIFont.fdBodySemibold, .foregroundColor: UIColor.fdText]
+        ))
+        l.attributedText = attr
+        return l
+    }
+
+    private func makeOptionalLabel(title: String) -> UILabel {
+        let l = UILabel()
+        let attr = NSMutableAttributedString(
+            string: title,
+            attributes: [.font: UIFont.fdBodySemibold, .foregroundColor: UIColor.fdText]
+        )
+        attr.append(NSAttributedString(
+            string: " (选填)",
+            attributes: [.font: UIFont.fdCaption, .foregroundColor: UIColor.fdMuted]
+        ))
+        l.attributedText = attr
+        return l
+    }
+
+    private func makeLabeledField(required: Bool, title: String, content: UIView) -> UIStackView {
+        let label = required ? makeRequiredLabel(title: title) : makeOptionalLabel(title: title)
+        let stack = UIStackView(arrangedSubviews: [label, content])
+        stack.axis = .vertical
+        stack.spacing = 8
+        return stack
+    }
+
+    private func makeDivider() -> UIView {
+        let wrap = UIView()
+        wrap.snp.makeConstraints { make in make.height.equalTo(20) }
+        let left = UIView()
+        left.backgroundColor = UIColor.fdBorder.withAlphaComponent(0.8)
+        let right = UIView()
+        right.backgroundColor = UIColor.fdBorder.withAlphaComponent(0.8)
+        let icon = UIImageView(image: UIImage(systemName: "building.2.fill"))
+        icon.tintColor = .fdWarning
+        icon.contentMode = .scaleAspectFit
+        wrap.addSubview(left)
+        wrap.addSubview(icon)
+        wrap.addSubview(right)
+        icon.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.size.equalTo(14)
+        }
+        left.snp.makeConstraints { make in
+            make.leading.equalToSuperview()
+            make.trailing.equalTo(icon.snp.leading).offset(-10)
+            make.centerY.equalToSuperview()
+            make.height.equalTo(1)
+        }
+        right.snp.makeConstraints { make in
+            make.trailing.equalToSuperview()
+            make.leading.equalTo(icon.snp.trailing).offset(10)
+            make.centerY.equalToSuperview()
+            make.height.equalTo(1)
+        }
+        return wrap
     }
 
     // MARK: - Actions
@@ -326,12 +429,17 @@ final class OnboardingViewController: BaseViewController {
         updateSaveButtonState()
     }
 
+    @objc private func genderTapped(_ sender: UIButton) {
+        selectedGender = sender.tag == 1 ? "男" : "女"
+        updateGenderAppearance()
+        updateSaveButtonState()
+    }
+
     @objc private func dateChanged(_ picker: UIDatePicker) {
         birthDate = picker.date
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         birthdayField.text = formatter.string(from: picker.date)
-        updateAgeLabel()
         updateSaveButtonState()
     }
 
@@ -339,156 +447,109 @@ final class OnboardingViewController: BaseViewController {
         birthdayField.resignFirstResponder()
     }
 
-    @objc private func showCityPicker() {
+    @objc private func openInstitutionSelect() {
         view.endEditing(true)
-
-        let container = UIView()
-        container.backgroundColor = .fdSurface
-
-        // Toolbar
-        let toolbar = UIView()
-        toolbar.backgroundColor = .fdBg
-        container.addSubview(toolbar)
-        toolbar.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
-            make.height.equalTo(44)
+        let vc = InstitutionSelectViewController(selectedId: selectedHospitalId)
+        vc.onInstitutionSelected = { [weak self] institution in
+            guard let self else { return }
+            let changed = self.selectedHospitalId != institution.id
+            self.selectedHospitalId = institution.id
+            self.selectedHospitalName = institution.name
+            self.setPickerTitle(self.institutionButton, text: institution.name)
+            if changed {
+                self.clearManagerSelection()
+            }
+            self.updateSaveButtonState()
         }
-
-        let cancelBtn = UIButton(type: .system)
-        cancelBtn.setTitle("取消", for: .normal)
-        cancelBtn.titleLabel?.font = .fdBody
-        cancelBtn.setTitleColor(.fdSubtext, for: .normal)
-        cancelBtn.addAction(UIAction { [weak self] _ in self?.dismissCityPicker() }, for: .touchUpInside)
-        toolbar.addSubview(cancelBtn)
-        cancelBtn.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.centerY.equalToSuperview()
-        }
-
-        let confirmBtn = UIButton(type: .system)
-        confirmBtn.setTitle("确定", for: .normal)
-        confirmBtn.titleLabel?.font = .fdBodySemibold
-        confirmBtn.setTitleColor(.fdPrimary, for: .normal)
-        confirmBtn.addAction(UIAction { [weak self] _ in self?.confirmCitySelection() }, for: .touchUpInside)
-        toolbar.addSubview(confirmBtn)
-        confirmBtn.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-16)
-            make.centerY.equalToSuperview()
-        }
-
-        // Picker
-        let picker = UIPickerView()
-        picker.delegate = self
-        picker.dataSource = self
-        cityPickerView = picker
-
-        // Set current selection
-        if let pIdx = provinces.firstIndex(of: selectedProvince),
-           let cities = cityMap[selectedProvince],
-           let cIdx = cities.firstIndex(of: selectedCity) {
-            picker.selectRow(pIdx, inComponent: 0, animated: false)
-            picker.selectRow(cIdx, inComponent: 1, animated: false)
-        }
-
-        container.addSubview(picker)
-        picker.snp.makeConstraints { make in
-            make.top.equalTo(toolbar.snp.bottom)
-            make.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(container.safeAreaLayoutGuide)
-            make.height.equalTo(216)
-        }
-
-        view.addSubview(container)
-        container.snp.makeConstraints { make in
-            make.leading.trailing.bottom.equalToSuperview()
-        }
-        cityPickerContainer = container
-
-        // Animate in
-        container.transform = CGAffineTransform(translationX: 0, y: 300)
-        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
-            container.transform = .identity
-        }
+        pushOrPresent(vc)
     }
 
-    private func dismissCityPicker() {
-        guard let container = cityPickerContainer else { return }
-        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseIn) {
-            container.transform = CGAffineTransform(translationX: 0, y: 300)
-        } completion: { _ in
-            container.removeFromSuperview()
-            self.cityPickerContainer = nil
-            self.cityPickerView = nil
+    @objc private func openManagerSelect() {
+        view.endEditing(true)
+        guard let hospitalId = selectedHospitalId?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !hospitalId.isEmpty else {
+            showAlert("请先选择所属机构")
+            return
         }
-    }
-
-    private func confirmCitySelection() {
-        guard let picker = cityPickerView else { return }
-        let pIdx = picker.selectedRow(inComponent: 0)
-        let cIdx = picker.selectedRow(inComponent: 1)
-
-        selectedProvince = provinces.indices.contains(pIdx) ? provinces[pIdx] : provinces[0]
-        let cities = cityMap[selectedProvince] ?? []
-        selectedCity = cities.indices.contains(cIdx) ? cities[cIdx] : (cities.first ?? "")
-
-        let text = selectedProvince == selectedCity ? selectedCity : "\(selectedProvince) \(selectedCity)"
-        cityButton.setTitle(text, for: .normal)
-        cityButton.setTitleColor(.fdText, for: .normal)
-        updateSaveButtonState()
-        dismissCityPicker()
+        let vc = ManagerSelectViewController(
+            hospitalId: hospitalId,
+            hospitalName: selectedHospitalName ?? "",
+            selectedId: selectedManagerId
+        )
+        vc.onManagerSelected = { [weak self] doctor in
+            self?.selectedManagerId = doctor.id
+            self?.selectedManagerDisplay = doctor.pickerDisplay
+            self?.setPickerTitle(self?.managerButton, text: doctor.pickerDisplay)
+        }
+        pushOrPresent(vc)
     }
 
     @objc private func saveAndContinue() {
-        guard !nameText.isEmpty else { showAlert("请输入姓名"); nameField.textField.becomeFirstResponder(); return }
-        guard let date = birthDate else { showAlert("请选择出生日期"); birthdayField.becomeFirstResponder(); return }
-        guard !selectedGender.isEmpty else { showAlert("请选择性别"); return }
+        guard !nameText.isEmpty else {
+            showAlert("请输入您的真实姓名")
+            nameField.becomeFirstResponder()
+            return
+        }
+        guard !selectedGender.isEmpty else {
+            showAlert("请选择性别")
+            return
+        }
+        guard let date = birthDate else {
+            showAlert("请选择出生日期")
+            birthdayField.becomeFirstResponder()
+            return
+        }
+        guard let hospitalIdRaw = selectedHospitalId?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !hospitalIdRaw.isEmpty,
+              let hospitalId = Int64(hospitalIdRaw) else {
+            showAlert("请选择服务机构")
+            return
+        }
 
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         let birthdayStr = formatter.string(from: date)
+        let sexCode = selectedGender == "男" ? "1" : "2"
+        let managerId = selectedManagerId.flatMap { Int64($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
 
-        let mobile = UserDefaults.standard.string(forKey: "current_user_mobile")
-
-        let payload = SUsersOnboardingPayload(
-            mobile: mobile,
+        let dto = SaveArchiveHospitalDTO(
             chineseName: nameText,
-            sex: selectedGender == "男" ? "1" : "2",
+            sex: sexCode,
             birthday: birthdayStr,
-            medicalHistory: nil,
-            smokingStatus: nil,
-            exerciseFrequency: nil
+            hospitalId: hospitalId,
+            businessManagerId: managerId
         )
 
-        // Loading
         saveButton.isEnabled = false
         saveButton.alpha = 0.6
-        saveButton.setTitle("保存中…", for: .normal)
+        saveButton.setTitle("提交中…", for: .normal)
 
         Task {
             do {
-                try await UserService.shared.updateCurrentProfile(payload)
+                try await userService.saveArchiveHospital(dto)
                 UserManager.shared.patchLoginUserInfo(
                     chineseName: nameText,
-                    sex: selectedGender == "男" ? "1" : "2",
-                    birthday: birthdayStr
+                    sex: sexCode,
+                    birthday: birthdayStr,
+                    hospitalId: hospitalIdRaw
                 )
-                // 业务侧 currentUser 与门禁 loginUserInfo 分开刷新
                 _ = await UserManager.shared.refreshUserInfo()
                 await MainActor.run {
                     UserDefaults.standard.set(20, forKey: "fd_archive_progress")
-                    if !nameText.isEmpty {
-                        UserDefaults.standard.set(nameText, forKey: "fd_profile_name")
+                    UserDefaults.standard.set(nameText, forKey: "fd_profile_name")
+                    if let name = selectedHospitalName {
+                        UserDefaults.standard.set(name, forKey: "fd_profile_institution")
                     }
-                    // 城市暂存本地（对齐 Vue localStorage）
-                    let cityText = selectedProvince == selectedCity ? selectedCity : "\(selectedProvince) \(selectedCity)"
-                    UserDefaults.standard.set(cityText, forKey: "fd_profile_city")
-                    dismiss(animated: true)
+                    if let manager = selectedManagerDisplay, !manager.isEmpty {
+                        UserDefaults.standard.set(manager, forKey: "fd_profile_manager")
+                    }
+                    finishOnboardingWithToast("个人信息已提交")
                 }
             } catch {
                 await MainActor.run {
                     saveButton.isEnabled = true
                     saveButton.alpha = 1.0
-                    saveButton.setTitle("保存并继续", for: .normal)
+                    saveButton.setTitle("提交信息", for: .normal)
                     showAlert("保存失败: \(error.localizedDescription)")
                 }
             }
@@ -497,26 +558,73 @@ final class OnboardingViewController: BaseViewController {
 
     // MARK: - Helpers
 
-    private func calculateAge(from date: Date) -> Int {
-        Calendar.current.dateComponents([.year], from: date, to: Date()).year ?? 0
+    private func pushOrPresent(_ vc: UIViewController) {
+        // Onboarding 已包在 Nav 内（根页隐藏导航栏）；子页需要显示导航栏以便返回
+        if let nav = navigationController {
+            nav.setNavigationBarHidden(false, animated: true)
+            nav.pushViewController(vc, animated: true)
+        } else {
+            let nav = UINavigationController(rootViewController: vc)
+            nav.modalPresentationStyle = .fullScreen
+            present(nav, animated: true)
+        }
     }
 
-    private func updateAgeLabel() {
-        guard let date = birthDate else { ageLabel.isHidden = true; return }
-        let age = calculateAge(from: date)
-        if age > 0 {
-            ageLabel.text = "已自动计算年龄：\(age) 岁"
-            ageLabel.isHidden = false
+    private func setPickerTitle(_ button: UIButton?, text: String) {
+        guard let button else { return }
+        button.setTitle(text, for: .normal)
+        button.setTitleColor(.fdText, for: .normal)
+    }
+
+    private func clearManagerSelection() {
+        selectedManagerId = nil
+        selectedManagerDisplay = nil
+        managerButton.setTitle("请选择业务经理", for: .normal)
+        managerButton.setTitleColor(.fdMuted, for: .normal)
+    }
+
+    private func updateGenderAppearance() {
+        styleGender(maleButton, active: selectedGender == "男")
+        styleGender(femaleButton, active: selectedGender == "女")
+    }
+
+    private func styleGender(_ button: UIButton, active: Bool) {
+        if active {
+            button.backgroundColor = .fdPrimarySoft
+            button.setTitleColor(.fdPrimary, for: .normal)
+            button.titleLabel?.font = .fdBodySemibold
+            button.layer.borderColor = UIColor.fdPrimary.cgColor
         } else {
-            ageLabel.isHidden = true
+            button.backgroundColor = .fdSurface
+            button.setTitleColor(.fdSubtext, for: .normal)
+            button.titleLabel?.font = .fdBody
+            button.layer.borderColor = UIColor.fdBorder.cgColor
         }
     }
 
     private func updateSaveButtonState() {
-        let can = !nameText.isEmpty && birthDate != nil && !selectedGender.isEmpty
+        let hasHospital = !(selectedHospitalId?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+        let can = !nameText.isEmpty && birthDate != nil && !selectedGender.isEmpty && hasHospital
         saveButton.isEnabled = can
         saveButton.alpha = can ? 1.0 : 0.45
-        saveButton.layer.shadowOpacity = can ? 0.32 : 0
+    }
+
+    private func finishOnboardingWithToast(_ message: String) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        present(alert, animated: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            alert.dismiss(animated: true) {
+                self?.dismissOnboarding()
+            }
+        }
+    }
+
+    private func dismissOnboarding() {
+        if let presenting = presentingViewController {
+            presenting.dismiss(animated: true)
+        } else {
+            dismiss(animated: true)
+        }
     }
 
     private func showAlert(_ message: String) {
@@ -524,38 +632,6 @@ final class OnboardingViewController: BaseViewController {
         present(alert, animated: true)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             alert.dismiss(animated: true)
-        }
-    }
-}
-
-// MARK: - UIPickerViewDataSource / Delegate
-
-extension OnboardingViewController: UIPickerViewDataSource, UIPickerViewDelegate {
-
-    func numberOfComponents(in pickerView: UIPickerView) -> Int { 2 }
-
-    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-        if component == 0 { return provinces.count }
-        let pIdx = pickerView.selectedRow(inComponent: 0)
-        let province = provinces.indices.contains(pIdx) ? provinces[pIdx] : provinces[0]
-        return cityMap[province]?.count ?? 0
-    }
-
-    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
-        if component == 0 { return provinces.indices.contains(row) ? provinces[row] : nil }
-        let pIdx = pickerView.selectedRow(inComponent: 0)
-        let province = provinces.indices.contains(pIdx) ? provinces[pIdx] : provinces[0]
-        let cities = cityMap[province] ?? []
-        return cities.indices.contains(row) ? cities[row] : nil
-    }
-
-    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
-        if component == 0 {
-            pickerView.reloadComponent(1)
-            let province = provinces.indices.contains(row) ? provinces[row] : provinces[0]
-            if let cities = cityMap[province], !cities.isEmpty {
-                pickerView.selectRow(0, inComponent: 1, animated: true)
-            }
         }
     }
 }

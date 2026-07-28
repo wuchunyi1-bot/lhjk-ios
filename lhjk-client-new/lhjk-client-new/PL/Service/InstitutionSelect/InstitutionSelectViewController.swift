@@ -8,6 +8,9 @@ final class InstitutionSelectViewController: BaseViewController {
     private let viewModel: InstitutionSelectViewModel
     private var cancellables = Set<AnyCancellable>()
 
+    /// 选中后回调（Onboarding 等场景）；为 nil 时仅写入 InstitutionSelectionStore 并 pop
+    var onInstitutionSelected: ((SelectedServiceInstitution) -> Void)?
+
     private let locationBar = UIView()
     private let locationValueLabel = UILabel()
     private let relocateButton = UIButton(type: .system)
@@ -28,10 +31,26 @@ final class InstitutionSelectViewController: BaseViewController {
     override func setupUI() {
         view.backgroundColor = .fdBg
         title = "选择服务机构"
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            image: UIImage(systemName: "chevron.left"),
+            style: .plain,
+            target: self,
+            action: #selector(backTapped)
+        )
+        navigationItem.leftBarButtonItem?.tintColor = .fdText
         setupLocationBar()
         setupSearch()
         setupTable()
         setupEmpty()
+    }
+
+    @objc private func backTapped() {
+        view.endEditing(true)
+        if let nav = navigationController, nav.viewControllers.count > 1 {
+            nav.popViewController(animated: true)
+        } else {
+            dismiss(animated: true)
+        }
     }
 
     override func bindViewModel() {
@@ -275,7 +294,13 @@ extension InstitutionSelectViewController: UITableViewDataSource, UITableViewDel
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let item = viewModel.items[indexPath.row]
         viewModel.select(item)
-        navigationController?.popViewController(animated: true)
+        let selected = SelectedServiceInstitution(vo: item)
+        onInstitutionSelected?(selected)
+        if let nav = navigationController, nav.viewControllers.count > 1 {
+            nav.popViewController(animated: true)
+        } else {
+            dismiss(animated: true)
+        }
     }
 }
 

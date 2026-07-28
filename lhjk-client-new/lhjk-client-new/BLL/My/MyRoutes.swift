@@ -35,8 +35,12 @@ enum MyRoutes {
         r.register(path: "/me/settings/about")          { _ in AboutSettingsViewController() }
         r.register(path: "/me/settings/cancel-account") { _ in CancelAccountViewController() }
 
-        // 卡券
-        r.register(path: "/me/vouchers")         { _ in VoucherListViewController() }
+        // 卡券（params: 可选 tab=coupon|benefit）
+        r.register(path: "/me/vouchers") { params in
+            let raw = (params["tab"] as? String)?.lowercased() ?? ""
+            let top: VoucherTopTab = (raw == "coupon") ? .coupon : .benefit
+            return VoucherListViewController(topTab: top)
+        }
 
         // 新增子页面（占位）
         r.register(path: "/me/change-phone")     { _ in ChangePhoneViewController() }

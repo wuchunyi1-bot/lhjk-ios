@@ -1,96 +1,101 @@
 import Foundation
 
-// MARK: - 卡券服务 (BLL)
-
-/// 三好卡券管理服务
+/// 我的卡券资产服务 — 对齐 funde `benefit-card-state` / `coupon-state`
 ///
-/// 当前使用本地 Mock 数据，后续对接后端 API 时替换 `getVouchers()` 实现即可。
-/// 参考 funde-client: prototype/src/views/me/MyVouchersView.vue
+/// 当前为本地 Mock；卡包优惠券与订单 `CouponService` 独立维护。
 final class VoucherService {
-
-    // MARK: - Singleton
 
     static let shared = VoucherService()
 
     private init() {}
 
-    // MARK: - Mock State
+    // MARK: - Query
 
-    /// 模拟激活状态（对应 funde-client stores/demo.ts 的 cardActivated）
-    private(set) var isCardActivated = false
+    func getBenefitCards() -> [BenefitCard] {
+        Self.mockBenefitCards
+    }
 
-    static let cardActivationDidChange = Notification.Name("VoucherService.cardActivationDidChange")
+    func getTransferRecords() -> [BenefitTransferRecord] {
+        Self.mockTransfers
+    }
 
-    // MARK: - 查询卡券列表
+    func getCouponAssets() -> [VoucherCouponAsset] {
+        Self.mockCoupons
+    }
 
-    /// 获取当前用户的卡券列表（Mock）
-    /// - Returns: 全量卡券数组
-    func getVouchers() -> [MVoucher] {
+    /// 待使用权益卡（未转赠锁定）
+    var availableBenefitCount: Int {
+        getBenefitCards().filter { $0.status == .available && $0.pendingTransferId == nil }.count
+    }
+
+    /// 待使用优惠券（内部已领取）
+    var availableCouponCount: Int {
+        getCouponAssets().filter { $0.status == .received }.count
+    }
+
+    /// 我的页角标
+    var meBadgeCount: Int {
+        availableBenefitCount + availableCouponCount
+    }
+
+    var meBadgeText: String? {
+        let n = meBadgeCount
+        if n <= 0 { return nil }
+        if n > 99 { return "99+" }
+        return "\(n)"
+    }
+
+    // MARK: - Mock（对齐 funde seed，去掉演示专用卡）
+
+    private static let mockBenefitCards: [BenefitCard] = [
+        BenefitCard(id: "benefit-card-001", code: "SGHK-2026-0201", name: "三好健康权益卡", amount: 300, validUntil: "2026-12-31", status: .available, boundAt: "2026-07-15", redeemedAt: nil, orderId: nil, pendingTransferId: nil, transferredOnce: false),
+        BenefitCard(id: "benefit-card-002", code: "SGHK-2026-0512", name: "企业健康权益卡", amount: 500, validUntil: "2026-10-20", status: .available, boundAt: "2026-06-12", redeemedAt: nil, orderId: nil, pendingTransferId: nil, transferredOnce: false),
+        BenefitCard(id: "benefit-card-003", code: "SGHK-2025-1108", name: "尊享健康权益卡", amount: 1000, validUntil: "2026-11-07", status: .redeemed, boundAt: "2025-11-08", redeemedAt: "2026-05-20", orderId: "demo-benefit-order-001", pendingTransferId: nil, transferredOnce: false),
+        BenefitCard(id: "benefit-card-004", code: "SGHK-2024-0318", name: "企业健康权益卡", amount: 300, validUntil: "2025-12-31", status: .expired, boundAt: "2024-03-18", redeemedAt: nil, orderId: nil, pendingTransferId: nil, transferredOnce: false),
+        BenefitCard(id: "benefit-card-hbs-200", code: "HBS-2026-0200", name: "三好卡", amount: 200, validUntil: "2026-09-30", status: .available, boundAt: "2026-07-26", redeemedAt: nil, orderId: nil, pendingTransferId: nil, transferredOnce: false),
+        BenefitCard(id: "benefit-card-hbs-500", code: "HBS-2026-0500", name: "金穗卡", amount: 500, validUntil: "2026-12-31", status: .available, boundAt: "2026-07-26", redeemedAt: nil, orderId: nil, pendingTransferId: nil, transferredOnce: true),
+        BenefitCard(id: "benefit-card-pending", code: "SGHK-DEMO-PENDING", name: "等待领取演示权益卡", amount: 500, validUntil: "2026-10-20", status: .available, boundAt: "2026-07-21", redeemedAt: nil, orderId: nil, pendingTransferId: "transfer-record-pending", transferredOnce: false),
+    ]
+
+    private static var mockTransfers: [BenefitTransferRecord] {
+        let pendingExpires = Date().addingTimeInterval(22 * 3600)
+        let iso = ISO8601DateFormatter()
         return [
-            MVoucher(
-                id: "v001",
-                cardNo: "SGHK-2026-0001",
-                packageName: isCardActivated ? "德好·标准版" : "三好健康服务卡",
-                status: isCardActivated ? .activated : .unused,
-                activationDeadline: "2026/12/31",
-                activatedAt: isCardActivated ? "2026/06/23" : nil,
-                validUntil: isCardActivated ? "2027/06/22" : nil,
-                advisorName: isCardActivated ? "王顾问" : nil,
-                daysLeft: isCardActivated ? 364 : nil
+            BenefitTransferRecord(
+                id: "transfer-record-001",
+                cardId: "benefit-card-old-001",
+                cardName: "三好健康权益卡",
+                amount: 300,
+                validUntil: "2026-12-31",
+                status: .transferred,
+                sharedAt: "2026-07-16T09:00:00Z",
+                expiresAt: "2026-07-17T09:00:00Z",
+                claimedAt: "2026-07-16T10:12:00Z",
+                recipientName: "王建国",
+                message: nil
             ),
-            MVoucher(
-                id: "v002",
-                cardNo: "SGHK-2026-0512",
-                packageName: "德康·标准版",
-                status: .unused,
-                activationDeadline: "2026/09/30",
-                activatedAt: nil,
-                validUntil: nil,
-                advisorName: nil,
-                daysLeft: nil
-            ),
-            MVoucher(
-                id: "v003",
-                cardNo: "SGHK-2025-1108",
-                packageName: "德医·就医协助（标准版）",
-                status: .activated,
-                activationDeadline: nil,
-                activatedAt: "2025/11/08",
-                validUntil: "2026/11/07",
-                advisorName: "李协调员",
-                daysLeft: 137
-            ),
-            MVoucher(
-                id: "v004",
-                cardNo: "SGHK-2024-0318",
-                packageName: "德康·入门版",
-                status: .expired,
-                activationDeadline: nil,
-                activatedAt: "2024/03/18",
-                validUntil: "2025/03/18",
-                advisorName: nil,
-                daysLeft: nil
-            ),
-            MVoucher(
-                id: "v005",
-                cardNo: "SGHK-2023-0921",
-                packageName: "体验套餐",
-                status: .expired,
-                activationDeadline: nil,
-                activatedAt: "2023/09/21",
-                validUntil: "2023/09/28",
-                advisorName: nil,
-                daysLeft: nil
+            BenefitTransferRecord(
+                id: "transfer-record-pending",
+                cardId: "benefit-card-pending",
+                cardName: "等待领取演示权益卡",
+                amount: 500,
+                validUntil: "2026-10-20",
+                status: .waiting,
+                sharedAt: iso.string(from: Date().addingTimeInterval(-2 * 3600)),
+                expiresAt: iso.string(from: pendingExpires),
+                claimedAt: nil,
+                recipientName: nil,
+                message: "送你一份健康关怀"
             ),
         ]
     }
 
-    // MARK: - 激活卡券（Mock）
-
-    /// 模拟激活卡券（对应 funde-client stores/demo.ts 的 activateCard）
-    func activateCard() {
-        isCardActivated = true
-        print("[VoucherService] activateCard ✓ isCardActivated = true")
-        NotificationCenter.default.post(name: Self.cardActivationDidChange, object: nil)
-    }
+    private static let mockCoupons: [VoucherCouponAsset] = [
+        VoucherCouponAsset(id: "coupon-01", name: "会员健康满减券-满100减50", type: .fullReduction, threshold: 100, discountAmount: 50, discountRate: nil, maxDiscount: nil, scopeRule: .include, businessCategories: ["高血压管理"], packageNames: ["高血压年度管理套餐"], institutionNames: ["富德健康广州机构"], excludedProductNames: ["营养补充剂"], receivedAt: "2026-07-26 10:00:00", effectiveEndAt: "2026-12-31 23:59:59", status: .received, usedAt: nil),
+        VoucherCouponAsset(id: "coupon-02", name: "健管服务满减券-满200减80", type: .fullReduction, threshold: 200, discountAmount: 80, discountRate: nil, maxDiscount: nil, scopeRule: .exclude, businessCategories: ["健康体检"], packageNames: ["健康体检基础套餐"], institutionNames: ["富德健康深圳机构"], excludedProductNames: ["营养补充剂"], receivedAt: "2026-07-25 10:00:00", effectiveEndAt: "2026-12-31 23:59:59", status: .received, usedAt: nil),
+        VoucherCouponAsset(id: "coupon-03", name: "会员服务折扣券-8.8折", type: .discount, threshold: 100, discountAmount: nil, discountRate: 8.8, maxDiscount: 100, scopeRule: .include, businessCategories: ["会员综合服务"], packageNames: [], institutionNames: [], excludedProductNames: [], receivedAt: "2026-07-24 10:00:00", effectiveEndAt: "2026-12-31 23:59:59", status: .received, usedAt: nil),
+        VoucherCouponAsset(id: "coupon-04", name: "复购服务折扣券-9.5折", type: .discount, threshold: 200, discountAmount: nil, discountRate: 9.5, maxDiscount: 50, scopeRule: .include, businessCategories: ["会员综合服务"], packageNames: [], institutionNames: [], excludedProductNames: [], receivedAt: "2026-06-20 10:00:00", effectiveEndAt: "2026-12-31 23:59:59", status: .used, usedAt: "2026-07-12 14:30:00"),
+        VoucherCouponAsset(id: "coupon-05", name: "会员服务减价券-满100减50", type: .priceOff, threshold: 100, discountAmount: 50, discountRate: nil, maxDiscount: nil, scopeRule: .include, businessCategories: ["会员综合服务"], packageNames: [], institutionNames: [], excludedProductNames: [], receivedAt: "2026-06-18 10:00:00", effectiveEndAt: "2026-12-31 23:59:59", status: .used, usedAt: "2026-07-08 09:20:00"),
+        VoucherCouponAsset(id: "coupon-06", name: "健管服务减价券-满200减80", type: .priceOff, threshold: 200, discountAmount: 80, discountRate: nil, maxDiscount: nil, scopeRule: .exclude, businessCategories: ["健康体检"], packageNames: [], institutionNames: [], excludedProductNames: [], receivedAt: "2026-04-20 10:00:00", effectiveEndAt: "2026-06-30 23:59:59", status: .expired, usedAt: nil),
+    ]
 }

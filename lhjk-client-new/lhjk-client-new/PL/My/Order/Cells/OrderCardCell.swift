@@ -272,6 +272,8 @@ enum OrderListCardAction: Equatable {
     case afterSale
     case renew
     case settle
+    /// 退款审核通过后的退货处理（接口未出，先 UI）
+    case returnGoods
 
     var title: String {
         switch self {
@@ -282,6 +284,7 @@ enum OrderListCardAction: Equatable {
         case .afterSale: return "退款/售后"
         case .renew: return "续费订单"
         case .settle: return "结算订单"
+        case .returnGoods: return "去退货"
         }
     }
 
@@ -319,7 +322,10 @@ enum OrderListCardAction: Equatable {
             return overdueActions(packageType: packageType, canRenew: canRenew)
         case .completed:
             return completedActions(packageType: packageType, hasRefundHistory: hasRefundHistory)
-        case .refund, .cancelled, .refundReview:
+        case .refund:
+            // 履约行资格待接口字段；退款/售后列表先统一展示入口
+            return [.returnGoods]
+        case .cancelled, .refundReview:
             return []
         }
     }
