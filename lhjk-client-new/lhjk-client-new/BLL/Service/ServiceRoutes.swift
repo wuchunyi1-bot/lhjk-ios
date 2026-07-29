@@ -25,6 +25,11 @@ enum ServiceRoutes {
             PlaceholderViewController(title: "就医协助服务")
         }
 
+        // 会员专区（首页「查看更多」）
+        r.register(path: "/services/membership") { _ in
+            PlaceholderViewController(title: "会员专区")
+        }
+
         // 健康包详情（params: id）— 与 detail 共用同一页
         r.register(path: "/services/pkg") { params in
             ServiceRoutes.makePackageDetailViewController(params: params)

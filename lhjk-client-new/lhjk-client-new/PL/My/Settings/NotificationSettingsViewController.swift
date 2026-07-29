@@ -171,14 +171,7 @@ final class NotificationSettingsViewController: BaseViewController {
             cell.onToggle = { [weak self] isOn in
                 self?.updatePref(item.key, isOn: isOn)
             }
-            // 卡片内左右留白
-            let padded = UIView()
-            padded.addSubview(cell)
-            cell.snp.makeConstraints {
-                $0.top.bottom.equalToSuperview()
-                $0.leading.trailing.equalToSuperview().inset(16)
-            }
-            stack.addArrangedSubview(padded)
+            stack.addArrangedSubview(cell)
         }
 
         return wrap

@@ -27,6 +27,10 @@ enum RouteSetup {
         Router.shared.register(path: "/web/appointments") { _ in
             WebViewController(urlString: "https://www.funde-life.com/appointments/exams", title: "预约体检")
         }
+        // 对齐 funde-client `/appointments/exams`
+        Router.shared.register(path: "/appointments/exams") { _ in
+            WebViewController(urlString: "https://www.funde-life.com/appointments/exams", title: "预约体检")
+        }
         Router.shared.register(path: "/web/membership") { _ in
             WebViewController(urlString: "https://www.funde-life.com/me/membership", title: "查看权益")
         }

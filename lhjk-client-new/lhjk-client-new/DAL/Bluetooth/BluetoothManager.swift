@@ -38,6 +38,8 @@ final class BluetoothManager: NSObject {
     let statePublisher = PassthroughSubject<BluetoothState, Never>()
     /// 发现的设备列表
     let discoveredPeripheralsPublisher = PassthroughSubject<Peripheral, Never>()
+    /// 原始广播事件（含 manufacturerData；不解析厂商协议）
+    let advertisementPublisher = PassthroughSubject<BLEAdvertisementEvent, Never>()
     /// 连接状态变化
     let connectionPublisher = PassthroughSubject<(UUID, Bool), Never>()
     /// 收到的数据
@@ -52,6 +54,10 @@ final class BluetoothManager: NSObject {
     private var connectionRetryCount: [UUID: Int] = [:]
 
     private let maxRetryCount = 3
+
+    var state: BluetoothState {
+        BluetoothState(from: centralManager.state)
+    }
 
     // MARK: - Initialization
 
@@ -68,12 +74,15 @@ final class BluetoothManager: NSObject {
 // MARK: - Public API: Scanning
 
 extension BluetoothManager {
-    /// 开始扫描指定服务的设备
-    func startScan(serviceUUIDs: [CBUUID]? = nil) {
+    /// 开始扫描
+    /// - Parameters:
+    ///   - serviceUUIDs: 按服务 UUID 过滤；广播秤传 `nil`
+    ///   - allowDuplicates: 广播测量会话传 `true`，设备列表扫描默认 `false`
+    func startScan(serviceUUIDs: [CBUUID]? = nil, allowDuplicates: Bool = false) {
         guard centralManager.state == .poweredOn else { return }
         centralManager.scanForPeripherals(
             withServices: serviceUUIDs,
-            options: [CBCentralManagerScanOptionAllowDuplicatesKey: false]
+            options: [CBCentralManagerScanOptionAllowDuplicatesKey: allowDuplicates]
         )
     }
 
@@ -147,12 +156,22 @@ extension BluetoothManager: CBCentralManagerDelegate {
         rssi RSSI: NSNumber
     ) {
         discoveredPeripherals[peripheral.identifier] = peripheral
+        let name = peripheral.name ?? advertisementData[CBAdvertisementDataLocalNameKey] as? String
         let model = Peripheral(
             identifier: peripheral.identifier,
-            name: peripheral.name ?? advertisementData[CBAdvertisementDataLocalNameKey] as? String,
+            name: name,
             rssi: RSSI.intValue
         )
         discoveredPeripheralsPublisher.send(model)
+        advertisementPublisher.send(
+            BLEAdvertisementEvent(
+                peripheralId: peripheral.identifier,
+                name: name,
+                rssi: RSSI.intValue,
+                advertisementData: advertisementData,
+                timestamp: Date()
+            )
+        )
     }
 
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {

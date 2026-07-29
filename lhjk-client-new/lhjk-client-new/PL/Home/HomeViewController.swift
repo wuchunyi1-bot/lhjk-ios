@@ -2,18 +2,16 @@ import UIKit
 import SnapKit
 import Combine
 
-/// 首页 Hub — UITableView 实现
-/// 参考 funde-client: HomeView.vue
+/// 首页 Hub — 对齐 HomeView.vue / home.page.yaml（现行布局）
 final class HomeViewController: BaseViewController {
-
-    // MARK: - ViewModel
 
     private let viewModel = HomeViewModel()
     private var cancellables = Set<AnyCancellable>()
+    private var didApplyInitialSnapshot = false
 
-    // MARK: - UI
+    private let brandHeader = TabHubBrandHeaderView()
 
-    private lazy var tableView: UITableView = {
+    private let tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
         tv.backgroundColor = .fdBg
         tv.separatorStyle = .none
@@ -24,79 +22,12 @@ final class HomeViewController: BaseViewController {
         tv.sectionFooterHeight = 0
         tv.estimatedSectionHeaderHeight = 0
         tv.estimatedSectionFooterHeight = 0
-        tv.estimatedRowHeight = 300
+        tv.estimatedRowHeight = 200
         tv.rowHeight = UITableView.automaticDimension
-        tv.register(HomeHeroCell.self, forCellReuseIdentifier: HomeHeroCell.reuseID)
-        tv.register(HomeQuickActionsCell.self, forCellReuseIdentifier: HomeQuickActionsCell.reuseID)
-        tv.register(HomeTeamCardCell.self, forCellReuseIdentifier: HomeTeamCardCell.reuseID)
-        tv.register(HomeTaskCardCell.self, forCellReuseIdentifier: HomeTaskCardCell.reuseID)
-        tv.register(HomeServiceBannerCell.self, forCellReuseIdentifier: HomeServiceBannerCell.reuseID)
-        tv.register(HomeArticleCell.self, forCellReuseIdentifier: HomeArticleCell.reuseID)
-        tv.delegate = self
         return tv
     }()
 
-    private lazy var dataSource: UITableViewDiffableDataSource<HomeViewModel.HomeSection, HomeViewModel.HomeItem> = {
-        UITableViewDiffableDataSource<HomeViewModel.HomeSection, HomeViewModel.HomeItem>(tableView: tableView) { [weak self] tv, indexPath, item in
-            guard let self else { return UITableViewCell() }
-            switch item {
-            case .hero:
-                let cell = tv.dequeueReusableCell(withIdentifier: HomeHeroCell.reuseID, for: indexPath) as! HomeHeroCell
-                cell.configure(
-                    name: self.viewModel.userName,
-                    advisor: self.viewModel.advisor,
-                    daysLeft: self.viewModel.daysLeft,
-                    riskScore: self.viewModel.riskScore,
-                    riskLevel: self.viewModel.riskLevel,
-                    riskHint: self.viewModel.riskHint,
-                    metrics: self.viewModel.metrics
-                )
-                return cell
-            case .quickActions:
-                let cell = tv.dequeueReusableCell(withIdentifier: HomeQuickActionsCell.reuseID, for: indexPath) as! HomeQuickActionsCell
-                cell.configure(actions: self.viewModel.quickActions)
-                cell.onActionTapped = { [weak self] route in
-                    if route == "/messages" {
-                        self?.tabBarController?.selectedIndex = 3
-                    } else {
-                        Router.shared.push(route)
-                    }
-                }
-                return cell
-            case .teamMember(let idx):
-                let cell = tv.dequeueReusableCell(withIdentifier: HomeTeamCardCell.reuseID, for: indexPath) as! HomeTeamCardCell
-                cell.configure(member: self.viewModel.teamMembers[idx])
-                cell.onMessageTapped = { name in
-                    Router.shared.push("/messages", params: ["name": name])
-                }
-                return cell
-            case .taskCard:
-                let cell = tv.dequeueReusableCell(withIdentifier: HomeTaskCardCell.reuseID, for: indexPath) as! HomeTaskCardCell
-                cell.configure(tasks: self.viewModel.tasks)
-                cell.onTaskTapped = { _ in
-                    // TODO: toggle task completion when wired to real data
-                }
-                return cell
-            case .serviceBanner:
-                let cell = tv.dequeueReusableCell(withIdentifier: HomeServiceBannerCell.reuseID, for: indexPath) as! HomeServiceBannerCell
-                cell.configure(week: 5, totalWeeks: 12, daysLeft: self.viewModel.daysLeft)
-                cell.onTapped = {
-                    Router.shared.push("/services")
-                }
-                return cell
-            case .article(let idx):
-                let cell = tv.dequeueReusableCell(withIdentifier: HomeArticleCell.reuseID, for: indexPath) as! HomeArticleCell
-                let article = self.viewModel.articles[idx]
-                cell.configure(article: article, isLast: idx == self.viewModel.articles.count - 1)
-                cell.onTapped = {
-                    // TODO: navigate to article detail
-                }
-                return cell
-            }
-        }
-    }()
-
-    // MARK: - Lifecycle
+    private var dataSource: UITableViewDiffableDataSource<HomeViewModel.HomeSection, HomeViewModel.HomeItem>!
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -111,17 +42,100 @@ final class HomeViewController: BaseViewController {
 
     override func setupUI() {
         view.backgroundColor = .fdBg
+
+        brandHeader.configure(
+            title: "富德健康",
+            subtitle: "健康生命 · 美好生活",
+            titleColor: .fdPrimary
+        )
+
+        tableView.register(HomeBannerCarouselCell.self, forCellReuseIdentifier: HomeBannerCarouselCell.reuseID)
+        tableView.register(HomeQuickActionsCell.self, forCellReuseIdentifier: HomeQuickActionsCell.reuseID)
+        tableView.register(HomeMembershipPackagesCell.self, forCellReuseIdentifier: HomeMembershipPackagesCell.reuseID)
+        tableView.register(HomeTeamCardCell.self, forCellReuseIdentifier: HomeTeamCardCell.reuseID)
+        tableView.register(HomeTaskCardCell.self, forCellReuseIdentifier: HomeTaskCardCell.reuseID)
+        tableView.register(HomeArticleCell.self, forCellReuseIdentifier: HomeArticleCell.reuseID)
+
+        dataSource = UITableViewDiffableDataSource(tableView: tableView) { [weak self] tv, indexPath, item in
+            guard let self else { return UITableViewCell() }
+            return self.cell(for: item, tableView: tv, indexPath: indexPath)
+        }
+        dataSource.defaultRowAnimation = .none
+        tableView.dataSource = dataSource
+        tableView.delegate = self
+
+        dataSource.apply(viewModel.snapshot, animatingDifferences: false)
+        didApplyInitialSnapshot = true
+
+        view.addSubview(brandHeader)
         view.addSubview(tableView)
-        tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        brandHeader.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.leading.trailing.equalToSuperview()
+        }
+        tableView.snp.makeConstraints {
+            $0.top.equalTo(brandHeader.snp.bottom)
+            $0.leading.trailing.bottom.equalToSuperview()
+        }
     }
 
     override func bindViewModel() {
         viewModel.$snapshot
             .receive(on: DispatchQueue.main)
             .sink { [weak self] snapshot in
-                self?.dataSource.apply(snapshot, animatingDifferences: false)
+                guard let self, self.dataSource != nil else { return }
+                self.dataSource.apply(snapshot, animatingDifferences: false)
             }
             .store(in: &cancellables)
+    }
+
+    private func handleQuickRoute(_ route: String) {
+        if route == "/messages" {
+            tabBarController?.selectedIndex = 3
+        } else {
+            Router.shared.push(route)
+        }
+    }
+
+    private func cell(
+        for item: HomeViewModel.HomeItem,
+        tableView tv: UITableView,
+        indexPath: IndexPath
+    ) -> UITableViewCell {
+        switch item {
+        case .banner:
+            return tv.dequeueReusableCell(withIdentifier: HomeBannerCarouselCell.reuseID, for: indexPath)
+        case .quickActions:
+            let cell = tv.dequeueReusableCell(withIdentifier: HomeQuickActionsCell.reuseID, for: indexPath) as! HomeQuickActionsCell
+            cell.configure(actions: viewModel.quickActions)
+            cell.onActionTapped = { [weak self] route in self?.handleQuickRoute(route) }
+            return cell
+        case .membership:
+            let cell = tv.dequeueReusableCell(withIdentifier: HomeMembershipPackagesCell.reuseID, for: indexPath) as! HomeMembershipPackagesCell
+            cell.configure(packages: viewModel.membershipPackages)
+            cell.onPackageTapped = { id in
+                Router.shared.push("/services/pkg", params: ["id": id])
+            }
+            return cell
+        case .teamMember(let idx):
+            let cell = tv.dequeueReusableCell(withIdentifier: HomeTeamCardCell.reuseID, for: indexPath) as! HomeTeamCardCell
+            cell.configure(member: viewModel.teamMembers[idx])
+            cell.onMessageTapped = { name in
+                Router.shared.push("/messages", params: ["name": name])
+            }
+            return cell
+        case .taskCard:
+            let cell = tv.dequeueReusableCell(withIdentifier: HomeTaskCardCell.reuseID, for: indexPath) as! HomeTaskCardCell
+            cell.configure(tasks: viewModel.tasks)
+            cell.onTaskTapped = { _ in }
+            return cell
+        case .article(let idx):
+            let cell = tv.dequeueReusableCell(withIdentifier: HomeArticleCell.reuseID, for: indexPath) as! HomeArticleCell
+            let article = viewModel.articles[idx]
+            cell.configure(article: article, isLast: idx == viewModel.articles.count - 1)
+            cell.onTapped = {}
+            return cell
+        }
     }
 }
 
@@ -130,65 +144,74 @@ final class HomeViewController: BaseViewController {
 extension HomeViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        guard let s = HomeViewModel.HomeSection(rawValue: section) else { return 0 }
+        guard let s = sectionKind(section) else { return .leastNormalMagnitude }
         switch s {
-        case .hero, .quickActions, .serviceBanner:
-            return 0
-        case .team, .tasks, .articles:
+        case .membership, .team, .tasks, .articles:
             return 40
+        default:
+            return .leastNormalMagnitude
         }
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        guard let s = HomeViewModel.HomeSection(rawValue: section) else { return nil }
+        guard let s = sectionKind(section) else { return nil }
         switch s {
-        case .hero, .quickActions, .serviceBanner:
-            return nil
+        case .membership:
+            guard !viewModel.membershipPackages.isEmpty else { return nil }
+            let header = SectionTitleView(title: "会员健康服务", more: "查看更多 ›")
+            header.onMoreTapped = { Router.shared.push("/services/membership") }
+            return wrapHeader(header)
         case .team:
             let header = SectionTitleView(title: "我的富德健康管家团队", more: "服务剩余 \(viewModel.daysLeft) 天 ›")
-            header.onMoreTapped = { [weak self] in
-                // TODO: navigate to team detail
-            }
             return wrapHeader(header)
         case .tasks:
-            let tasks = viewModel.tasks
-            let doneCount = tasks.filter { $0.isDone }.count
-            let header = SectionTitleView(title: "今日健康任务", more: "已完成 \(doneCount) / \(tasks.count) · +10 分 ›")
+            let done = viewModel.tasks.filter(\.isDone).count
+            let header = SectionTitleView(
+                title: "今日健康任务",
+                more: "已完成 \(done) / \(viewModel.tasks.count) · +10 分 ›"
+            )
             return wrapHeader(header)
         case .articles:
             let header = SectionTitleView(title: "健康陪伴", more: "更多 ›")
-            header.onMoreTapped = {
-                // TODO: navigate to articles list
-            }
             return wrapHeader(header)
+        default:
+            return nil
         }
     }
 
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        guard let s = HomeViewModel.HomeSection(rawValue: section) else { return 0 }
+        guard let s = sectionKind(section) else { return .leastNormalMagnitude }
         switch s {
-        case .hero, .quickActions:
-            return 0
-        case .team, .tasks, .serviceBanner:
+        case .quickActions:
+            return 10
+        case .membership, .team, .tasks:
             return 20
-        case .articles:
-            return 0
+        default:
+            return .leastNormalMagnitude
         }
     }
 
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        guard sectionKind(section) != nil else { return nil }
         let v = UIView()
         v.backgroundColor = .clear
         return v
+    }
+
+    private func sectionKind(_ section: Int) -> HomeViewModel.HomeSection? {
+        guard dataSource != nil else { return nil }
+        let ids = dataSource.snapshot().sectionIdentifiers
+        guard section >= 0, section < ids.count else { return nil }
+        return ids[section]
     }
 
     private func wrapHeader(_ titleView: SectionTitleView) -> UIView {
         let container = UIView()
         container.backgroundColor = .clear
         container.addSubview(titleView)
-        titleView.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview()
+        titleView.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalToSuperview()
         }
         return container
     }

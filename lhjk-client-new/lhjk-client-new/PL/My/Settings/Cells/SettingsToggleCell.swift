@@ -2,7 +2,7 @@ import UIKit
 import SnapKit
 
 /// 设置页通用开关行 — title + subtitle + UISwitch
-/// 参考 funde-client: van-cell + van-switch
+/// 对齐 PrivacySettingsView.vue `.switch-row`：内边距 16，开关缩小至约 22pt 高度
 final class SettingsToggleCell: UIView {
 
     // MARK: - Model
@@ -17,14 +17,14 @@ final class SettingsToggleCell: UIView {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdBody
-        l.textColor = .fdText
+        l.font = .fdBodySemibold
+        l.textColor = .fdText2
         return l
     }()
 
     private let subtitleLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdCaption
+        l.font = .fdFont(ofSize: 11, weight: .regular)
         l.textColor = .fdSubtext
         l.numberOfLines = 0
         return l
@@ -33,6 +33,8 @@ final class SettingsToggleCell: UIView {
     private let toggle: UISwitch = {
         let s = UISwitch()
         s.onTintColor = .fdPrimary
+        // 对齐 Vue van-switch size="22"（系统 UISwitch 默认高约 31）
+        s.transform = CGAffineTransform(scaleX: 0.72, y: 0.72)
         return s
     }()
 
@@ -57,9 +59,7 @@ final class SettingsToggleCell: UIView {
         super.init(frame: .zero)
 
         titleLabel.text = model.title
-        titleLabel.font = .fdBodySemibold
         subtitleLabel.text = model.subtitle
-        subtitleLabel.font = .fdFont(ofSize: 11, weight: .regular)
         toggle.isOn = model.isOn
         divider.isHidden = !showDivider
 
@@ -82,27 +82,33 @@ final class SettingsToggleCell: UIView {
         toggle.setContentHuggingPriority(.required, for: .horizontal)
         toggle.setContentCompressionResistancePriority(.required, for: .horizontal)
 
+        // 预留缩放后开关宽度，避免文字顶到开关
         toggle.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-2)
+            make.trailing.equalToSuperview().inset(16)
             make.centerY.equalToSuperview()
         }
 
         titleLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(13)
-            make.leading.equalToSuperview()
+            make.top.equalToSuperview().offset(14)
+            make.leading.equalToSuperview().inset(16)
             make.trailing.lessThanOrEqualTo(toggle.snp.leading).offset(-12)
         }
 
         subtitleLabel.snp.makeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(2)
-            make.leading.equalToSuperview()
+            make.leading.equalToSuperview().inset(16)
             make.trailing.lessThanOrEqualTo(toggle.snp.leading).offset(-12)
-            make.bottom.equalToSuperview().offset(-13)
+            make.bottom.equalToSuperview().offset(-14)
         }
 
         divider.snp.makeConstraints { make in
-            make.leading.trailing.bottom.equalToSuperview()
-            make.height.equalTo(1)
+            make.leading.equalToSuperview().inset(16)
+            make.trailing.bottom.equalToSuperview()
+            make.height.equalTo(1 / UIScreen.main.scale)
+        }
+
+        snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(58)
         }
     }
 

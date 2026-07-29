@@ -4,12 +4,11 @@ import SnapKit
 /// 健康模块 Hub 页
 /// 参考 funde-client: HealthView.vue
 ///
-/// 布局: UITableView 4 sections
+/// 布局: 统一 `TabHubBrandHeaderView` + UITableView 4 sections
 ///   Section 0: HealthScoreCardCell
 ///   Section 1: HealthArchiveCardCell
 ///   Section 2: HealthVitalMetricsCell (内嵌 UICollectionView)
 ///   Section 3: HealthQuickEntriesCell
-///   tableHeaderView: 自定义 Topbar
 final class HealthViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate {
 
     // MARK: - Mock Data
@@ -47,6 +46,8 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
 
     // MARK: - UI
 
+    private let brandHeader = TabHubBrandHeaderView()
+
     private lazy var tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
         tv.backgroundColor = .fdBg
@@ -67,9 +68,6 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
-        if tableView.tableHeaderView == nil {
-            tableView.tableHeaderView = buildTableHeader().sizedForTableHeader(in: view)
-        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -79,48 +77,22 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
 
     override func setupUI() {
         view.backgroundColor = .fdBg
-        view.addSubview(tableView)
-        tableView.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom)
-        }
-    }
-
-    // MARK: - Table Header (Topbar)
-
-    private func buildTableHeader() -> UIView {
-        let header = UIView()
-        header.backgroundColor = .fdBg
-
-        let titleLbl = UILabel()
-        titleLbl.text = "我的健康"
-        titleLbl.font = .fdH2
-        titleLbl.textColor = .fdText
-
-        let subtitleLbl = UILabel()
-        subtitleLbl.text = "档案完整度 \(archiveProgress)% · \(riskLevel)"
-        subtitleLbl.font = .fdCaption
-        subtitleLbl.textColor = .fdSubtext
-
-        header.addSubview(titleLbl)
-        header.addSubview(subtitleLbl)
-        titleLbl.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(54)
-            make.leading.equalToSuperview().offset(18)
-        }
-        subtitleLbl.snp.makeConstraints { make in
-            make.top.equalTo(titleLbl.snp.bottom).offset(2)
-            make.leading.equalToSuperview().offset(18)
-            make.bottom.equalToSuperview().offset(-8)
-        }
-
-        let size = header.systemLayoutSizeFitting(
-            CGSize(width: view.bounds.width, height: UIView.layoutFittingCompressedSize.height),
-            withHorizontalFittingPriority: .required,
-            verticalFittingPriority: .fittingSizeLevel
+        brandHeader.configure(
+            title: "我的健康",
+            subtitle: "档案完整度 \(archiveProgress)% · \(riskLevel)",
+            titleColor: .fdText
         )
-        header.frame.size = size
-        return header
+        view.addSubview(brandHeader)
+        view.addSubview(tableView)
+        brandHeader.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.leading.trailing.equalToSuperview()
+        }
+        tableView.snp.makeConstraints {
+            $0.top.equalTo(brandHeader.snp.bottom)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom)
+        }
     }
 
     // MARK: - UITableViewDataSource

@@ -1,17 +1,20 @@
 import UIKit
+import SnapKit
 
-/// 关于我们页
-/// 参考 funde-client: prototype/src/views/me/settings/AboutSettingsView.vue
-/// PRD: 02_用户_我的设置_v1.0 §5.13
+/// 关于富德健康 — 对齐 PRD-213 / AboutSettingsView.vue / me-settings-about.page.yaml
 ///
-/// 居中 Logo + 品牌名 + slogan + 版本号
-/// + 功能卡片（版本检查 / 应用市场评分 / 客服电话）
-/// + 法律链接（用户协议 / 隐私政策 / 知情同意书）
-/// + 版权 + 备案信息
+/// 品牌 Hero + 信息卡（版本 / 评分 / 联系我们）+ 页脚版权与备案；不展示协议入口。
 final class AboutSettingsViewController: BaseViewController {
 
     private let scrollView = UIScrollView()
     private let contentView = UIView()
+    private let bgGradient = CAGradientLayer()
+    private var logoGradient: CAGradientLayer?
+
+    private var appVersionText: String {
+        let ver = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+        return "v\(ver)"
+    }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -19,240 +22,255 @@ final class AboutSettingsViewController: BaseViewController {
     }
 
     override func setupUI() {
-        title = "关于我们"
+        title = "关于富德健康"
         view.backgroundColor = .fdBg
 
+        bgGradient.colors = [
+            UIColor(hexString: "#FFF8F4").cgColor,
+            UIColor.fdBg.cgColor,
+            UIColor.fdBg.cgColor,
+        ]
+        bgGradient.locations = [0, 0.35, 1]
+        view.layer.insertSublayer(bgGradient, at: 0)
+
         scrollView.showsVerticalScrollIndicator = false
+        scrollView.backgroundColor = .clear
         view.addSubview(scrollView)
         scrollView.snp.makeConstraints { $0.edges.equalToSuperview() }
         scrollView.addSubview(contentView)
         contentView.snp.makeConstraints { $0.edges.width.equalToSuperview() }
 
-        // MARK: Logo + Brand
-
-        let logoView: UIView = {
-            let v = UIView()
-            let gradient = CAGradientLayer()
-            gradient.colors = [UIColor(hexString: "#FF7A50").cgColor, UIColor(hexString: "#FFAA80").cgColor]
-            gradient.startPoint = CGPoint(x: 0, y: 0); gradient.endPoint = CGPoint(x: 1, y: 1)
-            gradient.cornerRadius = 18
-            v.layer.insertSublayer(gradient, at: 0)
-            v.layer.cornerRadius = 18
-            v.clipsToBounds = true
-            let charLabel = UILabel()
-            charLabel.text = "富"
-            charLabel.font = .fdFont(ofSize: 30, weight: .heavy)
-            charLabel.textColor = .white
-            v.addSubview(charLabel)
-            charLabel.snp.makeConstraints { $0.center.equalToSuperview() }
-            v.layer.setValue(gradient, forKey: "logoGradient")
-            return v
-        }()
-
-        let nameLabel: UILabel = {
-            let l = UILabel()
-            l.text = "富德健康"
-            l.font = .fdH2
-            l.textColor = .fdText
-            l.textAlignment = .center
-            return l
-        }()
-
-        let sloganLabel: UILabel = {
-            let l = UILabel()
-            l.text = "健康生命 · 美好生活"
-            l.font = .fdCaption
-            l.textColor = .fdSubtext
-            l.textAlignment = .center
-            return l
-        }()
-
-        let versionLabel: UILabel = {
-            let l = UILabel()
-            l.text = "当前版本 v 2.6.1"
-            l.font = .fdCaption
-            l.textColor = .fdSubtext
-            l.textAlignment = .center
-            l.isUserInteractionEnabled = true
-            l.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleVersionTap)))
-            return l
-        }()
-
-        [logoView, nameLabel, sloganLabel, versionLabel].forEach(contentView.addSubview)
-        logoView.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(28)
-            make.centerX.equalToSuperview()
-            make.size.equalTo(68)
-        }
-        nameLabel.snp.makeConstraints { make in
-            make.top.equalTo(logoView.snp.bottom).offset(12)
-            make.centerX.equalToSuperview()
-        }
-        sloganLabel.snp.makeConstraints { make in
-            make.top.equalTo(nameLabel.snp.bottom).offset(4)
-            make.centerX.equalToSuperview()
-        }
-        versionLabel.snp.makeConstraints { make in
-            make.top.equalTo(sloganLabel.snp.bottom).offset(6)
-            make.centerX.equalToSuperview()
+        let brand = buildBrandSection()
+        contentView.addSubview(brand)
+        brand.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(28)
+            $0.leading.trailing.equalToSuperview()
         }
 
-        // MARK: Card 1 — Features
-
-        let card1 = buildCard()
-        let stack1 = UIStackView(); stack1.axis = .vertical
-        card1.addSubview(stack1); stack1.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-        let featureItems: [(label: String, value: String?, showArrow: Bool, action: Selector)] = [
-            ("当前版本", "v 2.6.1", true, #selector(handleVersionTap)),
-            ("去应用市场评分", nil, true, #selector(handleRatingTap)),
-            ("联系我们", "400-888-6520", false, #selector(noop)),
-        ]
-        for (i, item) in featureItems.enumerated() {
-            stack1.addArrangedSubview(makeLinkRow(
-                label: item.label, value: item.value, showArrow: item.showArrow,
-                showDivider: i < featureItems.count - 1, action: item.action
-            ))
+        let card = buildInfoCard()
+        contentView.addSubview(card)
+        card.snp.makeConstraints {
+            $0.top.equalTo(brand.snp.bottom).offset(22)
+            $0.leading.trailing.equalToSuperview().inset(16)
         }
 
-        contentView.addSubview(card1)
-        card1.snp.makeConstraints { make in
-            make.top.equalTo(versionLabel.snp.bottom).offset(22)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-
-        // MARK: Card 2 — Legal Links
-
-        let card2 = buildCard()
-        let stack2 = UIStackView(); stack2.axis = .vertical
-        card2.addSubview(stack2); stack2.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-        let legalItems: [(label: String, action: Selector)] = [
-            ("用户服务协议", #selector(handleUserAgreementTap)),
-            ("隐私政策", #selector(handlePrivacyPolicyTap)),
-            ("健康管理服务知情同意书", #selector(handleConsentTap)),
-        ]
-        for (i, item) in legalItems.enumerated() {
-            stack2.addArrangedSubview(makeLinkRow(
-                label: item.label, value: nil, showArrow: true,
-                showDivider: i < legalItems.count - 1, action: item.action
-            ))
-        }
-
-        contentView.addSubview(card2)
-        card2.snp.makeConstraints { make in
-            make.top.equalTo(card1.snp.bottom).offset(14)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-
-        // MARK: Card 3 — ICP + Copyright
-
-        let card3 = buildCard()
-        let stack3 = UIStackView(); stack3.axis = .vertical
-        card3.addSubview(stack3); stack3.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-        let icpRow = makeLinkRow(label: "备案信息", value: "粤ICP备示例号", showArrow: false, showDivider: true, action: #selector(noop))
-        stack3.addArrangedSubview(icpRow)
-
-        let copyrightRow = makeLinkRow(label: "版权信息", value: "Copyright © 2026 富德健康", showArrow: false, showDivider: false, action: #selector(noop))
-        stack3.addArrangedSubview(copyrightRow)
-
-        contentView.addSubview(card3)
-        card3.snp.makeConstraints { make in
-            make.top.equalTo(card2.snp.bottom).offset(14)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-32)
+        let footer = buildFooter()
+        contentView.addSubview(footer)
+        footer.snp.makeConstraints {
+            $0.top.equalTo(card.snp.bottom).offset(28)
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalToSuperview().offset(-32)
         }
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        for sv in contentView.subviews {
-            if let gradient = sv.layer.value(forKey: "logoGradient") as? CAGradientLayer {
-                gradient.frame = sv.bounds
-            }
+        bgGradient.frame = view.bounds
+        if let logo = contentView.viewWithTag(901) {
+            logoGradient?.frame = logo.bounds
         }
     }
 
-    // MARK: - Builders
+    // MARK: - Brand
 
-    private func buildCard() -> UIView {
+    private func buildBrandSection() -> UIView {
+        let wrap = UIView()
+
+        let logo = UIView()
+        logo.tag = 901
+        logo.layer.cornerRadius = 18
+        logo.clipsToBounds = true
+        let gradient = CAGradientLayer()
+        gradient.colors = [UIColor.fdPrimary.cgColor, UIColor(hexString: "#FFAA80").cgColor]
+        gradient.startPoint = CGPoint(x: 0, y: 0)
+        gradient.endPoint = CGPoint(x: 1, y: 1)
+        logo.layer.insertSublayer(gradient, at: 0)
+        logoGradient = gradient
+
+        let charLabel = UILabel()
+        charLabel.text = "富"
+        charLabel.font = .fdFont(ofSize: 30, weight: .heavy)
+        charLabel.textColor = .white
+        logo.addSubview(charLabel)
+        charLabel.snp.makeConstraints { $0.center.equalToSuperview() }
+
+        let nameLabel = UILabel()
+        nameLabel.text = "富德健康"
+        nameLabel.font = .fdFont(ofSize: 20, weight: .heavy)
+        nameLabel.textColor = .fdText
+        nameLabel.textAlignment = .center
+
+        let sloganLabel = UILabel()
+        sloganLabel.text = "健康生命 · 美好生活"
+        sloganLabel.font = .fdCaption
+        sloganLabel.textColor = .fdSubtext
+        sloganLabel.textAlignment = .center
+
+        [logo, nameLabel, sloganLabel].forEach(wrap.addSubview)
+        logo.snp.makeConstraints {
+            $0.top.equalToSuperview()
+            $0.centerX.equalToSuperview()
+            $0.size.equalTo(68)
+        }
+        nameLabel.snp.makeConstraints {
+            $0.top.equalTo(logo.snp.bottom).offset(12)
+            $0.centerX.equalToSuperview()
+        }
+        sloganLabel.snp.makeConstraints {
+            $0.top.equalTo(nameLabel.snp.bottom).offset(6)
+            $0.centerX.equalToSuperview()
+            $0.bottom.equalToSuperview()
+        }
+        return wrap
+    }
+
+    // MARK: - Info card
+
+    private func buildInfoCard() -> UIView {
         let card = UIView()
         card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 18
+        card.layer.cornerRadius = 12
         card.layer.shadowColor = UIColor.black.cgColor
         card.layer.shadowOffset = CGSize(width: 0, height: 1)
         card.layer.shadowRadius = 6
         card.layer.shadowOpacity = 0.03
+        card.clipsToBounds = false
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        card.addSubview(stack)
+        stack.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        stack.addArrangedSubview(makeRow(
+            label: "当前版本",
+            value: appVersionText,
+            showArrow: true,
+            showDivider: true,
+            tappable: true,
+            action: #selector(handleVersionTap)
+        ))
+        stack.addArrangedSubview(makeRow(
+            label: "去应用市场评分",
+            value: "去评分",
+            showArrow: true,
+            showDivider: true,
+            tappable: true,
+            action: #selector(handleRatingTap)
+        ))
+        stack.addArrangedSubview(makeRow(
+            label: "联系我们",
+            value: "400-888-6520",
+            showArrow: false,
+            showDivider: false,
+            tappable: false,
+            action: nil
+        ))
+
         return card
     }
 
-    private func makeLinkRow(label: String, value: String?, showArrow: Bool, showDivider: Bool, action: Selector) -> UIView {
-        let row = UIView(); row.isUserInteractionEnabled = true
-        row.addGestureRecognizer(UITapGestureRecognizer(target: self, action: action))
+    private func makeRow(
+        label: String,
+        value: String,
+        showArrow: Bool,
+        showDivider: Bool,
+        tappable: Bool,
+        action: Selector?
+    ) -> UIView {
+        let row = UIControl()
+        if let action, tappable {
+            row.addTarget(self, action: action, for: .touchUpInside)
+        }
 
         let titleLbl = UILabel()
         titleLbl.text = label
-        titleLbl.font = .fdBody
-        titleLbl.textColor = .fdText
+        titleLbl.font = .fdBodySemibold
+        titleLbl.textColor = .fdText2
 
-        row.addSubview(titleLbl)
-        titleLbl.snp.makeConstraints { $0.leading.equalToSuperview().inset(16); $0.centerY.equalToSuperview() }
+        let valueLbl = UILabel()
+        valueLbl.text = value
+        valueLbl.font = .fdCaption
+        valueLbl.textColor = .fdSubtext
+        valueLbl.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        if let value = value {
-            let valueLbl = UILabel()
-            valueLbl.text = value
-            valueLbl.font = .fdCaption
-            valueLbl.textColor = .fdSubtext
-            row.addSubview(valueLbl)
-            valueLbl.snp.makeConstraints { $0.trailing.equalToSuperview().offset(showArrow ? -40 : -16); $0.centerY.equalToSuperview() }
-            titleLbl.snp.makeConstraints { $0.trailing.lessThanOrEqualTo(valueLbl.snp.leading).offset(-8) }
-        }
+        let side = UIStackView()
+        side.axis = .horizontal
+        side.alignment = .center
+        side.spacing = 4
+        side.addArrangedSubview(valueLbl)
 
         if showArrow {
             let arrow = UIImageView(image: UIImage(systemName: "chevron.right"))
-            arrow.tintColor = .fdMuted; arrow.contentMode = .scaleAspectFit
-            row.addSubview(arrow)
-            arrow.snp.makeConstraints { $0.trailing.equalToSuperview().offset(-16); $0.centerY.equalToSuperview(); $0.size.equalTo(16) }
+            arrow.tintColor = .fdMuted
+            arrow.contentMode = .scaleAspectFit
+            arrow.snp.makeConstraints { $0.size.equalTo(16) }
+            side.addArrangedSubview(arrow)
         }
 
-        if showDivider {
-            let divider = UIView(); divider.backgroundColor = .fdBorder
-            row.addSubview(divider)
-            divider.snp.makeConstraints { $0.leading.equalTo(titleLbl); $0.trailing.bottom.equalToSuperview(); $0.height.equalTo(1) }
+        row.addSubview(titleLbl)
+        row.addSubview(side)
+        titleLbl.snp.makeConstraints {
+            $0.leading.equalToSuperview().inset(16)
+            $0.centerY.equalToSuperview()
+            $0.trailing.lessThanOrEqualTo(side.snp.leading).offset(-12)
         }
-        row.snp.makeConstraints { $0.height.equalTo(48) }
+        side.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(16)
+            $0.centerY.equalToSuperview()
+        }
+        row.snp.makeConstraints { $0.height.greaterThanOrEqualTo(52) }
+
+        if showDivider {
+            let divider = UIView()
+            divider.backgroundColor = .fdBorder
+            row.addSubview(divider)
+            divider.snp.makeConstraints {
+                $0.leading.equalToSuperview().inset(16)
+                $0.trailing.bottom.equalToSuperview()
+                $0.height.equalTo(1 / UIScreen.main.scale)
+            }
+        }
         return row
     }
 
-    // MARK: - Actions
+    // MARK: - Footer
 
-    @objc private func noop() {}
+    private func buildFooter() -> UIView {
+        let wrap = UIView()
+
+        let copyright = UILabel()
+        copyright.text = "Copyright © 2026 富德健康"
+        copyright.font = .fdMicro
+        copyright.textColor = .fdMuted
+        copyright.textAlignment = .center
+
+        let icp = UILabel()
+        icp.text = "粤ICP备xxxxx号"
+        icp.font = .fdMicro
+        icp.textColor = .fdMuted
+        icp.textAlignment = .center
+
+        let stack = UIStackView(arrangedSubviews: [copyright, icp])
+        stack.axis = .vertical
+        stack.spacing = 2
+        stack.alignment = .center
+        wrap.addSubview(stack)
+        stack.snp.makeConstraints {
+            $0.top.bottom.equalToSuperview()
+            $0.centerX.equalToSuperview()
+            $0.leading.trailing.equalToSuperview()
+        }
+        return wrap
+    }
+
+    // MARK: - Actions
 
     @objc private func handleVersionTap() {
         showToast("当前已经是最新版本")
     }
 
     @objc private func handleRatingTap() {
-        showToast("功能开发中")
-    }
-
-    @objc private func handleUserAgreementTap() {
-        showDialog(title: "用户服务协议", message: "这里是《用户服务协议》的完整内容。\n\n在原型阶段，此处展示协议摘要。\n\n正式上线前需替换为法务/合规审核后的完整文本。")
-    }
-
-    @objc private func handlePrivacyPolicyTap() {
-        showDialog(title: "隐私政策", message: "这里是《隐私政策》的完整内容。\n\n在原型阶段，此处展示协议摘要。\n\n正式上线前需替换为法务/合规审核后的完整文本。")
-    }
-
-    @objc private func handleConsentTap() {
-        showDialog(title: "健康管理服务知情同意书", message: "这里是《健康管理服务知情同意书》的完整内容。\n\n在原型阶段，此处展示协议摘要。\n\n正式上线前需替换为法务/合规审核后的完整文本。")
-    }
-
-    private func showDialog(title: String, message: String) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "关闭", style: .default))
-        present(alert, animated: true)
+        showToast("暂无法打开应用市场")
     }
 
     private func showToast(_ message: String) {

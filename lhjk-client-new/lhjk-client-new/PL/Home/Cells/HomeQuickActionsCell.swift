@@ -58,7 +58,7 @@ final class HomeQuickActionsCell: UITableViewCell {
         cardView.addSubview(stackView)
 
         cardView.snp.makeConstraints { make in
-            make.top.equalToSuperview()
+            make.top.equalToSuperview().offset(10)
             make.leading.trailing.equalToSuperview().inset(16)
             make.bottom.equalToSuperview()
         }

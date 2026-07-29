@@ -14,22 +14,14 @@ final class MessagesViewController: BaseViewController {
 
     // MARK: - UI
 
-    private lazy var topbar: UIStackView = {
-        let title = UILabel()
-        title.text = "消息"
-        title.font = .fdH3
-        title.textColor = .fdText
-
-        let subtitle = UILabel()
-        subtitle.text = "您的健管团队 7×24 在线"
-        subtitle.font = .fdCaption
-        subtitle.textColor = .fdSubtext
-
-        let stack = UIStackView(arrangedSubviews: [title, subtitle])
-        stack.axis = .vertical
-        stack.alignment = .leading
-        stack.spacing = 2
-        return stack
+    private let brandHeader: TabHubBrandHeaderView = {
+        let v = TabHubBrandHeaderView()
+        v.configure(
+            title: "消息",
+            subtitle: "您的健管团队 7×24 在线",
+            titleColor: .fdText
+        )
+        return v
     }()
 
     private lazy var segmentControl: UISegmentedControl = {
@@ -55,15 +47,15 @@ final class MessagesViewController: BaseViewController {
     override func setupUI() {
         view.backgroundColor = .fdBg
 
-        [topbar, segmentControl, containerView].forEach(view.addSubview)
+        [brandHeader, segmentControl, containerView].forEach(view.addSubview)
 
-        topbar.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
-            make.leading.trailing.equalToSuperview().inset(16)
+        brandHeader.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.equalToSuperview()
         }
 
         segmentControl.snp.makeConstraints { make in
-            make.top.equalTo(topbar.snp.bottom).offset(12)
+            make.top.equalTo(brandHeader.snp.bottom).offset(12)
             make.leading.trailing.equalToSuperview().inset(16)
         }
 

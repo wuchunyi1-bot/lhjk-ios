@@ -271,6 +271,11 @@
 		A5B1FB303009E3350039B16C /* MapCoordinateConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB2F3009E3350039B16C /* MapCoordinateConverter.swift */; };
 		A5B1FB33300A022F0039B16C /* ShoppingCartModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB31300A022F0039B16C /* ShoppingCartModels.swift */; };
 		A5B1FB34300A022F0039B16C /* ShoppingCartService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB32300A022F0039B16C /* ShoppingCartService.swift */; };
+		A5BD9DE430199326008C44FC /* TabHubBrandHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DE230199326008C44FC /* TabHubBrandHeaderView.swift */; };
+		A5BD9DEA3019A316008C44FC /* OKOKV3PacketParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DE73019A316008C44FC /* OKOKV3PacketParser.swift */; };
+		A5BD9DEB3019A316008C44FC /* OKOKBroadcastScaleHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DE63019A316008C44FC /* OKOKBroadcastScaleHandler.swift */; };
+		A5BD9DEC3019A316008C44FC /* BLEDeviceHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DE53019A316008C44FC /* BLEDeviceHandler.swift */; };
+		A5BD9DEE3019A33E008C44FC /* ScaleBleSessionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DED3019A33E008C44FC /* ScaleBleSessionService.swift */; };
 		A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */; };
 		A5C71AEB3018592B006EA79C /* VoucherBindEntryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AEA3018592B006EA79C /* VoucherBindEntryCell.swift */; };
 		A5C71AEC3018592B006EA79C /* BenefitCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AE83018592B006EA79C /* BenefitCardCell.swift */; };
@@ -284,6 +289,9 @@
 		A5C71B0030188F8E006EA79C /* AgreementCenterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AFA30188F8E006EA79C /* AgreementCenterViewController.swift */; };
 		A5C71B0130188F8E006EA79C /* SettingsHubItemRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AFD30188F8E006EA79C /* SettingsHubItemRow.swift */; };
 		A5C71B033018917A006EA79C /* WechatAuthorizationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71B023018917A006EA79C /* WechatAuthorizationViewController.swift */; };
+		A5C71B073018BAFC006EA79C /* HomeMembershipPackagesCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71B063018BAFC006EA79C /* HomeMembershipPackagesCell.swift */; };
+		A5C71B083018BAFC006EA79C /* HomeBannerCarouselCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71B043018BAFC006EA79C /* HomeBannerCarouselCell.swift */; };
+		A5C71B093018BAFC006EA79C /* HomeBrandHeaderCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71B053018BAFC006EA79C /* HomeBrandHeaderCell.swift */; };
 		A5CF597930077AA40067A4DE /* ServiceListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597830077AA40067A4DE /* ServiceListViewModel.swift */; };
 		A5CF597A30077AA40067A4DE /* HealthMallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597730077AA40067A4DE /* HealthMallViewModel.swift */; };
 		A5CF597C30077C6A0067A4DE /* RetailCategoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597B30077C6A0067A4DE /* RetailCategoryService.swift */; };
@@ -574,6 +582,11 @@
 		A5B1FB2F3009E3350039B16C /* MapCoordinateConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapCoordinateConverter.swift; sourceTree = "<group>"; };
 		A5B1FB31300A022F0039B16C /* ShoppingCartModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShoppingCartModels.swift; path = BLL/Service/ShoppingCartModels.swift; sourceTree = "<group>"; };
 		A5B1FB32300A022F0039B16C /* ShoppingCartService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShoppingCartService.swift; path = BLL/Service/ShoppingCartService.swift; sourceTree = "<group>"; };
+		A5BD9DE230199326008C44FC /* TabHubBrandHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabHubBrandHeaderView.swift; sourceTree = "<group>"; };
+		A5BD9DE53019A316008C44FC /* BLEDeviceHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BLEDeviceHandler.swift; path = DAL/Bluetooth/BLEDeviceHandler.swift; sourceTree = "<group>"; };
+		A5BD9DE63019A316008C44FC /* OKOKBroadcastScaleHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OKOKBroadcastScaleHandler.swift; sourceTree = "<group>"; };
+		A5BD9DE73019A316008C44FC /* OKOKV3PacketParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OKOKV3PacketParser.swift; sourceTree = "<group>"; };
+		A5BD9DED3019A33E008C44FC /* ScaleBleSessionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScaleBleSessionService.swift; path = BLL/Health/ScaleBleSessionService.swift; sourceTree = "<group>"; };
 		A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIFont+Funde.swift"; sourceTree = "<group>"; };
 		A5C71AE83018592B006EA79C /* BenefitCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenefitCardCell.swift; sourceTree = "<group>"; };
 		A5C71AE93018592B006EA79C /* CouponCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CouponCardCell.swift; sourceTree = "<group>"; };
@@ -587,6 +600,9 @@
 		A5C71AFB30188F8E006EA79C /* AgreementDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgreementDetailViewController.swift; sourceTree = "<group>"; };
 		A5C71AFD30188F8E006EA79C /* SettingsHubItemRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsHubItemRow.swift; sourceTree = "<group>"; };
 		A5C71B023018917A006EA79C /* WechatAuthorizationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WechatAuthorizationViewController.swift; sourceTree = "<group>"; };
+		A5C71B043018BAFC006EA79C /* HomeBannerCarouselCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeBannerCarouselCell.swift; sourceTree = "<group>"; };
+		A5C71B053018BAFC006EA79C /* HomeBrandHeaderCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeBrandHeaderCell.swift; sourceTree = "<group>"; };
+		A5C71B063018BAFC006EA79C /* HomeMembershipPackagesCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeMembershipPackagesCell.swift; sourceTree = "<group>"; };
 		A5CF597730077AA40067A4DE /* HealthMallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthMallViewModel.swift; sourceTree = "<group>"; };
 		A5CF597830077AA40067A4DE /* ServiceListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceListViewModel.swift; sourceTree = "<group>"; };
 		A5CF597B30077C6A0067A4DE /* RetailCategoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RetailCategoryService.swift; path = BLL/Service/RetailCategoryService.swift; sourceTree = "<group>"; };
@@ -650,6 +666,8 @@
 		33AD0B9BEA61617FD7371544 /* Bluetooth */ = {
 			isa = PBXGroup;
 			children = (
+				A5BD9DE53019A316008C44FC /* BLEDeviceHandler.swift */,
+				A5BD9DE93019A316008C44FC /* Devices */,
 				5CE8E0C75DF62E92DC4A2681 /* BluetoothManager.swift */,
 				B6373F937CC9DA144A80873C /* BluetoothModels.swift */,
 			);
@@ -659,6 +677,7 @@
 		75BC1DDC53A99376450DD2BB /* Common */ = {
 			isa = PBXGroup;
 			children = (
+				A5BD9DE330199326008C44FC /* Components */,
 				A528D7B030078E1C005B0CA7 /* H5Config.swift */,
 				A5A6F5392FFF7E100065C921 /* DebugLogger.swift */,
 				A5917D052FDFC8EF00878961 /* Extensions */,
@@ -979,6 +998,9 @@
 		A590FC492FEA91170056EF52 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
+				A5C71B043018BAFC006EA79C /* HomeBannerCarouselCell.swift */,
+				A5C71B053018BAFC006EA79C /* HomeBrandHeaderCell.swift */,
+				A5C71B063018BAFC006EA79C /* HomeMembershipPackagesCell.swift */,
 				A590FC432FEA91170056EF52 /* HomeArticleCell.swift */,
 				A590FC442FEA91170056EF52 /* HomeHeroCell.swift */,
 				A590FC452FEA91170056EF52 /* HomeQuickActionsCell.swift */,
@@ -1796,6 +1818,33 @@
 			path = InstitutionSelect;
 			sourceTree = "<group>";
 		};
+		A5BD9DE330199326008C44FC /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A5BD9DE230199326008C44FC /* TabHubBrandHeaderView.swift */,
+			);
+			name = Components;
+			path = Other/Common/Components;
+			sourceTree = "<group>";
+		};
+		A5BD9DE83019A316008C44FC /* OKOK */ = {
+			isa = PBXGroup;
+			children = (
+				A5BD9DE63019A316008C44FC /* OKOKBroadcastScaleHandler.swift */,
+				A5BD9DE73019A316008C44FC /* OKOKV3PacketParser.swift */,
+			);
+			path = OKOK;
+			sourceTree = "<group>";
+		};
+		A5BD9DE93019A316008C44FC /* Devices */ = {
+			isa = PBXGroup;
+			children = (
+				A5BD9DE83019A316008C44FC /* OKOK */,
+			);
+			name = Devices;
+			path = DAL/Bluetooth/Devices;
+			sourceTree = "<group>";
+		};
 		A5BFCA372FE38EF1008DA1DF /* UIFont */ = {
 			isa = PBXGroup;
 			children = (
@@ -1862,6 +1911,7 @@
 		B64D5D28AFB9110FDD54A8D6 /* Health */ = {
 			isa = PBXGroup;
 			children = (
+				A5BD9DED3019A33E008C44FC /* ScaleBleSessionService.swift */,
 				C585503B59B93311DEC6A839 /* HealthRoutes.swift */,
 			);
 			name = Health;
@@ -2390,6 +2440,7 @@
 				A590FCED2FEA91170056EF52 /* RiskBarView.swift in Sources */,
 				A590FCEE2FEA91170056EF52 /* VerifyCodeButton.swift in Sources */,
 				A590FCF02FEA91170056EF52 /* DietPlanViewController.swift in Sources */,
+				A5BD9DE430199326008C44FC /* TabHubBrandHeaderView.swift in Sources */,
 				A5A6F53A2FFF7E100065C921 /* DebugLogger.swift in Sources */,
 				A590FCF22FEA91170056EF52 /* PhoneBindingView.swift in Sources */,
 				A590FCF42FEA91170056EF52 /* PolicyViewController.swift in Sources */,
@@ -2436,6 +2487,9 @@
 				A56120CD3010A31C00505C32 /* OrderConfirmComponents.swift in Sources */,
 				A56120CE3010A31C00505C32 /* OrderListViewController.swift in Sources */,
 				A56120CF3010A31C00505C32 /* OrderConfirmViewController.swift in Sources */,
+				A5C71B073018BAFC006EA79C /* HomeMembershipPackagesCell.swift in Sources */,
+				A5C71B083018BAFC006EA79C /* HomeBannerCarouselCell.swift in Sources */,
+				A5C71B093018BAFC006EA79C /* HomeBrandHeaderCell.swift in Sources */,
 				8E749A7845EBA8C07946E821 /* Router.swift in Sources */,
 				05433145BBE114CF0C1DC08A /* DatabaseManager.swift in Sources */,
 				31C52A8BD36FA64D4C32B098 /* UserDefaultsManager.swift in Sources */,
@@ -2493,8 +2547,12 @@
 				A5A6F5752FFF8EA30065C921 /* CategoryNavCell.swift in Sources */,
 				A5A6F5082FFF7BBD0065C921 /* MealAnalysisCell.swift in Sources */,
 				A53EFC133008E2D700ED9E5A /* MallProductGridCell.swift in Sources */,
+				A5BD9DEA3019A316008C44FC /* OKOKV3PacketParser.swift in Sources */,
+				A5BD9DEB3019A316008C44FC /* OKOKBroadcastScaleHandler.swift in Sources */,
+				A5BD9DEC3019A316008C44FC /* BLEDeviceHandler.swift in Sources */,
 				A5A6F5092FFF7BBD0065C921 /* VideoBubbleCell.swift in Sources */,
 				A5A6F50A2FFF7BBD0065C921 /* FileBubbleCell.swift in Sources */,
+				A5BD9DEE3019A33E008C44FC /* ScaleBleSessionService.swift in Sources */,
 				A5A6F50B2FFF7BBD0065C921 /* ChatViewModel.swift in Sources */,
 				A5A6F56D2FFF8E880065C921 /* MallProductCell.swift in Sources */,
 				A514288B3011AEFB00770A5E /* OrderNavigationCoordinator.swift in Sources */,
