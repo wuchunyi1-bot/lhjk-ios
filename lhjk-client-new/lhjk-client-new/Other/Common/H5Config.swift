@@ -207,7 +207,8 @@ enum H5Environment: String {
     var baseURL: URL {
         switch self {
         case .development:
-            return URL(string: "https://h5-dev.lianhaojiankang.com")!
+//            return URL(string: "https://h5-dev.lianhaojiankang.com")!
+            return URL(string: "http://192.168.15.86:5181")! //跟H5连调
         case .staging:
             return URL(string: "https://staging-h5.lhjk.com")!
         case .production:

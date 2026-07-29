@@ -42,3 +42,12 @@ struct BLEAdvertisementEvent {
         advertisementData[CBAdvertisementDataLocalNameKey] as? String ?? name
     }
 }
+
+// MARK: - Debug helpers
+
+extension Data {
+    /// 调试用十六进制（大写，空格分隔）
+    var bleHexString: String {
+        map { String(format: "%02X", $0) }.joined(separator: " ")
+    }
+}

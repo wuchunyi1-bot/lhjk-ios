@@ -35,6 +35,9 @@ enum HealthRoutes {
         r.register(path: "/health/assessment/report") { _ in HealthReportViewController() }
         r.register(path: "/health/assessment/risk") { _ in PlaceholderViewController(title: "风险评估") }
 
+        // OKOK 广播体脂秤原生测量（不连 GATT）
+        r.register(path: "/health/scale/measure") { _ in ScaleBroadcastMeasureViewController() }
+
         registerAllMetricH5Routes(r)
     }
 

@@ -28,6 +28,7 @@ final class OKOKBroadcastScaleHandler: BLEDeviceHandler {
         self.bluetooth = bluetooth
         isRunning = true
         lastEmittedLockKey = nil
+        print("[OKOK-DAL] handler start — subscribe ads + scan allowDuplicates")
 
         bluetooth.advertisementPublisher
             .receive(on: DispatchQueue.global(qos: .userInitiated))
@@ -40,6 +41,8 @@ final class OKOKBroadcastScaleHandler: BLEDeviceHandler {
     }
 
     func stop() {
+        guard isRunning || bluetooth != nil || !cancellables.isEmpty else { return }
+        print("[OKOK-DAL] handler stop")
         isRunning = false
         cancellables.removeAll()
         bluetooth?.stopScan()
@@ -50,15 +53,29 @@ final class OKOKBroadcastScaleHandler: BLEDeviceHandler {
     // MARK: - Private
 
     private func handleAdvertisement(_ event: BLEAdvertisementEvent) {
-        guard isRunning, let raw = event.manufacturerData else { return }
-        guard let packet = OKOKV3PacketParser.parse(manufacturerData: raw) else { return }
+        guard isRunning else { return }
+        guard let raw = event.manufacturerData else { return }
+
+        guard let packet = OKOKV3PacketParser.parse(manufacturerData: raw) else {
+            // 有厂商数据但非 OKOK C0 帧：便于对照周边设备
+            print(
+                "[OKOK-DAL] skip non-OKOK mfg name=\(event.localName ?? "-") " +
+                    "rssi=\(event.rssi) hex=[\(raw.bleHexString)]"
+            )
+            return
+        }
 
         if packet.isLocked {
             let key = "\(packet.macString)|\(packet.serial)|\(packet.weightRaw)"
-            if key == lastEmittedLockKey { return }
+            if key == lastEmittedLockKey {
+                print("[OKOK-DAL] locked duplicate ignored key=\(key)")
+                return
+            }
             lastEmittedLockKey = key
+            print("[OKOK-DAL] LOCKED \(packet.debugDescription) rawMfg=[\(raw.bleHexString)]")
             eventPublisher.send(.locked(packet))
         } else {
+            print("[OKOK-DAL] realtime \(packet.debugDescription) rssi=\(event.rssi)")
             eventPublisher.send(.realtime(packet))
         }
     }

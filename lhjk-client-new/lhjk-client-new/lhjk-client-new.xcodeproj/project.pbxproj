@@ -276,6 +276,10 @@
 		A5BD9DEB3019A316008C44FC /* OKOKBroadcastScaleHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DE63019A316008C44FC /* OKOKBroadcastScaleHandler.swift */; };
 		A5BD9DEC3019A316008C44FC /* BLEDeviceHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DE53019A316008C44FC /* BLEDeviceHandler.swift */; };
 		A5BD9DEE3019A33E008C44FC /* ScaleBleSessionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DED3019A33E008C44FC /* ScaleBleSessionService.swift */; };
+		A5BD9DF23019D0C6008C44FC /* FundeNativeBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DEF3019D0C6008C44FC /* FundeNativeBridge.swift */; };
+		A5BD9DF33019D0C6008C44FC /* WeakScriptMessageHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DF03019D0C6008C44FC /* WeakScriptMessageHandler.swift */; };
+		A5BD9DF83019D5B4008C44FC /* ScaleBroadcastMeasureViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DF43019D5B4008C44FC /* ScaleBroadcastMeasureViewModel.swift */; };
+		A5BD9DF93019D5B4008C44FC /* ScaleBroadcastMeasureViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DF63019D5B4008C44FC /* ScaleBroadcastMeasureViewController.swift */; };
 		A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */; };
 		A5C71AEB3018592B006EA79C /* VoucherBindEntryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AEA3018592B006EA79C /* VoucherBindEntryCell.swift */; };
 		A5C71AEC3018592B006EA79C /* BenefitCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AE83018592B006EA79C /* BenefitCardCell.swift */; };
@@ -587,6 +591,10 @@
 		A5BD9DE63019A316008C44FC /* OKOKBroadcastScaleHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OKOKBroadcastScaleHandler.swift; sourceTree = "<group>"; };
 		A5BD9DE73019A316008C44FC /* OKOKV3PacketParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OKOKV3PacketParser.swift; sourceTree = "<group>"; };
 		A5BD9DED3019A33E008C44FC /* ScaleBleSessionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScaleBleSessionService.swift; path = BLL/Health/ScaleBleSessionService.swift; sourceTree = "<group>"; };
+		A5BD9DEF3019D0C6008C44FC /* FundeNativeBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FundeNativeBridge.swift; sourceTree = "<group>"; };
+		A5BD9DF03019D0C6008C44FC /* WeakScriptMessageHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeakScriptMessageHandler.swift; sourceTree = "<group>"; };
+		A5BD9DF43019D5B4008C44FC /* ScaleBroadcastMeasureViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleBroadcastMeasureViewModel.swift; sourceTree = "<group>"; };
+		A5BD9DF63019D5B4008C44FC /* ScaleBroadcastMeasureViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleBroadcastMeasureViewController.swift; sourceTree = "<group>"; };
 		A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIFont+Funde.swift"; sourceTree = "<group>"; };
 		A5C71AE83018592B006EA79C /* BenefitCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenefitCardCell.swift; sourceTree = "<group>"; };
 		A5C71AE93018592B006EA79C /* CouponCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CouponCardCell.swift; sourceTree = "<group>"; };
@@ -702,6 +710,7 @@
 		80323DB75D4CB2E15619DDBB /* DAL */ = {
 			isa = PBXGroup;
 			children = (
+				A5BD9DF13019D0C6008C44FC /* H5Bridge */,
 				A53EF9D330088E0900ED9E5A /* Location */,
 				A5A6F5472FFF7EFC0065C921 /* Media */,
 				A5A6F5342FFF7D5F0065C921 /* FileManager */,
@@ -986,6 +995,7 @@
 		A590FC422FEA91170056EF52 /* Health */ = {
 			isa = PBXGroup;
 			children = (
+				A5BD9DF73019D5B4008C44FC /* ScaleMeasure */,
 				A590FC242FEA91170056EF52 /* Cells */,
 				A590FC342FEA91170056EF52 /* Metrics */,
 				A590FC402FEA91170056EF52 /* Record */,
@@ -1845,6 +1855,33 @@
 			path = DAL/Bluetooth/Devices;
 			sourceTree = "<group>";
 		};
+		A5BD9DF13019D0C6008C44FC /* H5Bridge */ = {
+			isa = PBXGroup;
+			children = (
+				A5BD9DEF3019D0C6008C44FC /* FundeNativeBridge.swift */,
+				A5BD9DF03019D0C6008C44FC /* WeakScriptMessageHandler.swift */,
+			);
+			name = H5Bridge;
+			path = DAL/H5Bridge;
+			sourceTree = "<group>";
+		};
+		A5BD9DF53019D5B4008C44FC /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A5BD9DF43019D5B4008C44FC /* ScaleBroadcastMeasureViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A5BD9DF73019D5B4008C44FC /* ScaleMeasure */ = {
+			isa = PBXGroup;
+			children = (
+				A5BD9DF53019D5B4008C44FC /* ViewModels */,
+				A5BD9DF63019D5B4008C44FC /* ScaleBroadcastMeasureViewController.swift */,
+			);
+			path = ScaleMeasure;
+			sourceTree = "<group>";
+		};
 		A5BFCA372FE38EF1008DA1DF /* UIFont */ = {
 			isa = PBXGroup;
 			children = (
@@ -2328,6 +2365,8 @@
 				A590FCB52FEA91170056EF52 /* ServiceViewController.swift in Sources */,
 				A590FCB62FEA91170056EF52 /* StageMetricsCardView.swift in Sources */,
 				A5C71AF430185CD6006EA79C /* CouponListViewController.swift in Sources */,
+				A5BD9DF23019D0C6008C44FC /* FundeNativeBridge.swift in Sources */,
+				A5BD9DF33019D0C6008C44FC /* WeakScriptMessageHandler.swift in Sources */,
 				A5C71AF530185CD6006EA79C /* BenefitListViewController.swift in Sources */,
 				A5C71AF630185CD6006EA79C /* CouponTabViewController.swift in Sources */,
 				A5C71AF730185CD6006EA79C /* BenefitTabViewController.swift in Sources */,
@@ -2376,6 +2415,8 @@
 				A5B1FB233009E2F80039B16C /* HospitalSearchModels.swift in Sources */,
 				A5B1FB243009E2F80039B16C /* InstitutionSelectionStore.swift in Sources */,
 				A5ACE2333000C25200056C52 /* MeMembershipCardView.swift in Sources */,
+				A5BD9DF83019D5B4008C44FC /* ScaleBroadcastMeasureViewModel.swift in Sources */,
+				A5BD9DF93019D5B4008C44FC /* ScaleBroadcastMeasureViewController.swift in Sources */,
 				A590FCD52FEA91170056EF52 /* HealthRecordMetricRowCell.swift in Sources */,
 				A590FCD62FEA91170056EF52 /* MyViewController.swift in Sources */,
 				A590FCD82FEA91170056EF52 /* CaptchaVerifyView.swift in Sources */,

@@ -79,7 +79,12 @@ extension BluetoothManager {
     ///   - serviceUUIDs: 按服务 UUID 过滤；广播秤传 `nil`
     ///   - allowDuplicates: 广播测量会话传 `true`，设备列表扫描默认 `false`
     func startScan(serviceUUIDs: [CBUUID]? = nil, allowDuplicates: Bool = false) {
-        guard centralManager.state == .poweredOn else { return }
+        guard centralManager.state == .poweredOn else {
+            print("[BLE-DAL] startScan skipped — state=\(state)")
+            return
+        }
+        let uuids = serviceUUIDs?.map(\.uuidString).joined(separator: ",") ?? "nil"
+        print("[BLE-DAL] startScan allowDuplicates=\(allowDuplicates) services=\(uuids)")
         centralManager.scanForPeripherals(
             withServices: serviceUUIDs,
             options: [CBCentralManagerScanOptionAllowDuplicatesKey: allowDuplicates]
@@ -88,6 +93,7 @@ extension BluetoothManager {
 
     /// 停止扫描
     func stopScan() {
+        print("[BLE-DAL] stopScan")
         centralManager.stopScan()
     }
 }
@@ -146,6 +152,7 @@ extension BluetoothManager {
 extension BluetoothManager: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         let state = BluetoothState(from: central.state)
+        print("[BLE-DAL] central state → \(state)")
         statePublisher.send(state)
     }
 
@@ -157,6 +164,15 @@ extension BluetoothManager: CBCentralManagerDelegate {
     ) {
         discoveredPeripherals[peripheral.identifier] = peripheral
         let name = peripheral.name ?? advertisementData[CBAdvertisementDataLocalNameKey] as? String
+        let mfg = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data
+        let serviceUUIDs = (advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID])?
+            .map(\.uuidString)
+            .joined(separator: ",") ?? "-"
+        print(
+            "[BLE-DAL] discover name=\(name ?? "-") id=\(peripheral.identifier.uuidString.prefix(8)) " +
+                "rssi=\(RSSI.intValue) services=\(serviceUUIDs) " +
+                "mfg=\(mfg.map { "\($0.count)B[\($0.bleHexString)]" } ?? "nil")"
+        )
         let model = Peripheral(
             identifier: peripheral.identifier,
             name: name,

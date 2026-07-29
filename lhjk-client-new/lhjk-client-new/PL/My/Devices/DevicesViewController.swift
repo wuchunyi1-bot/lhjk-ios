@@ -50,7 +50,7 @@ final class DevicesViewController: BaseViewController {
             stack.addArrangedSubview(buildDeviceCard(d))
         }
 
-        // Add device button
+        // Add device button → OKOK 广播体脂秤测量页
         let addBtn = UIButton(type: .system)
         addBtn.setTitle("添加新设备", for: .normal)
         addBtn.titleLabel?.font = .fdBodySemibold
@@ -58,6 +58,7 @@ final class DevicesViewController: BaseViewController {
         addBtn.backgroundColor = .fdPrimary
         addBtn.layer.cornerRadius = 14
         addBtn.snp.makeConstraints { $0.height.equalTo(50) }
+        addBtn.addTarget(self, action: #selector(handleAddDeviceTap), for: .touchUpInside)
         stack.addArrangedSubview(addBtn)
 
         // Tip card
@@ -169,6 +170,10 @@ final class DevicesViewController: BaseViewController {
         dot.snp.makeConstraints { $0.size.equalTo(10) }
 
         return card
+    }
+
+    @objc private func handleAddDeviceTap() {
+        Router.shared.push("/health/scale/measure")
     }
 
     private func buildTipCard() -> UIView {

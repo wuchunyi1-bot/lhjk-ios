@@ -17,6 +17,14 @@ struct OKOKScalePacket: Equatable {
     var macString: String {
         macBytes.map { String(format: "%02X", $0) }.joined(separator: ":")
     }
+
+    /// 调试日志摘要
+    var debugDescription: String {
+        "mac=\(macString) weight=\(String(format: "%.2f", weightKg))kg " +
+            "raw=\(weightRaw) R=\(resistanceRaw) serial=\(serial) " +
+            "productId=\(String(format: "0x%04X", productId)) attr=0x\(String(format: "%02X", attributes)) " +
+            "locked=\(isLocked) bodyFat=\(deviceTypeIsBodyFat)"
+    }
 }
 
 /// OKOK 单向广播体脂秤 V3 解析器
@@ -48,25 +56,39 @@ enum OKOKV3PacketParser {
     /// 在载荷中定位 15 字节数据域（以 0xC0 开头）
     static func locateDataDomain(in data: Data) -> Data? {
         let bytes = [UInt8](data)
-        guard !bytes.isEmpty else { return nil }
+        guard !bytes.isEmpty else {
+            print("[OKOK-DAL] locateDataDomain miss — empty data")
+            return nil
+        }
+
+        let hex = data.bleHexString
+        print("[OKOK-DAL] locateDataDomain in len=\(bytes.count) hex=[\(hex)]")
 
         // 完整 AD：Len=0x10, Type=0xFF, 后跟 15B 数据域
         if bytes.count >= 17, bytes[0] == 0x10, bytes[1] == 0xFF, bytes[2] == versionByte {
-            return Data(bytes[2..<17])
+            let domain = Data(bytes[2..<17])
+            print("[OKOK-DAL] locateDataDomain hit path=AD(0x10,0xFF,C0) domain=[\(domain.bleHexString)]")
+            return domain
         }
 
         // 在任意位置搜索以 C0 开头、其后至少 14 字节的窗口（兼容 Company ID 前缀等）
         if let idx = bytes.firstIndex(of: versionByte),
            idx + dataDomainLength <= bytes.count {
             let slice = Data(bytes[idx..<(idx + dataDomainLength)])
-            if slice.first == versionByte { return slice }
+            if slice.first == versionByte {
+                print("[OKOK-DAL] locateDataDomain hit path=scanC0 offset=\(idx) domain=[\(slice.bleHexString)]")
+                return slice
+            }
         }
 
         // 载荷本身即以 C0 开头
         if bytes.count >= dataDomainLength, bytes[0] == versionByte {
-            return Data(bytes[0..<dataDomainLength])
+            let domain = Data(bytes[0..<dataDomainLength])
+            print("[OKOK-DAL] locateDataDomain hit path=rawC0 domain=[\(domain.bleHexString)]")
+            return domain
         }
 
+        print("[OKOK-DAL] locateDataDomain miss — no C0 domain (need ≥15B from 0xC0)")
         return nil
     }
 

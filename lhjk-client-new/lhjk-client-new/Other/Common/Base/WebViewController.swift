@@ -1,17 +1,30 @@
 import UIKit
 import WebKit
 
-/// 通用 WebView 页面 — 加载指定 URL
+/// 通用 WebView 页面 — 加载指定 URL，并注入 FundeNative Bridge
 final class WebViewController: BaseViewController {
 
     private let urlString: String
     private let pageTitle: String?
     private weak var previousPopGestureDelegate: UIGestureRecognizerDelegate?
 
+    private var bridge: FundeNativeBridge?
+    private var scriptHandlerProxy: WeakScriptMessageHandler?
+
     // MARK: - UI
 
     private lazy var webView: WKWebView = {
+        let userContent = WKUserContentController()
+        let proxy = WeakScriptMessageHandler(target: self)
+        self.scriptHandlerProxy = proxy
+        userContent.add(proxy, name: FundeNativeBridge.handlerName)
+
         let config = WKWebViewConfiguration()
+        config.userContentController = userContent
+        if #available(iOS 14.0, *) {
+            config.defaultWebpagePreferences.allowsContentJavaScript = true
+        }
+
         let wv = WKWebView(frame: .zero, configuration: config)
         wv.navigationDelegate = self
         wv.allowsBackForwardNavigationGestures = true
@@ -55,7 +68,7 @@ final class WebViewController: BaseViewController {
         super.viewDidLoad()
         title = pageTitle
         setupBackNavigation()
-
+        bridge = FundeNativeBridge(webView: webView, hostViewController: self)
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
     }
 
@@ -93,6 +106,8 @@ final class WebViewController: BaseViewController {
     }
 
     deinit {
+        bridge?.detach()
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: FundeNativeBridge.handlerName)
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress))
     }
 
@@ -163,12 +178,27 @@ final class WebViewController: BaseViewController {
     }
 }
 
+// MARK: - WKScriptMessageHandler
+
+extension WebViewController: WKScriptMessageHandler {
+
+    func userContentController(
+        _ userContentController: WKUserContentController,
+        didReceive message: WKScriptMessage
+    ) {
+        guard message.name == FundeNativeBridge.handlerName else { return }
+        bridge?.handle(message: message.body)
+    }
+}
+
 // MARK: - WKNavigationDelegate
 
 extension WebViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         indicator.stopAnimating()
+        // 页面就绪后推一次当前蓝牙状态，便于 H5 横条初始化
+        ScaleBleSessionService.shared.publishStatus()
         if title == nil {
             webView.evaluateJavaScript("document.title") { [weak self] result, _ in
                 guard let self, let t = result as? String, !t.isEmpty else { return }
