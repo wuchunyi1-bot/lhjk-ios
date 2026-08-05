@@ -27,17 +27,37 @@
 #### Scenario: 列表非空
 
 - **WHEN** `getMonitorCardList` 返回非空数组
-- **THEN** Hub 体征区按列表顺序渲染卡片；展示 `monitorData` 解析出的数值、单位与 `result`/`resultType` 状态；图标优先 `iconUrl`
+- **THEN** Hub 体征区按列表顺序渲染卡片；展示 `monitorData` 解析出的数值、单位与 `result`/`resultType` 状态；图标优先 `iconUrl`；卡片背景优先 `backgroundUrl`
 
 #### Scenario: 列表空或失败
 
 - **WHEN** 列表为空或请求失败，且 CMS `monitorCardMeta` 可用
-- **THEN** Hub 按 meta 渲染空壳，数值为 `--`
+- **THEN** Hub 按 meta 渲染空壳，数值为 `--`；背景使用本地 `metric_*` 资源（meta 无 backgroundUrl）
 
 #### Scenario: 两者皆无
 
 - **WHEN** 列表空/失败且无可用 meta
 - **THEN** 体征监测 section 不展示（或空列表）
+
+### Requirement: 体征卡片背景图优先级
+
+系统 SHALL 按以下优先级渲染体征监测卡片背景（水印铺满卡片）：
+
+1. `getMonitorCardList` 单项的 `backgroundUrl`（非空合法 URL）— 网络图（Kingfisher）
+2. 否则按 `metricKey` 映射本地 Assets：`metric_bp` / `metric_bs` / `metric_weight` / `metric_hr` / `metric_sleep` / `metric_ecg` / `metric_fundus` / `metric_exercise` / `metric_spo2` / `metric_digestive` / `metric_temperature` 等
+3. 若本地亦无对应资源，则不展示背景图（仅卡片底色）
+
+CMS 空壳路径（仅 `monitorCardMeta`）无 `backgroundUrl`，MUST 走本地映射。
+
+#### Scenario: 接口下发 backgroundUrl
+
+- **WHEN** 卡片项 `backgroundUrl` 为非空 http(s) URL
+- **THEN** `MetricCardCell` 用该 URL 加载背景；加载失败时 SHOULD 回退到本地 `metric_*`（若有）
+
+#### Scenario: backgroundUrl 缺失或空白
+
+- **WHEN** `backgroundUrl` 为 nil、空串或仅空白
+- **THEN** 使用本地 `metric_*` 水印；无本地图则背景为空
 
 ### Requirement: 快捷入口仅来自 CMS
 
@@ -116,5 +136,7 @@ Base：`{gateway}/mobile` + path。Apifox 只读文档链接见 proposal。
 | POST | `/v1/userMonitorCardConfig/saveUserMonitorCardConfig` | 保存用户卡片配置 |
 
 共用 Query/Body 字段：`hospitalId`（数字串）、`code`（固定 `column_health`）。
+
+`getMonitorCardList` 单项额外字段：`backgroundUrl`（卡片背景图 URL，可选）。
 
 保存 Body 额外：`addCardVOList: [{ cardType, cardName?, sortId }]`。

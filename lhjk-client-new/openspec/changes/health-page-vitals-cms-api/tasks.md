@@ -11,6 +11,7 @@
 - [x] 2.2 `HealthViewController`：订阅 metrics / quickEntries；编辑走 `/health/metrics/edit`
 - [x] 2.3 `MetricCardCell` 支持 `iconUrl`；快捷入口 CMS 图标
 - [x] 2.4 删除 Hub 硬编码 metrics / quickEntries mock
+- [x] 2.5 `MonitorHealthCardVO.backgroundUrl` + 展示优先网络背景、回退本地 `metric_*`
 
 ## 3. 编辑卡片
 

@@ -380,11 +380,13 @@ struct MonitorHealthCardVO: Decodable, Equatable {
     let monitorData: [String: HealthJSONValue]?
     let dietSportData: [String: HealthJSONValue]?
     let iconUrl: String?
+    /// 卡片背景图 URL（优先于本地 metric_*）
+    let backgroundUrl: String?
     let pageUrl: String?
 
     private enum CodingKeys: String, CodingKey {
         case cardName, cardType, monitorTime, monitorTimeType, resultType, result
-        case allResultList, monitorData, dietSportData, iconUrl, pageUrl
+        case allResultList, monitorData, dietSportData, iconUrl, backgroundUrl, pageUrl
     }
 
     init(from decoder: Decoder) throws {
@@ -399,6 +401,7 @@ struct MonitorHealthCardVO: Decodable, Equatable {
         monitorData = try c.decodeIfPresent([String: HealthJSONValue].self, forKey: .monitorData)
         dietSportData = try c.decodeIfPresent([String: HealthJSONValue].self, forKey: .dietSportData)
         iconUrl = try c.decodeIfPresent(String.self, forKey: .iconUrl)
+        backgroundUrl = try c.decodeIfPresent(String.self, forKey: .backgroundUrl)
         pageUrl = try c.decodeIfPresent(String.self, forKey: .pageUrl)
     }
 }
@@ -535,6 +538,8 @@ struct HealthMetricDisplayItem: Equatable {
     let statusType: String
     let iconSF: String
     let iconUrl: String?
+    /// 卡片背景图 URL；nil 时 Cell 使用本地 metric_*
+    let backgroundUrl: String?
     let time: String
     let pageUrl: String?
     let routeKey: String
@@ -646,6 +651,7 @@ enum MonitorCardDisplayMapper {
                 statusType: statusType(for: card.resultType, hasValue: mapped.value != "--"),
                 iconSF: iconSF(for: key),
                 iconUrl: nonempty(card.iconUrl),
+                backgroundUrl: nonempty(card.backgroundUrl),
                 time: time,
                 pageUrl: nonempty(card.pageUrl),
                 routeKey: key
@@ -670,6 +676,7 @@ enum MonitorCardDisplayMapper {
                     statusType: "success",
                     iconSF: iconSF(for: key),
                     iconUrl: nonempty(item.iconUrl),
+                    backgroundUrl: nil,
                     time: "",
                     pageUrl: nonempty(item.pageUrl),
                     routeKey: key

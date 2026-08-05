@@ -137,6 +137,7 @@ final class MetricCardCell: UICollectionViewCell {
         metricKey: String = "",
         icon: String,
         iconUrl: String? = nil,
+        backgroundUrl: String? = nil,
         status: String,
         statusType: String,
         label: String,
@@ -147,7 +148,7 @@ final class MetricCardCell: UICollectionViewCell {
     ) {
         let bg = Self.cardBgs[metricKey] ?? UIColor(hexString: "#FDFCFC")
         contentView.backgroundColor = bg
-        watermark.image = Self.watermarkNames[metricKey].flatMap { UIImage(named: $0) }
+        applyBackground(metricKey: metricKey, backgroundUrl: backgroundUrl)
         watermark.snp.remakeConstraints {
             $0.edges.equalToSuperview()
         }
@@ -184,10 +185,42 @@ final class MetricCardCell: UICollectionViewCell {
         timeLabel.isHidden = time.isEmpty
     }
 
+    /// 背景优先级：`backgroundUrl` → 本地 `metric_*` → 空
+    private func applyBackground(metricKey: String, backgroundUrl: String?) {
+        watermark.kf.cancelDownloadTask()
+        let local = Self.watermarkNames[metricKey].flatMap { UIImage(named: $0) }
+        let remote = backgroundUrl?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .nilIfEmpty
+            .flatMap { URL(string: $0) }
+
+        if let remote {
+            watermark.kf.setImage(
+                with: remote,
+                placeholder: local,
+                options: [.transition(.fade(0.15))]
+            ) { [weak self] result in
+                guard let self else { return }
+                if case .failure = result, self.watermark.image == nil {
+                    self.watermark.image = local
+                }
+            }
+        } else {
+            watermark.image = local
+        }
+    }
+
     override func prepareForReuse() {
         super.prepareForReuse()
+        watermark.kf.cancelDownloadTask()
         watermark.image = nil
         iconView.kf.cancelDownloadTask()
         iconView.image = nil
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? {
+        isEmpty ? nil : self
     }
 }

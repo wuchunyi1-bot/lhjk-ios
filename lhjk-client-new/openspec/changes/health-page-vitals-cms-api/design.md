@@ -36,6 +36,8 @@
       else      → fromCmsMeta(CMS.monitorCardMeta)
 ```
 
+卡片背景：`backgroundUrl`（列表项）优先 → 本地 `metric_*` 按 metricKey → 无图仅底色。CMS 空壳无 backgroundUrl，走本地。
+
 ### 3. cardType（天使）
 
 | cardType | 含义 | metric key |
