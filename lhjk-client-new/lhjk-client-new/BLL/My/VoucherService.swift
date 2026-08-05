@@ -1,8 +1,6 @@
 import Foundation
 
-/// 我的卡券资产服务 — 对齐 funde `benefit-card-state` / `coupon-state`
-///
-/// 当前为本地 Mock；卡包优惠券与订单 `CouponService` 独立维护。
+/// 我的卡券资产服务 — 权益卡暂 Mock；优惠券走 `CouponService.getCouponTakeList`
 final class VoucherService {
 
     static let shared = VoucherService()
@@ -19,18 +17,14 @@ final class VoucherService {
         Self.mockTransfers
     }
 
-    func getCouponAssets() -> [VoucherCouponAsset] {
-        Self.mockCoupons
-    }
-
     /// 待使用权益卡（未转赠锁定）
     var availableBenefitCount: Int {
         getBenefitCards().filter { $0.status == .available && $0.pendingTransferId == nil }.count
     }
 
-    /// 待使用优惠券（内部已领取）
+    /// 待使用优惠券（接口 status=1 缓存总数）
     var availableCouponCount: Int {
-        getCouponAssets().filter { $0.status == .received }.count
+        CouponService.shared.cachedAvailableCouponCount
     }
 
     /// 我的页角标
@@ -45,7 +39,12 @@ final class VoucherService {
         return "\(n)"
     }
 
-    // MARK: - Mock（对齐 funde seed，去掉演示专用卡）
+    /// 异步刷新优惠券待使用数（供「我的」角标）
+    func refreshAvailableCouponCount() async {
+        _ = try? await CouponService.shared.refreshAvailableCouponCount()
+    }
+
+    // MARK: - Mock（仅权益卡；对齐 funde seed）
 
     private static let mockBenefitCards: [BenefitCard] = [
         BenefitCard(id: "benefit-card-001", code: "SGHK-2026-0201", name: "三好健康权益卡", amount: 300, validUntil: "2026-12-31", status: .available, boundAt: "2026-07-15", redeemedAt: nil, orderId: nil, pendingTransferId: nil, transferredOnce: false),
@@ -89,13 +88,4 @@ final class VoucherService {
             ),
         ]
     }
-
-    private static let mockCoupons: [VoucherCouponAsset] = [
-        VoucherCouponAsset(id: "coupon-01", name: "会员健康满减券-满100减50", type: .fullReduction, threshold: 100, discountAmount: 50, discountRate: nil, maxDiscount: nil, scopeRule: .include, businessCategories: ["高血压管理"], packageNames: ["高血压年度管理套餐"], institutionNames: ["富德健康广州机构"], excludedProductNames: ["营养补充剂"], receivedAt: "2026-07-26 10:00:00", effectiveEndAt: "2026-12-31 23:59:59", status: .received, usedAt: nil),
-        VoucherCouponAsset(id: "coupon-02", name: "健管服务满减券-满200减80", type: .fullReduction, threshold: 200, discountAmount: 80, discountRate: nil, maxDiscount: nil, scopeRule: .exclude, businessCategories: ["健康体检"], packageNames: ["健康体检基础套餐"], institutionNames: ["富德健康深圳机构"], excludedProductNames: ["营养补充剂"], receivedAt: "2026-07-25 10:00:00", effectiveEndAt: "2026-12-31 23:59:59", status: .received, usedAt: nil),
-        VoucherCouponAsset(id: "coupon-03", name: "会员服务折扣券-8.8折", type: .discount, threshold: 100, discountAmount: nil, discountRate: 8.8, maxDiscount: 100, scopeRule: .include, businessCategories: ["会员综合服务"], packageNames: [], institutionNames: [], excludedProductNames: [], receivedAt: "2026-07-24 10:00:00", effectiveEndAt: "2026-12-31 23:59:59", status: .received, usedAt: nil),
-        VoucherCouponAsset(id: "coupon-04", name: "复购服务折扣券-9.5折", type: .discount, threshold: 200, discountAmount: nil, discountRate: 9.5, maxDiscount: 50, scopeRule: .include, businessCategories: ["会员综合服务"], packageNames: [], institutionNames: [], excludedProductNames: [], receivedAt: "2026-06-20 10:00:00", effectiveEndAt: "2026-12-31 23:59:59", status: .used, usedAt: "2026-07-12 14:30:00"),
-        VoucherCouponAsset(id: "coupon-05", name: "会员服务减价券-满100减50", type: .priceOff, threshold: 100, discountAmount: 50, discountRate: nil, maxDiscount: nil, scopeRule: .include, businessCategories: ["会员综合服务"], packageNames: [], institutionNames: [], excludedProductNames: [], receivedAt: "2026-06-18 10:00:00", effectiveEndAt: "2026-12-31 23:59:59", status: .used, usedAt: "2026-07-08 09:20:00"),
-        VoucherCouponAsset(id: "coupon-06", name: "健管服务减价券-满200减80", type: .priceOff, threshold: 200, discountAmount: 80, discountRate: nil, maxDiscount: nil, scopeRule: .exclude, businessCategories: ["健康体检"], packageNames: [], institutionNames: [], excludedProductNames: [], receivedAt: "2026-04-20 10:00:00", effectiveEndAt: "2026-06-30 23:59:59", status: .expired, usedAt: nil),
-    ]
 }

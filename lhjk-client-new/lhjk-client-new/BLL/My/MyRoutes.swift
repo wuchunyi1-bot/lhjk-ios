@@ -26,7 +26,52 @@ enum MyRoutes {
         r.register(path: "/me/membership/open") { _ in PlaceholderViewController(title: "开通会员") }
         r.register(path: "/me/points")      { _ in PointsViewController() }
         r.register(path: "/me/family")      { _ in FamilyViewController() }
-        r.register(path: "/me/medical-reports") { _ in PlaceholderViewController(title: "体检报告单") }
+
+        // 体检报告单 → H5 `#/medical-reports`（宿主接入文档）
+        r.register(path: "/me/medical-reports") { _ in
+            WebViewController(
+                urlString: H5Config.medicalReportsPageURL.absoluteString,
+                title: "体检报告单"
+            )
+        }
+        r.register(path: "/me/medical-reports/upload") { _ in
+            WebViewController(
+                urlString: H5Config.medicalReportsUploadPageURL.absoluteString,
+                title: "上传体检报告"
+            )
+        }
+        r.register(path: "/me/medical-reports/detail") { params in
+            let reportId = (params["reportId"] as? String)
+                ?? (params["id"] as? String)
+                ?? ""
+            return WebViewController(
+                urlString: H5Config.medicalReportsDetailPageURL(reportId: reportId).absoluteString,
+                title: "报告详情"
+            )
+        }
+
+        // 文档路径别名（与 H5 hash 对齐）
+        r.register(path: "/medical-reports") { _ in
+            WebViewController(
+                urlString: H5Config.medicalReportsPageURL.absoluteString,
+                title: "体检报告单"
+            )
+        }
+        r.register(path: "/medical-reports/upload") { _ in
+            WebViewController(
+                urlString: H5Config.medicalReportsUploadPageURL.absoluteString,
+                title: "上传体检报告"
+            )
+        }
+        r.register(path: "/medical-reports/detail") { params in
+            let reportId = (params["reportId"] as? String)
+                ?? (params["id"] as? String)
+                ?? ""
+            return WebViewController(
+                urlString: H5Config.medicalReportsDetailPageURL(reportId: reportId).absoluteString,
+                title: "报告详情"
+            )
+        }
 
         // Settings 子页面
         r.register(path: "/me/settings/notifications")  { _ in NotificationSettingsViewController() }

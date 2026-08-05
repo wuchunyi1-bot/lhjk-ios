@@ -16,6 +16,7 @@ enum H5Config {
         ("blood-pressure", "血压"),
         ("blood-sugar", "血糖"),
         ("weight", "体重"),
+        ("temperature", "体温"),
         ("heart-rate", "心率"),
         ("sleep", "睡眠"),
         ("ecg", "心电"),
@@ -32,22 +33,29 @@ enum H5Config {
     /// 原生子路由 suffix → H5 子路径（空字符串表示回指标首页）
     private static let nativeSuffixToH5Subpath: [String: [String: String]] = [
         "blood-pressure": [
+            "add": "add",
             "manual": "add",
             "history": "records",
             "detail": "detail",
             "service": "",
         ],
         "blood-sugar": [
+            "add": "add",
             "manual": "add",
             "history": "records",
             "detail": "detail",
             "service": "",
         ],
         "weight": [
+            "add": "add",
             "manual": "add",
             "history": "records",
             "detail": "detail",
             "service": "",
+        ],
+        "heart-rate": [
+            "add": "add",
+            "manual": "add",
         ],
         "exercise": [
             "home": "",
@@ -71,6 +79,26 @@ enum H5Config {
     /// 参考宿主文档 `h5接入文档`；「我的」`/me/health-profile` 与健康 Tab `/health/record` 共用。
     static var healthRecordPageURL: URL {
         authenticatedPageURL(path: "health/record")
+    }
+
+    /// 体检报告单列表 H5：`#/medical-reports?token&platform=ios`
+    static var medicalReportsPageURL: URL {
+        authenticatedPageURL(path: "medical-reports")
+    }
+
+    /// 上传体检报告 H5：`#/medical-reports/upload?token&platform=ios`
+    static var medicalReportsUploadPageURL: URL {
+        authenticatedPageURL(path: "medical-reports/upload")
+    }
+
+    /// 体检报告详情 H5：`#/medical-reports/detail?token&platform=ios&reportId=`
+    static func medicalReportsDetailPageURL(reportId: String) -> URL {
+        var extra: [String: String] = [:]
+        let trimmed = reportId.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            extra["reportId"] = trimmed
+        }
+        return authenticatedPageURL(path: "medical-reports/detail", extraQuery: extra)
     }
 
     /// 构建任意 H5 鉴权 URL：`{base}#/{path}?token&platform=ios&...`
@@ -152,7 +180,9 @@ enum H5Config {
         }
 
         let normalizedPath = h5Path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        let base = environment.baseURL.absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        // Hash 路由必须以 `origin/#/path` 打开，不能写成 `origin#/path`；
+        // 否则 WebKit 解析文档 URL 异常，相对路径 `./assets/*` 的 JS/CSS 可能加载失败。
+        let origin = h5OriginBaseURLString()
         let queryString = queryItems
             .map { key, value in
                 let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? key
@@ -163,11 +193,16 @@ enum H5Config {
 
         let urlString: String
         if queryString.isEmpty {
-            urlString = "\(base)#/\(normalizedPath)"
+            urlString = "\(origin)#/\(normalizedPath)"
         } else {
-            urlString = "\(base)#/\(normalizedPath)?\(queryString)"
+            urlString = "\(origin)#/\(normalizedPath)?\(queryString)"
         }
         return URL(string: urlString) ?? environment.baseURL
+    }
+
+    private static func h5OriginBaseURLString() -> String {
+        let raw = environment.baseURL.absoluteString
+        return raw.hasSuffix("/") ? raw : "\(raw)/"
     }
 
     private static func accessToken() -> String? {
@@ -207,8 +242,8 @@ enum H5Environment: String {
     var baseURL: URL {
         switch self {
         case .development:
-//            return URL(string: "https://h5-dev.lianhaojiankang.com")!
-            return URL(string: "http://192.168.15.86:5181")! //跟H5连调
+            return URL(string: "https://h5-dev.lianhaojiankang.com")!
+//            return URL(string: "http://192.168.15.86:5181")! //跟H5连调
         case .staging:
             return URL(string: "https://staging-h5.lhjk.com")!
         case .production:

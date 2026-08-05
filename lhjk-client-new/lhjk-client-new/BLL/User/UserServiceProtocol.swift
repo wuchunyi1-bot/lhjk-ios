@@ -21,9 +21,6 @@ protocol UserServiceProtocol {
     /// 手机号验证码重置密码
     func resetPasswordByMobile(mobile: String, newPwd: String, checkCode: String) async throws
 
-    /// 修改密码（旧密码 + 新密码，可选验证码）
-    func changePassword(mobile: String, oldPwd: String?, newPwd: String, checkCode: String?) async throws
-
     /// 修改用户手机号
     func changeMobile(oldMobile: String?, newMobile: String, checkCode: String?) async throws
 

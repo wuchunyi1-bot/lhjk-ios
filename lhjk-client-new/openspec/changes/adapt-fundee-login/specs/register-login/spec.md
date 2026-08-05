@@ -1021,6 +1021,8 @@ POST {Root URL}/mobile/v1/users/resetPasswordByMobile
 Content-Type: application/json
 ```
 
+> **认证要求**: 该接口为公开接口，不需要用户登录 Token。DAL 层必须使用 `APIManager.publicPostAsync`（`publicSession`）发送请求，不得经过 `AuthenticationInterceptor`，不得添加 `Authorization: Bearer` 请求头。
+
 **Request Body** (`ResetPasswordByMobileDTO`):
 
 | 字段 | 类型 | 必填 | 描述 |

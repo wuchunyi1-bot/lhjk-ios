@@ -15,6 +15,13 @@ extension APIManager {
         return try await request(url: url, method: .get, parameters: parameters, encoding: URLEncoding.default, session: publicSession)
     }
 
+    func publicPostAsync<T: Decodable>(
+        path: String, parameters: [String: Any]? = nil, responseType: T.Type
+    ) async throws -> T {
+        let url = makeURL(for: path)
+        return try await request(url: url, method: .post, parameters: parameters, encoding: JSONEncoding.default, session: publicSession)
+    }
+
     func publicPostFormURLEncodedAsync<T: Decodable>(
         path: String,
         parameters: [String: Any]? = nil,

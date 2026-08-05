@@ -88,15 +88,16 @@ final class ServiceViewModel: ObservableObject {
 
     func sectionTitle(for section: Section) -> String? {
         switch section {
-        case .matrix: return "德系产品"
-        case .mallPreview: return "富德优选"
+        // 矩阵与富德优选标题都画在各自白卡内（对齐 Figma）
+        case .matrix: return nil
+        case .mallPreview: return nil
         default: return nil
         }
     }
 
     func sectionMore(for section: Section) -> String? {
         switch section {
-        case .mallPreview: return "查看全部 ›"
+        case .mallPreview: return nil
         default: return nil
         }
     }

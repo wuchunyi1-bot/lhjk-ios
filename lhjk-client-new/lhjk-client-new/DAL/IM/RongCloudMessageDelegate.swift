@@ -67,23 +67,20 @@ extension ChatMessage {
             imagePath = nil
             thumbWidth = nil
             thumbHeight = nil
-            
-            print("[RongCloud] fromRongCloud recal type objectName=\(rcMessage.objectName ?? "nil") content === \(rcMessage.content) user == \(rcMessage.content?.senderUserInfo?.name)")
-            
+            Self.logNonTextMessageBody(rcMessage)
         } else if let textContent = rcMessage.content as? RCTextMessage {
             content = textContent.content
             type = .text
             imagePath = nil
             thumbWidth = nil
             thumbHeight = nil
-            print("[RongCloud] fromRongCloud text type objectName=\(rcMessage.objectName ?? "nil") content = \(content) sendUserInfo === \(textContent.senderUserInfo) extra ===\(textContent.extra)")
         } else if let imageContent = rcMessage.content as? RCImageMessage {
             content = "[图片]"
             type = .image
             imagePath = imageContent.imageUrl ?? imageContent.remoteUrl ?? imageContent.localPath
             thumbWidth = imageContent.thumWidth > 0 ? imageContent.thumWidth : nil
             thumbHeight = imageContent.thumHeight > 0 ? imageContent.thumHeight : nil
-            print("[RongCloud] fromRongCloud image → imageUrl=\(imageContent.imageUrl ?? "nil") remoteUrl=\(imageContent.remoteUrl ?? "nil") localPath=\(imageContent.localPath ?? "nil") thumbSize=\(thumbWidth ?? 0)x\(thumbHeight ?? 0)")
+            Self.logNonTextMessageBody(rcMessage)
         } else if let voiceContent = rcMessage.content as? RCHQVoiceMessage {
             // 高清语音 RC:HQVCMsg
             content = "[语音]"
@@ -91,7 +88,7 @@ extension ChatMessage {
             imagePath = voiceContent.localPath ?? voiceContent.remoteUrl
             thumbWidth = nil
             thumbHeight = Int(voiceContent.duration)
-            print("[RongCloud] fromRongCloud voice → localPath=\(voiceContent.localPath ?? "nil") remoteUrl=\(voiceContent.remoteUrl ?? "nil") duration=\(voiceContent.duration)s")
+            Self.logNonTextMessageBody(rcMessage)
         } else {
             // 自定义消息类型：尝试 downcast 到具体子类，fallback 到 RCMessageContent 基类
             type = mapObjectName(rcMessage.objectName)
@@ -99,7 +96,7 @@ extension ChatMessage {
             thumbWidth = nil
             thumbHeight = nil
             content = ""
-            print("[RongCloud] fromRongCloud custom type objectName=\(rcMessage.objectName ?? "nil") content === \(rcMessage.content)")
+            Self.logNonTextMessageBody(rcMessage)
         }
 
         let senderInfo = rcMessage.content?.senderUserInfo
@@ -166,5 +163,71 @@ extension ChatMessage {
         case "AD:SysNotify": return .sysNotify
         default:             return .text
         }
+    }
+
+    /// 调试：打印非文本 IM 消息体（encode JSON / 已知字段）
+    private static func logNonTextMessageBody(_ rcMessage: RCMessage) {
+        let objectName = rcMessage.objectName ?? "nil"
+        let msgId = rcMessage.messageId
+        let uid = rcMessage.messageUId ?? "nil"
+
+        var body = "nil"
+        if let content = rcMessage.content {
+            if let data = content.encode(),
+               let json = String(data: data, encoding: .utf8), !json.isEmpty {
+                body = json
+            } else if let image = content as? RCImageMessage {
+                body = "{"
+                    + "\"imageUrl\":\"\(image.imageUrl ?? "")\","
+                    + "\"remoteUrl\":\"\(image.remoteUrl ?? "")\","
+                    + "\"localPath\":\"\(image.localPath ?? "")\","
+                    + "\"thumb\":\(image.thumWidth)x\(image.thumHeight),"
+                    + "\"extra\":\"\(image.extra ?? "")\""
+                    + "}"
+            } else if let voice = content as? RCHQVoiceMessage {
+                body = "{"
+                    + "\"localPath\":\"\(voice.localPath ?? "")\","
+                    + "\"remoteUrl\":\"\(voice.remoteUrl ?? "")\","
+                    + "\"duration\":\(voice.duration),"
+                    + "\"extra\":\"\(voice.extra ?? "")\""
+                    + "}"
+            } else if let file = content as? FileMessage {
+                body = "{"
+                    + "\"fileUrl\":\"\(file.fileUrl ?? "")\","
+                    + "\"fileName\":\"\(file.fileName ?? "")\","
+                    + "\"fileSize\":\"\(file.fileSize ?? "")\","
+                    + "\"fileSuffix\":\"\(file.fileSuffix ?? "")\","
+                    + "\"fileTime\":\(file.fileTime),"
+                    + "\"imageUrl\":\"\(file.imageUrl ?? "")\","
+                    + "\"lastMsgDisplayContent\":\"\(file.lastMsgDisplayContent ?? "")\","
+                    + "\"extra\":\"\(file.extra ?? "")\""
+                    + "}"
+            } else if let video = content as? VideoMessage {
+                body = "{"
+                    + "\"videoUrl\":\"\(video.videoUrl ?? "")\","
+                    + "\"videoCoverImg\":\"\(video.videoCoverImg ?? "")\","
+                    + "\"videoName\":\"\(video.videoName ?? "")\","
+                    + "\"videoTime\":\(video.videoTime),"
+                    + "\"videoSuffix\":\"\(video.videoSuffix ?? "")\","
+                    + "\"lastMsgDisplayContent\":\"\(video.lastMsgDisplayContent ?? "")\","
+                    + "\"extra\":\"\(video.extra ?? "")\""
+                    + "}"
+            } else if let notify = content as? SysNotifyMessage {
+                body = "{"
+                    + "\"title\":\"\(notify.title ?? "")\","
+                    + "\"content\":\"\(notify.content ?? "")\","
+                    + "\"businessData\":\"\(notify.businessData ?? "")\","
+                    + "\"imageUrl\":\"\(notify.imageUrl ?? "")\","
+                    + "\"urlKey\":\"\(notify.urlKey ?? "")\","
+                    + "\"isShowUser\":\(notify.isShowUser),"
+                    + "\"lastMsgDisplayContent\":\"\(notify.lastMsgDisplayContent ?? "")\","
+                    + "\"extra\":\"\(notify.extra ?? "")\""
+                    + "}"
+            } else {
+                body = String(describing: content)
+            }
+        }
+
+        print("[Chat][non-text] objectName=\(objectName) msgId=\(msgId) uid=\(uid) body=\(body)")
     }
 }

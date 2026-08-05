@@ -4,7 +4,7 @@
 
 ## 2. 详情 API
 
-- [x] 2.1 DTO + Mapper：`getPackageDetail` → `ServicePackageDetail`
+- [x] 2.1 DTO + Mapper：`getHospitalPackageDetail` → `ServicePackageDetail`
 - [x] 2.2 `HospitalPackageService.fetchPackageDetail`；临时 `hospitalId`
 - [x] 2.3 ViewModel + VC 异步加载；轮播支持图片 URL
 

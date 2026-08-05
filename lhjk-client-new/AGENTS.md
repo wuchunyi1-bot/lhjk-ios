@@ -24,6 +24,9 @@ openspec/
 └── changes/        # 进行中的变更提案（proposal / design / tasks / delta specs）
 ```
 
+进行中变更示例：`openspec/changes/health-page-vitals-cms-api/`（健康 Tab CMS / 监测卡片）。
+网络接口全量清单：`docs/api-inventory.md`（新增 path 须同步更新）。
+
 ## 开发工作流
 
 1. **查 spec**：开发某功能前，先读 `openspec/specs/{module}/spec.md`
@@ -46,7 +49,8 @@ openspec/
 | **模块归属** | 服务 Tab = 商城模块（`Service/`）；与健康等模块平级；**不确定归属时必须先问用户** |
 | **新增文件** | AI 不修改 `.xcodeproj`；新增/移动 `.swift` 后**必须提示开发者手动加入 Xcode 工程** |
 | **网络参数** | **禁止**将 mock/本地假数据传入 API；模块已接真实接口后须删除该模块 mock 数据 |
+| **Apifox** | **只读**；禁止修改 Apifox，仅读取文档后改本仓库 iOS / OpenSpec |
 
 ## Cursor 规则
 
-持久化规则位于 `.cursor/rules/lhjk-openspec.mdc`，每次对话自动加载。
+持久化规则位于 `.cursor/rules/`（`lhjk-openspec.mdc`、`apifox-readonly.mdc` 等），每次对话自动加载。

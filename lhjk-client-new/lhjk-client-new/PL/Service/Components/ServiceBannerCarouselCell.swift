@@ -2,11 +2,18 @@ import UIKit
 import SnapKit
 import Kingfisher
 
-/// 服务首页 Banner 轮播 — 仅展示图片，自动轮播单向无限循环（不回退滚动）
+/// 服务首页 Banner 轮播 — 对齐 Figma 3042:1521（344×180 / 圆角 16）
 /// 数据来自 `GET /v1/columnContent/getByCode`；间隔 3.6s 对齐 funde `van-swipe :autoplay="3600"`
+/// 图片比例不符时 `scaleAspectFill` 居中裁剪填满画幅
 final class ServiceBannerCarouselCell: UITableViewCell {
 
     static let reuseID = "ServiceBannerCarouselCell"
+
+    /// Figma 3042:1521 高度
+    static let bannerHeight: CGFloat = 180
+    /// Figma 左右边距（375 稿宽 → 内容约 343~344）
+    static let horizontalInset: CGFloat = 16
+    static let cornerRadius: CGFloat = 16
 
     /// 逻辑页复制倍数，用于始终向右滚动实现循环
     private static let loopMultiplier = 200
@@ -28,6 +35,8 @@ final class ServiceBannerCarouselCell: UITableViewCell {
         cv.isPagingEnabled = true
         cv.showsHorizontalScrollIndicator = false
         cv.decelerationRate = .fast
+        cv.layer.cornerRadius = Self.cornerRadius
+        cv.clipsToBounds = true
         cv.dataSource = self
         cv.delegate = self
         cv.register(BannerSlideCell.self, forCellWithReuseIdentifier: BannerSlideCell.reuseID)
@@ -46,18 +55,25 @@ final class ServiceBannerCarouselCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
         backgroundColor = .clear
+        contentView.backgroundColor = .clear
         contentView.addSubview(collectionView)
+        // 页码点叠在 Banner 底部内侧（Figma 3042:1554）
         contentView.addSubview(pageControl)
         collectionView.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(4)
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(172)
+            $0.top.bottom.equalToSuperview()
+            $0.leading.equalToSuperview().offset(Self.horizontalInset)
+            $0.trailing.equalToSuperview().offset(-Self.horizontalInset)
+            $0.height.equalTo(Self.bannerHeight)
         }
         pageControl.snp.makeConstraints {
-            $0.top.equalTo(collectionView.snp.bottom).offset(8)
-            $0.centerX.equalToSuperview()
-            $0.bottom.equalToSuperview().offset(-4)
+            $0.centerX.equalTo(collectionView)
+            $0.bottom.equalTo(collectionView).offset(-12)
         }
+        if #available(iOS 14.0, *) {
+            pageControl.backgroundStyle = .minimal
+            pageControl.allowsContinuousInteraction = false
+        }
+        pageControl.transform = CGAffineTransform(scaleX: 0.75, y: 0.75)
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -68,6 +84,18 @@ final class ServiceBannerCarouselCell: UITableViewCell {
     }
 
     deinit { stopAutoScroll() }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // bounds 变化后刷新 itemSize，保证分页宽度与裁剪画幅一致
+        if let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
+            let size = collectionView.bounds.size
+            if size.width > 0, size.height > 0, layout.itemSize != size {
+                layout.itemSize = size
+                layout.invalidateLayout()
+            }
+        }
+    }
 
     func configure(_ banners: [ServiceHubBanner]) {
         self.banners = banners
@@ -189,13 +217,12 @@ extension ServiceBannerCarouselCell: UICollectionViewDataSource, UICollectionVie
     }
 }
 
-// MARK: - Slide Cell（仅 Banner 图）
+// MARK: - Slide Cell（纯图；比例不符时居中裁剪）
 
 private final class BannerSlideCell: UICollectionViewCell {
 
     static let reuseID = "BannerSlideCell"
 
-    private let card = UIView()
     private let bannerImageView: UIImageView = {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFill
@@ -206,11 +233,8 @@ private final class BannerSlideCell: UICollectionViewCell {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        card.layer.cornerRadius = 16
-        card.clipsToBounds = true
-        contentView.addSubview(card)
-        card.snp.makeConstraints { $0.edges.equalToSuperview() }
-        card.addSubview(bannerImageView)
+        contentView.clipsToBounds = true
+        contentView.addSubview(bannerImageView)
         bannerImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
     }
 
@@ -224,7 +248,14 @@ private final class BannerSlideCell: UICollectionViewCell {
 
     func configure(_ banner: ServiceHubBanner) {
         if banner.hasImage, let urlString = banner.imageUrl, let url = URL(string: urlString) {
-            bannerImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+            // scaleAspectFill + clipsToBounds：比例不匹配时裁剪适配 Figma 画幅
+            bannerImageView.kf.setImage(
+                with: url,
+                options: [
+                    .transition(.fade(0.2)),
+                    .scaleFactor(UIScreen.main.scale),
+                ]
+            )
         } else {
             bannerImageView.image = nil
             bannerImageView.backgroundColor = banner.background

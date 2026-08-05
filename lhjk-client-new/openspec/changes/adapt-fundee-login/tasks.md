@@ -34,6 +34,7 @@
 - [ ] 4.1 创建 `PL/RegisterLogin/ForgotPasswordViewController.swift` — 忘记密码页
 - [ ] 4.2 实现忘记密码流程：手机号 → 拼图验证 → 发送验证码 → 输入验证码 → 设置新密码 → 提交重置
 - [ ] 4.3 重置成功后返回密码登录页并预填手机号
+- [x] 4.4 `resetPasswordByMobile` 使用未认证 JSON Session，避免未登录时触发 Alamofire `AuthenticationError`
 
 ## 5. 微信登录与绑定
 

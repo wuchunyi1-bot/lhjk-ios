@@ -1,12 +1,22 @@
 import UIKit
 import SnapKit
 
-/// 富德优选双列商品网格 — 嵌入服务首页 TableView，样式对齐 `/mall` `MallProductCell`
+/// 富德优选双列商品网格 — 对齐 Figma 3042:1759
+/// 外层白卡包含标题与商品网格；375pt 稿面下白卡为 343×792，商品卡为 153×235。
 final class MallProductGridCell: UITableViewCell {
 
     static let reuseID = "MallProductGridCell"
 
+    private static let outerHorizontalInset: CGFloat = 16
+    private static let cardContentInset: CGFloat = 12
+    private static let headerHeight: CGFloat = 51
+    private static let cardBottomInset: CGFloat = 12
+    private static let columnSpacing: CGFloat = 13
+    private static let rowSpacing: CGFloat = 12
+    private static let itemBodyHeight: CGFloat = 82
+
     var onProductTap: ((HealthPackageItem) -> Void)?
+    var onMoreTapped: (() -> Void)?
     /// CollectionView 实测高度变化时回调，用于触发外层 TableView 重新计算行高
     var onContentHeightChanged: (() -> Void)?
 
@@ -16,15 +26,43 @@ final class MallProductGridCell: UITableViewCell {
     private var lastLayoutWidth: CGFloat = 0
     private var needsContentReload = false
 
+    private let cardView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .fdSurface
+        view.layer.cornerRadius = 16
+        view.clipsToBounds = true
+        return view
+    }()
+
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "富德优选"
+        label.font = .fdFont(ofSize: 18, weight: .medium)
+        label.textColor = .fdText
+        return label
+    }()
+
+    private let moreButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("查看全部 ›", for: .normal)
+        button.titleLabel?.font = .fdCaption
+        button.setTitleColor(.fdSubtext, for: .normal)
+        button.contentHorizontalAlignment = .right
+        return button
+    }()
+
     private lazy var collectionView: UICollectionView = {
-        let cv = UICollectionView(frame: .zero, collectionViewLayout: Self.makeGridLayout(containerWidth: UIScreen.main.bounds.width))
-        cv.backgroundColor = .fdBg
-        cv.isScrollEnabled = false
-        cv.showsVerticalScrollIndicator = false
-        cv.register(MallProductCell.self, forCellWithReuseIdentifier: MallProductCell.reuseID)
-        cv.dataSource = self
-        cv.delegate = self
-        return cv
+        let view = UICollectionView(
+            frame: .zero,
+            collectionViewLayout: Self.makeGridLayout(outerWidth: UIScreen.main.bounds.width)
+        )
+        view.backgroundColor = .clear
+        view.isScrollEnabled = false
+        view.showsVerticalScrollIndicator = false
+        view.register(MallProductCell.self, forCellWithReuseIdentifier: MallProductCell.reuseID)
+        view.dataSource = self
+        view.delegate = self
+        return view
     }()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -32,11 +70,36 @@ final class MallProductGridCell: UITableViewCell {
         selectionStyle = .none
         backgroundColor = .fdBg
         contentView.backgroundColor = .fdBg
-        contentView.addSubview(collectionView)
+
+        contentView.addSubview(cardView)
+        cardView.addSubview(titleLabel)
+        cardView.addSubview(moreButton)
+        cardView.addSubview(collectionView)
+
+        cardView.snp.makeConstraints {
+            $0.top.bottom.equalToSuperview()
+            $0.leading.equalToSuperview().offset(Self.outerHorizontalInset)
+            $0.trailing.equalToSuperview().offset(-Self.outerHorizontalInset)
+        }
+        titleLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(16)
+            $0.leading.equalToSuperview().offset(16)
+        }
+        moreButton.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(14)
+            $0.trailing.equalToSuperview().inset(12)
+            $0.height.equalTo(24)
+            $0.leading.greaterThanOrEqualTo(titleLabel.snp.trailing).offset(8)
+        }
         collectionView.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
+            $0.top.equalToSuperview().offset(Self.headerHeight)
+            $0.leading.equalToSuperview().offset(Self.cardContentInset)
+            $0.trailing.equalToSuperview().offset(-Self.cardContentInset)
+            $0.bottom.equalToSuperview().inset(Self.cardBottomInset)
             collectionHeightConstraint = $0.height.equalTo(1).constraint
         }
+
+        moreButton.addTarget(self, action: #selector(moreTapped), for: .touchUpInside)
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -45,6 +108,7 @@ final class MallProductGridCell: UITableViewCell {
         super.prepareForReuse()
         products = []
         onProductTap = nil
+        onMoreTapped = nil
         onContentHeightChanged = nil
         lastAppliedHeight = 0
         lastLayoutWidth = 0
@@ -69,7 +133,7 @@ final class MallProductGridCell: UITableViewCell {
                 verticalFittingPriority: verticalFittingPriority
             )
         }
-        applyCollectionHeight(for: width, notifyTableView: false)
+        applyLayout(for: width, notifyTableView: false)
         return CGSize(width: width, height: lastAppliedHeight)
     }
 
@@ -77,7 +141,7 @@ final class MallProductGridCell: UITableViewCell {
         self.products = products
         needsContentReload = true
         let width = resolvedContainerWidth(from: contentView.bounds.width)
-        applyCollectionHeight(for: width, notifyTableView: false)
+        applyLayout(for: width, notifyTableView: false)
         setNeedsLayout()
     }
 
@@ -88,13 +152,12 @@ final class MallProductGridCell: UITableViewCell {
         return UIScreen.main.bounds.width
     }
 
-    private func applyCollectionHeight(for width: CGFloat, notifyTableView: Bool) {
+    private func applyLayout(for width: CGFloat, notifyTableView: Bool) {
         guard width > 0 else { return }
 
-        let targetHeight = Self.gridHeight(productCount: products.count, containerWidth: width)
         if abs(width - lastLayoutWidth) > 0.5 {
             lastLayoutWidth = width
-            collectionView.setCollectionViewLayout(Self.makeGridLayout(containerWidth: width), animated: false)
+            collectionView.setCollectionViewLayout(Self.makeGridLayout(outerWidth: width), animated: false)
             needsContentReload = true
         }
 
@@ -103,11 +166,14 @@ final class MallProductGridCell: UITableViewCell {
             needsContentReload = false
         }
 
-        guard abs(targetHeight - lastAppliedHeight) > 0.5 else { return }
+        let collectionHeight = Self.collectionHeight(productCount: products.count, outerWidth: width)
+        let totalHeight = Self.gridHeight(productCount: products.count, containerWidth: width)
+        let heightChanged = abs(totalHeight - lastAppliedHeight) > 0.5
 
-        lastAppliedHeight = targetHeight
-        collectionHeightConstraint?.update(offset: max(targetHeight, 0))
-        if notifyTableView {
+        collectionHeightConstraint?.update(offset: max(collectionHeight, 1))
+        lastAppliedHeight = totalHeight
+
+        if notifyTableView, heightChanged {
             onContentHeightChanged?()
         }
     }
@@ -115,64 +181,48 @@ final class MallProductGridCell: UITableViewCell {
     private func refreshLayoutIfNeeded() {
         let width = contentView.bounds.width
         guard width > 0, !products.isEmpty else { return }
-
         if abs(width - lastLayoutWidth) > 0.5 {
-            applyCollectionHeight(for: width, notifyTableView: lastAppliedHeight > 0)
-            return
+            applyLayout(for: width, notifyTableView: lastAppliedHeight > 0)
         }
-
-        collectionView.layoutIfNeeded()
-        let measuredHeight = collectionView.collectionViewLayout.collectionViewContentSize.height
-        guard measuredHeight > 0, abs(measuredHeight - lastAppliedHeight) > 0.5 else { return }
-
-        lastAppliedHeight = measuredHeight
-        collectionHeightConstraint?.update(offset: measuredHeight)
-        onContentHeightChanged?()
     }
 
-    /// 双列网格总高度（含 section 内边距与行间距）
+    /// 富德优选白卡总高度（标题 51 + 网格 + 底部 12）。
     static func gridHeight(productCount: Int, containerWidth: CGFloat) -> CGFloat {
         guard productCount > 0, containerWidth > 0 else { return 0 }
-        let itemHeight = itemSize(for: containerWidth).height
+        return headerHeight
+            + collectionHeight(productCount: productCount, outerWidth: containerWidth)
+            + cardBottomInset
+    }
+
+    private static func collectionHeight(productCount: Int, outerWidth: CGFloat) -> CGFloat {
+        guard productCount > 0 else { return 0 }
         let rowCount = (productCount + 1) / 2
-        let sectionVerticalInset: CGFloat = 24
-        let interRowSpacing: CGFloat = 10
-        let rows = CGFloat(rowCount)
-        return sectionVerticalInset + rows * itemHeight + max(0, rows - 1) * interRowSpacing
+        let itemHeight = itemSize(for: outerWidth).height
+        return CGFloat(rowCount) * itemHeight
+            + CGFloat(max(rowCount - 1, 0)) * rowSpacing
     }
 
-    private static func makeGridLayout(containerWidth: CGFloat) -> UICollectionViewCompositionalLayout {
-        let itemHeight = itemSize(for: containerWidth).height
-
-        let item = NSCollectionLayoutItem(
-            layoutSize: NSCollectionLayoutSize(
-                widthDimension: .fractionalWidth(0.5),
-                heightDimension: .absolute(itemHeight)
-            )
-        )
-        item.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 5, bottom: 0, trailing: 5)
-
-        let group = NSCollectionLayoutGroup.horizontal(
-            layoutSize: NSCollectionLayoutSize(
-                widthDimension: .fractionalWidth(1.0),
-                heightDimension: .absolute(itemHeight)
-            ),
-            subitems: [item]
-        )
-
-        let section = NSCollectionLayoutSection(group: group)
-        section.interGroupSpacing = 10
-        section.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 11, bottom: 12, trailing: 11)
-        return UICollectionViewCompositionalLayout(section: section)
+    private static func makeGridLayout(outerWidth: CGFloat) -> UICollectionViewFlowLayout {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .vertical
+        layout.minimumInteritemSpacing = columnSpacing
+        layout.minimumLineSpacing = rowSpacing
+        layout.sectionInset = .zero
+        layout.itemSize = itemSize(for: outerWidth)
+        return layout
     }
 
-    /// 与 `MallProductCell` 约束对齐：1:1 封面 + 文案区 + 44pt 购买按钮
-    private static func itemSize(for containerWidth: CGFloat) -> CGSize {
-        let horizontalInset: CGFloat = 22
-        let interColumnSpacing: CGFloat = 10
-        let itemWidth = (containerWidth - horizontalInset - interColumnSpacing) / 2
-        let bodyHeight: CGFloat = 12 + 20 + 4 + 17 + 8 + 44 + 12
-        return CGSize(width: itemWidth, height: itemWidth + bodyHeight)
+    /// Figma 商品卡：图片 1:1 + 82pt 文案区；375pt 稿面下为 153×235。
+    private static func itemSize(for outerWidth: CGFloat) -> CGSize {
+        let collectionWidth = outerWidth
+            - (outerHorizontalInset * 2)
+            - (cardContentInset * 2)
+        let itemWidth = max(0, (collectionWidth - columnSpacing) / 2)
+        return CGSize(width: itemWidth, height: itemWidth + itemBodyHeight)
+    }
+
+    @objc private func moreTapped() {
+        onMoreTapped?()
     }
 }
 
@@ -183,7 +233,10 @@ extension MallProductGridCell: UICollectionViewDataSource, UICollectionViewDeleg
         products.count
     }
 
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        cellForItemAt indexPath: IndexPath
+    ) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(
             withReuseIdentifier: MallProductCell.reuseID,
             for: indexPath

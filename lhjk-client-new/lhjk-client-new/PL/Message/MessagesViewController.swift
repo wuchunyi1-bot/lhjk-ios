@@ -1,8 +1,8 @@
 import UIKit
 import SnapKit
 
-/// 消息模块根页 — 容器 VC，通过分段 Tab 切换两个子 VC
-/// 参考 funde-client MessagesView.vue
+/// 消息模块根页 — 容器 VC，通过自定义分段 Tab 切换两个子 VC
+/// 对齐 Figma 3042:740（标题行 + 团队对话/通知中心分段 + 圆角白卡列表）
 final class MessagesViewController: BaseViewController {
 
     // MARK: - Child VCs
@@ -14,21 +14,59 @@ final class MessagesViewController: BaseViewController {
 
     // MARK: - UI
 
-    private let brandHeader: TabHubBrandHeaderView = {
-        let v = TabHubBrandHeaderView()
-        v.configure(
-            title: "消息",
-            subtitle: "您的健管团队 7×24 在线",
-            titleColor: .fdText
-        )
+    private let headerView: UIView = {
+        let v = UIView()
+        v.backgroundColor = .fdBg
         return v
     }()
 
-    private lazy var segmentControl: UISegmentedControl = {
-        let sc = UISegmentedControl(items: ["团队对话", "通知中心"])
-        sc.selectedSegmentIndex = 0
-        sc.addTarget(self, action: #selector(segmentChanged), for: .valueChanged)
-        return sc
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "消息"
+        label.font = .fdFont(ofSize: 18, weight: .semibold)
+        label.textColor = .fdText
+        return label
+    }()
+
+    private let subtitleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "您的健管团队 7X24 在线"
+        label.font = .fdFont(ofSize: 12, weight: .regular)
+        label.textColor = .fdSubtext
+        return label
+    }()
+
+    /// Figma 3042:740：选中「团队对话」时的曲线背景
+    private let activeTabBackgroundView: UIImageView = {
+        let view = UIImageView(image: UIImage(named: "msg_tab_active"))
+        view.contentMode = .scaleToFill
+        view.isUserInteractionEnabled = false
+        return view
+    }()
+
+    /// Figma 3042:740：选中「通知中心」时的右侧曲线背景
+    private let inactiveTabBackgroundView: UIImageView = {
+        let view = UIImageView(image: UIImage(named: "msg_tab_inactive"))
+        view.contentMode = .scaleToFill
+        view.isUserInteractionEnabled = false
+        view.isHidden = true
+        return view
+    }()
+
+    private lazy var segmentedControl: MessageSegmentedControl = {
+        let c = MessageSegmentedControl()
+        c.items = [
+            MessageSegmentedControl.Item(title: "团队对话", badge: 0),
+            MessageSegmentedControl.Item(title: "通知中心", badge: 0),
+        ]
+        c.onSelect = { [weak self] idx in
+            self?.activeTab = idx == 0 ? "chat" : "noti"
+            self?.chatListVC.view.isHidden = idx != 0
+            self?.notiListVC.view.isHidden = idx == 0
+            self?.updateTabBackground()
+            self?.refreshCurrentChild()
+        }
+        return c
     }()
 
     private lazy var containerView: UIView = {
@@ -47,24 +85,55 @@ final class MessagesViewController: BaseViewController {
     override func setupUI() {
         view.backgroundColor = .fdBg
 
-        [brandHeader, segmentControl, containerView].forEach(view.addSubview)
+        headerView.addSubview(titleLabel)
+        headerView.addSubview(subtitleLabel)
+        [
+            headerView,
+            activeTabBackgroundView,
+            inactiveTabBackgroundView,
+            segmentedControl,
+            containerView,
+        ].forEach(view.addSubview)
 
-        brandHeader.snp.makeConstraints { make in
+        headerView.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
+            make.height.equalTo(65)
+        }
+        titleLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(9)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.height.equalTo(22)
+        }
+        subtitleLabel.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(7)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.height.equalTo(15)
         }
 
-        segmentControl.snp.makeConstraints { make in
-            make.top.equalTo(brandHeader.snp.bottom).offset(12)
-            make.leading.trailing.equalToSuperview().inset(16)
+        activeTabBackgroundView.snp.makeConstraints { make in
+            make.top.equalTo(headerView.snp.bottom)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(185)
+        }
+        inactiveTabBackgroundView.snp.makeConstraints { make in
+            make.top.equalTo(headerView.snp.bottom).offset(6)
+            make.trailing.equalToSuperview()
+            make.width.equalTo(212)
+            make.height.equalTo(185)
+        }
+
+        segmentedControl.snp.makeConstraints { make in
+            make.top.equalTo(headerView.snp.bottom)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(73)
         }
 
         containerView.snp.makeConstraints { make in
-            make.top.equalTo(segmentControl.snp.bottom).offset(12)
+            make.top.equalTo(segmentedControl.snp.bottom)
             make.leading.trailing.bottom.equalToSuperview()
         }
 
-        // 添加两个子 VC
         [chatListVC, notiListVC].forEach {
             addChild($0)
             containerView.addSubview($0.view)
@@ -76,18 +145,17 @@ final class MessagesViewController: BaseViewController {
         chatListVC.onDataChanged = { [weak self] in self?.updateSegmentBadges() }
         notiListVC.onDataChanged = { [weak self] in self?.updateSegmentBadges() }
         chatListVC.view.isHidden = false
+        updateTabBackground()
+        updateSegmentBadges()
+    }
+
+    private func updateTabBackground() {
+        let isChat = activeTab == "chat"
+        activeTabBackgroundView.isHidden = !isChat
+        inactiveTabBackgroundView.isHidden = isChat
     }
 
     // MARK: - Actions
-
-    @objc private func segmentChanged() {
-        activeTab = segmentControl.selectedSegmentIndex == 0 ? "chat" : "noti"
-
-        chatListVC.view.isHidden = activeTab != "chat"
-        notiListVC.view.isHidden = activeTab == "chat"
-
-        refreshCurrentChild()
-    }
 
     private func refreshCurrentChild() {
         if activeTab == "chat" {
@@ -101,10 +169,10 @@ final class MessagesViewController: BaseViewController {
         let chatBadge = chatListVC.totalUnread
         let notiBadge = notiListVC.unreadCount
 
-        let chatTitle = chatBadge > 0 ? "团队对话 \(chatBadge)" : "团队对话"
-        let notiTitle = notiBadge > 0 ? "通知中心 \(notiBadge)" : "通知中心"
-
-        segmentControl.setTitle(chatTitle, forSegmentAt: 0)
-        segmentControl.setTitle(notiTitle, forSegmentAt: 1)
+        segmentedControl.items = [
+            MessageSegmentedControl.Item(title: "团队对话", badge: chatBadge),
+            MessageSegmentedControl.Item(title: "通知中心", badge: notiBadge),
+        ]
+        segmentedControl.selectedIndex = activeTab == "chat" ? 0 : 1
     }
 }

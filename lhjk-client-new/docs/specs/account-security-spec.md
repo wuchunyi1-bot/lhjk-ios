@@ -151,7 +151,7 @@ SettingsViewController (设置主页) — 已存在
 
 **统一使用 `UserService.resetPasswordByMobile(mobile:newPwd:checkCode:)`**
 
-> `changePassword` 和 `changeCurrentPassword` 暂不使用。
+> `changeCurrentPassword` 暂不使用（接口仍保留，Apifox 有文档）。`changePassword` 已删除（Apifox 无文档且无调用）。
 
 成功 → Toast "密码设置成功" → 返回上一页 → `UserManager.shared.refreshUserInfo()`
 

@@ -106,7 +106,7 @@
 
 ### Requirement: 套餐详情接口
 
-服务模块套餐详情 SHALL 调用 `GET /v1/hospitalPackage/getPackageDetail`（[Apifox](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/485486161e0)）。
+服务模块套餐详情 SHALL 调用 `GET /v1/hospitalPackage/getHospitalPackageDetail`（Query：`hospitalId`、`packageId`；Apifox 层级 `App端/商城/商城套餐相关接口`）。
 
 #### Scenario: 请求参数
 

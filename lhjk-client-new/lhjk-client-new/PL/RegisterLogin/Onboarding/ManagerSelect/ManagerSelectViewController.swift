@@ -34,7 +34,7 @@ final class ManagerSelectViewController: BaseViewController {
         view.backgroundColor = .fdBg
         title = "选择业务经理"
         navigationItem.leftBarButtonItem = UIBarButtonItem(
-            image: UIImage(systemName: "chevron.left"),
+            image: .fdNavBack,
             style: .plain,
             target: self,
             action: #selector(backTapped)

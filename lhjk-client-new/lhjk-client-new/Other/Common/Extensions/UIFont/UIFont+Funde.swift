@@ -82,6 +82,29 @@ extension UIFont {
         .fdFont(ofSize: senior ? 22 : 18, weight: .regular)
     }
 
+    // MARK: - Login Figma
+
+    /// Figma 登录页品牌标题；工程未内置 DingTalk JinBuTi 时回退系统粗体。
+    static var fdLoginTitle: UIFont {
+        UIFont(name: "DingTalk JinBuTi", size: senior ? 38 : 32)
+            ?? .fdFont(ofSize: senior ? 38 : 32, weight: .bold)
+    }
+
+    /// Figma 登录页输入与标签（14pt）。
+    static var fdLoginInput: UIFont {
+        .fdFont(ofSize: senior ? 17 : 14, weight: .regular)
+    }
+
+    /// Figma 登录页主按钮（16pt Medium）。
+    static var fdLoginButton: UIFont {
+        .fdFont(ofSize: senior ? 20 : 16, weight: .medium)
+    }
+
+    /// Figma 登录页辅助文案（12pt）。
+    static var fdLoginMeta: UIFont {
+        .fdFont(ofSize: senior ? 15 : 12, weight: .regular)
+    }
+
     // MARK: - Type Scale: Body
 
     /// 正文 / 列表项 — 标准 15pt / 老年 19pt，`.regular`

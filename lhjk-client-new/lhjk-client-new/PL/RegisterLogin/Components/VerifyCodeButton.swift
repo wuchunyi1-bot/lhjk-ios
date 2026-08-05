@@ -1,31 +1,28 @@
 import UIKit
+import SnapKit
 
 /// 验证码倒计时按钮
-/// 参考 funde-client: login-code-btn / login-code-btn--sent
 ///
-/// 三态切换:
-///   - 默认: "获取验证码" (fdPrimary 文字 + fdPrimarySoft 背景)
-///   - 倒计时: "{N}s 后重发" (fdMuted 文字 + fdBg2 背景, disabled)
-///   - 结束: "重新获取" (fdPrimary 文字 + fdPrimarySoft 背景, enabled)
+/// - `inline`：输入壳内橙色文字（登录页 Figma）
+/// - `pill`：独立胶囊按钮（忘记密码 / 绑定手机号等）
 final class VerifyCodeButton: UIButton {
 
-    // MARK: - Constants
+    enum Style {
+        case inline
+        case pill
+    }
 
     private let countdownDuration = 60
-
-    // MARK: - State
-
     private(set) var isCountingDown = false
     private var countdown = 0
     private var timer: Timer?
+    private let style: Style
 
-    /// 点击获取验证码的回调
     var onRequestCode: (() -> Void)?
 
-    // MARK: - Init
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
+    init(style: Style = .inline) {
+        self.style = style
+        super.init(frame: .zero)
         setupStyle()
         addTarget(self, action: #selector(didTap), for: .touchUpInside)
     }
@@ -34,27 +31,31 @@ final class VerifyCodeButton: UIButton {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        timer?.invalidate()
-    }
-
-    // MARK: - Style
+    deinit { timer?.invalidate() }
 
     private func setupStyle() {
-        titleLabel?.font = .fdCaptionSemibold
-        layer.cornerRadius = 12
-        contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
+        setContentHuggingPriority(.required, for: .horizontal)
+        setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        switch style {
+        case .inline:
+            titleLabel?.font = .fdLoginInput
+            backgroundColor = .clear
+            contentEdgeInsets = .zero
+        case .pill:
+            titleLabel?.font = .fdCaptionSemibold
+            layer.cornerRadius = 12
+            contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
+            snp.makeConstraints { $0.height.equalTo(48) }
+        }
         updateToDefaultState()
     }
-
-    // MARK: - Actions
 
     @objc private func didTap() {
         guard !isCountingDown else { return }
         onRequestCode?()
     }
 
-    /// 开始倒计时（由外部在验证码发送成功后调用）
     func startCountdown() {
         countdown = countdownDuration
         isCountingDown = true
@@ -65,7 +66,6 @@ final class VerifyCodeButton: UIButton {
         }
     }
 
-    /// 停止倒计时（用于异常重置场景）
     func stopCountdown() {
         timer?.invalidate()
         timer = nil
@@ -86,19 +86,24 @@ final class VerifyCodeButton: UIButton {
         }
     }
 
-    // MARK: - UI State
-
     private func updateCountdownState() {
         isEnabled = false
-        backgroundColor = .fdBg2
-        setTitleColor(.fdMuted, for: .disabled)
+        switch style {
+        case .inline:
+            setTitleColor(.fdMuted, for: .disabled)
+        case .pill:
+            backgroundColor = .fdBg2
+            setTitleColor(.fdMuted, for: .disabled)
+        }
         setTitle("\(countdown)s 后重发", for: .disabled)
     }
 
     private func updateToDefaultState() {
         isEnabled = true
-        backgroundColor = .fdPrimarySoft
         setTitleColor(.fdPrimary, for: .normal)
         setTitle("获取验证码", for: .normal)
+        if style == .pill {
+            backgroundColor = .fdPrimarySoft
+        }
     }
 }

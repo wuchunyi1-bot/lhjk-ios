@@ -54,7 +54,7 @@ final class ForgotPasswordViewController: BaseViewController {
     )
 
     private lazy var codeButton: VerifyCodeButton = {
-        let btn = VerifyCodeButton()
+        let btn = VerifyCodeButton(style: .pill)
         btn.onRequestCode = { [weak self] in
             self?.requestCode()
         }

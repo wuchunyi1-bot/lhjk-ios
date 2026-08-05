@@ -251,11 +251,11 @@ final class OrderConfirmViewModel: ObservableObject {
 
     func fetchCouponOptions() async throws -> [CouponTakeItem] {
         let hospitalId = latestSettlement?.resolvedHospitalId
-        let coupons = try await couponService.getCouponTakeList(hospitalId: hospitalId)
+        let result = try await couponService.getCouponTakeList(hospitalId: hospitalId)
         await MainActor.run {
-            availableCouponCount = coupons.count
+            availableCouponCount = result.items.count
         }
-        return coupons
+        return result.items
     }
 
     func bindCoupon(takeId: Int64?) {

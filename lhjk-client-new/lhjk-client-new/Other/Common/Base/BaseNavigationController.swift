@@ -19,7 +19,42 @@ class BaseNavigationController: UINavigationController {
     private func configureAppearance() {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = .fdBg
+        appearance.shadowColor = .clear
+        appearance.titleTextAttributes = [
+            .foregroundColor: UIColor.fdText,
+            .font: UIFont.fdFont(ofSize: 18, weight: .medium)
+        ]
+
+        // 全局返回箭头：使用选择套餐页 Figma 返回图标，并隐藏系统返回文案
+        let backImage = UIImage.fdNavBack
+        appearance.setBackIndicatorImage(backImage, transitionMaskImage: backImage)
+        let backButtonAppearance = UIBarButtonItemAppearance()
+        backButtonAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.clear]
+        backButtonAppearance.highlighted.titleTextAttributes = [.foregroundColor: UIColor.clear]
+        appearance.backButtonAppearance = backButtonAppearance
+
         navigationBar.standardAppearance = appearance
         navigationBar.scrollEdgeAppearance = appearance
+        navigationBar.compactAppearance = appearance
+        navigationBar.tintColor = .fdText
+        navigationBar.isTranslucent = false
+    }
+}
+
+extension UIImage {
+    /// Figma 导航栏返回箭头（全局统一）
+    static var fdNavBack: UIImage? {
+        UIImage(named: "nav_back")?.withRenderingMode(.alwaysTemplate)
+    }
+
+    /// Figma 导航栏搜索图标
+    static var fdNavSearch: UIImage? {
+        UIImage(named: "nav_search")?.withRenderingMode(.alwaysTemplate)
+    }
+
+    /// Figma 导航栏购物车图标
+    static var fdNavCart: UIImage? {
+        UIImage(named: "nav_cart")?.withRenderingMode(.alwaysTemplate)
     }
 }

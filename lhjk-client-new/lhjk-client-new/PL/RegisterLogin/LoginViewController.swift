@@ -27,6 +27,7 @@ final class LoginViewController: BaseViewController {
     // MARK: - Constants
 
     private let horizontalPadding: CGFloat = 24
+    private var didBuildLoginUI = false
 
     // MARK: - UI
 
@@ -47,11 +48,17 @@ final class LoginViewController: BaseViewController {
 
     // SMS fields
     private lazy var phoneField = LoginFieldView(
-        title: "手机号", placeholder: "请输入手机号", sfSymbol: "phone"
+        title: "手机号",
+        placeholder: "请输入手机号",
+        sfSymbol: "phone",
+        iconAssetName: "login_phone_icon"
     )
 
     private lazy var codeField = LoginFieldView(
-        title: "验证码", placeholder: "请输入验证码", sfSymbol: "shield"
+        title: "验证码",
+        placeholder: "请输入验证码",
+        sfSymbol: "shield",
+        iconAssetName: "login_code_icon"
     )
 
     private lazy var codeButton: VerifyCodeButton = {
@@ -62,23 +69,12 @@ final class LoginViewController: BaseViewController {
         return btn
     }()
 
-    private lazy var codeRowView: UIStackView = {
-        let container = UIView()
-        container.addSubview(codeField)
-        codeField.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
-            make.bottom.equalToSuperview()
-        }
-        let stack = UIStackView(arrangedSubviews: [container, codeButton])
-        stack.axis = .horizontal
-        stack.alignment = .bottom
-        stack.spacing = 10
-        return stack
-    }()
-
     // Password fields
     private lazy var passwordPhoneField = LoginFieldView(
-        title: "手机号", placeholder: "请输入手机号", sfSymbol: "phone"
+        title: "手机号",
+        placeholder: "请输入手机号",
+        sfSymbol: "phone",
+        iconAssetName: "login_phone_icon"
     )
 
     private lazy var passwordField = LoginFieldView(
@@ -94,14 +90,6 @@ final class LoginViewController: BaseViewController {
         btn.setTitleColor(.fdPrimary, for: .normal)
         btn.addTarget(self, action: #selector(showForgotPassword), for: .touchUpInside)
         return btn
-    }()
-
-    // Form stack
-    private let formStack: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .vertical
-        stack.spacing = 20
-        return stack
     }()
 
     private let smsFieldsContainer = UIView()
@@ -140,7 +128,7 @@ final class LoginViewController: BaseViewController {
     // Forgot / reset fields
     private lazy var forgotHeadBackButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        btn.setImage(.fdNavBack, for: .normal)
         btn.tintColor = .fdText
         btn.addTarget(self, action: #selector(backFromForgotFlow), for: .touchUpInside)
         return btn
@@ -164,11 +152,17 @@ final class LoginViewController: BaseViewController {
     }()
 
     private lazy var forgotPhoneField = LoginFieldView(
-        title: "手机号", placeholder: "请输入手机号", sfSymbol: "phone"
+        title: "手机号",
+        placeholder: "请输入手机号",
+        sfSymbol: "phone",
+        iconAssetName: "login_phone_icon"
     )
 
     private lazy var forgotCodeField = LoginFieldView(
-        title: "验证码", placeholder: "请输入验证码", sfSymbol: "shield"
+        title: "验证码",
+        placeholder: "请输入验证码",
+        sfSymbol: "shield",
+        iconAssetName: "login_code_icon"
     )
 
     private lazy var forgotCodeButton: VerifyCodeButton = {
@@ -192,27 +186,36 @@ final class LoginViewController: BaseViewController {
     // Agreement checkbox
     private let agreementCheckbox = AgreementCheckboxView()
 
-    // Submit button
+    // Submit button（渐变胶囊，在 layoutSubviews 更新图层）
     private lazy var submitButton: UIButton = {
-        let btn = UIButton(type: .system)
-        btn.setTitle("登录 / 注册", for: .normal)
-        btn.titleLabel?.font = .fdBodyBold
+        let btn = UIButton(type: .custom)
+        btn.setTitle("登录/注册", for: .normal)
+        btn.titleLabel?.font = .fdLoginButton
         btn.setTitleColor(.white, for: .normal)
-        btn.backgroundColor = .fdPrimary
-        btn.layer.cornerRadius = 18
-        btn.layer.shadowColor = UIColor.fdPrimary.cgColor
-        btn.layer.shadowOffset = CGSize(width: 0, height: 6)
-        btn.layer.shadowRadius = 18
-        btn.layer.shadowOpacity = 0.32
+        btn.layer.cornerRadius = 25.5
+        btn.layer.borderWidth = 0.5
+        btn.layer.borderColor = UIColor.fdLoginButtonEnd.cgColor
+        btn.clipsToBounds = true
         btn.addTarget(self, action: #selector(handleSubmit), for: .touchUpInside)
         return btn
+    }()
+
+    private let submitGradientLayer: CAGradientLayer = {
+        let layer = CAGradientLayer()
+        layer.colors = [
+            UIColor.fdLoginButtonStart.cgColor,
+            UIColor.fdLoginButtonEnd.cgColor,
+        ]
+        layer.startPoint = CGPoint(x: 0, y: 0.5)
+        layer.endPoint = CGPoint(x: 1, y: 0.5)
+        return layer
     }()
 
     // Mode switch link
     private lazy var modeSwitchButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("使用账号密码登录", for: .normal)
-        btn.titleLabel?.font = .fdCaption
+        btn.titleLabel?.font = .fdLoginInput
         btn.setTitleColor(.fdPrimary, for: .normal)
         btn.addTarget(self, action: #selector(toggleMode), for: .touchUpInside)
         return btn
@@ -220,19 +223,54 @@ final class LoginViewController: BaseViewController {
 
     // WeChat entry
     private lazy var wechatButton: UIButton = {
-        let btn = UIButton(type: .system)
-        btn.setImage(UIImage(systemName: "message.circle.fill")?
-            .withTintColor(.fdWechatGreen, renderingMode: .alwaysOriginal)
-            .applyingSymbolConfiguration(UIImage.SymbolConfiguration(pointSize: 28, weight: .regular)),
-            for: .normal)
-        btn.backgroundColor = .white
+        let btn = UIButton(type: .custom)
+        btn.setImage(UIImage(named: "login_wechat"), for: .normal)
+        btn.imageView?.contentMode = .scaleAspectFit
+        btn.backgroundColor = .fdSurface
         btn.layer.cornerRadius = 26
-        btn.layer.shadowColor = UIColor.black.cgColor
-        btn.layer.shadowOffset = CGSize(width: 0, height: 4)
-        btn.layer.shadowRadius = 12
-        btn.layer.shadowOpacity = 0.08
         btn.addTarget(self, action: #selector(showWechatSheet), for: .touchUpInside)
         return btn
+    }()
+
+    private let wechatLabel: UILabel = {
+        let l = UILabel()
+        l.text = "微信登录"
+        l.font = .fdLoginMeta
+        l.textColor = .fdLoginLabel
+        l.textAlignment = .center
+        return l
+    }()
+
+    private lazy var wechatStack: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [wechatButton, wechatLabel])
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 8
+        return stack
+    }()
+
+    // Hero — Figma 3021:586
+    private let heroContainer = UIView()
+
+    private let heroImageView: UIImageView = {
+        let iv = UIImageView(image: UIImage(named: "login_hero_bg"))
+        iv.contentMode = .scaleAspectFill
+        iv.clipsToBounds = true
+        return iv
+    }()
+
+    private let heroFadeView = LoginHeroFadeView()
+
+    // Session expired hint（仅登录过期回跳时展示）
+    private let sessionExpiredLabel: UILabel = {
+        let l = UILabel()
+        l.text = "当前登录状态已失效，请重新登录后继续操作"
+        l.font = .fdLoginMeta
+        l.textColor = .fdMuted
+        l.textAlignment = .center
+        l.numberOfLines = 0
+        l.isHidden = true
+        return l
     }()
 
     // Overlays
@@ -241,9 +279,6 @@ final class LoginViewController: BaseViewController {
     private var captchaVerifyView: CaptchaVerifyView?
     private var notificationGuideView: NotificationGuideView?
     private var phoneBindingView: PhoneBindingView?
-
-    // Session expired banner
-    private var sessionExpiredBanner: UIView?
 
     // MARK: - Lifecycle
 
@@ -384,58 +419,75 @@ final class LoginViewController: BaseViewController {
     // MARK: - Setup UI
 
     override func setupUI() {
-        view.backgroundColor = .fdBg
+        // Base.viewDidLoad 会先调一次；等 flow 进入 loginForm 再建树，并保证只建一次
+        guard !didBuildLoginUI else { return }
+        guard case .loginForm = viewModel.flowStep else { return }
+        didBuildLoginUI = true
 
-        // ScrollView
+        view.backgroundColor = .fdLoginBackground
+
+        view.addSubview(heroContainer)
+        heroContainer.clipsToBounds = true
+        heroContainer.addSubview(heroImageView)
+        heroContainer.addSubview(heroFadeView)
+        heroContainer.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.height.equalTo(243)
+        }
+        heroImageView.snp.makeConstraints { make in
+            make.top.equalToSuperview()
+            make.centerX.equalToSuperview().offset(2)
+            make.width.equalTo(403)
+            make.height.equalTo(290)
+        }
+        heroFadeView.snp.makeConstraints { make in
+            make.leading.trailing.bottom.equalToSuperview()
+            make.height.equalTo(89)
+        }
+
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
         scrollView.snp.makeConstraints { $0.edges.equalToSuperview() }
-        contentView.snp.makeConstraints { $0.edges.width.equalToSuperview() }
-
-        // Brand
-        contentView.addSubview(brandHeader)
-        brandHeader.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(36)
-            make.centerX.equalToSuperview()
+        contentView.snp.makeConstraints { make in
+            make.edges.width.equalToSuperview()
+            make.height.greaterThanOrEqualTo(830)
         }
 
-        // SMS fields
+        contentView.addSubview(brandHeader)
+        brandHeader.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(80)
+            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+        }
+
+        // SMS：验证码按钮内嵌输入壳
+        codeField.trailingAccessoryView = codeButton
         smsInnerStack.addArrangedSubview(phoneField)
-        smsInnerStack.addArrangedSubview(codeRowView)
+        smsInnerStack.addArrangedSubview(codeField)
         smsFieldsContainer.addSubview(smsInnerStack)
         smsInnerStack.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        // Password fields
         passwordInnerStack.addArrangedSubview(passwordPhoneField)
         passwordInnerStack.addArrangedSubview(passwordField)
         passwordFieldsContainer.addSubview(passwordInnerStack)
         passwordInnerStack.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        // Forgot fields
         let forgotHead = UIStackView(arrangedSubviews: [forgotHeadBackButton, forgotTitleLabel])
         forgotHead.axis = .horizontal
         forgotHead.spacing = 8
         forgotHead.alignment = .center
         forgotHeadBackButton.snp.makeConstraints { $0.size.equalTo(28) }
 
-        let forgotCodeContainer = UIView()
-        forgotCodeContainer.addSubview(forgotCodeField)
-        forgotCodeField.snp.makeConstraints { $0.edges.equalToSuperview() }
-        let forgotCodeRow = UIStackView(arrangedSubviews: [forgotCodeContainer, forgotCodeButton])
-        forgotCodeRow.axis = .horizontal
-        forgotCodeRow.alignment = .bottom
-        forgotCodeRow.spacing = 10
+        forgotCodeField.trailingAccessoryView = forgotCodeButton
 
         forgotInnerStack.addArrangedSubview(forgotHead)
         forgotInnerStack.addArrangedSubview(forgotDescLabel)
         forgotInnerStack.addArrangedSubview(forgotPhoneField)
-        forgotInnerStack.addArrangedSubview(forgotCodeRow)
+        forgotInnerStack.addArrangedSubview(forgotCodeField)
         forgotFieldsContainer.addSubview(forgotInnerStack)
         forgotInnerStack.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        // Reset fields
         let resetHeadBack = UIButton(type: .system)
-        resetHeadBack.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        resetHeadBack.setImage(.fdNavBack, for: .normal)
         resetHeadBack.tintColor = .fdText
         resetHeadBack.addTarget(self, action: #selector(backToForgotStep), for: .touchUpInside)
         resetHeadBack.snp.makeConstraints { $0.size.equalTo(28) }
@@ -453,31 +505,77 @@ final class LoginViewController: BaseViewController {
         resetFieldsContainer.addSubview(resetInnerStack)
         resetInnerStack.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        // Form stack
-        contentView.addSubview(formStack)
-        formStack.addArrangedSubview(smsFieldsContainer)
-        formStack.addArrangedSubview(passwordFieldsContainer)
-        formStack.addArrangedSubview(forgotFieldsContainer)
-        formStack.addArrangedSubview(resetFieldsContainer)
-        formStack.snp.makeConstraints { make in
-            make.top.equalTo(brandHeader.snp.bottom).offset(48)
+        // 四个流程表单独立占位，避免用普通 UIView 作为 UIStackView arrangedSubview
+        // 时无法向 stack 传递 intrinsic height。
+        contentView.addSubview(smsFieldsContainer)
+        smsFieldsContainer.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(251)
             make.leading.trailing.equalToSuperview().inset(horizontalPadding)
         }
 
-        // Forgot password (password mode only)
+        contentView.addSubview(passwordFieldsContainer)
+        passwordFieldsContainer.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(251)
+            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+        }
+
+        contentView.addSubview(forgotFieldsContainer)
+        forgotFieldsContainer.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(251)
+            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+        }
+
+        contentView.addSubview(resetFieldsContainer)
+        resetFieldsContainer.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(251)
+            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+        }
+
         contentView.addSubview(forgotPasswordButton)
         forgotPasswordButton.snp.makeConstraints { make in
-            make.top.equalTo(formStack.snp.bottom).offset(10)
-            make.trailing.equalTo(formStack)
+            make.top.equalTo(passwordFieldsContainer.snp.bottom)
+            make.trailing.equalTo(passwordFieldsContainer)
             make.height.equalTo(28)
         }
         forgotPasswordButton.isHidden = true
 
-        // Agreement checkbox
+        if submitGradientLayer.superlayer == nil {
+            submitButton.layer.insertSublayer(submitGradientLayer, at: 0)
+        }
+        contentView.addSubview(submitButton)
+        submitButton.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(448)
+            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+            make.height.equalTo(51)
+        }
+
+        contentView.addSubview(modeSwitchButton)
+        modeSwitchButton.snp.makeConstraints { make in
+            make.top.equalTo(submitButton.snp.bottom)
+            make.centerX.equalToSuperview()
+            make.height.equalTo(44)
+        }
+
+        wechatButton.snp.makeConstraints { $0.size.equalTo(52) }
+        contentView.addSubview(wechatStack)
+        wechatStack.snp.makeConstraints { make in
+            make.top.equalTo(modeSwitchButton.snp.bottom).offset(49)
+            make.centerX.equalToSuperview()
+        }
+
+        contentView.addSubview(sessionExpiredLabel)
+        sessionExpiredLabel.snp.makeConstraints { make in
+            make.top.equalTo(wechatStack.snp.bottom).offset(27)
+            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+        }
+
         contentView.addSubview(agreementCheckbox)
         agreementCheckbox.snp.makeConstraints { make in
-            make.top.equalTo(forgotPasswordButton.snp.bottom).offset(14)
-            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+            make.top.equalTo(sessionExpiredLabel.snp.bottom).offset(14)
+            make.centerX.equalToSuperview()
+            make.width.equalTo(263)
+            make.height.equalTo(36)
+            make.bottom.lessThanOrEqualToSuperview().offset(-34)
         }
         agreementCheckbox.onUserAgreementTap = { [weak self] in
             self?.openURL("https://example.com/agreement", title: "用户协议")
@@ -489,23 +587,23 @@ final class LoginViewController: BaseViewController {
             self?.openURL("https://example.com/consent", title: "健康管理服务知情同意书")
         }
 
-        // Submit button
-        contentView.addSubview(submitButton)
-        submitButton.snp.makeConstraints { make in
-            make.top.equalTo(agreementCheckbox.snp.bottom).offset(16)
-            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
-            make.height.equalTo(52)
-        }
-
-        // Mode switch
-        contentView.addSubview(modeSwitchButton)
-        modeSwitchButton.snp.makeConstraints { make in
-            make.top.equalTo(submitButton.snp.bottom).offset(12)
-            make.trailing.equalTo(submitButton)
-            make.bottom.equalToSuperview().offset(-32)
-        }
-
+        applySessionExpiredIfNeeded()
         updateFormStepUI(animated: false)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        submitGradientLayer.frame = submitButton.bounds
+        submitGradientLayer.cornerRadius = submitButton.layer.cornerRadius
+    }
+
+    /// 登录过期回跳时展示底部提示（路由参数 `expired=1` 或本地标记）
+    private func applySessionExpiredIfNeeded() {
+        let expired = UserDefaults.standard.bool(forKey: "fd_session_expired_hint")
+        sessionExpiredLabel.isHidden = !expired
+        if expired {
+            UserDefaults.standard.set(false, forKey: "fd_session_expired_hint")
+        }
     }
 
     // MARK: - Mode / Form Step
@@ -515,6 +613,10 @@ final class LoginViewController: BaseViewController {
     }
 
     private func updateFormStepUI(animated: Bool) {
+        // BaseViewController 在 UI 构建前就会收到 @Published 的初始值。
+        // 此时 submitButton 尚未加入 contentView，不能创建跨层级约束。
+        guard didBuildLoginUI, submitButton.superview != nil else { return }
+
         let step = viewModel.formStep
         let isSMS = viewModel.loginMode == .sms
         let changes = {
@@ -528,17 +630,33 @@ final class LoginViewController: BaseViewController {
             self.agreementCheckbox.isHidden = !inLogin
             self.modeSwitchButton.isHidden = !inLogin
 
+            self.submitButton.snp.remakeConstraints { make in
+                switch step {
+                case .login:
+                    make.top.equalToSuperview().offset(448)
+                case .forgot:
+                    make.top.equalTo(self.forgotFieldsContainer.snp.bottom).offset(20)
+                case .resetPassword:
+                    make.top.equalTo(self.resetFieldsContainer.snp.bottom).offset(20)
+                }
+                make.leading.trailing.equalToSuperview().inset(self.horizontalPadding)
+                make.height.equalTo(51)
+            }
+
             switch step {
             case .login:
-                self.submitButton.setTitle(isSMS ? "登录 / 注册" : "密码登录", for: .normal)
+                self.submitButton.setTitle(isSMS ? "登录/注册" : "密码登录", for: .normal)
                 self.modeSwitchButton.setTitle(
                     isSMS ? "使用账号密码登录" : "返回验证码登录",
                     for: .normal
                 )
+                self.wechatStack.isHidden = false
             case .forgot:
                 self.submitButton.setTitle("下一步", for: .normal)
+                self.wechatStack.isHidden = true
             case .resetPassword:
                 self.submitButton.setTitle("确认重置", for: .normal)
+                self.wechatStack.isHidden = true
             }
         }
         if animated {
@@ -933,5 +1051,31 @@ final class LoginViewController: BaseViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             alert.dismiss(animated: true)
         }
+    }
+}
+
+/// Figma 3021:588 — 头图下沿由透明渐变到登录页底色。
+private final class LoginHeroFadeView: UIView {
+
+    private let gradientLayer = CAGradientLayer()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+        gradientLayer.colors = [
+            UIColor.fdLoginBackground.withAlphaComponent(0).cgColor,
+            UIColor.fdLoginBackground.cgColor,
+        ]
+        gradientLayer.locations = [0.05, 0.95]
+        layer.addSublayer(gradientLayer)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        gradientLayer.frame = bounds
     }
 }

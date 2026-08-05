@@ -1,7 +1,8 @@
 import Foundation
 
 // MARK: - 套餐详情 DTO
-// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/485486161e0
+// Path: GET /v1/hospitalPackage/getHospitalPackageDetail（Query: hospitalId、packageId）
+// Apifox 层级：App端/商城/商城套餐相关接口（与同组套餐列表接口一致；分享站无公开 md 时以本 path 为准）
 
 /// `GET /v1/hospitalPackage/getHospitalPackageDetail` → `data`
 struct HospitalPackageDetailBO: Decodable {

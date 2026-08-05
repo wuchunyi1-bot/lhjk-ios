@@ -76,7 +76,7 @@ final class PasswordSetupViewController: BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         navigationItem.leftBarButtonItem = UIBarButtonItem(
-            image: UIImage(systemName: "chevron.left"),
+            image: .fdNavBack,
             style: .plain,
             target: self,
             action: #selector(handleBack)

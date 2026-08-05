@@ -5,9 +5,10 @@ enum HealthRoutes {
 
     /// 兼容历史深链的子路径；映射为 H5 子页面（见 `H5Config` / OpenSpec）
     private static let metricSubPaths: [String: [String]] = [
-        "blood-pressure": ["manual", "history", "service", "detail"],
-        "blood-sugar": ["manual", "history", "service", "detail"],
-        "weight": ["manual", "history", "service", "detail"],
+        "blood-pressure": ["add", "manual", "history", "service", "detail"],
+        "blood-sugar": ["add", "manual", "history", "service", "detail"],
+        "weight": ["add", "manual", "history", "service", "detail"],
+        "heart-rate": ["add", "manual"],
         "exercise": ["home", "add-diet", "add-motion", "search"],
     ]
 
@@ -30,7 +31,9 @@ enum HealthRoutes {
         r.register(path: "/health/record/history") { _ in PlaceholderViewController(title: "健康史") }
         r.register(path: "/health/record/lifestyle") { _ in PlaceholderViewController(title: "生活习惯") }
         r.register(path: "/health/record/condition") { _ in PlaceholderViewController(title: "慢病标签") }
-        r.register(path: "/health/metrics") { _ in MetricsViewController() }
+        // 编辑卡片（替换旧体征监测网格页）
+        r.register(path: "/health/metrics/edit") { _ in MetricCardEditViewController() }
+        r.register(path: "/health/metrics") { _ in MetricCardEditViewController() }
         r.register(path: "/health/assessment/six-dim") { _ in PlaceholderViewController(title: "六维评测") }
         r.register(path: "/health/assessment/report") { _ in HealthReportViewController() }
         r.register(path: "/health/assessment/risk") { _ in PlaceholderViewController(title: "风险评估") }

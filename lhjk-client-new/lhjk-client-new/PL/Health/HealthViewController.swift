@@ -1,50 +1,21 @@
 import UIKit
 import SnapKit
+import Combine
 
-/// 健康模块 Hub 页
-/// 参考 funde-client: HealthView.vue
+/// 健康模块 Hub — 对齐 Figma 3021:1121
 ///
-/// 布局: 统一 `TabHubBrandHeaderView` + UITableView 4 sections
-///   Section 0: HealthScoreCardCell
-///   Section 1: HealthArchiveCardCell
-///   Section 2: HealthVitalMetricsCell (内嵌 UICollectionView)
-///   Section 3: HealthQuickEntriesCell
+/// Section 0: HealthScoreCardCell（本地）
+/// Section 1: HealthArchiveCardCell（本地）
+/// Section 2: HealthVitalMetricsCell（API）
+/// Section 3: HealthQuickEntriesCell（CMS，可空隐藏）
 final class HealthViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate {
-
-    // MARK: - Mock Data
 
     private let riskScore = 62
     private let riskLevel = "中风险"
     private let archiveProgress = 72
 
-    typealias MetricItem = (key: String, label: String, value: String, unit: String, status: String, statusType: String, icon: String, time: String, trend: String)
-
-    private let metrics: [MetricItem] = [
-        ("blood-pressure", "血压", "138/88", "mmHg", "偏高", "warning", "drop", "今天 07:32", "up"),
-        ("blood-sugar", "血糖", "5.8", "mmol/L", "正常", "success", "capsule", "昨天 08:10", "flat"),
-        ("weight", "体重", "68.5", "kg", "正常", "success", "scalemass", "3 天前", "down"),
-        ("heart-rate", "心率", "76", "bpm", "正常", "success", "heart", "今天 07:32", "flat"),
-        ("sleep", "睡眠", "7.2", "小时", "良好", "success", "moon", "昨晚", "flat"),
-        ("ecg", "心电", "正常", "", "无异常", "success", "waveform.path.ecg", "本月 12 日", "flat"),
-        ("fundus", "鹰瞳眼底", "无异常", "", "无异常", "success", "eye", "2 个月前", "flat"),
-        ("exercise", "饮食运动", "6,230", "步", "达标", "success", "figure.walk", "今天", "up"),
-        ("spo2", "血氧", "98", "%", "正常", "success", "lungs", "今天 07:32", "flat"),
-        ("digestive", "消化道", "无异常", "", "无异常", "success", "stethoscope", "3 个月前", "flat"),
-    ]
-
-    struct QuickEntry {
-        let key: String; let label: String; let icon: String
-        let bgColor: UIColor; let fgColor: UIColor; let route: String
-    }
-
-    private let quickEntries: [QuickEntry] = [
-        QuickEntry(key: "record", label: "健康档案", icon: "doc.text", bgColor: UIColor(hexString: "#FFF3DC"), fgColor: UIColor(hexString: "#B47300"), route: "/health/record"),
-        QuickEntry(key: "metrics", label: "体征监测", icon: "heart.text.square", bgColor: UIColor(hexString: "#FFE9DF"), fgColor: UIColor.fdPrimary, route: "/health/metrics"),
-        QuickEntry(key: "assess", label: "六维评测", icon: "clipboard", bgColor: UIColor(hexString: "#E6F7EF"), fgColor: UIColor(hexString: "#1F9A6B"), route: "/health/assessment/six-dim"),
-        QuickEntry(key: "report", label: "我的报告", icon: "chart.bar", bgColor: UIColor(hexString: "#F3EFFC"), fgColor: UIColor(hexString: "#7B5E9F"), route: "/health/assessment/report"),
-    ]
-
-    // MARK: - UI
+    private let viewModel = HealthViewModel()
+    private var cancellables = Set<AnyCancellable>()
 
     private let brandHeader = TabHubBrandHeaderView()
 
@@ -60,14 +31,18 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         tv.register(HealthVitalMetricsCell.self, forCellReuseIdentifier: HealthVitalMetricsCell.reuseIdentifier)
         tv.register(HealthQuickEntriesCell.self, forCellReuseIdentifier: HealthQuickEntriesCell.reuseIdentifier)
         tv.contentInsetAdjustmentBehavior = .never
+        tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 90, right: 0)
+        tv.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: 90, right: 0)
+        tv.estimatedRowHeight = 200
+        tv.rowHeight = UITableView.automaticDimension
+        if #available(iOS 15.0, *) { tv.sectionHeaderTopPadding = 0 }
         return tv
     }()
-
-    // MARK: - Lifecycle
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        viewModel.load()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -79,8 +54,9 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         view.backgroundColor = .fdBg
         brandHeader.configure(
             title: "我的健康",
-            subtitle: "档案完整度 \(archiveProgress)% · \(riskLevel)",
-            titleColor: .fdText
+            subtitle: "档案完整度 \(archiveProgress)%",
+            titleColor: .fdText,
+            badge: riskLevel
         )
         view.addSubview(brandHeader)
         view.addSubview(tableView)
@@ -90,90 +66,81 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         }
         tableView.snp.makeConstraints {
             $0.top.equalTo(brandHeader.snp.bottom)
-            $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom)
+            $0.leading.trailing.bottom.equalToSuperview()
         }
     }
 
-    // MARK: - UITableViewDataSource
+    override func bindViewModel() {
+        viewModel.$metrics
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.tableView.reloadData() }
+            .store(in: &cancellables)
 
-    func numberOfSections(in tableView: UITableView) -> Int { 4 }
+        viewModel.$quickEntries
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.tableView.reloadData() }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - Sections
+
+    private var sectionCount: Int {
+        viewModel.quickEntries.isEmpty ? 3 : 4
+    }
+
+    func numberOfSections(in tableView: UITableView) -> Int { sectionCount }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { 1 }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         switch indexPath.section {
         case 0:
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: HealthScoreCardCell.reuseIdentifier, for: indexPath) as? HealthScoreCardCell else {
-                return UITableViewCell()
-            }
+            let cell = tableView.dequeueReusableCell(withIdentifier: HealthScoreCardCell.reuseIdentifier, for: indexPath) as! HealthScoreCardCell
             cell.configure(riskScore: riskScore, riskLevel: riskLevel)
             return cell
-
         case 1:
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: HealthArchiveCardCell.reuseIdentifier, for: indexPath) as? HealthArchiveCardCell else {
-                return UITableViewCell()
-            }
+            let cell = tableView.dequeueReusableCell(withIdentifier: HealthArchiveCardCell.reuseIdentifier, for: indexPath) as! HealthArchiveCardCell
             cell.configure(archiveProgress: archiveProgress)
             cell.onCompleteTap = { [weak self] in self?.goToRecord() }
             return cell
-
         case 2:
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: HealthVitalMetricsCell.reuseIdentifier, for: indexPath) as? HealthVitalMetricsCell else {
-                return UITableViewCell()
+            let cell = tableView.dequeueReusableCell(withIdentifier: HealthVitalMetricsCell.reuseIdentifier, for: indexPath) as! HealthVitalMetricsCell
+            cell.configure(metrics: viewModel.metrics)
+            cell.onMetricTap = { [weak self] item in
+                guard let self else { return }
+                Router.shared.push(self.viewModel.route(for: item))
             }
-            cell.configure(metrics: metrics)
-            cell.onMetricTap = { key in Router.shared.push("/health/metrics/\(key)") }
+            cell.onEditTap = { Router.shared.push("/health/metrics/edit") }
             return cell
-
         case 3:
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: HealthQuickEntriesCell.reuseIdentifier, for: indexPath) as? HealthQuickEntriesCell else {
-                return UITableViewCell()
-            }
-            cell.configure(entries: quickEntries.map {
-                HealthQuickEntriesCell.Entry(key: $0.key, label: $0.label, icon: $0.icon, bgColor: $0.bgColor, fgColor: $0.fgColor, route: $0.route)
-            })
-            cell.onEntryTap = { route in Router.shared.push(route) }
+            let cell = tableView.dequeueReusableCell(withIdentifier: HealthQuickEntriesCell.reuseIdentifier, for: indexPath) as! HealthQuickEntriesCell
+            cell.configure(entries: viewModel.quickEntries)
+            // quickEntryList 暂不做跳转
+            cell.onEntryTap = nil
             return cell
-
         default:
             return UITableViewCell()
         }
     }
 
-    // MARK: - UITableViewDelegate
-
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         switch indexPath.section {
-        case 2: return HealthVitalMetricsCell.height(for: metrics.count)
+        case 2: return HealthVitalMetricsCell.height(for: viewModel.metrics.count)
         default: return UITableView.automaticDimension
         }
     }
 
-    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        guard section == 2 else { return nil }
-        let header = SectionTitleView(title: "体征监测", more: "编辑卡片 ›")
-        header.onMoreTapped = { Router.shared.push("/health/metrics") }
-        let container = UIView()
-        container.backgroundColor = .fdBg
-        container.addSubview(header)
-        header.snp.makeConstraints { $0.leading.trailing.equalToSuperview().inset(16); $0.centerY.equalToSuperview() }
-        return container
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        .leastNormalMagnitude
     }
 
-    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        return section == 2 ? 36 : 8
-    }
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? { nil }
 
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        return 8
+        .leastNormalMagnitude
     }
 
-    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
-        return UIView()
-    }
-
-    // MARK: - Actions
+    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? { nil }
 
     @objc private func goToRecord() {
         Router.shared.push("/health/record")

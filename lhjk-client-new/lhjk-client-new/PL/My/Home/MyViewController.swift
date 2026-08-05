@@ -351,6 +351,7 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             }
             IMService.shared.clear()
             ServiceHubCacheService.shared.clear()
+            HealthPageCacheService.shared.clear()
             InstitutionSelectionStore.shared.clear()
             RongCloudManager.shared.disconnect()
             UserManager.shared.clear()

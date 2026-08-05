@@ -59,7 +59,7 @@ final class PhoneBindingView: UIView {
     )
 
     private lazy var codeButton: VerifyCodeButton = {
-        let btn = VerifyCodeButton()
+        let btn = VerifyCodeButton(style: .pill)
         btn.onRequestCode = { [weak self] in
             self?.handleRequestCode()
         }

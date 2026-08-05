@@ -12,7 +12,7 @@ final class ServiceHubHeaderView: UIView {
         addSubview(brandHeader)
         brandHeader.configure(
             title: "健康服务",
-            subtitle: "德系健康管理 · 9 大产品线",
+            subtitle: "德系健康管理·9大产品线",
             titleColor: .fdText
         )
         brandHeader.snp.makeConstraints { $0.edges.equalToSuperview() }

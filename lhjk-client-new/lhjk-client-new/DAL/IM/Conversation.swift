@@ -12,11 +12,11 @@ enum ConversationRole: String, Codable {
         switch self {
         case .ai: return "AI 健康顾问"
         case .team: return "三好共管服务群"
-        case .manager: return "健管师 · 专属"
-        case .doctor: return "主任医师 · 内科"
+        case .manager: return "健管师｜专属"
+        case .doctor: return "主任医师｜内科"
         case .nutrition: return "营养师"
         case .service: return "家庭服务台"
-        case .caseManager: return "个案管理师 · 专项"
+        case .caseManager: return "个案管理师｜专项"
         case .psychology: return "心理咨询师"
         }
     }
@@ -112,11 +112,11 @@ extension Conversation {
     private static let roleMetaMap: [String: (role: ConversationRole, roleLabel: String, name: String, title: String, avatar: String, status: String, serviceScope: String, important: Bool)] = [
         "conv-ai-xd": (.ai, "AI 健康顾问", "小德", "7×24h AI 健康顾问", "德", "AI 在线", "周报推送 · 目标提醒 · 健康问答", false),
         "conv-team": (.team, "三好共管服务群", "德好慢病逆转服务群", "医生 + 营养师 + 健管师协同服务", "群", "3 人在线", "血压血糖达标 · 饮食运动干预 · 随访协同", true),
-        "conv-001": (.manager, "健管师 · 专属", "王顾问", "健康管理专家", "王", "在线", "慢病逆转 · 日常随访", true),
-        "conv-002": (.doctor, "主任医师 · 内科", "张建国", "内科主任医师", "张", "今日可咨询", "用药建议 · 指标复核", false),
+        "conv-001": (.manager, "健管师｜专属", "王顾问", "健康管理专家", "王", "在线", "慢病逆转 · 日常随访", true),
+        "conv-002": (.doctor, "主任医师｜内科", "张建国", "内科主任医师", "张", "今日可咨询", "用药建议 · 指标复核", false),
         "conv-003": (.nutrition, "营养师", "陈梅", "国家注册营养师", "陈", "在线", "饮食方案 · 热量管理", false),
         "conv-004": (.service, "家庭服务台", "家庭服务台", "预约与履约支持", "家", "服务中", "预约确认 · 订单履约", false),
-        "conv-005": (.caseManager, "个案管理师 · 专项", "刘个管", "肿瘤与疑难病个案管理师", "刘", "专项跟进", "转诊协调 · MDT 跟进", true),
+        "conv-005": (.caseManager, "个案管理师｜专项", "刘个管", "肿瘤与疑难病个案管理师", "刘", "专项跟进", "转诊协调 · MDT 跟进", true),
         "conv-006": (.psychology, "心理咨询师", "林老师", "国家二级心理咨询师", "林", "在线", "情绪管理 · 睡眠认知行为", false),
     ]
 

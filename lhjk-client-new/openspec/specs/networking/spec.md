@@ -29,6 +29,19 @@
 
 ---
 
+### Requirement: Unauthenticated Requests
+系统 SHALL 为登录、注册、发送验证码、手机号重置密码等无需用户 Token 的接口提供独立的公开请求 Session。公开请求不得经过 `AuthenticationInterceptor`，也不得因本地没有 Credential 在请求适配阶段失败。
+
+#### Scenario: 发送未认证 JSON 请求
+- **WHEN** BLL 层调用无需 Token 的 JSON POST 接口
+- **THEN** DAL 层使用 `APIManager.publicPostAsync` 和 `publicSession` 发送 `application/json` 请求，不添加 `Authorization: Bearer` 请求头
+
+#### Scenario: 公开接口没有本地 Credential
+- **WHEN** 用户尚未登录或已退出登录，调用无需 Token 的接口
+- **THEN** 请求仍正常构建并发送，不得返回 Alamofire `AuthenticationError`
+
+---
+
 ### Requirement: Authentication & Token Management
 系统 SHALL 使用 Alamofire 的 `AuthenticationInterceptor` 配合自定义 `Authenticator` 实现 Token 的自动注入、过期刷新和并发请求控制。
 

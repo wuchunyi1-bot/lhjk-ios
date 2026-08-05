@@ -22,7 +22,16 @@ final class ServiceViewController: BaseViewController {
         tv.register(MallProductGridCell.self, forCellReuseIdentifier: MallProductGridCell.reuseID)
         tv.estimatedRowHeight = 120
         tv.rowHeight = UITableView.automaticDimension
+        tv.sectionHeaderHeight = 0
+        tv.sectionFooterHeight = 0
+        tv.estimatedSectionHeaderHeight = 0
+        tv.estimatedSectionFooterHeight = 0
+        if #available(iOS 15.0, *) {
+            // 关闭系统默认的 section 顶部留白，模块间距只由 footer 的 12pt 控制
+            tv.sectionHeaderTopPadding = 0
+        }
         tv.contentInsetAdjustmentBehavior = .never
+        tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 24, right: 0)
         return tv
     }()
 
@@ -146,6 +155,9 @@ extension ServiceViewController: UITableViewDataSource, UITableViewDelegate {
                 for: indexPath
             ) as! MallProductGridCell
             cell.configure(products: viewModel.mallPreviewPackages)
+            cell.onMoreTapped = {
+                Router.shared.push("/mall")
+            }
             cell.onProductTap = { pkg in
                 Router.shared.push("/services/pkg", params: pkg.packageDetailRouteParams())
             }
@@ -182,7 +194,7 @@ extension ServiceViewController: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         guard let s = sectionKind(at: section),
-              let title = viewModel.sectionTitle(for: s) else { return spacingHeader(height: 8) }
+              let title = viewModel.sectionTitle(for: s) else { return nil }
 
         let header = SectionTitleView(title: title, more: viewModel.sectionMore(for: s))
         if s == .mallPreview {
@@ -196,13 +208,30 @@ extension ServiceViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        guard let s = sectionKind(at: section) else { return 8 }
+        guard let s = sectionKind(at: section) else { return .leastNormalMagnitude }
         if viewModel.rowCount(for: s) == 0 { return .leastNormalMagnitude }
-        return viewModel.sectionTitle(for: s) != nil ? 36 : 8
+        // 富德优选保留标题行；Banner / 矩阵无 section header（矩阵标题在 Cell 内）
+        return viewModel.sectionTitle(for: s) != nil ? 36 : .leastNormalMagnitude
     }
 
-    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat { 8 }
-    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? { spacingHeader(height: 8) }
+    /// Figma：Banner 底 → 矩阵顶约 12pt；矩阵 → 优选约 12pt
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        guard let s = sectionKind(at: section), viewModel.rowCount(for: s) > 0 else {
+            return .leastNormalMagnitude
+        }
+        switch s {
+        case .bannerCarousel, .matrix:
+            return 12
+        case .mallPreview:
+            return 12
+        }
+    }
+
+    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        let h = self.tableView(tableView, heightForFooterInSection: section)
+        guard h > 1 else { return nil }
+        return spacingHeader(height: h)
+    }
 
     private func spacingHeader(height: CGFloat) -> UIView {
         let v = UIView()

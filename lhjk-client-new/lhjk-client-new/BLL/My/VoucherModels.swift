@@ -198,6 +198,16 @@ enum CouponStatusFilter: Int, CaseIterable {
         default: return nil
         }
     }
+
+    /// Query `status`：1 待使用 / 2 已领用 / 3 已过期；全部不传
+    var apiStatus: Int? {
+        switch self {
+        case .available: return 1
+        case .used: return 2
+        case .expired: return 3
+        case .all: return nil
+        }
+    }
 }
 
 struct VoucherCouponAsset: Equatable {
@@ -213,6 +223,8 @@ struct VoucherCouponAsset: Equatable {
     let packageNames: [String]
     let institutionNames: [String]
     let excludedProductNames: [String]
+    /// 使用规则说明（`description`）
+    let ruleDescription: String?
     let receivedAt: String
     let effectiveEndAt: String
     let status: VoucherCouponStatus
@@ -235,5 +247,14 @@ struct VoucherCouponAsset: Equatable {
             return "满 ¥\(Int(threshold)) 可用"
         }
         return String(format: "满 ¥%.2f 可用", threshold)
+    }
+
+    /// 是否有可展开的使用规则内容（对齐 Apifox 非空才展示）
+    var hasExpandableRules: Bool {
+        !businessCategories.isEmpty
+            || !packageNames.isEmpty
+            || !institutionNames.isEmpty
+            || !excludedProductNames.isEmpty
+            || !(ruleDescription?.isEmpty ?? true)
     }
 }

@@ -1,54 +1,44 @@
 import UIKit
 import SnapKit
 
-/// 品牌头部视图 — Logo Mark + 应用名称 + Slogan
-/// 参考 funde-client: login-brand / login-brand__mark / login-brand__name / login-brand__tagline
+/// 品牌头部 — Figma 3021:586 / 3021:589 / 3021:611 / 3021:612
 final class BrandHeaderView: UIView {
 
-    // MARK: - UI
-
-    /// Logo Mark: 72×72 品牌色圆角方块 + 白色品牌简称
-    private let logoMarkView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .fdPrimary
-        view.layer.cornerRadius = 22
-        view.layer.shadowColor = UIColor.fdPrimary.cgColor
-        view.layer.shadowOffset = CGSize(width: 0, height: 8)
-        view.layer.shadowRadius = 24
-        view.layer.shadowOpacity = 0.35
-        return view
+    private let logoImageView: UIImageView = {
+        let iv = UIImageView(image: UIImage(named: "login_logo"))
+        iv.contentMode = .scaleAspectFit
+        return iv
     }()
 
-    private let logoLabel: UILabel = {
-        let label = UILabel()
-        label.text = "富德"
-        label.font = .fdH2
-        label.textColor = .white
-        label.textAlignment = .center
-        return label
-    }()
+    private let logoHost = LoginLogoBackgroundView()
 
-    /// 应用名称: 22pt bold
     private let appNameLabel: UILabel = {
         let label = UILabel()
-        label.text = "富德健康"
-        label.font = .fdH2
-        label.textColor = .fdText
+        label.attributedText = NSAttributedString(
+            string: "富德健康",
+            attributes: [
+                .font: UIFont.fdLoginTitle,
+                .foregroundColor: UIColor.fdLoginTitle,
+                .kern: 0.55,
+            ]
+        )
         label.textAlignment = .center
         return label
     }()
 
-    /// Slogan: 13pt muted
     private let taglineLabel: UILabel = {
         let label = UILabel()
-        label.text = "全生命周期健康守护数智化平台"
-        label.font = .fdCaption
-        label.textColor = .fdSubtext
+        label.attributedText = NSAttributedString(
+            string: "全生命周期健康守护数智化平台",
+            attributes: [
+                .font: UIFont.fdLoginMeta,
+                .foregroundColor: UIColor.fdLoginTitle.withAlphaComponent(0.8),
+                .kern: 0.55,
+            ]
+        )
         label.textAlignment = .center
         return label
     }()
-
-    // MARK: - Init
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -59,32 +49,68 @@ final class BrandHeaderView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    // MARK: - Setup
-
     private func setupUI() {
-        addSubview(logoMarkView)
-        logoMarkView.addSubview(logoLabel)
+        addSubview(logoHost)
+        logoHost.addSubview(logoImageView)
         addSubview(appNameLabel)
         addSubview(taglineLabel)
 
-        logoMarkView.snp.makeConstraints { make in
+        logoHost.snp.makeConstraints { make in
             make.top.centerX.equalToSuperview()
             make.size.equalTo(72)
         }
-
-        logoLabel.snp.makeConstraints { make in
+        logoImageView.snp.makeConstraints { make in
             make.center.equalToSuperview()
+            make.width.equalTo(44.884)
+            make.height.equalTo(45.063)
         }
 
         appNameLabel.snp.makeConstraints { make in
-            make.top.equalTo(logoMarkView.snp.bottom).offset(16)
+            make.top.equalTo(logoHost.snp.bottom).offset(9)
             make.centerX.equalToSuperview()
+            make.leading.trailing.equalToSuperview()
         }
 
         taglineLabel.snp.makeConstraints { make in
-            make.top.equalTo(appNameLabel.snp.bottom).offset(6)
+            make.top.equalTo(appNameLabel.snp.bottom).offset(3)
             make.centerX.equalToSuperview()
+            make.leading.trailing.equalToSuperview()
             make.bottom.equalToSuperview()
         }
+    }
+}
+
+private final class LoginLogoBackgroundView: UIView {
+
+    private let gradientLayer = CAGradientLayer()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        layer.cornerRadius = 16
+        layer.masksToBounds = false
+        layer.shadowColor = UIColor.fdLoginLogoShadow.cgColor
+        layer.shadowOffset = .zero
+        layer.shadowRadius = 6.8
+        layer.shadowOpacity = 0.59
+
+        gradientLayer.colors = [
+            UIColor.fdLoginLogoSurface.cgColor,
+            UIColor.white.cgColor,
+            UIColor.fdLoginLogoSurface.cgColor,
+        ]
+        gradientLayer.locations = [0, 0.45, 1]
+        gradientLayer.startPoint = CGPoint(x: 1, y: 0)
+        gradientLayer.endPoint = CGPoint(x: 0, y: 1)
+        gradientLayer.cornerRadius = 16
+        layer.insertSublayer(gradientLayer, at: 0)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        gradientLayer.frame = bounds
     }
 }

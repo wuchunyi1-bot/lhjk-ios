@@ -1,72 +1,82 @@
 import UIKit
 import SnapKit
 
-/// 登录输入框组件 — label + icon + textField + 可选右侧按钮
-/// 参考 funde-client: login-field / login-field__shell / login-field__icon / login-field__input / login-field__toggle
+/// 登录输入框 — Figma 3021:575 / 3021:578
 final class LoginFieldView: UIView {
-
-    // MARK: - Types
 
     enum RightButton {
         case none
-        /// 密码显隐切换 (eye / eye.slash)
         case secureToggle
-        /// 自定义 icon
         case custom(sfSymbol: String, action: () -> Void)
     }
 
-    // MARK: - UI
+    /// Figma 输入框左侧图标 1x 尺寸（pt）
+    private static let iconSize: CGFloat = 18
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdCaptionSemibold
-        label.textColor = .fdSubtext
+        label.font = .fdLoginInput
+        label.textColor = .fdLoginLabel
         return label
     }()
 
     private let iconImageView: UIImageView = {
         let iv = UIImageView()
-        iv.tintColor = .fdSubtext
         iv.contentMode = .scaleAspectFit
-        iv.setContentHuggingPriority(.required, for: .horizontal)
-        iv.setContentCompressionResistancePriority(.required, for: .horizontal)
         return iv
     }()
 
     let textField: UITextField = {
         let tf = UITextField()
-        tf.font = .fdBody
+        tf.font = .fdLoginInput
         tf.textColor = .fdText
         tf.borderStyle = .none
         return tf
     }()
 
-    /// 输入框容器（白色背景 + 边框 + 圆角）
     private let shellView: UIView = {
         let view = UIView()
         view.backgroundColor = .fdSurface
-        view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor.fdBorder.cgColor
         view.layer.cornerRadius = 12
         return view
     }()
 
-    /// 右侧按钮（可选：密码显隐等）
     private var rightButton: UIButton?
     private var rightButtonConfig: RightButton = .none
-
-    /// 密码当前是否可见
+    private var trailingAccessory: UIView?
     private var isSecureVisible = false
 
-    // MARK: - Init
+    /// 内嵌于输入壳右侧的配件（如「获取验证码」文字按钮）。
+    var trailingAccessoryView: UIView? {
+        get { trailingAccessory }
+        set { setTrailingAccessory(newValue) }
+    }
 
-    init(title: String, placeholder: String, sfSymbol: String, rightButton: RightButton = .none) {
+    init(
+        title: String,
+        placeholder: String,
+        sfSymbol: String,
+        iconAssetName: String? = nil,
+        rightButton: RightButton = .none
+    ) {
         super.init(frame: .zero)
-        self.rightButtonConfig = rightButton
+        rightButtonConfig = rightButton
 
         titleLabel.text = title
-        textField.placeholder = placeholder
-        iconImageView.image = UIImage(systemName: sfSymbol)?.withRenderingMode(.alwaysTemplate)
+        textField.attributedPlaceholder = NSAttributedString(
+            string: placeholder,
+            attributes: [
+                .font: UIFont.fdLoginInput,
+                .foregroundColor: UIColor.fdLoginLabel.withAlphaComponent(0.5),
+            ]
+        )
+
+        if let iconAssetName {
+            iconImageView.image = UIImage(named: iconAssetName)
+        } else {
+            iconImageView.image = UIImage(systemName: sfSymbol)?.withRenderingMode(.alwaysTemplate)
+            iconImageView.tintColor = .fdPrimary
+        }
 
         setupUI()
         configureRightButton()
@@ -76,8 +86,6 @@ final class LoginFieldView: UIView {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
-    // MARK: - Setup
 
     private func setupUI() {
         addSubview(titleLabel)
@@ -90,7 +98,7 @@ final class LoginFieldView: UIView {
         }
 
         shellView.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(8)
+            make.top.equalTo(titleLabel.snp.bottom).offset(9)
             make.leading.trailing.equalToSuperview()
             make.height.equalTo(48)
             make.bottom.equalToSuperview()
@@ -99,48 +107,78 @@ final class LoginFieldView: UIView {
         iconImageView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(14)
             make.centerY.equalToSuperview()
-            make.size.equalTo(18)
+            make.size.equalTo(Self.iconSize)
         }
 
-        // textField 的 trailing 取决于是否有右侧按钮，先做基础约束
         textField.snp.makeConstraints { make in
-            make.leading.equalTo(iconImageView.snp.trailing).offset(10)
+            make.leading.equalTo(iconImageView.snp.trailing).offset(12)
             make.centerY.equalToSuperview()
+            make.trailing.equalToSuperview().offset(-14)
         }
     }
 
     private func configureRightButton() {
         switch rightButtonConfig {
         case .none:
-            textField.snp.makeConstraints { make in
-                make.trailing.equalToSuperview().offset(-14)
-            }
+            break
 
         case .secureToggle:
-            isSecureVisible = false
+            textField.isSecureTextEntry = true
+            textField.textContentType = .password
             let btn = makeRightButton(sfSymbol: "eye.slash", action: #selector(toggleSecure))
+            btn.contentEdgeInsets = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
             shellView.addSubview(btn)
             btn.snp.makeConstraints { make in
-                make.trailing.equalToSuperview().offset(-14)
+                make.trailing.equalToSuperview().offset(-4)
                 make.centerY.equalToSuperview()
-                make.size.equalTo(24)
+                make.size.equalTo(44)
             }
-            textField.snp.makeConstraints { make in
-                make.trailing.equalTo(btn.snp.leading).offset(-8)
-            }
+            remakeTextFieldTrailing(equalTo: btn.snp.leading, offset: -4)
 
         case .custom(let sfSymbol, let action):
             let btn = makeRightButton(sfSymbol: sfSymbol, action: #selector(customAction))
+            btn.addAction(UIAction { _ in action() }, for: .touchUpInside)
             shellView.addSubview(btn)
             btn.snp.makeConstraints { make in
                 make.trailing.equalToSuperview().offset(-14)
                 make.centerY.equalToSuperview()
                 make.size.equalTo(24)
             }
-            rightButton?.addAction(UIAction { _ in action() }, for: .touchUpInside)
-            textField.snp.makeConstraints { make in
-                make.trailing.equalTo(btn.snp.leading).offset(-8)
+            remakeTextFieldTrailing(equalTo: btn.snp.leading, offset: -8)
+        }
+    }
+
+    private func setTrailingAccessory(_ view: UIView?) {
+        trailingAccessory?.removeFromSuperview()
+        trailingAccessory = view
+
+        guard let view else {
+            textField.snp.remakeConstraints { make in
+                make.leading.equalTo(iconImageView.snp.trailing).offset(12)
+                make.centerY.equalToSuperview()
+                make.trailing.equalToSuperview().offset(-14)
             }
+            return
+        }
+
+        shellView.addSubview(view)
+        view.setContentHuggingPriority(.required, for: .horizontal)
+        view.setContentCompressionResistancePriority(.required, for: .horizontal)
+        view.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-12)
+            make.centerY.equalToSuperview()
+        }
+        remakeTextFieldTrailing(equalTo: view.snp.leading, offset: -8)
+    }
+
+    private func remakeTextFieldTrailing(
+        equalTo anchor: ConstraintRelatableTarget,
+        offset: CGFloat
+    ) {
+        textField.snp.remakeConstraints { make in
+            make.leading.equalTo(iconImageView.snp.trailing).offset(12)
+            make.centerY.equalToSuperview()
+            make.trailing.equalTo(anchor).offset(offset)
         }
     }
 
@@ -149,40 +187,36 @@ final class LoginFieldView: UIView {
         btn.setImage(UIImage(systemName: sfSymbol), for: .normal)
         btn.tintColor = .fdSubtext
         btn.addTarget(self, action: action, for: .touchUpInside)
-        self.rightButton = btn
+        rightButton = btn
         return btn
     }
 
-    // MARK: - Actions
-
     @objc private func toggleSecure() {
         isSecureVisible.toggle()
+        let wasEditing = textField.isFirstResponder
+        if wasEditing { textField.resignFirstResponder() }
+
         textField.isSecureTextEntry = !isSecureVisible
-        let icon = isSecureVisible ? "eye" : "eye.slash"
-        rightButton?.setImage(UIImage(systemName: icon), for: .normal)
+        let current = textField.text
+        textField.text = nil
+        textField.text = current
+        rightButton?.setImage(
+            UIImage(systemName: isSecureVisible ? "eye" : "eye.slash"),
+            for: .normal
+        )
+
+        if wasEditing { textField.becomeFirstResponder() }
     }
 
-    @objc private func customAction() {
-        // handled via UIAction
-    }
-
-    // MARK: - Focus Styling
+    @objc private func customAction() {}
 
     private func setFocused(_ focused: Bool) {
-        let borderColor = focused ? UIColor.fdPrimary : UIColor.fdBorder
-        let shadowOpacity: Float = focused ? 1.0 : 0.0
-
         UIView.animate(withDuration: 0.15) {
-            self.shellView.layer.borderColor = borderColor.cgColor
-            self.shellView.layer.shadowColor = UIColor.fdPrimary.cgColor
-            self.shellView.layer.shadowOffset = .zero
-            self.shellView.layer.shadowRadius = 3
-            self.shellView.layer.shadowOpacity = shadowOpacity
+            self.shellView.layer.borderWidth = focused ? 1 : 0
+            self.shellView.layer.borderColor = UIColor.fdPrimary.cgColor
         }
     }
 }
-
-// MARK: - UITextFieldDelegate
 
 extension LoginFieldView: UITextFieldDelegate {
     func textFieldDidBeginEditing(_ textField: UITextField) {

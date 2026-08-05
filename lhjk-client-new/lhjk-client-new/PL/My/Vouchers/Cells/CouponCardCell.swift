@@ -47,6 +47,7 @@ final class CouponCardCell: UITableViewCell {
             $0.removeFromSuperview()
         }
         rulesStack.isHidden = true
+        rulesButton.isHidden = false
         card.alpha = 1
         card.backgroundColor = .fdSurface
         card.layer.borderColor = UIColor.fdPrimaryEdge.cgColor
@@ -56,7 +57,9 @@ final class CouponCardCell: UITableViewCell {
         amountLabel.text = item.benefitText
         thresholdLabel.text = item.thresholdText
         nameLabel.text = item.name
-        validityLabel.text = "有效期至 \(item.effectiveEndAt)"
+        validityLabel.text = item.effectiveEndAt.isEmpty
+            ? "有效期至 —"
+            : "有效期至 \(item.effectiveEndAt)"
         statusBadge.text = " \(item.status.displayLabel) "
         useButton.isHidden = item.status != .received
 
@@ -78,6 +81,8 @@ final class CouponCardCell: UITableViewCell {
             card.layer.borderColor = UIColor.fdBorder.cgColor
         }
 
+        let hasRules = item.hasExpandableRules
+        rulesButton.isHidden = !hasRules
         let chevron = expanded ? "chevron.up" : "chevron.down"
         rulesButton.setImage(UIImage(systemName: chevron), for: .normal)
         rulesButton.setTitle("使用规则 ", for: .normal)
@@ -86,18 +91,31 @@ final class CouponCardCell: UITableViewCell {
             rulesStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
-        rulesStack.isHidden = !expanded
-        if expanded {
-            rulesStack.addArrangedSubview(makeRuleBold(item.scopeRule.rawValue))
-            rulesStack.addArrangedSubview(makeRuleLine("\(item.scopeRule.prefix)业务：\(item.businessCategories.joined(separator: "、"))"))
+        rulesStack.isHidden = !expanded || !hasRules
+        if expanded, hasRules {
+            // 标题对齐 Apifox：rule 仅影响业务/套餐；机构与排除商品标题固定
+            if !item.businessCategories.isEmpty {
+                rulesStack.addArrangedSubview(
+                    makeRuleLine("\(item.scopeRule.prefix)业务：\(item.businessCategories.joined(separator: "、"))")
+                )
+            }
             if !item.packageNames.isEmpty {
-                rulesStack.addArrangedSubview(makeRuleLine("\(item.scopeRule.prefix)套餐：\(item.packageNames.joined(separator: "、"))"))
+                rulesStack.addArrangedSubview(
+                    makeRuleLine("\(item.scopeRule.prefix)套餐：\(item.packageNames.joined(separator: "、"))")
+                )
             }
             if !item.institutionNames.isEmpty {
-                rulesStack.addArrangedSubview(makeRuleLine("\(item.scopeRule.prefix)机构：\(item.institutionNames.joined(separator: "、"))"))
+                rulesStack.addArrangedSubview(
+                    makeRuleLine("适用机构：\(item.institutionNames.joined(separator: "、"))")
+                )
             }
             if !item.excludedProductNames.isEmpty {
-                rulesStack.addArrangedSubview(makeRuleLine("不参与折扣的商品：\(item.excludedProductNames.joined(separator: "、"))"))
+                rulesStack.addArrangedSubview(
+                    makeRuleLine("不参与折扣的商品：\(item.excludedProductNames.joined(separator: "、"))")
+                )
+            }
+            if let desc = item.ruleDescription, !desc.isEmpty {
+                rulesStack.addArrangedSubview(makeRuleLine(desc))
             }
         }
         setNeedsLayout()
@@ -197,15 +215,6 @@ final class CouponCardCell: UITableViewCell {
             make.height.equalTo(32)
             make.width.greaterThanOrEqualTo(58)
         }
-    }
-
-    private func makeRuleBold(_ text: String) -> UILabel {
-        let l = UILabel()
-        l.text = text
-        l.font = .fdMicroSemibold
-        l.textColor = .fdText
-        l.numberOfLines = 0
-        return l
     }
 
     private func makeRuleLine(_ text: String) -> UILabel {

@@ -64,6 +64,9 @@ final class AppContainer {
     private(set) lazy var orderService: OrderService = .shared
     private(set) lazy var couponService: CouponService = .shared
     private(set) lazy var paymentService: PaymentService = .shared
+    private(set) lazy var homeService: HomeService = .shared
+    private(set) lazy var healthPageService: HealthPageService = .shared
+    private(set) lazy var healthPageCacheService: HealthPageCacheService = .shared
     // MARK: - 存储
 
     private(set) lazy var userDefaultsManager: UserDefaultsManager = .shared

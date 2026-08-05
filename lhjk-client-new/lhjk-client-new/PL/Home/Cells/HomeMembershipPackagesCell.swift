@@ -1,7 +1,7 @@
 import UIKit
 import SnapKit
 
-/// 首页会员健康服务 — 一主二副白卡，对齐 HomeView.vue membership-section
+/// 推荐健康套餐 — 对齐 Figma：白卡内「一主二副」
 final class HomeMembershipPackagesCell: UITableViewCell {
 
     static let reuseID = "HomeMembershipPackagesCell"
@@ -15,39 +15,82 @@ final class HomeMembershipPackagesCell: UITableViewCell {
     }
 
     var onPackageTapped: ((String) -> Void)?
+    var onMoreTapped: (() -> Void)?
 
-    private let mainCard = MembershipPackageCardView(style: .main)
+    private let cardView: UIView = {
+        let v = UIView()
+        v.backgroundColor = .fdSurface
+        v.layer.cornerRadius = 16
+        return v
+    }()
+
+    private let titleLabel: UILabel = {
+        let l = UILabel()
+        l.text = "推荐健康套餐"
+        l.font = .fdFont(ofSize: 16, weight: .medium)
+        l.textColor = .fdText
+        return l
+    }()
+
+    private let moreButton: UIButton = {
+        let b = UIButton(type: .system)
+        b.setTitle("更多套餐 ›", for: .normal)
+        b.titleLabel?.font = .fdFont(ofSize: 12, weight: .regular)
+        b.setTitleColor(.fdSubtext, for: .normal)
+        return b
+    }()
+
+    private let mainCard = FeaturedPackageView()
     private let subStack: UIStackView = {
         let s = UIStackView()
         s.axis = .horizontal
-        s.spacing = 8
+        s.spacing = 9
         s.distribution = .fillEqually
         return s
     }()
 
-    private var packages: [Package] = []
-
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        backgroundColor = .fdBg
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
         selectionStyle = .none
-        contentView.addSubview(mainCard)
-        contentView.addSubview(subStack)
-        mainCard.snp.makeConstraints {
-            $0.top.equalToSuperview()
-            $0.leading.trailing.equalToSuperview().inset(16)
-        }
-        subStack.snp.makeConstraints {
-            $0.top.equalTo(mainCard.snp.bottom).offset(8)
-            $0.leading.trailing.equalToSuperview().inset(16)
+
+        contentView.addSubview(cardView)
+        cardView.addSubview(titleLabel)
+        cardView.addSubview(moreButton)
+        cardView.addSubview(mainCard)
+        cardView.addSubview(subStack)
+
+        cardView.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(12)
+            $0.leading.trailing.equalToSuperview().inset(16).priority(750)
             $0.bottom.equalToSuperview()
         }
+        titleLabel.snp.makeConstraints {
+            $0.top.leading.equalToSuperview().inset(16)
+        }
+        moreButton.snp.makeConstraints {
+            $0.centerY.equalTo(titleLabel)
+            $0.trailing.equalToSuperview().inset(12)
+        }
+        mainCard.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(12)
+            $0.leading.trailing.equalToSuperview().inset(12)
+            $0.height.equalTo(86)
+        }
+        subStack.snp.makeConstraints {
+            $0.top.equalTo(mainCard.snp.bottom).offset(12)
+            $0.leading.trailing.equalToSuperview().inset(12)
+            $0.bottom.equalToSuperview().inset(16)
+            $0.height.equalTo(98)
+        }
+
+        moreButton.addTarget(self, action: #selector(moreTap), for: .touchUpInside)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     func configure(packages: [Package]) {
-        self.packages = packages
         subStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         guard let first = packages.first else {
             mainCard.isHidden = true
@@ -58,95 +101,116 @@ final class HomeMembershipPackagesCell: UITableViewCell {
         mainCard.onTap = { [weak self] in self?.onPackageTapped?(first.id) }
 
         for pkg in packages.dropFirst().prefix(2) {
-            let card = MembershipPackageCardView(style: .sub)
+            let card = SubPackageView()
             card.configure(name: pkg.name, intro: pkg.intro, price: pkg.priceText, badge: pkg.badge)
             card.onTap = { [weak self] in self?.onPackageTapped?(pkg.id) }
             subStack.addArrangedSubview(card)
         }
     }
 
+    @objc private func moreTap() { onMoreTapped?() }
+
     override func prepareForReuse() {
         super.prepareForReuse()
         onPackageTapped = nil
+        onMoreTapped = nil
         subStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
     }
 }
 
-// MARK: - Card
+// MARK: - Featured
 
-private final class MembershipPackageCardView: UIControl {
-
-    enum Style { case main, sub }
-
+private final class FeaturedPackageView: UIControl {
     var onTap: (() -> Void)?
 
-    private let style: Style
+    private let priceSymbol = UILabel()
+    private let priceLabel = UILabel()
     private let nameLabel = UILabel()
     private let introLabel = UILabel()
-    private let priceLabel = UILabel()
-    private let unitLabel = UILabel()
+    private let ctaButton = UILabel()
+    private let badgeView = UIView()
     private let badgeLabel = UILabel()
+    private let divider = UIView()
 
-    init(style: Style) {
-        self.style = style
-        super.init(frame: .zero)
-        backgroundColor = .fdSurface
-        layer.cornerRadius = 12
-        addFundeShadow()
-        clipsToBounds = false
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        layer.cornerRadius = 16
+        layer.borderWidth = 0.5
+        layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.3).cgColor
+        clipsToBounds = true
+        backgroundColor = UIColor(hexString: "#FFF8F5")
 
-        nameLabel.font = style == .main ? .fdBodySemibold : .fdCaptionSemibold
+        priceSymbol.text = "¥"
+        priceSymbol.font = .fdFont(ofSize: 14, weight: .medium)
+        priceSymbol.textColor = UIColor(hexString: "#F93838")
+
+        priceLabel.font = .fdFont(ofSize: 24, weight: .medium)
+        priceLabel.textColor = UIColor(hexString: "#F93838")
+
+        nameLabel.font = .fdFont(ofSize: 16, weight: .medium)
         nameLabel.textColor = .fdText
-        nameLabel.lineBreakMode = .byTruncatingTail
 
-        introLabel.font = .fdMicro
+        introLabel.font = .fdFont(ofSize: 12, weight: .regular)
         introLabel.textColor = .fdSubtext
-        introLabel.lineBreakMode = .byTruncatingTail
 
-        priceLabel.font = .fdFont(ofSize: style == .main ? 18 : 16, weight: .bold)
-        priceLabel.textColor = .fdPrimary
+        ctaButton.text = "立即了解"
+        ctaButton.font = .fdFont(ofSize: 12, weight: .medium)
+        ctaButton.textColor = .white
+        ctaButton.textAlignment = .center
+        ctaButton.backgroundColor = .fdPrimary
+        ctaButton.layer.cornerRadius = 14
+        ctaButton.clipsToBounds = true
 
-        unitLabel.text = "元起"
-        unitLabel.font = .fdMicro
-        unitLabel.textColor = .fdSubtext
-
-        badgeLabel.font = .fdMicroSemibold
-        badgeLabel.textColor = .fdPrimary
-        badgeLabel.backgroundColor = .fdPrimarySoft
-        badgeLabel.layer.cornerRadius = 999
-        badgeLabel.clipsToBounds = true
+        badgeView.backgroundColor = UIColor(hexString: "#F93838")
+        badgeView.layer.cornerRadius = 7
+        badgeView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMaxXMaxYCorner]
+        badgeLabel.font = .fdFont(ofSize: 10, weight: .regular)
+        badgeLabel.textColor = .white
         badgeLabel.textAlignment = .center
 
-        let footer = UIStackView(arrangedSubviews: [priceLabel, unitLabel])
-        footer.axis = .horizontal
-        footer.spacing = 4
-        footer.alignment = .center
+        divider.backgroundColor = UIColor.fdPrimary.withAlphaComponent(0.15)
 
-        addSubview(nameLabel)
-        addSubview(introLabel)
-        addSubview(footer)
-        addSubview(badgeLabel)
+        [priceSymbol, priceLabel, nameLabel, introLabel, ctaButton, badgeView, divider].forEach(addSubview)
+        badgeView.addSubview(badgeLabel)
 
-        let pad: CGFloat = style == .main ? 16 : 12
+        priceSymbol.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(12)
+            $0.top.equalToSuperview().offset(38)
+        }
+        priceLabel.snp.makeConstraints {
+            $0.leading.equalTo(priceSymbol.snp.trailing).offset(2)
+            $0.bottom.equalTo(priceSymbol).offset(4)
+        }
+        divider.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(78)
+            $0.centerY.equalToSuperview()
+            $0.width.equalTo(0.5)
+            $0.height.equalTo(48)
+        }
         nameLabel.snp.makeConstraints {
-            $0.top.leading.equalToSuperview().inset(pad)
-            $0.trailing.equalToSuperview().inset(56)
+            $0.leading.equalTo(divider.snp.trailing).offset(12)
+            $0.top.equalToSuperview().offset(24)
+            $0.trailing.lessThanOrEqualTo(ctaButton.snp.leading).offset(-8)
         }
         introLabel.snp.makeConstraints {
-            $0.top.equalTo(nameLabel.snp.bottom).offset(4)
-            $0.leading.trailing.equalToSuperview().inset(pad)
+            $0.leading.equalTo(nameLabel)
+            $0.top.equalTo(nameLabel.snp.bottom).offset(8)
+            $0.trailing.lessThanOrEqualTo(ctaButton.snp.leading).offset(-8)
         }
-        footer.snp.makeConstraints {
-            $0.top.equalTo(introLabel.snp.bottom).offset(8)
-            $0.leading.equalToSuperview().inset(pad)
-            $0.bottom.equalToSuperview().inset(pad)
+        ctaButton.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(12)
+            $0.centerY.equalToSuperview()
+            $0.width.equalTo(70)
+            $0.height.equalTo(28)
+        }
+        badgeView.snp.makeConstraints {
+            $0.top.trailing.equalToSuperview()
+            $0.height.equalTo(20)
+            $0.width.greaterThanOrEqualTo(36)
         }
         badgeLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(pad)
-            $0.trailing.equalToSuperview().inset(style == .main ? 16 : 8)
-            $0.height.equalTo(20)
+            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 3, left: 6, bottom: 3, right: 6))
         }
-        snp.makeConstraints { $0.height.greaterThanOrEqualTo(88) }
 
         addTarget(self, action: #selector(handleTap), for: .touchUpInside)
     }
@@ -156,12 +220,97 @@ private final class MembershipPackageCardView: UIControl {
     func configure(name: String, intro: String, price: String, badge: String?) {
         nameLabel.text = name
         introLabel.text = intro
-        priceLabel.text = price
+        let digits = price.replacingOccurrences(of: "¥", with: "").trimmingCharacters(in: .whitespaces)
+        priceLabel.text = digits
         if let badge, !badge.isEmpty {
-            badgeLabel.isHidden = false
-            badgeLabel.text = "  \(badge)  "
+            badgeView.isHidden = false
+            badgeLabel.text = badge
         } else {
-            badgeLabel.isHidden = true
+            badgeView.isHidden = true
+        }
+    }
+
+    @objc private func handleTap() { onTap?() }
+}
+
+// MARK: - Sub
+
+private final class SubPackageView: UIControl {
+    var onTap: (() -> Void)?
+
+    private let priceSymbol = UILabel()
+    private let priceLabel = UILabel()
+    private let nameLabel = UILabel()
+    private let introLabel = UILabel()
+    private let badgeView = UIView()
+    private let badgeLabel = UILabel()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = UIColor(hexString: "#FFFAF7")
+        layer.cornerRadius = 16
+        clipsToBounds = true
+
+        priceSymbol.text = "¥"
+        priceSymbol.font = .fdFont(ofSize: 14, weight: .medium)
+        priceSymbol.textColor = UIColor(hexString: "#F93838")
+        priceLabel.font = .fdFont(ofSize: 20, weight: .medium)
+        priceLabel.textColor = UIColor(hexString: "#F93838")
+        nameLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        nameLabel.textColor = .fdText
+        nameLabel.numberOfLines = 1
+        introLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        introLabel.textColor = .fdSubtext
+        introLabel.numberOfLines = 1
+
+        badgeView.backgroundColor = UIColor(hexString: "#F93838")
+        badgeView.layer.cornerRadius = 7
+        badgeView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMaxXMaxYCorner]
+        badgeLabel.font = .fdFont(ofSize: 10, weight: .regular)
+        badgeLabel.textColor = .white
+
+        [priceSymbol, priceLabel, nameLabel, introLabel, badgeView].forEach(addSubview)
+        badgeView.addSubview(badgeLabel)
+
+        priceSymbol.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(12)
+            $0.top.equalToSuperview().offset(19)
+        }
+        priceLabel.snp.makeConstraints {
+            $0.leading.equalTo(priceSymbol.snp.trailing).offset(2)
+            $0.bottom.equalTo(priceSymbol).offset(3)
+        }
+        nameLabel.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(12)
+            $0.top.equalToSuperview().offset(48)
+        }
+        introLabel.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(12)
+            $0.top.equalTo(nameLabel.snp.bottom).offset(8)
+        }
+        badgeView.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(18)
+            $0.trailing.equalToSuperview()
+            $0.height.equalTo(18)
+        }
+        badgeLabel.snp.makeConstraints {
+            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 5, bottom: 2, right: 5))
+        }
+
+        addTarget(self, action: #selector(handleTap), for: .touchUpInside)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func configure(name: String, intro: String, price: String, badge: String?) {
+        nameLabel.text = name
+        introLabel.text = intro
+        priceLabel.text = price.replacingOccurrences(of: "¥", with: "").trimmingCharacters(in: .whitespaces)
+        if let badge, !badge.isEmpty {
+            badgeView.isHidden = false
+            badgeLabel.text = badge
+        } else {
+            badgeView.isHidden = true
         }
     }
 

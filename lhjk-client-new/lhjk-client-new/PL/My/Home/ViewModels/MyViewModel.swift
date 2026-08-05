@@ -59,9 +59,18 @@ final class MyViewModel: ObservableObject {
         avatarURL = user.imageUrl
     }
 
-    /// 刷新「我的卡券」角标
+    /// 刷新「我的卡券」角标（优惠券待使用数走接口缓存）
     func refreshVoucherBadge() {
-        let badge = AppContainer.shared.voucherService.meBadgeText
+        applyVoucherBadge(AppContainer.shared.voucherService.meBadgeText)
+        Task { [weak self] in
+            await AppContainer.shared.voucherService.refreshAvailableCouponCount()
+            await MainActor.run {
+                self?.applyVoucherBadge(AppContainer.shared.voucherService.meBadgeText)
+            }
+        }
+    }
+
+    private func applyVoucherBadge(_ badge: String?) {
         commonActions = commonActions.map { action in
             guard action.route == "/me/vouchers" else { return action }
             return CommonAction(

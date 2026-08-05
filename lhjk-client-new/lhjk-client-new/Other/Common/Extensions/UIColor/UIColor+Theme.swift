@@ -16,6 +16,23 @@ extension UIColor {
     /// 主色描边 / 分割线  #FFD9C7
     static let fdPrimaryEdge = UIColor(hexString: "#FFD9C7")
 
+    // MARK: - Login Figma
+
+    /// 登录页背景  #FDF6F4
+    static let fdLoginBackground = UIColor(hexString: "#FDF6F4")
+    /// 登录页标题棕  #64351F
+    static let fdLoginTitle = UIColor(hexString: "#64351F")
+    /// 登录页标签 / 微信文案  #6F6E75
+    static let fdLoginLabel = UIColor(hexString: "#6F6E75")
+    /// 登录主按钮渐变起点  #FE9B43
+    static let fdLoginButtonStart = UIColor(hexString: "#FE9B43")
+    /// 登录主按钮渐变终点  #FE622C
+    static let fdLoginButtonEnd = UIColor(hexString: "#FE622C")
+    /// 登录 Logo 容器阴影  #FCE6D6
+    static let fdLoginLogoShadow = UIColor(hexString: "#FCE6D6")
+    /// 登录 Logo 容器暖白  #FEF9F4
+    static let fdLoginLogoSurface = UIColor(hexString: "#FEF9F4")
+
     // MARK: - Semantic
 
     /// 正常 / 绿色  #2DB983
@@ -55,6 +72,8 @@ extension UIColor {
     static let fdSurface2 = UIColor(hexString: "#FAF4EF")
     /// 全局暖米底色  #FDF6F3
     static let fdBg = UIColor(hexString: "#FDF6F3")
+    /// 商品图片底色  #F7F7F7
+    static let fdProductImageBg = UIColor(hexString: "#F7F7F7")
     /// 次级背景（segment 底色等）  #F6ECE4
     static let fdBg2 = UIColor(hexString: "#F6ECE4")
 

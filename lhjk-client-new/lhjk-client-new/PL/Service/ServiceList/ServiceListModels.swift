@@ -18,7 +18,7 @@ struct ServiceListInstitutionDisplay: Equatable {
         name: "富德健康",
         typeLabel: "品牌机构",
         address: "全国服务网络",
-        distance: "距您最近"
+        distance: "距离最近"
     )
 }
 

@@ -1,12 +1,10 @@
 import UIKit
 import SnapKit
 
-/// 快捷操作区 Cell — 4 个操作按钮横向排列
+/// 快捷操作区 — 对齐 Figma：白卡 16 圆角 + 统一暖橙圆形图标
 final class HomeQuickActionsCell: UITableViewCell {
 
     static let reuseID = "HomeQuickActionsCell"
-
-    // MARK: - Data types
 
     struct Action {
         let icon: String
@@ -16,64 +14,50 @@ final class HomeQuickActionsCell: UITableViewCell {
         let route: String
     }
 
-    // MARK: - UI
-
     private let cardView: UIView = {
         let v = UIView()
         v.backgroundColor = .fdSurface
-        v.layer.cornerRadius = 18
-        v.addFundeShadow()
+        v.layer.cornerRadius = 16
         return v
     }()
 
     private let stackView: UIStackView = {
         let s = UIStackView()
         s.distribution = .fillEqually
+        s.spacing = 0
         return s
     }()
 
-    // MARK: - Callback
-
     var onActionTapped: ((String) -> Void)?
-
-    // MARK: - Init
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        backgroundColor = .fdBg
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
         selectionStyle = .none
-        contentView.clipsToBounds = false
         clipsToBounds = false
-        setupUI()
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    // MARK: - Setup
-
-    private func setupUI() {
+        contentView.clipsToBounds = false
         contentView.addSubview(cardView)
         cardView.addSubview(stackView)
-
         cardView.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(10)
-            make.leading.trailing.equalToSuperview().inset(16)
+            make.top.equalToSuperview().offset(12)
+            make.leading.trailing.equalToSuperview().inset(16).priority(750)
             make.bottom.equalToSuperview()
+            make.height.equalTo(104)
         }
         stackView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 18, left: 8, bottom: 18, right: 8))
+            make.top.equalToSuperview().offset(16)
+            make.leading.trailing.equalToSuperview().inset(8)
+            make.bottom.equalToSuperview().offset(-16)
         }
     }
 
-    // MARK: - Configure
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     func configure(actions: [Action]) {
         stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for act in actions {
-            let item = makeActionItem(act)
-            stackView.addArrangedSubview(item)
+            stackView.addArrangedSubview(makeActionItem(act))
         }
     }
 
@@ -81,40 +65,39 @@ final class HomeQuickActionsCell: UITableViewCell {
         let item = UIView()
 
         let iconBg = UIView()
-        iconBg.backgroundColor = action.bgColor
-        iconBg.layer.cornerRadius = 16
+        iconBg.backgroundColor = UIColor(hexString: "#FFF3EE")
+        iconBg.layer.cornerRadius = 24
 
         let icon = UIImageView(image: UIImage(systemName: action.icon))
-        icon.tintColor = action.iconColor
+        icon.tintColor = .fdPrimary
         icon.contentMode = .scaleAspectFit
         iconBg.addSubview(icon)
-        icon.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.size.equalTo(24)
+        icon.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.size.equalTo(22)
         }
 
         let lbl = UILabel()
         lbl.text = action.title
-        lbl.font = .fdCaption
-        lbl.textColor = .fdText2
+        lbl.font = .fdFont(ofSize: 12, weight: .regular)
+        lbl.textColor = .fdText
         lbl.textAlignment = .center
 
         item.addSubview(iconBg)
         item.addSubview(lbl)
-        iconBg.snp.makeConstraints { make in
-            make.top.centerX.equalToSuperview()
-            make.size.equalTo(48)
+        iconBg.snp.makeConstraints {
+            $0.top.centerX.equalToSuperview()
+            $0.size.equalTo(48)
         }
-        lbl.snp.makeConstraints { make in
-            make.top.equalTo(iconBg.snp.bottom).offset(7)
-            make.centerX.equalToSuperview()
-            make.bottom.equalToSuperview()
+        lbl.snp.makeConstraints {
+            $0.top.equalTo(iconBg.snp.bottom).offset(6)
+            $0.centerX.leading.trailing.equalToSuperview()
+            $0.bottom.equalToSuperview()
         }
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(actionTapped(_:)))
         item.addGestureRecognizer(tap)
         item.accessibilityIdentifier = action.route
-
         return item
     }
 

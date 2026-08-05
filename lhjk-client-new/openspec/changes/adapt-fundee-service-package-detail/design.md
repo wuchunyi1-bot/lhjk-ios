@@ -3,8 +3,8 @@
 套餐详情 UI 已对齐图示。数据改为真实接口：
 
 - 列表：`GET /v1/hospitalPackage/getEnabledHospitalPackagePage`（须解析 `id`）
-- 详情：`GET /v1/hospitalPackage/getPackageDetail?hospitalId=&packageId=`  
-  [Apifox](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/485486161e0)
+- 详情：`GET /v1/hospitalPackage/getHospitalPackageDetail?hospitalId=&packageId=`  
+  Apifox 层级：`App端/商城/商城套餐相关接口`（只读查阅；分享站无公开 md 时以 App path 为准）
 
 ## Goals / Non-Goals
 

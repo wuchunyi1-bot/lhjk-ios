@@ -14,7 +14,7 @@ final class ServiceListViewController: BaseViewController {
 
     private lazy var leftTable: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
-        tv.backgroundColor = .fdBg2
+        tv.backgroundColor = .fdBg
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
         tv.register(CategoryNavCell.self, forCellReuseIdentifier: CategoryNavCell.reuseID)
@@ -26,9 +26,10 @@ final class ServiceListViewController: BaseViewController {
 
     private lazy var rightTable: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
-        tv.backgroundColor = .fdBg
+        tv.backgroundColor = .fdSurface
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
+        tv.contentInset = UIEdgeInsets(top: 16, left: 0, bottom: 24, right: 0)
         tv.register(PackageCardCell.self, forCellReuseIdentifier: PackageCardCell.reuseID)
         tv.dataSource = self
         tv.delegate = self
@@ -58,19 +59,24 @@ final class ServiceListViewController: BaseViewController {
     }
 
     private func setupNavigationItems() {
-        let searchItem = UIBarButtonItem(
-            image: UIImage(systemName: "magnifyingglass"),
-            style: .plain,
-            target: self,
-            action: #selector(openSearch)
-        )
-        let cartItem = UIBarButtonItem(
-            image: UIImage(systemName: "cart"),
-            style: .plain,
-            target: self,
-            action: #selector(openCart)
-        )
-        navigationItem.rightBarButtonItems = [cartItem, searchItem]
+        // Figma 3021:2143 — 搜索 + 购物车，间距 16
+        let searchButton = UIButton(type: .system)
+        searchButton.setImage(.fdNavSearch, for: .normal)
+        searchButton.tintColor = .fdText
+        searchButton.addTarget(self, action: #selector(openSearch), for: .touchUpInside)
+        searchButton.snp.makeConstraints { $0.size.equalTo(24) }
+
+        let cartButton = UIButton(type: .system)
+        cartButton.setImage(.fdNavCart, for: .normal)
+        cartButton.tintColor = .fdText
+        cartButton.addTarget(self, action: #selector(openCart), for: .touchUpInside)
+        cartButton.snp.makeConstraints { $0.size.equalTo(24) }
+
+        let stack = UIStackView(arrangedSubviews: [searchButton, cartButton])
+        stack.axis = .horizontal
+        stack.spacing = 16
+        stack.alignment = .center
+        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: stack)
     }
 
     @objc private func openSearch() {
@@ -84,6 +90,10 @@ final class ServiceListViewController: BaseViewController {
     override func setupUI() {
         view.backgroundColor = .fdBg
         topDivider.backgroundColor = .fdBorder
+        // 两栏各自裁剪内容，右侧卡片不能溢出到左侧类目栏
+        layoutContainer.clipsToBounds = true
+        leftTable.clipsToBounds = true
+        rightTable.clipsToBounds = true
 
         view.addSubview(institutionCard)
         view.addSubview(topDivider)
@@ -107,7 +117,8 @@ final class ServiceListViewController: BaseViewController {
         }
         leftTable.snp.makeConstraints {
             $0.top.leading.bottom.equalToSuperview()
-            $0.width.equalTo(78)
+            // Figma 左栏宽 115
+            $0.width.equalTo(115)
         }
         rightTable.snp.makeConstraints {
             $0.top.trailing.bottom.equalToSuperview()
@@ -206,7 +217,8 @@ extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate 
         if viewModel.packages.isEmpty {
             let cell = UITableViewCell()
             cell.selectionStyle = .none
-            cell.backgroundColor = .clear
+            cell.backgroundColor = .fdSurface
+            cell.contentView.backgroundColor = .fdSurface
             let label = UILabel()
             label.text = "暂无套餐"
             label.font = .fdBody
@@ -233,8 +245,10 @@ extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate 
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        if tableView.tag == 0 { return 52 }
-        return UITableView.automaticDimension
+        if tableView.tag == 0 { return CategoryNavCell.rowHeight }
+        if viewModel.packages.isEmpty { return UITableView.automaticDimension }
+        // 卡片 106 + 行间距 14
+        return PackageCardCell.cardHeight + 14
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

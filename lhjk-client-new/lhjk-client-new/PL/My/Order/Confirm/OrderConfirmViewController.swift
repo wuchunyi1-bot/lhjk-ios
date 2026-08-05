@@ -160,7 +160,7 @@ final class OrderConfirmViewController: BaseViewController {
         guard entry == .cartCheckout else { return }
         navigationItem.hidesBackButton = true
         navigationItem.leftBarButtonItem = UIBarButtonItem(
-            image: UIImage(systemName: "chevron.left"),
+            image: .fdNavBack,
             style: .plain,
             target: self,
             action: #selector(handleCartCheckoutBack)

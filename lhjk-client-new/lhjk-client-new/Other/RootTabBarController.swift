@@ -6,25 +6,30 @@ final class RootTabBarController: UITabBarController {
 
     private var messageNav: BaseNavigationController?
     private var cancellables = Set<AnyCancellable>()
-    private var didScheduleServiceHubPreload = false
+    private var didScheduleHubPreload = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupViewControllers()
         configureAppearance()
         setupBadgeSubscription()
-        scheduleServiceHubPreloadIfNeeded()
+        scheduleHubPreloadIfNeeded()
     }
 
-    /// 冷启动 / 登录进主界面后延迟预拉服务 Hub 静态层（无 TTL；与 SceneDelegate 登录态路径共用）
-    private func scheduleServiceHubPreloadIfNeeded() {
-        guard !didScheduleServiceHubPreload else { return }
-        didScheduleServiceHubPreload = true
+    /// 冷启动 / 登录进主界面后延迟预拉服务 Hub 与健康 Hub（无 TTL；与 SceneDelegate 登录态路径共用）
+    private func scheduleHubPreloadIfNeeded() {
+        guard !didScheduleHubPreload else { return }
+        didScheduleHubPreload = true
         Task {
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             print("[RootTab] service hub preloadStatic → start")
             await AppContainer.shared.serviceHubCacheService.preloadStatic()
             print("[RootTab] service hub preloadStatic → done hasLoaded=\(AppContainer.shared.serviceHubCacheService.hasLoadedStatic)")
+
+            print("[RootTab] health hub preload → start")
+            let healthHub = await AppContainer.shared.healthPageCacheService.preload()
+            let cardCount = healthHub?.monitorCards.count ?? 0
+            print("[RootTab] health hub preload → done hasLoaded=\(AppContainer.shared.healthPageCacheService.hasLoaded) cards=\(cardCount)")
         }
     }
 
@@ -52,14 +57,9 @@ final class RootTabBarController: UITabBarController {
         let serviceNav = BaseNavigationController(rootViewController: serviceVC)
         serviceNav.tabBarItem = UITabBarItem(
             title: "服务",
-            image: UIImage(systemName: "shield"),
-            selectedImage: UIImage(systemName: "shield.fill")
+            image: UIImage(systemName: "briefcase"),
+            selectedImage: UIImage(systemName: "briefcase.fill")
         )
-        // 待使用服务数量角标
-        let pendingCount = 2  // Mock: services.json orders.pending
-        if pendingCount > 0 {
-            serviceNav.tabBarItem.badgeValue = "\(pendingCount)"
-        }
 
         // 消息
         let messageVC = MessagesViewController()
@@ -85,9 +85,29 @@ final class RootTabBarController: UITabBarController {
 
     private func configureAppearance() {
         let appearance = UITabBarAppearance()
-        appearance.configureWithDefaultBackground()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = .fdSurface
+        appearance.shadowColor = .fdBorder
+
+        let normal = appearance.stackedLayoutAppearance.normal
+        normal.iconColor = .fdMuted
+        normal.titleTextAttributes = [
+            .foregroundColor: UIColor.fdMuted,
+            .font: UIFont.fdFont(ofSize: 12, weight: .regular),
+        ]
+
+        let selected = appearance.stackedLayoutAppearance.selected
+        selected.iconColor = .fdPrimary
+        selected.titleTextAttributes = [
+            .foregroundColor: UIColor.fdPrimary,
+            .font: UIFont.fdFont(ofSize: 12, weight: .medium),
+        ]
+
         tabBar.standardAppearance = appearance
         tabBar.scrollEdgeAppearance = appearance
+        tabBar.isTranslucent = false
+        tabBar.tintColor = .fdPrimary
+        tabBar.unselectedItemTintColor = .fdMuted
     }
 
     // MARK: - Badge

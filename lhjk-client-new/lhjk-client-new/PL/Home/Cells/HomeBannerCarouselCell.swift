@@ -1,24 +1,19 @@
 import UIKit
 import SnapKit
 
-/// 首页 Banner 轮播 — 对齐 HomeView.vue `.home-banner-section`（原型四色占位）
+/// 首页 Banner 轮播 — 对齐 Figma 3021:784（全宽暖橙图；叠层文案暂不展示）
 final class HomeBannerCarouselCell: UITableViewCell {
 
     static let reuseID = "HomeBannerCarouselCell"
+    static let bannerHeight: CGFloat = 288
 
-    private let colors: [UIColor] = [
-        .fdPrimary,
-        UIColor(hexString: "#4B8BFF"),
-        UIColor(hexString: "#2EAD8A"),
-        UIColor(hexString: "#8B6CFF"),
-    ]
+    private let imageNames = ["home_banner_1", "home_banner_2", "home_banner_3"]
 
     private let scrollView: UIScrollView = {
         let s = UIScrollView()
         s.isPagingEnabled = true
         s.showsHorizontalScrollIndicator = false
-        s.layer.cornerRadius = 18
-        s.clipsToBounds = true
+        s.bounces = false
         return s
     }()
 
@@ -32,34 +27,29 @@ final class HomeBannerCarouselCell: UITableViewCell {
 
     private var timer: Timer?
     private var pageWidth: CGFloat = 0
+    private var slideViews: [UIView] = []
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        backgroundColor = .fdBg
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
         selectionStyle = .none
-        contentView.clipsToBounds = false
+        contentView.clipsToBounds = true
 
-        let wrap = UIView()
-        wrap.layer.cornerRadius = 18
-        wrap.addFundeShadow(radius: 12, opacity: 0.08)
-        contentView.addSubview(wrap)
-        wrap.addSubview(scrollView)
-        wrap.addSubview(pageControl)
-
-        wrap.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(12)
-            $0.leading.trailing.equalToSuperview().inset(16)
+        contentView.addSubview(scrollView)
+        contentView.addSubview(pageControl)
+        scrollView.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.height.equalTo(Self.bannerHeight)
             $0.bottom.equalToSuperview()
-            $0.height.equalTo(140)
         }
-        scrollView.snp.makeConstraints { $0.edges.equalToSuperview() }
         pageControl.snp.makeConstraints {
             $0.centerX.equalToSuperview()
-            $0.bottom.equalToSuperview().offset(-8)
+            $0.bottom.equalToSuperview().offset(-16)
         }
 
         scrollView.delegate = self
-        pageControl.numberOfPages = colors.count
+        pageControl.numberOfPages = imageNames.count
         buildSlides()
     }
 
@@ -69,9 +59,7 @@ final class HomeBannerCarouselCell: UITableViewCell {
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
-        if window != nil {
-            startTimer()
-        } else {
+        if window != nil { startTimer() } else {
             timer?.invalidate()
             timer = nil
         }
@@ -80,20 +68,32 @@ final class HomeBannerCarouselCell: UITableViewCell {
     override func layoutSubviews() {
         super.layoutSubviews()
         let w = scrollView.bounds.width
+        let h = Self.bannerHeight
         guard w > 0, abs(w - pageWidth) > 0.5 else { return }
         pageWidth = w
-        for (i, sub) in scrollView.subviews.enumerated() {
-            sub.frame = CGRect(x: CGFloat(i) * w, y: 0, width: w, height: 140)
+        for (i, sub) in slideViews.enumerated() {
+            sub.frame = CGRect(x: CGFloat(i) * w, y: 0, width: w, height: h)
         }
-        scrollView.contentSize = CGSize(width: w * CGFloat(colors.count), height: 140)
+        scrollView.contentSize = CGSize(width: w * CGFloat(imageNames.count), height: h)
     }
 
     private func buildSlides() {
         scrollView.subviews.forEach { $0.removeFromSuperview() }
-        for color in colors {
-            let slide = UIView()
-            slide.backgroundColor = color
-            scrollView.addSubview(slide)
+        slideViews.removeAll()
+        for name in imageNames {
+            // 仅展示图片；叠层文案暂不创建，避免 frame 布局初始宽度为 0 时约束冲突
+            let container = UIView()
+            container.clipsToBounds = true
+
+            let imageView = UIImageView(image: UIImage(named: name))
+            imageView.contentMode = .scaleAspectFill
+            imageView.clipsToBounds = true
+            imageView.frame = container.bounds
+            imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            container.addSubview(imageView)
+
+            scrollView.addSubview(container)
+            slideViews.append(container)
         }
     }
 
@@ -102,14 +102,12 @@ final class HomeBannerCarouselCell: UITableViewCell {
         timer = Timer.scheduledTimer(withTimeInterval: 4.2, repeats: true) { [weak self] _ in
             self?.advancePage()
         }
-        if let timer {
-            RunLoop.main.add(timer, forMode: .common)
-        }
+        if let timer { RunLoop.main.add(timer, forMode: .common) }
     }
 
     private func advancePage() {
         guard pageWidth > 0 else { return }
-        let next = (pageControl.currentPage + 1) % colors.count
+        let next = (pageControl.currentPage + 1) % imageNames.count
         scrollView.setContentOffset(CGPoint(x: CGFloat(next) * pageWidth, y: 0), animated: true)
         pageControl.currentPage = next
     }

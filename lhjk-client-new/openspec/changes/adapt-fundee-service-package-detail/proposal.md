@@ -1,11 +1,11 @@
 ## Why
 
-服务模块应展示**套餐详情**（健康包组合配置页），并从真实接口拉取数据。列表须带上商品 `id`，详情用 `getPackageDetail` 查询。
+服务模块应展示**套餐详情**（健康包组合配置页），并从真实接口拉取数据。列表须带上商品 `id`，详情用 `getHospitalPackageDetail` 查询。
 
 ## What Changes
 
 - 列表 `getEnabledHospitalPackagePage` 解析 `id` → `HealthPackageItem.id`
-- 详情 `GET /v1/hospitalPackage/getPackageDetail`（hospitalId 临时常量 + packageId）
+- 详情 `GET /v1/hospitalPackage/getHospitalPackageDetail`（hospitalId + packageId）
 - 详情页 UI：轮播 / 信息头 / 套餐内容·详情 Tab / 必选组合 / 应付+加购+下单
 - `/services/detail`、`/services/pkg` 统一指向套餐详情 VC
 

@@ -7,11 +7,14 @@ final class CouponTabViewController: BaseViewController {
     let filter: CouponStatusFilter
     private let emptyTitle: String
     private let emptySubtitle: String
-    private let voucherService: VoucherService
+    private let couponService: CouponService
 
     private var coupons: [VoucherCouponAsset] = []
     private var expandedIds: Set<String> = []
     private var hasLoaded = false
+    private var loadTask: Task<Void, Never>?
+
+    var onAvailableCountUpdated: ((Int) -> Void)?
 
     private lazy var tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
@@ -69,16 +72,20 @@ final class CouponTabViewController: BaseViewController {
         filter: CouponStatusFilter,
         emptyTitle: String = "暂无相关优惠券",
         emptySubtitle: String = "可在确认订单时选择符合条件的优惠券。",
-        voucherService: VoucherService = AppContainer.shared.voucherService
+        couponService: CouponService = AppContainer.shared.couponService
     ) {
         self.filter = filter
         self.emptyTitle = emptyTitle
         self.emptySubtitle = emptySubtitle
-        self.voucherService = voucherService
+        self.couponService = couponService
         super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) { fatalError() }
+
+    deinit {
+        loadTask?.cancel()
+    }
 
     override func setupUI() {
         view.backgroundColor = .fdBg
@@ -104,13 +111,47 @@ final class CouponTabViewController: BaseViewController {
     }
 
     private func reload() {
-        coupons = VoucherListQuery.coupons(assets: voucherService.getCouponAssets(), filter: filter)
-        hasLoaded = true
-        tableView.reloadData()
-        refreshControl.endRefreshing()
-        let empty = coupons.isEmpty
-        emptyView.isHidden = !empty
-        tableView.isHidden = empty
+        loadTask?.cancel()
+        loadTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let result = try await self.couponService.getCouponTakeList(
+                    status: self.filter.apiStatus,
+                    pageNum: 1,
+                    pageSize: 50
+                )
+                guard !Task.isCancelled else { return }
+
+                var assets = result.items.map { $0.toVoucherAsset() }
+                if self.filter == .all {
+                    assets = VoucherListQuery.coupons(assets: assets, filter: .all)
+                }
+
+                await MainActor.run {
+                    self.coupons = assets
+                    self.hasLoaded = true
+                    self.tableView.reloadData()
+                    self.refreshControl.endRefreshing()
+                    let empty = assets.isEmpty
+                    self.emptyView.isHidden = !empty
+                    self.tableView.isHidden = empty
+
+                    if self.filter == .available {
+                        self.onAvailableCountUpdated?(result.total)
+                    }
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    self.coupons = []
+                    self.hasLoaded = true
+                    self.tableView.reloadData()
+                    self.refreshControl.endRefreshing()
+                    self.emptyView.isHidden = false
+                    self.tableView.isHidden = true
+                }
+            }
+        }
     }
 }
 

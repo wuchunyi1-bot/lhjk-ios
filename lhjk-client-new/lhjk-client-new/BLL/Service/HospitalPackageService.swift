@@ -228,9 +228,10 @@ final class HospitalPackageService {
     // MARK: - 套餐详情
 
     /// `GET /v1/hospitalPackage/getHospitalPackageDetail`
+    /// Apifox：`App端/商城/商城套餐相关接口`（只读查阅；无公开 md 时以本 path 为准）
     /// - Parameters:
     ///   - packageId: 列表接口返回的商品 id
-    ///   - hospitalId: 默认临时常量；机构 API 接入后传入真实值
+    ///   - hospitalId: 列表/路由传入的机构 id；无效时回退临时常量
     func fetchPackageDetail(
         packageId: String,
         hospitalId: String? = nil,

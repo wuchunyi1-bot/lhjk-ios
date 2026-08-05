@@ -1,165 +1,193 @@
 import UIKit
 import SnapKit
 
-/// 健康文章行 Cell — 缩略图 + 标签 + 标题 + 元信息
+/// 健康陪伴整卡 — 对齐 Figma：卡内标题 + 文章列表（68 缩略图）
 final class HomeArticleCell: UITableViewCell {
 
     static let reuseID = "HomeArticleCell"
 
-    // MARK: - Data types
-
     struct Article {
         let tag: String
-        let tagType: String // "warning" / "success" / "primary" / "info"
+        let tagType: String
         let title: String
         let author: String
         let reads: String
+        let imageName: String?
     }
 
-    // MARK: - UI
+    var onTapped: ((Int) -> Void)?
+    var onMoreTapped: (() -> Void)?
 
-    private let thumbnailView: UIView = {
+    private let cardView: UIView = {
         let v = UIView()
-        v.backgroundColor = .fdBg2
-        v.layer.borderWidth = 1
-        v.layer.borderColor = UIColor.fdBorderStrong.cgColor
-        v.layer.cornerRadius = 12
+        v.backgroundColor = .fdSurface
+        v.layer.cornerRadius = 16
         return v
-    }()
-
-    private let thumbnailLabel: UILabel = {
-        let l = UILabel()
-        l.text = "文章\n封面"
-        l.font = .fdMicro
-        l.textColor = .fdMuted
-        l.numberOfLines = 0
-        l.textAlignment = .center
-        return l
-    }()
-
-    private let tagLabel: UILabel = {
-        let l = UILabel()
-        l.font = .fdMicroSemibold
-        l.layer.cornerRadius = 999
-        l.clipsToBounds = true
-        l.textAlignment = .center
-        return l
     }()
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdBody
+        l.text = "健康陪伴"
+        l.font = .fdFont(ofSize: 16, weight: .medium)
         l.textColor = .fdText
-        l.numberOfLines = 2
         return l
     }()
 
-    private let metaLabel: UILabel = {
-        let l = UILabel()
-        l.font = .fdMicro
-        l.textColor = .fdMuted
-        return l
+    private let moreButton: UIButton = {
+        let b = UIButton(type: .system)
+        b.setTitle("更多 ›", for: .normal)
+        b.titleLabel?.font = .fdFont(ofSize: 12, weight: .regular)
+        b.setTitleColor(.fdSubtext, for: .normal)
+        return b
     }()
 
-    private let dividerView: UIView = {
-        let v = UIView()
-        v.backgroundColor = .fdBorder
-        return v
+    private let listStack: UIStackView = {
+        let s = UIStackView()
+        s.axis = .vertical
+        s.spacing = 0
+        return s
     }()
-
-    // MARK: - Callback
-
-    var onTapped: (() -> Void)?
-
-    // MARK: - Init
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        backgroundColor = .fdBg
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
         selectionStyle = .none
-        setupUI()
+
+        contentView.addSubview(cardView)
+        cardView.addSubview(titleLabel)
+        cardView.addSubview(moreButton)
+        cardView.addSubview(listStack)
+
+        cardView.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(12)
+            $0.leading.trailing.equalToSuperview().inset(16).priority(750)
+            $0.bottom.equalToSuperview().offset(-12)
+        }
+        titleLabel.snp.makeConstraints {
+            $0.top.leading.equalToSuperview().inset(15)
+        }
+        moreButton.snp.makeConstraints {
+            $0.centerY.equalTo(titleLabel)
+            $0.trailing.equalToSuperview().inset(8)
+        }
+        listStack.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(12)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalToSuperview().inset(8)
+        }
+
+        moreButton.addTarget(self, action: #selector(moreTap), for: .touchUpInside)
     }
 
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    // MARK: - Setup
-
-    private func setupUI() {
-        thumbnailView.addSubview(thumbnailLabel)
-        thumbnailLabel.snp.makeConstraints { $0.center.equalToSuperview() }
-
-        contentView.addSubview(thumbnailView)
-        contentView.addSubview(tagLabel)
-        contentView.addSubview(titleLabel)
-        contentView.addSubview(metaLabel)
-        contentView.addSubview(dividerView)
-
-        thumbnailView.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(12)
-            make.leading.equalToSuperview().inset(16)
-            make.size.equalTo(84)
-            make.bottom.lessThanOrEqualToSuperview().offset(-12)
+    func configure(articles: [Article]) {
+        listStack.arrangedSubviews.forEach {
+            listStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
         }
-        tagLabel.snp.makeConstraints { make in
-            make.top.equalTo(thumbnailView)
-            make.leading.equalTo(thumbnailView.snp.trailing).offset(12)
-        }
-        titleLabel.snp.makeConstraints { make in
-            make.top.equalTo(tagLabel.snp.bottom).offset(6)
-            make.leading.equalTo(tagLabel)
-            make.trailing.equalToSuperview().offset(-16)
-        }
-        metaLabel.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(6)
-            make.leading.equalTo(tagLabel)
-            make.bottom.equalToSuperview().offset(-12)
-        }
-        dividerView.snp.makeConstraints { make in
-            make.leading.trailing.bottom.equalToSuperview().inset(16)
-            make.height.equalTo(1)
-        }
-
-        let tap = UITapGestureRecognizer(target: self, action: #selector(cellTapped))
-        contentView.addGestureRecognizer(tap)
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        // 确保多行 label 能正确计算 intrinsic content size
-        let maxWidth = contentView.bounds.width - 16 /* thumbnail leading */ - 84 /* thumbnail */ - 12 /* gap */ - 16 /* trailing */
-        if maxWidth > 0 && titleLabel.preferredMaxLayoutWidth != maxWidth {
-            titleLabel.preferredMaxLayoutWidth = maxWidth
+        for (idx, article) in articles.enumerated() {
+            listStack.addArrangedSubview(makeRow(article, index: idx))
+            if idx < articles.count - 1 {
+                let wrap = UIView()
+                let div = UIView()
+                div.backgroundColor = UIColor.fdBorder.withAlphaComponent(0.8)
+                wrap.addSubview(div)
+                div.snp.makeConstraints {
+                    $0.leading.trailing.equalToSuperview().inset(11)
+                    $0.height.equalTo(0.5)
+                    $0.top.bottom.equalToSuperview()
+                }
+                listStack.addArrangedSubview(wrap)
+            }
         }
     }
 
-    // MARK: - Configure
+    private func makeRow(_ article: Article, index: Int) -> UIView {
+        let row = UIView()
+        row.tag = index
 
-    func configure(article: Article, isLast: Bool) {
-        let tagColors: [String: (bg: UIColor, fg: UIColor)] = [
-            "warning": (.fdWarningSoft, UIColor(hexString: "#B47300")),
-            "success": (.fdSuccessSoft, .fdSuccess),
-            "primary": (.fdPrimarySoft, .fdPrimary),
-            "info":    (.fdInfoSoft, .fdInfo),
-        ]
-        let tc = tagColors[article.tagType] ?? (.fdBg2, .fdSubtext)
-        tagLabel.text = " \(article.tag) "
-        tagLabel.textColor = tc.fg
-        tagLabel.backgroundColor = tc.bg
+        let thumb = UIImageView()
+        thumb.backgroundColor = UIColor(hexString: "#AFAFAF")
+        thumb.layer.cornerRadius = 8
+        thumb.clipsToBounds = true
+        thumb.contentMode = .scaleAspectFill
+        if let name = article.imageName {
+            thumb.image = UIImage(named: name)
+        }
 
-        titleLabel.text = article.title
-        metaLabel.text = "\(article.author) · \(article.reads)"
-        dividerView.isHidden = isLast
+        let title = UILabel()
+        title.text = article.title
+        title.font = .fdFont(ofSize: 14, weight: .medium)
+        title.textColor = .fdText
+        title.numberOfLines = 2
+
+        let tag = UILabel()
+        tag.text = " \(article.tag) "
+        tag.font = .fdFont(ofSize: 11, weight: .regular)
+        tag.textColor = UIColor(hexString: "#A1733E")
+        tag.backgroundColor = UIColor(hexString: "#FAF5EE")
+        tag.layer.cornerRadius = 2
+        tag.clipsToBounds = true
+
+        let author = UILabel()
+        author.text = article.author.replacingOccurrences(of: " ", with: "｜")
+        author.font = .fdFont(ofSize: 12, weight: .regular)
+        author.textColor = .fdSubtext
+
+        let reads = UILabel()
+        reads.text = article.reads
+        reads.font = .fdFont(ofSize: 12, weight: .regular)
+        reads.textColor = .fdSubtext
+        reads.textAlignment = .right
+
+        row.addSubview(thumb)
+        row.addSubview(title)
+        row.addSubview(tag)
+        row.addSubview(author)
+        row.addSubview(reads)
+
+        thumb.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(12)
+            $0.top.equalToSuperview().offset(12)
+            $0.bottom.equalToSuperview().offset(-12)
+            $0.size.equalTo(68)
+        }
+        title.snp.makeConstraints {
+            $0.top.equalTo(thumb)
+            $0.leading.equalTo(thumb.snp.trailing).offset(12)
+            $0.trailing.equalToSuperview().inset(12)
+        }
+        tag.snp.makeConstraints {
+            $0.leading.equalTo(title)
+            $0.bottom.equalTo(thumb)
+        }
+        author.snp.makeConstraints {
+            $0.leading.equalTo(tag.snp.trailing).offset(6)
+            $0.centerY.equalTo(tag)
+        }
+        reads.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(12)
+            $0.centerY.equalTo(tag)
+            $0.leading.greaterThanOrEqualTo(author.snp.trailing).offset(4)
+        }
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(rowTapped(_:)))
+        row.addGestureRecognizer(tap)
+        return row
     }
 
-    @objc private func cellTapped() {
-        onTapped?()
+    @objc private func rowTapped(_ g: UITapGestureRecognizer) {
+        guard let idx = g.view?.tag else { return }
+        onTapped?(idx)
     }
+
+    @objc private func moreTap() { onMoreTapped?() }
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        dividerView.isHidden = false
         onTapped = nil
+        onMoreTapped = nil
     }
 }

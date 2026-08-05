@@ -44,6 +44,7 @@ final class CouponListViewController: BaseViewController {
         super.viewDidLoad()
         availableCount = AppContainer.shared.voucherService.availableCouponCount
         buildChildVCs()
+        refreshAvailableBadge()
     }
 
     override func setupUI() {
@@ -77,6 +78,7 @@ final class CouponListViewController: BaseViewController {
         super.viewWillAppear(animated)
         availableCount = AppContainer.shared.voucherService.availableCouponCount
         tabCollectionView.reloadData()
+        refreshAvailableBadge()
         currentChildVC?.beginAppearanceTransition(true, animated: animated)
     }
 
@@ -98,13 +100,32 @@ final class CouponListViewController: BaseViewController {
     func refreshVisibleTab() {
         availableCount = AppContainer.shared.voucherService.availableCouponCount
         tabCollectionView.reloadData()
+        refreshAvailableBadge()
         currentChildVC?.refresh()
     }
 
     private func buildChildVCs() {
         childVCs = tabs.map {
-            CouponTabViewController(filter: $0.filter, emptyTitle: $0.emptyTitle)
+            let child = CouponTabViewController(filter: $0.filter, emptyTitle: $0.emptyTitle)
+            child.onAvailableCountUpdated = { [weak self] count in
+                self?.applyAvailableCount(count)
+            }
+            return child
         }
+    }
+
+    private func refreshAvailableBadge() {
+        Task { [weak self] in
+            let count = try? await AppContainer.shared.couponService.refreshAvailableCouponCount()
+            await MainActor.run {
+                self?.applyAvailableCount(count ?? AppContainer.shared.voucherService.availableCouponCount)
+            }
+        }
+    }
+
+    private func applyAvailableCount(_ count: Int) {
+        availableCount = count
+        tabCollectionView.reloadData()
     }
 
     private func showChildVC(at index: Int) {

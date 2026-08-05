@@ -167,6 +167,7 @@ final class OnboardingViewController: BaseViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        prefillExistingInfo()
         updateGenderAppearance()
         updateSaveButtonState()
     }
@@ -554,6 +555,110 @@ final class OnboardingViewController: BaseViewController {
                 }
             }
         }
+    }
+
+    // MARK: - Prefill
+
+    /// 已有字段回填：loginUserInfo → currentUser → defaultArchive → 本地展示缓存
+    private func prefillExistingInfo() {
+        let login = UserManager.shared.loginUserInfo
+        let user = UserManager.shared.currentUser
+        let archive = UserManager.shared.defaultArchive
+
+        let name = firstNonBlank(
+            login?.chineseName,
+            user?.chineseName,
+            user?.surname,
+            archive?.chineseName,
+            UserDefaults.standard.string(forKey: "fd_profile_name")
+        )
+        if let name {
+            nameField.text = name
+        }
+
+        if let gender = Self.normalizedGender(
+            firstNonBlank(login?.sex, user?.sex)
+        ) {
+            selectedGender = gender
+        }
+
+        if let birthday = firstNonBlank(login?.birthday, user?.birthday),
+           let date = Self.parseBirthday(birthday) {
+            birthDate = date
+            birthdayField.text = Self.displayBirthday(date)
+            if let picker = birthdayField.inputView as? UIDatePicker {
+                picker.date = date
+            }
+        }
+
+        let hospitalId = firstNonBlank(login?.hospitalId, archive?.hospitalId)
+        if let hospitalId {
+            selectedHospitalId = hospitalId
+            let hospitalName = firstNonBlank(
+                archive?.hospitalName,
+                UserDefaults.standard.string(forKey: "fd_profile_institution")
+            ) ?? "已绑定机构"
+            selectedHospitalName = hospitalName
+            setPickerTitle(institutionButton, text: hospitalName)
+        }
+
+        if let managerId = firstNonBlank(archive?.businessManagerId) {
+            selectedManagerId = managerId
+            let managerName = firstNonBlank(
+                archive?.businessManagerName,
+                UserDefaults.standard.string(forKey: "fd_profile_manager")
+            ) ?? "已绑定业务经理"
+            selectedManagerDisplay = managerName
+            setPickerTitle(managerButton, text: managerName)
+        } else if let cachedManager = firstNonBlank(
+            UserDefaults.standard.string(forKey: "fd_profile_manager")
+        ) {
+            selectedManagerDisplay = cachedManager
+            setPickerTitle(managerButton, text: cachedManager)
+        }
+    }
+
+    private func firstNonBlank(_ values: String?...) -> String? {
+        for value in values {
+            let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if !trimmed.isEmpty { return trimmed }
+        }
+        return nil
+    }
+
+    private static func normalizedGender(_ raw: String?) -> String? {
+        guard let raw else { return nil }
+        let v = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        switch v {
+        case "1", "男", "male", "m": return "男"
+        case "2", "女", "female", "f": return "女"
+        default: return nil
+        }
+    }
+
+    private static func parseBirthday(_ raw: String) -> Date? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        for format in ["yyyy-MM-dd", "yyyy/MM/dd", "yyyy.MM.dd"] {
+            formatter.dateFormat = format
+            if let date = formatter.date(from: String(trimmed.prefix(10))) {
+                return date
+            }
+        }
+        if trimmed.count >= 10 {
+            formatter.dateFormat = "yyyy-MM-dd"
+            return formatter.date(from: String(trimmed.prefix(10)))
+        }
+        return nil
+    }
+
+    private static func displayBirthday(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
     }
 
     // MARK: - Helpers

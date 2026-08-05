@@ -32,7 +32,7 @@ final class InstitutionSelectViewController: BaseViewController {
         view.backgroundColor = .fdBg
         title = "选择服务机构"
         navigationItem.leftBarButtonItem = UIBarButtonItem(
-            image: UIImage(systemName: "chevron.left"),
+            image: .fdNavBack,
             style: .plain,
             target: self,
             action: #selector(backTapped)

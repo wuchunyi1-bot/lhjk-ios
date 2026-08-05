@@ -2,37 +2,46 @@ import UIKit
 import SnapKit
 import Combine
 
-/// 首页 Hub — 对齐 HomeView.vue / home.page.yaml（现行布局）
+/// 首页 Hub — 对齐 Figma 3021:784
 final class HomeViewController: BaseViewController {
 
     private let viewModel = HomeViewModel()
     private var cancellables = Set<AnyCancellable>()
-    private var didApplyInitialSnapshot = false
-
-    private let brandHeader = TabHubBrandHeaderView()
 
     private let tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
-        tv.backgroundColor = .fdBg
+        tv.backgroundColor = UIColor(hexString: "#FFF9F7")
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
         tv.contentInsetAdjustmentBehavior = .never
-        tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 76, right: 0)
+        tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 90, right: 0)
         tv.sectionHeaderHeight = 0
         tv.sectionFooterHeight = 0
         tv.estimatedSectionHeaderHeight = 0
         tv.estimatedSectionFooterHeight = 0
         tv.estimatedRowHeight = 200
         tv.rowHeight = UITableView.automaticDimension
+        tv.clipsToBounds = false
         return tv
     }()
 
     private var dataSource: UITableViewDiffableDataSource<HomeViewModel.HomeSection, HomeViewModel.HomeItem>!
 
+    override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        setNeedsStatusBarAppearanceUpdate()
         viewModel.loadUserProfile()
+        viewModel.loadTodayTasks()
+        viewModel.loadDoctorTeam()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        // 冷启动时 viewDidLoad 可能尚未挂上 window，补一次 apply
+        applyHomeSnapshot(viewModel.snapshot)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -41,13 +50,7 @@ final class HomeViewController: BaseViewController {
     }
 
     override func setupUI() {
-        view.backgroundColor = .fdBg
-
-        brandHeader.configure(
-            title: "富德健康",
-            subtitle: "健康生命 · 美好生活",
-            titleColor: .fdPrimary
-        )
+        view.backgroundColor = UIColor(hexString: "#FFF9F7")
 
         tableView.register(HomeBannerCarouselCell.self, forCellReuseIdentifier: HomeBannerCarouselCell.reuseID)
         tableView.register(HomeQuickActionsCell.self, forCellReuseIdentifier: HomeQuickActionsCell.reuseID)
@@ -64,18 +67,17 @@ final class HomeViewController: BaseViewController {
         tableView.dataSource = dataSource
         tableView.delegate = self
 
-        dataSource.apply(viewModel.snapshot, animatingDifferences: false)
-        didApplyInitialSnapshot = true
-
-        view.addSubview(brandHeader)
+        // 先入层级，再 apply；否则 DiffableDataSource 会触发
+        // UITableViewAlertForLayoutOutsideViewHierarchy
         view.addSubview(tableView)
-        brandHeader.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide)
-            $0.leading.trailing.equalToSuperview()
-        }
         tableView.snp.makeConstraints {
-            $0.top.equalTo(brandHeader.snp.bottom)
-            $0.leading.trailing.bottom.equalToSuperview()
+            $0.edges.equalToSuperview()
+        }
+
+        // Banner 延伸到状态栏下方
+        tableView.contentInset.top = 0
+        if #available(iOS 15.0, *) {
+            tableView.sectionHeaderTopPadding = 0
         }
     }
 
@@ -83,10 +85,17 @@ final class HomeViewController: BaseViewController {
         viewModel.$snapshot
             .receive(on: DispatchQueue.main)
             .sink { [weak self] snapshot in
-                guard let self, self.dataSource != nil else { return }
-                self.dataSource.apply(snapshot, animatingDifferences: false)
+                self?.applyHomeSnapshot(snapshot)
             }
             .store(in: &cancellables)
+    }
+
+    /// 仅在 tableView 已挂到 window 时 apply，避免层级外布局告警
+    private func applyHomeSnapshot(
+        _ snapshot: NSDiffableDataSourceSnapshot<HomeViewModel.HomeSection, HomeViewModel.HomeItem>
+    ) {
+        guard dataSource != nil, tableView.window != nil else { return }
+        dataSource.apply(snapshot, animatingDifferences: false)
     }
 
     private func handleQuickRoute(_ route: String) {
@@ -116,24 +125,38 @@ final class HomeViewController: BaseViewController {
             cell.onPackageTapped = { id in
                 Router.shared.push("/services/pkg", params: ["id": id])
             }
+            cell.onMoreTapped = {
+                Router.shared.push("/services/membership")
+            }
             return cell
-        case .teamMember(let idx):
+        case .teamList:
             let cell = tv.dequeueReusableCell(withIdentifier: HomeTeamCardCell.reuseID, for: indexPath) as! HomeTeamCardCell
-            cell.configure(member: viewModel.teamMembers[idx])
-            cell.onMessageTapped = { name in
-                Router.shared.push("/messages", params: ["name": name])
+            cell.configure(members: viewModel.teamMembers, daysLeft: viewModel.daysLeft)
+            cell.onMessageTapped = { member in
+                guard let groupId = member.groupId, !groupId.isEmpty else { return }
+                // 会话 id = groupId，直接进聊天详情（见 home-doctor-team / im spec）
+                Router.shared.push("/conversations/:id", params: ["id": groupId])
             }
             return cell
         case .taskCard:
             let cell = tv.dequeueReusableCell(withIdentifier: HomeTaskCardCell.reuseID, for: indexPath) as! HomeTaskCardCell
-            cell.configure(tasks: viewModel.tasks)
-            cell.onTaskTapped = { _ in }
+            cell.configure(
+                previewTasks: viewModel.taskPreview,
+                doneCount: viewModel.taskDoneCount,
+                totalCount: viewModel.taskTotalCount
+            )
+            cell.onTaskAction = { task in
+                let route = task.actionRoute.isEmpty ? "/health/metrics" : task.actionRoute
+                Router.shared.push(route)
+            }
+            cell.onViewAll = {
+                Router.shared.push("/home/tasks")
+            }
             return cell
-        case .article(let idx):
+        case .articlesCard:
             let cell = tv.dequeueReusableCell(withIdentifier: HomeArticleCell.reuseID, for: indexPath) as! HomeArticleCell
-            let article = viewModel.articles[idx]
-            cell.configure(article: article, isLast: idx == viewModel.articles.count - 1)
-            cell.onTapped = {}
+            cell.configure(articles: viewModel.articles)
+            cell.onTapped = { _ in }
             return cell
         }
     }
@@ -144,75 +167,18 @@ final class HomeViewController: BaseViewController {
 extension HomeViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        guard let s = sectionKind(section) else { return .leastNormalMagnitude }
-        switch s {
-        case .membership, .team, .tasks, .articles:
-            return 40
-        default:
-            return .leastNormalMagnitude
-        }
+        .leastNormalMagnitude
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        guard let s = sectionKind(section) else { return nil }
-        switch s {
-        case .membership:
-            guard !viewModel.membershipPackages.isEmpty else { return nil }
-            let header = SectionTitleView(title: "会员健康服务", more: "查看更多 ›")
-            header.onMoreTapped = { Router.shared.push("/services/membership") }
-            return wrapHeader(header)
-        case .team:
-            let header = SectionTitleView(title: "我的富德健康管家团队", more: "服务剩余 \(viewModel.daysLeft) 天 ›")
-            return wrapHeader(header)
-        case .tasks:
-            let done = viewModel.tasks.filter(\.isDone).count
-            let header = SectionTitleView(
-                title: "今日健康任务",
-                more: "已完成 \(done) / \(viewModel.tasks.count) · +10 分 ›"
-            )
-            return wrapHeader(header)
-        case .articles:
-            let header = SectionTitleView(title: "健康陪伴", more: "更多 ›")
-            return wrapHeader(header)
-        default:
-            return nil
-        }
+        nil
     }
 
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        guard let s = sectionKind(section) else { return .leastNormalMagnitude }
-        switch s {
-        case .quickActions:
-            return 10
-        case .membership, .team, .tasks:
-            return 20
-        default:
-            return .leastNormalMagnitude
-        }
+        .leastNormalMagnitude
     }
 
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
-        guard sectionKind(section) != nil else { return nil }
-        let v = UIView()
-        v.backgroundColor = .clear
-        return v
-    }
-
-    private func sectionKind(_ section: Int) -> HomeViewModel.HomeSection? {
-        guard dataSource != nil else { return nil }
-        let ids = dataSource.snapshot().sectionIdentifiers
-        guard section >= 0, section < ids.count else { return nil }
-        return ids[section]
-    }
-
-    private func wrapHeader(_ titleView: SectionTitleView) -> UIView {
-        let container = UIView()
-        container.backgroundColor = .clear
-        container.addSubview(titleView)
-        titleView.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.bottom.equalToSuperview()
-        }
-        return container
+        nil
     }
 }

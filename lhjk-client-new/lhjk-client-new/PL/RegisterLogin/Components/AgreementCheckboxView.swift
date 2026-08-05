@@ -1,25 +1,25 @@
 import UIKit
 import SnapKit
 
-/// 协议勾选 — 《用户协议》《隐私政策》《健康管理服务知情同意书》
-/// 对齐 funde `LoginView` / PRD AUTH-06
+/// 协议勾选 — Figma 3021:621
 final class AgreementCheckboxView: UIView {
 
     private let checkboxButton: UIButton = {
-        let btn = UIButton(type: .system)
-        btn.setImage(UIImage(systemName: "square"), for: .normal)
-        btn.setImage(UIImage(systemName: "checkmark.square.fill"), for: .selected)
-        btn.tintColor = .fdPrimary
-        btn.contentHorizontalAlignment = .fill
-        btn.contentVerticalAlignment = .fill
+        let btn = UIButton(type: .custom)
+        let unchecked = UIImage(named: "login_checkbox")?.withRenderingMode(.alwaysOriginal)
+        let checked = UIImage(named: "login_checkbox_checked")?.withRenderingMode(.alwaysOriginal)
+        btn.setImage(unchecked, for: .normal)
+        btn.setImage(checked, for: .selected)
+        btn.imageEdgeInsets = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
         return btn
     }()
 
     private let agreementLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdCaption
-        label.textColor = .fdSubtext
-        label.numberOfLines = 0
+        label.font = .fdLoginMeta
+        label.textColor = .fdMuted
+        label.numberOfLines = 2
+        label.textAlignment = .center
         label.isUserInteractionEnabled = true
         return label
     }()
@@ -46,14 +46,15 @@ final class AgreementCheckboxView: UIView {
 
         checkboxButton.addTarget(self, action: #selector(toggleCheck), for: .touchUpInside)
         checkboxButton.snp.makeConstraints { make in
-            make.leading.top.equalToSuperview()
-            make.size.equalTo(22)
+            make.leading.equalToSuperview().offset(-8)
+            make.top.equalToSuperview().offset(-4)
+            make.size.equalTo(28)
         }
 
         buildAgreementText()
 
         agreementLabel.snp.makeConstraints { make in
-            make.leading.equalTo(checkboxButton.snp.trailing).offset(8)
+            make.leading.equalToSuperview().offset(18)
             make.trailing.equalToSuperview()
             make.top.bottom.equalToSuperview()
         }
@@ -63,18 +64,23 @@ final class AgreementCheckboxView: UIView {
     }
 
     private func buildAgreementText() {
-        let fullText = "我已阅读并同意《用户协议》《隐私政策》与《健康管理服务知情同意书》"
+        let fullText = "我已阅读并同意 《用户协议》 《隐私政策》与 《健康管理服务知情同意书》"
         let attributed = NSMutableAttributedString(string: fullText)
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        paragraph.minimumLineHeight = 18
+        paragraph.maximumLineHeight = 18
         attributed.setAttributes([
-            .font: UIFont.fdCaption,
-            .foregroundColor: UIColor.fdSubtext,
+            .font: UIFont.fdLoginMeta,
+            .foregroundColor: UIColor.fdMuted,
+            .kern: 0.55,
+            .paragraphStyle: paragraph,
         ], range: NSRange(location: 0, length: fullText.count))
 
         for link in ["《用户协议》", "《隐私政策》", "《健康管理服务知情同意书》"] {
             if let range = fullText.range(of: link) {
                 attributed.addAttributes([
                     .foregroundColor: UIColor.fdPrimary,
-                    .underlineStyle: NSUnderlineStyle.single.rawValue,
                 ], range: NSRange(range, in: fullText))
             }
         }

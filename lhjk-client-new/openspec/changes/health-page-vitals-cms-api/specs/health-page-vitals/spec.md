@@ -1,0 +1,120 @@
+# health-page-vitals Specification
+
+## Purpose
+
+健康 Tab Hub「体征监测」与下方快捷入口接入 CMS / 监测卡片 API；「编辑卡片」读写用户监测卡片配置。评分卡、档案卡不在本规格范围。
+
+## Requirements
+
+### Requirement: CMS 配置加载
+
+系统 SHALL 使用 `GET /v1/healthPage/getCmsConfig` 拉取健康页 CMS，Query 必须包含合法数字串 `hospitalId` 与 `code=column_health`。
+
+#### Scenario: 成功返回快捷入口与卡片元数据
+
+- **WHEN** 请求成功且 `data` 含 `quickEntryList` / `monitorCardMeta`
+- **THEN** 快捷入口按 `sortId` 升序展示；卡片元数据可用于空壳与编辑页卡池
+
+#### Scenario: hospitalId 非法
+
+- **WHEN** 无法解析为纯数字 `hospitalId`
+- **THEN** 不发起 CMS / 卡片列表请求；体征区与快捷入口为空（评分 / 档案仍可本地展示）
+
+### Requirement: 监测卡片列表与空壳回退
+
+系统 SHALL 使用 `GET /v1/monitorHealth/getMonitorCardList`（同 Query）获取用户当前展示卡片及监测值，并与 CMS 合并。
+
+#### Scenario: 列表非空
+
+- **WHEN** `getMonitorCardList` 返回非空数组
+- **THEN** Hub 体征区按列表顺序渲染卡片；展示 `monitorData` 解析出的数值、单位与 `result`/`resultType` 状态；图标优先 `iconUrl`
+
+#### Scenario: 列表空或失败
+
+- **WHEN** 列表为空或请求失败，且 CMS `monitorCardMeta` 可用
+- **THEN** Hub 按 meta 渲染空壳，数值为 `--`
+
+#### Scenario: 两者皆无
+
+- **WHEN** 列表空/失败且无可用 meta
+- **THEN** 体征监测 section 不展示（或空列表）
+
+### Requirement: 快捷入口仅来自 CMS
+
+系统 SHALL 仅使用 CMS `quickEntryList` 驱动 Hub 下方快捷入口；禁止硬编码入口列表。
+
+#### Scenario: 快捷入口为空
+
+- **WHEN** `quickEntryList` 为空或缺失
+- **THEN** 隐藏快捷入口 section
+
+#### Scenario: 点击跳转
+
+- **WHEN** 用户点击快捷入口或体征卡片
+- **THEN** 将 `pageUrl`（如 `FundeH5:/blood-pressure`）映射为 App 路由 `/health/metrics/{key}` 并打开对应 H5；`exercise-food` 映射为 `exercise`
+
+### Requirement: 编辑卡片配置
+
+系统 SHALL 提供编辑页：查询 `GET /v1/userMonitorCardConfig/getUserMonitorCardConfig`，保存 `POST /v1/userMonitorCardConfig/saveUserMonitorCardConfig`。
+
+#### Scenario: 进入编辑页
+
+- **WHEN** Hub 点击「编辑卡片」或路由 `/health/metrics/edit`（及兼容 `/health/metrics`）
+- **THEN** 打开 `MetricCardEditViewController`，展示当前可见卡片与可选卡池
+
+#### Scenario: 可见上限
+
+- **WHEN** 用户尝试将可见卡片数增至超过 6
+- **THEN** 系统拒绝并提示上限
+
+#### Scenario: 保存
+
+- **WHEN** 用户确认保存
+- **THEN** Body 提交 `hospitalId`、`code=column_health`、`addCardVOList`（含 `cardType`、可选 `cardName`、`sortId` 从 0 递增）；不提交 `hiddenCardVOList`；成功后返回 Hub 并刷新体征区
+
+#### Scenario: 返回未保存
+
+- **WHEN** 用户有未保存修改并返回
+- **THEN** 弹出确认；确认丢弃后返回，取消则留在编辑页
+
+### Requirement: cardType 映射
+
+系统 SHALL 按天使枚举识别卡片类型：`2` 血压、`3` 血糖、`4` 体温、`5` 体重、`10` 饮食运动。
+
+#### Scenario: 未知 cardType
+
+- **WHEN** `cardType` 不在已知集合且无法从 `pageUrl` 解析 key
+- **THEN** 该卡片不进入 Hub 展示映射（或跳过），不影响其它卡片
+
+### Requirement: 柔性字段解码
+
+系统 SHALL 兼容后端将 `monitorTime`、数值 id、`sortId` 等以字符串下发的情况，解码为 Int/Int64 而不导致整包失败。
+
+#### Scenario: monitorTime 为字符串时间戳
+
+- **WHEN** JSON 中 `monitorTime` 为字符串数字
+- **THEN** 成功解码为 `Int64`，卡片列表可用
+
+### Requirement: 分层与依赖
+
+系统 SHALL 遵守 PL → BLL → DAL：VC/VM 只调用 `HealthPageService`；网络经 `APIManager`；依赖经 `AppContainer.shared.healthPageService` 注入。
+
+#### Scenario: ViewModel 注入
+
+- **WHEN** 创建 `HealthViewModel` / `MetricCardEditViewModel`
+- **THEN** 默认注入 `AppContainer.shared.healthPageService`，可测时可替换
+
+## API Reference
+
+Base：`{gateway}/mobile` + path。Apifox 只读文档链接见 proposal。
+
+| Method | Path | 用途 |
+|--------|------|------|
+| GET | `/v1/healthPage/getCmsConfig` | 健康页 CMS |
+| GET | `/v1/monitorHealth/getMonitorCardList` | 用户监测卡片列表 |
+| GET | `/v1/userMonitorCardConfig/getUserMonitorCardConfig` | 用户卡片配置 |
+| POST | `/v1/userMonitorCardConfig/saveUserMonitorCardConfig` | 保存用户卡片配置 |
+
+共用 Query/Body 字段：`hospitalId`（数字串）、`code`（固定 `column_health`）。
+
+保存 Body 额外：`addCardVOList: [{ cardType, cardName?, sortId }]`。

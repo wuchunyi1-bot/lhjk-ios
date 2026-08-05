@@ -139,29 +139,17 @@ final class UserService: UserServiceProtocol {
         let dto = ResetPasswordByMobileDTO(mobile: mobile, newPwd: newPwd, checkCode: checkCode)
 
         let response: APIResponse<EmptyResponse> = try await APIManager.shared
-            .postAsync(path: "/v1/users/resetPasswordByMobile", parameters: dto.asDict(), responseType: APIResponse<EmptyResponse>.self)
+            .publicPostAsync(
+                path: "/v1/users/resetPasswordByMobile",
+                parameters: dto.asDict(),
+                responseType: APIResponse<EmptyResponse>.self
+            )
 
         guard response.isSuccess else {
             print("[UserService] resetPasswordByMobile ✗ code=\(response.code)")
             throw UserServiceError.passwordResetFailed(response.msg ?? "")
         }
         print("[UserService] resetPasswordByMobile ✓")
-    }
-
-    func changePassword(mobile: String, oldPwd: String?, newPwd: String, checkCode: String?) async throws {
-        print("[UserService] changePassword → mobile=\(mobile)")
-        var params: [String: Any] = ["mobile": mobile, "newPwd": newPwd]
-        if let old = oldPwd { params["oldPwd"] = old }
-        if let code = checkCode { params["checkCode"] = code }
-
-        let response: APIResponse<EmptyResponse> = try await APIManager.shared
-            .postFormURLEncodedAsync(path: "/v1/users/changePassword", parameters: params, responseType: APIResponse<EmptyResponse>.self)
-
-        guard response.isSuccess else {
-            print("[UserService] changePassword ✗ code=\(response.code)")
-            throw UserServiceError.passwordChangeFailed(response.msg ?? "")
-        }
-        print("[UserService] changePassword ✓")
     }
 
     func changeMobile(oldMobile: String?, newMobile: String, checkCode: String?) async throws {

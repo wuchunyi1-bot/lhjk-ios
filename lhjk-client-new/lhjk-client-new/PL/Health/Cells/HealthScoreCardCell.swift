@@ -1,147 +1,220 @@
 import UIKit
 import SnapKit
 
-/// 综合健康评分卡片 Cell — 视图 init 创建，configure 仅赋值
+/// 综合健康评分卡 — 对齐 Figma 3021:1318（环形分 + 风险文案 + 健管师批注）
 final class HealthScoreCardCell: UITableViewCell {
 
     static let reuseIdentifier = "HealthScoreCardCell"
 
-    // MARK: - Views (created once)
-
     private let card = UIView()
-    private let scoreCircle = UIView()
-    private let scoreLabel = UILabel()
-    private let scoreMicro = UILabel()
+    private let ringTrack = UIImageView()
+    private let ringProgress = UIImageView()
+    private let ringScoreLabel = UILabel()
     private let trendLabel = UILabel()
-    private let sublabel = UILabel()
+    private let trendArrow = UIImageView()
+
     private let numLabel = UILabel()
     private let badgeView = UIView()
     private let badgeLabel = UILabel()
     private let hintLabel = UILabel()
 
-    // Advisor note
     private let noteView = UIView()
-    private let noteAvatar = UIView()
-    private let noteAvatarLbl = UILabel()
-    private let noteTextLbl = UILabel()
-
-    // MARK: - Init
+    private let noteAvatar = UIImageView()
+    private let noteTitle = UILabel()
+    private let noteBody = UILabel()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
         backgroundColor = .clear
+        contentView.clipsToBounds = true
         setupViews()
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     private func setupViews() {
-        // Card
         card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 18
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 6
-        card.layer.shadowOpacity = 0.03
+        card.layer.cornerRadius = 16
+        card.clipsToBounds = true
         contentView.addSubview(card)
-        card.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
-
-        // Score circle
-        scoreCircle.layer.borderWidth = 7
-        scoreCircle.layer.cornerRadius = 39
-        [scoreMicro, scoreLabel, trendLabel].forEach(scoreCircle.addSubview)
-        scoreMicro.font = .fdMicro; scoreMicro.textColor = .fdMuted; scoreMicro.text = "SCORE"
-        scoreLabel.font = .fdH2
-        trendLabel.font = .fdMicro
-
-        scoreMicro.snp.makeConstraints { $0.centerX.equalToSuperview(); $0.bottom.equalTo(scoreLabel.snp.top).offset(-2) }
-        scoreLabel.snp.makeConstraints { $0.centerX.centerY.equalToSuperview().offset(-8) }
-        trendLabel.snp.makeConstraints { $0.centerX.equalToSuperview(); $0.top.equalTo(scoreLabel.snp.bottom).offset(2) }
-
-        // Right column
-        sublabel.font = .fdCaption; sublabel.textColor = .fdSubtext; sublabel.text = "综合健康评分"
-        numLabel.font = .fdFont(ofSize: 40, weight: .bold); numLabel.textColor = .fdText
-        hintLabel.font = .fdCaption; hintLabel.textColor = .fdText2; hintLabel.numberOfLines = 0
-
-        badgeView.layer.cornerRadius = 999
-        badgeView.addSubview(badgeLabel)
-        badgeLabel.font = .fdMicroSemibold
-        badgeLabel.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }
-
-        let numRow = UIStackView(arrangedSubviews: [numLabel, badgeView, UIView()])
-        numRow.axis = .horizontal; numRow.spacing = 8; numRow.alignment = .center
-        let rightCol = UIStackView(arrangedSubviews: [sublabel, numRow, hintLabel])
-        rightCol.axis = .vertical; rightCol.spacing = 4
-
-        let mainRow = UIStackView(arrangedSubviews: [scoreCircle, rightCol])
-        mainRow.axis = .horizontal; mainRow.spacing = 16; mainRow.alignment = .center
-        card.addSubview(mainRow)
-        mainRow.snp.makeConstraints { $0.top.leading.trailing.equalToSuperview().inset(18) }
-        scoreCircle.snp.makeConstraints { $0.size.equalTo(78) }
-
-        // Advisor note
-        noteView.backgroundColor = .fdPrimarySoft
-        noteView.layer.cornerRadius = 12
-
-        noteAvatar.backgroundColor = UIColor(hexString: "#FFEFE6")
-        noteAvatar.layer.cornerRadius = 14
-        noteAvatarLbl.font = .fdCaptionSemibold; noteAvatarLbl.textColor = UIColor(hexString: "#D6602B")
-        noteAvatarLbl.text = "王"
-        noteAvatar.addSubview(noteAvatarLbl)
-        noteAvatarLbl.snp.makeConstraints { $0.center.equalToSuperview() }
-
-        noteTextLbl.numberOfLines = 0
-        noteView.addSubview(noteAvatar)
-        noteView.addSubview(noteTextLbl)
-        noteAvatar.snp.makeConstraints { $0.top.leading.equalToSuperview().inset(12); $0.size.equalTo(28) }
-        noteTextLbl.snp.makeConstraints { make in
-            make.top.equalToSuperview().inset(12)
-            make.leading.equalTo(noteAvatar.snp.trailing).offset(10)
-            make.trailing.bottom.equalToSuperview().inset(12)
+        card.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(4)
+            $0.leading.equalToSuperview().offset(16)
+            $0.trailing.equalToSuperview().offset(-16)
+            $0.bottom.equalToSuperview()
         }
 
+        ringTrack.image = UIImage(named: "score_ring_track")
+        ringTrack.contentMode = .scaleAspectFit
+        ringProgress.image = UIImage(named: "score_ring_progress")
+        ringProgress.contentMode = .scaleAspectFit
+
+        ringScoreLabel.font = .fdFont(ofSize: 24, weight: .medium)
+        ringScoreLabel.textColor = .fdPrimary
+        ringScoreLabel.textAlignment = .center
+
+        trendLabel.font = .fdFont(ofSize: 10, weight: .regular)
+        trendLabel.textColor = UIColor(hexString: "#2EBA83")
+
+        trendArrow.image = UIImage(systemName: "arrow.down")
+        trendArrow.tintColor = UIColor(hexString: "#2EBA83")
+        trendArrow.contentMode = .scaleAspectFit
+
+        let trendRow = UIStackView(arrangedSubviews: [trendLabel, trendArrow])
+        trendRow.axis = .horizontal
+        trendRow.spacing = 2
+        trendRow.alignment = .center
+
+        let ringWrap = UIView()
+        card.addSubview(ringWrap)
+        ringWrap.addSubview(ringTrack)
+        ringWrap.addSubview(ringProgress)
+        ringWrap.addSubview(ringScoreLabel)
+        card.addSubview(trendRow)
+
+        ringWrap.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(12)
+            $0.top.equalToSuperview().offset(16)
+            $0.size.equalTo(92)
+        }
+        ringTrack.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.size.equalTo(84)
+        }
+        // Figma 进度弧 viewBox 略偏，对齐底环右上
+        ringProgress.snp.makeConstraints {
+            $0.centerX.equalTo(ringTrack).offset(5)
+            $0.centerY.equalTo(ringTrack).offset(-1)
+            $0.width.equalTo(74)
+            $0.height.equalTo(84)
+        }
+        ringScoreLabel.snp.makeConstraints {
+            $0.centerX.equalToSuperview()
+            $0.centerY.equalToSuperview().offset(-8)
+        }
+        trendRow.snp.makeConstraints {
+            $0.centerX.equalTo(ringWrap)
+            $0.top.equalTo(ringScoreLabel.snp.bottom).offset(0)
+        }
+        trendArrow.snp.makeConstraints { $0.size.equalTo(10) }
+
+        numLabel.font = .fdFont(ofSize: 34, weight: .medium)
+        numLabel.textColor = UIColor(hexString: "#592F10")
+        numLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        badgeView.backgroundColor = UIColor(hexString: "#FFF8EB")
+        badgeView.layer.cornerRadius = 12
+        badgeLabel.font = .fdFont(ofSize: 10, weight: .medium)
+        badgeLabel.textColor = UIColor(hexString: "#862804")
+        badgeView.addSubview(badgeLabel)
+        badgeLabel.snp.makeConstraints {
+            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8))
+        }
+
+        hintLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        hintLabel.textColor = .fdSubtext
+        hintLabel.numberOfLines = 2
+        hintLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        card.addSubview(numLabel)
+        card.addSubview(badgeView)
+        card.addSubview(hintLabel)
+
+        numLabel.snp.makeConstraints {
+            $0.leading.equalTo(ringWrap.snp.trailing).offset(14)
+            $0.top.equalToSuperview().offset(20)
+        }
+        badgeView.snp.makeConstraints {
+            $0.leading.equalTo(numLabel.snp.trailing).offset(8)
+            $0.centerY.equalTo(numLabel)
+            $0.trailing.lessThanOrEqualToSuperview().inset(12)
+        }
+        hintLabel.snp.makeConstraints {
+            $0.leading.equalTo(numLabel)
+            $0.trailing.equalToSuperview().inset(12)
+            $0.top.equalTo(numLabel.snp.bottom).offset(8)
+        }
+
+        noteView.layer.cornerRadius = 12
+        noteView.clipsToBounds = true
+        let noteGradient = CAGradientLayer()
+        noteGradient.colors = [
+            UIColor(hexString: "#FFF1E5").cgColor,
+            UIColor(hexString: "#FFF8F2").cgColor,
+        ]
+        noteGradient.startPoint = CGPoint(x: 0, y: 0.5)
+        noteGradient.endPoint = CGPoint(x: 1, y: 0.5)
+        noteView.layer.insertSublayer(noteGradient, at: 0)
+
+        noteAvatar.contentMode = .scaleAspectFill
+        noteAvatar.clipsToBounds = true
+        noteAvatar.layer.cornerRadius = 24
+        noteAvatar.layer.borderWidth = 1
+        noteAvatar.layer.borderColor = UIColor(hexString: "#FFE5D0").cgColor
+        noteAvatar.image = UIImage(named: "health_advisor")
+        noteAvatar.backgroundColor = UIColor(hexString: "#FFD5AE")
+
+        noteTitle.font = .fdFont(ofSize: 14, weight: .medium)
+        noteTitle.textColor = UIColor(hexString: "#592F10")
+        noteTitle.text = "王顾问·健管师批注"
+
+        noteBody.font = .fdFont(ofSize: 10, weight: .regular)
+        noteBody.textColor = UIColor(hexString: "#592F10")
+        noteBody.numberOfLines = 2
+
         card.addSubview(noteView)
-        noteView.snp.makeConstraints { make in
-            make.top.equalTo(mainRow.snp.bottom).offset(14)
-            make.leading.trailing.equalToSuperview().inset(14)
-            make.bottom.equalToSuperview().offset(-14)
+        noteView.addSubview(noteAvatar)
+        noteView.addSubview(noteTitle)
+        noteView.addSubview(noteBody)
+
+        noteView.snp.makeConstraints {
+            $0.top.equalTo(ringWrap.snp.bottom).offset(14)
+            $0.leading.trailing.equalToSuperview().inset(12)
+            $0.bottom.equalToSuperview().inset(12)
+            $0.height.equalTo(77)
+        }
+        noteAvatar.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(9)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(48)
+        }
+        noteTitle.snp.makeConstraints {
+            $0.leading.equalTo(noteAvatar.snp.trailing).offset(14)
+            $0.top.equalToSuperview().offset(12)
+            $0.trailing.equalToSuperview().inset(12)
+        }
+        noteBody.snp.makeConstraints {
+            $0.leading.equalTo(noteTitle)
+            $0.trailing.equalToSuperview().inset(14)
+            $0.top.equalTo(noteTitle.snp.bottom).offset(6)
         }
     }
 
-    // MARK: - Configure (赋值 only)
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        if let g = noteView.layer.sublayers?.first as? CAGradientLayer {
+            g.frame = noteView.bounds
+        }
+    }
 
     func configure(riskScore: Int, riskLevel: String) {
-        scoreLabel.text = "\(riskScore)"
-        scoreLabel.textColor = .fdText
-
+        ringScoreLabel.text = "\(riskScore)"
         numLabel.text = "\(riskScore)"
-        numLabel.textColor = .fdText
+        badgeLabel.text = riskLevel
 
         let isWarning = riskLevel.contains("高") || riskLevel.contains("中")
-        scoreCircle.layer.borderColor = (isWarning ? UIColor.fdWarning : UIColor.fdPrimary).withAlphaComponent(0.3).cgColor
-        trendLabel.textColor = isWarning ? .fdWarning : .fdSuccess
-        trendLabel.text = isWarning ? "↓ 3 周前 65" : "↑ 持续改善"
-
-        // Badge
-        let badgeBg: UIColor = isWarning ? .fdWarningSoft : .fdSuccessSoft
-        let badgeFg: UIColor = isWarning ? UIColor(hexString: "#B47300") : .fdSuccess
-        badgeView.backgroundColor = badgeBg
-        badgeLabel.text = riskLevel
-        badgeLabel.textColor = badgeFg
+        trendLabel.text = "3周前65"
+        trendArrow.image = UIImage(systemName: isWarning ? "arrow.down" : "arrow.up")
+        trendArrow.tintColor = UIColor(hexString: "#2EBA83")
+        trendLabel.textColor = UIColor(hexString: "#2EBA83")
 
         hintLabel.text = isWarning
-            ? "血压偏高拉低了评分。改善晨起测量习惯可在 4 周内提升约 8 分。"
+            ? "血压偏高拉低了评分。改善 晨起测量习惯 可在4周内提升约 8 分"
             : "各项指标良好，继续保持当前的健康管理节奏。"
 
-        // Advisor note text
-        let attr = NSMutableAttributedString()
-        attr.append(NSAttributedString(string: "王顾问 · 健管师批注：\n",
-            attributes: [.font: UIFont.fdCaptionSemibold, .foregroundColor: UIColor.fdText]))
-        attr.append(NSAttributedString(string: isWarning
+        noteBody.text = isWarning
             ? "您的血压周均值连续 7 天 > 135，需重点关注。我已为您预约下周一三甲随访。"
-            : "您的各项指标保持稳定，建议继续维持现有运动和饮食方案。",
-            attributes: [.font: UIFont.fdCaption, .foregroundColor: UIColor.fdText2]))
-        noteTextLbl.attributedText = attr
+            : "您的各项指标保持稳定，建议继续维持现有运动和饮食方案。"
     }
 }

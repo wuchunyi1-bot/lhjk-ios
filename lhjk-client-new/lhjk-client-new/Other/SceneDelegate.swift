@@ -72,6 +72,20 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func sceneDidEnterBackground(_ scene: UIScene) {
         // 应用进入后台，保存状态、释放资源
     }
+    
+    func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
+        // 1. 检查活动类型是否为网页浏览
+        guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+              let webpageURL = userActivity.webpageURL else {
+            return
+        }
+        
+        // 2. 解析 URL，处理你的业务逻辑
+        print("Received Universal Link: \(webpageURL.absoluteString)")
+        // 根据 URL 路径跳转到 App 内对应页面
+//        handleIncomingURL(webpageURL)
+    }
+    
 
     // MARK: - IM Connection
 

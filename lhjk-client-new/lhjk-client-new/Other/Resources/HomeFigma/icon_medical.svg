@@ -1,0 +1,20 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="30" height="29.9999" viewBox="0 0 30 29.9999" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 1739333340">
+<rect id="Rectangle 346243675" x="15" width="21.2132" height="21.2132" rx="3" transform="rotate(45 15 0)" fill="#FF6637"/>
+<g id="Mask group">
+<mask id="mask0_0_136" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="1" y="1" width="28" height="28">
+<rect id="Rectangle 346243676" x="15" y="-2.25947e-05" width="21.2132" height="21.2132" rx="3" transform="rotate(45 15 -2.25947e-05)" fill="#FF6637"/>
+</mask>
+<g mask="url(#mask0_0_136)">
+<circle id="Ellipse 1167" cx="14.7675" cy="7.76751" r="16.0722" fill="url(#paint0_linear_0_136)"/>
+</g>
+</g>
+<path id="&#231;&#186;&#162;&#232;&#137;&#178;&#230;&#184;&#144;&#229;&#143;&#152;&#229;&#133;&#131;&#231;&#180;&#160;" d="M15.7441 9.69531C15.8496 9.69531 15.9355 9.78126 15.9355 9.88672V13.4541H17.4043C18.6695 13.4543 19.6951 14.48 19.6953 15.7451C19.6953 15.8506 19.6094 15.9365 19.5039 15.9365H15.9355V17.4043C15.9354 18.6695 14.9097 19.6952 13.6445 19.6953C13.5391 19.6953 13.4531 19.6094 13.4531 19.5039V15.9365H11.9863C10.7211 15.9363 9.69546 14.9107 9.69531 13.6455C9.69531 13.5401 9.78126 13.4541 9.88672 13.4541H13.4531V11.9863C13.4533 10.7212 14.479 9.69556 15.7441 9.69531Z" fill="white"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_136" x1="14.6953" y1="3.19529" x2="15.1953" y2="23.6953" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FE994E" stop-opacity="0"/>
+<stop offset="1" stop-color="#FE994E"/>
+</linearGradient>
+</defs>
+</svg>

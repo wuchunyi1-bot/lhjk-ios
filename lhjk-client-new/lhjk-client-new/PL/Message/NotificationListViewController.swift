@@ -2,6 +2,7 @@ import UIKit
 import SnapKit
 
 /// 通知中心列表 — MessagesViewController 的子 VC
+/// 白卡容器与团队对话列表对齐 Figma 3042:740
 final class NotificationListViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
     var onDataChanged: (() -> Void)?
@@ -9,14 +10,24 @@ final class NotificationListViewController: UIViewController, UITableViewDataSou
 
     // MARK: - UI
 
+    private lazy var cardView: UIView = {
+        let v = UIView()
+        v.backgroundColor = .fdSurface
+        v.layer.cornerRadius = 16
+        v.clipsToBounds = true
+        return v
+    }()
+
     private lazy var tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
-        tv.backgroundColor = .fdBg
+        tv.backgroundColor = .fdSurface
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
+        tv.contentInsetAdjustmentBehavior = .never
         tv.dataSource = self
         tv.delegate = self
         tv.register(NotificationCell.self, forCellReuseIdentifier: NotificationCell.reuseIdentifier)
+        tv.contentInset = .zero
         return tv
     }()
 
@@ -25,7 +36,13 @@ final class NotificationListViewController: UIViewController, UITableViewDataSou
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .fdBg
-        view.addSubview(tableView)
+        view.addSubview(cardView)
+        cardView.addSubview(tableView)
+        cardView.snp.makeConstraints {
+            $0.top.equalToSuperview()
+            $0.leading.trailing.equalToSuperview().inset(12)
+            $0.bottom.equalToSuperview().offset(-25)
+        }
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
     }
 

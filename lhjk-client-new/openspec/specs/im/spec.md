@@ -433,8 +433,14 @@ App 冷启动
 ### Requirement: Conversation Detail / Chat
 系统 SHALL 展示单个会话的完整 IM 聊天界面，支持多角色、多消息类型和快捷回复。
 
-**路由**: `/conversations/:id`
+**路由**: `/conversations/:id`（`params["id"]` 为会话 id；群聊时即融云 `targetId` / 业务 `groupId`）
 **数据源**: 融云 SDK `getHistoryMessages`（历史消息拉取）+ `RCIMClientReceiveMessageDelegate`（实时消息接收）
+
+#### Scenario: 从首页管家团队发消息进入
+- **WHEN** 用户在首页「我的富德健康管家团队」点击成员「发消息」且 `groupId` 非空
+- **THEN** `Router.push("/conversations/:id", params: ["id": groupId])` 直接进入本页
+- **AND** `ChatViewController` 的 `conversationId` = `groupId`
+- **AND** 不经过消息列表中转
 
 #### Scenario: 导航栏
 - **WHEN** 进入会话详情
