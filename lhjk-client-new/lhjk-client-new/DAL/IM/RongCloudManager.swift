@@ -104,7 +104,10 @@ final class RongCloudManager {
         client.registerMessageType(FileMessage.self)
         client.registerMessageType(VideoMessage.self)
         client.registerMessageType(SysNotifyMessage.self)
-        print("[RongCloud] Custom message types registered: AD:FileMsg, AD:VideoMsg, AD:SysNotify")
+        client.registerMessageType(VipMessage.self)
+        client.registerMessageType(ServiceCommentMessage.self)
+        client.registerMessageType(CheckUserMessage.self)
+        print("[RongCloud] Custom message types registered: AD:FileMsg, AD:VideoMsg, AD:SysNotify, AD:Vip, AD:ServiceComment, AD:CheckUserMsg")
     }
 
     /// 登录后完整流程：调后端获取 Token → 存本地 → 连接融云

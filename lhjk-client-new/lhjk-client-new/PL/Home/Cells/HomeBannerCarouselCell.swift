@@ -1,13 +1,16 @@
 import UIKit
 import SnapKit
+import Kingfisher
 
-/// 首页 Banner 轮播 — 对齐 Figma 3021:784（全宽暖橙图；叠层文案暂不展示）
+/// 首页 Banner 轮播 — 全宽图；数据来自 `getByCode` + `home_banner_code`
 final class HomeBannerCarouselCell: UITableViewCell {
 
     static let reuseID = "HomeBannerCarouselCell"
     static let bannerHeight: CGFloat = 288
 
-    private let imageNames = ["home_banner_1", "home_banner_2", "home_banner_3"]
+    var onBannerTap: ((ServiceHubBanner) -> Void)?
+
+    private var banners: [ServiceHubBanner] = []
 
     private let scrollView: UIScrollView = {
         let s = UIScrollView()
@@ -22,6 +25,7 @@ final class HomeBannerCarouselCell: UITableViewCell {
         p.currentPageIndicatorTintColor = .white
         p.pageIndicatorTintColor = UIColor.white.withAlphaComponent(0.45)
         p.isUserInteractionEnabled = false
+        p.hidesForSinglePage = true
         return p
     }()
 
@@ -49,17 +53,23 @@ final class HomeBannerCarouselCell: UITableViewCell {
         }
 
         scrollView.delegate = self
-        pageControl.numberOfPages = imageNames.count
-        buildSlides()
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     deinit { timer?.invalidate() }
 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        timer?.invalidate()
+        timer = nil
+    }
+
     override func didMoveToWindow() {
         super.didMoveToWindow()
-        if window != nil { startTimer() } else {
+        if window != nil, banners.count > 1 {
+            startTimer()
+        } else {
             timer?.invalidate()
             timer = nil
         }
@@ -74,31 +84,71 @@ final class HomeBannerCarouselCell: UITableViewCell {
         for (i, sub) in slideViews.enumerated() {
             sub.frame = CGRect(x: CGFloat(i) * w, y: 0, width: w, height: h)
         }
-        scrollView.contentSize = CGSize(width: w * CGFloat(imageNames.count), height: h)
+        scrollView.contentSize = CGSize(width: w * CGFloat(max(banners.count, 1)), height: h)
+    }
+
+    func configure(_ banners: [ServiceHubBanner]) {
+        let next = banners.filter(\.hasImage)
+        let sameIds = self.banners.map(\.id) == next.map(\.id)
+        self.banners = next
+        pageControl.numberOfPages = next.count
+        pageControl.currentPage = min(pageControl.currentPage, max(next.count - 1, 0))
+
+        if !sameIds {
+            pageWidth = 0
+            buildSlides()
+            setNeedsLayout()
+            layoutIfNeeded()
+        }
+
+        if window != nil, next.count > 1 {
+            startTimer()
+        } else {
+            timer?.invalidate()
+            timer = nil
+        }
     }
 
     private func buildSlides() {
         scrollView.subviews.forEach { $0.removeFromSuperview() }
         slideViews.removeAll()
-        for name in imageNames {
-            // 仅展示图片；叠层文案暂不创建，避免 frame 布局初始宽度为 0 时约束冲突
+
+        for (index, banner) in banners.enumerated() {
             let container = UIView()
             container.clipsToBounds = true
+            container.tag = index
 
-            let imageView = UIImageView(image: UIImage(named: name))
+            let imageView = UIImageView()
             imageView.contentMode = .scaleAspectFill
             imageView.clipsToBounds = true
+            imageView.backgroundColor = UIColor(hexString: banner.backgroundHex)
             imageView.frame = container.bounds
             imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            if let urlString = banner.imageUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !urlString.isEmpty,
+               let url = URL(string: urlString) {
+                imageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+            }
             container.addSubview(imageView)
+
+            let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+            container.addGestureRecognizer(tap)
+            container.isUserInteractionEnabled = true
 
             scrollView.addSubview(container)
             slideViews.append(container)
         }
+        scrollView.contentOffset = .zero
+    }
+
+    @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
+        guard let index = gesture.view?.tag, banners.indices.contains(index) else { return }
+        onBannerTap?(banners[index])
     }
 
     private func startTimer() {
         timer?.invalidate()
+        guard banners.count > 1 else { return }
         timer = Timer.scheduledTimer(withTimeInterval: 4.2, repeats: true) { [weak self] _ in
             self?.advancePage()
         }
@@ -106,8 +156,8 @@ final class HomeBannerCarouselCell: UITableViewCell {
     }
 
     private func advancePage() {
-        guard pageWidth > 0 else { return }
-        let next = (pageControl.currentPage + 1) % imageNames.count
+        guard pageWidth > 0, banners.count > 1 else { return }
+        let next = (pageControl.currentPage + 1) % banners.count
         scrollView.setContentOffset(CGPoint(x: CGFloat(next) * pageWidth, y: 0), animated: true)
         pageControl.currentPage = next
     }
@@ -115,7 +165,20 @@ final class HomeBannerCarouselCell: UITableViewCell {
 
 extension HomeBannerCarouselCell: UIScrollViewDelegate {
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        guard pageWidth > 0 else { return }
-        pageControl.currentPage = Int(round(scrollView.contentOffset.x / pageWidth))
+        guard pageWidth > 0, !banners.isEmpty else { return }
+        pageControl.currentPage = Int(round(scrollView.contentOffset.x / pageWidth)) % banners.count
+    }
+
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if !decelerate { startTimer() }
+    }
+
+    func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
+        startTimer()
     }
 }

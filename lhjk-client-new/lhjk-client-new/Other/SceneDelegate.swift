@@ -13,6 +13,12 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         window = UIWindow(windowScene: windowScene)
 
+        // 登录态失效：业务码 A0230 / HTTP 401 → 清态 + 全局弹窗
+        SessionExpiryCoordinator.shared.presentExpiredUI = { message, onRelogin in
+            SessionExpiryPresenter.present(message: message, onRelogin: onRelogin)
+        }
+        SessionExpiryCoordinator.shared.install()
+
         let hasToken = UserDefaults.standard.string(forKey: "auth_access_token") != nil
 
         if hasToken {
@@ -25,19 +31,15 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
             // 服务 Hub 静态预拉由 RootTabBarController 延迟触发（覆盖冷启动与登录 setRoot）
 
-            // 多套数据并行、互不依赖：
-            // 1) 本地 loginUserInfo → Onboarding 门禁
-            // 2) 网络 getCurrentUserBaseInfo → App 业务 currentUser
-            // 3) 网络 getOArchiveByUserId → 默认档案 defaultArchive
+            // 串行：getCurrentUserBaseInfo → getOArchiveByUserId → archiveComplete 门禁
             Task {
-                async let profile: SUsers? = UserManager.shared.fetchUserInfo()
-                async let archive: OArchive? = UserManager.shared.fetchDefaultArchive()
+                _ = await UserManager.shared.fetchUserInfo()
+                _ = await UserManager.shared.fetchDefaultArchive()
                 let needOnboarding = UserManager.shared.checkNeedOnboarding()
-                _ = await (profile, archive)
 
                 await MainActor.run {
                     if needOnboarding {
-                        print("[SceneDelegate] loginUserInfo incomplete → presenting onboarding")
+                        print("[SceneDelegate] archiveComplete incomplete → presenting onboarding")
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             Router.shared.present("/onboarding")
                         }
@@ -73,17 +75,20 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // 应用进入后台，保存状态、释放资源
     }
     
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        guard let url = URLContexts.first?.url else { return }
+        _ = WeChatSDKManager.shared.handleOpenURL(url)
+    }
+
     func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
-        // 1. 检查活动类型是否为网页浏览
+        if WeChatSDKManager.shared.handleUniversalLink(userActivity) {
+            return
+        }
         guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
               let webpageURL = userActivity.webpageURL else {
             return
         }
-        
-        // 2. 解析 URL，处理你的业务逻辑
         print("Received Universal Link: \(webpageURL.absoluteString)")
-        // 根据 URL 路径跳转到 App 内对应页面
-//        handleIncomingURL(webpageURL)
     }
     
 

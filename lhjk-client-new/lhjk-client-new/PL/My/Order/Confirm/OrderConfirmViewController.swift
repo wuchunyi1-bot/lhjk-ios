@@ -317,7 +317,12 @@ final class OrderConfirmViewController: BaseViewController {
             placeholder: viewModel.couponSummaryIsPlaceholder,
             emphasis: viewModel.couponDiscount > 0
         )
-        benefitRow.configure(title: "权益卡", value: "暂无可用", placeholder: true)
+        benefitRow.configure(
+            title: "权益卡",
+            value: viewModel.benefitSummaryText,
+            placeholder: viewModel.benefitSummaryIsPlaceholder,
+            emphasis: viewModel.benefitDiscount > 0
+        )
 
         feeView.configure(
             packageAmount: viewModel.packageAmount,
@@ -394,7 +399,29 @@ final class OrderConfirmViewController: BaseViewController {
     }
 
     @objc private func tapBenefit() {
-        showToast("暂无可用权益卡")
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let cards = try await self.viewModel.fetchBenefitOptions()
+                await MainActor.run {
+                    let sheet = OrderBenefitPickerSheet(
+                        cards: cards,
+                        selectedIds: self.viewModel.selectedBenefitIds,
+                        cardLimit: self.viewModel.benefitCardLimit
+                    )
+                    sheet.onConfirm = { [weak self] ids in
+                        self?.viewModel.applyBenefitSelection(ids: ids)
+                    }
+                    self.present(sheet, animated: true)
+                }
+            } catch {
+                await MainActor.run {
+                    self.showToast(error.localizedDescription.isEmpty
+                        ? "查询权益卡失败"
+                        : error.localizedDescription)
+                }
+            }
+        }
     }
 
     private func handlePendingPaymentCancel() {

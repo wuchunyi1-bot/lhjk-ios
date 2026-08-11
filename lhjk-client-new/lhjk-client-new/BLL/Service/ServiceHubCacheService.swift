@@ -13,12 +13,19 @@ struct ServiceHubStaticData {
 
 /// 服务首页预加载与会话内缓存 — 对标 `IMService` 会话列表缓存模式。
 ///
+/// - **actor 隔离**：禁止并行 Task 互踩 `packageTasks` / `packagesByCategoryId` 等（否则会 EXC_BAD_ACCESS）
 /// - **无 TTL**：不做时间过期；冷启动 / `clear()` 后重新拉取
 /// - **静态层**：冷启动延迟预拉；会话内 `hasLoadedStatic` 为 true 时复用
 /// - **packages**：不预拉；按类目 id 缓存，同 key 会话内复用
-final class ServiceHubCacheService {
+actor ServiceHubCacheService {
 
     static let shared = ServiceHubCacheService()
+
+    private struct StaticFetchOutcome {
+        let data: ServiceHubStaticData
+        /// 至少有一路接口成功，或任一模块非空 → 视为本会话可复用
+        let succeeded: Bool
+    }
 
     private(set) var hasLoadedStatic = false
 
@@ -28,23 +35,26 @@ final class ServiceHubCacheService {
     private var retailTotalPages: Int = 1
     private var retailTask: Task<(packages: [HealthPackageItem], totalPages: Int), Never>?
 
-    private var staticTask: Task<ServiceHubStaticData, Never>?
+    private var staticTask: Task<StaticFetchOutcome, Never>?
     private var packageTasks: [String: Task<[HealthPackageItem], Never>] = [:]
     /// 递增以丢弃 clear / forceReload 之后迟到的 in-flight 结果
     private var generation = 0
 
-    private let columnContentService: ColumnContentService
+    private let columnContentCache: ColumnContentCacheService
     private let dictionaryService: DictionaryService
     private let hospitalPackageService: HospitalPackageService
+    private let retailCategoryService: RetailCategoryService
 
     init(
-        columnContentService: ColumnContentService = .shared,
+        columnContentCache: ColumnContentCacheService = .shared,
         dictionaryService: DictionaryService = .shared,
-        hospitalPackageService: HospitalPackageService = .shared
+        hospitalPackageService: HospitalPackageService = .shared,
+        retailCategoryService: RetailCategoryService = .shared
     ) {
-        self.columnContentService = columnContentService
+        self.columnContentCache = columnContentCache
         self.dictionaryService = dictionaryService
         self.hospitalPackageService = hospitalPackageService
+        self.retailCategoryService = retailCategoryService
     }
 
     // MARK: - Read
@@ -87,20 +97,20 @@ final class ServiceHubCacheService {
         }
 
         let gen = generation
-        let task = Task { [weak self] () -> (packages: [HealthPackageItem], totalPages: Int) in
-            guard let self else { return ([], 1) }
+        let packageService = hospitalPackageService
+        let task = Task { () -> (packages: [HealthPackageItem], totalPages: Int) in
             do {
-                let pageData = try await self.hospitalPackageService.fetchRetailPackages(
+                let pageData = try await packageService.fetchRetailPackages(
                     pageNum: 1,
                     pageSize: pageSize
                 )
                 let items = (pageData.records ?? []).enumerated().map { index, vo in
                     HospitalPackageMapper.toPackageItem(vo, index: index)
                 }
-                return (items, pageData.totalPages ?? 1)
+                return (packages: items, totalPages: pageData.totalPages ?? 1)
             } catch {
                 print("[ServiceHubCache] ensureRetailPreview failed: \(error.localizedDescription)")
-                return ([], 1)
+                return (packages: [], totalPages: 1)
             }
         }
         retailTask = task
@@ -108,7 +118,7 @@ final class ServiceHubCacheService {
         retailTask = nil
 
         guard gen == generation else {
-            return (retailPreviewPackages ?? result.packages, retailTotalPages)
+            return (packages: retailPreviewPackages ?? result.packages, totalPages: retailTotalPages)
         }
         retailPreviewPackages = result.packages
         retailTotalPages = result.totalPages
@@ -117,32 +127,33 @@ final class ServiceHubCacheService {
 
     // MARK: - Preload / Ensure
 
-    /// 预拉静态层（banners / matrix / categories）。已加载则直接返回缓存；in-flight 去重。
+    /// 预拉静态层（banners / matrix / categories）。已成功加载则直接返回缓存；in-flight 去重。
+    /// 全失败 / 全空时 **不** 置 `hasLoadedStatic`，以便进入服务 Tab 时再次拉取（对齐 service-hub-preload）。
     @discardableResult
     func preloadStatic() async -> ServiceHubStaticData {
         if let staticData, hasLoadedStatic {
             return staticData
         }
         if let staticTask {
-            return await staticTask.value
+            return await staticTask.value.data
         }
 
         let gen = generation
-        let task = Task { [weak self] () -> ServiceHubStaticData in
-            guard let self else {
-                return ServiceHubStaticData(banners: [], matrix: [], categories: [])
-            }
-            let result = await self.fetchStatic()
-            // 写入放在 Task 内，保证所有 awaiter 都能读到已完成的缓存
-            guard gen == self.generation else { return result }
-            self.staticData = result
-            self.hasLoadedStatic = true
-            return result
+        let task = Task {
+            await self.fetchStatic()
         }
         staticTask = task
-        let result = await task.value
+        let fetched = await task.value
         staticTask = nil
-        return result
+
+        guard gen == generation else { return fetched.data }
+        if fetched.succeeded {
+            staticData = fetched.data
+            hasLoadedStatic = true
+        } else {
+            print("[ServiceHubCache] preloadStatic not ready — retry later")
+        }
+        return fetched.data
     }
 
     /// 确保某类目 packages 已缓存；有缓存则返回，否则请求并写入。
@@ -159,16 +170,16 @@ final class ServiceHubCacheService {
         }
 
         let gen = generation
-        let task = Task { [weak self] in
-            guard let self else { return [] as [HealthPackageItem] }
+        let packageService = hospitalPackageService
+        let task = Task {
             do {
-                return try await self.hospitalPackageService.fetchPackageItems(
+                return try await packageService.fetchPackageItems(
                     category: category,
                     hospitalId: hospitalId
                 )
             } catch {
                 print("[ServiceHubCache] ensurePackages failed category=\(key): \(error.localizedDescription)")
-                return []
+                return [] as [HealthPackageItem]
             }
         }
         packageTasks[key] = task
@@ -187,7 +198,7 @@ final class ServiceHubCacheService {
         category: ServiceRecommendCategory?,
         hospitalId: String?
     ) async -> (staticData: ServiceHubStaticData, packages: [HealthPackageItem]) {
-        clear()
+        await clear()
         let staticResult = await preloadStatic()
         guard let category else {
             return (staticResult, [])
@@ -197,14 +208,14 @@ final class ServiceHubCacheService {
     }
 
     /// 登出 / 强制刷新前清空。进程重启本身内存已空；显式 clear 用于同进程登出再登录。
-    func clear() {
+    func clear() async {
         generation += 1
         staticData = nil
         hasLoadedStatic = false
         packagesByCategoryId.removeAll()
         retailPreviewPackages = nil
         retailTotalPages = 1
-        RetailCategoryService.shared.invalidate()
+        await retailCategoryService.invalidate()
         staticTask?.cancel()
         staticTask = nil
         retailTask?.cancel()
@@ -215,11 +226,11 @@ final class ServiceHubCacheService {
     }
 
     /// 仅清空 packages（未来换机构时用）
-    func invalidatePackages() {
+    func invalidatePackages() async {
         packagesByCategoryId.removeAll()
         retailPreviewPackages = nil
         retailTotalPages = 1
-        RetailCategoryService.shared.invalidate()
+        await retailCategoryService.invalidate()
         retailTask?.cancel()
         retailTask = nil
         packageTasks.values.forEach { $0.cancel() }
@@ -228,41 +239,49 @@ final class ServiceHubCacheService {
 
     // MARK: - Private
 
-    private func fetchStatic() async -> ServiceHubStaticData {
+    private func fetchStatic() async -> StaticFetchOutcome {
         async let banners = fetchBanners()
         async let matrix = fetchMatrix()
         async let categories = fetchCategories()
-        return await ServiceHubStaticData(
-            banners: banners,
-            matrix: matrix,
-            categories: categories
-        )
+        let (b, m, c) = await (banners, matrix, categories)
+        let data = ServiceHubStaticData(banners: b.items, matrix: m.items, categories: c.items)
+        let hasContent = !b.items.isEmpty || !m.items.isEmpty || !c.items.isEmpty
+        let anyOK = b.ok || m.ok || c.ok
+        return StaticFetchOutcome(data: data, succeeded: hasContent || anyOK)
     }
 
-    private func fetchBanners() async -> [ServiceHubBanner] {
-        do {
-            return try await columnContentService.fetchHospitalBanners()
-        } catch {
-            print("[ServiceHubCache] fetchBanners failed: \(error.localizedDescription)")
-            return []
+    private struct FetchList<T> {
+        let items: [T]
+        let ok: Bool
+    }
+
+    private func fetchBanners() async -> FetchList<ServiceHubBanner> {
+        let code = ColumnContentService.hospitalBannerCode
+        let items = await columnContentCache.banners(for: code)
+        // 缓存层失败不标记 loaded → 返回空且 ok=false 以便 Hub 可重试静态层
+        if await columnContentCache.cachedBanners(for: code) != nil {
+            return FetchList(items: items, ok: true)
         }
+        return FetchList(items: items, ok: false)
     }
 
-    private func fetchMatrix() async -> [ProductMatrixItem] {
+    private func fetchMatrix() async -> FetchList<ProductMatrixItem> {
         do {
-            return try await dictionaryService.fetchProductMatrix()
+            let items = try await dictionaryService.fetchProductMatrix()
+            return FetchList(items: items, ok: true)
         } catch {
             print("[ServiceHubCache] fetchMatrix failed: \(error.localizedDescription)")
-            return []
+            return FetchList(items: [], ok: false)
         }
     }
 
-    private func fetchCategories() async -> [ServiceRecommendCategory] {
+    private func fetchCategories() async -> FetchList<ServiceRecommendCategory> {
         do {
-            return try await dictionaryService.fetchRecommendCategories()
+            let items = try await dictionaryService.fetchRecommendCategories()
+            return FetchList(items: items, ok: true)
         } catch {
             print("[ServiceHubCache] fetchCategories failed: \(error.localizedDescription)")
-            return []
+            return FetchList(items: [], ok: false)
         }
     }
 }

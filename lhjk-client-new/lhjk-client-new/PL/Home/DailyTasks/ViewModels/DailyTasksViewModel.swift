@@ -63,15 +63,7 @@ final class DailyTasksViewModel: ObservableObject {
     }
 
     private func resolveUserId() -> String? {
-        if let id = userManager.loginUserInfo?.id?
-            .trimmingCharacters(in: .whitespacesAndNewlines), !id.isEmpty {
-            return id
-        }
-        if let id = userManager.currentUser?.id?
-            .trimmingCharacters(in: .whitespacesAndNewlines), !id.isEmpty {
-            return id
-        }
-        return nil
+        userManager.resolvedUserId
     }
 
     func actionRoute(for task: DailyHealthTask) -> String? {

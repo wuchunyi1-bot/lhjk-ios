@@ -154,6 +154,12 @@ struct OArchive: Codable {
     let id: String?
     let userId: String?
     let chineseName: String?
+    /// 性别："1"=男 / "2"=女（完善资料回填；Apifox 分享站可能尚未同步）
+    let sex: String?
+    /// 出生日期，优先 `yyyy-MM-dd`
+    let birthday: String?
+    /// 档案资料是否已完善 — `/onboarding` 唯一门禁字段
+    let archiveComplete: Bool?
     /// 状态：1 已分娩 / 0 未分娩 / 2 已转院 / 3 分娩终止 / 4 备孕中
     let status: Int?
     let workplace: String?
@@ -214,7 +220,8 @@ struct OArchive: Codable {
     let businessManagerName: String?
 
     private enum CodingKeys: String, CodingKey {
-        case id, userId, chineseName, status, workplace, hospitalId
+        case id, userId, chineseName, sex, birthday, archiveComplete
+        case status, workplace, hospitalId
         case businessManagerId, hospitalName, source, riskLevel
         case emergencyContact, contactMobile, relationship
         case weight, hipCircum, waistCircum, bustCircum, fatContent
@@ -236,6 +243,9 @@ struct OArchive: Codable {
         id = Self.decodeFlexibleString(c, key: .id)
         userId = Self.decodeFlexibleString(c, key: .userId)
         chineseName = try c.decodeIfPresent(String.self, forKey: .chineseName)
+        sex = Self.decodeFlexibleString(c, key: .sex)
+        birthday = try c.decodeIfPresent(String.self, forKey: .birthday)
+        archiveComplete = Self.decodeFlexibleBool(c, key: .archiveComplete)
         status = Self.decodeFlexibleInt(c, key: .status)
         workplace = try c.decodeIfPresent(String.self, forKey: .workplace)
         hospitalId = Self.decodeFlexibleString(c, key: .hospitalId)
@@ -296,6 +306,9 @@ struct OArchive: Codable {
         try c.encodeIfPresent(id, forKey: .id)
         try c.encodeIfPresent(userId, forKey: .userId)
         try c.encodeIfPresent(chineseName, forKey: .chineseName)
+        try c.encodeIfPresent(sex, forKey: .sex)
+        try c.encodeIfPresent(birthday, forKey: .birthday)
+        try c.encodeIfPresent(archiveComplete, forKey: .archiveComplete)
         try c.encodeIfPresent(status, forKey: .status)
         try c.encodeIfPresent(workplace, forKey: .workplace)
         try c.encodeIfPresent(hospitalId, forKey: .hospitalId)
@@ -369,6 +382,23 @@ struct OArchive: Codable {
         if let i = try? container.decodeIfPresent(Int64.self, forKey: key) { return Int(i) }
         if let s = try? container.decodeIfPresent(String.self, forKey: key), let i = Int(s) { return i }
         if let d = try? container.decodeIfPresent(Double.self, forKey: key) { return Int(d) }
+        return nil
+    }
+
+    private static func decodeFlexibleBool<K: CodingKey>(
+        _ container: KeyedDecodingContainer<K>,
+        key: K
+    ) -> Bool? {
+        if let b = try? container.decodeIfPresent(Bool.self, forKey: key) { return b }
+        if let i = try? container.decodeIfPresent(Int.self, forKey: key) { return i != 0 }
+        if let i = try? container.decodeIfPresent(Int64.self, forKey: key) { return i != 0 }
+        if let s = try? container.decodeIfPresent(String.self, forKey: key) {
+            switch s.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+            case "true", "1", "yes": return true
+            case "false", "0", "no": return false
+            default: return nil
+            }
+        }
         return nil
     }
 

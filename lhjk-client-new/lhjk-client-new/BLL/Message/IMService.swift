@@ -9,6 +9,9 @@ final class IMService {
 
     static let shared = IMService()
 
+    /// 保护 conversations / messagesStore / notifications / hasLoadedConversations（含融云回调线程）
+    private let stateLock = NSLock()
+
     private var conversations: [Conversation] = []
     private var notifications: [AppNotification] = []
     private var messagesStore: [String: [ChatMessage]] = [:]
@@ -16,7 +19,10 @@ final class IMService {
     private var cancellables = Set<AnyCancellable>()
 
     /// 是否已完成过会话列表加载，用于避免重复 HTTP 请求
-    private(set) var hasLoadedConversations = false
+    private var _hasLoadedConversations = false
+    var hasLoadedConversations: Bool {
+        withState { _hasLoadedConversations }
+    }
 
     /// 会话已读状态变更（conversationId），用于会话列表局部刷新
     let conversationMarkedReadPublisher = PassthroughSubject<String, Never>()
@@ -36,20 +42,37 @@ final class IMService {
         RongCloudManager.shared.connectionStatusPublisher
             .filter { $0 == .connected }
             .sink { [weak self] _ in
-                guard let self, self.conversations.isEmpty else { return }
+                guard let self else { return }
+                let empty = self.withState { self.conversations.isEmpty }
+                guard empty else { return }
                 Task { _ = await self.loadConversations() }
             }
             .store(in: &cancellables)
     }
 
+
+    private func withState<T>(_ body: () -> T) -> T {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return body()
+    }
+
+    private func withState(_ body: () -> Void) {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        body()
+    }
+
     private func onMessageReceived(_ msg: ChatMessage) {
         guard let convId = msg.conversationId else { return }
-        messagesStore[convId, default: []].append(msg)
+        let shouldUpdateUnread = withState { () -> Bool in
+            messagesStore[convId, default: []].append(msg)
+            return !conversations.isEmpty && conversations.contains(where: { $0.id == convId })
+        }
         print("[IMService] real-time message received for conv=\(convId)")
 
         // 若会话列表已加载，主动更新该会话未读数（即使 ConversationListVC 未加载也能驱动角标刷新）
-        guard !conversations.isEmpty,
-              conversations.contains(where: { $0.id == convId }) else { return }
+        guard shouldUpdateUnread else { return }
         Task {
             _ = await updateConversation(id: convId)
         }
@@ -97,19 +120,13 @@ final class IMService {
                 }
                 groupDict = dict
             } else {
-                hasLoadedConversations = true
-                notifyUnreadCountChanged()
-                return conversations
+                return finishConversationsLoad()
             }
         } catch {
-            hasLoadedConversations = true
-            notifyUnreadCountChanged()
-            return conversations
+            return finishConversationsLoad()
         }
         guard !groupDict.isEmpty else {
-            hasLoadedConversations = true
-            notifyUnreadCountChanged()
-            return conversations
+            return finishConversationsLoad()
         }
 
         // Step 2: 提取 groupId 列表，批量查融云本地会话
@@ -148,26 +165,36 @@ final class IMService {
             }
 
             let list = matchedList + unmatchedList
-            conversations = list
+            return finishConversationsLoad(replacingWith: list)
         }
 
-        hasLoadedConversations = true
+        return finishConversationsLoad()
+    }
+
+    private func finishConversationsLoad(replacingWith list: [Conversation]? = nil) -> [Conversation] {
+        let snapshot = withState { () -> [Conversation] in
+            if let list {
+                conversations = list
+            }
+            _hasLoadedConversations = true
+            return conversations
+        }
         notifyUnreadCountChanged()
-        return conversations
+        return snapshot
     }
 
     func getConversations() -> [Conversation] {
-        return conversations
+        withState { conversations }
     }
 
     /// 团队对话总未读数
     func totalUnreadCount() -> Int {
-        conversations.reduce(0) { $0 + $1.unread }
+        withState { conversations.reduce(0) { $0 + $1.unread } }
     }
 
     /// 通知未读数
     func notiUnreadCount() -> Int {
-        notifications.filter { $0.unread }.count
+        withState { notifications.filter { $0.unread }.count }
     }
 
     /// 通知订阅者总未读数已变更
@@ -176,8 +203,10 @@ final class IMService {
     }
 
     func markAsRead(_ conversationId: String) {
-        if let idx = conversations.firstIndex(where: { $0.id == conversationId }) {
-            conversations[idx].unread = 0
+        withState {
+            if let idx = conversations.firstIndex(where: { $0.id == conversationId }) {
+                conversations[idx].unread = 0
+            }
         }
         RongCloudManager.shared.clearGroupUnreadCount(for: conversationId)
         conversationMarkedReadPublisher.send(conversationId)
@@ -196,16 +225,19 @@ final class IMService {
     /// B方案：按 conversationId 从融云查单条 RCConversation，局部更新本地会话
     /// - Returns: 更新后的 Conversation；本地未找到该 id 返回 nil
     func updateConversation(id: String) async -> Conversation? {
-        guard let idx = conversations.firstIndex(where: { $0.id == id }) else {
-            print("[IMService] updateConversation ✗ convId=\(id) not found in local cache (count=\(conversations.count), ids=\(conversations.map { $0.id }))")
+        let lookup = withState { () -> (idx: Int, oldLastMsg: String, oldUnread: Int, snapshot: Conversation)? in
+            guard let idx = conversations.firstIndex(where: { $0.id == id }) else { return nil }
+            return (idx, conversations[idx].lastMessage, conversations[idx].unread, conversations[idx])
+        }
+        guard let lookup else {
+            let ids = withState { conversations.map { $0.id } }
+            print("[IMService] updateConversation ✗ convId=\(id) not found in local cache (count=\(ids.count), ids=\(ids))")
             return nil
         }
-        let oldLastMsg = conversations[idx].lastMessage
-        let oldUnread  = conversations[idx].unread
 
         guard RongCloudManager.shared.connectionStatus == .connected else {
             print("[IMService] updateConversation ✗ convId=\(id) RongCloud not connected, return cached")
-            return conversations[idx]
+            return lookup.snapshot
         }
 
         let rcList: [RCConversation] = await withCheckedContinuation { continuation in
@@ -217,7 +249,9 @@ final class IMService {
 
         guard let rc = rcList.first else {
             print("[IMService] updateConversation ✗ convId=\(id) RCConversation not found in RongCloud, keep cached")
-            return conversations[idx]
+            return withState {
+                conversations.first(where: { $0.id == id }) ?? lookup.snapshot
+            }
         }
 
         // 只更新融云侧字段，不动后端元数据
@@ -226,25 +260,33 @@ final class IMService {
         let newTime    = Conversation.formatRCTime(rc.sentTime)
         let newUnread  = Int(rc.unreadMessageCount)
 
-        print("[IMService] updateConversation ✓ convId=\(id) lastMsg \"\(oldLastMsg.prefix(12))…\" → \"\(newLastMsg.prefix(12))…\" unread \(oldUnread)→\(newUnread) time=\(newTime)")
+        print("[IMService] updateConversation ✓ convId=\(id) lastMsg \"\(lookup.oldLastMsg.prefix(12))…\" → \"\(newLastMsg.prefix(12))…\" unread \(lookup.oldUnread)→\(newUnread) time=\(newTime)")
 
-        conversations[idx].lastMessage = newLastMsg
-        conversations[idx].lastTime   = newTime
-        conversations[idx].unread     = newUnread
+        let updated = withState { () -> Conversation? in
+            guard let idx = conversations.firstIndex(where: { $0.id == id }) else { return nil }
+            conversations[idx].lastMessage = newLastMsg
+            conversations[idx].lastTime   = newTime
+            conversations[idx].unread     = newUnread
+            return conversations[idx]
+        }
         notifyUnreadCountChanged()
-        return conversations[idx]
+        return updated
     }
 
     func deleteConversation(_ conversationId: String) {
-        conversations.removeAll { $0.id == conversationId }
+        withState {
+            conversations.removeAll { $0.id == conversationId }
+        }
         notifyUnreadCountChanged()
     }
 
     /// 登出时清除所有内存缓存
     func clear() {
-        conversations.removeAll()
-        messagesStore.removeAll()
-        hasLoadedConversations = false
+        withState {
+            conversations.removeAll()
+            messagesStore.removeAll()
+            _hasLoadedConversations = false
+        }
         notifyUnreadCountChanged()
         print("[IMService] cleared")
     }
@@ -252,11 +294,13 @@ final class IMService {
     // MARK: - Notifications
 
     func getNotifications() -> [AppNotification] {
-        notifications
+        withState { notifications }
     }
 
     func markNotificationsRead() {
-        for i in notifications.indices { notifications[i].unread = false }
+        withState {
+            for i in notifications.indices { notifications[i].unread = false }
+        }
     }
 
     // MARK: - Messages
@@ -273,7 +317,7 @@ final class IMService {
         let chatMessages = rcMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }.reversed()
         let sorted = Array(chatMessages)
         if !sorted.isEmpty {
-            messagesStore[conversationId] = sorted
+            withState { messagesStore[conversationId] = sorted }
         }
         print("[IMService] loadMessages conv=\(conversationId) count=\(sorted.count) timestamp=\(timestamp) isRemaining=\(isRemaining)")
         for msg in rcMessages {
@@ -297,7 +341,9 @@ final class IMService {
         let older = rcMessages.map { ChatMessage.fromRongCloud(rcMessage: $0) }.reversed()
         let sorted = Array(older)
         if !sorted.isEmpty {
-            messagesStore[conversationId] = sorted + (messagesStore[conversationId] ?? [])
+            withState {
+                messagesStore[conversationId] = sorted + (messagesStore[conversationId] ?? [])
+            }
         }
         print("[IMService] loadOlderMessages conv=\(conversationId) count=\(sorted.count) newTimestamp=\(newTimestamp) isRemaining=\(isRemaining)")
         return (sorted, newTimestamp, isRemaining)
@@ -305,7 +351,7 @@ final class IMService {
 
     /// 同步获取缓存消息
     func getMessages(conversationId: String) -> [ChatMessage] {
-        return messagesStore[conversationId] ?? []
+        withState { messagesStore[conversationId] ?? [] }
     }
 
     /// 发送文本消息（通过融云 SDK）
@@ -326,7 +372,7 @@ final class IMService {
         }
         if let rcMsg = result.0 {
             let chatMsg = ChatMessage.fromRongCloud(rcMessage: rcMsg)
-            messagesStore[conversationId, default: []].append(chatMsg)
+            withState { messagesStore[conversationId, default: []].append(chatMsg) }
             return chatMsg
         } else {
             print("[IMService] sendMessage ✗ errorCode=\(result.1.rawValue)")
@@ -352,7 +398,7 @@ final class IMService {
         }
         if let rcMsg = result.0 {
             let chatMsg = ChatMessage.fromRongCloud(rcMessage: rcMsg)
-            messagesStore[conversationId, default: []].append(chatMsg)
+            withState { messagesStore[conversationId, default: []].append(chatMsg) }
             return chatMsg
         } else {
             print("[IMService] sendImage ✗ errorCode=\(result.1.rawValue)")
@@ -384,7 +430,7 @@ final class IMService {
         }
         if let rcMsg = result.0 {
             let chatMsg = ChatMessage.fromRongCloud(rcMessage: rcMsg)
-            messagesStore[conversationId, default: []].append(chatMsg)
+            withState { messagesStore[conversationId, default: []].append(chatMsg) }
             return chatMsg
         } else {
             print("[IMService] sendFile ✗ errorCode=\(result.1.rawValue)")
@@ -416,7 +462,7 @@ final class IMService {
         }
         if let rcMsg = result.0 {
             let chatMsg = ChatMessage.fromRongCloud(rcMessage: rcMsg)
-            messagesStore[conversationId, default: []].append(chatMsg)
+            withState { messagesStore[conversationId, default: []].append(chatMsg) }
             return chatMsg
         } else {
             print("[IMService] sendVideo ✗ errorCode=\(result.1.rawValue)")
@@ -448,7 +494,7 @@ final class IMService {
         }
         if let rcMsg = result.0 {
             let chatMsg = ChatMessage.fromRongCloud(rcMessage: rcMsg)
-            messagesStore[conversationId, default: []].append(chatMsg)
+            withState { messagesStore[conversationId, default: []].append(chatMsg) }
             return chatMsg
         } else {
             print("[IMService] sendSysNotify ✗ errorCode=\(result.1.rawValue)")
@@ -475,7 +521,7 @@ final class IMService {
         }
         if let rcMsg = result.0 {
             let chatMsg = ChatMessage.fromRongCloud(rcMessage: rcMsg)
-            messagesStore[conversationId, default: []].append(chatMsg)
+            withState { messagesStore[conversationId, default: []].append(chatMsg) }
             return chatMsg
         } else {
             print("[IMService] sendVoice ✗ errorCode=\(result.1.rawValue)")

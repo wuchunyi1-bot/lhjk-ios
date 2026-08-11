@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - 订单服务 (BLL)
 
-/// 订单管理服务 — 提供订单列表 / 详情 / 结算 / 退货提交能力
+/// 订单管理服务 — 提供订单列表 / 详情 / 结算 / 退货提交 / 支付能力
 ///
 /// 封装后端接口：
 /// - `GET /v1/order/getAppOrderList` — 分页查询用户订单列表
@@ -10,6 +10,7 @@ import Foundation
 /// - `GET /v1/order/getOrderSettlement` — 确认订单结算信息
 /// - `POST /v1/order/insertOrEdit` — 新增或编辑订单（取消 / 退款申请）
 /// - `POST /v1/orderClearing/submitReturnGoods` — 提交退货信息
+/// - `GET /v1/orderPay/orderPay` — 支付统一接口
 final class OrderService {
 
     // MARK: - Singleton
@@ -294,6 +295,50 @@ final class OrderService {
             throw OrderServiceError.queryFailed(response.msg ?? "提交退货失败，请稍后重试")
         }
         print("[OrderService] submitReturnGoods ✓ refundId=\(dto.refundId)")
+    }
+
+    // MARK: - 支付
+
+    /// `GET /v1/orderPay/orderPay`
+    /// - Parameters:
+    ///   - orderId: 订单 ID
+    ///   - payType: `OrderPayType`（1 微信 / 2 支付宝）
+    ///   - description: 可选描述（可用订单备注）
+    ///   - code: 可选授权码（小程序等场景）
+    @discardableResult
+    func orderPay(
+        orderId: Int64,
+        payType: OrderPayType,
+        description: String? = nil,
+        code: String? = nil
+    ) async throws -> OrderPayResultVO {
+        var params: [String: Any] = [
+            "orderId": String(orderId),
+            "payType": payType.rawValue,
+        ]
+        let desc = description?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !desc.isEmpty {
+            params["description"] = String(desc.prefix(300))
+        }
+        let authCode = code?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !authCode.isEmpty {
+            params["code"] = authCode
+        }
+
+        print("[OrderService] orderPay → orderId=\(orderId) payType=\(payType.rawValue)")
+
+        let response: APIResponse<OrderPayResultVO> = try await APIManager.shared.getAsync(
+            path: "/v1/orderPay/orderPay",
+            parameters: params,
+            responseType: APIResponse<OrderPayResultVO>.self
+        )
+        guard response.isSuccess else {
+            print("[OrderService] orderPay ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw OrderServiceError.queryFailed(response.msg ?? "发起支付失败")
+        }
+        let data = response.data ?? OrderPayResultVO.empty
+        print("[OrderService] orderPay ✓ hasWechat=\(data.wechatPayRequest != nil) hasAlipay=\(data.orderString != nil)")
+        return data
     }
 }
 

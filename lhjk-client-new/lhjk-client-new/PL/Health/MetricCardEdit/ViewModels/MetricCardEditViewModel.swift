@@ -143,7 +143,7 @@ final class MetricCardEditViewModel: ObservableObject {
                 hospitalId: hospitalId,
                 addCardVOList: list
             )
-            HealthPageCacheService.shared.invalidate()
+            await HealthPageCacheService.shared.invalidate()
             _ = await HealthPageCacheService.shared.refresh()
             snapshotDisplayed = displayed
             return true

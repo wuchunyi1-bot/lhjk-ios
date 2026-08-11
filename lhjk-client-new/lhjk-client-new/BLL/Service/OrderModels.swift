@@ -649,6 +649,172 @@ extension Notification.Name {
     static let orderListNeedsRefresh = Notification.Name("lhjk.order.listNeedsRefresh")
 }
 
+// MARK: - 订单支付 `GET /v1/orderPay/orderPay`
+
+/// 支付渠道类型（对齐订单 `paymentType`：1 微信 / 2 支付宝）
+enum OrderPayType: String {
+    case wechat = "1"
+    case alipay = "2"
+}
+
+/// `orderPay` 返回 `data`（Apifox schema 为空，按微信 APP 调起字段做宽松解码）
+struct OrderPayResultVO: Decodable, Equatable {
+    let partnerId: String?
+    let prepayId: String?
+    let nonceStr: String?
+    let timeStamp: String?
+    let packageValue: String?
+    let sign: String?
+    let appId: String?
+    /// 支付宝 orderString（若后端返回）
+    let orderString: String?
+
+    static let empty = OrderPayResultVO(
+        partnerId: nil,
+        prepayId: nil,
+        nonceStr: nil,
+        timeStamp: nil,
+        packageValue: nil,
+        sign: nil,
+        appId: nil,
+        orderString: nil
+    )
+
+    init(
+        partnerId: String?,
+        prepayId: String?,
+        nonceStr: String?,
+        timeStamp: String?,
+        packageValue: String?,
+        sign: String?,
+        appId: String?,
+        orderString: String?
+    ) {
+        self.partnerId = partnerId
+        self.prepayId = prepayId
+        self.nonceStr = nonceStr
+        self.timeStamp = timeStamp
+        self.packageValue = packageValue
+        self.sign = sign
+        self.appId = appId
+        self.orderString = orderString
+    }
+
+    var wechatPayRequest: WeChatPayRequest? {
+        let partner = Self.nonEmpty(partnerId)
+        let prepay = Self.nonEmpty(prepayId)
+        let nonce = Self.nonEmpty(nonceStr)
+        let stamp = Self.nonEmpty(timeStamp)
+        let signValue = Self.nonEmpty(sign)
+        guard let partner, let prepay, let nonce, let stamp, let signValue else { return nil }
+        let pkg = Self.nonEmpty(packageValue) ?? "Sign=WXPay"
+        return WeChatPayRequest(
+            partnerId: partner,
+            prepayId: prepay,
+            nonceStr: nonce,
+            timeStamp: stamp,
+            package: pkg,
+            sign: signValue
+        )
+    }
+
+    init(from decoder: Decoder) throws {
+        if let single = try? decoder.singleValueContainer(),
+           let raw = try? single.decode(String.self),
+           let data = raw.data(using: .utf8),
+           let nested = try? JSONDecoder().decode(OrderPayPayload.self, from: data) {
+            self.init(payload: nested)
+            return
+        }
+
+        let c = try decoder.container(keyedBy: DynamicKey.self)
+        var payload = OrderPayPayload(from: c)
+
+        if payload.partnerId == nil, payload.prepayId == nil {
+            for nestKey in ["wxPay", "wechat", "weChat", "appPay", "payInfo", "payParam", "wxPayInfo"] {
+                guard let nested = try? c.nestedContainer(keyedBy: DynamicKey.self, forKey: DynamicKey(nestKey)) else {
+                    continue
+                }
+                let child = OrderPayPayload(from: nested)
+                if child.prepayId != nil || child.orderString != nil {
+                    payload = child
+                    break
+                }
+            }
+        }
+        self.init(payload: payload)
+    }
+
+    private init(payload: OrderPayPayload) {
+        self.init(
+            partnerId: payload.partnerId,
+            prepayId: payload.prepayId,
+            nonceStr: payload.nonceStr,
+            timeStamp: payload.timeStamp,
+            packageValue: payload.packageValue,
+            sign: payload.sign,
+            appId: payload.appId,
+            orderString: payload.orderString
+        )
+    }
+
+    private static func nonEmpty(_ value: String?) -> String? {
+        let t = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return t.isEmpty ? nil : t
+    }
+
+    private struct DynamicKey: CodingKey {
+        var stringValue: String
+        init(_ string: String) { stringValue = string }
+        init?(stringValue: String) { self.stringValue = stringValue }
+        var intValue: Int? { nil }
+        init?(intValue: Int) { nil }
+    }
+
+    private struct OrderPayPayload: Decodable {
+        var partnerId: String?
+        var prepayId: String?
+        var nonceStr: String?
+        var timeStamp: String?
+        var packageValue: String?
+        var sign: String?
+        var appId: String?
+        var orderString: String?
+
+        init(from c: KeyedDecodingContainer<DynamicKey>) {
+            partnerId = Self.pick(c, ["partnerId", "partnerid", "partner_id", "mchId", "mch_id", "mchid"])
+            prepayId = Self.pick(c, ["prepayId", "prepayid", "prepay_id"])
+            nonceStr = Self.pick(c, ["nonceStr", "noncestr", "nonce_str"])
+            timeStamp = Self.pick(c, ["timeStamp", "timestamp", "time_stamp"])
+            packageValue = Self.pick(c, ["package", "packageValue", "package_value"])
+            sign = Self.pick(c, ["sign", "paySign", "pay_sign"])
+            appId = Self.pick(c, ["appId", "appid", "app_id"])
+            orderString = Self.pick(c, ["orderString", "orderInfo", "body", "alipayOrderString"])
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: DynamicKey.self)
+            self.init(from: c)
+        }
+
+        private static func pick(_ c: KeyedDecodingContainer<DynamicKey>, _ keys: [String]) -> String? {
+            for key in keys {
+                if let s = try? c.decodeIfPresent(String.self, forKey: DynamicKey(key)) {
+                    let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !t.isEmpty { return t }
+                }
+                if let i = try? c.decodeIfPresent(Int64.self, forKey: DynamicKey(key)) {
+                    return String(i)
+                }
+                if let i = try? c.decodeIfPresent(Int.self, forKey: DynamicKey(key)) {
+                    return String(i)
+                }
+            }
+            return nil
+        }
+    }
+}
+
 // MARK: - insertOrEdit 机构 id
 
 enum OrderInsertOrEditContext {

@@ -1,33 +1,23 @@
 import Foundation
 
-/// 我的卡券资产服务 — 权益卡暂 Mock；优惠券走 `CouponService.getCouponTakeList`
+/// 我的卡券 — 权益卡走 `/v1/benefitsTake/*`；优惠券走 `CouponService`
 final class VoucherService {
 
     static let shared = VoucherService()
 
+    /// 待使用权益卡数量（status=3）缓存，供角标
+    private(set) var cachedAvailableBenefitCount: Int = 0
+
     private init() {}
 
-    // MARK: - Query
+    // MARK: - Badge
 
-    func getBenefitCards() -> [BenefitCard] {
-        Self.mockBenefitCards
-    }
+    var availableBenefitCount: Int { cachedAvailableBenefitCount }
 
-    func getTransferRecords() -> [BenefitTransferRecord] {
-        Self.mockTransfers
-    }
-
-    /// 待使用权益卡（未转赠锁定）
-    var availableBenefitCount: Int {
-        getBenefitCards().filter { $0.status == .available && $0.pendingTransferId == nil }.count
-    }
-
-    /// 待使用优惠券（接口 status=1 缓存总数）
     var availableCouponCount: Int {
         CouponService.shared.cachedAvailableCouponCount
     }
 
-    /// 我的页角标
     var meBadgeCount: Int {
         availableBenefitCount + availableCouponCount
     }
@@ -39,53 +29,334 @@ final class VoucherService {
         return "\(n)"
     }
 
-    /// 异步刷新优惠券待使用数（供「我的」角标）
     func refreshAvailableCouponCount() async {
         _ = try? await CouponService.shared.refreshAvailableCouponCount()
     }
 
-    // MARK: - Mock（仅权益卡；对齐 funde seed）
+    @discardableResult
+    func refreshAvailableBenefitCount() async -> Int {
+        do {
+            let overview = try await getActivationOverview()
+            cachedAvailableBenefitCount = overview.count
+            return cachedAvailableBenefitCount
+        } catch {
+            print("[VoucherService] getActivationOverview ✗ \(error.localizedDescription)，回退状态计数")
+        }
+        do {
+            let counts = try await getCustomerStatusCount()
+            let available = counts.first {
+                $0.value == String(BenefitAPIStatus.available.rawValue)
+                    || ($0.name?.contains("待使用") ?? false)
+            }?.count ?? 0
+            cachedAvailableBenefitCount = max(0, available)
+        } catch {
+            print("[VoucherService] refreshAvailableBenefitCount ✗ \(error.localizedDescription)")
+        }
+        return cachedAvailableBenefitCount
+    }
 
-    private static let mockBenefitCards: [BenefitCard] = [
-        BenefitCard(id: "benefit-card-001", code: "SGHK-2026-0201", name: "三好健康权益卡", amount: 300, validUntil: "2026-12-31", status: .available, boundAt: "2026-07-15", redeemedAt: nil, orderId: nil, pendingTransferId: nil, transferredOnce: false),
-        BenefitCard(id: "benefit-card-002", code: "SGHK-2026-0512", name: "企业健康权益卡", amount: 500, validUntil: "2026-10-20", status: .available, boundAt: "2026-06-12", redeemedAt: nil, orderId: nil, pendingTransferId: nil, transferredOnce: false),
-        BenefitCard(id: "benefit-card-003", code: "SGHK-2025-1108", name: "尊享健康权益卡", amount: 1000, validUntil: "2026-11-07", status: .redeemed, boundAt: "2025-11-08", redeemedAt: "2026-05-20", orderId: "demo-benefit-order-001", pendingTransferId: nil, transferredOnce: false),
-        BenefitCard(id: "benefit-card-004", code: "SGHK-2024-0318", name: "企业健康权益卡", amount: 300, validUntil: "2025-12-31", status: .expired, boundAt: "2024-03-18", redeemedAt: nil, orderId: nil, pendingTransferId: nil, transferredOnce: false),
-        BenefitCard(id: "benefit-card-hbs-200", code: "HBS-2026-0200", name: "三好卡", amount: 200, validUntil: "2026-09-30", status: .available, boundAt: "2026-07-26", redeemedAt: nil, orderId: nil, pendingTransferId: nil, transferredOnce: false),
-        BenefitCard(id: "benefit-card-hbs-500", code: "HBS-2026-0500", name: "金穗卡", amount: 500, validUntil: "2026-12-31", status: .available, boundAt: "2026-07-26", redeemedAt: nil, orderId: nil, pendingTransferId: nil, transferredOnce: true),
-        BenefitCard(id: "benefit-card-pending", code: "SGHK-DEMO-PENDING", name: "等待领取演示权益卡", amount: 500, validUntil: "2026-10-20", status: .available, boundAt: "2026-07-21", redeemedAt: nil, orderId: nil, pendingTransferId: "transfer-record-pending", transferredOnce: false),
-    ]
+    func refreshVoucherBadges() async {
+        _ = await refreshAvailableBenefitCount()
+        await refreshAvailableCouponCount()
+    }
 
-    private static var mockTransfers: [BenefitTransferRecord] {
-        let pendingExpires = Date().addingTimeInterval(22 * 3600)
-        let iso = ISO8601DateFormatter()
-        return [
-            BenefitTransferRecord(
-                id: "transfer-record-001",
-                cardId: "benefit-card-old-001",
-                cardName: "三好健康权益卡",
-                amount: 300,
-                validUntil: "2026-12-31",
-                status: .transferred,
-                sharedAt: "2026-07-16T09:00:00Z",
-                expiresAt: "2026-07-17T09:00:00Z",
-                claimedAt: "2026-07-16T10:12:00Z",
-                recipientName: "王建国",
-                message: nil
-            ),
-            BenefitTransferRecord(
-                id: "transfer-record-pending",
-                cardId: "benefit-card-pending",
-                cardName: "等待领取演示权益卡",
-                amount: 500,
-                validUntil: "2026-10-20",
-                status: .waiting,
-                sharedAt: iso.string(from: Date().addingTimeInterval(-2 * 3600)),
-                expiresAt: iso.string(from: pendingExpires),
-                claimedAt: nil,
-                recipientName: nil,
-                message: "送你一份健康关怀"
-            ),
+    // MARK: - List
+
+    /// `GET /v1/benefitsTake/getCustomerPage`
+    func getCustomerPage(
+        status: Int? = nil,
+        pageNum: Int = 1,
+        pageSize: Int = 50
+    ) async throws -> (cards: [BenefitCard], pendingTransfers: [BenefitTransferRecord], total: Int) {
+        var params: [String: Any] = [
+            "pageNum": String(pageNum),
+            "pageSize": String(pageSize),
         ]
+        if let status {
+            params["status"] = String(status)
+        }
+
+        print("[VoucherService] getCustomerPage → status=\(status.map(String.init) ?? "nil") page=\(pageNum)")
+
+        let response: APIResponse<PaginatedBenefitsTakeData> = try await APIManager.shared.getAsync(
+            path: "/v1/benefitsTake/getCustomerPage",
+            parameters: params,
+            responseType: APIResponse<PaginatedBenefitsTakeData>.self
+        )
+        guard response.isSuccess else {
+            throw VoucherServiceError.requestFailed(response.msg ?? "查询权益卡失败")
+        }
+
+        let records = response.data?.records ?? []
+        let total = response.total ?? response.data?.totalRecords ?? records.count
+        var cards: [BenefitCard] = []
+        var pending: [BenefitTransferRecord] = []
+        for item in records {
+            if let t = BenefitMapper.pendingTransfer(from: item) {
+                pending.append(t)
+            } else if let c = BenefitMapper.card(from: item) {
+                cards.append(c)
+            }
+        }
+        print("[VoucherService] getCustomerPage ✓ cards=\(cards.count) pending=\(pending.count) total=\(total)")
+        return (cards, pending, total)
+    }
+
+    /// `GET /v1/benefitsTake/getGiftRecordPage`
+    func getGiftRecordPage(
+        pageNum: Int = 1,
+        pageSize: Int = 50
+    ) async throws -> [BenefitTransferRecord] {
+        let params: [String: Any] = [
+            "pageNum": String(pageNum),
+            "pageSize": String(pageSize),
+        ]
+        print("[VoucherService] getGiftRecordPage → page=\(pageNum)")
+
+        let response: APIResponse<PaginatedBenefitsGiftData> = try await APIManager.shared.getAsync(
+            path: "/v1/benefitsTake/getGiftRecordPage",
+            parameters: params,
+            responseType: APIResponse<PaginatedBenefitsGiftData>.self
+        )
+        guard response.isSuccess else {
+            throw VoucherServiceError.requestFailed(response.msg ?? "查询转赠记录失败")
+        }
+        let items = (response.data?.records ?? []).map(BenefitMapper.transfer(from:))
+        print("[VoucherService] getGiftRecordPage ✓ count=\(items.count)")
+        return items
+    }
+
+    /// `GET /v1/benefitsTake/getCustomerStatusCount`
+    func getCustomerStatusCount() async throws -> [BenefitsTakeStatusCountItem] {
+        let response: APIResponse<[BenefitsTakeStatusCountItem]> = try await APIManager.shared.getAsync(
+            path: "/v1/benefitsTake/getCustomerStatusCount",
+            parameters: nil,
+            responseType: APIResponse<[BenefitsTakeStatusCountItem]>.self
+        )
+        guard response.isSuccess else {
+            throw VoucherServiceError.requestFailed(response.msg ?? "查询状态数量失败")
+        }
+        return response.data ?? []
+    }
+
+    /// 按 Tab 拉取列表条目
+    func loadBenefitEntries(filter: BenefitStatusFilter) async throws -> [BenefitListEntry] {
+        switch filter {
+        case .transferRecords:
+            let records = try await getGiftRecordPage()
+            return VoucherListQuery.benefitEntries(cards: [], transfers: records, filter: filter)
+        case .all:
+            let page = try await getCustomerPage(status: nil)
+            // 全部 Tab 还需已转赠？原型：已转赠仅在转赠记录。全部只含等待领取 + 卡
+            return VoucherListQuery.benefitEntries(
+                cards: page.cards,
+                transfers: page.pendingTransfers,
+                filter: .all
+            )
+        case .available, .redeemed, .expired:
+            let page = try await getCustomerPage(status: filter.apiStatus)
+            if filter == .available {
+                cachedAvailableBenefitCount = page.total
+            }
+            return VoucherListQuery.benefitEntries(
+                cards: page.cards,
+                transfers: [],
+                filter: filter
+            )
+        }
+    }
+
+    // MARK: - Bind
+
+    /// `POST /v1/benefitsTake/preCheckByKey`
+    func preCheckByKey(_ benefitsKey: String) async throws -> BenefitsBindPreCheckVO {
+        guard !benefitsKey.isEmpty else { throw VoucherServiceError.requestFailed("请输入卡密") }
+
+        let response: APIResponse<BenefitsBindPreCheckVO> = try await APIManager.shared.postAsync(
+            path: "/v1/benefitsTake/preCheckByKey",
+            parameters: ["benefitsKey": benefitsKey],
+            responseType: APIResponse<BenefitsBindPreCheckVO>.self
+        )
+        guard response.isSuccess, let data = response.data else {
+            throw VoucherServiceError.requestFailed(response.msg ?? "卡密校验失败")
+        }
+        return data
+    }
+
+    /// `POST /v1/benefitsTake/bindByKey`
+    func bindByKey(_ benefitsKey: String) async throws {
+        guard !benefitsKey.isEmpty else { throw VoucherServiceError.requestFailed("请输入卡密") }
+
+        let response: APIResponse<EmptyResponse> = try await APIManager.shared.postAsync(
+            path: "/v1/benefitsTake/bindByKey",
+            parameters: ["benefitsKey": benefitsKey],
+            responseType: APIResponse<EmptyResponse>.self
+        )
+        guard response.isSuccess else {
+            throw VoucherServiceError.requestFailed(response.msg ?? "绑定失败")
+        }
+        _ = await refreshAvailableBenefitCount()
+    }
+
+    // MARK: - Gift
+
+    /// `POST /v1/benefitsTake/giftBenefit`
+    @discardableResult
+    func giftBenefit(benefitsTakeId: Int64, message: String?) async throws -> BenefitsIssueVO {
+        let operationNo = Self.newOperationNo()
+        var body: [String: Any] = [
+            "benefitsTakeId": benefitsTakeId,
+            "operationNo": operationNo,
+        ]
+        let msg = message?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !msg.isEmpty {
+            body["message"] = String(msg.prefix(50))
+        }
+
+        print("[VoucherService] giftBenefit → id=\(benefitsTakeId) operationNo=\(operationNo)")
+
+        let response: APIResponse<BenefitsIssueVO> = try await APIManager.shared.postAsync(
+            path: "/v1/benefitsTake/giftBenefit",
+            parameters: body,
+            responseType: APIResponse<BenefitsIssueVO>.self
+        )
+        guard response.isSuccess, let data = response.data else {
+            throw VoucherServiceError.requestFailed(response.msg ?? "转赠失败")
+        }
+        _ = await refreshAvailableBenefitCount()
+
+        let serverNo = data.operationNo?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !serverNo.isEmpty {
+            return data
+        }
+        // 服务端未回显时，用请求幂等号组装分享凭证
+        return BenefitsIssueVO(
+            operationNo: operationNo,
+            pageStatus: data.pageStatus,
+            expireTime: data.expireTime,
+            giftMessage: data.giftMessage ?? (msg.isEmpty ? nil : msg),
+            giverName: data.giverName,
+            appId: data.appId,
+            path: data.path,
+            cards: data.cards
+        )
+    }
+
+    static func newOperationNo() -> String {
+        UUID().uuidString.replacingOccurrences(of: "-", with: "")
+    }
+
+    // MARK: - 激活兑换 / 兑换套餐 / 订单绑卡
+
+    /// `GET /v1/benefitsTake/getActivationOverview`
+    func getActivationOverview() async throws -> BenefitsActivationOverviewVO {
+        let response: APIResponse<BenefitsActivationOverviewVO> = try await APIManager.shared.getAsync(
+            path: "/v1/benefitsTake/getActivationOverview",
+            parameters: nil,
+            responseType: APIResponse<BenefitsActivationOverviewVO>.self
+        )
+        guard response.isSuccess, let data = response.data else {
+            throw VoucherServiceError.requestFailed(response.msg ?? "查询激活兑换数据失败")
+        }
+        cachedAvailableBenefitCount = data.count
+        return data
+    }
+
+    /// `GET /v1/benefitsTake/getRedeemPageInfo`
+    func getRedeemPageInfo() async throws -> BenefitsRedeemPageInfoVO {
+        let response: APIResponse<BenefitsRedeemPageInfoVO> = try await APIManager.shared.getAsync(
+            path: "/v1/benefitsTake/getRedeemPageInfo",
+            parameters: nil,
+            responseType: APIResponse<BenefitsRedeemPageInfoVO>.self
+        )
+        guard response.isSuccess, let data = response.data else {
+            throw VoucherServiceError.requestFailed(response.msg ?? "查询兑换页数据失败")
+        }
+        if data.availableCount > 0 {
+            cachedAvailableBenefitCount = data.availableCount
+        }
+        return data
+    }
+
+    /// `GET /v1/benefitsTake/getRedeemPackagePage`
+    func getRedeemPackagePage(
+        categoryServiceId: String? = nil,
+        pageNum: Int = 1,
+        pageSize: Int = 10
+    ) async throws -> (items: [BenefitsRedeemPackageItem], total: Int, hasMore: Bool) {
+        var params: [String: Any] = [
+            "pageNum": String(pageNum),
+            "pageSize": String(pageSize),
+        ]
+        let category = categoryServiceId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !category.isEmpty {
+            params["categoryServiceId"] = category
+        }
+
+        print("[VoucherService] getRedeemPackagePage → category=\(category.isEmpty ? "全部" : category) page=\(pageNum)")
+
+        let response: APIResponse<PaginatedBenefitsRedeemPackageData> = try await APIManager.shared.getAsync(
+            path: "/v1/benefitsTake/getRedeemPackagePage",
+            parameters: params,
+            responseType: APIResponse<PaginatedBenefitsRedeemPackageData>.self
+        )
+        guard response.isSuccess else {
+            throw VoucherServiceError.requestFailed(response.msg ?? "查询可兑换套餐失败")
+        }
+        let records = (response.data?.records ?? []).filter { !$0.packageId.isEmpty }
+        let total = response.total
+            ?? response.data?.totalRecords
+            ?? records.count
+        let current = response.data?.currentPage ?? pageNum
+        let pages = response.data?.totalPages
+        let hasMore: Bool
+        if let pages {
+            hasMore = current < pages
+        } else {
+            hasMore = records.count >= pageSize && (pageNum * pageSize) < total
+        }
+        print("[VoucherService] getRedeemPackagePage ✓ count=\(records.count) total=\(total)")
+        return (records, total, hasMore)
+    }
+
+    /// `GET /v1/benefitsTake/getOrderBenefitsList`
+    func getOrderBenefitsList(orderId: Int64) async throws -> [BenefitsRedeemCardVO] {
+        let response: APIResponse<[BenefitsRedeemCardVO]> = try await APIManager.shared.getAsync(
+            path: "/v1/benefitsTake/getOrderBenefitsList",
+            parameters: ["orderId": orderId],
+            responseType: APIResponse<[BenefitsRedeemCardVO]>.self
+        )
+        guard response.isSuccess else {
+            throw VoucherServiceError.requestFailed(response.msg ?? "查询订单权益卡失败")
+        }
+        return response.data ?? []
+    }
+
+    /// `POST /v1/benefitsTake/updateOrderBenefits`（query：orderId、benefitsTakeIds）
+    func updateOrderBenefits(orderId: Int64, benefitsTakeIds: [Int64]) async throws {
+        var params: [String: Any] = ["orderId": orderId]
+        params["benefitsTakeIds"] = benefitsTakeIds
+
+        print("[VoucherService] updateOrderBenefits → orderId=\(orderId) ids=\(benefitsTakeIds)")
+
+        let response: APIResponse<EmptyResponse> = try await APIManager.shared.postQueryAsync(
+            path: "/v1/benefitsTake/updateOrderBenefits",
+            parameters: params,
+            responseType: APIResponse<EmptyResponse>.self
+        )
+        guard response.isSuccess else {
+            throw VoucherServiceError.requestFailed(response.msg ?? "保存权益卡失败")
+        }
+    }
+}
+
+enum VoucherServiceError: Error, LocalizedError {
+    case requestFailed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .requestFailed(let msg):
+            return msg.isEmpty ? "权益卡操作失败" : msg
+        }
     }
 }

@@ -93,8 +93,8 @@ final class ServiceListViewModel: ObservableObject {
         if let selected = selectionStore.selectedHospitalId {
             return selected
         }
-        if let userHospitalId = AppContainer.shared.userManager.loginUserInfo?.hospitalId,
-           let valid = HospitalPackageService.apiHospitalId(userHospitalId) {
+        if let archiveHospitalId = AppContainer.shared.userManager.defaultArchive?.hospitalId,
+           let valid = HospitalPackageService.apiHospitalId(archiveHospitalId) {
             return valid
         }
         return catalogService.selectedApiHospitalId()

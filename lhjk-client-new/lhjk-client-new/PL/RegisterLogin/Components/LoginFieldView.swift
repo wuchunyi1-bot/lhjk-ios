@@ -31,8 +31,13 @@ final class LoginFieldView: UIView {
         tf.font = .fdLoginInput
         tf.textColor = .fdText
         tf.borderStyle = .none
+        tf.returnKeyType = .done
+        tf.enablesReturnKeyAutomatically = false
         return tf
     }()
+
+    /// 回车键回调；返回 `true` 表示已处理。默认收起键盘。
+    var onReturnKey: (() -> Bool)?
 
     private let shellView: UIView = {
         let view = UIView()
@@ -210,6 +215,34 @@ final class LoginFieldView: UIView {
 
     @objc private func customAction() {}
 
+    /// 为无 Return 键的键盘（phonePad / numberPad）挂「完成」工具栏
+    func attachDoneToolbarIfNeeded() {
+        switch textField.keyboardType {
+        case .phonePad, .numberPad, .decimalPad, .asciiCapableNumberPad:
+            break
+        default:
+            return
+        }
+        guard textField.inputAccessoryView == nil else { return }
+
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+        let flex = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let done = UIBarButtonItem(
+            title: "完成",
+            style: .done,
+            target: self,
+            action: #selector(tapDoneToolbar)
+        )
+        done.tintColor = .fdPrimary
+        toolbar.items = [flex, done]
+        textField.inputAccessoryView = toolbar
+    }
+
+    @objc private func tapDoneToolbar() {
+        textField.resignFirstResponder()
+    }
+
     private func setFocused(_ focused: Bool) {
         UIView.animate(withDuration: 0.15) {
             self.shellView.layer.borderWidth = focused ? 1 : 0
@@ -225,5 +258,13 @@ extension LoginFieldView: UITextFieldDelegate {
 
     func textFieldDidEndEditing(_ textField: UITextField) {
         setFocused(false)
+    }
+
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        if let onReturnKey {
+            return onReturnKey()
+        }
+        textField.resignFirstResponder()
+        return true
     }
 }

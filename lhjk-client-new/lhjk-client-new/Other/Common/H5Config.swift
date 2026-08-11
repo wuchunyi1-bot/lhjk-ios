@@ -101,6 +101,16 @@ enum H5Config {
         return authenticatedPageURL(path: "medical-reports/detail", extraQuery: extra)
     }
 
+    /// 监测方案 H5：`#/monitoring-plan?token&platform=ios`
+    static var monitoringPlanPageURL: URL {
+        authenticatedPageURL(path: "monitoring-plan")
+    }
+
+    /// 健康评估 H5：`#/health-assessment?token&platform=ios`
+    static var healthAssessmentPageURL: URL {
+        authenticatedPageURL(path: "health-assessment")
+    }
+
     /// 构建任意 H5 鉴权 URL：`{base}#/{path}?token&platform=ios&...`
     static func authenticatedPageURL(path: String, extraQuery: [String: String] = [:]) -> URL {
         buildAuthenticatedURL(h5Path: path, extraQuery: extraQuery)

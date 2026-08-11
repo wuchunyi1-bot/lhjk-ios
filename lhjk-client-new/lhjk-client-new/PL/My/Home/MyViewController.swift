@@ -348,14 +348,17 @@ final class MyViewController: BaseViewController, UITableViewDataSource, UITable
             Task {
                 await LoginService.shared.logout()
                 LoginService.shared.clearSession()
+                IMService.shared.clear()
+                await ServiceHubCacheService.shared.clear()
+                await ColumnContentCacheService.shared.clear()
+                await HealthPageCacheService.shared.clear()
+                InstitutionSelectionStore.shared.clear()
+                RongCloudManager.shared.disconnect()
+                UserManager.shared.clear()
+                await MainActor.run {
+                    Router.shared.setRoot("/login")
+                }
             }
-            IMService.shared.clear()
-            ServiceHubCacheService.shared.clear()
-            HealthPageCacheService.shared.clear()
-            InstitutionSelectionStore.shared.clear()
-            RongCloudManager.shared.disconnect()
-            UserManager.shared.clear()
-            Router.shared.setRoot("/login")
         })
         present(alert, animated: true)
     }

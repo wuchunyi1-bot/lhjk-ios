@@ -30,11 +30,12 @@ protocol LoginServiceProtocol {
 
     // MARK: - WeChat
 
-    /// 微信授权
-    func wechatAuth(authCode: String) async throws -> WechatAuthResult
+    /// 微信授权 code 登录（`grant_type=WE_CHAT_APP_LOGIN`）
+    /// - Returns: 已登录，或需绑定手机号（`AU0001`）
+    func loginByWeChat(code: String) async throws -> WeChatLoginStep
 
-    /// 微信绑定手机号
-    func wechatBindPhone(wechatToken: String, phone: String, code: String, confirmRebind: Bool) async throws -> LoginResult
+    /// 微信未绑定手机号时：原 code + 手机号 + 短信验证码完成登录
+    func loginByWeChatBinding(code: String, mobile: String, smsCode: String) async throws -> LoginResult
 
     // MARK: - Password Reset
 

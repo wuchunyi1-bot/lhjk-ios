@@ -1,7 +1,7 @@
 import UIKit
 import SnapKit
 
-/// 权益卡单状态列表 — 对齐订单 `OrderTabViewController`（独立 TableView + 缓存）
+/// 权益卡单状态列表 — 真实接口 `/v1/benefitsTake/*`
 final class BenefitTabViewController: BaseViewController {
 
     let filter: BenefitStatusFilter
@@ -10,8 +10,9 @@ final class BenefitTabViewController: BaseViewController {
 
     private var entries: [BenefitListEntry] = []
     private var hasLoaded = false
-    private var countdownTimer: Timer?
-    private var now = Date()
+    private var loadTask: Task<Void, Never>?
+
+    var onAvailableCountUpdated: ((Int) -> Void)?
 
     private lazy var tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
@@ -76,7 +77,7 @@ final class BenefitTabViewController: BaseViewController {
     required init?(coder: NSCoder) { fatalError() }
 
     deinit {
-        countdownTimer?.invalidate()
+        loadTask?.cancel()
     }
 
     override func setupUI() {
@@ -91,15 +92,7 @@ final class BenefitTabViewController: BaseViewController {
         super.viewWillAppear(animated)
         if !hasLoaded {
             reload()
-        } else {
-            startCountdownIfNeeded()
         }
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        countdownTimer?.invalidate()
-        countdownTimer = nil
     }
 
     func refresh() {
@@ -111,14 +104,36 @@ final class BenefitTabViewController: BaseViewController {
     }
 
     private func reload() {
-        let cards = voucherService.getBenefitCards()
-        let transfers = voucherService.getTransferRecords()
-        entries = VoucherListQuery.benefitEntries(cards: cards, transfers: transfers, filter: filter)
-        hasLoaded = true
-        tableView.reloadData()
-        refreshControl.endRefreshing()
-        updateEmpty()
-        startCountdownIfNeeded()
+        loadTask?.cancel()
+        loadTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let list = try await self.voucherService.loadBenefitEntries(filter: self.filter)
+                await MainActor.run {
+                    self.entries = list
+                    self.hasLoaded = true
+                    self.tableView.reloadData()
+                    self.refreshControl.endRefreshing()
+                    self.updateEmpty()
+                    if self.filter == .available || self.filter == .all {
+                        self.onAvailableCountUpdated?(self.voucherService.availableBenefitCount)
+                    }
+                }
+                if self.filter == .available {
+                    _ = await self.voucherService.refreshAvailableBenefitCount()
+                    await MainActor.run {
+                        self.onAvailableCountUpdated?(self.voucherService.availableBenefitCount)
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self.refreshControl.endRefreshing()
+                    self.hasLoaded = true
+                    self.updateEmpty()
+                    self.showToast(error.localizedDescription)
+                }
+            }
+        }
     }
 
     private func updateEmpty() {
@@ -132,41 +147,36 @@ final class BenefitTabViewController: BaseViewController {
         VoucherListQuery.showsBindEntry(for: filter)
     }
 
-    private func startCountdownIfNeeded() {
-        countdownTimer?.invalidate()
-        countdownTimer = nil
-        let needs = entries.contains {
-            if case .transfer(let r) = $0 { return r.status == .waiting }
-            return false
-        }
-        guard needs else { return }
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            self.now = Date()
-            self.tableView.reloadData()
-        }
-    }
-
     private func showToast(_ message: String) {
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
         present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
             alert.dismiss(animated: true)
         }
     }
 
-    private func openBind() { showToast("绑定权益卡功能即将开放") }
+    private func openBind() {
+        Router.shared.push("/activate/bind")
+    }
+
     private func openRedeem(_ card: BenefitCard) {
-        showToast("兑换套餐功能即将开放")
+        Router.shared.push("/activate/redeem")
         _ = card
     }
+
     private func openTransfer(_ card: BenefitCard) {
-        showToast("赠送好友功能即将开放")
-        _ = card
+        guard card.canGift, let takeId = Int64(card.id) else {
+            showToast("该权益卡暂不可转赠")
+            return
+        }
+        let vc = BenefitTransferViewController(card: card, benefitsTakeId: takeId)
+        vc.onGifted = { [weak self] in self?.reload() }
+        navigationController?.pushViewController(vc, animated: true)
     }
+
     private func openOrder(_ card: BenefitCard) {
         guard let orderId = card.orderId, !orderId.isEmpty else {
-            showToast("订单异常")
+            showToast("暂无关联订单")
             return
         }
         Router.shared.push("/orders/detail", params: ["id": orderId])
@@ -205,10 +215,7 @@ extension BenefitTabViewController: UITableViewDataSource, UITableViewDelegate {
             }
             cell.onSecondary = { [weak self] in self?.openTransfer(card) }
         case .transfer(let record):
-            cell.configureTransfer(
-                record,
-                countdown: VoucherListQuery.remainingTransferText(expiresAt: record.expiresAt, now: now)
-            )
+            cell.configureTransfer(record)
         }
         return cell
     }

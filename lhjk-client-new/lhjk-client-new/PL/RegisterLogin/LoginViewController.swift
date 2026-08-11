@@ -34,7 +34,8 @@ final class LoginViewController: BaseViewController {
     private let scrollView: UIScrollView = {
         let sv = UIScrollView()
         sv.showsVerticalScrollIndicator = false
-        sv.keyboardDismissMode = .onDrag
+        sv.keyboardDismissMode = .interactive
+        sv.alwaysBounceVertical = true
         return sv
     }()
 
@@ -228,7 +229,7 @@ final class LoginViewController: BaseViewController {
         btn.imageView?.contentMode = .scaleAspectFit
         btn.backgroundColor = .fdSurface
         btn.layer.cornerRadius = 26
-        btn.addTarget(self, action: #selector(showWechatSheet), for: .touchUpInside)
+        btn.addTarget(self, action: #selector(handleWechatLoginTap), for: .touchUpInside)
         return btn
     }()
 
@@ -238,6 +239,7 @@ final class LoginViewController: BaseViewController {
         l.font = .fdLoginMeta
         l.textColor = .fdLoginLabel
         l.textAlignment = .center
+        l.isUserInteractionEnabled = true
         return l
     }()
 
@@ -252,6 +254,7 @@ final class LoginViewController: BaseViewController {
     // Hero — Figma 3021:586
     private let heroContainer = UIView()
 
+    /// 资源本身已是 375×243 可视区（@2x 750×486），勿再套 Figma 内层 403×290 二次裁切
     private let heroImageView: UIImageView = {
         let iv = UIImageView(image: UIImage(named: "login_hero_bg"))
         iv.contentMode = .scaleAspectFill
@@ -274,8 +277,6 @@ final class LoginViewController: BaseViewController {
     }()
 
     // Overlays
-    private var overlayView: UIView?
-    private var wechatSheetView: UIView?
     private var captchaVerifyView: CaptchaVerifyView?
     private var notificationGuideView: NotificationGuideView?
     private var phoneBindingView: PhoneBindingView?
@@ -356,6 +357,14 @@ final class LoginViewController: BaseViewController {
                 }
             }
             .store(in: &cancellables)
+
+        // 微信未绑定手机号
+        viewModel.presentWeChatBindPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.showPhoneBinding()
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Flow Step Handler
@@ -373,6 +382,7 @@ final class LoginViewController: BaseViewController {
             // CaptchaVerifyView is shown synchronously in handleRequestCode
             break
         case .notificationGuide:
+            dismissPhoneBinding()
             showNotificationGuide { [weak self] in
                 // Guide dismissed, navigation handled by publishers
             }
@@ -435,10 +445,7 @@ final class LoginViewController: BaseViewController {
             make.height.equalTo(243)
         }
         heroImageView.snp.makeConstraints { make in
-            make.top.equalToSuperview()
-            make.centerX.equalToSuperview().offset(2)
-            make.width.equalTo(403)
-            make.height.equalTo(290)
+            make.edges.equalToSuperview()
         }
         heroFadeView.snp.makeConstraints { make in
             make.leading.trailing.bottom.equalToSuperview()
@@ -452,6 +459,12 @@ final class LoginViewController: BaseViewController {
             make.edges.width.equalToSuperview()
             make.height.greaterThanOrEqualTo(830)
         }
+
+        let dismissTap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        dismissTap.cancelsTouchesInView = false
+        view.addGestureRecognizer(dismissTap)
+
+        configureLoginFieldKeyboards()
 
         contentView.addSubview(brandHeader)
         brandHeader.snp.makeConstraints { make in
@@ -562,6 +575,9 @@ final class LoginViewController: BaseViewController {
             make.top.equalTo(modeSwitchButton.snp.bottom).offset(49)
             make.centerX.equalToSuperview()
         }
+        wechatLabel.addGestureRecognizer(
+            UITapGestureRecognizer(target: self, action: #selector(handleWechatLoginTap))
+        )
 
         contentView.addSubview(sessionExpiredLabel)
         sessionExpiredLabel.snp.makeConstraints { make in
@@ -599,10 +615,10 @@ final class LoginViewController: BaseViewController {
 
     /// 登录过期回跳时展示底部提示（路由参数 `expired=1` 或本地标记）
     private func applySessionExpiredIfNeeded() {
-        let expired = UserDefaults.standard.bool(forKey: "fd_session_expired_hint")
+        let expired = UserDefaults.standard.bool(forKey: SessionExpiryCoordinator.sessionExpiredHintKey)
         sessionExpiredLabel.isHidden = !expired
         if expired {
-            UserDefaults.standard.set(false, forKey: "fd_session_expired_hint")
+            UserDefaults.standard.set(false, forKey: SessionExpiryCoordinator.sessionExpiredHintKey)
         }
     }
 
@@ -748,6 +764,7 @@ final class LoginViewController: BaseViewController {
     // MARK: - Submit
 
     @objc private func handleSubmit() {
+        dismissKeyboard()
         guard !viewModel.isLoggingIn, !viewModel.isResettingPassword else { return }
 
         switch viewModel.formStep {
@@ -811,6 +828,8 @@ final class LoginViewController: BaseViewController {
             case .passwordLogin:
                 self.viewModel.loginMode = .password
                 self.performLoginSubmit()
+            case .wechatLogin:
+                self.viewModel.startWeChatLogin()
             case .none:
                 break
             }
@@ -897,100 +916,29 @@ final class LoginViewController: BaseViewController {
 
     // MARK: - WeChat
 
-    @objc private func showWechatSheet() {
+    @objc private func handleWechatLoginTap() {
         view.endEditing(true)
-        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
-            self.overlayView?.alpha = 1
-            self.wechatSheetView?.transform = .identity
+        guard !viewModel.isLoggingIn else { return }
+        guard agreementCheckbox.isChecked else {
+            presentAgreementConsent(action: .wechatLogin)
+            return
         }
+        viewModel.startWeChatLogin()
     }
 
-    @objc private func dismissWechatSheet() {
-        let sheetHeight = wechatSheetView?.bounds.height ?? 0
-        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseIn) {
-            self.overlayView?.alpha = 0
-            self.wechatSheetView?.transform = CGAffineTransform(translationX: 0, y: sheetHeight)
-        }
-    }
-
-    @objc private func wechatLogin() {
-        dismissWechatSheet()
-        viewModel.isLoggingIn = true
-
-        Task {
-            do {
-                let result = try await viewModel.wechatAuth(authCode: "mock_openid_bound")
-                await MainActor.run {
-                    viewModel.isLoggingIn = false
-                    switch result.bindStatus {
-                    case .bound:
-                        // Directly navigate — this is a simplified mock flow
-                        showNotificationGuide { [weak self] in
-                            Router.shared.setRoot("/")
-                        }
-                    case .unbound:
-                        guard let tempToken = result.wechatTempToken else { return }
-                        showPhoneBinding(wechatToken: tempToken)
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    viewModel.isLoggingIn = false
-                    showToast(error.localizedDescription)
-                }
-            }
-        }
-    }
-
-    private func showPhoneBinding(wechatToken: String) {
+    private func showPhoneBinding() {
         let binding = PhoneBindingView(mode: .bind)
+        binding.onRequestSMSCode = { [weak self] phone in
+            guard let self else { return }
+            try await self.viewModel.sendWeChatBindVerificationCode(phone: phone)
+        }
         binding.onSubmit = { [weak self] phone, code in
-            self?.handleWechatBinding(wechatToken: wechatToken, phone: phone, code: code, confirmRebind: false)
+            self?.viewModel.submitWeChatBind(phone: phone, smsCode: code)
         }
-        binding.onDismiss = { [weak self] in self?.dismissPhoneBinding() }
-
-        view.addSubview(binding)
-        binding.snp.makeConstraints { $0.edges.equalToSuperview() }
-        binding.alpha = 0
-        phoneBindingView = binding
-        UIView.animate(withDuration: 0.25) { binding.alpha = 1 }
-    }
-
-    private func handleWechatBinding(wechatToken: String, phone: String, code: String, confirmRebind: Bool) {
-        viewModel.isLoggingIn = true
-        Task {
-            do {
-                let result = try await viewModel.wechatBindPhone(
-                    wechatToken: wechatToken, phone: phone, code: code, confirmRebind: confirmRebind
-                )
-                await MainActor.run {
-                    viewModel.isLoggingIn = false
-                    dismissPhoneBinding()
-                    showNotificationGuide { [weak self] in
-                        Router.shared.setRoot("/")
-                    }
-                }
-            } catch LoginError.phoneBoundOtherWechat {
-                await MainActor.run {
-                    viewModel.isLoggingIn = false
-                    showPhoneBindingRebind(wechatToken: wechatToken, maskedPhone: Self.maskPhoneNumber(phone), phone: phone)
-                }
-            } catch {
-                await MainActor.run {
-                    viewModel.isLoggingIn = false
-                    showToast(error.localizedDescription)
-                }
-            }
+        binding.onDismiss = { [weak self] in
+            self?.viewModel.clearPendingWeChatCode()
+            self?.dismissPhoneBinding()
         }
-    }
-
-    private func showPhoneBindingRebind(wechatToken: String, maskedPhone: String, phone: String) {
-        dismissPhoneBinding()
-        let binding = PhoneBindingView(mode: .rebind(maskedPhone: maskedPhone))
-        binding.onSubmit = { [weak self] _, code in
-            self?.handleWechatBinding(wechatToken: wechatToken, phone: phone, code: code, confirmRebind: true)
-        }
-        binding.onDismiss = { [weak self] in self?.dismissPhoneBinding() }
 
         view.addSubview(binding)
         binding.snp.makeConstraints { $0.edges.equalToSuperview() }
@@ -1010,17 +958,111 @@ final class LoginViewController: BaseViewController {
 
     // MARK: - Keyboard
 
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+
+    private func configureLoginFieldKeyboards() {
+        let phoneFields = [phoneField, passwordPhoneField, forgotPhoneField]
+        for field in phoneFields {
+            field.textField.keyboardType = .phonePad
+            field.textField.textContentType = .telephoneNumber
+            field.attachDoneToolbarIfNeeded()
+        }
+
+        let codeFields = [codeField, forgotCodeField]
+        for field in codeFields {
+            field.textField.keyboardType = .numberPad
+            field.textField.textContentType = .oneTimeCode
+            field.attachDoneToolbarIfNeeded()
+        }
+
+        passwordField.textField.keyboardType = .default
+        passwordField.textField.isSecureTextEntry = true
+        passwordField.textField.returnKeyType = .done
+        confirmPasswordField.textField.keyboardType = .default
+        confirmPasswordField.textField.isSecureTextEntry = true
+        confirmPasswordField.textField.returnKeyType = .done
+        resetPasswordField.textField.keyboardType = .default
+        resetPasswordField.textField.isSecureTextEntry = true
+        resetPasswordField.textField.returnKeyType = .next
+
+        phoneField.onReturnKey = { [weak self] in
+            self?.codeField.textField.becomeFirstResponder()
+            return true
+        }
+        codeField.onReturnKey = { [weak self] in
+            self?.dismissKeyboard()
+            return true
+        }
+        passwordPhoneField.onReturnKey = { [weak self] in
+            self?.passwordField.textField.becomeFirstResponder()
+            return true
+        }
+        passwordField.onReturnKey = { [weak self] in
+            self?.dismissKeyboard()
+            return true
+        }
+    }
+
     @objc private func keyboardWillShow(_ notification: Notification) {
         guard let userInfo = notification.userInfo,
               let kbFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
-        let inset = kbFrame.height
-        scrollView.contentInset.bottom = inset
-        scrollView.verticalScrollIndicatorInsets.bottom = inset
+
+        let kbInView = view.convert(kbFrame, from: nil)
+        let overlap = max(0, view.bounds.maxY - kbInView.minY)
+        let duration = (userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double) ?? 0.25
+        let curveRaw = (userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt) ?? 0
+        let options = UIView.AnimationOptions(rawValue: curveRaw << 16)
+
+        UIView.animate(withDuration: duration, delay: 0, options: options) {
+            self.scrollView.contentInset.bottom = overlap
+            self.scrollView.verticalScrollIndicatorInsets.bottom = overlap
+        } completion: { _ in
+            self.scrollFocusedFieldAboveKeyboard(keyboardOverlap: overlap)
+        }
     }
 
     @objc private func keyboardWillHide(_ notification: Notification) {
-        scrollView.contentInset.bottom = 0
-        scrollView.verticalScrollIndicatorInsets.bottom = 0
+        let duration = (notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double) ?? 0.25
+        UIView.animate(withDuration: duration) {
+            self.scrollView.contentInset.bottom = 0
+            self.scrollView.verticalScrollIndicatorInsets.bottom = 0
+        }
+    }
+
+    /// 把当前输入框与登录按钮滚到键盘上方可见区
+    private func scrollFocusedFieldAboveKeyboard(keyboardOverlap: CGFloat) {
+        guard keyboardOverlap > 0 else { return }
+
+        var targetMaxY: CGFloat = 0
+        if let field = findFirstResponder(in: contentView) {
+            targetMaxY = max(targetMaxY, field.convert(field.bounds, to: scrollView).maxY)
+        }
+        // 登录主流程时尽量露出主按钮，避免被键盘挡住
+        if viewModel.formStep == .login, !submitButton.isHidden, submitButton.superview != nil {
+            targetMaxY = max(targetMaxY, submitButton.convert(submitButton.bounds, to: scrollView).maxY)
+        }
+        guard targetMaxY > 0 else { return }
+
+        let visibleHeight = scrollView.bounds.height - keyboardOverlap
+        let padding: CGFloat = 24
+        let needed = targetMaxY + padding
+        if needed > scrollView.contentOffset.y + visibleHeight {
+            let offsetY = needed - visibleHeight
+            scrollView.setContentOffset(
+                CGPoint(x: 0, y: max(0, offsetY)),
+                animated: true
+            )
+        }
+    }
+
+    private func findFirstResponder(in view: UIView) -> UIView? {
+        if view.isFirstResponder { return view }
+        for sub in view.subviews {
+            if let found = findFirstResponder(in: sub) { return found }
+        }
+        return nil
     }
 
     // MARK: - URL Opening

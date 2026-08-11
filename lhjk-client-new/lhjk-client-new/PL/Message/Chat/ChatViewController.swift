@@ -8,10 +8,12 @@ import AVFoundation
 protocol ChatCellDelegate: AnyObject {
     func cellDidLongPress(_ cell: UITableViewCell, message: ChatMessage)
     func cellDidTapReply(_ cell: UITableViewCell, message: ChatMessage)
+    func cellDidTapIMCard(_ cell: UITableViewCell, message: ChatMessage)
 }
 
 extension ChatCellDelegate {
     func cellDidTapReply(_ cell: UITableViewCell, message: ChatMessage) {}
+    func cellDidTapIMCard(_ cell: UITableViewCell, message: ChatMessage) {}
 }
 
 /// 聊天详情页 — 参考 funde-client ConversationDetailView.vue
@@ -377,7 +379,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             cell.delegate = self
             cell.configure(msg, tone: tone, convRole: convRole)
             return cell
-        case .sysNotify:
+        case .sysNotify, .vip, .serviceComment, .checkUserMsg:
             let cell = tableView.dequeueReusableCell(withIdentifier: SysNotifyCell.reuseID, for: indexPath) as! SysNotifyCell
             cell.delegate = self
             cell.configure(msg, tone: tone, convRole: convRole)
@@ -606,6 +608,16 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         case .playVoice(let path): playVoice(urlPath: path)
         case .playVideo: showToast("视频播放")
         case .none: break
+        }
+    }
+
+    /// 点击协议卡片（可点矩阵）
+    func cellDidTapIMCard(_ cell: UITableViewCell, message: ChatMessage) {
+        guard let card = IMCardResolver.resolve(from: message),
+              let action = IMCardResolver.tapAction(for: card) else { return }
+        switch action {
+        case .unavailable(let tip):
+            showToast(tip)
         }
     }
 

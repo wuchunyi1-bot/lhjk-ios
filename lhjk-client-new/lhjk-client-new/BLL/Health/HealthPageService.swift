@@ -30,7 +30,7 @@ final class HealthPageService {
 
     // MARK: - hospitalId
 
-    /// 解析合法数字 hospitalId：机构选择 → 登录用户 → 服务目录临时回退
+    /// 解析合法数字 hospitalId：机构选择 → 默认档案 → 服务目录临时回退
     static func resolveHospitalId(
         userManager: UserManager = AppContainer.shared.userManager,
         catalog: ServiceCatalogService = AppContainer.shared.serviceCatalogService
@@ -41,7 +41,7 @@ final class HealthPageService {
             return id
         }
         if let id = ServiceCatalogService.validApiHospitalId(
-            userManager.loginUserInfo?.hospitalId
+            userManager.defaultArchive?.hospitalId
         ) {
             return id
         }
@@ -157,7 +157,9 @@ struct HealthPageHubCache {
 }
 
 /// 健康 Tab Hub 预加载与会话内缓存 — 对标 `ServiceHubCacheService`。
-final class HealthPageCacheService {
+///
+/// - **actor 隔离**：preload / refresh / clear 不得并发踩 `cached` 与 Task 句柄
+actor HealthPageCacheService {
 
     static let shared = HealthPageCacheService()
 
@@ -192,19 +194,18 @@ final class HealthPageCacheService {
         }
 
         let gen = generation
-        let task = Task { [weak self] () -> HealthPageHubCache? in
-            guard let self else { return nil }
-            let result = await self.fetchFromNetwork()
-            guard gen == self.generation else { return result }
-            if let result {
-                self.cached = result
-                self.hasLoaded = true
-            }
-            return result
+        let task = Task {
+            await self.fetchFromNetwork()
         }
         preloadTask = task
         let result = await task.value
         preloadTask = nil
+
+        guard gen == generation else { return result }
+        if let result {
+            cached = result
+            hasLoaded = true
+        }
         return result
     }
 
@@ -218,19 +219,18 @@ final class HealthPageCacheService {
         }
 
         let gen = generation
-        let task = Task { [weak self] () -> HealthPageHubCache? in
-            guard let self else { return nil }
-            let result = await self.fetchFromNetwork()
-            guard gen == self.generation else { return result }
-            if let result {
-                self.cached = result
-                self.hasLoaded = true
-            }
-            return result
+        let task = Task {
+            await self.fetchFromNetwork()
         }
         refreshTask = task
         let result = await task.value
         refreshTask = nil
+
+        guard gen == generation else { return result }
+        if let result {
+            cached = result
+            hasLoaded = true
+        }
         return result
     }
 

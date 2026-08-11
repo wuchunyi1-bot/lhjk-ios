@@ -15,7 +15,7 @@ final class HomeViewModel: ObservableObject {
     }
 
     enum HomeItem: Hashable {
-        case banner
+        case banner(String)
         case quickActions
         case membership
         case teamList
@@ -24,6 +24,7 @@ final class HomeViewModel: ObservableObject {
     }
 
     @Published var daysLeft: Int = 45
+    @Published var banners: [ServiceHubBanner] = []
     @Published var quickActions: [HomeQuickActionsCell.Action]
     @Published var membershipPackages: [HomeMembershipPackagesCell.Package]
     @Published var teamMembers: [HomeTeamCardCell.Member] = []
@@ -32,19 +33,24 @@ final class HomeViewModel: ObservableObject {
     @Published var snapshot = NSDiffableDataSourceSnapshot<HomeSection, HomeItem>()
     @Published private(set) var isTasksLoading = false
     @Published private(set) var isTeamLoading = false
+    @Published private(set) var isBannersLoading = false
 
     private let userManager: UserManager
     private let homeService: HomeService
+    private let columnContentCache: ColumnContentCacheService
     private var cancellables = Set<AnyCancellable>()
     private var tasksLoadTask: Task<Void, Never>?
     private var teamLoadTask: Task<Void, Never>?
+    private var bannersLoadTask: Task<Void, Never>?
 
     init(
         userManager: UserManager = AppContainer.shared.userManager,
-        homeService: HomeService = .shared
+        homeService: HomeService = .shared,
+        columnContentCache: ColumnContentCacheService = AppContainer.shared.columnContentCacheService
     ) {
         self.userManager = userManager
         self.homeService = homeService
+        self.columnContentCache = columnContentCache
         self.quickActions = Self.defaultQuickActions
         self.membershipPackages = Self.defaultMembershipPackages
         self.articles = Self.defaultArticles
@@ -65,6 +71,13 @@ final class HomeViewModel: ObservableObject {
         applySnapshot()
     }
 
+    func loadBanners() {
+        bannersLoadTask?.cancel()
+        bannersLoadTask = Task { [weak self] in
+            await self?.fetchBanners()
+        }
+    }
+
     func loadTodayTasks() {
         tasksLoadTask?.cancel()
         tasksLoadTask = Task { [weak self] in
@@ -77,6 +90,17 @@ final class HomeViewModel: ObservableObject {
         teamLoadTask = Task { [weak self] in
             await self?.fetchDoctorTeam()
         }
+    }
+
+    @MainActor
+    private func fetchBanners() async {
+        isBannersLoading = true
+        defer { isBannersLoading = false }
+
+        let remote = await columnContentCache.banners(for: ColumnContentService.homeBannerCode)
+        guard !Task.isCancelled else { return }
+        banners = remote.filter(\.hasImage)
+        applySnapshot()
     }
 
     @MainActor
@@ -129,20 +153,15 @@ final class HomeViewModel: ObservableObject {
     }
 
     private func resolveUserId() -> String? {
-        if let id = userManager.loginUserInfo?.id?
-            .trimmingCharacters(in: .whitespacesAndNewlines), !id.isEmpty {
-            return id
-        }
-        if let id = userManager.currentUser?.id?
-            .trimmingCharacters(in: .whitespacesAndNewlines), !id.isEmpty {
-            return id
-        }
-        return nil
+        userManager.resolvedUserId
     }
 
     private func applySnapshot() {
         var snap = NSDiffableDataSourceSnapshot<HomeSection, HomeItem>()
         var sections = HomeSection.allCases
+        if banners.isEmpty {
+            sections.removeAll { $0 == .banner }
+        }
         if membershipPackages.isEmpty {
             sections.removeAll { $0 == .membership }
         }
@@ -153,7 +172,10 @@ final class HomeViewModel: ObservableObject {
             sections.removeAll { $0 == .tasks }
         }
         snap.appendSections(sections)
-        snap.appendItems([.banner], toSection: .banner)
+        if !banners.isEmpty {
+            let bannerSig = banners.map(\.id).joined(separator: "|")
+            snap.appendItems([.banner(bannerSig)], toSection: .banner)
+        }
         snap.appendItems([.quickActions], toSection: .quickActions)
         if !membershipPackages.isEmpty {
             snap.appendItems([.membership], toSection: .membership)

@@ -56,6 +56,15 @@ extension APIManager {
         return try await request(url: url, method: .post, parameters: parameters, encoding: URLEncoding.default, session: session)
     }
 
+    /// 已认证 POST，参数全部挂在 URL query（Apifox `in: query` 的 POST，如 updateOrderBenefits）
+    func postQueryAsync<T: Decodable>(
+        path: String, parameters: [String: Any]? = nil, responseType: T.Type
+    ) async throws -> T {
+        let url = makeURL(for: path)
+        let encoding = URLEncoding(destination: .queryString, arrayEncoding: .noBrackets)
+        return try await request(url: url, method: .post, parameters: parameters, encoding: encoding, session: session)
+    }
+
     func putAsync<T: Decodable>(
         path: String, parameters: [String: Any]? = nil, responseType: T.Type
     ) async throws -> T {
@@ -79,12 +88,18 @@ extension APIManager {
         url: URL, method: HTTPMethod, parameters: [String: Any]?, encoding: ParameterEncoding, session: Session
     ) async throws -> T {
         DebugLogger.logAPIRequest(method: method.rawValue, url: url.absoluteString, parameters: parameters)
+        let authenticated = session === self.session
         return try await withCheckedThrowingContinuation { cont in
             var c: AnyCancellable?
             c = session.request(url, method: method, parameters: parameters, encoding: encoding)
                 .validate()
                 .publishDecodable(type: T.self, decoder: jsonDecoder)
-                .tryMap { r in
+                .tryMap { [weak self] r in
+                    self?.evaluateSessionValidity(
+                        rawData: r.data,
+                        statusCode: r.response?.statusCode,
+                        authenticated: authenticated
+                    )
                     switch r.result {
                     case .success(let v):
                         DebugLogger.logAPIResponse(

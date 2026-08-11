@@ -9,6 +9,9 @@ enum MessageType: String, Codable {
     case file
     case video
     case sysNotify
+    case vip              // AD:Vip
+    case serviceComment   // AD:ServiceComment
+    case checkUserMsg     // AD:CheckUserMsg
     case timeMarker   // 日期分隔
     case recall       // 撤回通知
     case voice        // 语音消息
@@ -24,6 +27,14 @@ enum MessageType: String, Codable {
     var isCard: Bool {
         switch self {
         case .metricCard, .reportCard, .dietCard, .appointmentCard, .caseCard, .planCard: return true
+        default: return false
+        }
+    }
+
+    /// 融云协议卡片（SysNotify / Vip / ServiceComment / CheckUserMsg）
+    var isIMProtocolCard: Bool {
+        switch self {
+        case .sysNotify, .vip, .serviceComment, .checkUserMsg: return true
         default: return false
         }
     }
@@ -201,6 +212,12 @@ struct ChatMessage: Identifiable {
     var videoContent: VideoMessage? = nil
     /// AD:SysNotify 消息体
     var sysNotifyContent: SysNotifyMessage? = nil
+    /// AD:Vip 消息体
+    var vipContent: VipMessage? = nil
+    /// AD:ServiceComment 消息体
+    var serviceCommentContent: ServiceCommentMessage? = nil
+    /// AD:CheckUserMsg 消息体
+    var checkUserContent: CheckUserMessage? = nil
 
     var isStaff: Bool { role == .staff }
     var isUser: Bool { role == .user }
@@ -241,6 +258,9 @@ extension ChatMessage: Codable {
         fileContent = nil
         videoContent = nil
         sysNotifyContent = nil
+        vipContent = nil
+        serviceCommentContent = nil
+        checkUserContent = nil
         messageId = -1
     }
 
@@ -293,6 +313,9 @@ extension ChatMessage {
         case .file:   return "AD:FileMsg"
         case .video:  return "AD:VideoMsg"
         case .sysNotify: return "AD:SysNotify"
+        case .vip: return "AD:Vip"
+        case .serviceComment: return "AD:ServiceComment"
+        case .checkUserMsg: return "AD:CheckUserMsg"
         default:      return "RC:TxtMsg"
         }
     }
@@ -312,6 +335,12 @@ extension ChatMessage {
             return fileContent?.fileUrl ?? ""
         case .sysNotify:
             return sysNotifyContent?.title ?? "[套餐]"
+        case .vip:
+            return vipContent?.title ?? "[VIP]"
+        case .serviceComment:
+            return serviceCommentContent?.title ?? "[服务评价]"
+        case .checkUserMsg:
+            return checkUserContent?.title ?? "[核对信息]"
         default:
             return ""
         }

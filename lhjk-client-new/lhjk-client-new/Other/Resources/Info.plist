@@ -21,11 +21,13 @@
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
 			<key>CFBundleURLName</key>
 			<string>wechat</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>wx_app_id_placeholder</string>
+				<string>wx019459b820b44c38</string>
 			</array>
 		</dict>
 		<dict>
@@ -39,6 +41,12 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>weixin</string>
+		<string>weixinURLParamsAPI</string>
+		<string>weixinULAPI</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
@@ -70,6 +78,8 @@
 	</dict>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>需要使用蓝牙来连接附近的设备</string>
+	<key>NSCameraUsageDescription</key>
+	<string>用于扫描权益卡二维码完成绑定</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>用于获取当前位置并自动填写收货地址</string>
 	<key>NSMicrophoneUsageDescription</key>

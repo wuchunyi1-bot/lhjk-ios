@@ -162,7 +162,7 @@ final class ServicePackageDetailViewModel: ObservableObject {
             } catch {
                 guard !Task.isCancelled else { return }
                 // API 失败时若有本地原型同 id 则降级，否则展示错误
-                if let local = catalogService.packageDetail(id: packageId),
+                if let local = await catalogService.packageDetail(id: packageId),
                    HospitalPackageService.apiHospitalId(local.id) == nil {
                     await MainActor.run {
                         package = local
@@ -181,7 +181,7 @@ final class ServicePackageDetailViewModel: ObservableObject {
         }
 
         // 德系原型等非数字 id
-        let local = catalogService.packageDetail(id: packageId)
+        let local = await catalogService.packageDetail(id: packageId)
         await MainActor.run {
             package = local
             isLoading = false

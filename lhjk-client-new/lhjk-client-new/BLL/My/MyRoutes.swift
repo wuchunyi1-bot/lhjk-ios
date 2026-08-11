@@ -17,9 +17,34 @@ enum MyRoutes {
         r.register(path: "/me/appointments")     { _ in AppointmentsViewController() }
         r.register(path: "/me/devices")          { _ in DevicesViewController() }
         r.register(path: "/me/diet-plan")        { _ in DietPlanViewController() }
-        r.register(path: "/me/monitoring-plan")  { _ in MonitoringPlanViewController() }
+
+        // 监测方案 / 健康评估 → H5
+        r.register(path: "/me/monitoring-plan") { _ in
+            WebViewController(
+                urlString: H5Config.monitoringPlanPageURL.absoluteString,
+                title: "监测方案"
+            )
+        }
+        r.register(path: "/me/health-assessment") { _ in
+            WebViewController(
+                urlString: H5Config.healthAssessmentPageURL.absoluteString,
+                title: "健康评估"
+            )
+        }
+        r.register(path: "/monitoring-plan") { _ in
+            WebViewController(
+                urlString: H5Config.monitoringPlanPageURL.absoluteString,
+                title: "监测方案"
+            )
+        }
+        r.register(path: "/health-assessment") { _ in
+            WebViewController(
+                urlString: H5Config.healthAssessmentPageURL.absoluteString,
+                title: "健康评估"
+            )
+        }
+
         r.register(path: "/me/health-evaluations") { _ in HealthEvaluationsViewController() }
-        r.register(path: "/me/health-assessment") { _ in PlaceholderViewController(title: "健康评估") }
 
         // 占位页面（后续迭代实现）
         r.register(path: "/me/membership")  { _ in MembershipViewController() }

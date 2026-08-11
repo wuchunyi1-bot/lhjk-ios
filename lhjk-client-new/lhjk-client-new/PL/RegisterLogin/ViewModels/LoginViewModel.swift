@@ -38,25 +38,32 @@ final class LoginViewModel: ObservableObject {
     let toastPublisher = PassthroughSubject<String, Never>()
     let navigateToHomePublisher = PassthroughSubject<Void, Never>()
     let presentOnboardingPublisher = PassthroughSubject<Void, Never>()
+    /// 微信登录需绑定手机号（携带待复用的微信 code）
+    let presentWeChatBindPublisher = PassthroughSubject<String, Never>()
 
     // MARK: - Dependencies
 
     private let loginService: LoginService
     private let userManager: UserManager
     private let rongCloudManager: RongCloudManager
+    private let wechatSDK: WeChatSDKManager
 
     // MARK: - Private State
 
     private var smsRequestId: String?
+    /// AU0001 后暂存的微信授权 code（取消绑定时清除）
+    private(set) var pendingWeChatCode: String?
 
     // MARK: - Init
 
     init(loginService: LoginService = AppContainer.shared.loginService,
          userManager: UserManager = AppContainer.shared.userManager,
-         rongCloudManager: RongCloudManager = AppContainer.shared.rongCloudManager) {
+         rongCloudManager: RongCloudManager = AppContainer.shared.rongCloudManager,
+         wechatSDK: WeChatSDKManager = .shared) {
         self.loginService = loginService
         self.userManager = userManager
         self.rongCloudManager = rongCloudManager
+        self.wechatSDK = wechatSDK
     }
 
     // MARK: - Mode Toggle
@@ -227,15 +234,105 @@ final class LoginViewModel: ObservableObject {
 
     // MARK: - WeChat
 
-    func wechatAuth(authCode: String) async throws -> WechatAuthResult {
-        try await loginService.wechatAuth(authCode: authCode)
+    /// 拉起微信授权并登录；未绑定则通过 `presentWeChatBindPublisher` 通知 VC
+    func startWeChatLogin() {
+        guard !isLoggingIn else { return }
+        isLoggingIn = true
+        pendingWeChatCode = nil
+
+        Task {
+            do {
+                let auth = try await requestWeChatAuthCode()
+                let step = try await loginService.loginByWeChat(code: auth.code)
+                switch step {
+                case .loggedIn:
+                    await handleLoginSuccess(phone: "")
+                case .needBindMobile(let code):
+                    await MainActor.run {
+                        isLoggingIn = false
+                        pendingWeChatCode = code
+                        presentWeChatBindPublisher.send(code)
+                    }
+                }
+            } catch let error as WeChatSDKError where error == .userCancelled {
+                await MainActor.run { isLoggingIn = false }
+            } catch {
+                await MainActor.run {
+                    isLoggingIn = false
+                    let msg = mapWeChatError(error)
+                    if !msg.isEmpty {
+                        toastPublisher.send(msg)
+                    }
+                }
+            }
+        }
     }
 
-    func wechatBindPhone(wechatToken: String, phone: String, code: String,
-                         confirmRebind: Bool = false) async throws -> LoginResult {
-        try await loginService.wechatBindPhone(
-            wechatToken: wechatToken, phone: phone, code: code, confirmRebind: confirmRebind
-        )
+    /// 绑定页发码（type=1）
+    func sendWeChatBindVerificationCode(phone: String) async throws {
+        _ = try await loginService.sendVerificationCode(to: phone, type: .login)
+    }
+
+    /// 提交绑定并登录
+    func submitWeChatBind(phone: String, smsCode: String) {
+        guard let wechatCode = pendingWeChatCode, !wechatCode.isEmpty else {
+            toastPublisher.send(LoginError.wechatCodeExpired.errorDescription ?? "请重新微信登录")
+            return
+        }
+        guard validatePhone(phone) == nil else {
+            toastPublisher.send("请输入正确的手机号")
+            return
+        }
+        guard !smsCode.isEmpty else {
+            toastPublisher.send("请输入验证码")
+            return
+        }
+
+        isLoggingIn = true
+        Task {
+            do {
+                _ = try await loginService.loginByWeChatBinding(
+                    code: wechatCode,
+                    mobile: phone,
+                    smsCode: smsCode
+                )
+                await MainActor.run { pendingWeChatCode = nil }
+                await handleLoginSuccess(phone: phone)
+            } catch {
+                await MainActor.run {
+                    isLoggingIn = false
+                    toastPublisher.send(error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    func clearPendingWeChatCode() {
+        pendingWeChatCode = nil
+    }
+
+    private func requestWeChatAuthCode() async throws -> WeChatAuthResult {
+        try await withCheckedThrowingContinuation { continuation in
+            wechatSDK.sendAuth { result in
+                continuation.resume(with: result)
+            }
+        }
+    }
+
+    private func mapWeChatError(_ error: Error) -> String {
+        if let sdk = error as? WeChatSDKError {
+            switch sdk {
+            case .notInstalled:
+                return LoginError.wechatNotInstalled.errorDescription ?? sdk.localizedDescription
+            case .sdkNotLinked, .notConfigured:
+                return LoginError.wechatSDKUnavailable.errorDescription ?? sdk.localizedDescription
+            case .userCancelled:
+                return ""
+            default:
+                return LoginError.wechatAuthFailed.errorDescription ?? sdk.localizedDescription
+            }
+        }
+        return error.localizedDescription
     }
 
     // MARK: - Post-Login Orchestration
@@ -251,11 +348,10 @@ final class LoginViewModel: ObservableObject {
         // 连接 IM
         rongCloudManager.fetchTokenAndConnect()
 
-        // 并行：门禁只用 loginUserInfo；业务资料 + 默认档案同步拉取
-        async let profile: SUsers? = userManager.fetchUserInfo()
-        async let archive: OArchive? = userManager.fetchDefaultArchive()
+        // 串行：先拿 userId → 拉默认档案 → 按 archiveComplete 门禁
+        _ = await userManager.refreshUserInfo()
+        _ = await userManager.refreshDefaultArchive()
         let needOnboarding = userManager.checkNeedOnboarding()
-        _ = await (profile, archive)
 
         await MainActor.run {
             navigateToHomePublisher.send()

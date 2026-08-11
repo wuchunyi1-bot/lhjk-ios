@@ -54,13 +54,14 @@ final class CancelAccountViewModel: ObservableObject {
                 try await userService.cancelCurrentUser()
 
                 // 2. 清理本地状态
+                await AppContainer.shared.columnContentCacheService.clear()
+                await AppContainer.shared.serviceHubCacheService.clear()
+                await AppContainer.shared.healthPageCacheService.clear()
                 await MainActor.run {
                     APIManager.shared.clearCredential()
                     loginService.clearSession()
                     userManager.clear()
                     imService.clear()
-                    AppContainer.shared.serviceHubCacheService.clear()
-                    AppContainer.shared.healthPageCacheService.clear()
                     AppContainer.shared.institutionSelectionStore.clear()
                     isSubmitting = false
                     isSuccess = true

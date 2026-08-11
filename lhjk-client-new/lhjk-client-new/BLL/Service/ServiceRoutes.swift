@@ -50,9 +50,18 @@ enum ServiceRoutes {
             return InstitutionSelectViewController(selectedId: selectedId)
         }
 
-        // 三好卡激活入口
+        // 激活兑换（对齐 funde /activate*）
         r.register(path: "/activate") { _ in
-            VoucherListViewController()
+            ActivateViewController()
+        }
+        r.register(path: "/activate/bind") { _ in
+            BenefitBindViewController()
+        }
+        r.register(path: "/activate/redeem") { _ in
+            BenefitRedeemViewController()
+        }
+        r.register(path: "/scan/qrcode") { _ in
+            QRCodeScanViewController()
         }
 
         // 富德优选

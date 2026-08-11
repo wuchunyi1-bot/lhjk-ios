@@ -128,7 +128,7 @@ final class UserService: UserServiceProtocol {
             print("[UserService] getOArchiveByUserId → data is null")
             return nil
         }
-        print("[UserService] getOArchiveByUserId ✓ id=\(archive.id ?? "nil") name=\(archive.chineseName ?? "nil") height=\(archive.height.map(String.init) ?? "nil")")
+        print("[UserService] getOArchiveByUserId ✓ id=\(archive.id ?? "nil") name=\(archive.chineseName ?? "nil") archiveComplete=\(archive.archiveComplete.map(String.init) ?? "nil") height=\(archive.height.map(String.init) ?? "nil")")
         return archive
     }
 

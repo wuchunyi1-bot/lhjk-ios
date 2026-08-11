@@ -9,7 +9,6 @@ final class AboutSettingsViewController: BaseViewController {
     private let scrollView = UIScrollView()
     private let contentView = UIView()
     private let bgGradient = CAGradientLayer()
-    private var logoGradient: CAGradientLayer?
 
     private var appVersionText: String {
         let ver = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
@@ -66,9 +65,6 @@ final class AboutSettingsViewController: BaseViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         bgGradient.frame = view.bounds
-        if let logo = contentView.viewWithTag(901) {
-            logoGradient?.frame = logo.bounds
-        }
     }
 
     // MARK: - Brand
@@ -76,23 +72,11 @@ final class AboutSettingsViewController: BaseViewController {
     private func buildBrandSection() -> UIView {
         let wrap = UIView()
 
-        let logo = UIView()
-        logo.tag = 901
-        logo.layer.cornerRadius = 18
+        let logo = UIImageView(image: UIImage(named: "login_logo"))
+        logo.contentMode = .scaleAspectFill
         logo.clipsToBounds = true
-        let gradient = CAGradientLayer()
-        gradient.colors = [UIColor.fdPrimary.cgColor, UIColor(hexString: "#FFAA80").cgColor]
-        gradient.startPoint = CGPoint(x: 0, y: 0)
-        gradient.endPoint = CGPoint(x: 1, y: 1)
-        logo.layer.insertSublayer(gradient, at: 0)
-        logoGradient = gradient
-
-        let charLabel = UILabel()
-        charLabel.text = "富"
-        charLabel.font = .fdFont(ofSize: 30, weight: .heavy)
-        charLabel.textColor = .white
-        logo.addSubview(charLabel)
-        charLabel.snp.makeConstraints { $0.center.equalToSuperview() }
+        logo.layer.cornerRadius = 18
+        logo.accessibilityLabel = "富德健康"
 
         let nameLabel = UILabel()
         nameLabel.text = "富德健康"

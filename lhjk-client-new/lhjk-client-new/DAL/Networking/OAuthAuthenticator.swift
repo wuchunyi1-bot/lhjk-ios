@@ -73,9 +73,12 @@ final class OAuthAuthenticator: Authenticator {
                     }
 
                     let expiresIn = max(token.expiresIn, 60)
+                    let newRefresh = token.refreshToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        ? credential.refreshToken
+                        : token.refreshToken
                     let newCredential = OAuthCredential(
                         accessToken: token.accessToken,
-                        refreshToken: token.refreshToken,
+                        refreshToken: newRefresh,
                         expiration: Date().addingTimeInterval(TimeInterval(expiresIn))
                     )
                     APIManager.shared.persistRefreshedCredential(newCredential)

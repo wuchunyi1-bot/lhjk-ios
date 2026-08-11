@@ -7,6 +7,7 @@ final class AgreementConsentSheet: UIViewController {
     enum PendingAction {
         case smsLogin
         case passwordLogin
+        case wechatLogin
     }
 
     var onAgreeAndContinue: (() -> Void)?

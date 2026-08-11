@@ -302,6 +302,10 @@
 		A5C71B073018BAFC006EA79C /* HomeMembershipPackagesCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71B063018BAFC006EA79C /* HomeMembershipPackagesCell.swift */; };
 		A5C71B083018BAFC006EA79C /* HomeBannerCarouselCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71B043018BAFC006EA79C /* HomeBannerCarouselCell.swift */; };
 		A5C71B093018BAFC006EA79C /* HomeBrandHeaderCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71B053018BAFC006EA79C /* HomeBrandHeaderCell.swift */; };
+		A5C7564630259CED004FA15B /* WeChatConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C7564230259CED004FA15B /* WeChatConfig.swift */; };
+		A5C7564730259CED004FA15B /* WeChatSDKManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C7564430259CED004FA15B /* WeChatSDKManager.swift */; };
+		A5C7564830259CED004FA15B /* WeChatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C7564330259CED004FA15B /* WeChatModels.swift */; };
+		A5C7564B3025AF23004FA15B /* QRCodeScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C756493025AF23004FA15B /* QRCodeScanner.swift */; };
 		A5CB0BC5302193440076FAFB /* HealthPageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CB0BC4302193440076FAFB /* HealthPageService.swift */; };
 		A5CB0BCA3021935F0076FAFB /* MetricCardEditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CB0BC63021935F0076FAFB /* MetricCardEditViewModel.swift */; };
 		A5CB0BCB3021935F0076FAFB /* MetricCardEditViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CB0BC83021935F0076FAFB /* MetricCardEditViewController.swift */; };
@@ -309,6 +313,12 @@
 		A5CF597930077AA40067A4DE /* ServiceListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597830077AA40067A4DE /* ServiceListViewModel.swift */; };
 		A5CF597A30077AA40067A4DE /* HealthMallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597730077AA40067A4DE /* HealthMallViewModel.swift */; };
 		A5CF597C30077C6A0067A4DE /* RetailCategoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597B30077C6A0067A4DE /* RetailCategoryService.swift */; };
+		A5F6AF2130296CED00D1BF74 /* SessionInvalidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5F6AF2030296CED00D1BF74 /* SessionInvalidation.swift */; };
+		A5F6AF2330296D0000D1BF74 /* SessionExpiryCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5F6AF2230296D0000D1BF74 /* SessionExpiryCoordinator.swift */; };
+		A5F6AF2630296D1A00D1BF74 /* SessionExpiryPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5F6AF2430296D1A00D1BF74 /* SessionExpiryPresenter.swift */; };
+		A5F6AF2730296D1A00D1BF74 /* SessionExpirySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5F6AF2530296D1A00D1BF74 /* SessionExpirySheet.swift */; };
+		A5F6AF293029724D00D1BF74 /* BenefitGiftShareBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5F6AF283029724D00D1BF74 /* BenefitGiftShareBuilder.swift */; };
+		A5F6AF2B3029E03C00D1BF74 /* ColumnContentCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5F6AF2A3029E03C00D1BF74 /* ColumnContentCacheService.swift */; };
 		A952E20047557E6F1D7EE0AF /* Pods_lhjk_client_new.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */; };
 		A97FF7EF73364502F99C2EC4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FACC28499C23F3853EBBF10 /* AppDelegate.swift */; };
 		B0BC602D83CB797AB66DFE1F /* WechatPayChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 395140C046B00859321C4B05 /* WechatPayChannel.swift */; };
@@ -628,6 +638,10 @@
 		A5C71B043018BAFC006EA79C /* HomeBannerCarouselCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeBannerCarouselCell.swift; sourceTree = "<group>"; };
 		A5C71B053018BAFC006EA79C /* HomeBrandHeaderCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeBrandHeaderCell.swift; sourceTree = "<group>"; };
 		A5C71B063018BAFC006EA79C /* HomeMembershipPackagesCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeMembershipPackagesCell.swift; sourceTree = "<group>"; };
+		A5C7564230259CED004FA15B /* WeChatConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatConfig.swift; sourceTree = "<group>"; };
+		A5C7564330259CED004FA15B /* WeChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatModels.swift; sourceTree = "<group>"; };
+		A5C7564430259CED004FA15B /* WeChatSDKManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatSDKManager.swift; sourceTree = "<group>"; };
+		A5C756493025AF23004FA15B /* QRCodeScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeScanner.swift; sourceTree = "<group>"; };
 		A5CB0BC4302193440076FAFB /* HealthPageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HealthPageService.swift; path = BLL/Health/HealthPageService.swift; sourceTree = "<group>"; };
 		A5CB0BC63021935F0076FAFB /* MetricCardEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCardEditViewModel.swift; sourceTree = "<group>"; };
 		A5CB0BC83021935F0076FAFB /* MetricCardEditViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCardEditViewController.swift; sourceTree = "<group>"; };
@@ -635,6 +649,12 @@
 		A5CF597730077AA40067A4DE /* HealthMallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthMallViewModel.swift; sourceTree = "<group>"; };
 		A5CF597830077AA40067A4DE /* ServiceListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceListViewModel.swift; sourceTree = "<group>"; };
 		A5CF597B30077C6A0067A4DE /* RetailCategoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RetailCategoryService.swift; path = BLL/Service/RetailCategoryService.swift; sourceTree = "<group>"; };
+		A5F6AF2030296CED00D1BF74 /* SessionInvalidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SessionInvalidation.swift; path = DAL/Networking/SessionInvalidation.swift; sourceTree = "<group>"; };
+		A5F6AF2230296D0000D1BF74 /* SessionExpiryCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionExpiryCoordinator.swift; sourceTree = "<group>"; };
+		A5F6AF2430296D1A00D1BF74 /* SessionExpiryPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionExpiryPresenter.swift; sourceTree = "<group>"; };
+		A5F6AF2530296D1A00D1BF74 /* SessionExpirySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionExpirySheet.swift; sourceTree = "<group>"; };
+		A5F6AF283029724D00D1BF74 /* BenefitGiftShareBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenefitGiftShareBuilder.swift; sourceTree = "<group>"; };
+		A5F6AF2A3029E03C00D1BF74 /* ColumnContentCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ColumnContentCacheService.swift; path = BLL/Service/ColumnContentCacheService.swift; sourceTree = "<group>"; };
 		A8B0D2D90AC6467582FAAE9C /* MessageRoutes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MessageRoutes.swift; path = BLL/Message/MessageRoutes.swift; sourceTree = "<group>"; };
 		AFDBED21231D2F368D2F5FA5 /* OAuthCredential.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OAuthCredential.swift; path = DAL/Networking/OAuthCredential.swift; sourceTree = "<group>"; };
 		B1B291D76D4C819D8DB33D00 /* DatabaseManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DatabaseManager.swift; path = DAL/Storage/DatabaseManager.swift; sourceTree = "<group>"; };
@@ -673,6 +693,7 @@
 		209982680F814E7623CEE52C /* Networking */ = {
 			isa = PBXGroup;
 			children = (
+				A5F6AF2030296CED00D1BF74 /* SessionInvalidation.swift */,
 				E2C9738A2B82C009F94EDFE7 /* APIError.swift */,
 				27CE239FA8FD35C6FAB8017C /* APIManager.swift */,
 				2864D2DFAE001AA678A08E54 /* NetworkMonitor.swift */,
@@ -731,6 +752,8 @@
 		80323DB75D4CB2E15619DDBB /* DAL */ = {
 			isa = PBXGroup;
 			children = (
+				A5C7564A3025AF23004FA15B /* QRCode */,
+				A5C7564530259CED004FA15B /* WeChat */,
 				A5BD9DF13019D0C6008C44FC /* H5Bridge */,
 				A53EF9D330088E0900ED9E5A /* Location */,
 				A5A6F5472FFF7EFC0065C921 /* Media */,
@@ -900,6 +923,7 @@
 		A57D2F1D2FDC0647002E43BA /* My */ = {
 			isa = PBXGroup;
 			children = (
+				A5F6AF283029724D00D1BF74 /* BenefitGiftShareBuilder.swift */,
 				A5C71AF830185CF6006EA79C /* VoucherListQuery.swift */,
 				A5A6F4BD2FFF7A8B0065C921 /* AddressModels.swift */,
 				A5A6F4BE2FFF7A8B0065C921 /* AddressService.swift */,
@@ -914,6 +938,7 @@
 		A57D2F222FDC0661002E43BA /* RegisterLogin */ = {
 			isa = PBXGroup;
 			children = (
+				A5F6AF2230296D0000D1BF74 /* SessionExpiryCoordinator.swift */,
 				A5917D1D2FDFD7FE00878961 /* LoginModels.swift */,
 				A5917D1E2FDFD7FE00878961 /* LoginService.swift */,
 				A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */,
@@ -1298,6 +1323,8 @@
 		A590FC942FEA91170056EF52 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A5F6AF2430296D1A00D1BF74 /* SessionExpiryPresenter.swift */,
+				A5F6AF2530296D1A00D1BF74 /* SessionExpirySheet.swift */,
 				A56DDEAF30173A08000E03A0 /* AgreementConsentSheet.swift */,
 				A590FC8B2FEA91170056EF52 /* AgreementCheckboxView.swift */,
 				A590FC8C2FEA91170056EF52 /* BrandHeaderView.swift */,
@@ -1978,6 +2005,26 @@
 			path = Components;
 			sourceTree = "<group>";
 		};
+		A5C7564530259CED004FA15B /* WeChat */ = {
+			isa = PBXGroup;
+			children = (
+				A5C7564230259CED004FA15B /* WeChatConfig.swift */,
+				A5C7564330259CED004FA15B /* WeChatModels.swift */,
+				A5C7564430259CED004FA15B /* WeChatSDKManager.swift */,
+			);
+			name = WeChat;
+			path = DAL/WeChat;
+			sourceTree = "<group>";
+		};
+		A5C7564A3025AF23004FA15B /* QRCode */ = {
+			isa = PBXGroup;
+			children = (
+				A5C756493025AF23004FA15B /* QRCodeScanner.swift */,
+			);
+			name = QRCode;
+			path = DAL/QRCode;
+			sourceTree = "<group>";
+		};
 		A5CB0BC73021935F0076FAFB /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
@@ -2055,6 +2102,7 @@
 		C4193BC7FCD37A9D67D93F74 /* Service */ = {
 			isa = PBXGroup;
 			children = (
+				A5F6AF2A3029E03C00D1BF74 /* ColumnContentCacheService.swift */,
 				A56DDEB130174B8E000E03A0 /* DoctorModels.swift */,
 				A56DDEB230174B8E000E03A0 /* DoctorService.swift */,
 				A56120AC3010A2BC00505C32 /* OrderDetailModels.swift */,
@@ -2274,25 +2322,11 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new-resources.sh",
-				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RongCloud.bundle",
-				"${PODS_ROOT}/RongCloudIM/RongCloudIM/en.lproj",
-				"${PODS_ROOT}/RongCloudIM/RongCloudIM/zh-Hans.lproj",
-				"${PODS_ROOT}/RongCloudIM/RongCloudIM/ar.lproj",
-				"${PODS_ROOT}/RongCloudIM/RongCloudIM/Emoji.plist",
-				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RCColor.plist",
 				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RCConfig.plist",
-				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RongSticker.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RongCloud.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/en.lproj",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/zh-Hans.lproj",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ar.lproj",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/Emoji.plist",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RCColor.plist",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RCConfig.plist",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RongSticker.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -2312,17 +2346,11 @@
 				"${BUILT_PRODUCTS_DIR}/Kingfisher/Kingfisher.framework",
 				"${BUILT_PRODUCTS_DIR}/SnapKit/SnapKit.framework",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/ChatRoom/RongChatRoom.framework/RongChatRoom",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/ContactCard/RongContactCard.framework/RongContactCard",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/CustomerService/RongCustomerService.framework/RongCustomerService",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/Discussion/RongDiscussion.framework/RongDiscussion",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/IMKit/RongIMKit.framework/RongIMKit",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/IMLib/RongIMLib.framework/RongIMLib",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/IMLibCore/RongIMLibCore.framework/RongIMLibCore",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/Location/RongLocation.framework/RongLocation",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/LocationKit/RongLocationKit.framework/RongLocationKit",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/PublicService/RongPublicService.framework/RongPublicService",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/RongSticker/RongSticker.framework/RongSticker",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/RongCloudIM/Sight/RongSight.framework/RongSight",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
@@ -2332,17 +2360,11 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Kingfisher.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SnapKit.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongChatRoom.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongContactCard.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongCustomerService.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongDiscussion.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongIMKit.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongIMLib.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongIMLibCore.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongLocation.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongLocationKit.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongPublicService.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongSticker.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RongSight.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -2397,11 +2419,14 @@
 				A5A6F4B52FFF7A720065C921 /* ColumnContentService.swift in Sources */,
 				A5A6F4B62FFF7A720065C921 /* HospitalPackageService.swift in Sources */,
 				A5ACE23A3000CC8A00056C52 /* ProfileFieldEditorSheet.swift in Sources */,
+				A5F6AF2630296D1A00D1BF74 /* SessionExpiryPresenter.swift in Sources */,
+				A5F6AF2730296D1A00D1BF74 /* SessionExpirySheet.swift in Sources */,
 				A5A6F4B72FFF7A720065C921 /* ServiceModels.swift in Sources */,
 				A5A6F4C62FFF7AA20065C921 /* AppContainer.swift in Sources */,
 				A5A6F4B82FFF7A720065C921 /* OrderService.swift in Sources */,
 				A5A6F4B92FFF7A720065C921 /* ServiceCatalogService.swift in Sources */,
 				A5A6F4BA2FFF7A720065C921 /* DictionaryModels.swift in Sources */,
+				A5F6AF293029724D00D1BF74 /* BenefitGiftShareBuilder.swift in Sources */,
 				A5A6F4BB2FFF7A720065C921 /* DictionaryService.swift in Sources */,
 				A56120AD3010A2BC00505C32 /* OrderDetailModels.swift in Sources */,
 				A5ACE2433000F56200056C52 /* HospitalPackageDetailModels.swift in Sources */,
@@ -2464,6 +2489,7 @@
 				A590FCBD2FEA91170056EF52 /* HealthRecordUserInfoCell.swift in Sources */,
 				A590FCBE2FEA91170056EF52 /* AccessibilitySettingsViewController.swift in Sources */,
 				A590FCBF2FEA91170056EF52 /* MeFuncRowCell.swift in Sources */,
+				A5C7564B3025AF23004FA15B /* QRCodeScanner.swift in Sources */,
 				A590FCC02FEA91170056EF52 /* OnboardingViewController.swift in Sources */,
 				A590FCC22FEA91170056EF52 /* ConversationCell.swift in Sources */,
 				A56DDEB030173A08000E03A0 /* AgreementConsentSheet.swift in Sources */,
@@ -2557,6 +2583,7 @@
 				A5A6F5172FFF7BFE0065C921 /* AddressEditViewController.swift in Sources */,
 				A5C71AFF30188F8E006EA79C /* AgreementDetailViewController.swift in Sources */,
 				A5C71B0030188F8E006EA79C /* AgreementCenterViewController.swift in Sources */,
+				A5F6AF2130296CED00D1BF74 /* SessionInvalidation.swift in Sources */,
 				A5C71B0130188F8E006EA79C /* SettingsHubItemRow.swift in Sources */,
 				A599B60830204B9B0012086A /* MessageSegmentedControl.swift in Sources */,
 				A590FCEA2FEA91170056EF52 /* WeeklyReportCell.swift in Sources */,
@@ -2569,6 +2596,7 @@
 				A590FCF22FEA91170056EF52 /* PhoneBindingView.swift in Sources */,
 				A590FCF42FEA91170056EF52 /* PolicyViewController.swift in Sources */,
 				A590FCF52FEA91170056EF52 /* HealthMallViewController.swift in Sources */,
+				A5F6AF2B3029E03C00D1BF74 /* ColumnContentCacheService.swift in Sources */,
 				A590FCF62FEA91170056EF52 /* HomeHeroCell.swift in Sources */,
 				A590FCF72FEA91170056EF52 /* ServiceListViewController.swift in Sources */,
 				A590FCF82FEA91170056EF52 /* HomeQuickActionsCell.swift in Sources */,
@@ -2622,6 +2650,7 @@
 				A5C71B033018917A006EA79C /* WechatAuthorizationViewController.swift in Sources */,
 				A97FF7EF73364502F99C2EC4 /* AppDelegate.swift in Sources */,
 				A5CF597930077AA40067A4DE /* ServiceListViewModel.swift in Sources */,
+				A5F6AF2330296D0000D1BF74 /* SessionExpiryCoordinator.swift in Sources */,
 				A5CF597A30077AA40067A4DE /* HealthMallViewModel.swift in Sources */,
 				7FD06195AE16D4FD3861568B /* BaseNavigationController.swift in Sources */,
 				A5917D062FDFC8EF00878961 /* UIColor+Hex.swift in Sources */,
@@ -2644,6 +2673,9 @@
 				E7E5276C54E35414EB42377A /* HealthRoutes.swift in Sources */,
 				A5A6F5222FFF7CA00065C921 /* UserManager.swift in Sources */,
 				A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */,
+				A5C7564630259CED004FA15B /* WeChatConfig.swift in Sources */,
+				A5C7564730259CED004FA15B /* WeChatSDKManager.swift in Sources */,
+				A5C7564830259CED004FA15B /* WeChatModels.swift in Sources */,
 				A576A2202FE8E22E004F6070 /* ECGSimulator.swift in Sources */,
 				A576A2212FE8E22E004F6070 /* ECGChartView.swift in Sources */,
 				A5A6F4ED2FFF7B930065C921 /* NotificationCell.swift in Sources */,

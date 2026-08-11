@@ -24,6 +24,7 @@ final class ServiceInstitutionCardView: UIView {
         let label = UILabel()
         label.font = .fdFont(ofSize: 16, weight: .semibold)
         label.textColor = .fdText
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return label
     }()
 
@@ -44,27 +45,22 @@ final class ServiceInstitutionCardView: UIView {
         let label = UILabel()
         label.font = .fdFont(ofSize: 12, weight: .regular)
         label.textColor = .fdSubtext
+        label.lineBreakMode = .byTruncatingTail
         return label
     }()
 
+    /// 「切换」+ 图标；宽度随内容，热区至少 44，避免旧版固定 48 宽导致点偏无响应
     private lazy var switchButton: UIButton = {
-        let btn = UIButton(type: .custom)
-        let titleLabel = UILabel()
-        titleLabel.text = "切换"
-        titleLabel.textColor = .fdPrimary
-        titleLabel.font = .fdFont(ofSize: 14, weight: .medium)
-
-        let iconView = UIImageView(image: UIImage(named: "institution_switch"))
-        iconView.contentMode = .scaleAspectFit
-        iconView.snp.makeConstraints { $0.size.equalTo(18) }
-
-        let content = UIStackView(arrangedSubviews: [titleLabel, iconView])
-        content.axis = .horizontal
-        content.spacing = 2
-        content.alignment = .center
-        btn.addSubview(content)
-        content.snp.makeConstraints { $0.center.equalToSuperview() }
-
+        let btn = UIButton(type: .system)
+        btn.setTitle("切换", for: .normal)
+        btn.setTitleColor(.fdPrimary, for: .normal)
+        btn.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
+        btn.setImage(UIImage(named: "institution_switch")?.withRenderingMode(.alwaysOriginal), for: .normal)
+        // 文案在左、图标在右
+        btn.semanticContentAttribute = .forceRightToLeft
+        btn.contentEdgeInsets = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
+        btn.imageEdgeInsets = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: -2)
+        btn.titleEdgeInsets = UIEdgeInsets(top: 0, left: -2, bottom: 0, right: 2)
         btn.addTarget(self, action: #selector(switchTapped), for: .touchUpInside)
         return btn
     }()
@@ -106,19 +102,21 @@ final class ServiceInstitutionCardView: UIView {
             $0.top.equalToSuperview().offset(18)
             $0.size.equalTo(42)
         }
+        switchButton.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(8)
+            $0.centerY.equalTo(iconView)
+            $0.height.greaterThanOrEqualTo(44)
+        }
+        switchButton.setContentHuggingPriority(.required, for: .horizontal)
+        switchButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+
         infoStack.snp.makeConstraints {
             $0.leading.equalTo(iconView.snp.trailing).offset(8)
             $0.centerY.equalTo(iconView)
-            $0.trailing.lessThanOrEqualTo(switchButton.snp.leading).offset(-8)
+            $0.trailing.lessThanOrEqualTo(switchButton.snp.leading).offset(-4)
         }
         typeBadge.snp.makeConstraints {
             $0.height.equalTo(18)
-        }
-        switchButton.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(16)
-            $0.centerY.equalTo(iconView)
-            $0.width.equalTo(48)
-            $0.height.equalTo(44)
         }
         snp.makeConstraints { $0.height.equalTo(78) }
     }

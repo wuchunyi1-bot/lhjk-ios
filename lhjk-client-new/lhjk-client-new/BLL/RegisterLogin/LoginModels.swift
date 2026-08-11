@@ -29,17 +29,12 @@ struct LoginResult {
     let refreshToken: String
 }
 
-/// 微信授权结果
-struct WechatAuthResult {
-    let bindStatus: WechatBindStatus
-    let wechatTempToken: String?
-    let maskedPhone: String?
-}
-
-/// 微信绑定状态
-enum WechatBindStatus {
-    case bound       // 已绑定手机号，可直接登录
-    case unbound     // 未绑定手机号，需手机号验证码绑定
+/// 微信 App 登录中间结果（对接 `WE_CHAT_APP_LOGIN`）
+enum WeChatLoginStep {
+    /// 已获 Token，可进入登录成功编排
+    case loggedIn(LoginResult)
+    /// 业务码 AU0001：需绑定手机号，复用同一微信 `code`
+    case needBindMobile(wechatCode: String)
 }
 
 /// 会话状态

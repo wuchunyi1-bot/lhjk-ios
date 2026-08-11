@@ -528,13 +528,8 @@ final class OnboardingViewController: BaseViewController {
         Task {
             do {
                 try await userService.saveArchiveHospital(dto)
-                UserManager.shared.patchLoginUserInfo(
-                    chineseName: nameText,
-                    sex: sexCode,
-                    birthday: birthdayStr,
-                    hospitalId: hospitalIdRaw
-                )
                 _ = await UserManager.shared.refreshUserInfo()
+                _ = await UserManager.shared.refreshDefaultArchive()
                 await MainActor.run {
                     UserDefaults.standard.set(20, forKey: "fd_archive_progress")
                     UserDefaults.standard.set(nameText, forKey: "fd_profile_name")
@@ -559,17 +554,15 @@ final class OnboardingViewController: BaseViewController {
 
     // MARK: - Prefill
 
-    /// 已有字段回填：loginUserInfo → currentUser → defaultArchive → 本地展示缓存
+    /// 已有字段回填：defaultArchive → currentUser → 本地展示缓存
     private func prefillExistingInfo() {
-        let login = UserManager.shared.loginUserInfo
         let user = UserManager.shared.currentUser
         let archive = UserManager.shared.defaultArchive
 
         let name = firstNonBlank(
-            login?.chineseName,
+            archive?.chineseName,
             user?.chineseName,
             user?.surname,
-            archive?.chineseName,
             UserDefaults.standard.string(forKey: "fd_profile_name")
         )
         if let name {
@@ -577,12 +570,12 @@ final class OnboardingViewController: BaseViewController {
         }
 
         if let gender = Self.normalizedGender(
-            firstNonBlank(login?.sex, user?.sex)
+            firstNonBlank(archive?.sex, user?.sex)
         ) {
             selectedGender = gender
         }
 
-        if let birthday = firstNonBlank(login?.birthday, user?.birthday),
+        if let birthday = firstNonBlank(archive?.birthday, user?.birthday),
            let date = Self.parseBirthday(birthday) {
             birthDate = date
             birthdayField.text = Self.displayBirthday(date)
@@ -591,7 +584,7 @@ final class OnboardingViewController: BaseViewController {
             }
         }
 
-        let hospitalId = firstNonBlank(login?.hospitalId, archive?.hospitalId)
+        let hospitalId = firstNonBlank(archive?.hospitalId)
         if let hospitalId {
             selectedHospitalId = hospitalId
             let hospitalName = firstNonBlank(

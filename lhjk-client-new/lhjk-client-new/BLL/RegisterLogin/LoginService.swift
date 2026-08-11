@@ -26,8 +26,7 @@ enum SMSVerificationType {
 
 /// 登录业务逻辑实现
 ///
-/// V1.0 → V1.1: `sendVerificationCode`、`loginByPhone`、`loginByPassword` 已对接真实 API，
-/// 其余方法（微信、会话状态等）保持 mock。
+/// 短信 / 密码 / 微信 App 登录均走 `POST /auth/oauth2/token`；发码走 mobileVerification。
 final class LoginService: LoginServiceProtocol {
 
     static let shared = LoginService()
@@ -36,6 +35,9 @@ final class LoginService: LoginServiceProtocol {
 
     private let clientId = "funde-app"
     private let clientSecret = "funde-app"
+
+    /// 微信未绑定手机号（后端文档 AU0001）
+    private static let wechatNeedBindCode = "AU0001"
 
     // MARK: - Private State
 
@@ -115,28 +117,10 @@ final class LoginService: LoginServiceProtocol {
         }
 
         print("[LoginService] loginByPhone ✓ accessToken=\(token.accessToken.prefix(12))… expiresIn=\(token.expiresIn)s")
-
-        // 持久化 OAuthCredential
-        let credential = OAuthCredential(
-            accessToken: token.accessToken,
-            refreshToken: token.refreshToken,
-            expiration: Date().addingTimeInterval(TimeInterval(token.expiresIn))
-        )
-        APIManager.shared.setCredential(credential)
-
-        // 兼容旧版存储
-        storedToken = token.accessToken
-        storedRefreshToken = token.refreshToken
-
-        UserManager.shared.applyLoginUserInfo(token.userInfo)
-
-        return LoginResult(
-            accessToken: token.accessToken,
-            refreshToken: token.refreshToken
-        )
+        return applyToken(token)
     }
 
-    // MARK: - Password Login (Mock — 待后续 API 对接)
+    // MARK: - Password Login
 
     func loginByPassword(_ phone: String, password: String) async throws -> LoginResult {
         print("[LoginService] loginByPassword → mobile=\(phone)")
@@ -163,40 +147,63 @@ final class LoginService: LoginServiceProtocol {
         }
 
         print("[LoginService] loginByPassword ✓ accessToken=\(token.accessToken.prefix(12))… expiresIn=\(token.expiresIn)s")
-
-        let credential = OAuthCredential(
-            accessToken: token.accessToken,
-            refreshToken: token.refreshToken,
-            expiration: Date().addingTimeInterval(TimeInterval(token.expiresIn))
-        )
-        APIManager.shared.setCredential(credential)
-        storedToken = token.accessToken
-        storedRefreshToken = token.refreshToken
-
-        UserManager.shared.applyLoginUserInfo(token.userInfo)
-
-        return LoginResult(accessToken: token.accessToken, refreshToken: token.refreshToken)
+        return applyToken(token)
     }
 
-    // MARK: - WeChat (Mock — 待后续 API 对接)
+    // MARK: - WeChat App Login
 
-    func wechatAuth(authCode: String) async throws -> WechatAuthResult {
-        try await Task.sleep(nanoseconds: 500_000_000)
-        if authCode == "mock_openid_bound" {
-            return WechatAuthResult(bindStatus: .bound, wechatTempToken: nil, maskedPhone: "156****7890")
-        } else {
-            return WechatAuthResult(bindStatus: .unbound, wechatTempToken: "wxtoken_\(UUID().uuidString.prefix(8))", maskedPhone: nil)
+    func loginByWeChat(code: String) async throws -> WeChatLoginStep {
+        let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw LoginError.wechatAuthFailed
         }
+        print("[LoginService] loginByWeChat → code=\(trimmed.prefix(6))…")
+
+        let response = try await postWeChatToken(code: trimmed, mobile: nil, smsCode: nil)
+
+        if response.code == Self.wechatNeedBindCode {
+            print("[LoginService] loginByWeChat → AU0001 need bind mobile")
+            return .needBindMobile(wechatCode: trimmed)
+        }
+
+        guard response.isSuccess, let token = response.data else {
+            print("[LoginService] loginByWeChat ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw LoginError(from: response.code, msg: response.msg ?? "")
+        }
+
+        print("[LoginService] loginByWeChat ✓ accessToken=\(token.accessToken.prefix(12))… expiresIn=\(token.expiresIn)s")
+        return .loggedIn(applyToken(token))
     }
 
-    func wechatBindPhone(wechatToken: String, phone: String, code: String, confirmRebind: Bool) async throws -> LoginResult {
-        try await Task.sleep(nanoseconds: 500_000_000)
-        guard code == "111111" else { throw LoginError.invalidCode }
-        if phone == "15600000006" && !confirmRebind { throw LoginError.phoneBoundOtherWechat }
-        return LoginResult(
-            accessToken: "token_\(UUID().uuidString.prefix(12))",
-            refreshToken: "refresh_\(UUID().uuidString.prefix(12))"
+    func loginByWeChatBinding(code: String, mobile: String, smsCode: String) async throws -> LoginResult {
+        let trimmedCode = code.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedMobile = mobile.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedSms = smsCode.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedCode.isEmpty else { throw LoginError.wechatAuthFailed }
+        guard !trimmedMobile.isEmpty else { throw LoginError.invalidPhone }
+        guard !trimmedSms.isEmpty else { throw LoginError.invalidCode }
+
+        print("[LoginService] loginByWeChatBinding → mobile=\(trimmedMobile) sms=\(trimmedSms.prefix(2))****")
+
+        let response = try await postWeChatToken(
+            code: trimmedCode,
+            mobile: trimmedMobile,
+            smsCode: trimmedSms
         )
+
+        if response.code == Self.wechatNeedBindCode {
+            // 绑定阶段仍返回未绑定：通常为 code 过期，需重新授权
+            print("[LoginService] loginByWeChatBinding ✗ still AU0001 — wechat code may expired")
+            throw LoginError.wechatCodeExpired
+        }
+
+        guard response.isSuccess, let token = response.data else {
+            print("[LoginService] loginByWeChatBinding ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw LoginError(from: response.code, msg: response.msg ?? "")
+        }
+
+        print("[LoginService] loginByWeChatBinding ✓ accessToken=\(token.accessToken.prefix(12))…")
+        return applyToken(token)
     }
 
     // MARK: - Password Reset (Real API)
@@ -251,6 +258,48 @@ final class LoginService: LoginServiceProtocol {
         storedRefreshToken = nil
         APIManager.shared.clearCredential()
     }
+
+    // MARK: - Private helpers
+
+    private func postWeChatToken(
+        code: String,
+        mobile: String?,
+        smsCode: String?
+    ) async throws -> APIResponse<OAuthTokenResponse> {
+        var params: [String: Any] = [
+            "client_id": clientId,
+            "client_secret": clientSecret,
+            "grant_type": "WE_CHAT_APP_LOGIN",
+            "code": code
+        ]
+        if let mobile, let smsCode {
+            params["mobile"] = mobile
+            params["smsCode"] = smsCode
+        }
+
+        return try await APIManager.shared.publicPostFormURLEncodedAsync(
+            path: "/auth/oauth2/token",
+            parameters: params,
+            responseType: APIResponse<OAuthTokenResponse>.self,
+            useGatewayRoot: true
+        )
+    }
+
+    @discardableResult
+    private func applyToken(_ token: OAuthTokenResponse) -> LoginResult {
+        let credential = OAuthCredential(
+            accessToken: token.accessToken,
+            refreshToken: token.refreshToken,
+            expiration: Date().addingTimeInterval(TimeInterval(token.expiresIn))
+        )
+        APIManager.shared.setCredential(credential)
+        storedToken = token.accessToken
+        storedRefreshToken = token.refreshToken
+        return LoginResult(
+            accessToken: token.accessToken,
+            refreshToken: token.refreshToken
+        )
+    }
 }
 
 // MARK: - LoginError → 从 API 响应映射
@@ -272,12 +321,15 @@ extension LoginError {
             self = .tooManyAttempts
         case "408", "504":
             self = .timeout
+        case "AU0001":
+            self = .wechatNeedBindMobile
         case "A0230":
             self = msg.contains("失效") || msg.contains("过期") ? .codeExpired : .invalidCode
         default:
             if msg.contains("网络") || msg.contains("连接") { self = .networkError }
             else if msg.contains("超时") { self = .timeout }
             else if msg.contains("失效") || msg.contains("过期") { self = .codeExpired }
+            else if msg.contains("微信授权") { self = .wechatAuthFailed }
             else { self = .serverMessage(msg) }
         }
     }
@@ -297,6 +349,8 @@ enum LoginError: Error, LocalizedError {
     case wechatAuthFailed
     case wechatSDKUnavailable
     case wechatNotInstalled
+    case wechatNeedBindMobile
+    case wechatCodeExpired
     case phoneBoundOtherWechat
     case wechatBoundOtherPhone
     case networkError
@@ -328,6 +382,10 @@ enum LoginError: Error, LocalizedError {
             return "当前设备未安装微信，请使用手机号登录"
         case .wechatNotInstalled:
             return "当前设备未安装微信，请使用手机号登录"
+        case .wechatNeedBindMobile:
+            return "该微信尚未绑定手机号，请验证手机号后登录"
+        case .wechatCodeExpired:
+            return "微信授权已过期，请重新点击微信登录"
         case .phoneBoundOtherWechat:
             return "该手机号已绑定其他微信号，请更换手机号，或联系客服解绑后重试"
         case .wechatBoundOtherPhone:

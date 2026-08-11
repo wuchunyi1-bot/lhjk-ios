@@ -136,8 +136,14 @@ extension Conversation {
             return "[文件]"
         case is VideoMessage:
             return "[视频]"
-        case is SysNotifyMessage:
-            return "[套餐]"
+        case let notify as SysNotifyMessage:
+            return notify.conversationDigest() ?? "[套餐]"
+        case let vip as VipMessage:
+            return vip.conversationDigest() ?? "[VIP]"
+        case let comment as ServiceCommentMessage:
+            return comment.conversationDigest() ?? "[服务评价]"
+        case let check as CheckUserMessage:
+            return check.conversationDigest() ?? "[核对信息]"
         case is RCRecallNotificationMessage:
             return "[撤回消息]"
         default:

@@ -61,6 +61,8 @@ final class OrderConfirmViewModel: ObservableObject {
     @Published var navigateToOrders = false
     @Published private(set) var orderDetail: AppOrderDetailBO?
     @Published private(set) var availableCouponCount = 0
+    @Published private(set) var availableBenefitCount = 0
+    @Published private(set) var selectedBenefitIds: [String] = []
 
     private let orderId: Int64
     private let serialNumber: Int?
@@ -68,10 +70,16 @@ final class OrderConfirmViewModel: ObservableObject {
     private let hospitalService: HospitalService
     private let orderService: OrderService
     private let couponService: CouponService
+    private let voucherService: VoucherService
+    private let paymentService: PaymentService
     private let institutionStore: InstitutionSelectionStore
     private var loadTask: Task<Void, Never>?
+    private var payTask: Task<Void, Never>?
     private var fallbackHospitalName: String?
     private var latestSettlement: OrderSettlementBO?
+    private var availableBenefits: [BenefitsRedeemCardVO] = []
+    /// 绑单后结算 `totalPrice` 是否已体现权益抵扣（启发式）
+    private var settlementIncludesBenefitDiscount = false
 
     init(
         orderId: Int64,
@@ -80,6 +88,8 @@ final class OrderConfirmViewModel: ObservableObject {
         hospitalService: HospitalService = AppContainer.shared.hospitalService,
         orderService: OrderService = AppContainer.shared.orderService,
         couponService: CouponService = AppContainer.shared.couponService,
+        voucherService: VoucherService = AppContainer.shared.voucherService,
+        paymentService: PaymentService = AppContainer.shared.paymentService,
         institutionStore: InstitutionSelectionStore = AppContainer.shared.institutionSelectionStore
     ) {
         self.orderId = orderId
@@ -88,10 +98,15 @@ final class OrderConfirmViewModel: ObservableObject {
         self.hospitalService = hospitalService
         self.orderService = orderService
         self.couponService = couponService
+        self.voucherService = voucherService
+        self.paymentService = paymentService
         self.institutionStore = institutionStore
     }
 
-    deinit { loadTask?.cancel() }
+    deinit {
+        loadTask?.cancel()
+        payTask?.cancel()
+    }
 
     var showsOrderListPayPresentation: Bool { entry == .orderListPay }
 
@@ -129,10 +144,22 @@ final class OrderConfirmViewModel: ObservableObject {
     }
 
     var couponDiscount: Double { settlementCouponDiscount }
-    var benefitDiscount: Double { 0 }
+
+    /// 权益卡抵扣上限：仅套餐金额 − 优惠券，不抵运费
+    var benefitCardLimit: Double {
+        max(0, packageAmount - couponDiscount)
+    }
+
+    var benefitDiscount: Double {
+        let raw = selectedBenefits.reduce(0) { $0 + $1.effectiveDeduct }
+        return min(benefitCardLimit, raw)
+    }
 
     var payableAmount: Double {
-        max(0, settlementPayable)
+        if settlementIncludesBenefitDiscount {
+            return settlementPayable
+        }
+        return max(0, settlementPayable - benefitDiscount)
     }
 
     var couponSummaryText: String {
@@ -147,6 +174,26 @@ final class OrderConfirmViewModel: ObservableObject {
 
     var couponSummaryIsPlaceholder: Bool {
         settlementCouponDiscount <= 0 && availableCouponCount == 0
+    }
+
+    var benefitSummaryText: String {
+        let selectedCount = selectedBenefitIds.count
+        if selectedCount > 0 {
+            return "已使用\(selectedCount)张，共优惠\(OrderConfirmMoney.yen(benefitDiscount))"
+        }
+        if availableBenefitCount > 0 {
+            return "有\(availableBenefitCount)张可用"
+        }
+        return "暂无可用"
+    }
+
+    var benefitSummaryIsPlaceholder: Bool {
+        selectedBenefitIds.isEmpty && availableBenefitCount == 0
+    }
+
+    private var selectedBenefits: [BenefitsRedeemCardVO] {
+        let idSet = Set(selectedBenefitIds)
+        return availableBenefits.filter { idSet.contains($0.id) }
     }
 
     var pickupName: String {
@@ -228,12 +275,59 @@ final class OrderConfirmViewModel: ObservableObject {
         }
 
         isSubmitting = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+        payTask?.cancel()
+        payTask = Task { [weak self] in
             guard let self else { return }
-            self.isSubmitting = false
-            self.toastMessage = "订单已提交，支付功能即将开放"
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.25) { [weak self] in
-                self?.navigateToOrders = true
+            await self.performSubmitPay()
+        }
+    }
+
+    private func performSubmitPay() async {
+        let channel: PaymentChannel = payMethod == .wechat ? .wechatPay : .alipay
+        let productName = draft?.packageName
+            ?? latestSettlement?.packageName
+            ?? "健康服务套餐"
+        let amount = payableAmount
+        let remarkText = remark.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        do {
+            _ = try await paymentService.payMallOrder(
+                orderId: orderId,
+                productName: productName,
+                amountYuan: amount,
+                channel: channel,
+                description: remarkText.isEmpty ? nil : remarkText
+            )
+            await MainActor.run {
+                isSubmitting = false
+                toastMessage = "支付成功"
+                NotificationCenter.default.post(name: .orderListNeedsRefresh, object: nil)
+                navigateToOrders = true
+            }
+        } catch let error as PaymentError {
+            await MainActor.run {
+                isSubmitting = false
+                switch error {
+                case .userCancelled:
+                    toastMessage = "已取消支付"
+                case .channelNotAvailable:
+                    toastMessage = channel == .wechatPay
+                        ? "请先安装微信后再支付"
+                        : "当前支付方式暂不可用"
+                case .paymentFailed(let reason):
+                    toastMessage = reason.isEmpty ? "支付失败，请稍后重试" : reason
+                default:
+                    toastMessage = error.localizedDescription.isEmpty
+                        ? "支付失败，请稍后重试"
+                        : error.localizedDescription
+                }
+            }
+        } catch {
+            await MainActor.run {
+                isSubmitting = false
+                toastMessage = error.localizedDescription.isEmpty
+                    ? "发起支付失败，请稍后重试"
+                    : error.localizedDescription
             }
         }
     }
@@ -262,6 +356,44 @@ final class OrderConfirmViewModel: ObservableObject {
         Task { [weak self] in
             guard let self else { return }
             await self.performBindCoupon(takeId: takeId)
+        }
+    }
+
+    // MARK: - 权益卡
+
+    /// 加载 / 刷新订单可选权益卡 `getOrderBenefitsList`
+    @discardableResult
+    func fetchBenefitOptions() async throws -> [BenefitsRedeemCardVO] {
+        let list = try await voucherService.getOrderBenefitsList(orderId: orderId)
+        await MainActor.run {
+            applyOrderBenefitsList(list)
+            objectWillChange.send()
+        }
+        return list
+    }
+
+    func applyBenefitSelection(ids: [String]) {
+        Task { [weak self] in
+            guard let self else { return }
+            await MainActor.run { self.isSyncing = true }
+            do {
+                let takeIds = ids.compactMap { Int64($0) }
+                try await self.voucherService.updateOrderBenefits(
+                    orderId: self.orderId,
+                    benefitsTakeIds: takeIds
+                )
+                await self.refreshSettlement(
+                    showToast: takeIds.isEmpty ? "已取消权益卡" : "已选择权益卡"
+                )
+                _ = try? await self.fetchBenefitOptions()
+            } catch {
+                await MainActor.run {
+                    self.toastMessage = error.localizedDescription.isEmpty
+                        ? "保存权益卡失败"
+                        : error.localizedDescription
+                }
+            }
+            await MainActor.run { self.isSyncing = false }
         }
     }
 
@@ -333,6 +465,8 @@ final class OrderConfirmViewModel: ObservableObject {
             await loadHospitalDetail(
                 hospitalId: settlement.resolvedHospitalId ?? institutionStore.selectedHospitalId
             )
+            _ = try? await fetchBenefitOptions()
+            _ = try? await fetchCouponOptions()
         } catch {
             await MainActor.run {
                 isLoading = false
@@ -449,6 +583,7 @@ final class OrderConfirmViewModel: ObservableObject {
         selectedCouponTakeId = settlement.resolvedCouponTakeId
         selectedCouponName = resolveCouponName(from: settlement)
         fallbackHospitalName = settlement.resolvedHospitalName
+        pruneSelectedBenefits()
 
         if let remarkText = settlement.description?.trimmingCharacters(in: .whitespacesAndNewlines),
            !remarkText.isEmpty {
@@ -458,6 +593,33 @@ final class OrderConfirmViewModel: ObservableObject {
         applyPayFlags(wechat: settlement.wechat, alipay: settlement.alipay)
         fulfillment = Self.fulfillment(from: settlement)
         deliveryAddress = Self.deliveryAddress(from: settlement)
+        recomputeSettlementBenefitFlag()
+    }
+
+    private func applyOrderBenefitsList(_ list: [BenefitsRedeemCardVO]) {
+        availableBenefits = list
+        availableBenefitCount = list.filter(\.isAvailable).count
+        selectedBenefitIds = list.filter(\.isSelected).map(\.id).filter { !$0.isEmpty }
+        recomputeSettlementBenefitFlag()
+    }
+
+    private func recomputeSettlementBenefitFlag() {
+        let discount = selectedBenefits.reduce(0) { $0 + $1.effectiveDeduct }
+        guard discount > 0.009 else {
+            settlementIncludesBenefitDiscount = false
+            return
+        }
+        let expectedWithout = max(0, packageAmount + shippingFee - couponDiscount)
+        let expectedWith = max(0, expectedWithout - min(benefitCardLimit, discount))
+        // 结算应付更接近「已扣权益」时，认为服务端已计入
+        settlementIncludesBenefitDiscount =
+            abs(settlementPayable - expectedWith) <= abs(settlementPayable - expectedWithout)
+    }
+
+    private func pruneSelectedBenefits() {
+        let allowed = Set(availableBenefits.map(\.id))
+        selectedBenefitIds = selectedBenefitIds.filter { allowed.contains($0) }
+        recomputeSettlementBenefitFlag()
     }
 
     private func resolveCouponName(from settlement: OrderSettlementBO) -> String {

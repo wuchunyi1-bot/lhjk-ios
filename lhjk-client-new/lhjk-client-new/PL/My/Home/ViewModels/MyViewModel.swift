@@ -59,11 +59,11 @@ final class MyViewModel: ObservableObject {
         avatarURL = user.imageUrl
     }
 
-    /// 刷新「我的卡券」角标（优惠券待使用数走接口缓存）
+    /// 刷新「我的卡券」角标（权益卡 + 优惠券待使用数）
     func refreshVoucherBadge() {
         applyVoucherBadge(AppContainer.shared.voucherService.meBadgeText)
         Task { [weak self] in
-            await AppContainer.shared.voucherService.refreshAvailableCouponCount()
+            await AppContainer.shared.voucherService.refreshVoucherBadges()
             await MainActor.run {
                 self?.applyVoucherBadge(AppContainer.shared.voucherService.meBadgeText)
             }

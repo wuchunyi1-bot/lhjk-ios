@@ -34,6 +34,7 @@ final class HomeViewController: BaseViewController {
         navigationController?.setNavigationBarHidden(true, animated: animated)
         setNeedsStatusBarAppearanceUpdate()
         viewModel.loadUserProfile()
+        viewModel.loadBanners()
         viewModel.loadTodayTasks()
         viewModel.loadDoctorTeam()
     }
@@ -113,7 +114,17 @@ final class HomeViewController: BaseViewController {
     ) -> UITableViewCell {
         switch item {
         case .banner:
-            return tv.dequeueReusableCell(withIdentifier: HomeBannerCarouselCell.reuseID, for: indexPath)
+            let cell = tv.dequeueReusableCell(withIdentifier: HomeBannerCarouselCell.reuseID, for: indexPath) as! HomeBannerCarouselCell
+            cell.configure(viewModel.banners)
+            cell.onBannerTap = { banner in
+                guard let path = banner.routePath, !path.isEmpty else { return }
+                var params: [String: String] = [:]
+                if let id = banner.routeParamId, !id.isEmpty {
+                    params["id"] = id
+                }
+                Router.shared.push(path, params: params)
+            }
+            return cell
         case .quickActions:
             let cell = tv.dequeueReusableCell(withIdentifier: HomeQuickActionsCell.reuseID, for: indexPath) as! HomeQuickActionsCell
             cell.configure(actions: viewModel.quickActions)

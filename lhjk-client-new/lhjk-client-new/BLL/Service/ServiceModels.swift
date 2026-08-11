@@ -288,7 +288,7 @@ struct MallProduct {
 // MARK: - Hub 轮播
 
 /// 服务首页运营 Banner — API `columnContent/getByCode`
-struct ServiceHubBanner {
+struct ServiceHubBanner: Sendable {
     let id: String
     let title: String
     let subtitle: String

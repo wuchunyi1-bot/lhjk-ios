@@ -37,23 +37,25 @@ final class ServiceViewModel: ObservableObject {
     deinit { loadTask?.cancel() }
 
     func load() {
-        if let staticData = cacheService.getStatic() {
-            let preview = snapshot?.mallPreviewPackages
-                ?? cacheService.cachedRetailPreview()
-                ?? []
-            applyFromCache(staticData: staticData, mallPreview: preview)
-        }
-
-        // 已加载富德优选数据时，Tab 切回不重置分页
-        if snapshot?.mallPreviewPackages.isEmpty == false {
-            return
-        }
-
         if loadTask != nil, isLoading { return }
 
-        let generation = beginLoad()
         loadTask = Task { [weak self] in
-            await self?.reloadFromCacheOrNetwork(generation: generation)
+            guard let self else { return }
+            // 仅当静态层「成功加载」后才用缓存短路；失败留下的空缓存不得阻止重拉
+            if await self.cacheService.hasLoadedStatic,
+               let staticData = await self.cacheService.getStatic() {
+                let cachedPreview = await self.cacheService.cachedRetailPreview()
+                let preview = self.snapshot?.mallPreviewPackages ?? cachedPreview ?? []
+                self.applyFromCache(staticData: staticData, mallPreview: preview)
+                // 已加载富德优选数据时，Tab 切回不重置分页
+                if !preview.isEmpty {
+                    self.loadTask = nil
+                    return
+                }
+            }
+
+            let generation = self.beginLoad()
+            await self.reloadFromCacheOrNetwork(generation: generation)
         }
     }
 
@@ -66,7 +68,6 @@ final class ServiceViewModel: ObservableObject {
 
     func selectInstitution(id: String) {
         guard snapshot?.institutions.contains(where: { $0.id == id }) == true else { return }
-        cacheService.invalidatePackages()
         forceReload()
     }
 
@@ -128,10 +129,8 @@ final class ServiceViewModel: ObservableObject {
         let staticData = await cacheService.preloadStatic()
         guard isCurrent(generation) else { return }
 
-        applyFromCache(
-            staticData: staticData,
-            mallPreview: cacheService.cachedRetailPreview() ?? []
-        )
+        let cachedPreview = await cacheService.cachedRetailPreview() ?? []
+        applyFromCache(staticData: staticData, mallPreview: cachedPreview)
 
         let result = await cacheService.ensureRetailPreview(
             hospitalId: catalogService.selectedApiHospitalId(),
@@ -148,7 +147,7 @@ final class ServiceViewModel: ObservableObject {
     private func performForceReload(generation: Int) async {
         defer { finishLoad(generation) }
 
-        cacheService.invalidatePackages()
+        await cacheService.invalidatePackages()
         let staticData = await cacheService.preloadStatic()
         guard isCurrent(generation) else { return }
 
@@ -195,7 +194,7 @@ final class ServiceViewModel: ObservableObject {
                 self.hasMore = stillHasMore
                 self.isLoadingMore = false
 
-                self.cacheService.updateRetailPreview(
+                await self.cacheService.updateRetailPreview(
                     packages: updatedPackages,
                     totalPages: resolvedTotalPages
                 )

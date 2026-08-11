@@ -52,6 +52,10 @@ final class APIManager {
     /// 无认证 Session（用于登录、发送验证码等公开接口）
     var publicSession: Session!
 
+    /// 已认证请求识别到会话失效时回调（由 App 启动注入 `SessionExpiryCoordinator`）
+    /// - Parameter message: 服务端 msg 或默认文案；调用方负责去重与 UI
+    var onSessionInvalidated: ((String?) -> Void)?
+
     /// JSONDecoder 配置：后端使用 snake_case 字段名
     let jsonDecoder: JSONDecoder = {
         let decoder = JSONDecoder()
@@ -128,6 +132,81 @@ final class APIManager {
         UserDefaults.standard.removeObject(forKey: .authRefreshTokenKey)
         UserDefaults.standard.removeObject(forKey: .authExpirationKey)
         configureSession(with: nil)
+    }
+
+    /// 检查已认证响应对话是否会话失效（业务码 A0230 / HTTP 401 等）
+    func evaluateSessionValidity(rawData: Data?, statusCode: Int?, authenticated: Bool) {
+        guard authenticated else { return }
+        if statusCode == 401 {
+            onSessionInvalidated?(nil)
+            return
+        }
+        guard let hit = SessionInvalidation.inspect(rawData) else { return }
+        onSessionInvalidated?(hit.message)
+    }
+
+    /// 使用本地 `refresh_token` 换发新 access_token（`grant_type=refresh_token`）。
+    /// 成功则 `setCredential` 重建认证 Session；失败返回 false（调用方应走重新登录）。
+    @discardableResult
+    func refreshCredentialIfPossible() async -> Bool {
+        guard let credential = Self.loadCredentialFromStorage(),
+              !credential.refreshToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else {
+            DebugLogger.logReturn(
+                module: "APIManager",
+                function: "refreshCredentialIfPossible",
+                value: "skipped: no refresh_token"
+            )
+            return false
+        }
+
+        let params: [String: Any] = [
+            "client_id": "funde-app",
+            "client_secret": "funde-app",
+            "grant_type": "refresh_token",
+            "refresh_token": credential.refreshToken,
+        ]
+
+        do {
+            let response: APIResponse<OAuthTokenResponse> = try await publicPostFormURLEncodedAsync(
+                path: "/auth/oauth2/token",
+                parameters: params,
+                responseType: APIResponse<OAuthTokenResponse>.self,
+                useGatewayRoot: true
+            )
+            guard response.isSuccess, let token = response.data else {
+                DebugLogger.logReturn(
+                    module: "APIManager",
+                    function: "refreshCredentialIfPossible",
+                    value: "failed: code=\(response.code) msg=\(response.msg ?? "")"
+                )
+                return false
+            }
+
+            let newRefresh = token.refreshToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? credential.refreshToken
+                : token.refreshToken
+            let expiresIn = max(token.expiresIn, 60)
+            let newCredential = OAuthCredential(
+                accessToken: token.accessToken,
+                refreshToken: newRefresh,
+                expiration: Date().addingTimeInterval(TimeInterval(expiresIn))
+            )
+            setCredential(newCredential)
+            DebugLogger.logReturn(
+                module: "APIManager",
+                function: "refreshCredentialIfPossible",
+                value: "success, expiresIn=\(expiresIn)s"
+            )
+            return true
+        } catch {
+            DebugLogger.logReturn(
+                module: "APIManager",
+                function: "refreshCredentialIfPossible",
+                value: "failed: \(error.localizedDescription)"
+            )
+            return false
+        }
     }
 
     // MARK: - Private: 持久化
@@ -266,7 +345,12 @@ final class APIManager {
         }
         .validate()
         .publishDecodable(type: T.self, decoder: jsonDecoder)
-        .tryMap { response in
+        .tryMap { [weak self] response in
+            self?.evaluateSessionValidity(
+                rawData: response.data,
+                statusCode: response.response?.statusCode,
+                authenticated: true
+            )
             switch response.result {
             case .success(let value):
                 DebugLogger.logAPIResponse(
@@ -320,7 +404,12 @@ final class APIManager {
         )
         .validate()
         .publishDecodable(type: T.self, decoder: jsonDecoder)
-        .tryMap { response in
+        .tryMap { [weak self] response in
+            self?.evaluateSessionValidity(
+                rawData: response.data,
+                statusCode: response.response?.statusCode,
+                authenticated: true
+            )
             switch response.result {
             case .success(let value):
                 DebugLogger.logAPIResponse(

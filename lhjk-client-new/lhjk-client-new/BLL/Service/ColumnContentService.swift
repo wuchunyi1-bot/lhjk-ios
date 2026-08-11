@@ -12,15 +12,36 @@ final class ColumnContentService {
     /// 服务首页轮播栏位 code
     static let hospitalBannerCode = "mall_advertisement"
 
+    /// 首页（Home Tab）轮播栏位 code
+    static let homeBannerCode = "home_banner_code"
+
     private init() {}
 
     /// 获取服务首页轮播 Banner
     func fetchHospitalBanners(
         code: String = ColumnContentService.hospitalBannerCode
     ) async throws -> [ServiceHubBanner] {
+        try await fetchBanners(code: code)
+    }
+
+    /// 获取首页运营 Banner
+    func fetchHomeBanners(
+        code: String = ColumnContentService.homeBannerCode
+    ) async throws -> [ServiceHubBanner] {
+        try await fetchBanners(code: code)
+    }
+
+    /// 按栏位 code 拉取可展示 Banner
+    func fetchBanners(code: String) async throws -> [ServiceHubBanner] {
+        let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw ColumnContentError.requestFailed("栏位 code 为空")
+        }
+
+        print("[ColumnContentService] getByCode → code=\(trimmed)")
         let response: APIResponse<[ColumnContentDTO]> = try await APIManager.shared.getAsync(
             path: "/v1/columnContent/getByCode",
-            parameters: ["code": code],
+            parameters: ["code": trimmed],
             responseType: APIResponse<[ColumnContentDTO]>.self
         )
 
@@ -29,9 +50,11 @@ final class ColumnContentService {
         }
 
         let items = response.data ?? []
-        return items
+        let banners = items
             .filter { isDisplayable($0) }
             .map(ColumnContentMapper.toHubBanner)
+        print("[ColumnContentService] getByCode ✓ code=\(trimmed) count=\(banners.count)")
+        return banners
     }
 
     private func isDisplayable(_ dto: ColumnContentDTO) -> Bool {

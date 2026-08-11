@@ -19,6 +19,8 @@ final class PhoneBindingView: UIView {
     var onSubmit: ((_ phone: String, _ code: String) -> Void)?
     var onDismiss: (() -> Void)?
     var onContactSupport: (() -> Void)?
+    /// 真实发码；抛错时不开始倒计时
+    var onRequestSMSCode: ((_ phone: String) async throws -> Void)?
 
     // MARK: - UI
 
@@ -207,9 +209,29 @@ final class PhoneBindingView: UIView {
     private func handleRequestCode() {
         let phone = phoneField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
         guard validatePhone(phone) else { return }
-        // Simulate sending code
-        codeButton.startCountdown()
-        showBriefToast("验证码已发送")
+
+        guard let onRequestSMSCode else {
+            codeButton.startCountdown()
+            showBriefToast("验证码已发送")
+            return
+        }
+
+        codeButton.isEnabled = false
+        Task {
+            do {
+                try await onRequestSMSCode(phone)
+                await MainActor.run {
+                    codeButton.isEnabled = true
+                    codeButton.startCountdown()
+                    showBriefToast("验证码已发送")
+                }
+            } catch {
+                await MainActor.run {
+                    codeButton.isEnabled = true
+                    showBriefToast(error.localizedDescription)
+                }
+            }
+        }
     }
 
     @objc private func tapSubmit() {
@@ -227,6 +249,14 @@ final class PhoneBindingView: UIView {
         submitButton.alpha = 0.72
 
         onSubmit?(phone, code)
+
+        // 失败时由外部保持弹层；短暂后允许再次提交（成功时弹层会被移除）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+            guard let self, self.superview != nil else { return }
+            self.isSubmitting = false
+            self.submitButton.isEnabled = true
+            self.submitButton.alpha = 1
+        }
     }
 
     @objc private func tapDismiss() {

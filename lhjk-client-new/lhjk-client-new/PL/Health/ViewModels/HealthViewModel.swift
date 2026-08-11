@@ -27,7 +27,7 @@ final class HealthViewModel: ObservableObject {
 
     @MainActor
     private func fetch() async {
-        if let cached = cacheService.getCached() {
+        if let cached = await cacheService.getCached() {
             applyHubCache(cached)
         }
 
@@ -38,14 +38,14 @@ final class HealthViewModel: ObservableObject {
             return
         }
 
-        let showLoading = cacheService.getCached() == nil
+        let showLoading = await cacheService.getCached() == nil
         if showLoading {
             isLoading = true
             loadError = nil
         }
 
         let hub: HealthPageHubCache?
-        if cacheService.hasLoaded {
+        if await cacheService.hasLoaded {
             hub = await cacheService.refresh()
         } else {
             hub = await cacheService.preload()
@@ -58,7 +58,7 @@ final class HealthViewModel: ObservableObject {
 
         if let hub {
             applyHubCache(hub)
-        } else if cacheService.getCached() == nil {
+        } else if await cacheService.getCached() == nil {
             metrics = []
             quickEntries = []
             if loadError == nil {

@@ -3,7 +3,7 @@ import Foundation
 // MARK: - 零售类目解析 (BLL)
 
 /// 富德优选零售套包 — 从字典解析「电商零售」二级业务分类的 `value`（Integer）作为 `packageMainCategory`
-final class RetailCategoryService {
+actor RetailCategoryService {
 
     static let shared = RetailCategoryService()
 

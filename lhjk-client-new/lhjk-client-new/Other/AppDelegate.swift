@@ -81,8 +81,34 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         RongCloudManager.shared.initialize(appKey: "k51hidwqkor2b")
         RongCloudMessageDelegate.shared.register()
 
-        // TODO: 微信 SDK 注册
+        // 微信 Open SDK（登录 / 分享 / 支付统一入口；AppID 见 WeChatConfig）
+        WeChatSDKManager.shared.register()
+
         // TODO: 支付宝 SDK 注册
+    }
+
+    // MARK: - URL / Universal Link（微信回调兜底；Scene 生命周期优先走 SceneDelegate）
+
+    func application(
+        _ app: UIApplication,
+        open url: URL,
+        options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+    ) -> Bool {
+        if WeChatSDKManager.shared.handleOpenURL(url) {
+            return true
+        }
+        return false
+    }
+
+    func application(
+        _ application: UIApplication,
+        continue userActivity: NSUserActivity,
+        restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
+    ) -> Bool {
+        if WeChatSDKManager.shared.handleUniversalLink(userActivity) {
+            return true
+        }
+        return false
     }
 
     private func configureRoutes() {

@@ -47,12 +47,13 @@ final class ServiceCatalogService {
     func packageDetail(
         id: String,
         hubCache: ServiceHubCacheService = ServiceHubCacheService.shared
-    ) -> ServicePackageDetail? {
+    ) async -> ServicePackageDetail? {
         if let match = Self.prototypeServicePackages.first(where: { $0.id == id }) {
             return match
         }
-        if let item = hubCache.findCachedPackage(id: id) {
-            return Self.mapHealthPackage(item, matrix: hubCache.getStatic()?.matrix ?? [])
+        if let item = await hubCache.findCachedPackage(id: id) {
+            let matrix = await hubCache.getStatic()?.matrix ?? []
+            return Self.mapHealthPackage(item, matrix: matrix)
         }
         if !id.isEmpty, let fallback = Self.prototypeServicePackages.first(where: { $0.id == "dehao-m" }) {
             return fallback

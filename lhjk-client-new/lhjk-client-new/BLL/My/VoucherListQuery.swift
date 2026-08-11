@@ -178,11 +178,23 @@ enum VoucherListQuery {
     }
 
     static func remainingTransferText(expiresAt: String, now: Date = Date()) -> String {
-        guard let expires = parseDate(expiresAt) else { return "-- 后自动退回" }
-        let remaining = max(0, expires.timeIntervalSince(now))
-        let hours = Int(remaining) / 3600
-        let minutes = (Int(remaining) % 3600) / 60
-        let seconds = Int(remaining) % 60
-        return String(format: "%02d:%02d:%02d 后自动退回", hours, minutes, seconds)
+        // 原型：不展示动态倒计时，固定文案 + 赠送日期
+        _ = expiresAt
+        _ = now
+        return "24小时未领取自动退回"
+    }
+
+    static func waitingTransferMeta(sharedAt: String) -> String {
+        let day: String = {
+            guard let d = parseDate(sharedAt) else {
+                let s = sharedAt.replacingOccurrences(of: "T", with: " ")
+                return s.isEmpty ? "--" : String(s.prefix(10))
+            }
+            let f = DateFormatter()
+            f.locale = Locale(identifier: "en_US_POSIX")
+            f.dateFormat = "yyyy-MM-dd"
+            return f.string(from: d)
+        }()
+        return "24小时未领取自动退回\n赠送时间 \(day)"
     }
 }

@@ -22,14 +22,20 @@ final class RootTabBarController: UITabBarController {
         didScheduleHubPreload = true
         Task {
             try? await Task.sleep(nanoseconds: 1_500_000_000)
+            print("[RootTab] columnContent preloadColdStart → start")
+            await AppContainer.shared.columnContentCacheService.preloadColdStart()
+            print("[RootTab] columnContent preloadColdStart → done")
+
             print("[RootTab] service hub preloadStatic → start")
             await AppContainer.shared.serviceHubCacheService.preloadStatic()
-            print("[RootTab] service hub preloadStatic → done hasLoaded=\(AppContainer.shared.serviceHubCacheService.hasLoadedStatic)")
+            let hubLoaded = await AppContainer.shared.serviceHubCacheService.hasLoadedStatic
+            print("[RootTab] service hub preloadStatic → done hasLoaded=\(hubLoaded)")
 
             print("[RootTab] health hub preload → start")
             let healthHub = await AppContainer.shared.healthPageCacheService.preload()
             let cardCount = healthHub?.monitorCards.count ?? 0
-            print("[RootTab] health hub preload → done hasLoaded=\(AppContainer.shared.healthPageCacheService.hasLoaded) cards=\(cardCount)")
+            let healthLoaded = await AppContainer.shared.healthPageCacheService.hasLoaded
+            print("[RootTab] health hub preload → done hasLoaded=\(healthLoaded) cards=\(cardCount)")
         }
     }
 
