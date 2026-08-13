@@ -1,21 +1,24 @@
 import UIKit
 import SnapKit
+import Kingfisher
 
-/// 健康陪伴整卡 — 对齐 Figma：卡内标题 + 文章列表（68 缩略图）
+/// 健康陪伴整卡 — 标题 +「更多」+ 资讯列表（远程缩略图）
 final class HomeArticleCell: UITableViewCell {
 
     static let reuseID = "HomeArticleCell"
 
-    struct Article {
+    struct Article: Hashable {
+        let id: String
         let tag: String
-        let tagType: String
         let title: String
         let author: String
         let reads: String
-        let imageName: String?
+        let imageUrl: String?
+        /// 内容 ID → H5 `#/content/detail?id=`
+        let contentId: String?
     }
 
-    var onTapped: ((Int) -> Void)?
+    var onTapped: ((Article) -> Void)?
     var onMoreTapped: (() -> Void)?
 
     private let cardView: UIView = {
@@ -48,6 +51,8 @@ final class HomeArticleCell: UITableViewCell {
         return s
     }()
 
+    private var articlesByTag: [Int: Article] = [:]
+
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         backgroundColor = .clear
@@ -66,6 +71,7 @@ final class HomeArticleCell: UITableViewCell {
         }
         titleLabel.snp.makeConstraints {
             $0.top.leading.equalToSuperview().inset(15)
+            $0.trailing.lessThanOrEqualTo(moreButton.snp.leading).offset(-8)
         }
         moreButton.snp.makeConstraints {
             $0.centerY.equalTo(titleLabel)
@@ -87,7 +93,9 @@ final class HomeArticleCell: UITableViewCell {
             listStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
+        articlesByTag.removeAll()
         for (idx, article) in articles.enumerated() {
+            articlesByTag[idx] = article
             listStack.addArrangedSubview(makeRow(article, index: idx))
             if idx < articles.count - 1 {
                 let wrap = UIView()
@@ -113,8 +121,10 @@ final class HomeArticleCell: UITableViewCell {
         thumb.layer.cornerRadius = 8
         thumb.clipsToBounds = true
         thumb.contentMode = .scaleAspectFill
-        if let name = article.imageName {
-            thumb.image = UIImage(named: name)
+        if let urlString = article.imageUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !urlString.isEmpty,
+           let url = URL(string: urlString) {
+            thumb.kf.setImage(with: url)
         }
 
         let title = UILabel()
@@ -124,23 +134,29 @@ final class HomeArticleCell: UITableViewCell {
         title.numberOfLines = 2
 
         let tag = UILabel()
-        tag.text = " \(article.tag) "
         tag.font = .fdFont(ofSize: 11, weight: .regular)
         tag.textColor = UIColor(hexString: "#A1733E")
         tag.backgroundColor = UIColor(hexString: "#FAF5EE")
         tag.layer.cornerRadius = 2
         tag.clipsToBounds = true
+        let hasTag = !article.tag.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        tag.isHidden = !hasTag
+        if hasTag {
+            tag.text = " \(article.tag) "
+        }
 
         let author = UILabel()
-        author.text = article.author.replacingOccurrences(of: " ", with: "｜")
+        author.text = article.author
         author.font = .fdFont(ofSize: 12, weight: .regular)
         author.textColor = .fdSubtext
+        author.isHidden = article.author.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
         let reads = UILabel()
         reads.text = article.reads
         reads.font = .fdFont(ofSize: 12, weight: .regular)
         reads.textColor = .fdSubtext
         reads.textAlignment = .right
+        reads.isHidden = article.reads.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
         row.addSubview(thumb)
         row.addSubview(title)
@@ -164,12 +180,17 @@ final class HomeArticleCell: UITableViewCell {
             $0.bottom.equalTo(thumb)
         }
         author.snp.makeConstraints {
-            $0.leading.equalTo(tag.snp.trailing).offset(6)
-            $0.centerY.equalTo(tag)
+            if hasTag {
+                $0.leading.equalTo(tag.snp.trailing).offset(6)
+                $0.centerY.equalTo(tag)
+            } else {
+                $0.leading.equalTo(title)
+                $0.bottom.equalTo(thumb)
+            }
         }
         reads.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(12)
-            $0.centerY.equalTo(tag)
+            $0.centerY.equalTo(author)
             $0.leading.greaterThanOrEqualTo(author.snp.trailing).offset(4)
         }
 
@@ -179,15 +200,22 @@ final class HomeArticleCell: UITableViewCell {
     }
 
     @objc private func rowTapped(_ g: UITapGestureRecognizer) {
-        guard let idx = g.view?.tag else { return }
-        onTapped?(idx)
+        guard let idx = g.view?.tag, let article = articlesByTag[idx] else { return }
+        onTapped?(article)
     }
 
-    @objc private func moreTap() { onMoreTapped?() }
+    @objc private func moreTap() {
+        onMoreTapped?()
+    }
 
     override func prepareForReuse() {
         super.prepareForReuse()
         onTapped = nil
         onMoreTapped = nil
+        articlesByTag.removeAll()
+        listStack.arrangedSubviews.forEach {
+            listStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
     }
 }

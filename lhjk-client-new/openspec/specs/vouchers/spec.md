@@ -2,7 +2,36 @@
 
 ## Purpose
 
-展示用户持有的全部三好卡状态（未使用 / 已激活 / 已过期），支持按 Tab 筛选，未使用卡可直接跳转套餐选择页完成激活。对应 Vue 端 `MyVouchersView.vue` 实现。
+统一管理用户 **权益卡** 与 **优惠券**（原型 `me-vouchers`）。
+
+### 权益卡 C 端（已接真接口，无 Mock）
+
+| UI | API | 说明 |
+|----|-----|------|
+| 全部 | `GET /v1/benefitsTake/getCustomerPage` | 无 status；2→等待领取卡样式，3/4/5→卡 |
+| 待使用/已兑换/已过期 | 同上 `?status=3/4/5` | |
+| 转赠记录 | `GET /v1/benefitsTake/getGiftRecordPage` | PENDING_RECEIVE / TRANSFERRED |
+| 角标 | `GET /v1/benefitsTake/getCustomerStatusCount` | value=3 待使用 |
+| 绑定 | `preCheckByKey` → `bindByKey` | |
+| 赠送 | `POST /v1/benefitsTake/giftBenefit` | 必传 `operationNo`；成功后拉起微信小程序卡片分享 |
+
+代码：`VoucherService` + `BenefitGiftShareBuilder` + `PL/My/Vouchers/Benefit/*`。优惠券见 `CouponService`。  
+本期不做：员工转交/发放、App 内领取落地 `open*`/`receive*`（领取在小程序完成）。
+
+### 转赠微信分享
+
+1. 未安装微信 → Toast，不调 `giftBenefit`
+2. `giftBenefit` 成功 → `WeChatSDKManager.shareMiniProgram`（会话，path 带 `operationNo`）
+3. 分享成功 / 取消 / 失败：均刷新卡包；取消不重复创建转赠批次
+4. path / 小程序原始 id / 兜底 URL：见 `WeChatConfig`
+
+### 确认订单权益卡
+
+确认订单页多选抵扣见变更 `openspec/changes/order-confirm-benefits-card/`：列表复用 `getCustomerPage?status=3`；抵扣客户端试算（不抵运费）；Apifox 尚无绑单 / 结算权益字段，支付核销后续接入。
+
+### 激活兑换
+
+首页「激活兑换」与卡包绑定/兑换见 `openspec/specs/activate/`（`/activate`、`/activate/bind`、`/activate/redeem`）。
 
 ## Route
 
@@ -11,7 +40,7 @@
 | 我的卡券列表 | `/me/vouchers` | — |
 | 套餐选择（激活） | `/activate/choose` | `card: String` (卡号) |
 
-## Data Model
+## Data Model（历史三好卡草案，保留备查）
 
 ### MVoucher
 

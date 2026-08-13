@@ -16,24 +16,27 @@ final class HomeViewModel: ObservableObject {
 
     enum HomeItem: Hashable {
         case banner(String)
-        case quickActions
-        case membership
+        case quickActions(String)
+        case membership(String)
         case teamList
         case taskCard(String)
-        case articlesCard
+        case articlesCard(String)
     }
 
     @Published var daysLeft: Int = 45
     @Published var banners: [ServiceHubBanner] = []
-    @Published var quickActions: [HomeQuickActionsCell.Action]
-    @Published var membershipPackages: [HomeMembershipPackagesCell.Package]
+    @Published var quickActions: [HomeQuickActionsCell.Action] = []
+    @Published var membershipPackages: [HomeMembershipPackagesCell.Package] = []
     @Published var teamMembers: [HomeTeamCardCell.Member] = []
     @Published var tasks: [DailyHealthTask] = []
-    @Published var articles: [HomeArticleCell.Article]
+    @Published var articles: [HomeArticleCell.Article] = []
     @Published var snapshot = NSDiffableDataSourceSnapshot<HomeSection, HomeItem>()
     @Published private(set) var isTasksLoading = false
     @Published private(set) var isTeamLoading = false
     @Published private(set) var isBannersLoading = false
+    @Published private(set) var isQuickLinksLoading = false
+    @Published private(set) var isHealthServicesLoading = false
+    @Published private(set) var isNewsLoading = false
 
     private let userManager: UserManager
     private let homeService: HomeService
@@ -42,6 +45,9 @@ final class HomeViewModel: ObservableObject {
     private var tasksLoadTask: Task<Void, Never>?
     private var teamLoadTask: Task<Void, Never>?
     private var bannersLoadTask: Task<Void, Never>?
+    private var quickLinksLoadTask: Task<Void, Never>?
+    private var healthServicesLoadTask: Task<Void, Never>?
+    private var newsLoadTask: Task<Void, Never>?
 
     init(
         userManager: UserManager = AppContainer.shared.userManager,
@@ -51,9 +57,6 @@ final class HomeViewModel: ObservableObject {
         self.userManager = userManager
         self.homeService = homeService
         self.columnContentCache = columnContentCache
-        self.quickActions = Self.defaultQuickActions
-        self.membershipPackages = Self.defaultMembershipPackages
-        self.articles = Self.defaultArticles
 
         NotificationCenter.default.publisher(for: .userDidUpdate)
             .receive(on: DispatchQueue.main)
@@ -75,6 +78,27 @@ final class HomeViewModel: ObservableObject {
         bannersLoadTask?.cancel()
         bannersLoadTask = Task { [weak self] in
             await self?.fetchBanners()
+        }
+    }
+
+    func loadQuickLinks() {
+        quickLinksLoadTask?.cancel()
+        quickLinksLoadTask = Task { [weak self] in
+            await self?.fetchQuickLinks()
+        }
+    }
+
+    func loadHealthServices() {
+        healthServicesLoadTask?.cancel()
+        healthServicesLoadTask = Task { [weak self] in
+            await self?.fetchHealthServices()
+        }
+    }
+
+    func loadNews() {
+        newsLoadTask?.cancel()
+        newsLoadTask = Task { [weak self] in
+            await self?.fetchNews()
         }
     }
 
@@ -100,6 +124,39 @@ final class HomeViewModel: ObservableObject {
         let remote = await columnContentCache.banners(for: ColumnContentService.homeBannerCode)
         guard !Task.isCancelled else { return }
         banners = remote.filter(\.hasImage)
+        applySnapshot()
+    }
+
+    @MainActor
+    private func fetchQuickLinks() async {
+        isQuickLinksLoading = true
+        defer { isQuickLinksLoading = false }
+
+        let remote = await columnContentCache.banners(for: ColumnContentService.homeQuickLinkCode)
+        guard !Task.isCancelled else { return }
+        quickActions = remote.compactMap(Self.mapQuickAction)
+        applySnapshot()
+    }
+
+    @MainActor
+    private func fetchHealthServices() async {
+        isHealthServicesLoading = true
+        defer { isHealthServicesLoading = false }
+
+        let remote = await columnContentCache.banners(for: ColumnContentService.homeHealthServiceCode)
+        guard !Task.isCancelled else { return }
+        membershipPackages = remote.compactMap(Self.mapHealthServicePackage)
+        applySnapshot()
+    }
+
+    @MainActor
+    private func fetchNews() async {
+        isNewsLoading = true
+        defer { isNewsLoading = false }
+
+        let remote = await columnContentCache.banners(for: ColumnContentService.homeNewsCode)
+        guard !Task.isCancelled else { return }
+        articles = remote.compactMap(Self.mapNewsArticle)
         applySnapshot()
     }
 
@@ -162,6 +219,9 @@ final class HomeViewModel: ObservableObject {
         if banners.isEmpty {
             sections.removeAll { $0 == .banner }
         }
+        if quickActions.isEmpty {
+            sections.removeAll { $0 == .quickActions }
+        }
         if membershipPackages.isEmpty {
             sections.removeAll { $0 == .membership }
         }
@@ -171,14 +231,21 @@ final class HomeViewModel: ObservableObject {
         if tasks.isEmpty {
             sections.removeAll { $0 == .tasks }
         }
+        if articles.isEmpty {
+            sections.removeAll { $0 == .articles }
+        }
         snap.appendSections(sections)
         if !banners.isEmpty {
             let bannerSig = banners.map(\.id).joined(separator: "|")
             snap.appendItems([.banner(bannerSig)], toSection: .banner)
         }
-        snap.appendItems([.quickActions], toSection: .quickActions)
+        if !quickActions.isEmpty {
+            let quickSig = quickActions.map(\.id).joined(separator: "|")
+            snap.appendItems([.quickActions(quickSig)], toSection: .quickActions)
+        }
         if !membershipPackages.isEmpty {
-            snap.appendItems([.membership], toSection: .membership)
+            let membershipSig = membershipPackages.map(\.id).joined(separator: "|")
+            snap.appendItems([.membership(membershipSig)], toSection: .membership)
         }
         if !teamMembers.isEmpty {
             snap.appendItems([.teamList], toSection: .team)
@@ -188,7 +255,10 @@ final class HomeViewModel: ObservableObject {
                 + "#\(tasks.count)"
             snap.appendItems([.taskCard(taskSig)], toSection: .tasks)
         }
-        snap.appendItems([.articlesCard], toSection: .articles)
+        if !articles.isEmpty {
+            let articlesSig = articles.map(\.id).joined(separator: "|")
+            snap.appendItems([.articlesCard(articlesSig)], toSection: .articles)
+        }
         snapshot = snap
     }
 
@@ -247,45 +317,47 @@ final class HomeViewModel: ObservableObject {
             placeholderImageName: placeholders[min(index, placeholders.count - 1)]
         )
     }
-}
 
-// MARK: - 本地样例（未接 API 的区块）
-
-extension HomeViewModel {
-
-    static var defaultQuickActions: [HomeQuickActionsCell.Action] {
-        [
-            .init(icon: "bubble.left.and.bubble.right.fill", title: "咨询健管师",
-                  bgColor: UIColor(hexString: "#FFF3EE"), iconColor: .fdPrimary, route: "/messages"),
-            .init(icon: "calendar", title: "预约体检",
-                  bgColor: UIColor(hexString: "#FFF3EE"), iconColor: .fdPrimary, route: "/appointments/exams"),
-            .init(icon: "cross.case", title: "就医协助",
-                  bgColor: UIColor(hexString: "#FFF3EE"), iconColor: .fdPrimary, route: "/services/medical-assist"),
-            .init(icon: "creditcard", title: "激活兑换",
-                  bgColor: UIColor(hexString: "#FFF3EE"), iconColor: .fdPrimary, route: "/activate"),
-        ]
+    private static func mapQuickAction(_ banner: ServiceHubBanner) -> HomeQuickActionsCell.Action? {
+        let title = banner.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasTitle = !title.isEmpty
+        let hasImage = banner.hasImage
+        guard hasTitle || hasImage else { return nil }
+        return HomeQuickActionsCell.Action(
+            id: banner.id,
+            title: title,
+            imageUrl: banner.imageUrl,
+            pageUrl: banner.pageUrl
+        )
     }
 
-    static var defaultMembershipPackages: [HomeMembershipPackagesCell.Package] {
-        [
-            .init(id: "pkg-plan-001", name: "体验套餐", intro: "7天健康管理体验", priceText: "¥19.9", badge: "热门"),
-            .init(id: "pkg-plan-002", name: "基础健康服务套餐", intro: "3个月基础健康管理", priceText: "¥199", badge: nil),
-            .init(id: "pkg-plan-003", name: "进阶健康管理套餐", intro: "12个月全面健康管理", priceText: "¥980", badge: "推荐"),
-        ]
+    private static func mapHealthServicePackage(_ banner: ServiceHubBanner) -> HomeMembershipPackagesCell.Package? {
+        guard banner.hasImage,
+              let imageUrl = banner.imageUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !imageUrl.isEmpty else {
+            return nil
+        }
+        return HomeMembershipPackagesCell.Package(
+            id: banner.id,
+            imageUrl: imageUrl,
+            pageUrl: banner.pageUrl
+        )
     }
 
-    static var defaultArticles: [HomeArticleCell.Article] {
-        [
-            .init(tag: "高血压", tagType: "warning", title: "为什么医生说「早晨的第一杯水」不能省？",
-                  author: "张建国｜主任医师", reads: "2.3K 阅读", imageName: "home_article_1"),
-            .init(tag: "膳食干预", tagType: "success", title: "低钠≠无味——3 个让餐桌更香的代盐技巧",
-                  author: "陈梅｜注册营养师", reads: "1.8K 阅读", imageName: "home_article_2"),
-            .init(tag: "运动", tagType: "primary", title: "每天30分钟快走，血压能下降多少？",
-                  author: "王顾问｜健康管理师", reads: "3.1K 阅读", imageName: "home_article_3"),
-            .init(tag: "睡眠", tagType: "info", title: "睡眠不足1小时，血压可能上升 10 个百分点",
-                  author: "张建国｜主任医师", reads: "2.8K 阅读", imageName: "home_article_4"),
-            .init(tag: "体重管理", tagType: "warning", title: "减重 5 %，血糖能有多大改变？",
-                  author: "陈梅｜注册营养师", reads: "1.5K 阅读", imageName: "home_article_5"),
-        ]
+    private static func mapNewsArticle(_ banner: ServiceHubBanner) -> HomeArticleCell.Article? {
+        let title = banner.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let imageUrl = banner.imageUrl?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasImage = !(imageUrl?.isEmpty ?? true)
+        guard !title.isEmpty || hasImage else { return nil }
+
+        return HomeArticleCell.Article(
+            id: banner.id,
+            tag: banner.labelName ?? "",
+            title: title,
+            author: banner.authorName ?? "",
+            reads: ColumnContentMapper.formatReadCount(banner.clickCount),
+            imageUrl: hasImage ? imageUrl : nil,
+            contentId: banner.contentId
+        )
     }
 }

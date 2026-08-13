@@ -35,6 +35,9 @@ final class HomeViewController: BaseViewController {
         setNeedsStatusBarAppearanceUpdate()
         viewModel.loadUserProfile()
         viewModel.loadBanners()
+        viewModel.loadQuickLinks()
+        viewModel.loadHealthServices()
+        viewModel.loadNews()
         viewModel.loadTodayTasks()
         viewModel.loadDoctorTeam()
     }
@@ -99,12 +102,21 @@ final class HomeViewController: BaseViewController {
         dataSource.apply(snapshot, animatingDifferences: false)
     }
 
-    private func handleQuickRoute(_ route: String) {
-        if route == "/messages" {
-            tabBarController?.selectedIndex = 3
-        } else {
-            Router.shared.push(route)
-        }
+    private func handleColumnContentPageUrl(_ pageUrl: String?) {
+        FundePageURL.open(pageUrl, from: self)
+    }
+
+    private func handleArticlesMoreTapped() {
+        // 健康陪伴「更多」独立入口；跳转另定
+        // TODO: 更多列表页
+    }
+
+    private func handleNewsArticleTap(_ article: HomeArticleCell.Article) {
+        let contentId = article.contentId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !contentId.isEmpty else { return }
+        let url = H5Config.contentDetailPageURL(contentId: contentId)
+        let webVC = WebViewController(urlString: url.absoluteString, title: article.title)
+        navigationController?.pushViewController(webVC, animated: true)
     }
 
     private func cell(
@@ -116,28 +128,22 @@ final class HomeViewController: BaseViewController {
         case .banner:
             let cell = tv.dequeueReusableCell(withIdentifier: HomeBannerCarouselCell.reuseID, for: indexPath) as! HomeBannerCarouselCell
             cell.configure(viewModel.banners)
-            cell.onBannerTap = { banner in
-                guard let path = banner.routePath, !path.isEmpty else { return }
-                var params: [String: String] = [:]
-                if let id = banner.routeParamId, !id.isEmpty {
-                    params["id"] = id
-                }
-                Router.shared.push(path, params: params)
+            cell.onBannerTap = { [weak self] banner in
+                self?.handleColumnContentPageUrl(banner.pageUrl)
             }
             return cell
         case .quickActions:
             let cell = tv.dequeueReusableCell(withIdentifier: HomeQuickActionsCell.reuseID, for: indexPath) as! HomeQuickActionsCell
             cell.configure(actions: viewModel.quickActions)
-            cell.onActionTapped = { [weak self] route in self?.handleQuickRoute(route) }
+            cell.onActionTapped = { [weak self] action in
+                self?.handleColumnContentPageUrl(action.pageUrl)
+            }
             return cell
         case .membership:
             let cell = tv.dequeueReusableCell(withIdentifier: HomeMembershipPackagesCell.reuseID, for: indexPath) as! HomeMembershipPackagesCell
             cell.configure(packages: viewModel.membershipPackages)
-            cell.onPackageTapped = { id in
-                Router.shared.push("/services/pkg", params: ["id": id])
-            }
-            cell.onMoreTapped = {
-                Router.shared.push("/services/membership")
+            cell.onPackageTapped = { [weak self] package in
+                self?.handleColumnContentPageUrl(package.pageUrl)
             }
             return cell
         case .teamList:
@@ -167,7 +173,12 @@ final class HomeViewController: BaseViewController {
         case .articlesCard:
             let cell = tv.dequeueReusableCell(withIdentifier: HomeArticleCell.reuseID, for: indexPath) as! HomeArticleCell
             cell.configure(articles: viewModel.articles)
-            cell.onTapped = { _ in }
+            cell.onTapped = { [weak self] article in
+                self?.handleNewsArticleTap(article)
+            }
+            cell.onMoreTapped = { [weak self] in
+                self?.handleArticlesMoreTapped()
+            }
             return cell
         }
     }

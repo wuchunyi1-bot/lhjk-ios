@@ -175,12 +175,65 @@ final class RongCloudManager {
         }
     }
 
-    /// 获取单聊会话列表（异步）
+    /// 获取群聊 + 单聊本地会话列表（异步）
     func getConversationList(completion: @escaping ([RCConversation]) -> Void) {
         client.getConversationList([
-            NSNumber(value: RCConversationType.ConversationType_GROUP.rawValue),NSNumber(value: RCConversationType.ConversationType_PRIVATE.rawValue)
+            NSNumber(value: RCConversationType.ConversationType_GROUP.rawValue),
+            NSNumber(value: RCConversationType.ConversationType_PRIVATE.rawValue),
         ]) { conversationList in
             completion(conversationList ?? [])
+        }
+    }
+
+    /// 通知中心：单聊 + 系统会话。
+    /// 本地分页：`startTime=0` 从最新往历史翻，**不限制一周**；远端同步最多 1000 条（需开通 getRemoteConversationList）。
+    func getPrivateConversationList(completion: @escaping ([RCConversation]) -> Void) {
+        let types: [NSNumber] = [
+            NSNumber(value: RCConversationType.ConversationType_PRIVATE.rawValue),
+            NSNumber(value: RCConversationType.ConversationType_SYSTEM.rawValue),
+        ]
+        fetchConversationPages(types: types, startTime: 0, accumulated: []) { list in
+            let privateCount = list.filter { $0.conversationType == .ConversationType_PRIVATE }.count
+            let systemCount = list.filter { $0.conversationType == .ConversationType_SYSTEM }.count
+            print("[RongCloud] getPrivateConversationList total=\(list.count) private=\(privateCount) system=\(systemCount)")
+            for conv in list.prefix(20) {
+                let typeStr = conv.conversationType == .ConversationType_SYSTEM ? "系统" : "单聊"
+                print("[RongCloud]   \(typeStr) id=\(conv.targetId) unread=\(conv.unreadMessageCount) sentTime=\(conv.sentTime)")
+            }
+            completion(list)
+        }
+    }
+
+    /// 从最新会话往历史翻页，直到不足一页。startTime=0 表示不按 7 天截断。
+    private func fetchConversationPages(
+        types: [NSNumber],
+        startTime: Int64,
+        accumulated: [RCConversation],
+        completion: @escaping ([RCConversation]) -> Void
+    ) {
+        let pageSize: Int32 = 100
+        client.getConversationList(types, count: pageSize, startTime: startTime) { [weak self] conversationList in
+            let batch = conversationList ?? []
+            let merged = accumulated + batch
+            guard let self else {
+                completion(merged)
+                return
+            }
+            if batch.count < Int(pageSize) {
+                completion(merged)
+                return
+            }
+            let nextTime = batch.last?.sentTime ?? 0
+            if nextTime <= 0 || nextTime == startTime {
+                completion(merged)
+                return
+            }
+            self.fetchConversationPages(
+                types: types,
+                startTime: nextTime,
+                accumulated: merged,
+                completion: completion
+            )
         }
     }
 
@@ -287,6 +340,7 @@ final class RongCloudManager {
     /// - Returns: (消息列表, 下次翻页用的 timestamp, 是否还有更多)
     func getHistoryMessages(
         targetId: String,
+        conversationType: RCConversationType = .ConversationType_GROUP,
         recordTime: Int64 = 0,
         count: Int = 20,
         order: RCHistoryMessageOrder = .desc
@@ -296,10 +350,10 @@ final class RongCloudManager {
         option.count = count
         option.order = order
         let dateStr = Date(timeIntervalSince1970: TimeInterval(recordTime) / 1000)
-        print("[RongCloud] getHistoryMessages -> targetId=\(targetId) recordTime=\(recordTime) (\(dateStr)) count=\(count)")
+        print("[RongCloud] getHistoryMessages -> type=\(conversationType.rawValue) targetId=\(targetId) recordTime=\(recordTime) (\(dateStr)) count=\(count)")
         return await withCheckedContinuation { continuation in
             client.getMessages(
-                .ConversationType_GROUP,
+                conversationType,
                 targetId: targetId,
                 option: option,
                 complete: { messages, timestamp, isRemaining, code in
@@ -441,13 +495,26 @@ final class RongCloudManager {
 
     /// 下载媒体消息（语音），完成后 localPath 可用
     func downloadMediaMessage(_ messageId: Int, completion: @escaping (String?) -> Void) {
-        client.downloadMediaMessage(messageId, progress: nil, success: { localPath in
-            print("[RongCloud] downloadMedia ✓ msgId=\(messageId) path=\(localPath)")
-            completion(localPath)
-        }, error: { errorCode in
-            print("[RongCloud] downloadMedia ✗ msgId=\(messageId) code=\(errorCode.rawValue)")
-            completion(nil)
-        })        
+        client.getMessage(messageId) { [weak self] message in
+            guard let self, let message else {
+                print("[RongCloud] downloadMedia ✗ msgId=\(messageId) message not found")
+                completion(nil)
+                return
+            }
+            self.client.downloadMediaMessage(
+                message,
+                progressBlock: nil,
+                successBlock: { localPath in
+                    print("[RongCloud] downloadMedia ✓ msgId=\(messageId) path=\(localPath)")
+                    completion(localPath)
+                },
+                errorBlock: { errorCode in
+                    print("[RongCloud] downloadMedia ✗ msgId=\(messageId) code=\(errorCode.rawValue)")
+                    completion(nil)
+                },
+                cancel: nil
+            )
+        }
     }
 
     /// 发送高清语音消息（RC:HQVCMsg）
@@ -640,8 +707,21 @@ final class RongCloudManager {
     }
     
     /// 清除会话未读数
+    func clearUnreadCount(for conversationId: String, type: RCConversationType) {
+        client.clearMessagesUnreadStatus(type, targetId: conversationId, completion: nil)
+    }
+
+    /// 将单条消息标记为已读（通知中心点击）
+    func markMessageRead(messageId: Int) {
+        guard messageId > 0 else { return }
+        client.setMessageReceivedStatus(messageId, receivedStatus: .ReceivedStatus_READ) { success in
+            print("[RongCloud] setMessageReceivedStatus READ msgId=\(messageId) success=\(success)")
+        }
+    }
+
+    /// 清除会话未读数
     func clearPrivateUnreadCount(for conversationId: String) {
-        client.clearMessagesUnreadStatus(.ConversationType_PRIVATE, targetId: conversationId, completion: nil)
+        clearUnreadCount(for: conversationId, type: .ConversationType_PRIVATE)
     }
     
 
@@ -651,7 +731,7 @@ final class RongCloudManager {
     /// 融云批量查询 API (`getConversations`) 只查本地数据，必须先同步远端
     private func syncConversationsFromServer() {
         client.getRemoteConversationList(success: {
-            print("[RongCloud] Remote conversations synced to local")
+            print("[RongCloud] getRemoteConversationList requested (wait remoteConversationListDidSync)")
         }, error: { [weak self] errorCode in
             self?.logError("Sync remote conversations", code: errorCode)
         })

@@ -112,8 +112,19 @@ enum H5Config {
     }
 
     /// 构建任意 H5 鉴权 URL：`{base}#/{path}?token&platform=ios&...`
+    /// 含套餐中间页 `package/bridge`（点击后经 `FundeBridge` 打开原生套餐详情）。
     static func authenticatedPageURL(path: String, extraQuery: [String: String] = [:]) -> URL {
         buildAuthenticatedURL(h5Path: path, extraQuery: extraQuery)
+    }
+
+    /// 资讯详情 H5：`#/content/detail?id={内容ID}&platform=ios`（本页接口无需登录，token 可选）
+    static func contentDetailPageURL(contentId: String) -> URL {
+        var extra: [String: String] = [:]
+        let trimmed = contentId.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            extra["id"] = trimmed
+        }
+        return authenticatedPageURL(path: "content/detail", extraQuery: extra)
     }
 
     /// 构建健康体征 H5 鉴权 URL：`{base}#/{path}?token&platform=ios&...`

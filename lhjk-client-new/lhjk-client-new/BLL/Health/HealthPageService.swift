@@ -332,11 +332,10 @@ struct MonitorCardMetaVO: Decodable, Equatable {
     let cardName: String?
     let iconUrl: String?
     let sortId: Int?
-    let pageUrl: String?
     let cmsCreateTime: Int64?
 
     private enum CodingKeys: String, CodingKey {
-        case cardType, cardName, iconUrl, sortId, pageUrl, cmsCreateTime
+        case cardType, cardName, iconUrl, sortId, cmsCreateTime
     }
 
     init(from decoder: Decoder) throws {
@@ -345,7 +344,6 @@ struct MonitorCardMetaVO: Decodable, Equatable {
         cardName = try c.decodeIfPresent(String.self, forKey: .cardName)
         iconUrl = try c.decodeIfPresent(String.self, forKey: .iconUrl)
         sortId = HealthFlexible.decodeInt(c, key: .sortId)
-        pageUrl = try c.decodeIfPresent(String.self, forKey: .pageUrl)
         cmsCreateTime = HealthFlexible.decodeInt64(c, key: .cmsCreateTime)
     }
 }
@@ -382,11 +380,10 @@ struct MonitorHealthCardVO: Decodable, Equatable {
     let iconUrl: String?
     /// 卡片背景图 URL（优先于本地 metric_*）
     let backgroundUrl: String?
-    let pageUrl: String?
 
     private enum CodingKeys: String, CodingKey {
         case cardName, cardType, monitorTime, monitorTimeType, resultType, result
-        case allResultList, monitorData, dietSportData, iconUrl, backgroundUrl, pageUrl
+        case allResultList, monitorData, dietSportData, iconUrl, backgroundUrl
     }
 
     init(from decoder: Decoder) throws {
@@ -402,7 +399,6 @@ struct MonitorHealthCardVO: Decodable, Equatable {
         dietSportData = try c.decodeIfPresent([String: HealthJSONValue].self, forKey: .dietSportData)
         iconUrl = try c.decodeIfPresent(String.self, forKey: .iconUrl)
         backgroundUrl = try c.decodeIfPresent(String.self, forKey: .backgroundUrl)
-        pageUrl = try c.decodeIfPresent(String.self, forKey: .pageUrl)
     }
 }
 
@@ -527,7 +523,7 @@ enum HealthJSONValue: Decodable, Equatable {
 
 // MARK: - Display mapping
 
-/// 首页体征卡展示模型
+/// 首页体征卡展示模型（无 pageUrl；跳转仅按 cardType）
 struct HealthMetricDisplayItem: Equatable {
     let cardType: Int
     let metricKey: String
@@ -541,7 +537,6 @@ struct HealthMetricDisplayItem: Equatable {
     /// 卡片背景图 URL；nil 时 Cell 使用本地 metric_*
     let backgroundUrl: String?
     let time: String
-    let pageUrl: String?
     let routeKey: String
 }
 
@@ -569,46 +564,9 @@ enum MonitorCardDisplayMapper {
         }
     }
 
-    /// 优先从 `FundeH5:/xxx` 解析 key，否则回退 cardType
-    static func metricKey(cardType: Int?, pageUrl: String?) -> String {
-        if let fromPage = metricKey(fromPageUrl: pageUrl) {
-            return fromPage
-        }
-        return metricKey(for: cardType)
-    }
-
-    static func metricKey(fromPageUrl pageUrl: String?) -> String? {
-        guard let pageUrl else { return nil }
-        let trimmed = pageUrl.trimmingCharacters(in: .whitespacesAndNewlines)
-        let path: String
-        if trimmed.hasPrefix("FundeH5:/") {
-            path = String(trimmed.dropFirst("FundeH5:/".count))
-        } else if trimmed.hasPrefix("/health/metrics/") {
-            path = String(trimmed.dropFirst("/health/metrics/".count))
-        } else {
-            return nil
-        }
-        let key = path.split(separator: "/").first.map(String.init) ?? path
-        switch key {
-        case "exercise-food": return "exercise"
-        case "temperature", "blood-pressure", "blood-sugar", "weight",
-             "heart-rate", "sleep", "ecg", "fundus", "exercise", "spo2", "digestive":
-            return key
-        default:
-            return key.isEmpty ? nil : key
-        }
-    }
-
-    /// `FundeH5:/blood-pressure` → `/health/metrics/blood-pressure`
-    static func appRoute(from pageUrl: String?, cardType: Int?) -> String {
-        if let key = metricKey(fromPageUrl: pageUrl) {
-            return "/health/metrics/\(key)"
-        }
-        if let pageUrl {
-            let t = pageUrl.trimmingCharacters(in: .whitespacesAndNewlines)
-            if t.hasPrefix("/") { return t }
-        }
-        return fallbackRoute(for: cardType)
+    /// 体征卡跳转：仅按 cardType（体征卡无 pageUrl）
+    static func route(for cardType: Int?) -> String {
+        "/health/metrics/\(metricKey(for: cardType))"
     }
 
     static func iconSF(for metricKey: String) -> String {
@@ -628,15 +586,10 @@ enum MonitorCardDisplayMapper {
         }
     }
 
-    static func fallbackRoute(for cardType: Int?) -> String {
-        let key = metricKey(for: cardType)
-        return "/health/metrics/\(key)"
-    }
-
     static func fromMonitorCards(_ cards: [MonitorHealthCardVO]) -> [HealthMetricDisplayItem] {
         cards.compactMap { card in
             guard let type = card.cardType else { return nil }
-            let key = metricKey(cardType: type, pageUrl: card.pageUrl)
+            let key = metricKey(for: type)
             let mapped = extractValueUnit(from: card)
             let time = formatTime(card.monitorTime, scene: card.monitorTimeType)
             let status = (card.result ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -653,7 +606,6 @@ enum MonitorCardDisplayMapper {
                 iconUrl: nonempty(card.iconUrl),
                 backgroundUrl: nonempty(card.backgroundUrl),
                 time: time,
-                pageUrl: nonempty(card.pageUrl),
                 routeKey: key
             )
         }
@@ -664,7 +616,7 @@ enum MonitorCardDisplayMapper {
             .sorted { ($0.sortId ?? Int.max) < ($1.sortId ?? Int.max) }
             .compactMap { item in
                 guard let type = item.cardType else { return nil }
-                let key = metricKey(cardType: type, pageUrl: item.pageUrl)
+                let key = metricKey(for: type)
                 let name = (item.cardName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                 return HealthMetricDisplayItem(
                     cardType: type,
@@ -678,7 +630,6 @@ enum MonitorCardDisplayMapper {
                     iconUrl: nonempty(item.iconUrl),
                     backgroundUrl: nil,
                     time: "",
-                    pageUrl: nonempty(item.pageUrl),
                     routeKey: key
                 )
             }

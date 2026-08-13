@@ -3,7 +3,7 @@ import SnapKit
 import Kingfisher
 
 /// 融云协议卡片 Cell
-/// - AD:SysNotify：`monitor`（录入成功卡，对齐 funde-client chat-card）或旧 `sysNotify`（C-sys）
+/// - AD:SysNotify：`monitorReminder`（实时提醒）/ `monitor`（录入成功）/ `sysNotify`（C-sys）
 /// - AD:Vip / ServiceComment / CheckUserMsg
 final class SysNotifyCell: UITableViewCell {
     static let reuseID = "SysNotifyCell"
@@ -145,6 +145,16 @@ final class SysNotifyCell: UITableViewCell {
         return s
     }()
 
+    /// 实时提醒 CTA「去完成 ›」
+    private let actionButton: UIButton = {
+        let b = UIButton(type: .system)
+        b.titleLabel?.font = .fdFont(ofSize: 13, weight: .bold)
+        b.layer.cornerRadius = 12
+        b.clipsToBounds = true
+        b.isHidden = true
+        return b
+    }()
+
     // MARK: - Init
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -158,7 +168,10 @@ final class SysNotifyCell: UITableViewCell {
 
         titleRow.addArrangedSubview(monitorIconCircle)
         titleRow.addArrangedSubview(titleLabel)
-        [coverImageView, titleRow, tagButton, dividerView, descLabel, rowsStack, commentStack].forEach(cardView.addSubview)
+        [coverImageView, titleRow, tagButton, dividerView, descLabel, rowsStack, commentStack, actionButton]
+            .forEach(cardView.addSubview)
+
+        actionButton.addTarget(self, action: #selector(actionTapped), for: .touchUpInside)
 
         let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
         cardView.addGestureRecognizer(longPress)
@@ -181,6 +194,8 @@ final class SysNotifyCell: UITableViewCell {
             tagButton.configuration = config
         }
         dividerView.isHidden = true
+        actionButton.isHidden = true
+        actionButton.setTitle(nil, for: .normal)
     }
 
     // MARK: - Configure
@@ -243,6 +258,7 @@ final class SysNotifyCell: UITableViewCell {
             commentStack.isHidden = true
             dividerView.isHidden = true
             monitorIconCircle.isHidden = true
+            actionButton.isHidden = true
             return
         }
 
@@ -257,6 +273,7 @@ final class SysNotifyCell: UITableViewCell {
         descLabel.isHidden = false
         dividerView.isHidden = true
         monitorIconCircle.isHidden = true
+        actionButton.isHidden = true
         tagButton.isHidden = true
         if var config = tagButton.configuration {
             config.title = nil
@@ -266,6 +283,16 @@ final class SysNotifyCell: UITableViewCell {
         clearStack(commentStack)
 
         switch card.variant {
+        case .monitorReminder:
+            applyMonitorHeader(card)
+            descLabel.text = card.bodyText
+            descLabel.isHidden = card.bodyText.isEmpty
+            dividerView.isHidden = false
+            rowsStack.isHidden = false
+            rowsStack.spacing = 0
+            populateMonitorRows(card.monitorRows, accent: card.monitorAccentColor)
+            applyReminderAction(card)
+
         case .monitor:
             applyMonitorHeader(card)
             descLabel.isHidden = true
@@ -318,11 +345,26 @@ final class SysNotifyCell: UITableViewCell {
             tagButton.configuration = config
             tagButton.isHidden = true
         }
-        print("[IM-Card] monitor title=\(card.title) tag=\(card.dataSourceTag ?? "nil") type=\(card.monitorType ?? "nil") extraKeys=\(card.extra?.keys.sorted() ?? []) rows=\(card.monitorRows.count)")
+    }
+
+    private func applyReminderAction(_ card: IMCardResolved) {
+        let accent = card.monitorAccentColor
+        actionButton.isHidden = false
+        actionButton.backgroundColor = accent.withAlphaComponent(0.12)
+        actionButton.setTitleColor(accent, for: .normal)
+        if card.isReminderCompleted {
+            actionButton.setTitle("已完成", for: .normal)
+            actionButton.isEnabled = false
+            actionButton.alpha = 0.55
+        } else {
+            actionButton.setTitle("去完成 ›", for: .normal)
+            actionButton.isEnabled = true
+            actionButton.alpha = 1
+        }
     }
 
     private func monitorSymbol(for type: String?) -> String {
-        switch type {
+        switch IMMonitorReminderRoute.normalizeMonitorType(type) {
         case "pressure": return "waveform.path.ecg"
         case "sugar": return "drop.fill"
         case "weight": return "chart.bar.fill"
@@ -578,12 +620,16 @@ final class SysNotifyCell: UITableViewCell {
         let metaOffset: ConstraintOffsetTarget = showUser ? 4 : 8
         let variant = card?.variant
         let isMonitor = variant == .monitor
-        let showRows = variant == .monitor || variant == .vip
+        let isReminder = variant == .monitorReminder
+        let isMonitorLike = isMonitor || isReminder
+        let showRows = isMonitorLike || variant == .vip
         let showComment = variant == .serviceComment
-        let showDivider = isMonitor
+        let showAction = isReminder && !actionButton.isHidden
         let showDesc: Bool = {
             switch variant {
             case .monitor, .vip: return false
+            case .monitorReminder:
+                return !(card?.bodyText.isEmpty ?? true)
             case .sysNotify, .checkUser, .serviceComment:
                 return !(card?.bodyText.isEmpty ?? true)
             case .none: return false
@@ -620,7 +666,7 @@ final class SysNotifyCell: UITableViewCell {
                 make.top.equalToSuperview().offset(8).priority(999)
             }
             make.bottom.equalToSuperview().offset(-8).priority(999)
-            make.width.equalTo(isMonitor ? 268 : 260)
+            make.width.equalTo(isMonitorLike ? 268 : 260)
             if isStaff {
                 make.leading.equalToSuperview().offset(showUser ? 58 : 16)
             } else {
@@ -628,8 +674,8 @@ final class SysNotifyCell: UITableViewCell {
             }
         }
 
-        let pad: CGFloat = isMonitor ? 14 : 12
-        let showTag = isMonitor && !tagButton.isHidden
+        let pad: CGFloat = isMonitorLike ? 14 : 12
+        let showTag = isMonitorLike && !tagButton.isHidden
 
         if hasCover {
             coverImageView.snp.remakeConstraints { make in
@@ -674,6 +720,65 @@ final class SysNotifyCell: UITableViewCell {
             }
         }
 
+        // 提醒卡：title → desc → divider → rows → action
+        // 录入成功：title → divider → rows
+        if isReminder {
+            if showDesc {
+                descLabel.snp.remakeConstraints { make in
+                    make.top.equalTo(titleRow.snp.bottom).offset(8)
+                    make.leading.trailing.equalToSuperview().inset(pad)
+                }
+            } else {
+                descLabel.snp.remakeConstraints { make in
+                    make.top.equalTo(titleRow.snp.bottom)
+                    make.leading.equalToSuperview().offset(pad)
+                    make.height.equalTo(0)
+                }
+            }
+            let afterDesc = showDesc ? descLabel.snp.bottom : titleRow.snp.bottom
+            dividerView.snp.remakeConstraints { make in
+                make.top.equalTo(afterDesc).offset(10)
+                make.leading.trailing.equalToSuperview().inset(pad)
+                make.height.equalTo(1 / UIScreen.main.scale)
+            }
+            rowsStack.snp.remakeConstraints { make in
+                make.top.equalTo(dividerView.snp.bottom).offset(2)
+                make.leading.trailing.equalToSuperview().inset(pad)
+            }
+            commentStack.snp.remakeConstraints { make in
+                make.top.equalTo(rowsStack.snp.bottom)
+                make.leading.equalToSuperview().offset(pad)
+                make.height.equalTo(0)
+            }
+            if showAction {
+                actionButton.snp.remakeConstraints { make in
+                    make.top.equalTo(rowsStack.snp.bottom).offset(10)
+                    make.leading.trailing.equalToSuperview().inset(pad)
+                    make.height.equalTo(36)
+                    make.bottom.equalToSuperview().offset(-pad)
+                }
+            } else {
+                actionButton.snp.remakeConstraints { make in
+                    make.top.equalTo(rowsStack.snp.bottom)
+                    make.leading.equalToSuperview().offset(pad)
+                    make.height.equalTo(0)
+                }
+                rowsStack.snp.remakeConstraints { make in
+                    make.top.equalTo(dividerView.snp.bottom).offset(2)
+                    make.leading.trailing.equalToSuperview().inset(pad)
+                    make.bottom.equalToSuperview().offset(-pad)
+                }
+            }
+            return
+        }
+
+        actionButton.snp.remakeConstraints { make in
+            make.top.equalTo(titleRow.snp.bottom)
+            make.leading.equalToSuperview().offset(pad)
+            make.height.equalTo(0)
+        }
+
+        let showDivider = isMonitor
         if showDivider {
             dividerView.snp.remakeConstraints { make in
                 make.top.equalTo(titleRow.snp.bottom).offset(10)
@@ -756,6 +861,11 @@ final class SysNotifyCell: UITableViewCell {
                 }
             }
         }
+    }
+
+    @objc private func actionTapped() {
+        guard let msg = currentMessage else { return }
+        delegate?.cellDidTapIMCard(self, message: msg)
     }
 
     @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {

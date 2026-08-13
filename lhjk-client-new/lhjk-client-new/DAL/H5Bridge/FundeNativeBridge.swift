@@ -4,10 +4,13 @@ import Combine
 
 /// H5 ↔ App Bridge — 对齐《H5 宿主接入文档》
 ///
-/// H5 → Native: `webkit.messageHandlers.FundeNative.postMessage({ action, params, callbackId })`
+/// - `FundeBridge`：套餐中间页等宿主导航（扁平 `{ action, packageId, hospitalId }`）
+/// - `FundeNative`：体重 BLE（`{ action, params, callbackId }`）
 /// Native → H5: `window.__fundeBridge.respond|reject|emit`
 final class FundeNativeBridge: NSObject {
 
+    /// 与 H5 `IOS_BRIDGE_HANDLER` 一致
+    static let packageHandlerName = "FundeBridge"
     static let handlerName = "FundeNative"
 
     private weak var webView: WKWebView?
@@ -41,12 +44,19 @@ final class FundeNativeBridge: NSObject {
         let callbackId = dict["callbackId"] as? String
 
         DispatchQueue.main.async { [weak self] in
-            self?.dispatch(action: action, params: params, callbackId: callbackId)
+            self?.dispatch(action: action, params: params, callbackId: callbackId, body: dict)
         }
     }
 
-    private func dispatch(action: String, params: [String: Any], callbackId: String?) {
+    private func dispatch(
+        action: String,
+        params: [String: Any],
+        callbackId: String?,
+        body: [String: Any]
+    ) {
         switch action {
+        case "navigatePackageDetail":
+            handleNavigatePackageDetail(body: body, params: params)
         case "ble.getStatus":
             handleBleGetStatus(params: params, callbackId: callbackId)
         case "ble.openManager":
@@ -54,6 +64,28 @@ final class FundeNativeBridge: NSObject {
         default:
             reject(callbackId, message: "未知 action: \(action)")
         }
+    }
+
+    /// 文档 `openPackageDetail`：打开 iOS 原生套餐详情
+    private func handleNavigatePackageDetail(body: [String: Any], params: [String: Any]) {
+        let packageId = Self.stringValue(body["packageId"])
+            ?? Self.stringValue(params["packageId"])
+            ?? ""
+        let hospitalId = Self.stringValue(body["hospitalId"])
+            ?? Self.stringValue(params["hospitalId"])
+            ?? ""
+        openPackageDetail(packageId: packageId, hospitalId: hospitalId)
+    }
+
+    private func openPackageDetail(packageId: String, hospitalId: String) {
+        let id = packageId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !id.isEmpty else { return }
+        var routeParams: [String: Any] = ["id": id]
+        let hid = hospitalId.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !hid.isEmpty {
+            routeParams["hospitalId"] = hid
+        }
+        Router.shared.push("/services/pkg", params: routeParams, from: hostViewController)
     }
 
     private func handleBleGetStatus(params: [String: Any], callbackId: String?) {
@@ -154,6 +186,23 @@ final class FundeNativeBridge: NSObject {
            let data = string.data(using: .utf8),
            let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             return obj
+        }
+        return nil
+    }
+
+    static func stringValue(_ value: Any?) -> String? {
+        if let string = value as? String {
+            let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        if let number = value as? NSNumber {
+            return number.stringValue
+        }
+        if let int = value as? Int {
+            return String(int)
+        }
+        if let int64 = value as? Int64 {
+            return String(int64)
         }
         return nil
     }

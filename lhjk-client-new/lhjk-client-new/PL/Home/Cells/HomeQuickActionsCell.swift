@@ -1,17 +1,18 @@
 import UIKit
 import SnapKit
+import Kingfisher
 
-/// 快捷操作区 — 对齐 Figma：白卡 16 圆角 + 统一暖橙圆形图标
+/// 快捷操作区 — 白卡 16 圆角；图标直接使用栏位 `imageUrl`，不加圆形底
 final class HomeQuickActionsCell: UITableViewCell {
 
     static let reuseID = "HomeQuickActionsCell"
 
-    struct Action {
-        let icon: String
+    struct Action: Hashable {
+        let id: String
         let title: String
-        let bgColor: UIColor
-        let iconColor: UIColor
-        let route: String
+        let imageUrl: String?
+        /// 栏位 `pageUrl`（`FundeH5:` / `FundeApp:`，见 `FundePageURL`）
+        let pageUrl: String?
     }
 
     private let cardView: UIView = {
@@ -28,7 +29,8 @@ final class HomeQuickActionsCell: UITableViewCell {
         return s
     }()
 
-    var onActionTapped: ((String) -> Void)?
+    var onActionTapped: ((Action) -> Void)?
+    private var actionsByTag: [Int: Action] = [:]
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -56,25 +58,25 @@ final class HomeQuickActionsCell: UITableViewCell {
 
     func configure(actions: [Action]) {
         stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for act in actions {
-            stackView.addArrangedSubview(makeActionItem(act))
+        actionsByTag.removeAll()
+        for (index, act) in actions.enumerated() {
+            let item = makeActionItem(act, tag: index)
+            actionsByTag[index] = act
+            stackView.addArrangedSubview(item)
         }
     }
 
-    private func makeActionItem(_ action: Action) -> UIView {
+    private func makeActionItem(_ action: Action, tag: Int) -> UIView {
         let item = UIView()
+        item.tag = tag
 
-        let iconBg = UIView()
-        iconBg.backgroundColor = UIColor(hexString: "#FFF3EE")
-        iconBg.layer.cornerRadius = 24
-
-        let icon = UIImageView(image: UIImage(systemName: action.icon))
-        icon.tintColor = .fdPrimary
+        let icon = UIImageView()
         icon.contentMode = .scaleAspectFit
-        iconBg.addSubview(icon)
-        icon.snp.makeConstraints {
-            $0.center.equalToSuperview()
-            $0.size.equalTo(22)
+        icon.clipsToBounds = true
+        if let urlString = action.imageUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !urlString.isEmpty,
+           let url = URL(string: urlString) {
+            icon.kf.setImage(with: url)
         }
 
         let lbl = UILabel()
@@ -83,32 +85,32 @@ final class HomeQuickActionsCell: UITableViewCell {
         lbl.textColor = .fdText
         lbl.textAlignment = .center
 
-        item.addSubview(iconBg)
+        item.addSubview(icon)
         item.addSubview(lbl)
-        iconBg.snp.makeConstraints {
+        icon.snp.makeConstraints {
             $0.top.centerX.equalToSuperview()
             $0.size.equalTo(48)
         }
         lbl.snp.makeConstraints {
-            $0.top.equalTo(iconBg.snp.bottom).offset(6)
+            $0.top.equalTo(icon.snp.bottom).offset(6)
             $0.centerX.leading.trailing.equalToSuperview()
             $0.bottom.equalToSuperview()
         }
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(actionTapped(_:)))
         item.addGestureRecognizer(tap)
-        item.accessibilityIdentifier = action.route
         return item
     }
 
     @objc private func actionTapped(_ gesture: UITapGestureRecognizer) {
-        guard let route = gesture.view?.accessibilityIdentifier else { return }
-        onActionTapped?(route)
+        guard let view = gesture.view, let action = actionsByTag[view.tag] else { return }
+        onActionTapped?(action)
     }
 
     override func prepareForReuse() {
         super.prepareForReuse()
         stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        actionsByTag.removeAll()
         onActionTapped = nil
     }
 }

@@ -3,6 +3,7 @@ import SnapKit
 import Combine
 import Kingfisher
 import AVFoundation
+import RongIMLibCore
 
 /// 消息 Cell 长按回调协议
 protocol ChatCellDelegate: AnyObject {
@@ -152,8 +153,14 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
 
     // MARK: - Init
 
-    init(conversationId: String) {
-        self.viewModel = ChatViewModel(conversationId: conversationId)
+    init(
+        conversationId: String,
+        conversationType: RCConversationType = .ConversationType_GROUP
+    ) {
+        self.viewModel = ChatViewModel(
+            conversationId: conversationId,
+            conversationType: conversationType
+        )
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -173,7 +180,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
 
     override func setupUI() {
         view.backgroundColor = .fdBg
-        title = viewModel.conversation?.name
+        title = viewModel.conversation?.name ?? "通知"
 
         // Input bar assembly
         let toolsRow = UIStackView(arrangedSubviews: toolBtns)
@@ -616,6 +623,8 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         guard let card = IMCardResolver.resolve(from: message),
               let action = IMCardResolver.tapAction(for: card) else { return }
         switch action {
+        case .openRoute(let path):
+            Router.shared.push(path)
         case .unavailable(let tip):
             showToast(tip)
         }

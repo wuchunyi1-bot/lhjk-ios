@@ -81,12 +81,18 @@ struct Conversation: Identifiable, Codable {
     let status: String
     let serviceScope: String
     var lastMessage: String
+    /// 最后一条消息的服务端时间（毫秒）。排序与右上角 `lastTime` 共用此字段，不用阅读/操作时间。
+    var lastMessageAt: Int64
     var lastTime: String
     var unread: Int
     let important: Bool
 
     var unreadBadge: String? {
         unread > 0 ? (unread > 99 ? "99+" : "\(unread)") : nil
+    }
+
+    static func sortedByLastMessage(_ list: [Conversation]) -> [Conversation] {
+        list.sorted { $0.lastMessageAt > $1.lastMessageAt }
     }
 }
 
@@ -95,6 +101,9 @@ struct Conversation: Identifiable, Codable {
 /// 系统通知模型 — 参考 funde-client conversations.json notifications 数组
 struct AppNotification: Identifiable, Codable {
     let id: String
+    /// 所属融云会话 targetId（仅用于已读，点击不进会话）
+    let conversationId: String
+    let conversationTypeRaw: UInt
     let icon: String          // SF Symbol 名
     let iconBg: String        // 图标背景色 hex
     let iconColor: String     // 图标前景色 hex
@@ -103,6 +112,82 @@ struct AppNotification: Identifiable, Codable {
     let body: String
     let time: String
     var unread: Bool
+    /// 点击跳转，来自消息 `body`（route / url / urlKey / pageUrl）
+    let route: String?
+    /// 融云本地 messageId，点击已读用；未入库为 -1
+    let rongMessageId: Int
+
+    var rongConversationType: RCConversationType {
+        RCConversationType(rawValue: conversationTypeRaw) ?? .ConversationType_PRIVATE
+    }
+
+    /// 单聊会话中的一条历史消息 → 通知中心行；无法解析 `body` 时返回 nil
+    static func fromPrivateMessage(
+        _ rc: RCMessage,
+        unread: Bool
+    ) -> AppNotification? {
+        guard let payload = NotificationMessageMapper.payload(from: rc) else { return nil }
+        return AppNotification(
+            id: messageId(from: rc),
+            conversationId: rc.targetId,
+            conversationTypeRaw: rc.conversationType.rawValue,
+            icon: payload.icon,
+            iconBg: payload.iconBg,
+            iconColor: payload.iconColor,
+            title: payload.title,
+            tag: payload.tag,
+            body: payload.body,
+            time: Conversation.formatRCTime(rc.sentTime),
+            unread: unread,
+            route: payload.route,
+            rongMessageId: rc.messageId
+        )
+    }
+
+    static func fromChatMessage(
+        _ msg: ChatMessage,
+        conversationType: RCConversationType,
+        unread: Bool
+    ) -> AppNotification? {
+        guard let payload = NotificationMessageMapper.payload(from: msg) else { return nil }
+        return AppNotification(
+            id: msg.id,
+            conversationId: msg.conversationId ?? "",
+            conversationTypeRaw: conversationType.rawValue,
+            icon: payload.icon,
+            iconBg: payload.iconBg,
+            iconColor: payload.iconColor,
+            title: payload.title,
+            tag: payload.tag,
+            body: payload.body,
+            time: Conversation.formatRCTime(msg.sentTime ?? 0),
+            unread: unread,
+            route: payload.route,
+            rongMessageId: msg.messageId
+        )
+    }
+
+    private static func messageId(from rc: RCMessage) -> String {
+        if rc.messageId > 0 { return "\(rc.messageId)" }
+        if let uid = rc.messageUId, !uid.isEmpty { return uid }
+        return "rm-\(rc.sentTime)"
+    }
+}
+
+extension ChatMessage {
+    var rongConversationType: RCConversationType {
+        RCConversationType(rawValue: conversationTypeRaw) ?? .ConversationType_GROUP
+    }
+
+    /// 单聊 / 系统会话 → 通知中心；群聊 → 团队对话
+    var isNotificationConversation: Bool {
+        switch rongConversationType {
+        case .ConversationType_PRIVATE, .ConversationType_SYSTEM:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 // MARK: - 预定义角色元数据
@@ -151,17 +236,29 @@ extension Conversation {
         }
     }
 
+    /// 会话展示名：conversationTitle → 最新消息发送者 → targetId
+    static func displayName(from rc: RCConversation) -> String {
+        let title = rc.conversationTitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !title.isEmpty { return title }
+        let sender = (rc.latestMessage?.senderUserInfo?.name ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !sender.isEmpty { return sender }
+        let target = rc.targetId.trimmingCharacters(in: .whitespacesAndNewlines)
+        return target.isEmpty ? "系统通知" : target
+    }
+
     /// 从融云 RCConversation 转换为 Conversation 模型
     /// - Parameter rc: 融云会话对象
     /// - Returns: 合并了预定义元数据的 Conversation，未匹配时使用默认元数据
     static func fromRongCloud(_ rc: RCConversation) -> Conversation {
         let convId = rc.targetId
+        let fallbackName = displayName(from: rc)
         let meta = roleMetaMap[convId] ?? (
-            role: .manager,
-            roleLabel: "健管师",
-            name: convId,
+            role: .service,
+            roleLabel: rc.conversationType == .ConversationType_PRIVATE ? "系统通知" : "健管师",
+            name: fallbackName,
             title: "健康管理",
-            avatar: String(convId.prefix(1)),
+            avatar: String(fallbackName.prefix(1)),
             status: "在线",
             serviceScope: "日常随访",
             important: false
@@ -179,6 +276,7 @@ extension Conversation {
             status: meta.status,
             serviceScope: meta.serviceScope,
             lastMessage: lastMsg.isEmpty ? "暂无消息" : lastMsg,
+            lastMessageAt: rc.sentTime,
             lastTime: formatRCTime(rc.sentTime),
             unread: Int(rc.unreadMessageCount),
             important: meta.important
@@ -195,15 +293,18 @@ extension Conversation {
 
         // 实时数据：融云优先，nil 时 fallback 到 GroupVO
         let unread: Int
+        let lastMessageAt: Int64
         let lastTimeStr: String
         var lastMsg: String
         if let rc = rc {
             unread = Int(rc.unreadMessageCount)
+            lastMessageAt = rc.sentTime
             lastTimeStr = formatRCTime(rc.sentTime)
             let text = lastMessageText(from: rc.latestMessage)
             lastMsg = text.isEmpty ? (group.lastContent ?? "暂无消息") : text
         } else {
             unread = 0
+            lastMessageAt = 0
             lastTimeStr = ""
             lastMsg = group.lastContent ?? "暂无消息"
         }
@@ -233,6 +334,7 @@ extension Conversation {
             status: statusStr,
             serviceScope: group.groupName ?? "日常随访",
             lastMessage: lastMsg,
+            lastMessageAt: lastMessageAt,
             lastTime: lastTimeStr,
             unread: unread,
             important: group.labelType == 1

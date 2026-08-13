@@ -115,8 +115,11 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         case 3:
             let cell = tableView.dequeueReusableCell(withIdentifier: HealthQuickEntriesCell.reuseIdentifier, for: indexPath) as! HealthQuickEntriesCell
             cell.configure(entries: viewModel.quickEntries)
-            // quickEntryList 暂不做跳转
-            cell.onEntryTap = nil
+            cell.onEntryTap = { [weak self] pageUrl in
+                guard let self else { return }
+                let title = self.viewModel.quickEntries.first { $0.pageUrl == pageUrl }?.name
+                FundePageURL.open(pageUrl, title: title, from: self)
+            }
             return cell
         default:
             return UITableViewCell()

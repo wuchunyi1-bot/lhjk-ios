@@ -6,6 +6,11 @@
 
 > **Reference**: funde-im `prototype/src/components/ConvoList.vue`、`ConvoItem.vue`、`MessageList.vue`、`MessageBubble.vue`、`Composer.vue`、`docs/v0.1/`
 
+> **消息类型全表 / Model↔Cell↔样式**：见同目录 [`message-types.md`](./message-types.md)。  
+> **消息卡片（生产协议 vs iOS）**：见 [`message-cards.md`](./message-cards.md)。  
+> 权威协议来自 funde-im（`AD:SysNotify` / `AD:Vip` / `AD:ServiceComment` / `AD:CheckUserMsg` + `urlKey`）。  
+> 下文 Data Model 中的 `metric-card` / `ServiceCard` 等仍描述 **funde-client 原型**，与生产协议卡片不是同一套。
+
 ---
 
 ## Data Model
@@ -101,17 +106,21 @@
 
 ### Notification (系统通知)
 
+对齐 funde-client `conversations.json` `notifications[]` 与 `docs/v0.1/pages/messages/notifications.md`。
+
 | Field | Type | 说明 |
 |-------|------|------|
-| `id` | String | 通知唯一 ID，如 `n1` |
+| `id` | String | 通知唯一 ID（融云消息 id / messageUId） |
+| `conversationId` | String | 所属单聊 targetId（仅用于已读，不用于点击进会话） |
 | `icon` | String | SF Symbol 图标名 |
 | `iconBg` | String | 图标背景色 hex |
 | `iconColor` | String | 图标前景色 hex |
 | `title` | String | 通知标题（加粗展示） |
-| `tag` | String | 分类标签文案（"预约提醒" / "保单" / "设备" / "报告"） |
-| `body` | String | 通知正文摘要（2 行截断） |
+| `tag` | String | 分类标签（预约提醒 / 保单 / 设备 / 报告 / 订单消息 / 退款售后） |
+| `body` | String | 通知正文摘要 |
 | `time` | String | 发送时间（友好格式） |
 | `unread` | Bool | 是否未读 |
+| `route` | String? | 点击跳转目标（来自消息 `body`） |
 
 ### 角色主色调 (roleTone)
 
@@ -255,8 +264,8 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 #### Scenario: 通知中心 Tab 内联预览
 - **WHEN** 切换到「通知中心」Tab
 - **THEN** 平铺展示通知行列表（与 `/notifications` 同一数据源）
-- **AND** 每行：[圆角色图标（iconBg + iconColor）] + [标题 + 未读红点 + 时间] + [body 摘要] + [tag badge]
-- **AND** 点击单条通知暂静默（后续接入精确路由跳转）
+- **AND** 行样式对齐 funde-client `MessagesView.vue` `.noti-row`：38pt 圆角图标（未读红点叠在图标右上）+ 标题与 tag 同行 + 时间右对齐 + body 单行截断
+- **AND** 点击按消息 `body` 中的路由跳转目标页（无路由则不跳转，MUST NOT 进入会话详情）
 
 #### Scenario: 空状态
 - **WHEN** 会话列表为空
@@ -269,15 +278,15 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 - **THEN** 前提：融云连接成功后已执行 `getRemoteConversationList` 将服务端会话同步到本地，确保本地数据库包含所有服务端会话
 - **AND** 第一步：调用 `GET /v1/session/getGroup` 获取我的群组列表，返回 `[GroupVO]`
 - **AND** 第二步：用所有 `groupId` 调用融云 `getConversations` 批量查询本地会话详情（按 ID 分批，每批 100 个）
-- **AND** 合并逻辑：**匹配上融云的在前展示，未匹配的在后展示**
+- **AND** 合并逻辑：**按最后一条消息的服务端 `sentTime` 倒序**（与列表 item 右上角时间同一字段）。MUST NOT 用阅读时间 / `operationTime`；已读后 MUST NOT 把会话顶到第一位。
   - 先遍历融云返回的 `[RCConversation]`，按 `sentTime` 倒序排列
   - 对每个 `RCConversation`，用 `targetId` 查找匹配的 `GroupVO`
   - 匹配成功 → `Conversation.fromGroupVO(group, rc: rc)`，记录为已匹配
   - 匹配失败（融云有会话但群组 API 未返回）→ `Conversation.fromRongCloud(rc)` fallback
-  - 再遍历 `GroupVO` 中未被匹配的项 → `Conversation.fromGroupVO(group, rc: nil)` 追加到末尾
-- **AND** 最终顺序：匹配的（按 sentTime 倒序）+ 未匹配的 GroupVO
+  - 再遍历 `GroupVO` 中未被匹配的项 → `Conversation.fromGroupVO(group, rc: nil)`（`lastMessageAt=0`，排在后面）
+- **AND** 最终顺序：全表按 `Conversation.lastMessageAt`（即 `RCConversation.sentTime`）倒序
 - **AND** `GroupVO` + `RCConversation` → `Conversation` 字段映射：
-  - 实时数据优先融云：`unreadMessageCount` → `unread`，`sentTime` → `lastTime`，`latestMessage` → `lastMessage`
+  - 实时数据优先融云：`unreadMessageCount` → `unread`，`sentTime` → `lastMessageAt` / `lastTime`，`latestMessage` → `lastMessage`
   - 展示元数据优先 `GroupVO`：`principalName ?? groupName` → `name`，`serviceName` → `title` / `roleLabel`
   - `groupImg` 取首字 → `avatar`，`numbers` → `status`（"N 人在线"）
   - `labelType == 1` → `important = true`，`serviceId` → `role`
@@ -324,12 +333,10 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 ---
 
 ### Requirement: Message Tab Bar Badge
-系统 SHALL 在底部 Tab Bar「消息」Tab 上展示未读消息角标，角标数字 = 所有团队对话未读数之和。
+系统 SHALL 在底部 Tab Bar「消息」Tab 上展示未读消息角标，角标数字 = 团队对话未读数 + 通知中心未读数。不依赖用户是否打开过消息 Tab。
 
-**数据源**：`IMService.totalUnreadCount()`（遍历 `conversations` 累加 `unread` 字段）
+**数据源**：`IMService.totalUnreadCount()`（`conversations` 的 `unread` 之和 + `notifications` 中 `unread == true` 的条数）
 **更新机制**：`IMService` 通过 Combine publisher `totalUnreadCountDidChangePublisher` 发布变更，`RootTabBarController` 订阅并更新 `messageNav.tabBarItem.badgeValue`
-
-> **暂时只计算团队对话未读数**，待通知中心接入后将 `notiUnreadCount()` 也纳入角标计算。
 
 #### Scenario: 显示规则
 - **WHEN** 总未读数 > 0
@@ -343,10 +350,12 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 - **AND** `RootTabBarController` 收到后更新消息 Tab 角标
 
 #### Scenario: 收到新消息后更新角标
-- **WHEN** 融云推送新消息 → `messageReceivedPublisher` 发出
-- **THEN** 两条路径并行处理：
-  - `IMService.onMessageReceived` → 会话已加载则 `updateConversation(id:)` → 角标更新（主力路径，不依赖 UI）
-  - `ConversationListViewController` 订阅 → `handleConversationUpdate` → 更新列表 UI + 角标（UI 已加载时生效）
+- **WHEN** 融云推送群聊新消息 → `messageReceivedPublisher` 发出
+- **THEN** `IMService.onMessageReceived` 在团队会话缓存含该 `conversationId` 时 `updateConversation(id:)` → `notifyUnreadCountChanged()`（不依赖消息 Tab 是否已加载）
+- **WHEN** 融云推送单聊/系统会话新消息（通知）
+- **THEN** 插入通知内存后立刻 `notifyUnreadCountChanged()`，即使用户停在首页/健康/服务/我的，消息 Tab 角标也递增
+- **WHEN** 用户点击一条通知标已读
+- **THEN** `markNotificationRead` 后 `notifyUnreadCountChanged()`，角标递减；全部已读后角标仅保留团队未读（若为 0 则隐藏）
 
 #### Scenario: 标记已读后更新角标
 - **WHEN** 用户在会话详情页退出（`ChatViewController.viewDidDisappear`）或点击会话行
@@ -363,9 +372,9 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 - **THEN** 清空 `conversations` + 重置 `hasLoadedConversations = false` + 调用 `notifyUnreadCountChanged()` → 角标归零
 
 #### Scenario: 初始状态
-- **WHEN** App 冷启动后尚未加载会话列表
-- **THEN** 消息 Tab 无角标（`conversations` 为空，`totalUnreadCount() = 0`）
-- **AND** IM 连接成功后自动加载，角标随即更新
+- **WHEN** App 冷启动后尚未加载会话列表与通知
+- **THEN** 消息 Tab 无角标（`totalUnreadCount() = 0`）
+- **AND** IM 连接成功后自动加载团队会话与通知，角标随即更新
 
 ---
 
@@ -553,29 +562,59 @@ App 冷启动
 ---
 
 ### Requirement: Notification Center
-系统 SHALL 提供独立通知中心页面，按时间倒序展示所有系统推送通知。
+系统 SHALL 提供独立通知中心页面，按时间倒序展示系统推送通知。通知中心是只读汇聚页：用户浏览后点击进入**目标业务页**，MUST NOT 把通知行当成会话入口。
 
-**路由**: `/notifications`
-**数据源**: `GET /api/notifications`
+**路由**: `/notifications`（独立页，卡片式）；消息 Tab 内联预览（行列表式）
+**UI 对齐**: funde-client `docs/v0.1/pages/messages/notifications.md`、`NotificationsView.vue`、`MessagesView.vue` `.noti-row`
+**数据源**: 融云单聊/系统会话列表按 `sentTime` 取最新一条，再 `getHistoryMessages` 拉取该会话消息，按时间倒序平铺
 
-#### Scenario: 通知卡片渲染
-- **WHEN** 进入通知中心
-- **THEN** 导航栏标题"通知中心"，左侧返回箭头
-- **AND** 每张通知以卡片形式渲染：[圆角色图标区（iconBg + iconColor，38×38pt 圆角色方形）] + [标题（14pt bold）+ 正文（12pt，2 行截断）+ tag badge + 时间（10pt）]
-- **AND** 按时间倒序平铺，卡片间有间距
+#### Scenario: 从消息 `body` 解析展示与跳转
+- **WHEN** 将一条融云历史消息映射为通知行
+- **THEN** 先取出消息 payload（`AD:SysNotify` 等自定义消息的 encode JSON，或 `RCTextMessage.content` / `extra` 的 JSON）
+- **AND** **展示文案与点击路由 MUST 取 payload 的 `body` 字段**，规则：
+  1. `body` 为对象（或可解析为 JSON 对象的字符串）→ `title` = `body.title`；展示正文 = `body.body` 或 `body.content`；`route` = `body.route` / `body.url` / `body.urlKey` / `body.pageUrl`；`tag` / `icon*` 优先用 `body` 内字段
+  2. `body` 为纯文本 → 展示正文 = 该字符串；`route` / `title` / `tag` 取 payload 同级的 `route`/`url`/`urlKey`/`pageUrl`/`title`/`tag`
+- **AND** 若 payload 无 `body`：回退 `AD:SysNotify.title` + `content` 作展示、`urlKey` 作路由（兼容现网无 `body` 的卡片）；仍无可用正文则丢弃该条
+- **AND** 不含自己发送的消息、不含撤回消息
 
-#### Scenario: 通知图标颜色
-- **WHEN** 渲染通知图标区
-- **THEN** 按 `tag` 类型映射颜色：预约提醒 → 蓝色 / 保险 → 黄色 / 设备指标 → 橙色 / 报告 → 绿色
+#### Scenario: 通知卡片 / 行渲染
+- **WHEN** 进入 `/notifications` 或切换到「通知中心」Tab
+- **THEN** 调用 `IMService.loadNotifications()` 得到通知数组，按消息 `sentTime` 倒序
+- **AND** 独立页对齐 `NotificationsView.vue`：44pt 圆角图标 + 标题加粗 + 正文 2 行截断 + 时间；卡片间距；已读透明度约 0.78
+- **AND** Tab 内联对齐 `MessagesView.vue` `.noti-row`：38pt 图标（未读红点在图标右上）+ 标题与 tag 同行 + 时间右对齐 + 正文单行截断
+- **AND** 图标颜色按 `tag` 映射（payload 已带 `iconBg`/`iconColor` 则用之）：预约提醒蓝 `#3D6FB8/#EAF3FF`；保单黄 `#B47300/#FFF3DC`；设备/指标橙 `#FF7A50/#FFE9DF`；报告绿 `#1F9A6B/#E6F7EF`；订单消息绿 `#4aa65f/#E7F8F0`；退款售后黄/红按 tag
+
+#### Scenario: 点击跳转目标页
+- **WHEN** 用户点击一条通知
+- **THEN** 标记该条已读
+- **AND** 用解析出的 `route` 打开目标页，**禁止** `push ChatViewController`
+- **AND** 路由解析：
+  - `FundeH5:` → `FundePageURL.open`
+  - `FundeApp:` / 以 `/` 开头的 path：先做别名再 `Router.push`（仅已注册 path）
+  - `FundeApp:/order/detail` → `/orders/detail`（单数 `order` 别名到 `orders`）
+  - 订单 id 取 query 的 `id`/`orderId`，缺省则取消息 `businessData.orderId` / `businessData.id`
+  - `/orders/{id}`（id 不是 `detail`/`confirm`/`shipment-records`）→ `/orders/detail` 且 params.id = 该段
+  - `route` 为空、无法解析或路径未注册 → 不跳转（静默），MUST NOT 降级首页
+
+#### Scenario: 收到新通知刷新列表
+- **WHEN** 收到融云 `ConversationType_PRIVATE` 或 `ConversationType_SYSTEM` 实时消息
+- **THEN** 立即将该消息插入通知列表内存，并在主线程发出 `notificationsDidChangePublisher`，Tab 内联与 `/notifications` 刷新
+- **AND** 同时 `notifyUnreadCountChanged()`，底部消息 Tab 角标计入该条未读（用户停在其他 Tab 时同样生效）
+- **AND** 后台再 `loadNotifications()` 与 SDK 历史对齐；过期的拉取结果 MUST NOT 覆盖更新的内存列表
+- **WHEN** 收到 `ConversationType_GROUP`（团队群）实时消息
+- **THEN** MUST NOT 刷新通知中心；若团队会话缓存含该 `conversationId`，则 `updateConversation(id:)` 刷新团队对话（原逻辑）
 
 #### Scenario: 已读行为
-- **WHEN** 用户进入通知中心页面
-- **THEN** 触发 `POST /api/notifications/read-all` 标记全部已读
-- **AND** 消息列表「通知中心」Tab 角标归零
+- **WHEN** 用户点击一条通知
+- **THEN** 立即将该条 `unread = false`（去掉红点）
+- **AND** 调用融云 `setMessageReceivedStatus(READ)` 把对应 IM 消息标为已读，刷新后仍保持已读
+- **AND** 无论目标路由是否识别、是否实际跳转，点击都 MUST 标记已读
+- **WHEN** 仅进入通知中心列表、未点击某条
+- **THEN** MUST NOT 把全部消息标为已读
 
 #### Scenario: 空状态
 - **WHEN** 通知列表为空
-- **THEN** 展示空状态插图 + "暂无通知"
+- **THEN** 展示 "暂无通知"
 
 ---
 
@@ -667,8 +706,9 @@ App 冷启动
 - [ ] 键盘弹起输入栏跟随
 
 ### 通知中心
-- [ ] 通知卡片图标颜色按类型区分
-- [ ] 标题 + 正文（2 行截断）+ 时间渲染正确
+- [ ] 通知卡片 / 行图标颜色按类型区分
+- [ ] 标题 + 正文（独立页 2 行 / Tab 单行截断）+ 时间渲染正确
+- [ ] 展示与点击路由取自消息 `body`；无路由不跳转，不进入会话
 - [ ] 空状态展示
 
 ### 通用

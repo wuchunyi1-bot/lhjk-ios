@@ -15,6 +15,15 @@ final class ColumnContentService {
     /// 首页（Home Tab）轮播栏位 code
     static let homeBannerCode = "home_banner_code"
 
+    /// 首页金刚区（快捷入口）栏位 code
+    static let homeQuickLinkCode = "home_quickLink_code"
+
+    /// 首页推荐健康套餐栏位 code
+    static let homeHealthServiceCode = "home_healthService_code"
+
+    /// 首页健康陪伴（资讯）栏位 code
+    static let homeNewsCode = "home_news_code"
+
     private init() {}
 
     /// 获取服务首页轮播 Banner
@@ -27,6 +36,27 @@ final class ColumnContentService {
     /// 获取首页运营 Banner
     func fetchHomeBanners(
         code: String = ColumnContentService.homeBannerCode
+    ) async throws -> [ServiceHubBanner] {
+        try await fetchBanners(code: code)
+    }
+
+    /// 获取首页金刚区栏位（与 Banner 同 DTO / 过滤规则）
+    func fetchHomeQuickLinks(
+        code: String = ColumnContentService.homeQuickLinkCode
+    ) async throws -> [ServiceHubBanner] {
+        try await fetchBanners(code: code)
+    }
+
+    /// 获取首页推荐健康套餐栏位
+    func fetchHomeHealthServices(
+        code: String = ColumnContentService.homeHealthServiceCode
+    ) async throws -> [ServiceHubBanner] {
+        try await fetchBanners(code: code)
+    }
+
+    /// 获取首页健康陪伴资讯栏位
+    func fetchHomeNews(
+        code: String = ColumnContentService.homeNewsCode
     ) async throws -> [ServiceHubBanner] {
         try await fetchBanners(code: code)
     }

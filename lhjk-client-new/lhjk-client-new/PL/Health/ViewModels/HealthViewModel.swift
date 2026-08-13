@@ -83,10 +83,6 @@ final class HealthViewModel: ObservableObject {
     }
 
     func route(for metric: HealthMetricDisplayItem) -> String {
-        MonitorCardDisplayMapper.appRoute(from: metric.pageUrl, cardType: metric.cardType)
-    }
-
-    func route(for entry: HealthQuickEntryDisplayItem) -> String {
-        MonitorCardDisplayMapper.appRoute(from: entry.pageUrl, cardType: nil)
+        MonitorCardDisplayMapper.route(for: metric.cardType)
     }
 }

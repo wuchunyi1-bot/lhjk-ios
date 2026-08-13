@@ -30,6 +30,7 @@ final class ChatViewModel: ObservableObject {
     // MARK: - Dependencies
 
     let conversationId: String
+    let conversationType: RCConversationType
     private let imService: IMService
     private let rongCloudManager: RongCloudManager
     private let rongCloudMessageDelegate: RongCloudMessageDelegate
@@ -42,16 +43,18 @@ final class ChatViewModel: ObservableObject {
     // MARK: - Init
 
     init(conversationId: String,
+         conversationType: RCConversationType = .ConversationType_GROUP,
          imService: IMService = AppContainer.shared.imService,
          rongCloudManager: RongCloudManager = AppContainer.shared.rongCloudManager,
          rongCloudMessageDelegate: RongCloudMessageDelegate = AppContainer.shared.rongCloudMessageDelegate) {
         self.conversationId = conversationId
+        self.conversationType = conversationType
         self.imService = imService
         self.rongCloudManager = rongCloudManager
         self.rongCloudMessageDelegate = rongCloudMessageDelegate
 
-        // 加载会话元数据
         self.conversation = imService.getConversations().first { $0.id == conversationId }
+            ?? imService.privateConversation(id: conversationId)
 
         setupRealtimeSubscription()
     }
@@ -79,7 +82,10 @@ final class ChatViewModel: ObservableObject {
 
     /// 首次加载历史消息
     func loadMessages() async {
-        let (msgs, timestamp, isRemaining) = await imService.loadMessages(conversationId: conversationId)
+        let (msgs, timestamp, isRemaining) = await imService.loadMessages(
+            conversationId: conversationId,
+            conversationType: conversationType
+        )
         await MainActor.run {
             lastTimestamp = timestamp
             hasMoreMessages = isRemaining
@@ -98,7 +104,8 @@ final class ChatViewModel: ObservableObject {
 
         let (olderMessages, newTimestamp, isRemaining) = await imService.loadOlderMessages(
             conversationId: conversationId,
-            timestamp: lastTimestamp
+            timestamp: lastTimestamp,
+            conversationType: conversationType
         )
         await MainActor.run {
             lastTimestamp = newTimestamp
@@ -152,7 +159,12 @@ final class ChatViewModel: ObservableObject {
         scrollToBottomPublisher.send(false)
 
         Task {
-            let sentMsg = await imService.sendMessage(text, conversationId: conversationId, replyMessage: reply)
+            let sentMsg = await imService.sendMessage(
+                text,
+                conversationId: conversationId,
+                conversationType: conversationType,
+                replyMessage: reply
+            )
             await MainActor.run {
                 self.replaceLocalMessage(localId: localMsg.id, with: sentMsg)
             }
@@ -176,7 +188,12 @@ final class ChatViewModel: ObservableObject {
         scrollToBottomPublisher.send(false)
 
         Task {
-            let sentMsg = await imService.sendImage(image, conversationId: conversationId, replyMessage: reply)
+            let sentMsg = await imService.sendImage(
+                image,
+                conversationId: conversationId,
+                conversationType: conversationType,
+                replyMessage: reply
+            )
             await MainActor.run {
                 self.replaceLocalMessage(localId: localMsg.id, with: sentMsg)
             }
@@ -193,6 +210,7 @@ final class ChatViewModel: ObservableObject {
                 localPath: localPath,
                 duration: duration,
                 conversationId: conversationId,
+                conversationType: conversationType,
                 replyMessage: reply
             )
             await MainActor.run {
@@ -261,8 +279,13 @@ final class ChatViewModel: ObservableObject {
     // MARK: - Mark as Read
 
     func markAsRead() {
-        rongCloudManager.clearGroupUnreadCount(for: conversationId)
-        imService.markAsRead(conversationId)
+        if conversationType == .ConversationType_PRIVATE
+            || conversationType == .ConversationType_SYSTEM {
+            imService.markPrivateAsRead(conversationId)
+        } else {
+            rongCloudManager.clearGroupUnreadCount(for: conversationId)
+            imService.markAsRead(conversationId)
+        }
     }
 
     // MARK: - Private Helpers
@@ -287,6 +310,7 @@ final class ChatViewModel: ObservableObject {
             thumbWidth: thumbWidth,
             thumbHeight: thumbHeight,
             conversationId: conversationId,
+            conversationTypeRaw: conversationType.rawValue,
             extra: nil, reply: nil, messageId: -1
         )
     }
@@ -309,6 +333,7 @@ final class ChatViewModel: ObservableObject {
             card: nil, meal: nil, report: nil,
             imagePath: nil, thumbWidth: nil, thumbHeight: nil,
             conversationId: message.conversationId,
+            conversationTypeRaw: message.conversationTypeRaw,
             extra: nil, reply: nil, messageId: message.messageId
         )
         messages[idx] = recalMsg

@@ -25,6 +25,7 @@ PODS:
   - RongCloudIM/PublicService (5.40.0):
     - RongCloudIM/IMLibCore
   - SnapKit (5.7.1)
+  - WechatOpenSDK-XCFramework (2.0.7)
 
 DEPENDENCIES:
   - Alamofire (~> 5.9)
@@ -33,6 +34,7 @@ DEPENDENCIES:
   - Kingfisher (~> 7.0)
   - RongCloudIM/IMLib (~> 5.40.0)
   - SnapKit (~> 5.7)
+  - WechatOpenSDK-XCFramework
 
 SPEC REPOS:
   trunk:
@@ -42,6 +44,7 @@ SPEC REPOS:
     - Kingfisher
     - RongCloudIM
     - SnapKit
+    - WechatOpenSDK-XCFramework
 
 SPEC CHECKSUMS:
   Alamofire: 400275dd1c6d87d95a041861d2a59da4b520a203
@@ -50,7 +53,8 @@ SPEC CHECKSUMS:
   Kingfisher: 53a10ea35051a436b5fb626ca2dd8f3144d755e9
   RongCloudIM: c9ce09fd954aa63cf443fb0c55823f0d6f40dca6
   SnapKit: d612e99e678a2d3b95bf60b0705ed0a35c03484a
+  WechatOpenSDK-XCFramework: 5df9b250e9839dcc306ad8b00f46822eead1ed47
 
-PODFILE CHECKSUM: f408b1aea6f58d377dd3a2dee03b9ac6374d36e3
+PODFILE CHECKSUM: 47bd58db1266e6505d9fc0156b0ffe5c198074d2
 
 COCOAPODS: 1.17.0

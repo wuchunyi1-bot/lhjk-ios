@@ -14,27 +14,8 @@ final class MessagesViewController: BaseViewController {
 
     // MARK: - UI
 
-    private let headerView: UIView = {
-        let v = UIView()
-        v.backgroundColor = .fdBg
-        return v
-    }()
-
-    private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.text = "消息"
-        label.font = .fdFont(ofSize: 18, weight: .semibold)
-        label.textColor = .fdText
-        return label
-    }()
-
-    private let subtitleLabel: UILabel = {
-        let label = UILabel()
-        label.text = "您的健管团队 7X24 在线"
-        label.font = .fdFont(ofSize: 12, weight: .regular)
-        label.textColor = .fdSubtext
-        return label
-    }()
+    /// 与服务 / 健康共用顶栏字号与间距（标题 fdH2 / 副标题 12）
+    private let brandHeader = TabHubBrandHeaderView()
 
     /// Figma 3042:740：选中「团队对话」时的曲线背景
     private let activeTabBackgroundView: UIImageView = {
@@ -85,46 +66,39 @@ final class MessagesViewController: BaseViewController {
     override func setupUI() {
         view.backgroundColor = .fdBg
 
-        headerView.addSubview(titleLabel)
-        headerView.addSubview(subtitleLabel)
+        brandHeader.configure(
+            title: "消息",
+            subtitle: "您的健管团队 7X24 在线",
+            titleColor: .fdText
+        )
+
         [
-            headerView,
+            brandHeader,
             activeTabBackgroundView,
             inactiveTabBackgroundView,
             segmentedControl,
             containerView,
         ].forEach(view.addSubview)
 
-        headerView.snp.makeConstraints { make in
+        brandHeader.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
-            make.height.equalTo(65)
-        }
-        titleLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(9)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.height.equalTo(22)
-        }
-        subtitleLabel.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(7)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.height.equalTo(15)
         }
 
         activeTabBackgroundView.snp.makeConstraints { make in
-            make.top.equalTo(headerView.snp.bottom)
+            make.top.equalTo(brandHeader.snp.bottom)
             make.leading.trailing.equalToSuperview()
             make.height.equalTo(185)
         }
         inactiveTabBackgroundView.snp.makeConstraints { make in
-            make.top.equalTo(headerView.snp.bottom).offset(6)
+            make.top.equalTo(brandHeader.snp.bottom).offset(6)
             make.trailing.equalToSuperview()
             make.width.equalTo(212)
             make.height.equalTo(185)
         }
 
         segmentedControl.snp.makeConstraints { make in
-            make.top.equalTo(headerView.snp.bottom)
+            make.top.equalTo(brandHeader.snp.bottom)
             make.leading.trailing.equalToSuperview()
             make.height.equalTo(73)
         }

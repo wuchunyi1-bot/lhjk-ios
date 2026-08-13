@@ -1,7 +1,7 @@
 import UIKit
 import WebKit
 
-/// 通用 WebView 页面 — 加载指定 URL，并注入 FundeNative Bridge
+/// 通用 WebView 页面 — 加载指定 URL，并注入 FundeBridge / FundeNative
 final class WebViewController: BaseViewController {
 
     private let urlString: String
@@ -18,6 +18,7 @@ final class WebViewController: BaseViewController {
         let userContent = WKUserContentController()
         let proxy = WeakScriptMessageHandler(target: self)
         self.scriptHandlerProxy = proxy
+        userContent.add(proxy, name: FundeNativeBridge.packageHandlerName)
         userContent.add(proxy, name: FundeNativeBridge.handlerName)
 
         let config = WKWebViewConfiguration()
@@ -136,7 +137,9 @@ final class WebViewController: BaseViewController {
 
     deinit {
         bridge?.detach()
-        webView.configuration.userContentController.removeScriptMessageHandler(forName: FundeNativeBridge.handlerName)
+        let controller = webView.configuration.userContentController
+        controller.removeScriptMessageHandler(forName: FundeNativeBridge.packageHandlerName)
+        controller.removeScriptMessageHandler(forName: FundeNativeBridge.handlerName)
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress))
     }
 
@@ -215,7 +218,8 @@ extension WebViewController: WKScriptMessageHandler {
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
     ) {
-        guard message.name == FundeNativeBridge.handlerName else { return }
+        guard message.name == FundeNativeBridge.packageHandlerName
+                || message.name == FundeNativeBridge.handlerName else { return }
         bridge?.handle(message: message.body)
     }
 }

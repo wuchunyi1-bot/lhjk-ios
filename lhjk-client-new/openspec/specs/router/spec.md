@@ -61,7 +61,7 @@
 
 #### Scenario: 路由未匹配
 - **WHEN** URL 路径未注册
-- **THEN** Router 降级到默认页面（首页），输出警告日志
+- **THEN** Router MUST NOT 跳转，MUST NOT 降级到首页；输出警告日志后静默返回
 
 ---
 

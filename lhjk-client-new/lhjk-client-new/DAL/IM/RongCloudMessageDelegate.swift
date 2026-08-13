@@ -149,6 +149,7 @@ extension ChatMessage {
             thumbWidth: thumbWidth,
             thumbHeight: thumbHeight,
             conversationId: rcMessage.targetId,
+            conversationTypeRaw: rcMessage.conversationType.rawValue,
             extra: extra,
             reply: reply,
             messageId: rcMessage.messageId
@@ -267,9 +268,11 @@ extension ChatMessage {
 // MARK: - Variant
 
 /// 协议卡片子类型
-/// - AD:SysNotify：仅 `monitor`（新 rows 卡）或 `sysNotify`（旧 C-sys）
+/// - AD:SysNotify：`monitorReminder`（实时提醒）/ `monitor`（录入成功）/ `sysNotify`（旧 C-sys）
 /// - 其它 ObjectName：vip / serviceComment / checkUser
 enum IMCardVariant: String {
+    /// 实时提醒：`extra.type == realTime`
+    case monitorReminder = "monitor-reminder"
     /// 监测上传新卡：`extra.rows` 非空，正文不读 `content`
     case monitor
     /// 旧版通用通知（C-sys）：无 rows；读 title + content
@@ -324,10 +327,91 @@ enum IMMonitorRow {
     }
 }
 
-// MARK: - Tap action（非 SysNotify 监测卡；套餐等已从 SysNotify 移除）
+// MARK: - Tap action
 
 enum IMCardTapAction {
+    case openRoute(String)
     case unavailable(String)
+}
+
+// MARK: - 实时提醒跳转
+
+/// 对齐 funde-client `monitor-reminder-routes.ts` + 生产 `urlKey`（AngelDoctor://…）
+enum IMMonitorReminderRoute {
+    private static let typePaths: [String: String] = [
+        "pressure": "/health/metrics/blood-pressure/add",
+        "sugar": "/health/metrics/blood-sugar/add",
+        "glucose": "/health/metrics/blood-sugar/add",
+        "weight": "/health/metrics/weight/add",
+        "temperature": "/health/metrics/temperature/add",
+        "diet": "/health/metrics/exercise",
+        "sport": "/health/metrics/exercise/add-motion",
+        "exercise": "/health/metrics/exercise/add-motion",
+    ]
+
+    private static let titleKeywords: [(String, String)] = [
+        ("血压", "/health/metrics/blood-pressure/add"),
+        ("血糖", "/health/metrics/blood-sugar/add"),
+        ("体重", "/health/metrics/weight/add"),
+        ("体温", "/health/metrics/temperature/add"),
+        ("饮食", "/health/metrics/exercise"),
+        ("运动", "/health/metrics/exercise/add-motion"),
+    ]
+
+    static func entryPath(urlKey: String?, monitorType: String?, title: String?) -> String {
+        let normalizedType = Self.normalizeMonitorType(monitorType)
+        if let path = typePaths[normalizedType] {
+            return path
+        }
+
+        let key = (urlKey ?? "").lowercased()
+        if key.contains("tizhong") || key.contains("weight") {
+            return "/health/metrics/weight/add"
+        }
+        if key.contains("xueya") || key.contains("pressure") {
+            return "/health/metrics/blood-pressure/add"
+        }
+        if key.contains("xuetang") || key.contains("sugar") || key.contains("glucose") {
+            return "/health/metrics/blood-sugar/add"
+        }
+        if key.contains("tiwen") || key.contains("temperature") || key.contains("temp") {
+            return "/health/metrics/temperature/add"
+        }
+        if key.contains("yinshi") || key.contains("diet") {
+            return "/health/metrics/exercise"
+        }
+        if key.contains("yundong") || key.contains("sport") || key.contains("exercise") {
+            return "/health/metrics/exercise/add-motion"
+        }
+
+        if let title {
+            for (keyword, path) in titleKeywords where title.contains(keyword) {
+                return path
+            }
+        }
+        return "/health/metrics"
+    }
+
+    static func normalizeMonitorType(_ raw: String?) -> String {
+        let t = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if t == "glucose" { return "sugar" }
+        return t
+    }
+
+    static func isCompleted(extra: [String: Any]?) -> Bool {
+        guard let extra else { return false }
+        if let s = IMCardJSON.stringValue(extra["completed"]) {
+            let t = s.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            return t == "1" || t == "true" || t == "yes"
+        }
+        if let n = extra["completed"] as? NSNumber {
+            return n.intValue == 1
+        }
+        if let b = extra["completed"] as? Bool {
+            return b
+        }
+        return false
+    }
 }
 
 // MARK: - Resolved model
@@ -344,17 +428,16 @@ struct IMCardResolved {
     let extra: [String: Any]?
     let isShowUser: Bool
     let lastMsgDisplayContent: String?
-    /// 改造后监测卡行；仅 `monitor`
+    /// 改造后监测卡行；`monitor` / `monitorReminder`
     let monitorRows: [IMMonitorRow]
-    /// `extra.dataSourceTag`，如「手动记录」
+    /// `extra.dataSourceTag`；提醒卡缺省「监测任务」
     let dataSourceTag: String?
     /// `extra.monitorType`：pressure/sugar/weight/temperature/diet/sport
     let monitorType: String?
 
     /// 监测卡圆形图标主题色：仅按 `monitorType`（对齐 funde-client iconMeta）
-    /// 结果行 `color` 只用于结果胶囊，不反哺图标
     var monitorAccentHex: String {
-        switch monitorType {
+        switch IMMonitorReminderRoute.normalizeMonitorType(monitorType) {
         case "pressure": return "#B47300"
         case "sugar": return "#E5564B"
         case "weight": return "#1F9A6B"
@@ -369,12 +452,16 @@ struct IMCardResolved {
         UIColor(hexString: monitorAccentHex)
     }
 
-    /// 左图：仅旧 C-sys 在有 imageUrl 时展示；监测新卡 / VIP / 评价 / 核对无封面
+    var isReminderCompleted: Bool {
+        IMMonitorReminderRoute.isCompleted(extra: extra)
+    }
+
+    /// 左图：仅旧 C-sys 在有 imageUrl 时展示
     var showsCover: Bool {
         switch variant {
         case .sysNotify:
             return !(imageUrl?.isEmpty ?? true)
-        case .monitor, .serviceComment, .checkUser, .vip:
+        case .monitor, .monitorReminder, .serviceComment, .checkUser, .vip:
             return false
         }
     }
@@ -383,6 +470,8 @@ struct IMCardResolved {
         switch variant {
         case .monitor:
             return "" // 正文来自 rows，不读 content
+        case .monitorReminder:
+            return rawContent
         case .sysNotify:
             return Self.appendStatus(to: rawContent, extra: extra)
         case .vip:
@@ -410,7 +499,6 @@ struct IMCardResolved {
     }
 
     private static func appendStatus(to content: String, extra: [String: Any]?) -> String {
-        // 旧格式：extra 有 date/status 无 rows 时，status 拼到 content
         guard IMMonitorRow.parseList(from: extra).isEmpty,
               let status = extra?["status"] as? [String: Any],
               let statusText = IMCardJSON.stringValue(status["content"]),
@@ -445,12 +533,19 @@ enum IMCardResolver {
 
         let variant = resolveVariant(
             objectName: objectName,
+            extra: extra,
             monitorRows: monitorRows
         )
 
+        let tag = IMCardJSON.dataSourceTag(from: extra)
+            ?? (variant == .monitorReminder ? "监测任务" : nil)
+
+        let completed = IMMonitorReminderRoute.isCompleted(extra: extra)
+        let clickable = variant == .monitorReminder && !completed
+
         return IMCardResolved(
             variant: variant,
-            clickable: false,
+            clickable: clickable,
             objectName: objectName,
             title: title.isEmpty && variant == .checkUser ? "核对信息消息" : title,
             rawContent: content,
@@ -461,7 +556,7 @@ enum IMCardResolver {
             isShowUser: isShowUser,
             lastMsgDisplayContent: lastMsgDisplayContent,
             monitorRows: monitorRows,
-            dataSourceTag: IMCardJSON.dataSourceTag(from: extra),
+            dataSourceTag: tag,
             monitorType: IMCardJSON.stringValue(extra?["monitorType"])
         )
     }
@@ -484,12 +579,12 @@ enum IMCardResolver {
                 isShowUser: n.isShowUser,
                 lastMsgDisplayContent: n.lastMsgDisplayContent
             )
-            if resolved.variant == .monitor {
+            if resolved.variant == .monitor || resolved.variant == .monitorReminder {
                 let rawPreview: String = {
                     if let s = extraRaw as? String { return String(s.prefix(180)) }
                     return String(String(describing: extraRaw).prefix(180))
                 }()
-                print("[IM-Card] resolve tag=\(resolved.dataSourceTag ?? "nil") rawExtra=\(rawPreview)")
+                print("[IM-Card] resolve variant=\(resolved.variant.rawValue) tag=\(resolved.dataSourceTag ?? "nil") rawExtra=\(rawPreview)")
             }
             return resolved
         }
@@ -535,20 +630,37 @@ enum IMCardResolver {
         return nil
     }
 
-    /// AD:SysNotify：`extra.rows` 非空 → monitor；否则旧 C-sys。不再按 urlKey 拆 meal/detection 等。
-    static func resolveVariant(objectName: String, monitorRows: [IMMonitorRow]) -> IMCardVariant {
+    /// AD:SysNotify：realTime → monitorReminder；rows → monitor；否则 sysNotify
+    static func resolveVariant(
+        objectName: String,
+        extra: [String: Any]?,
+        monitorRows: [IMMonitorRow]
+    ) -> IMCardVariant {
         if objectName == "AD:ServiceComment" { return .serviceComment }
         if objectName == "AD:CheckUserMsg" { return .checkUser }
         if objectName == "AD:Vip" { return .vip }
         if objectName == "AD:SysNotify" {
+            let type = IMCardJSON.stringValue(extra?["type"])?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if type == "realTime" {
+                return .monitorReminder
+            }
             return monitorRows.isEmpty ? .sysNotify : .monitor
         }
         return .sysNotify
     }
 
     static func tapAction(for card: IMCardResolved) -> IMCardTapAction? {
-        guard card.clickable else { return nil }
-        return nil
+        guard card.variant == .monitorReminder else { return nil }
+        if card.isReminderCompleted {
+            return .unavailable("任务已完成")
+        }
+        let path = IMMonitorReminderRoute.entryPath(
+            urlKey: card.urlKey,
+            monitorType: card.monitorType,
+            title: card.title
+        )
+        return .openRoute(path)
     }
 }
 

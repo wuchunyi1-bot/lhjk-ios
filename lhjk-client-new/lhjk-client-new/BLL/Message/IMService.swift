@@ -14,9 +14,17 @@ final class IMService {
 
     private var conversations: [Conversation] = []
     private var notifications: [AppNotification] = []
+    /// 通知中心对应的融云单聊（与 notifications 同步）
+    private var privateConversations: [Conversation] = []
+    /// 通知中心当前展示的会话（单聊列表按 sentTime 最新的一条）
+    private var notificationConversationId: String?
+    private var notificationConversationType: RCConversationType = .ConversationType_PRIVATE
     private var messagesStore: [String: [ChatMessage]] = [:]
 
     private var cancellables = Set<AnyCancellable>()
+
+    /// 通知中心拉取代数：较新的 load 完成后，丢弃过期结果，避免覆盖实时插入
+    private var notificationsLoadGeneration = 0
 
     /// 是否已完成过会话列表加载，用于避免重复 HTTP 请求
     private var _hasLoadedConversations = false
@@ -29,6 +37,9 @@ final class IMService {
 
     /// 团队对话总未读数变更，用于底部消息 Tab 角标更新
     let totalUnreadCountDidChangePublisher = PassthroughSubject<Int, Never>()
+
+    /// 通知中心列表已更新（实时新消息或重新拉取）
+    let notificationsDidChangePublisher = PassthroughSubject<Void, Never>()
 
     private init() {
         // 订阅实时消息，按 conversationId 缓存
@@ -44,8 +55,20 @@ final class IMService {
             .sink { [weak self] _ in
                 guard let self else { return }
                 let empty = self.withState { self.conversations.isEmpty }
-                guard empty else { return }
-                Task { _ = await self.loadConversations() }
+                if empty {
+                    Task { _ = await self.loadConversations() }
+                }
+            }
+            .store(in: &cancellables)
+
+        // 远端会话真正写入本地后，再拉通知中心（success 回调不等于已入库）
+        RongCloudManager.shared.remoteConversationListDidSyncPublisher
+            .sink { [weak self] code in
+                print("[IMService] remoteConversationListDidSync code=\(code.rawValue), load notifications")
+                Task {
+                    _ = await self?.loadNotifications()
+                    self?.publishNotificationsDidChange()
+                }
             }
             .store(in: &cancellables)
     }
@@ -65,16 +88,56 @@ final class IMService {
 
     private func onMessageReceived(_ msg: ChatMessage) {
         guard let convId = msg.conversationId else { return }
-        let shouldUpdateUnread = withState { () -> Bool in
+        withState {
             messagesStore[convId, default: []].append(msg)
-            return !conversations.isEmpty && conversations.contains(where: { $0.id == convId })
         }
-        print("[IMService] real-time message received for conv=\(convId)")
+        print("[IMService] real-time message received for conv=\(convId) type=\(msg.conversationTypeRaw) isNotification=\(msg.isNotificationConversation)")
 
-        // 若会话列表已加载，主动更新该会话未读数（即使 ConversationListVC 未加载也能驱动角标刷新）
+        if msg.isNotificationConversation {
+            ingestIncomingNotification(msg)
+            Task {
+                _ = await self.loadNotifications()
+                self.publishNotificationsDidChange()
+            }
+            return
+        }
+
+        let shouldUpdateUnread = withState {
+            !conversations.isEmpty && conversations.contains(where: { $0.id == convId })
+        }
         guard shouldUpdateUnread else { return }
         Task {
             _ = await updateConversation(id: convId)
+        }
+    }
+
+    /// 单聊/系统消息先插入内存并立刻通知 UI，不等待历史拉取
+    private func ingestIncomingNotification(_ msg: ChatMessage) {
+        guard msg.role != .user, msg.type != .recall else { return }
+        guard let noti = AppNotification.fromChatMessage(
+            msg,
+            conversationType: msg.rongConversationType,
+            unread: true
+        ) else {
+            print("[通知中心-BLL] ingest skip 无法从实时消息解析出通知 id=\(msg.id)")
+            return
+        }
+        withState {
+            notifications.removeAll { $0.id == noti.id }
+            notifications.insert(noti, at: 0)
+        }
+        print("[通知中心-BLL] ingest inserted id=\(noti.id) title=\(noti.title)")
+        publishNotificationsDidChange()
+    }
+
+    private func publishNotificationsDidChange() {
+        notifyUnreadCountChanged()
+        if Thread.isMainThread {
+            notificationsDidChangePublisher.send()
+        } else {
+            DispatchQueue.main.async { [weak self] in
+                self?.notificationsDidChangePublisher.send()
+            }
         }
     }
 
@@ -139,7 +202,7 @@ final class IMService {
             }
 
             // Step 3: 匹配融云的在前展示，未匹配的在后
-            // 先按 sentTime 倒序排列融云返回的会话
+            // 按最后一条消息的服务端 sentTime 倒序（与 item 右上角时间一致，不用阅读/operationTime）
             let sortedRC = rcList.sorted { $0.sentTime > $1.sentTime }
             var matchedIds = Set<String>()
 
@@ -164,7 +227,7 @@ final class IMService {
                 }
             }
 
-            let list = matchedList + unmatchedList
+            let list = Conversation.sortedByLastMessage(matchedList + unmatchedList)
             return finishConversationsLoad(replacingWith: list)
         }
 
@@ -187,9 +250,12 @@ final class IMService {
         withState { conversations }
     }
 
-    /// 团队对话总未读数
+    /// 消息 Tab 角标：团队对话未读 + 通知中心未读
     func totalUnreadCount() -> Int {
-        withState { conversations.reduce(0) { $0 + $1.unread } }
+        withState {
+            conversations.reduce(0) { $0 + $1.unread }
+                + notifications.filter { $0.unread }.count
+        }
     }
 
     /// 通知未读数
@@ -199,7 +265,15 @@ final class IMService {
 
     /// 通知订阅者总未读数已变更
     private func notifyUnreadCountChanged() {
-        totalUnreadCountDidChangePublisher.send(totalUnreadCount())
+        let send = { [weak self] in
+            guard let self else { return }
+            self.totalUnreadCountDidChangePublisher.send(self.totalUnreadCount())
+        }
+        if Thread.isMainThread {
+            send()
+        } else {
+            DispatchQueue.main.async(execute: send)
+        }
     }
 
     func markAsRead(_ conversationId: String) {
@@ -260,14 +334,16 @@ final class IMService {
         let newTime    = Conversation.formatRCTime(rc.sentTime)
         let newUnread  = Int(rc.unreadMessageCount)
 
-        print("[IMService] updateConversation ✓ convId=\(id) lastMsg \"\(lookup.oldLastMsg.prefix(12))…\" → \"\(newLastMsg.prefix(12))…\" unread \(lookup.oldUnread)→\(newUnread) time=\(newTime)")
+        print("[IMService] updateConversation ✓ convId=\(id) lastMsg \"\(lookup.oldLastMsg.prefix(12))…\" → \"\(newLastMsg.prefix(12))…\" unread \(lookup.oldUnread)→\(newUnread) time=\(newTime) sentTime=\(rc.sentTime)")
 
         let updated = withState { () -> Conversation? in
             guard let idx = conversations.firstIndex(where: { $0.id == id }) else { return nil }
             conversations[idx].lastMessage = newLastMsg
+            conversations[idx].lastMessageAt = rc.sentTime
             conversations[idx].lastTime   = newTime
             conversations[idx].unread     = newUnread
-            return conversations[idx]
+            conversations = Conversation.sortedByLastMessage(conversations)
+            return conversations.first(where: { $0.id == id })
         }
         notifyUnreadCountChanged()
         return updated
@@ -284,8 +360,13 @@ final class IMService {
     func clear() {
         withState {
             conversations.removeAll()
+            notifications.removeAll()
+            privateConversations.removeAll()
+            notificationConversationId = nil
+            notificationConversationType = .ConversationType_PRIVATE
             messagesStore.removeAll()
             _hasLoadedConversations = false
+            notificationsLoadGeneration = 0
         }
         notifyUnreadCountChanged()
         print("[IMService] cleared")
@@ -293,23 +374,145 @@ final class IMService {
 
     // MARK: - Notifications
 
+    /// 通知中心：单聊会话列表 → 取 sentTime 最新的一条 → 拉取该会话历史消息平铺展示
+    func loadNotifications() async -> [AppNotification] {
+        let isConnected = RongCloudManager.shared.connectionStatus == .connected
+        guard isConnected else {
+            return withState { notifications }
+        }
+        let generation = withState {
+            notificationsLoadGeneration += 1
+            return notificationsLoadGeneration
+        }
+
+        let rcList: [RCConversation] = await withCheckedContinuation { continuation in
+            RongCloudManager.shared.getPrivateConversationList { list in
+                continuation.resume(returning: list)
+            }
+        }
+        let sorted = rcList.sorted { $0.sentTime > $1.sentTime }
+        let mappedConv = sorted.map { Conversation.fromRongCloud($0) }
+        guard let first = sorted.first else {
+            print("[IMService] loadNotifications privateCount=0")
+            return withState {
+                guard generation == notificationsLoadGeneration else { return notifications }
+                notifications = []
+                privateConversations = mappedConv
+                notificationConversationId = nil
+                return notifications
+            }
+        }
+
+        let (rcMessages, _, _) = await RongCloudManager.shared.getHistoryMessages(
+            targetId: first.targetId,
+            conversationType: first.conversationType,
+            recordTime: 0,
+            count: 50
+        )
+        // getHistoryMessages 默认降序（新→旧）；通知中心按时间倒序，保持该顺序
+        let incoming = rcMessages.filter { rc in
+            rc.messageDirection != .MessageDirection_SEND
+                && !(rc.content is RCRecallNotificationMessage)
+        }
+        print("[通知中心-BLL] loadNotifications conv=\(first.targetId) type=\(first.conversationType.rawValue) history=\(rcMessages.count) incoming=\(incoming.count)")
+        let mappedNoti = incoming.enumerated().compactMap { index, rc -> AppNotification? in
+            let raw = Self.debugMessageBody(rc)
+            let unread = Self.isMessageUnread(rc)
+            print("[通知中心-BLL] raw[\(index)] objectName=\(rc.objectName ?? "nil") msgId=\(rc.messageId) sentTime=\(rc.sentTime) unread=\(unread) body=\(raw)")
+            guard let noti = AppNotification.fromPrivateMessage(rc, unread: unread) else {
+                print("[通知中心-BLL] skip[\(index)] 无法从 body 解析出通知")
+                return nil
+            }
+            print("[通知中心-BLL] mapped[\(index)] title=\(noti.title) body=\(noti.body) tag=\(noti.tag) route=\(noti.route ?? "nil") unread=\(noti.unread)")
+            return noti
+        }
+        print("[通知中心-BLL] loadNotifications mappedCount=\(mappedNoti.count)")
+
+        return withState {
+            guard generation == notificationsLoadGeneration else {
+                print("[通知中心-BLL] loadNotifications stale generation=\(generation) current=\(notificationsLoadGeneration), keep memory")
+                return notifications
+            }
+            notifications = mappedNoti
+            privateConversations = mappedConv
+            notificationConversationId = first.targetId
+            notificationConversationType = first.conversationType
+            return notifications
+        }
+    }
+
     func getNotifications() -> [AppNotification] {
         withState { notifications }
+    }
+
+    func privateConversation(id: String) -> Conversation? {
+        withState { privateConversations.first { $0.id == id } }
     }
 
     func markNotificationsRead() {
         withState {
             for i in notifications.indices { notifications[i].unread = false }
         }
+        notifyUnreadCountChanged()
+    }
+
+    func markNotificationRead(_ id: String) {
+        let messageId: Int = withState {
+            guard let idx = notifications.firstIndex(where: { $0.id == id }) else { return -1 }
+            notifications[idx].unread = false
+            return notifications[idx].rongMessageId
+        }
+        print("[通知中心-BLL] markNotificationRead id=\(id) messageId=\(messageId)")
+        RongCloudManager.shared.markMessageRead(messageId: messageId)
+        notifyUnreadCountChanged()
+    }
+
+    private static func isMessageUnread(_ rc: RCMessage) -> Bool {
+        guard rc.messageDirection == .MessageDirection_RECEIVE else { return false }
+        return (rc.receivedStatus.rawValue & RCReceivedStatus.ReceivedStatus_READ.rawValue) == 0
+    }
+
+    func markPrivateAsRead(_ conversationId: String) {
+        let type: RCConversationType = withState {
+            for i in notifications.indices where notifications[i].conversationId == conversationId {
+                notifications[i].unread = false
+            }
+            if let idx = privateConversations.firstIndex(where: { $0.id == conversationId }) {
+                privateConversations[idx].unread = 0
+            }
+            return notifications.first(where: { $0.conversationId == conversationId })?.rongConversationType
+                ?? notificationConversationType
+        }
+        RongCloudManager.shared.clearUnreadCount(for: conversationId, type: type)
+        notifyUnreadCountChanged()
+    }
+
+    private static func debugMessageBody(_ rc: RCMessage) -> String {
+        if let text = rc.content as? RCTextMessage {
+            return "RCText extra=\(text.extra ?? "nil") content=\(text.content ?? "")"
+        }
+        if let data = rc.content?.encode(),
+           let json = String(data: data, encoding: .utf8),
+           !json.isEmpty {
+            return json
+        }
+        if let extra = rc.content?.extra, !extra.isEmpty {
+            return "extra=\(extra)"
+        }
+        return "objectName=\(rc.objectName ?? "nil") content=\(String(describing: rc.content))"
     }
 
     // MARK: - Messages
 
     /// 异步加载历史消息（直接走融云推荐 API，消息正常入库 messageId 可靠）
     /// - Returns: (消息列表, 下次翻页用的 timestamp, 是否还有更多远端消息)
-    func loadMessages(conversationId: String) async -> (messages: [ChatMessage], timestamp: Int64, isRemaining: Bool) {
+    func loadMessages(
+        conversationId: String,
+        conversationType: RCConversationType = .ConversationType_GROUP
+    ) async -> (messages: [ChatMessage], timestamp: Int64, isRemaining: Bool) {
         let (rcMessages, timestamp, isRemaining) = await RongCloudManager.shared.getHistoryMessages(
             targetId: conversationId,
+            conversationType: conversationType,
             recordTime: 0,
             count: 20
         )
@@ -329,11 +532,16 @@ final class IMService {
     /// 加载更早的历史消息（用上次返回的 timestamp 翻页）
     /// - Parameter timestamp: 上次 getHistoryMessages 回调返回的翻页游标
     /// - Returns: (消息列表, 新的 timestamp, 是否还有更多)
-    func loadOlderMessages(conversationId: String, timestamp: Int64) async -> (messages: [ChatMessage], timestamp: Int64, isRemaining: Bool) {
+    func loadOlderMessages(
+        conversationId: String,
+        timestamp: Int64,
+        conversationType: RCConversationType = .ConversationType_GROUP
+    ) async -> (messages: [ChatMessage], timestamp: Int64, isRemaining: Bool) {
         print("[IMService] loadOlderMessages conv=\(conversationId) timestamp=\(timestamp)")
 
         let (rcMessages, newTimestamp, isRemaining) = await RongCloudManager.shared.getHistoryMessages(
             targetId: conversationId,
+            conversationType: conversationType,
             recordTime: timestamp,
             count: 20
         )
@@ -356,12 +564,13 @@ final class IMService {
 
     /// 发送文本消息（通过融云 SDK）
     func sendMessage(_ text: String, conversationId: String,
+                     conversationType: RCConversationType = .ConversationType_GROUP,
                      replyMessage: ReplyMessage? = nil) async -> ChatMessage? {
         let senderInfo = makeSenderUserInfo()
         let extra = replyMessage.flatMap { ReplyMessage.toExtraJSON($0) }
         let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
             RongCloudManager.shared.sendTextMessage(
-                conversationType: .ConversationType_GROUP,
+                conversationType: conversationType,
                 targetId: conversationId,
                 content: text,
                 extra: extra,
@@ -382,12 +591,13 @@ final class IMService {
 
     /// 发送图片消息（通过融云 SDK）
     func sendImage(_ image: UIImage, conversationId: String,
+                   conversationType: RCConversationType = .ConversationType_GROUP,
                    replyMessage: ReplyMessage? = nil) async -> ChatMessage? {
         let senderInfo = makeSenderUserInfo()
         let extra = replyMessage.flatMap { ReplyMessage.toExtraJSON($0) }
         let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
             RongCloudManager.shared.sendImageMessage(
-                conversationType: .ConversationType_GROUP,
+                conversationType: conversationType,
                 targetId: conversationId,
                 image: image,
                 extra: extra,
@@ -504,12 +714,13 @@ final class IMService {
 
     /// 发送语音消息（RC:HQVCMsg）
     func sendVoice(localPath: String, duration: Int, conversationId: String,
+                   conversationType: RCConversationType = .ConversationType_GROUP,
                    replyMessage: ReplyMessage? = nil) async -> ChatMessage? {
         let senderInfo = makeSenderUserInfo()
         let extra = replyMessage.flatMap { ReplyMessage.toExtraJSON($0) }
         let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
             RongCloudManager.shared.sendHQVoiceMessage(
-                conversationType: .ConversationType_GROUP,
+                conversationType: conversationType,
                 targetId: conversationId,
                 localPath: localPath,
                 duration: duration,

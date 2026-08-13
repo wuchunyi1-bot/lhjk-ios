@@ -119,6 +119,7 @@ final class RootTabBarController: UITabBarController {
     // MARK: - Badge
 
     private func setupBadgeSubscription() {
+        updateMessageBadge(IMService.shared.totalUnreadCount())
         IMService.shared.totalUnreadCountDidChangePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] totalUnread in

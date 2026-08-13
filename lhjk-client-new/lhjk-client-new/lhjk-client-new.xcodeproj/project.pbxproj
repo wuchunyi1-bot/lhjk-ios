@@ -274,6 +274,8 @@
 		A5B1FB303009E3350039B16C /* MapCoordinateConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB2F3009E3350039B16C /* MapCoordinateConverter.swift */; };
 		A5B1FB33300A022F0039B16C /* ShoppingCartModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB31300A022F0039B16C /* ShoppingCartModels.swift */; };
 		A5B1FB34300A022F0039B16C /* ShoppingCartService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB32300A022F0039B16C /* ShoppingCartService.swift */; };
+		A5B48010302DA29400319851 /* NotificationMessageMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B4800F302DA29400319851 /* NotificationMessageMapper.swift */; };
+		A5B77A5E302B24F70054B2C4 /* FundePageURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B77A5D302B24F70054B2C4 /* FundePageURL.swift */; };
 		A5BD9DE430199326008C44FC /* TabHubBrandHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DE230199326008C44FC /* TabHubBrandHeaderView.swift */; };
 		A5BD9DEA3019A316008C44FC /* OKOKV3PacketParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DE73019A316008C44FC /* OKOKV3PacketParser.swift */; };
 		A5BD9DEB3019A316008C44FC /* OKOKBroadcastScaleHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DE63019A316008C44FC /* OKOKBroadcastScaleHandler.swift */; };
@@ -610,6 +612,8 @@
 		A5B1FB2F3009E3350039B16C /* MapCoordinateConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapCoordinateConverter.swift; sourceTree = "<group>"; };
 		A5B1FB31300A022F0039B16C /* ShoppingCartModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShoppingCartModels.swift; path = BLL/Service/ShoppingCartModels.swift; sourceTree = "<group>"; };
 		A5B1FB32300A022F0039B16C /* ShoppingCartService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShoppingCartService.swift; path = BLL/Service/ShoppingCartService.swift; sourceTree = "<group>"; };
+		A5B4800F302DA29400319851 /* NotificationMessageMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NotificationMessageMapper.swift; path = DAL/IM/NotificationMessageMapper.swift; sourceTree = "<group>"; };
+		A5B77A5D302B24F70054B2C4 /* FundePageURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FundePageURL.swift; path = Other/Common/FundePageURL.swift; sourceTree = "<group>"; };
 		A5BD9DE230199326008C44FC /* TabHubBrandHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabHubBrandHeaderView.swift; sourceTree = "<group>"; };
 		A5BD9DE53019A316008C44FC /* BLEDeviceHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BLEDeviceHandler.swift; path = DAL/Bluetooth/BLEDeviceHandler.swift; sourceTree = "<group>"; };
 		A5BD9DE63019A316008C44FC /* OKOKBroadcastScaleHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OKOKBroadcastScaleHandler.swift; sourceTree = "<group>"; };
@@ -727,6 +731,7 @@
 		75BC1DDC53A99376450DD2BB /* Common */ = {
 			isa = PBXGroup;
 			children = (
+				A5B77A5D302B24F70054B2C4 /* FundePageURL.swift */,
 				A5BD9DE330199326008C44FC /* Components */,
 				A528D7B030078E1C005B0CA7 /* H5Config.swift */,
 				A5A6F5392FFF7E100065C921 /* DebugLogger.swift */,
@@ -2202,6 +2207,7 @@
 		ECD3693CC57BA01CDA4D232D /* IM */ = {
 			isa = PBXGroup;
 			children = (
+				A5B4800F302DA29400319851 /* NotificationMessageMapper.swift */,
 				A5A6F52B2FFF7D240065C921 /* CustomMessages */,
 				A5A6F52C2FFF7D240065C921 /* GroupVO.swift */,
 				3743DC311DF3858D78351828 /* Conversation.swift */,
@@ -2473,6 +2479,7 @@
 				A5BD9DF23019D0C6008C44FC /* FundeNativeBridge.swift in Sources */,
 				A5BD9DF33019D0C6008C44FC /* WeakScriptMessageHandler.swift in Sources */,
 				A5C71AF530185CD6006EA79C /* BenefitListViewController.swift in Sources */,
+				A5B77A5E302B24F70054B2C4 /* FundePageURL.swift in Sources */,
 				A5C71AF630185CD6006EA79C /* CouponTabViewController.swift in Sources */,
 				A5C71AF730185CD6006EA79C /* BenefitTabViewController.swift in Sources */,
 				A590FCB72FEA91170056EF52 /* PointsViewController.swift in Sources */,
@@ -2682,6 +2689,7 @@
 				A576A2222FE8E22E004F6070 /* ECGDataBuffer.swift in Sources */,
 				A5917CE22FDFA7C000878961 /* HomeRoutes.swift in Sources */,
 				A57D2F1E2FDC0647002E43BA /* MyRoutes.swift in Sources */,
+				A5B48010302DA29400319851 /* NotificationMessageMapper.swift in Sources */,
 				A5A6F4FF2FFF7BBD0065C921 /* SysNotifyCell.swift in Sources */,
 				A5ACE2463000F57B00056C52 /* ServicePackageDetailViewModel.swift in Sources */,
 				A53EF9D630088E2C00ED9E5A /* AddressEditViewModel.swift in Sources */,

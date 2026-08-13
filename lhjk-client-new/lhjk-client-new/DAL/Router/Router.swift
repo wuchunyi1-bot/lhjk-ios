@@ -157,6 +157,11 @@ final class Router {
         routes[path] = entry
     }
 
+    /// 路径是否已注册（未注册时 `push` 不跳转、不降级首页）
+    func contains(_ path: String) -> Bool {
+        routes[path] != nil
+    }
+
     // MARK: - Middleware Registration
 
     /// 注册中间件
@@ -247,10 +252,7 @@ final class Router {
     private func execute(context: RouteContext) {
         // 查找路由注册信息
         guard let entry = routes[context.path] else {
-            #if DEBUG
-            print("[Router] ⚠️ No route registered for '\(context.path)' — falling back to home")
-            #endif
-            fallbackToHome(context: context)
+            print("[Router] ⚠️ No route registered for '\(context.path)', skip navigation")
             return
         }
 
@@ -323,13 +325,6 @@ final class Router {
                 window.rootViewController = viewController
                 window.makeKeyAndVisible()
             }
-        }
-    }
-
-    /// 降级到首页
-    private func fallbackToHome(context: RouteContext) {
-        if let homeEntry = routes["/home"] {
-            performAction(entry: homeEntry, context: context)
         }
     }
 }

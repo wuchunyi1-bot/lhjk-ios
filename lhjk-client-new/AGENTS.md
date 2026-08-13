@@ -15,12 +15,14 @@ openspec/
 │   ├── im/
 │   ├── bluetooth/
 │   ├── payment/
+│   ├── wechat/
 │   ├── image-loading/
 │   ├── oss-upload/
 │   ├── ecg/
 │   ├── order-list/
 │   ├── shipping-address/
-│   └── vouchers/
+│   ├── vouchers/
+│   ├── activate/
 └── changes/        # 进行中的变更提案（proposal / design / tasks / delta specs）
 ```
 

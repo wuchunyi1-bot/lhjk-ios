@@ -197,6 +197,8 @@ struct ChatMessage: Identifiable {
     let thumbHeight: Int?
     /// 所属会话 ID（融云消息携带，mock 消息为 nil）
     let conversationId: String?
+    /// 融云会话类型 rawValue；默认群聊（本地构造的聊天消息）
+    var conversationTypeRaw: UInt = 3
     /// 消息附加字段（自定义类型时从 RCMessageContent.extra 提取）
     let extra: String?
     /// 引用回复信息（从 extra JSON 解析）
@@ -231,7 +233,7 @@ extension ChatMessage: Codable {
         case id, type, role, senderName, senderRole, avatar, portraitUrl
         case text, time, card, meal, report
         case imagePath, thumbWidth, thumbHeight
-        case conversationId, extra, reply, sentTime
+        case conversationId, conversationTypeRaw, extra, reply, sentTime
     }
 
     init(from decoder: Decoder) throws {
@@ -252,6 +254,7 @@ extension ChatMessage: Codable {
         thumbWidth = try c.decodeIfPresent(Int.self, forKey: .thumbWidth)
         thumbHeight = try c.decodeIfPresent(Int.self, forKey: .thumbHeight)
         conversationId = try c.decodeIfPresent(String.self, forKey: .conversationId)
+        conversationTypeRaw = try c.decodeIfPresent(UInt.self, forKey: .conversationTypeRaw) ?? 3
         extra = try c.decodeIfPresent(String.self, forKey: .extra)
         reply = try c.decodeIfPresent(ReplyMessage.self, forKey: .reply)
         sentTime = try c.decodeIfPresent(Int64.self, forKey: .sentTime)
@@ -282,6 +285,7 @@ extension ChatMessage: Codable {
         try c.encodeIfPresent(thumbWidth, forKey: .thumbWidth)
         try c.encodeIfPresent(thumbHeight, forKey: .thumbHeight)
         try c.encodeIfPresent(conversationId, forKey: .conversationId)
+        try c.encode(conversationTypeRaw, forKey: .conversationTypeRaw)
         try c.encodeIfPresent(extra, forKey: .extra)
         try c.encodeIfPresent(reply, forKey: .reply)
         try c.encodeIfPresent(sentTime, forKey: .sentTime)

@@ -1,15 +1,16 @@
 import UIKit
 import SnapKit
 
+/// 通知卡片 — 对齐 funde-client NotificationsView.vue `.notif-card`
 final class NotificationCardCell: UITableViewCell {
 
     static let reuseID = "NotificationCardCell"
 
+    private let card = UIView()
     private let iconView = UIView()
     private let iconImageView = UIImageView()
     private let titleLabel = UILabel()
     private let bodyLabel = UILabel()
-    private let tagLabel = UILabel()
     private let timeLabel = UILabel()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -17,7 +18,6 @@ final class NotificationCardCell: UITableViewCell {
         selectionStyle = .none
         backgroundColor = .clear
 
-        let card = UIView()
         card.backgroundColor = .fdSurface
         card.layer.cornerRadius = 14
         card.layer.shadowColor = UIColor.black.cgColor
@@ -29,36 +29,29 @@ final class NotificationCardCell: UITableViewCell {
         iconView.clipsToBounds = true
         iconImageView.contentMode = .scaleAspectFit
 
-        titleLabel.font = .fdFont(ofSize: 14, weight: .bold)
+        titleLabel.font = .fdFont(ofSize: 15, weight: .bold)
         titleLabel.textColor = .fdText
 
-        bodyLabel.font = .fdFont(ofSize: 12)
+        bodyLabel.font = .fdFont(ofSize: 13)
         bodyLabel.textColor = .fdSubtext
         bodyLabel.numberOfLines = 2
 
-        tagLabel.font = .fdFont(ofSize: 10)
-        tagLabel.textColor = .fdSubtext
-        tagLabel.backgroundColor = .fdBg2
-        tagLabel.layer.cornerRadius = 4
-        tagLabel.clipsToBounds = true
-
-        timeLabel.font = .fdFont(ofSize: 10)
+        timeLabel.font = .fdFont(ofSize: 12)
         timeLabel.textColor = .fdMuted
-        timeLabel.textAlignment = .right
 
         contentView.addSubview(card)
-        [iconView, titleLabel, bodyLabel, tagLabel, timeLabel].forEach(card.addSubview)
+        [iconView, titleLabel, bodyLabel, timeLabel].forEach(card.addSubview)
         iconView.addSubview(iconImageView)
 
         card.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(8)
             make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-4)
+            make.bottom.equalToSuperview().offset(-2)
         }
 
         iconView.snp.makeConstraints { make in
             make.top.leading.equalToSuperview().inset(14)
-            make.size.equalTo(38)
+            make.size.equalTo(44)
         }
 
         iconImageView.snp.makeConstraints { make in
@@ -69,25 +62,20 @@ final class NotificationCardCell: UITableViewCell {
         titleLabel.snp.makeConstraints { make in
             make.top.equalTo(iconView)
             make.leading.equalTo(iconView.snp.trailing).offset(12)
-        }
-
-        timeLabel.snp.makeConstraints { make in
-            make.centerY.equalTo(titleLabel)
             make.trailing.equalToSuperview().offset(-14)
-            make.leading.greaterThanOrEqualTo(titleLabel.snp.trailing).offset(8)
         }
 
         bodyLabel.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(3)
+            make.top.equalTo(titleLabel.snp.bottom).offset(4)
             make.leading.equalTo(titleLabel)
             make.trailing.equalToSuperview().offset(-14)
         }
 
-        tagLabel.snp.makeConstraints { make in
+        timeLabel.snp.makeConstraints { make in
             make.top.equalTo(bodyLabel.snp.bottom).offset(6)
             make.leading.equalTo(titleLabel)
+            make.trailing.equalToSuperview().offset(-14)
             make.bottom.equalToSuperview().offset(-14)
-            make.height.equalTo(20)
         }
     }
 
@@ -99,7 +87,7 @@ final class NotificationCardCell: UITableViewCell {
         iconImageView.tintColor = UIColor(hexString: noti.iconColor)
         titleLabel.text = noti.title
         bodyLabel.text = noti.body
-        tagLabel.text = " \(noti.tag) "
         timeLabel.text = noti.time
+        card.alpha = noti.unread ? 1 : 0.78
     }
 }

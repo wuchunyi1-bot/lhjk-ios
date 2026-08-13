@@ -31,6 +31,7 @@ final class ConversationListViewModel: ObservableObject {
         rongCloudManager.messageReceivedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] msg in
+                guard !msg.isNotificationConversation else { return }
                 self?.handleConversationUpdate(conversationId: msg.conversationId)
             }
             .store(in: &cancellables)
@@ -96,8 +97,8 @@ final class ConversationListViewModel: ObservableObject {
                 await MainActor.run {
                     var list = self.conversations
                     list.removeAll { $0.id == convId }
-                    list.insert(updated, at: 0)
-                    self.conversations = list
+                    list.append(updated)
+                    self.conversations = Conversation.sortedByLastMessage(list)
                 }
             } else {
                 await MainActor.run { self.forceReload() }
@@ -116,7 +117,9 @@ final class ConversationListViewModel: ObservableObject {
                 }
             }
             if anyChanged {
-                await MainActor.run { self.conversations = list }
+                await MainActor.run {
+                    self.conversations = Conversation.sortedByLastMessage(list)
+                }
             }
         }
     }

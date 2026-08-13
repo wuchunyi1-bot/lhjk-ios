@@ -26,7 +26,8 @@
 
 #### Scenario: 微信支付
 - **WHEN** 用户选择微信支付
-- **THEN** BLL 层向服务端请求预支付信息（prepay_id），调起微信 SDK 完成支付，PL 层展示支付结果
+- **THEN** BLL 层向服务端请求预支付信息（prepay_id 等），经 DAL `WeChatSDKManager.pay` / `WechatPayChannel.pay(order:prepay:)` 调起微信 SDK，PL 层展示支付结果
+- **AND** 微信 Open SDK 与登录、分享共用同一注册与回调入口（见 `openspec/specs/wechat/`）
 
 #### Scenario: 支付宝支付
 - **WHEN** 用户选择支付宝支付

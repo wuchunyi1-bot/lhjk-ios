@@ -70,8 +70,11 @@ CMS 空壳路径（仅 `monitorCardMeta`）无 `backgroundUrl`，MUST 走本地�
 
 #### Scenario: 点击跳转
 
-- **WHEN** 用户点击快捷入口或体征卡片
-- **THEN** 将 `pageUrl`（如 `FundeH5:/blood-pressure`）映射为 App 路由 `/health/metrics/{key}` 并打开对应 H5；`exercise-food` 映射为 `exercise`
+- **WHEN** 用户点击快捷入口
+- **THEN** 使用 `quickEntryList[].pageUrl`（`FundeH5:` / `FundeApp:`）经 `FundePageURL` 打开
+
+- **WHEN** 用户点击体征卡片
+- **THEN** 按 `cardType` 映射为 `/health/metrics/{key}` 并打开对应 H5（体征卡无 pageUrl）
 
 ### Requirement: 编辑卡片配置
 
@@ -103,7 +106,7 @@ CMS 空壳路径（仅 `monitorCardMeta`）无 `backgroundUrl`，MUST 走本地�
 
 #### Scenario: 未知 cardType
 
-- **WHEN** `cardType` 不在已知集合且无法从 `pageUrl` 解析 key
+- **WHEN** `cardType` 不在已知集合
 - **THEN** 该卡片不进入 Hub 展示映射（或跳过），不影响其它卡片
 
 ### Requirement: 柔性字段解码

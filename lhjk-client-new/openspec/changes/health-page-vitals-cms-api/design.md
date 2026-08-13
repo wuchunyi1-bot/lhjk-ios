@@ -48,7 +48,7 @@
 | 5 | 体重 | `weight` |
 | 10 | 饮食运动 | `exercise` |
 
-优先从 `pageUrl` 解析（`FundeH5:/blood-pressure`、`FundeH5:/exercise-food` → `exercise`）。
+`monitorCardMeta` **无** `pageUrl`；体征卡 key / 跳转仅由 `cardType` 映射。`pageUrl`（`FundeH5:` / `FundeApp:`）仅出现在 `quickEntryList`。
 
 ### 4. monitorData 展示
 
@@ -81,7 +81,7 @@
 | `/health/metrics` | 同上（兼容旧入口） |
 | `/health/metrics/{key}` | H5（含新增 `temperature`） |
 
-`FundeH5:/xxx` → `/health/metrics/{key}`。
+`FundeH5:` / `FundeApp:` 仅用于 `quickEntryList.pageUrl`（见 `funde-page-url-scheme`）。体征卡：`cardType` → `/health/metrics/{key}`。
 
 ## File map
 

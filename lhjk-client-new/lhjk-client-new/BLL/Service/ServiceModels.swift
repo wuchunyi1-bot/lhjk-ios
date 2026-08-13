@@ -287,7 +287,7 @@ struct MallProduct {
 
 // MARK: - Hub 轮播
 
-/// 服务首页运营 Banner — API `columnContent/getByCode`
+/// 服务首页运营 Banner / 栏位通用条目 — API `columnContent/getByCode`
 struct ServiceHubBanner: Sendable {
     let id: String
     let title: String
@@ -298,10 +298,28 @@ struct ServiceHubBanner: Sendable {
     let accentHex: String
     let routePath: String?
     let routeParamId: String?
+    /// 资讯等：作者（`detail.authorName`）
+    let authorName: String?
+    /// 资讯等：浏览次数（`detail.clickCount`）
+    let clickCount: Int?
+    /// 资讯等：标签（`detail.labelName` / categoryName）
+    let labelName: String?
+    /// 内容 ID（`contentId` / param）；健康陪伴详情 H5 用
+    let contentId: String?
+    /// 跳转目标：`pageUrl`（`FundeH5:` / `FundeApp:`，见 `FundePageURL`）
+    let pageUrl: String?
+    /// 内容链接（`detail.contentUrl`，展示用；首页点击不走此字段）
+    let contentUrl: String?
 
     var background: UIColor { UIColor(hexString: backgroundHex) }
     var accent: UIColor { UIColor(hexString: accentHex) }
     var hasImage: Bool { !(imageUrl?.isEmpty ?? true) }
+
+    /// 非空 `pageUrl`
+    var resolvedPageURLString: String? {
+        let page = pageUrl?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return page.isEmpty ? nil : page
+    }
 }
 
 // MARK: - Hub 快照

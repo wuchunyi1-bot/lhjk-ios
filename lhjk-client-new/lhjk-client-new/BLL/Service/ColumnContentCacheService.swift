@@ -15,6 +15,9 @@ actor ColumnContentCacheService {
     /// 冷启动预拉的已知栏位
     static let knownPreloadCodes: [String] = [
         ColumnContentService.homeBannerCode,
+        ColumnContentService.homeQuickLinkCode,
+        ColumnContentService.homeHealthServiceCode,
+        ColumnContentService.homeNewsCode,
         ColumnContentService.hospitalBannerCode,
     ]
 
