@@ -115,7 +115,8 @@ final class OrderConfirmViewModel: ObservableObject {
 
     var selectedPaymentMethodLabel: String { payMethod.title }
 
-    var showsFulfillment: Bool { true }
+    /// 机构自提始终可用；仅机构自提时不展示「收货方式」选择卡。
+    var showsFulfillment: Bool { supportsExpress }
 
     var needsExpressAddress: Bool {
         fulfillment == .express
@@ -591,7 +592,9 @@ final class OrderConfirmViewModel: ObservableObject {
         }
 
         applyPayFlags(wechat: settlement.wechat, alipay: settlement.alipay)
-        fulfillment = Self.fulfillment(from: settlement)
+        fulfillment = settlement.supportsExpress
+            ? Self.fulfillment(from: settlement)
+            : .selfPickup
         deliveryAddress = Self.deliveryAddress(from: settlement)
         recomputeSettlementBenefitFlag()
     }

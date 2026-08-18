@@ -1,10 +1,18 @@
 import UIKit
 import SnapKit
 
-/// 「常用功能」4 列宫格 Cell — 对齐 MeView.vue common-grid-card
+/// 「常用功能」4 列宫格 Cell — 对齐 MeView.vue common-grid-card（Hub 改版后暂未挂载，保留供复用）
 final class MeCommonActionsCell: UITableViewCell {
 
     static let reuseIdentifier = "MeCommonActionsCell"
+
+    struct Action {
+        let icon: String
+        let color: UIColor
+        let label: String
+        let route: String
+        var badge: String? = nil
+    }
 
     var onActionTap: ((String) -> Void)?
 
@@ -35,7 +43,7 @@ final class MeCommonActionsCell: UITableViewCell {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    func configure(actions: [MyViewModel.CommonAction]) {
+    func configure(actions: [Action]) {
         grid.arrangedSubviews.forEach {
             grid.removeArrangedSubview($0)
             $0.removeFromSuperview()
@@ -66,7 +74,7 @@ final class MeCommonActionsCell: UITableViewCell {
         }
     }
 
-    private func makeActionButton(_ action: MyViewModel.CommonAction) -> UIButton {
+    private func makeActionButton(_ action: Action) -> UIButton {
         let btn = UIButton(type: .system)
         btn.tag = actionButtons.count
 

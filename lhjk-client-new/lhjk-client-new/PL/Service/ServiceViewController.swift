@@ -141,6 +141,13 @@ extension ServiceViewController: UITableViewDataSource, UITableViewDelegate {
                     Router.shared.push(path)
                 }
             }
+            cell.onHeightUpdated = { [weak self] in
+                guard let self else { return }
+                UIView.performWithoutAnimation {
+                    self.tableView.beginUpdates()
+                    self.tableView.endUpdates()
+                }
+            }
             return cell
 
         case .matrix:
@@ -173,13 +180,20 @@ extension ServiceViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        guard let section = sectionKind(at: indexPath.section), section == .mallPreview else {
+        guard let section = sectionKind(at: indexPath.section) else {
             return UITableView.automaticDimension
         }
-        let count = viewModel.mallPreviewPackages.count
-        guard count > 0 else { return UITableView.automaticDimension }
-        let width = tableView.bounds.width > 0 ? tableView.bounds.width : UIScreen.main.bounds.width
-        return MallProductGridCell.gridHeight(productCount: count, containerWidth: width)
+        switch section {
+        case .matrix:
+            return MatrixGridCell.cardHeight
+        case .mallPreview:
+            let count = viewModel.mallPreviewPackages.count
+            guard count > 0 else { return UITableView.automaticDimension }
+            let width = tableView.bounds.width > 0 ? tableView.bounds.width : UIScreen.main.bounds.width
+            return MallProductGridCell.gridHeight(productCount: count, containerWidth: width)
+        case .bannerCarousel:
+            return UITableView.automaticDimension
+        }
     }
 
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {

@@ -1,8 +1,8 @@
 import UIKit
 import SnapKit
 
-/// 富德优选双列商品网格 — 对齐 Figma 3042:1759
-/// 外层白卡包含标题与商品网格；375pt 稿面下白卡为 343×792，商品卡为 153×235。
+/// 富德优选双列商品网格 — 对齐 Figma 3444:5385
+/// 外层白卡包含标题与商品网格；375pt 稿面下白卡宽 343，商品卡为 153×235。
 final class MallProductGridCell: UITableViewCell {
 
     static let reuseID = "MallProductGridCell"
@@ -13,7 +13,7 @@ final class MallProductGridCell: UITableViewCell {
     private static let cardBottomInset: CGFloat = 12
     private static let columnSpacing: CGFloat = 13
     private static let rowSpacing: CGFloat = 12
-    private static let itemBodyHeight: CGFloat = 82
+    private static let itemBodyHeight: CGFloat = 83
 
     var onProductTap: ((HealthPackageItem) -> Void)?
     var onMoreTapped: (() -> Void)?
@@ -36,17 +36,31 @@ final class MallProductGridCell: UITableViewCell {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = "富德优选"
-        label.font = .fdFont(ofSize: 18, weight: .medium)
-        label.textColor = .fdText
+        label.attributedText = NSAttributedString(
+            string: "富德优选",
+            attributes: [
+                .font: UIFont.fdFont(ofSize: 18, weight: .medium),
+                .foregroundColor: UIColor.fdText,
+                .kern: 0.55,
+            ]
+        )
         return label
     }()
 
     private let moreButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("查看全部 ›", for: .normal)
-        button.titleLabel?.font = .fdCaption
-        button.setTitleColor(.fdSubtext, for: .normal)
+        button.setTitle("查看全部", for: .normal)
+        button.titleLabel?.font = .fdFont(ofSize: 12, weight: .regular)
+        let moreColor = UIColor(hexString: "#717885")
+        button.setTitleColor(moreColor, for: .normal)
+        let chevron = UIImage(
+            systemName: "chevron.right",
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: 10, weight: .regular)
+        )
+        button.setImage(chevron, for: .normal)
+        button.tintColor = moreColor
+        button.semanticContentAttribute = .forceRightToLeft
+        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: -2)
         button.contentHorizontalAlignment = .right
         return button
     }()
@@ -212,13 +226,14 @@ final class MallProductGridCell: UITableViewCell {
         return layout
     }
 
-    /// Figma 商品卡：图片 1:1 + 82pt 文案区；375pt 稿面下为 153×235。
+    /// Figma 商品卡：图片 152 + 文案区 83；375pt 稿面下为 153×235。
     private static func itemSize(for outerWidth: CGFloat) -> CGSize {
         let collectionWidth = outerWidth
             - (outerHorizontalInset * 2)
             - (cardContentInset * 2)
         let itemWidth = max(0, (collectionWidth - columnSpacing) / 2)
-        return CGSize(width: itemWidth, height: itemWidth + itemBodyHeight)
+        let imageHeight = itemWidth * (152.0 / 153.0)
+        return CGSize(width: itemWidth, height: imageHeight + itemBodyHeight)
     }
 
     @objc private func moreTapped() {

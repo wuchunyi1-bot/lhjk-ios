@@ -333,9 +333,10 @@ struct MonitorCardMetaVO: Decodable, Equatable {
     let iconUrl: String?
     let sortId: Int?
     let cmsCreateTime: Int64?
+    let pageUrl: String?
 
     private enum CodingKeys: String, CodingKey {
-        case cardType, cardName, iconUrl, sortId, cmsCreateTime
+        case cardType, cardName, iconUrl, sortId, cmsCreateTime, pageUrl
     }
 
     init(from decoder: Decoder) throws {
@@ -345,6 +346,7 @@ struct MonitorCardMetaVO: Decodable, Equatable {
         iconUrl = try c.decodeIfPresent(String.self, forKey: .iconUrl)
         sortId = HealthFlexible.decodeInt(c, key: .sortId)
         cmsCreateTime = HealthFlexible.decodeInt64(c, key: .cmsCreateTime)
+        pageUrl = try c.decodeIfPresent(String.self, forKey: .pageUrl)
     }
 }
 
@@ -378,12 +380,13 @@ struct MonitorHealthCardVO: Decodable, Equatable {
     let monitorData: [String: HealthJSONValue]?
     let dietSportData: [String: HealthJSONValue]?
     let iconUrl: String?
-    /// 卡片背景图 URL（优先于本地 metric_*）
+    /// 卡片背景图 URL（网络获取）
     let backgroundUrl: String?
+    let pageUrl: String?
 
     private enum CodingKeys: String, CodingKey {
         case cardName, cardType, monitorTime, monitorTimeType, resultType, result
-        case allResultList, monitorData, dietSportData, iconUrl, backgroundUrl
+        case allResultList, monitorData, dietSportData, iconUrl, backgroundUrl, pageUrl
     }
 
     init(from decoder: Decoder) throws {
@@ -399,6 +402,7 @@ struct MonitorHealthCardVO: Decodable, Equatable {
         dietSportData = try c.decodeIfPresent([String: HealthJSONValue].self, forKey: .dietSportData)
         iconUrl = try c.decodeIfPresent(String.self, forKey: .iconUrl)
         backgroundUrl = try c.decodeIfPresent(String.self, forKey: .backgroundUrl)
+        pageUrl = try c.decodeIfPresent(String.self, forKey: .pageUrl)
     }
 }
 
@@ -523,7 +527,7 @@ enum HealthJSONValue: Decodable, Equatable {
 
 // MARK: - Display mapping
 
-/// 首页体征卡展示模型（无 pageUrl；跳转仅按 cardType）
+/// 首页体征卡展示模型（优先 pageUrl，否则按 cardType 兜底）
 struct HealthMetricDisplayItem: Equatable {
     let cardType: Int
     let metricKey: String
@@ -534,10 +538,12 @@ struct HealthMetricDisplayItem: Equatable {
     let statusType: String
     let iconSF: String
     let iconUrl: String?
-    /// 卡片背景图 URL；nil 时 Cell 使用本地 metric_*
+    /// 卡片背景图 URL（网络获取）
     let backgroundUrl: String?
     let time: String
     let routeKey: String
+    /// CMS / 列表下发的跳转；合法 `FundeH5:` / `FundeApp:` 时优先使用
+    let pageUrl: String?
 }
 
 /// 首页快捷入口展示模型
@@ -549,8 +555,6 @@ struct HealthQuickEntryDisplayItem: Equatable {
 }
 
 enum MonitorCardDisplayMapper {
-
-    static let maxVisibleCards = 6
 
     /// cardType：2血压 / 3血糖 / 4体温 / 5体重 / 10饮食运动
     static func metricKey(for cardType: Int?) -> String {
@@ -564,7 +568,7 @@ enum MonitorCardDisplayMapper {
         }
     }
 
-    /// 体征卡跳转：仅按 cardType（体征卡无 pageUrl）
+    /// 体征卡兜底跳转：无合法 pageUrl 时按 cardType
     static func route(for cardType: Int?) -> String {
         "/health/metrics/\(metricKey(for: cardType))"
     }
@@ -606,7 +610,8 @@ enum MonitorCardDisplayMapper {
                 iconUrl: nonempty(card.iconUrl),
                 backgroundUrl: nonempty(card.backgroundUrl),
                 time: time,
-                routeKey: key
+                routeKey: key,
+                pageUrl: nonempty(card.pageUrl)
             )
         }
     }
@@ -630,13 +635,14 @@ enum MonitorCardDisplayMapper {
                     iconUrl: nonempty(item.iconUrl),
                     backgroundUrl: nil,
                     time: "",
-                    routeKey: key
+                    routeKey: key,
+                    pageUrl: nonempty(item.pageUrl)
                 )
             }
     }
 
     static func quickEntries(from list: [HealthQuickEntryVO]?) -> [HealthQuickEntryDisplayItem] {
-        (list ?? [])
+        let parsed = (list ?? [])
             .compactMap { e -> HealthQuickEntryDisplayItem? in
                 let name = (e.name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                 let url = (e.pageUrl ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -649,6 +655,16 @@ enum MonitorCardDisplayMapper {
                 )
             }
             .sorted { $0.sortId < $1.sortId }
+        return parsed.isEmpty ? defaultQuickEntries() : parsed
+    }
+
+    static func defaultQuickEntries() -> [HealthQuickEntryDisplayItem] {
+        [
+            HealthQuickEntryDisplayItem(name: "健康档案", iconUrl: nil, pageUrl: "/health/record", sortId: 1),
+            HealthQuickEntryDisplayItem(name: "体征监测", iconUrl: nil, pageUrl: "/health/metrics", sortId: 2),
+            HealthQuickEntryDisplayItem(name: "六维评测", iconUrl: nil, pageUrl: "/health/assessment/six-dim", sortId: 3),
+            HealthQuickEntryDisplayItem(name: "我的报告", iconUrl: nil, pageUrl: "/health/assessment/report", sortId: 4),
+        ]
     }
 
     // MARK: Private helpers

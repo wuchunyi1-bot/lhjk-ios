@@ -166,6 +166,15 @@ struct AppOrderDetailBO: Decodable {
         orderStatus?.label ?? "订单详情"
     }
 
+    var paymentStatusText: String {
+        switch orderStatus {
+        case .pendingPayment: return "待支付"
+        case .cancelled: return "已取消"
+        case .none: return "—"
+        default: return "已支付"
+        }
+    }
+
     var statusHint: String {
         if let reject = afterSaleRejectHint { return reject }
         switch orderStatus {
@@ -434,7 +443,51 @@ struct OrderDetailPackageLineBO: Decodable {
 
     var isShipped: Bool { shipmentStatus == 2 }
 
-    func logisticsSecondaryText(isPickup: Bool, orderLogisticsSummary: String?) -> String? {
+    /// 物流行右上角印章文案（对齐 Figma 3546:4382）
+    func stampText(orderStatus: AppOrderStatus?, isPickup: Bool) -> String {
+        switch orderStatus {
+        case .overdue:
+            return "已逾期"
+        case .refund, .refundReview:
+            return "待收货"
+        case .pendingShip:
+            return isPickup ? "待自提" : "待发货"
+        case .pendingReceive:
+            return isPickup ? "待自提" : (isShipped ? "已发货" : "待收货")
+        default:
+            if isPickup && !isShipped { return "待自提" }
+            return shipmentStatusLabel
+        }
+    }
+
+    /// 物流行右上角印章图片切图资源名称（对齐 Figma 3546:4382）
+    func stampAssetName(orderStatus: AppOrderStatus?, isPickup: Bool) -> String {
+        switch orderStatus {
+        case .overdue:
+            return "order_detail_stamp_overdue"
+        case .refund, .refundReview:
+            return "order_detail_stamp_pending_receive"
+        case .pendingShip:
+            return isPickup ? "order_detail_stamp_pending_pickup" : "order_detail_stamp_pending_ship"
+        case .pendingReceive:
+            return isPickup ? "order_detail_stamp_pending_pickup" : (isShipped ? "order_detail_stamp_shipped" : "order_detail_stamp_pending_receive")
+        case .inProgress, .completed:
+            return isPickup ? "order_detail_stamp_pending_pickup" : "order_detail_stamp_shipped"
+        default:
+            if isPickup && !isShipped { return "order_detail_stamp_pending_pickup" }
+            if isShipped { return "order_detail_stamp_shipped" }
+            return isPickup ? "order_detail_stamp_pending_pickup" : "order_detail_stamp_pending_ship"
+        }
+    }
+
+    func logisticsSecondaryText(
+        isPickup: Bool,
+        orderLogisticsSummary: String?,
+        orderStatus: AppOrderStatus? = nil
+    ) -> String? {
+        if isPickup, orderStatus == .pendingReceive {
+            return "请前往机构自提"
+        }
         if isShipped {
             let summary = orderLogisticsSummary?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             return summary.isEmpty ? nil : summary

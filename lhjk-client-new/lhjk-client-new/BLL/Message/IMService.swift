@@ -524,7 +524,10 @@ final class IMService {
         }
         print("[IMService] loadMessages conv=\(conversationId) count=\(sorted.count) timestamp=\(timestamp) isRemaining=\(isRemaining)")
         for msg in rcMessages {
-            print("[IMService]   msgId=\(msg.messageId) sentTime=\(msg.sentTime)")
+            let objectName = msg.objectName ?? "?"
+            let uid = msg.messageUId ?? "nil"
+            let body = ChatMessage.rawContentJSON(from: msg.content)
+            print("[RongCloud][raw] loadMessages objectName=\(objectName) uid=\(uid) msgId=\(msg.messageId) sentTime=\(msg.sentTime) body=\(body)")
         }
         return (sorted, timestamp, isRemaining)
     }
@@ -572,7 +575,7 @@ final class IMService {
             RongCloudManager.shared.sendTextMessage(
                 conversationType: conversationType,
                 targetId: conversationId,
-                content: text,
+                content: RongEmoji.emojiToSymbol(text),
                 extra: extra,
                 senderUserInfo: senderInfo
             ) { message, errorCode in

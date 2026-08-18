@@ -150,7 +150,7 @@ final class ChatViewModel: ObservableObject {
 
     /// 发送文本消息（含乐观更新）
     func sendText(_ text: String) {
-        let localMsg = makeLocalMessage(type: MessageType.text, text: text, imagePath: nil, thumbWidth: nil, thumbHeight: nil)
+        let localMsg = makeLocalMessage(type: MessageType.text, text: RongEmoji.symbolToEmoji(text), imagePath: nil, thumbWidth: nil, thumbHeight: nil)
 
         let reply = quotedMessage.flatMap { ReplyMessage.from($0) }
         quotedMessage = nil

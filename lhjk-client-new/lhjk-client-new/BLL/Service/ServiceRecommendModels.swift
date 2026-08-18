@@ -80,7 +80,21 @@ struct HospitalPackagePageVO: Decodable {
         imageUrl = try c.decodeIfPresent(String.self, forKey: .imageUrl)
         price = try c.decodeIfPresent(Double.self, forKey: .price)
         introduction = try c.decodeIfPresent(String.self, forKey: .introduction)
-        recommend = try c.decodeIfPresent(Int.self, forKey: .recommend)
+        recommend = Self.decodeFlexibleOptionalInt(c, key: .recommend)
+    }
+
+    private static func decodeFlexibleOptionalInt<K: CodingKey>(
+        _ container: KeyedDecodingContainer<K>,
+        key: K
+    ) -> Int? {
+        if let value = try? container.decodeIfPresent(Int.self, forKey: key) { return value }
+        if let value = try? container.decodeIfPresent(Int64.self, forKey: key) { return Int(value) }
+        if let value = try? container.decodeIfPresent(String.self, forKey: key)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+           let parsed = Int(value) {
+            return parsed
+        }
+        return nil
     }
 
     private static func decodeFlexibleString<K: CodingKey>(
@@ -228,7 +242,7 @@ enum HospitalPackageMapper {
         let packageName = nonEmpty(vo.name) ?? nonEmpty(vo.introduction) ?? "健康服务套餐"
         let intro = nonEmpty(vo.introduction) ?? ""
         let priceText = formatPrice(vo.price)
-        let badge: String? = vo.recommend == 1 ? "推荐" : nil
+        let badge = badgeText(from: vo.recommend)
         let packageId = nonEmpty(vo.id) ?? "hospital-pkg-\(index)"
 
         return HealthPackageItem(
@@ -244,6 +258,15 @@ enum HospitalPackageMapper {
             sortRank: index,
             imageUrl: nonEmpty(vo.imageUrl)
         )
+    }
+
+    /// `recommend`：1 推荐，2 热销；其它值不展示角标
+    static func badgeText(from recommend: Int?) -> String? {
+        switch recommend {
+        case 1: return "推荐"
+        case 2: return "热销"
+        default: return nil
+        }
     }
 
     private static func nonEmpty(_ value: String?) -> String? {

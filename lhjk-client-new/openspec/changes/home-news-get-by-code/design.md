@@ -67,7 +67,7 @@ H5Config.contentDetailPageURL(contentId:)
 ### 4. 空态与更多
 
 - 过滤后无标题且无图 → 不展示该行；整表空 → 隐藏 section
-- 「更多 ›」保留，点击走 `onMoreTapped`（与条目 pageUrl 分离）
+- 「更多 ›」→ `Router.push("/companion")` → `H5Config.companionPageURL` → `#/companion`（与条目 `#/content/detail` 分离）
 
 ## Risks
 

@@ -11,7 +11,7 @@
 
 - Hub 体征区：`getMonitorCardList` 有数据则展示监测值；空/失败回退 CMS `monitorCardMeta` 空壳
 - Hub 快捷入口：仅 `quickEntryList`；空则隐藏该 section
-- 编辑页：查询 / 保存用户卡片配置；最多 6 张；拖拽排序；返回未保存确认
+- 编辑页：查询 / 保存用户卡片配置；不限制可见张数；拖拽排序；返回未保存确认
 - `hospitalId` 合法数字串；禁止 mock 入参
 
 **Non-Goals:**
@@ -48,7 +48,7 @@
 | 5 | 体重 | `weight` |
 | 10 | 饮食运动 | `exercise` |
 
-`monitorCardMeta` **无** `pageUrl`；体征卡 key / 跳转仅由 `cardType` 映射。`pageUrl`（`FundeH5:` / `FundeApp:`）仅出现在 `quickEntryList`。
+`monitorCardMeta` / 监测列表可含 `pageUrl`；合法时走 `FundePageURL`，否则跳转由 `cardType` 映射。`quickEntryList` 的 `pageUrl`（`FundeH5:` / `FundeApp:`）同样经 `FundePageURL`。
 
 ### 4. monitorData 展示
 
@@ -71,7 +71,6 @@
 - Body：`hospitalId`、`code=column_health`、`addCardVOList[{cardType, cardName?, sortId}]`
 - **不传** `hiddenCardVOList`（服务端按 CMS 卡池计算）
 - `sortId` 从 0 递增为展示列表全量顺序
-- 上限 `MAX_VISIBLE = 6`
 
 ### 7. 路由
 
@@ -81,7 +80,7 @@
 | `/health/metrics` | 同上（兼容旧入口） |
 | `/health/metrics/{key}` | H5（含新增 `temperature`） |
 
-`FundeH5:` / `FundeApp:` 仅用于 `quickEntryList.pageUrl`（见 `funde-page-url-scheme`）。体征卡：`cardType` → `/health/metrics/{key}`。
+`FundeH5:` / `FundeApp:` 用于 `quickEntryList.pageUrl` 以及体征卡合法 `pageUrl`（见 `funde-page-url-scheme`）。无合法 pageUrl 时：`cardType` → `/health/metrics/{key}`。
 
 ## File map
 

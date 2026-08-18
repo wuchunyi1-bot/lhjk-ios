@@ -31,13 +31,13 @@ final class OrderTabViewController: BaseViewController {
 
     private lazy var tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
-        tv.backgroundColor = .fdBg
+        tv.backgroundColor = UIColor(hexString: "#FDF6F3")
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
         tv.register(OrderCardCell.self, forCellReuseIdentifier: OrderCardCell.reuseIdentifier)
         tv.dataSource = self
         tv.delegate = self
-        tv.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 16, right: 0)
+        tv.contentInset = UIEdgeInsets(top: 6, left: 0, bottom: 24, right: 0)
         tv.rowHeight = UITableView.automaticDimension
         tv.estimatedRowHeight = 200
         tv.refreshControl = refreshControl
@@ -53,22 +53,23 @@ final class OrderTabViewController: BaseViewController {
 
     private lazy var emptyLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdCaption
-        label.textColor = .fdMuted
+        label.font = .fdFont(ofSize: 14, weight: .regular)
+        label.textColor = UIColor(hexString: "#8591AB")
         label.textAlignment = .center
         return label
     }()
 
     private lazy var emptyView: UIView = {
         let v = UIView()
-        let icon = UIImageView(image: UIImage(systemName: "doc.text.magnifyingglass"))
-        icon.tintColor = .fdMuted
+        let icon = UIImageView(image: UIImage(named: "order_package_placeholder"))
         icon.contentMode = .scaleAspectFit
+        icon.layer.cornerRadius = 12
+        icon.clipsToBounds = true
         v.addSubview(icon)
         icon.snp.makeConstraints { make in
             make.centerX.equalToSuperview()
             make.centerY.equalToSuperview().offset(-20)
-            make.size.equalTo(48)
+            make.size.equalTo(84)
         }
         v.addSubview(emptyLabel)
         emptyLabel.snp.makeConstraints { make in
@@ -110,7 +111,7 @@ final class OrderTabViewController: BaseViewController {
     // MARK: - Lifecycle
 
     override func setupUI() {
-        view.backgroundColor = .fdBg
+        view.backgroundColor = UIColor(hexString: "#FDF6F3")
         emptyLabel.text = emptyText
 
         view.addSubview(tableView)

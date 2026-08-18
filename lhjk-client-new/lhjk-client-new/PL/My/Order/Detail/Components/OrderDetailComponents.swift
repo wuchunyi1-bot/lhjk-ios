@@ -1,76 +1,64 @@
 import UIKit
 import SnapKit
 
-// MARK: - Card
+// MARK: - Figma Design Tokens
+
+private enum OrderDetailFigma {
+    static let title = UIColor(hexString: "#1F2942")
+    static let subtitle = UIColor(hexString: "#8591AB")
+    static let priceRed = UIColor(hexString: "#F93838")
+    static let primaryOrange = UIColor(hexString: "#FF7A50")
+    static let pinBg = UIColor(hexString: "#FFF2E6")
+    static let chipBg = UIColor(hexString: "#FFF4ED")
+    static let chipText = UIColor(hexString: "#FF7015")
+    static let divider = UIColor(hexString: "#F0F0F0")
+    static let titleStart = UIColor(hexString: "#A15313")
+    static let titleEnd = UIColor(hexString: "#522B0F")
+    static let taskCardBg = UIColor(hexString: "#FDF6F3")
+    static let ellipseBase = UIColor(hexString: "#FEC587").withAlphaComponent(0.23)
+}
+
+// MARK: - Card Container
 
 final class OrderDetailCardView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = .fdSurface
-        layer.cornerRadius = 12
+        backgroundColor = .white
+        layer.cornerRadius = 16
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOffset = CGSize(width: 0, height: 1)
         layer.shadowRadius = 6
         layer.shadowOpacity = 0.03
+        clipsToBounds = true
     }
 
     required init?(coder: NSCoder) { fatalError() }
 }
 
-// MARK: - 状态头（对齐 funde OrderDetailStatusCard）
+// MARK: - 状态头（对齐 Figma 3546:4382 / 3546:4549 / 3546:4611 等）
 
 final class OrderDetailStatusView: UIView {
-    private let card = UIView()
-    private let iconContainer = UIView()
-    private let iconView = UIImageView()
-    private let titleLabel = UILabel()
+    private let bannerImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFill
+        iv.clipsToBounds = true
+        iv.layer.cornerRadius = 16
+        return iv
+    }()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 12
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 6
-        card.layer.shadowOpacity = 0.03
-
-        titleLabel.font = .fdH3
-        titleLabel.textColor = .fdText
-        titleLabel.numberOfLines = 1
-
-        iconView.contentMode = .scaleAspectFit
-        iconContainer.layer.cornerRadius = 16
-        iconContainer.clipsToBounds = true
-        iconContainer.addSubview(iconView)
-        iconView.snp.makeConstraints {
-            $0.center.equalToSuperview()
-            $0.size.equalTo(18)
-        }
-        iconContainer.snp.makeConstraints { $0.size.equalTo(32) }
-
-        let main = UIStackView(arrangedSubviews: [iconContainer, titleLabel])
-        main.axis = .horizontal
-        main.spacing = 12
-        main.alignment = .center
-        card.addSubview(main)
-        main.snp.makeConstraints {
-            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 20, left: 16, bottom: 20, right: 16))
-        }
-
-        addSubview(card)
-        card.snp.makeConstraints {
-            $0.top.bottom.equalToSuperview().inset(4)
-            $0.leading.trailing.equalToSuperview()
+        addSubview(bannerImageView)
+        bannerImageView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.height.equalTo(80)
         }
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
     func configure(presentation: OrderDetailStatusPresentation) {
-        titleLabel.text = presentation.title
-        iconView.image = UIImage(systemName: presentation.systemImageName)
-        iconContainer.backgroundColor = presentation.iconBackgroundColor
-        iconView.tintColor = presentation.iconTintColor
+        bannerImageView.image = UIImage(named: presentation.illustrationName)
     }
 
     /// 兼容旧调用
@@ -79,7 +67,7 @@ final class OrderDetailStatusView: UIView {
     }
 }
 
-// MARK: - 状态提示条（对齐 funde OrderHintBar，卡片外展示）
+// MARK: - 状态提示条（已废弃，兼容保留）
 
 final class OrderDetailHintBar: UIView {
     private let label = UILabel()
@@ -105,7 +93,7 @@ final class OrderDetailHintBar: UIView {
     }
 }
 
-// MARK: - 履约地址（遗留，详情页已拆分为独立卡片）
+// MARK: - 履约地址（兼容保留）
 
 final class OrderDetailFulfillmentView: UIView {
     private let titleLabel = UILabel()
@@ -166,9 +154,17 @@ final class OrderDetailFulfillmentView: UIView {
     }
 }
 
-// MARK: - 收货地址（对齐 funde address-row）
+// MARK: - 收货地址（对齐 Figma 3546:4409）
 
 final class OrderDetailAddressView: UIView {
+    private let watermarkView: UIImageView = {
+        let iv = UIImageView(image: UIImage(named: "order_detail_address_bg"))
+        iv.contentMode = .scaleAspectFill
+        iv.alpha = 0.20
+        iv.isUserInteractionEnabled = false
+        return iv
+    }()
+
     private let titleLabel = UILabel()
     private let iconContainer = UIView()
     private let iconView = UIImageView()
@@ -177,39 +173,46 @@ final class OrderDetailAddressView: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        titleLabel.text = "收货地址"
-        titleLabel.font = .fdBodySemibold
-        titleLabel.textColor = .fdText
+        clipsToBounds = true
 
-        iconContainer.backgroundColor = .fdInfoSoft
-        iconContainer.layer.cornerRadius = 12
-        let iconConfig = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
-        iconView.image = UIImage(systemName: "location.fill", withConfiguration: iconConfig)
-        iconView.tintColor = .fdInfo
+        insertSubview(watermarkView, at: 0)
+        watermarkView.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(-125)
+            $0.trailing.equalToSuperview().offset(32)
+            $0.size.equalTo(245)
+        }
+
+        titleLabel.text = "收货地址"
+        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.textColor = OrderDetailFigma.title
+
+        iconContainer.backgroundColor = OrderDetailFigma.pinBg
+        iconContainer.layer.cornerRadius = 6
+        iconContainer.clipsToBounds = true
+        iconView.image = UIImage(named: "order_detail_address_pin")
         iconView.contentMode = .scaleAspectFit
         iconContainer.addSubview(iconView)
-        iconView.snp.makeConstraints { $0.center.equalToSuperview() }
-        iconContainer.snp.makeConstraints { $0.size.equalTo(40) }
+        iconView.snp.makeConstraints { $0.center.equalToSuperview(); $0.size.equalTo(14) }
+        iconContainer.snp.makeConstraints { $0.size.equalTo(24) }
 
-        nameLabel.font = .fdBodySemibold
-        nameLabel.textColor = .fdText
+        nameLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        nameLabel.textColor = OrderDetailFigma.title
         nameLabel.numberOfLines = 1
-        addressLabel.font = .fdCaption
-        addressLabel.textColor = .fdSubtext
-        addressLabel.numberOfLines = 0
 
-        let body = UIStackView(arrangedSubviews: [nameLabel, addressLabel])
-        body.axis = .vertical
-        body.spacing = 4
+        addressLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        addressLabel.textColor = OrderDetailFigma.subtitle
+        addressLabel.numberOfLines = 2
+        addressLabel.lineBreakMode = .byTruncatingTail
 
-        let row = UIStackView(arrangedSubviews: [iconContainer, body])
-        row.axis = .horizontal
-        row.alignment = .top
-        row.spacing = 12
+        let nameRow = UIStackView(arrangedSubviews: [iconContainer, nameLabel])
+        nameRow.axis = .horizontal
+        nameRow.spacing = 8
+        nameRow.alignment = .center
 
-        let root = UIStackView(arrangedSubviews: [titleLabel, row])
+        let root = UIStackView(arrangedSubviews: [titleLabel, nameRow, addressLabel])
         root.axis = .vertical
-        root.spacing = 12
+        root.spacing = 10
+        root.setCustomSpacing(6, after: nameRow)
         addSubview(root)
         root.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
     }
@@ -233,236 +236,320 @@ final class OrderDetailAddressView: UIView {
     }
 }
 
-// MARK: - 服务机构 / 自提地址（对齐 funde institution-card）
+// MARK: - 服务机构 / 自提地址（对齐 Figma 3546:4425 / 3546:4941）
 
 final class OrderDetailInstitutionView: UIView {
     var onCall: (() -> Void)?
 
+    private let watermarkView: UIImageView = {
+        let iv = UIImageView(image: UIImage(named: "order_detail_address_bg"))
+        iv.contentMode = .scaleAspectFill
+        iv.alpha = 0.20
+        iv.isUserInteractionEnabled = false
+        return iv
+    }()
+
     private let titleLabel = UILabel()
+    private let hintChip = UILabel()
     private let iconContainer = UIView()
     private let iconView = UIImageView()
     private let nameLabel = UILabel()
     private let addressLabel = UILabel()
-    private let callButton = UIButton(type: .system)
+    private let callBar = OrderDetailInstitutionCallBar()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        titleLabel.font = .fdBodySemibold
-        titleLabel.textColor = .fdText
+        clipsToBounds = true
 
-        iconContainer.backgroundColor = .fdInfoSoft
-        iconContainer.layer.cornerRadius = 12
-        let iconConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-        iconView.image = UIImage(systemName: "building.2.fill", withConfiguration: iconConfig)
-        iconView.tintColor = .fdInfo
+        insertSubview(watermarkView, at: 0)
+        watermarkView.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(-125)
+            $0.trailing.equalToSuperview().offset(32)
+            $0.size.equalTo(245)
+        }
+
+        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.textColor = OrderDetailFigma.title
+
+        hintChip.text = "请前往以下机构领取商品/设备"
+        hintChip.font = .fdFont(ofSize: 10, weight: .regular)
+        hintChip.textColor = OrderDetailFigma.chipText
+        hintChip.textAlignment = .center
+        hintChip.backgroundColor = OrderDetailFigma.chipBg
+        hintChip.layer.cornerRadius = 11
+        hintChip.clipsToBounds = true
+        hintChip.setContentHuggingPriority(.required, for: .horizontal)
+        hintChip.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        iconContainer.backgroundColor = OrderDetailFigma.pinBg
+        iconContainer.layer.cornerRadius = 6
+        iconContainer.clipsToBounds = true
+        iconView.image = UIImage(named: "order_detail_address_pin")
+        iconView.contentMode = .scaleAspectFit
         iconContainer.addSubview(iconView)
-        iconView.snp.makeConstraints { $0.center.equalToSuperview() }
+        iconView.snp.makeConstraints { $0.center.equalToSuperview(); $0.size.equalTo(14) }
         iconContainer.snp.makeConstraints { $0.size.equalTo(24) }
 
-        nameLabel.font = .fdBodySemibold
-        nameLabel.textColor = .fdText
-        nameLabel.numberOfLines = 2
-        addressLabel.font = .fdCaption
-        addressLabel.textColor = .fdSubtext
-        addressLabel.numberOfLines = 0
+        nameLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        nameLabel.textColor = OrderDetailFigma.title
+        nameLabel.numberOfLines = 1
+
+        addressLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        addressLabel.textColor = OrderDetailFigma.subtitle
+        addressLabel.numberOfLines = 2
+        addressLabel.lineBreakMode = .byTruncatingTail
 
         let nameRow = UIStackView(arrangedSubviews: [iconContainer, nameLabel])
         nameRow.axis = .horizontal
         nameRow.spacing = 8
-        nameRow.alignment = .top
+        nameRow.alignment = .center
 
-        var callConfig = UIButton.Configuration.plain()
-        callConfig.image = UIImage(systemName: "phone.fill")
-        callConfig.title = "联系机构"
-        callConfig.imagePadding = 6
-        callConfig.baseForegroundColor = .fdPrimary
-        callConfig.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-            var outgoing = incoming
-            outgoing.font = .fdCaptionSemibold
-            return outgoing
-        }
-        callButton.configuration = callConfig
-        callButton.addTarget(self, action: #selector(tapCall), for: .touchUpInside)
+        let header = UIStackView(arrangedSubviews: [titleLabel, hintChip])
+        header.axis = .horizontal
+        header.alignment = .center
+        header.spacing = 8
+        titleLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        let callRow = UIView()
-        callRow.addSubview(callButton)
-        callButton.snp.makeConstraints {
-            $0.centerX.equalToSuperview()
-            $0.top.bottom.equalToSuperview()
-            $0.height.equalTo(40)
+        hintChip.snp.makeConstraints {
+            $0.height.equalTo(22)
+            $0.width.greaterThanOrEqualTo(160)
         }
 
-        let root = UIStackView(arrangedSubviews: [titleLabel, nameRow, addressLabel, callRow])
+        callBar.onCall = { [weak self] in
+            self?.onCall?()
+        }
+
+        let root = UIStackView(arrangedSubviews: [header, nameRow, addressLabel])
         root.axis = .vertical
-        root.spacing = 12
-        root.setCustomSpacing(8, after: nameRow)
+        root.spacing = 10
+        root.setCustomSpacing(6, after: nameRow)
+
         addSubview(root)
-        root.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
+        addSubview(callBar)
+        root.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview().inset(16)
+        }
+        callBar.snp.makeConstraints {
+            $0.top.equalTo(root.snp.bottom).offset(12)
+            $0.leading.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(46)
+        }
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
     func configure(detail: AppOrderDetailBO) {
         titleLabel.text = detail.institutionCardTitle
+        hintChip.isHidden = detail.isExpressDelivery
         nameLabel.text = detail.displayInstitutionName
         addressLabel.text = detail.institutionAddressText
     }
-
-    @objc private func tapCall() { onCall?() }
 }
 
-// MARK: - 物流任务卡（详情预览 / 发货记录列表复用）
+// MARK: - 联系机构底栏
 
-final class OrderDetailShipmentTaskCardView: UIView {
-    var onCopyTracking: ((String) -> Void)?
-
-    private let iconContainer = UIView()
-    private let iconView = UIImageView()
-    private let nameLabel = UILabel()
-    private let bodyStack = UIStackView()
+private final class OrderDetailInstitutionCallBar: UIView {
+    var onCall: (() -> Void)?
+    private let gradientLayer = CAGradientLayer()
+    private let topBorder = UIView()
+    private let button = UIButton(type: .system)
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = .fdBg
-        layer.cornerRadius = 10
+        gradientLayer.colors = [
+            UIColor(hexString: "#FFF0EA").cgColor,
+            UIColor(hexString: "#FFF0EA").withAlphaComponent(0).cgColor
+        ]
+        gradientLayer.startPoint = CGPoint(x: 0, y: 0.5)
+        gradientLayer.endPoint = CGPoint(x: 1, y: 0.5)
+        layer.insertSublayer(gradientLayer, at: 0)
 
-        iconContainer.backgroundColor = .fdInfoSoft
-        iconContainer.layer.cornerRadius = 10
-        iconView.contentMode = .scaleAspectFit
-        iconView.tintColor = .fdInfo
-        iconContainer.addSubview(iconView)
-        iconView.snp.makeConstraints { $0.center.equalToSuperview() }
-        iconContainer.snp.makeConstraints { $0.size.equalTo(36) }
+        topBorder.backgroundColor = UIColor(hexString: "#FFECE4")
+        addSubview(topBorder)
+        topBorder.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.height.equalTo(0.5)
+        }
 
-        nameLabel.font = .fdBodySemibold
-        nameLabel.textColor = .fdText
-        nameLabel.numberOfLines = 2
-
-        bodyStack.axis = .vertical
-        bodyStack.spacing = 6
-
-        let content = UIStackView(arrangedSubviews: [iconContainer, bodyStack])
-        content.axis = .horizontal
-        content.alignment = .top
-        content.spacing = 12
-        addSubview(content)
-        content.snp.makeConstraints { $0.edges.equalToSuperview().inset(12) }
+        var config = UIButton.Configuration.plain()
+        config.image = UIImage(named: "order_detail_phone")
+        config.title = "联系机构"
+        config.imagePadding = 4
+        config.baseForegroundColor = OrderDetailFigma.primaryOrange
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = .fdFont(ofSize: 12, weight: .medium)
+            return outgoing
+        }
+        button.configuration = config
+        button.addAction(UIAction { [weak self] _ in self?.onCall?() }, for: .touchUpInside)
+        addSubview(button)
+        button.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.height.equalTo(46)
+        }
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
-    func configure(
-        line: OrderDetailPackageLineBO,
-        isPickup: Bool,
-        logisticsSummary: String?
-    ) {
-        let iconName = isPickup ? "storefront.fill" : "shippingbox.fill"
-        let iconConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .regular)
-        iconView.image = UIImage(systemName: iconName, withConfiguration: iconConfig)
-
-        nameLabel.text = line.displayName
-        bodyStack.arrangedSubviews.forEach {
-            bodyStack.removeArrangedSubview($0)
-            $0.removeFromSuperview()
-        }
-
-        let badge = Self.makeStatusBadge(text: line.shipmentStatusLabel, shipped: line.isShipped)
-        let head = UIStackView(arrangedSubviews: [nameLabel, badge])
-        head.axis = .horizontal
-        head.alignment = .top
-        head.spacing = 8
-        nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        bodyStack.addArrangedSubview(head)
-
-        if line.isShipped, let summary = logisticsSummary?.trimmingCharacters(in: .whitespacesAndNewlines), !summary.isEmpty {
-            bodyStack.addArrangedSubview(makeLogisticsRow(summary: summary))
-        } else if let secondary = line.logisticsSecondaryText(isPickup: isPickup, orderLogisticsSummary: nil) {
-            let label = UILabel()
-            label.font = .fdCaption
-            label.textColor = .fdSubtext
-            label.numberOfLines = 0
-            label.text = secondary
-            bodyStack.addArrangedSubview(label)
-        }
-    }
-
-    private func makeLogisticsRow(summary: String) -> UIView {
-        let label = UILabel()
-        label.font = .fdCaption
-        label.textColor = .fdText2
-        label.numberOfLines = 2
-        label.text = summary
-
-        let copyButton = UIButton(type: .system)
-        copyButton.setImage(UIImage(systemName: "doc.on.doc"), for: .normal)
-        copyButton.tintColor = .fdPrimary
-        let trackingNo = summary.components(separatedBy: "：").last?
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        copyButton.isHidden = trackingNo.isEmpty
-        copyButton.addAction(UIAction { [weak self] _ in
-            self?.onCopyTracking?(trackingNo)
-        }, for: .touchUpInside)
-        copyButton.snp.makeConstraints { $0.size.equalTo(28) }
-
-        let row = UIStackView(arrangedSubviews: [label, copyButton])
-        row.axis = .horizontal
-        row.alignment = .center
-        row.spacing = 4
-        return row
-    }
-
-    private static func makeStatusBadge(text: String, shipped: Bool) -> UIView {
-        let label = UILabel()
-        label.text = text
-        label.font = .fdMicroBold
-        label.textColor = shipped ? .fdInfo : .fdWarning
-        label.setContentHuggingPriority(.required, for: .horizontal)
-
-        let container = UIView()
-        container.backgroundColor = shipped ? .fdInfoSoft : .fdWarningSoft
-        container.layer.cornerRadius = 10
-        container.addSubview(label)
-        label.snp.makeConstraints {
-            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8))
-        }
-        return container
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        gradientLayer.frame = bounds
     }
 }
 
-// MARK: - 物流 / 自提信息（对齐 funde OrderLogisticsInfoSection）
+// MARK: - 物流任务卡（对齐 Figma 3546:4446）
+
+final class OrderDetailShipmentTaskCardView: UIView {
+    var onCopyTracking: ((String) -> Void)?
+
+    private let iconView = UIImageView()
+    private let nameLabel = UILabel()
+    private let subtitleLabel = UILabel()
+    private let copyButton = UIButton(type: .system)
+    private let stampImageView = UIImageView()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = OrderDetailFigma.taskCardBg
+        layer.cornerRadius = 12
+        clipsToBounds = true
+
+        iconView.image = UIImage(named: "order_detail_logistics_icon")
+        iconView.contentMode = .scaleAspectFit
+
+        nameLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        nameLabel.textColor = OrderDetailFigma.title
+        nameLabel.numberOfLines = 1
+
+        subtitleLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        subtitleLabel.textColor = OrderDetailFigma.subtitle
+        subtitleLabel.numberOfLines = 1
+        subtitleLabel.lineBreakMode = .byTruncatingTail
+
+        copyButton.setImage(UIImage(named: "order_detail_copy")?.withRenderingMode(.alwaysOriginal), for: .normal)
+        copyButton.tintColor = OrderDetailFigma.primaryOrange
+        copyButton.addTarget(self, action: #selector(tapCopy), for: .touchUpInside)
+
+        stampImageView.contentMode = .scaleAspectFit
+        stampImageView.isUserInteractionEnabled = false
+
+        addSubview(iconView)
+        addSubview(nameLabel)
+        addSubview(subtitleLabel)
+        addSubview(copyButton)
+        addSubview(stampImageView)
+
+        iconView.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(12)
+            $0.top.equalToSuperview().offset(15)
+            $0.size.equalTo(16)
+        }
+        nameLabel.snp.makeConstraints {
+            $0.leading.equalTo(iconView.snp.trailing).offset(8)
+            $0.centerY.equalTo(iconView)
+            $0.trailing.lessThanOrEqualTo(stampImageView.snp.leading).offset(-4)
+        }
+        subtitleLabel.snp.makeConstraints {
+            $0.leading.equalTo(nameLabel)
+            $0.top.equalTo(nameLabel.snp.bottom).offset(2)
+            $0.bottom.equalToSuperview().offset(-12)
+        }
+        copyButton.snp.makeConstraints {
+            $0.leading.equalTo(subtitleLabel.snp.trailing).offset(4)
+            $0.centerY.equalTo(subtitleLabel)
+            $0.size.equalTo(14)
+            $0.trailing.lessThanOrEqualTo(stampImageView.snp.leading).offset(-4)
+        }
+        stampImageView.snp.makeConstraints {
+            $0.trailing.equalToSuperview()
+            $0.top.equalToSuperview()
+            $0.size.equalTo(CGSize(width: 60, height: 51))
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    private var trackingNo: String = ""
+
+    func configure(
+        line: OrderDetailPackageLineBO,
+        isPickup: Bool,
+        logisticsSummary: String?,
+        orderStatus: AppOrderStatus? = nil
+    ) {
+        nameLabel.text = line.displayName
+
+        let stampAsset = line.stampAssetName(orderStatus: orderStatus, isPickup: isPickup)
+        stampImageView.image = UIImage(named: stampAsset)
+        stampImageView.isHidden = stampAsset.isEmpty
+
+        let secondary = line.logisticsSecondaryText(
+            isPickup: isPickup,
+            orderLogisticsSummary: logisticsSummary,
+            orderStatus: orderStatus
+        )
+        subtitleLabel.text = secondary
+        subtitleLabel.isHidden = (secondary ?? "").isEmpty
+
+        trackingNo = logisticsSummary?.components(separatedBy: "：").last?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let showsCopy = line.isShipped && !trackingNo.isEmpty
+        copyButton.isHidden = !showsCopy
+    }
+
+    @objc private func tapCopy() {
+        guard !trackingNo.isEmpty else { return }
+        onCopyTracking?(trackingNo)
+    }
+}
+
+// MARK: - 物流 / 自提信息（对齐 Figma 3546:4437）
 
 final class OrderDetailLogisticsView: UIView {
-    private static let previewLimit = 1
+    private static let previewLimit = 2
 
     var onCopyTracking: ((String) -> Void)?
     var onOpenRecords: (() -> Void)?
 
     private let titleLabel = UILabel()
     private let previewStack = UIStackView()
-    private let recordsDivider = UIView()
-    private let recordsButton = UIButton(type: .system)
+    private let recordsControl = UIControl()
+    private let recordsLabel = UILabel()
+    private let recordsIcon = UIImageView()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        titleLabel.font = .fdBodySemibold
-        titleLabel.textColor = .fdText
+        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.textColor = OrderDetailFigma.title
 
         previewStack.axis = .vertical
-        previewStack.spacing = 10
+        previewStack.spacing = 12
 
-        recordsDivider.backgroundColor = .fdBorder
-        recordsButton.titleLabel?.font = .fdCaptionSemibold
-        recordsButton.setTitleColor(.fdPrimary, for: .normal)
-        recordsButton.addTarget(self, action: #selector(tapRecords), for: .touchUpInside)
+        recordsLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        recordsLabel.textColor = OrderDetailFigma.subtitle
+        recordsIcon.image = UIImage(named: "order_detail_chevron_right")
+        recordsIcon.contentMode = .scaleAspectFit
+        recordsIcon.snp.makeConstraints { $0.size.equalTo(14) }
 
-        let root = UIStackView(arrangedSubviews: [titleLabel, previewStack, recordsDivider, recordsButton])
+        let recordsStack = UIStackView(arrangedSubviews: [recordsLabel, recordsIcon])
+        recordsStack.axis = .horizontal
+        recordsStack.spacing = 2
+        recordsStack.alignment = .center
+        recordsStack.isUserInteractionEnabled = false
+        recordsControl.addSubview(recordsStack)
+        recordsStack.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.top.bottom.equalToSuperview()
+        }
+        recordsControl.addTarget(self, action: #selector(tapRecords), for: .touchUpInside)
+
+        let root = UIStackView(arrangedSubviews: [titleLabel, previewStack, recordsControl])
         root.axis = .vertical
         root.spacing = 12
-        root.setCustomSpacing(12, after: previewStack)
         addSubview(root)
         root.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
-        recordsDivider.snp.makeConstraints { $0.height.equalTo(1) }
-        recordsButton.snp.makeConstraints { $0.height.equalTo(40) }
+        recordsControl.snp.makeConstraints { $0.height.equalTo(18) }
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -470,7 +557,8 @@ final class OrderDetailLogisticsView: UIView {
     func configure(
         lines: [OrderDetailPackageLineBO],
         isPickup: Bool,
-        logisticsSummary: String?
+        logisticsSummary: String?,
+        orderStatus: AppOrderStatus? = nil
     ) {
         titleLabel.text = isPickup ? "自提信息" : "物流信息"
         let totalCount = lines.count
@@ -482,7 +570,12 @@ final class OrderDetailLogisticsView: UIView {
         }
         for line in previewLines {
             let card = OrderDetailShipmentTaskCardView()
-            card.configure(line: line, isPickup: isPickup, logisticsSummary: logisticsSummary)
+            card.configure(
+                line: line,
+                isPickup: isPickup,
+                logisticsSummary: logisticsSummary,
+                orderStatus: orderStatus
+            )
             card.onCopyTracking = { [weak self] trackingNo in
                 self?.onCopyTracking?(trackingNo)
             }
@@ -490,13 +583,14 @@ final class OrderDetailLogisticsView: UIView {
         }
 
         let recordsTitle = isPickup ? "自提记录" : "发货记录"
-        recordsButton.setTitle("\(recordsTitle)（共\(totalCount)条） >", for: .normal)
+        recordsLabel.text = "\(recordsTitle) (共\(totalCount)条)"
+        recordsControl.isHidden = totalCount == 0
     }
 
     @objc private func tapRecords() { onOpenRecords?() }
 }
 
-// MARK: - 套餐卡（对齐 OrderConfirmPackageView：名称 + 金额 + 套餐内容 + 展开收起）
+// MARK: - 套餐卡（对齐 Figma 3546:4460）
 
 final class OrderDetailPackageView: UIView {
     var onToggleContent: (() -> Void)?
@@ -504,73 +598,82 @@ final class OrderDetailPackageView: UIView {
     private let nameLabel = UILabel()
     private let introLabel = UILabel()
     private let amountLabel = UILabel()
-    private let contentTitle = UILabel()
+    private let itemsContainer = OrderDetailPackageItemsGradientContainer()
+    private let sectionIcon = UIImageView()
+    private let sectionTitleLabel = UILabel()
     private let contentStack = UIStackView()
-    private let toggleButton = UIButton(type: .system)
-    private let divider = UIView()
-    private let contentSection = UIStackView()
-    private let toggleRow = UIView()
-    private let rootStack = UIStackView()
+    private let toggleContainer = UIControl()
+    private let toggleTitleLabel = UILabel()
+    private let toggleIcon = UIImageView()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        nameLabel.font = .fdBodySemibold
-        nameLabel.textColor = .fdText
+        nameLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        nameLabel.textColor = OrderDetailFigma.title
         nameLabel.numberOfLines = 2
 
-        introLabel.font = .fdCaption
-        introLabel.textColor = .fdSubtext
-        introLabel.numberOfLines = 2
+        introLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        introLabel.textColor = OrderDetailFigma.subtitle
+        introLabel.numberOfLines = 1
 
-        amountLabel.font = .fdMonoFont(ofSize: 18, weight: .heavy)
-        amountLabel.textColor = .fdPrimary
         amountLabel.textAlignment = .right
-
-        contentTitle.text = "套餐内容"
-        contentTitle.font = .fdBodySemibold
-        contentTitle.textColor = .fdText
-
-        contentStack.axis = .vertical
-        contentStack.spacing = 0
-
-        toggleButton.titleLabel?.font = .fdCaption
-        toggleButton.setTitleColor(.fdSubtext, for: .normal)
-        toggleButton.addTarget(self, action: #selector(tapToggle), for: .touchUpInside)
-
-        divider.backgroundColor = .fdBorder
+        amountLabel.setContentHuggingPriority(.required, for: .horizontal)
+        amountLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         let textCol = UIStackView(arrangedSubviews: [nameLabel, introLabel])
         textCol.axis = .vertical
         textCol.spacing = 4
 
-        let top = UIStackView(arrangedSubviews: [textCol, amountLabel])
-        top.axis = .horizontal
-        top.alignment = .top
-        top.spacing = 12
-        amountLabel.setContentHuggingPriority(.required, for: .horizontal)
-        amountLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let topRow = UIStackView(arrangedSubviews: [textCol, amountLabel])
+        topRow.axis = .horizontal
+        topRow.alignment = .top
+        topRow.spacing = 12
 
-        contentSection.axis = .vertical
-        contentSection.spacing = 8
-        contentSection.addArrangedSubview(contentTitle)
-        contentSection.addArrangedSubview(contentStack)
+        sectionIcon.image = UIImage(named: "order_detail_package_icon")
+        sectionIcon.contentMode = .scaleAspectFit
+        sectionIcon.snp.makeConstraints { $0.size.equalTo(16) }
 
-        toggleRow.addSubview(toggleButton)
-        toggleButton.snp.makeConstraints {
-            $0.centerX.equalToSuperview()
-            $0.top.bottom.equalToSuperview()
+        sectionTitleLabel.text = "套餐内容"
+        sectionTitleLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        sectionTitleLabel.textColor = OrderDetailFigma.title
+
+        let headerStack = UIStackView(arrangedSubviews: [sectionIcon, sectionTitleLabel])
+        headerStack.axis = .horizontal
+        headerStack.spacing = 4
+        headerStack.alignment = .center
+
+        contentStack.axis = .vertical
+        contentStack.spacing = 12
+
+        toggleTitleLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        toggleTitleLabel.textColor = OrderDetailFigma.subtitle
+        toggleIcon.contentMode = .scaleAspectFit
+        toggleIcon.snp.makeConstraints { $0.size.equalTo(14) }
+
+        let toggleStack = UIStackView(arrangedSubviews: [toggleTitleLabel, toggleIcon])
+        toggleStack.axis = .horizontal
+        toggleStack.spacing = 2
+        toggleStack.alignment = .center
+        toggleStack.isUserInteractionEnabled = false
+        toggleContainer.addSubview(toggleStack)
+        toggleStack.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.top.bottom.equalToSuperview().inset(4)
         }
+        toggleContainer.addTarget(self, action: #selector(tapToggle), for: .touchUpInside)
 
-        rootStack.axis = .vertical
-        rootStack.spacing = 12
-        rootStack.addArrangedSubview(top)
-        rootStack.addArrangedSubview(divider)
-        rootStack.addArrangedSubview(contentSection)
-        rootStack.addArrangedSubview(toggleRow)
-        addSubview(rootStack)
-        rootStack.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
-        divider.snp.makeConstraints { $0.height.equalTo(1) }
+        let itemsInner = UIStackView(arrangedSubviews: [headerStack, contentStack, toggleContainer])
+        itemsInner.axis = .vertical
+        itemsInner.spacing = 12
+        itemsContainer.addSubview(itemsInner)
+        itemsInner.snp.makeConstraints { $0.edges.equalToSuperview().inset(12) }
+
+        let main = UIStackView(arrangedSubviews: [topRow, itemsContainer])
+        main.axis = .vertical
+        main.spacing = 16
+        addSubview(main)
+        main.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -587,7 +690,12 @@ final class OrderDetailPackageView: UIView {
         nameLabel.text = name
         introLabel.text = subtitle
         introLabel.isHidden = subtitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        amountLabel.text = ServicePackageMoney.yen(amount)
+        amountLabel.attributedText = OrderConfirmMoney.formatPrice(
+            amount,
+            symbolSize: 16,
+            valueSize: 18,
+            color: OrderDetailFigma.title
+        )
 
         contentStack.arrangedSubviews.forEach {
             contentStack.removeArrangedSubview($0)
@@ -598,82 +706,78 @@ final class OrderDetailPackageView: UIView {
         }
 
         let hasContent = totalCount > 0
-        contentSection.isHidden = !hasContent
-        divider.isHidden = !hasContent
-        let showToggle = hasContent && canExpand
-        toggleRow.isHidden = !showToggle
-        if showToggle {
-            let title = expanded ? "收起" : "展开（共\(totalCount)项）"
-            toggleButton.setTitle(title, for: .normal)
+        itemsContainer.isHidden = !hasContent
+        toggleContainer.isHidden = !(hasContent && canExpand)
+        if hasContent && canExpand {
+            toggleTitleLabel.text = expanded ? "收起" : "展开 (共\(totalCount)项)"
+            toggleIcon.image = UIImage(named: expanded ? "order_detail_collapse" : "order_detail_expand")
         }
     }
 
     private func makeContentRow(_ line: OrderDetailPackageLineBO) -> UIView {
         let name = UILabel()
-        name.font = .fdCaption
-        name.textColor = .fdText2
+        name.font = .fdFont(ofSize: 12, weight: .regular)
+        name.textColor = OrderDetailFigma.title
         name.text = line.displayName
         name.lineBreakMode = .byTruncatingTail
 
         let meta = UILabel()
-        meta.font = .fdCaption
-        meta.textColor = .fdSubtext
+        meta.font = .fdFont(ofSize: 12, weight: .regular)
+        meta.textColor = OrderDetailFigma.title
         meta.text = line.qtyLabel
+        meta.textAlignment = .right
         meta.setContentHuggingPriority(.required, for: .horizontal)
 
         let price = UILabel()
-        price.font = .fdCaption
-        price.textColor = .fdSubtext
-        price.text = ServicePackageMoney.yen(line.priceValue)
+        price.font = .fdFont(ofSize: 12, weight: .medium)
+        price.textColor = OrderDetailFigma.title
+        price.text = OrderConfirmMoney.yen(line.priceValue)
+        price.textAlignment = .right
         price.setContentHuggingPriority(.required, for: .horizontal)
 
         let row = UIStackView(arrangedSubviews: [name, meta, price])
         row.axis = .horizontal
         row.spacing = 8
         row.alignment = .center
-        row.snp.makeConstraints { $0.height.greaterThanOrEqualTo(32) }
+        meta.snp.makeConstraints { $0.width.greaterThanOrEqualTo(30) }
+        price.snp.makeConstraints { $0.width.greaterThanOrEqualTo(45) }
         return row
     }
 
     @objc private func tapToggle() { onToggleContent?() }
 }
 
-// MARK: - 虚线分隔（与 OrderConfirmFeeView 一致）
-
-private final class OrderDetailDashedLineView: UIView {
-    private let shape = CAShapeLayer()
+private final class OrderDetailPackageItemsGradientContainer: UIView {
+    private let gradientLayer = CAGradientLayer()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        shape.strokeColor = UIColor.fdBorder.cgColor
-        shape.lineWidth = 1
-        shape.lineDashPattern = [4, 3]
-        layer.addSublayer(shape)
+        layer.cornerRadius = 12
+        clipsToBounds = true
+        gradientLayer.colors = [
+            UIColor(red: 255/255, green: 178/255, blue: 154/255, alpha: 0.10).cgColor,
+            UIColor(red: 255/255, green: 122/255, blue: 80/255, alpha: 0.0).cgColor
+        ]
+        gradientLayer.locations = [0.0, 0.87]
+        gradientLayer.startPoint = CGPoint(x: 0.5, y: 0)
+        gradientLayer.endPoint = CGPoint(x: 0.5, y: 1)
+        layer.insertSublayer(gradientLayer, at: 0)
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        shape.frame = bounds
-        shape.path = UIBezierPath(
-            rect: CGRect(x: 0, y: bounds.midY, width: bounds.width, height: 0)
-        ).cgPath
+        gradientLayer.frame = bounds
     }
 }
 
-// MARK: - 费用明细（对齐 OrderConfirmFeeView）
+// MARK: - 费用明细（对齐 Figma 3546:4499）
 
 final class OrderDetailFeeView: UIView {
-    private enum Metrics {
-        static let rowHeight: CGFloat = 40
-        static let labelFont: UIFont = .fdBody
-        static let valueFont: UIFont = .fdBody
-    }
-
     private let titleLabel = UILabel()
     private let rowsStack = UIStackView()
-    private let totalDivider = OrderDetailDashedLineView()
+    private let totalDivider = UIView()
     private let totalLeft = UILabel()
     private let totalRight = UILabel()
 
@@ -681,35 +785,29 @@ final class OrderDetailFeeView: UIView {
         super.init(frame: frame)
 
         titleLabel.text = "费用明细"
-        titleLabel.font = .fdBodySemibold
-        titleLabel.textColor = .fdText
+        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.textColor = OrderDetailFigma.title
 
         rowsStack.axis = .vertical
-        rowsStack.spacing = 0
+        rowsStack.spacing = 12
 
-        totalLeft.font = .fdBodySemibold
-        totalLeft.textColor = .fdText
+        totalDivider.backgroundColor = OrderDetailFigma.divider
 
-        totalRight.font = .fdNumM
-        totalRight.textColor = .fdPrimary
+        totalLeft.font = .fdFont(ofSize: 16, weight: .medium)
+        totalLeft.textColor = OrderDetailFigma.title
         totalRight.textAlignment = .right
 
         let totalRow = UIStackView(arrangedSubviews: [totalLeft, totalRight])
         totalRow.axis = .horizontal
         totalRow.alignment = .center
         totalRow.spacing = 12
-        totalRow.snp.makeConstraints { $0.height.equalTo(Metrics.rowHeight) }
 
         let root = UIStackView(arrangedSubviews: [titleLabel, rowsStack, totalDivider, totalRow])
         root.axis = .vertical
-        root.spacing = 0
-        root.setCustomSpacing(8, after: titleLabel)
-        root.setCustomSpacing(12, after: rowsStack)
-        root.setCustomSpacing(12, after: totalDivider)
-
+        root.spacing = 16
         addSubview(root)
         root.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
-        totalDivider.snp.makeConstraints { $0.height.equalTo(1) }
+        totalDivider.snp.makeConstraints { $0.height.equalTo(0.5) }
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -719,68 +817,61 @@ final class OrderDetailFeeView: UIView {
             rowsStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
-        rowsStack.addArrangedSubview(row("套餐金额", ServicePackageMoney.yen(detail.packageAmount)))
-        rowsStack.addArrangedSubview(row("运费", ServicePackageMoney.yen(detail.expressFee)))
+        rowsStack.addArrangedSubview(row("套餐金额", OrderConfirmMoney.yen(detail.packageAmount), highlight: false))
+        rowsStack.addArrangedSubview(row("运费", OrderConfirmMoney.yen(detail.expressFee), highlight: false))
         rowsStack.addArrangedSubview(
-            row(
-                "优惠券抵扣",
-                "-\(ServicePackageMoney.yen(detail.couponDiscount))",
-                minusValue: detail.couponDiscount > 0
-            )
+            row("优惠券抵扣", "-\(OrderConfirmMoney.yen(detail.couponDiscount))", highlight: detail.couponDiscount > 0)
         )
-        rowsStack.addArrangedSubview(row("权益卡抵扣", "-\(ServicePackageMoney.yen(0))", minusValue: false))
+        rowsStack.addArrangedSubview(row("权益卡抵扣", "-\(OrderConfirmMoney.yen(0))", highlight: false))
 
         let isPendingPayment = detail.orderStatus == .pendingPayment
         totalLeft.text = isPendingPayment ? "应付金额" : "实付金额"
-        totalRight.text = ServicePackageMoney.yen(detail.paidAmount)
+        totalRight.attributedText = OrderConfirmMoney.formatPrice(
+            detail.paidAmount,
+            symbolSize: 16,
+            valueSize: 18,
+            color: OrderDetailFigma.priceRed
+        )
     }
 
-    private func row(_ title: String, _ value: String, minusValue: Bool = false) -> UIView {
+    private func row(_ title: String, _ value: String, highlight: Bool) -> UIView {
         let left = UILabel()
         left.text = title
-        left.font = Metrics.labelFont
-        left.textColor = .fdSubtext
+        left.font = .fdFont(ofSize: 14, weight: .regular)
+        left.textColor = OrderDetailFigma.subtitle
         left.setContentHuggingPriority(.required, for: .horizontal)
 
         let right = UILabel()
         right.text = value
-        right.font = Metrics.valueFont
-        right.textColor = minusValue ? .fdSuccess : .fdText
+        right.font = .fdFont(ofSize: 14, weight: .medium)
+        right.textColor = highlight ? OrderDetailFigma.priceRed : OrderDetailFigma.title
         right.textAlignment = .right
 
         let row = UIStackView(arrangedSubviews: [left, right])
         row.axis = .horizontal
         row.alignment = .center
         row.spacing = 12
-        row.snp.makeConstraints { $0.height.equalTo(Metrics.rowHeight) }
         return row
     }
 }
 
-// MARK: - 退款/售后信息（对齐 funde OrderAfterSaleInfoCard）
+// MARK: - 退款/售后信息（对齐 Figma 3546:5429）
 
 final class OrderDetailAfterSaleView: UIView {
-    private enum Metrics {
-        static let rowHeight: CGFloat = 40
-        static let labelFont: UIFont = .fdBody
-        static let valueFont: UIFont = .fdBody
-    }
-
     private let titleLabel = UILabel()
     private let stack = UIStackView()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         titleLabel.text = "退款/售后信息"
-        titleLabel.font = .fdBodySemibold
-        titleLabel.textColor = .fdText
+        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.textColor = OrderDetailFigma.title
         stack.axis = .vertical
-        stack.spacing = 0
+        stack.spacing = 12
 
         let root = UIStackView(arrangedSubviews: [titleLabel, stack])
         root.axis = .vertical
         root.spacing = 12
-        root.setCustomSpacing(8, after: titleLabel)
         addSubview(root)
         root.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
     }
@@ -802,29 +893,31 @@ final class OrderDetailAfterSaleView: UIView {
             stack.addArrangedSubview(infoRow("申请退款原因", reason, multiline: true))
         }
         if let amount = detail.refundAmountValue {
-            stack.addArrangedSubview(refundAmountRow(ServicePackageMoney.yen(amount)))
+            stack.addArrangedSubview(infoRow("退款金额", ServicePackageMoney.yen(amount), valueColor: OrderDetailFigma.priceRed))
         }
     }
 
-    private func infoRow(_ title: String, _ value: String, multiline: Bool = false) -> UIView {
+    private func infoRow(
+        _ title: String,
+        _ value: String,
+        multiline: Bool = false,
+        valueColor: UIColor = OrderDetailFigma.title
+    ) -> UIView {
         let left = UILabel()
         left.text = title
-        left.font = Metrics.labelFont
-        left.textColor = .fdSubtext
+        left.font = .fdFont(ofSize: 14, weight: .regular)
+        left.textColor = OrderDetailFigma.subtitle
         left.setContentHuggingPriority(.required, for: .horizontal)
         let right = UILabel()
         right.text = value
-        right.font = Metrics.valueFont
-        right.textColor = .fdText
+        right.font = .fdFont(ofSize: 14, weight: .regular)
+        right.textColor = valueColor
         right.numberOfLines = multiline ? 0 : 1
         right.textAlignment = .right
         let row = UIStackView(arrangedSubviews: [left, right])
         row.axis = .horizontal
         row.alignment = multiline ? .top : .center
         row.spacing = 12
-        if !multiline {
-            row.snp.makeConstraints { $0.height.equalTo(Metrics.rowHeight) }
-        }
         return row
     }
 
@@ -840,73 +933,57 @@ final class OrderDetailAfterSaleView: UIView {
         guard let value = gesture.view?.accessibilityLabel else { return }
         UIPasteboard.general.string = value
     }
-
-    private func refundAmountRow(_ amount: String) -> UIView {
-        let container = UIView()
-        container.backgroundColor = .fdDangerSoft
-        container.layer.cornerRadius = 8
-
-        let left = UILabel()
-        left.text = "退款金额"
-        left.font = .fdBodySemibold
-        left.textColor = .fdText
-        let right = UILabel()
-        right.text = amount
-        right.font = .fdNumM
-        right.textColor = .fdDanger
-        right.textAlignment = .right
-
-        let row = UIStackView(arrangedSubviews: [left, right])
-        row.axis = .horizontal
-        row.alignment = .center
-        container.addSubview(row)
-        row.snp.makeConstraints { $0.edges.equalToSuperview().inset(12) }
-        return container
-    }
 }
 
-// MARK: - 订单信息（对齐 funde OrderDetailInfoSection）
+// MARK: - 订单信息（对齐 Figma 3546:4519）
 
 final class OrderDetailInfoView: UIView {
-
-    private enum Metrics {
-        static let rowHeight: CGFloat = 40
-        static let labelFont: UIFont = .fdBody
-        static let valueFont: UIFont = .fdBody
-    }
 
     var onOrderNumberCopied: (() -> Void)?
 
     private let titleLabel = UILabel()
     private let stack = UIStackView()
-    private let toggleButton = UIButton(type: .system)
     private let expandedStack = UIStackView()
-    private var isExpanded = false
+    private let toggleControl = UIControl()
+    private let toggleTitleLabel = UILabel()
+    private let toggleIcon = UIImageView()
+    private var isExpanded = true
     private var orderNumberText: String?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         titleLabel.text = "订单信息"
-        titleLabel.font = .fdBodySemibold
-        titleLabel.textColor = .fdText
+        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.textColor = OrderDetailFigma.title
 
         stack.axis = .vertical
-        stack.spacing = 0
+        stack.spacing = 12
 
         expandedStack.axis = .vertical
-        expandedStack.spacing = 0
-        expandedStack.isHidden = true
+        expandedStack.spacing = 12
 
-        toggleButton.setTitleColor(.fdPrimary, for: .normal)
-        toggleButton.titleLabel?.font = .fdBodySemibold
-        toggleButton.addTarget(self, action: #selector(toggleExpanded), for: .touchUpInside)
+        toggleTitleLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        toggleTitleLabel.textColor = OrderDetailFigma.subtitle
+        toggleIcon.contentMode = .scaleAspectFit
+        toggleIcon.snp.makeConstraints { $0.size.equalTo(14) }
+        let toggleStack = UIStackView(arrangedSubviews: [toggleTitleLabel, toggleIcon])
+        toggleStack.axis = .horizontal
+        toggleStack.spacing = 2
+        toggleStack.alignment = .center
+        toggleStack.isUserInteractionEnabled = false
+        toggleControl.addSubview(toggleStack)
+        toggleStack.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.top.bottom.equalToSuperview()
+        }
+        toggleControl.addTarget(self, action: #selector(toggleExpanded), for: .touchUpInside)
 
-        let root = UIStackView(arrangedSubviews: [titleLabel, stack, expandedStack, toggleButton])
+        let root = UIStackView(arrangedSubviews: [titleLabel, stack, expandedStack, toggleControl])
         root.axis = .vertical
         root.spacing = 12
-        root.setCustomSpacing(8, after: titleLabel)
         addSubview(root)
         root.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
+        toggleControl.snp.makeConstraints { $0.height.equalTo(18) }
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -934,11 +1011,18 @@ final class OrderDetailInfoView: UIView {
         if let createTime = detail.createTime?.nilIfEmpty {
             stack.addArrangedSubview(infoRow("下单时间", createTime))
         }
+        if let reject = detail.refuseReasons?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
+           !detail.isInAfterSaleFlow {
+            stack.addArrangedSubview(infoRow("拒绝退款原因", reject, multiline: true))
+        }
         let remark = remarkOverride?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
             ?? detail.remarkText
         stack.addArrangedSubview(infoRow("订单备注", remark ?? "无", mutedValue: remark == nil))
 
         var mergedExpanded = expandedRows
+        if !mergedExpanded.contains(where: { $0.0 == "支付状态" }) {
+            mergedExpanded.append(("支付状态", detail.paymentStatusText))
+        }
         if let payment = paymentMethodOverride?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
            payment != "—",
            !mergedExpanded.contains(where: { $0.0 == "支付方式" }) {
@@ -946,19 +1030,20 @@ final class OrderDetailInfoView: UIView {
         }
         if let phone = trimmedNonEmpty(detail.phone),
            !mergedExpanded.contains(where: { $0.0 == "手机号" }) {
-            mergedExpanded.insert(("手机号", phone), at: 0)
+            mergedExpanded.append(("手机号", phone))
         }
         mergedExpanded.forEach { title, value in
             expandedStack.addArrangedSubview(infoRow(title, value))
         }
 
         let hasExpandedContent = !mergedExpanded.isEmpty
-        toggleButton.isHidden = !showsExpandToggle || !hasExpandedContent
-        if !toggleButton.isHidden {
-            updateToggleTitle()
-        } else {
+        toggleControl.isHidden = !showsExpandToggle || !hasExpandedContent
+        if toggleControl.isHidden {
             isExpanded = false
             expandedStack.isHidden = true
+        } else {
+            expandedStack.isHidden = !isExpanded
+            updateToggleTitle()
         }
     }
 
@@ -970,27 +1055,27 @@ final class OrderDetailInfoView: UIView {
     private func orderNumberRow(_ value: String) -> UIView {
         let left = UILabel()
         left.text = "订单号"
-        left.font = Metrics.labelFont
-        left.textColor = .fdSubtext
+        left.font = .fdFont(ofSize: 14, weight: .regular)
+        left.textColor = OrderDetailFigma.subtitle
         left.setContentHuggingPriority(.required, for: .horizontal)
 
         let valueLabel = UILabel()
         valueLabel.text = value
-        valueLabel.font = Metrics.valueFont
-        valueLabel.textColor = .fdText
+        valueLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        valueLabel.textColor = OrderDetailFigma.title
         valueLabel.textAlignment = .right
         valueLabel.lineBreakMode = .byTruncatingMiddle
 
-        let copyButton = UIButton(type: .system)
-        copyButton.setImage(UIImage(systemName: "doc.on.doc"), for: .normal)
-        copyButton.tintColor = .fdPrimary
+        let copyButton = UIButton(type: .custom)
+        copyButton.setImage(UIImage(named: "order_detail_copy")?.withRenderingMode(.alwaysOriginal), for: .normal)
+        copyButton.tintColor = OrderDetailFigma.primaryOrange
         copyButton.accessibilityLabel = "复制订单号"
         copyButton.addAction(UIAction { [weak self] _ in
             guard let text = self?.orderNumberText else { return }
             UIPasteboard.general.string = text
             self?.onOrderNumberCopied?()
         }, for: .touchUpInside)
-        copyButton.snp.makeConstraints { $0.size.equalTo(28) }
+        copyButton.snp.makeConstraints { $0.size.equalTo(14) }
 
         let right = UIStackView(arrangedSubviews: [valueLabel, copyButton])
         right.axis = .horizontal
@@ -1001,27 +1086,25 @@ final class OrderDetailInfoView: UIView {
         row.axis = .horizontal
         row.alignment = .center
         row.spacing = 12
-        row.snp.makeConstraints { $0.height.equalTo(Metrics.rowHeight) }
         return row
     }
 
-    private func infoRow(_ title: String, _ value: String, mutedValue: Bool = false) -> UIView {
+    private func infoRow(_ title: String, _ value: String, mutedValue: Bool = false, multiline: Bool = false) -> UIView {
         let left = UILabel()
         left.text = title
-        left.font = Metrics.labelFont
-        left.textColor = .fdSubtext
+        left.font = .fdFont(ofSize: 14, weight: .regular)
+        left.textColor = OrderDetailFigma.subtitle
         left.setContentHuggingPriority(.required, for: .horizontal)
         let right = UILabel()
         right.text = value
-        right.font = Metrics.valueFont
-        right.textColor = mutedValue ? .fdMuted : .fdText
-        right.numberOfLines = 0
+        right.font = .fdFont(ofSize: 14, weight: .regular)
+        right.textColor = mutedValue ? OrderDetailFigma.subtitle : OrderDetailFigma.title
+        right.numberOfLines = multiline ? 0 : 1
         right.textAlignment = .right
         let row = UIStackView(arrangedSubviews: [left, right])
         row.axis = .horizontal
-        row.alignment = .center
+        row.alignment = multiline ? .top : .center
         row.spacing = 12
-        row.snp.makeConstraints { $0.height.equalTo(Metrics.rowHeight) }
         return row
     }
 
@@ -1032,11 +1115,12 @@ final class OrderDetailInfoView: UIView {
     }
 
     private func updateToggleTitle() {
-        toggleButton.setTitle(isExpanded ? "收起" : "查看更多", for: .normal)
+        toggleTitleLabel.text = isExpanded ? "收起" : "展开"
+        toggleIcon.image = UIImage(named: isExpanded ? "order_detail_collapse" : "order_detail_expand")
     }
 }
 
-// MARK: - 底部操作栏
+// MARK: - 底部操作栏（对齐 Figma 3546:4382）
 
 final class OrderDetailActionBar: UIView {
     var onAction: ((OrderListCardAction) -> Void)?
@@ -1045,21 +1129,24 @@ final class OrderDetailActionBar: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = .fdSurface
+        backgroundColor = .white
+        layer.cornerRadius = 16
+        layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.06
+        layer.shadowOpacity = 0.04
         layer.shadowOffset = CGSize(width: 0, height: -2)
         layer.shadowRadius = 8
 
         stack.axis = .horizontal
-        stack.spacing = 10
-        stack.alignment = .center
+        stack.spacing = 9
+        stack.alignment = .fill
+        stack.distribution = .fillEqually
         addSubview(stack)
         stack.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(10).priority(UILayoutPriority(999))
+            make.top.equalToSuperview().offset(16)
             make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalTo(safeAreaLayoutGuide).offset(-10).priority(UILayoutPriority(999))
-            make.height.greaterThanOrEqualTo(40).priority(UILayoutPriority(999))
+            make.bottom.equalTo(safeAreaLayoutGuide).offset(-10)
+            make.height.equalTo(40)
         }
     }
 
@@ -1073,27 +1160,25 @@ final class OrderDetailActionBar: UIView {
         let hasActions = !actions.isEmpty
         stack.isHidden = !hasActions
         isHidden = !hasActions
-        for (index, action) in actions.enumerated() {
-            let primary = index == actions.count - 1
-            stack.addArrangedSubview(makeButton(action: action, primary: primary))
+        for action in actions {
+            stack.addArrangedSubview(makeButton(action: action, primary: action.isPrimary))
         }
     }
 
     private func makeButton(action: OrderListCardAction, primary: Bool) -> UIButton {
         let button = UIButton(type: .system)
         button.setTitle(action.title, for: .normal)
-        button.titleLabel?.font = .fdBodySemibold
-        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 18, bottom: 0, right: 18)
+        button.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
         button.layer.cornerRadius = 20
-        button.snp.makeConstraints { $0.height.equalTo(40) }
         if primary {
-            button.backgroundColor = .fdPrimary
+            button.backgroundColor = OrderDetailFigma.primaryOrange
             button.setTitleColor(.white, for: .normal)
+            button.layer.borderWidth = 0
         } else {
-            button.backgroundColor = .fdSurface
-            button.setTitleColor(.fdText2, for: .normal)
-            button.layer.borderWidth = 1
-            button.layer.borderColor = UIColor.fdBorder.cgColor
+            button.backgroundColor = .white
+            button.setTitleColor(OrderDetailFigma.primaryOrange, for: .normal)
+            button.layer.borderWidth = 0.5
+            button.layer.borderColor = OrderDetailFigma.primaryOrange.cgColor
         }
         button.addAction(UIAction { [weak self] _ in
             self?.onAction?(action)

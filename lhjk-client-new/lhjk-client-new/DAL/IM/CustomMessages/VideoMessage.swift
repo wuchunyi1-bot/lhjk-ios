@@ -40,8 +40,8 @@ final class VideoMessage: RCMessageContent {
     }
 
     override func decode(with data: Data) {
+        self.rawJSONData = data
         guard let json = Self.dictionary(fromJsonData: data) as? [String: Any] else {
-            self.rawJSONData = data
             return
         }
         decodeBaseData(json)

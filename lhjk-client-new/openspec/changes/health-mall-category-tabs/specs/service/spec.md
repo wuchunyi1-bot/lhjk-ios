@@ -30,7 +30,7 @@
 #### Scenario: 商品卡片与跳转
 
 - **WHEN** 列表渲染商品
-- **THEN** 每张卡片含：1:1 封面（有 `imageUrl` 时 Kingfisher 加载）、推荐角标（`recommend==1`）、名称、简介、参考价、「购买」按钮
+- **THEN** 每张卡片含：封面（有 `imageUrl` 时 Kingfisher 加载，无图或失败用 `mall_product_placeholder`）、角标（`recommend==1` 推荐 / `recommend==2` 热销）、名称、简介、参考价、「购买」按钮
 - **AND** 点击卡片或「购买」跳转 `/services/pkg`，`id` 为列表返回的套餐 id
 
 #### Scenario: 分类无商品

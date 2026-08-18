@@ -148,7 +148,7 @@ struct ReplyMessage: Codable {
     /// 从 ChatMessage 构建引用信息
     static func from(_ msg: ChatMessage) -> ReplyMessage {
         ReplyMessage(
-            text: msg.quotePreviewText,
+            text: msg.type == .text ? RongEmoji.emojiToSymbol(msg.quotePreviewText) : msg.quotePreviewText,
             senderName: msg.senderName ?? "",
             messageType: msg.quoteObjectName,
             duration: msg.quoteMediaDuration,

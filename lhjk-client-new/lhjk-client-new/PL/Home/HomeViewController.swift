@@ -38,7 +38,7 @@ final class HomeViewController: BaseViewController {
         viewModel.loadQuickLinks()
         viewModel.loadHealthServices()
         viewModel.loadNews()
-        viewModel.loadTodayTasks()
+        viewModel.loadTodayTasks(forceRefresh: true)
         viewModel.loadDoctorTeam()
     }
 
@@ -107,8 +107,7 @@ final class HomeViewController: BaseViewController {
     }
 
     private func handleArticlesMoreTapped() {
-        // 健康陪伴「更多」独立入口；跳转另定
-        // TODO: 更多列表页
+        Router.shared.push("/companion", from: self)
     }
 
     private func handleNewsArticleTap(_ article: HomeArticleCell.Article) {
@@ -130,6 +129,13 @@ final class HomeViewController: BaseViewController {
             cell.configure(viewModel.banners)
             cell.onBannerTap = { [weak self] banner in
                 self?.handleColumnContentPageUrl(banner.pageUrl)
+            }
+            cell.onHeightUpdated = { [weak self] in
+                guard let self else { return }
+                UIView.performWithoutAnimation {
+                    self.tableView.beginUpdates()
+                    self.tableView.endUpdates()
+                }
             }
             return cell
         case .quickActions:

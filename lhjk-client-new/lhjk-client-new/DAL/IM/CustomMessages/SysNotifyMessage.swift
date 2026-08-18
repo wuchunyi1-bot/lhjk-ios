@@ -58,6 +58,18 @@ enum IMCardJSON {
         return defaultValue
     }
 
+    /// 协议卡顶层 `messageType`：兼容 Int / NSNumber / 数字字符串
+    static func intValue(_ raw: Any?) -> Int? {
+        if let i = raw as? Int { return i }
+        if let i = raw as? Int64 { return Int(i) }
+        if let n = raw as? NSNumber { return n.intValue }
+        if let s = raw as? String {
+            let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let i = Int(t) { return i }
+        }
+        return nil
+    }
+
     /// 监测卡来源 tag：兼容 dataSourceTag / sourceLabel
     static func dataSourceTag(from extra: [String: Any]?) -> String? {
         guard let extra else { return nil }
@@ -82,6 +94,7 @@ enum IMCardMessageCoding {
         urlKey: String?,
         lastMsgDisplayContent: String?,
         extra: String?,
+        messageType: Int?,
         into dataDict: NSMutableDictionary
     ) {
         dataDict["businessData"] = businessData
@@ -95,6 +108,9 @@ enum IMCardMessageCoding {
         if let extra, !extra.isEmpty {
             dataDict["extra"] = extra
         }
+        if let messageType {
+            dataDict["messageType"] = messageType
+        }
     }
 
     static func decodeFields(
@@ -106,7 +122,8 @@ enum IMCardMessageCoding {
         setIsShowUser: (Bool) -> Void,
         setImageUrl: (String?) -> Void,
         setUrlKey: (String?) -> Void,
-        setLastMsgDisplayContent: (String?) -> Void
+        setLastMsgDisplayContent: (String?) -> Void,
+        setMessageType: (Int?) -> Void
     ) {
         message.decodeBaseData(json)
         setBusinessData(IMCardJSON.stringify(json["businessData"]))
@@ -116,6 +133,7 @@ enum IMCardMessageCoding {
         setImageUrl(IMCardJSON.stringValue(json["imageUrl"]))
         setUrlKey(IMCardJSON.stringValue(json["urlKey"]))
         setLastMsgDisplayContent(IMCardJSON.stringValue(json["lastMsgDisplayContent"]))
+        setMessageType(IMCardJSON.intValue(json["messageType"]))
         // 显式写回协议 extra（对象/字符串双兼容）；覆盖基类可能的截断/丢失
         if let extraString = IMCardJSON.stringify(json["extra"]), !extraString.isEmpty {
             message.extra = extraString
@@ -124,12 +142,14 @@ enum IMCardMessageCoding {
     }
 
     static func applySenderUserInfo(from json: [String: Any], into message: RCMessageContent) {
-        guard let user = json["user"] as? [String: Any] else { return }
+        // 安卓侧 user 常为 JSON 字符串；iOS encodeBaseData 则为对象
+        guard let user = IMCardJSON.parseObject(json["user"]) else { return }
         let info = RCUserInfo()
         info.userId = IMCardJSON.stringValue(user["id"]) ?? ""
         info.name = IMCardJSON.stringValue(user["name"]) ?? ""
         info.portraitUri = IMCardJSON.stringValue(user["portraitUri"])
             ?? IMCardJSON.stringValue(user["portrait"])
+            ?? IMCardJSON.stringValue(user["icon"])
         message.senderUserInfo = info
     }
 }
@@ -147,6 +167,8 @@ final class SysNotifyMessage: RCMessageContent {
     var imageUrl: String?
     var urlKey: String?
     var lastMsgDisplayContent: String?
+    /// 协议卡顶层类型（安卓 `messageType`，如监测上传为 2）；与 `extra.type` 不是同一字段
+    var messageType: Int?
 
     override class func getObjectName() -> String { "AD:SysNotify" }
 
@@ -159,14 +181,15 @@ final class SysNotifyMessage: RCMessageContent {
         IMCardMessageCoding.encodeFields(
             businessData: businessData, title: title, content: content,
             isShowUser: isShowUser, imageUrl: imageUrl, urlKey: urlKey,
-            lastMsgDisplayContent: lastMsgDisplayContent, extra: extra, into: dataDict
+            lastMsgDisplayContent: lastMsgDisplayContent, extra: extra,
+            messageType: messageType, into: dataDict
         )
         return try? JSONSerialization.data(withJSONObject: dataDict)
     }
 
     override func decode(with data: Data) {
+        self.rawJSONData = data
         guard let json = Self.dictionary(fromJsonData: data) as? [String: Any] else {
-            self.rawJSONData = data
             return
         }
         IMCardMessageCoding.decodeFields(
@@ -177,7 +200,8 @@ final class SysNotifyMessage: RCMessageContent {
             setIsShowUser: { self.isShowUser = $0 },
             setImageUrl: { self.imageUrl = $0 },
             setUrlKey: { self.urlKey = $0 },
-            setLastMsgDisplayContent: { self.lastMsgDisplayContent = $0 }
+            setLastMsgDisplayContent: { self.lastMsgDisplayContent = $0 },
+            setMessageType: { self.messageType = $0 }
         )
     }
 
@@ -199,6 +223,8 @@ final class VipMessage: RCMessageContent {
     var imageUrl: String?
     var urlKey: String?
     var lastMsgDisplayContent: String?
+    /// 协议卡顶层类型（安卓 `messageType`，如监测上传为 2）；与 `extra.type` 不是同一字段
+    var messageType: Int?
 
     override class func getObjectName() -> String { "AD:Vip" }
 
@@ -211,14 +237,15 @@ final class VipMessage: RCMessageContent {
         IMCardMessageCoding.encodeFields(
             businessData: businessData, title: title, content: content,
             isShowUser: isShowUser, imageUrl: imageUrl, urlKey: urlKey,
-            lastMsgDisplayContent: lastMsgDisplayContent, extra: extra, into: dataDict
+            lastMsgDisplayContent: lastMsgDisplayContent, extra: extra,
+            messageType: messageType, into: dataDict
         )
         return try? JSONSerialization.data(withJSONObject: dataDict)
     }
 
     override func decode(with data: Data) {
+        self.rawJSONData = data
         guard let json = Self.dictionary(fromJsonData: data) as? [String: Any] else {
-            self.rawJSONData = data
             return
         }
         IMCardMessageCoding.decodeFields(
@@ -229,7 +256,8 @@ final class VipMessage: RCMessageContent {
             setIsShowUser: { self.isShowUser = $0 },
             setImageUrl: { self.imageUrl = $0 },
             setUrlKey: { self.urlKey = $0 },
-            setLastMsgDisplayContent: { self.lastMsgDisplayContent = $0 }
+            setLastMsgDisplayContent: { self.lastMsgDisplayContent = $0 },
+            setMessageType: { self.messageType = $0 }
         )
     }
 
@@ -251,6 +279,8 @@ final class ServiceCommentMessage: RCMessageContent {
     var imageUrl: String?
     var urlKey: String?
     var lastMsgDisplayContent: String?
+    /// 协议卡顶层类型（安卓 `messageType`，如监测上传为 2）；与 `extra.type` 不是同一字段
+    var messageType: Int?
 
     override class func getObjectName() -> String { "AD:ServiceComment" }
 
@@ -263,14 +293,15 @@ final class ServiceCommentMessage: RCMessageContent {
         IMCardMessageCoding.encodeFields(
             businessData: businessData, title: title, content: content,
             isShowUser: isShowUser, imageUrl: imageUrl, urlKey: urlKey,
-            lastMsgDisplayContent: lastMsgDisplayContent, extra: extra, into: dataDict
+            lastMsgDisplayContent: lastMsgDisplayContent, extra: extra,
+            messageType: messageType, into: dataDict
         )
         return try? JSONSerialization.data(withJSONObject: dataDict)
     }
 
     override func decode(with data: Data) {
+        self.rawJSONData = data
         guard let json = Self.dictionary(fromJsonData: data) as? [String: Any] else {
-            self.rawJSONData = data
             return
         }
         IMCardMessageCoding.decodeFields(
@@ -281,7 +312,8 @@ final class ServiceCommentMessage: RCMessageContent {
             setIsShowUser: { self.isShowUser = $0 },
             setImageUrl: { self.imageUrl = $0 },
             setUrlKey: { self.urlKey = $0 },
-            setLastMsgDisplayContent: { self.lastMsgDisplayContent = $0 }
+            setLastMsgDisplayContent: { self.lastMsgDisplayContent = $0 },
+            setMessageType: { self.messageType = $0 }
         )
     }
 
@@ -303,6 +335,8 @@ final class CheckUserMessage: RCMessageContent {
     var imageUrl: String?
     var urlKey: String?
     var lastMsgDisplayContent: String?
+    /// 协议卡顶层类型（安卓 `messageType`，如监测上传为 2）；与 `extra.type` 不是同一字段
+    var messageType: Int?
 
     override class func getObjectName() -> String { "AD:CheckUserMsg" }
 
@@ -315,14 +349,15 @@ final class CheckUserMessage: RCMessageContent {
         IMCardMessageCoding.encodeFields(
             businessData: businessData, title: title, content: content,
             isShowUser: isShowUser, imageUrl: imageUrl, urlKey: urlKey,
-            lastMsgDisplayContent: lastMsgDisplayContent, extra: extra, into: dataDict
+            lastMsgDisplayContent: lastMsgDisplayContent, extra: extra,
+            messageType: messageType, into: dataDict
         )
         return try? JSONSerialization.data(withJSONObject: dataDict)
     }
 
     override func decode(with data: Data) {
+        self.rawJSONData = data
         guard let json = Self.dictionary(fromJsonData: data) as? [String: Any] else {
-            self.rawJSONData = data
             return
         }
         IMCardMessageCoding.decodeFields(
@@ -333,7 +368,8 @@ final class CheckUserMessage: RCMessageContent {
             setIsShowUser: { self.isShowUser = $0 },
             setImageUrl: { self.imageUrl = $0 },
             setUrlKey: { self.urlKey = $0 },
-            setLastMsgDisplayContent: { self.lastMsgDisplayContent = $0 }
+            setLastMsgDisplayContent: { self.lastMsgDisplayContent = $0 },
+            setMessageType: { self.messageType = $0 }
         )
     }
 

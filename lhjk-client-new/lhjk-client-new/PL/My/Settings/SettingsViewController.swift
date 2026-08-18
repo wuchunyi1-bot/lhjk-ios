@@ -2,10 +2,7 @@ import UIKit
 import SnapKit
 import Kingfisher
 
-/// 设置主页 — 对齐 PRD-201 / SettingsView.vue / me-settings.page.yaml
-///
-/// 四组六项：账号与安全 / 消息提醒 / 隐私与协议 / 通用与支持
-/// 不含：适老化开关、退出登录、我的地址
+/// 设置主页 — 对齐 funde-client `SettingsView.vue`
 final class SettingsViewController: BaseViewController {
 
     private let cacheSizeKey = "fd_settings_cache_size"
@@ -30,7 +27,7 @@ final class SettingsViewController: BaseViewController {
 
     override func setupUI() {
         title = "设置"
-        view.backgroundColor = .fdBg
+        view.backgroundColor = UIColor(hexString: "#FFF8F4")
 
         scrollView.showsVerticalScrollIndicator = false
         view.addSubview(scrollView)
@@ -45,6 +42,20 @@ final class SettingsViewController: BaseViewController {
                     desc: "手机号、密码与账号管理",
                     icon: "lock.shield",
                     route: "/me/settings/security"
+                ),
+            ]),
+            ("地址与设备", [
+                .link(
+                    title: "我的地址",
+                    desc: "收货地址管理",
+                    icon: "mappin.and.ellipse",
+                    route: "/me/settings/addresses"
+                ),
+                .link(
+                    title: "智能设备",
+                    desc: "已绑定的健康监测设备",
+                    icon: "applewatch",
+                    route: "/me/devices"
                 ),
             ]),
             ("消息提醒", [
@@ -72,7 +83,7 @@ final class SettingsViewController: BaseViewController {
             ("通用与支持", [
                 .clearCache(
                     title: "清理缓存",
-                    icon: "trash"
+                    icon: "paintbrush"
                 ),
                 .link(
                     title: "关于富德健康",
@@ -91,11 +102,16 @@ final class SettingsViewController: BaseViewController {
             section.snp.makeConstraints { make in
                 make.top.equalTo(lastBottom).offset(idx == 0 ? 12 : 14)
                 make.leading.trailing.equalToSuperview()
-                if idx == groups.count - 1 {
-                    make.bottom.equalToSuperview().offset(-24)
-                }
             }
             lastBottom = section.snp.bottom
+        }
+
+        let logoutWrap = buildLogoutButton()
+        contentView.addSubview(logoutWrap)
+        logoutWrap.snp.makeConstraints { make in
+            make.top.equalTo(lastBottom).offset(20)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview().offset(-24)
         }
     }
 
@@ -167,6 +183,24 @@ final class SettingsViewController: BaseViewController {
         return wrap
     }
 
+    private func buildLogoutButton() -> UIView {
+        let wrap = UIView()
+        let btn = UIButton(type: .system)
+        btn.setTitle("退出登录", for: .normal)
+        btn.setTitleColor(.fdDanger, for: .normal)
+        btn.titleLabel?.font = .fdH3
+        btn.backgroundColor = .fdSurface
+        btn.layer.cornerRadius = 12
+        btn.layer.shadowColor = UIColor.black.cgColor
+        btn.layer.shadowOffset = CGSize(width: 0, height: 1)
+        btn.layer.shadowRadius = 6
+        btn.layer.shadowOpacity = 0.03
+        btn.addTarget(self, action: #selector(handleLogout), for: .touchUpInside)
+        wrap.addSubview(btn)
+        btn.snp.makeConstraints { $0.edges.equalToSuperview(); $0.height.equalTo(48) }
+        return wrap
+    }
+
     // MARK: - Cache
 
     private func currentCacheSizeText() -> String {
@@ -188,5 +222,33 @@ final class SettingsViewController: BaseViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             alert.dismiss(animated: true)
         }
+    }
+
+    // MARK: - Logout
+
+    @objc private func handleLogout() {
+        let alert = UIAlertController(
+            title: "确认退出登录",
+            message: "退出后需要重新登录才能使用富德健康。",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        alert.addAction(UIAlertAction(title: "退出登录", style: .destructive) { _ in
+            Task {
+                await LoginService.shared.logout()
+                LoginService.shared.clearSession()
+                IMService.shared.clear()
+                await ServiceHubCacheService.shared.clear()
+                await ColumnContentCacheService.shared.clear()
+                await HealthPageCacheService.shared.clear()
+                InstitutionSelectionStore.shared.clear()
+                RongCloudManager.shared.disconnect()
+                UserManager.shared.clear()
+                await MainActor.run {
+                    Router.shared.setRoot("/login")
+                }
+            }
+        })
+        present(alert, animated: true)
     }
 }

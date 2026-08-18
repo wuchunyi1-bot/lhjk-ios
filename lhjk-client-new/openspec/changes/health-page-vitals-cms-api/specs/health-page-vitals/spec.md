@@ -73,8 +73,11 @@ CMS 空壳路径（仅 `monitorCardMeta`）无 `backgroundUrl`，MUST 走本地�
 - **WHEN** 用户点击快捷入口
 - **THEN** 使用 `quickEntryList[].pageUrl`（`FundeH5:` / `FundeApp:`）经 `FundePageURL` 打开
 
-- **WHEN** 用户点击体征卡片
-- **THEN** 按 `cardType` 映射为 `/health/metrics/{key}` 并打开对应 H5（体征卡无 pageUrl）
+- **WHEN** 用户点击体征卡片且该项 `pageUrl` 可被 `FundePageURL` 解析
+- **THEN** 经 `FundePageURL.open` 打开
+
+- **WHEN** 用户点击体征卡片且无合法 `pageUrl`
+- **THEN** 按 `cardType` 映射为 `/health/metrics/{key}` 并打开对应 H5
 
 ### Requirement: 编辑卡片配置
 
@@ -84,11 +87,12 @@ CMS 空壳路径（仅 `monitorCardMeta`）无 `backgroundUrl`，MUST 走本地�
 
 - **WHEN** Hub 点击「编辑卡片」或路由 `/health/metrics/edit`（及兼容 `/health/metrics`）
 - **THEN** 打开 `MetricCardEditViewController`，展示当前可见卡片与可选卡池
+- **AND** MUST NOT 因张数将已显示卡片截断进隐藏区
 
-#### Scenario: 可见上限
+#### Scenario: 无可见张数上限
 
-- **WHEN** 用户尝试将可见卡片数增至超过 6
-- **THEN** 系统拒绝并提示上限
+- **WHEN** 用户从隐藏区将卡片加入显示区
+- **THEN** 系统允许加入，不以张数上限拒绝
 
 #### Scenario: 保存
 

@@ -2,15 +2,14 @@ import UIKit
 import SnapKit
 import Kingfisher
 
-/// 服务首页 Banner 轮播 — 对齐 Figma 3042:1521（344×180 / 圆角 16）
+/// 服务首页 Banner 轮播 — 宽度为屏宽减左右 16pt，高度按图片比例计算
 /// 数据来自 `GET /v1/columnContent/getByCode`；间隔 3.6s 对齐 funde `van-swipe :autoplay="3600"`
-/// 图片比例不符时 `scaleAspectFill` 居中裁剪填满画幅
 final class ServiceBannerCarouselCell: UITableViewCell {
 
     static let reuseID = "ServiceBannerCarouselCell"
 
-    /// Figma 3042:1521 高度
-    static let bannerHeight: CGFloat = 180
+    /// Figma 3042:1521 344×180，仅作图片未加载时的兜底比例
+    static let fallbackRatio: CGFloat = 180.0 / 344.0
     /// Figma 左右边距（375 稿宽 → 内容约 343~344）
     static let horizontalInset: CGFloat = 16
     static let cornerRadius: CGFloat = 16
@@ -19,8 +18,12 @@ final class ServiceBannerCarouselCell: UITableViewCell {
     private static let loopMultiplier = 200
 
     var onBannerTap: ((ServiceHubBanner) -> Void)?
+    var onHeightUpdated: (() -> Void)?
 
     private var banners: [ServiceHubBanner] = []
+    private var heightConstraint: Constraint?
+    private var resolvedImageSize: CGSize?
+    private var lastAppliedHeight: CGFloat = 0
     private var autoScrollTimer: Timer?
     /// 当前逻辑下标（落在 `[0, banners.count * loopMultiplier)`）
     private var logicalIndex = 0
@@ -57,13 +60,19 @@ final class ServiceBannerCarouselCell: UITableViewCell {
         backgroundColor = .clear
         contentView.backgroundColor = .clear
         contentView.addSubview(collectionView)
-        // 页码点叠在 Banner 底部内侧（Figma 3042:1554）
         contentView.addSubview(pageControl)
+        let initialWidth = UIScreen.main.bounds.width - Self.horizontalInset * 2
         collectionView.snp.makeConstraints {
             $0.top.bottom.equalToSuperview()
             $0.leading.equalToSuperview().offset(Self.horizontalInset)
             $0.trailing.equalToSuperview().offset(-Self.horizontalInset)
-            $0.height.equalTo(Self.bannerHeight)
+            heightConstraint = $0.height.equalTo(
+                BannerImageAspectLayout.height(
+                    width: initialWidth,
+                    imageSize: nil,
+                    fallbackRatio: Self.fallbackRatio
+                )
+            ).constraint
         }
         pageControl.snp.makeConstraints {
             $0.centerX.equalTo(collectionView)
@@ -87,7 +96,10 @@ final class ServiceBannerCarouselCell: UITableViewCell {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        // bounds 变化后刷新 itemSize，保证分页宽度与裁剪画幅一致
+        let width = collectionView.bounds.width
+        if width > 0 {
+            applyBannerHeight(width: width, notify: lastAppliedHeight > 0)
+        }
         if let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
             let size = collectionView.bounds.size
             if size.width > 0, size.height > 0, layout.itemSize != size {
@@ -98,9 +110,15 @@ final class ServiceBannerCarouselCell: UITableViewCell {
     }
 
     func configure(_ banners: [ServiceHubBanner]) {
+        let sameIds = self.banners.map(\.id) == banners.map(\.id)
         self.banners = banners
         pageControl.numberOfPages = banners.count
         pageControl.currentPage = 0
+        if !sameIds {
+            resolvedImageSize = nil
+            lastAppliedHeight = 0
+        }
+        applyBannerHeight(width: bannerWidth(), notify: false)
         collectionView.reloadData()
 
         guard banners.count > 1 else {
@@ -110,12 +128,39 @@ final class ServiceBannerCarouselCell: UITableViewCell {
             return
         }
 
-        // 从中间一组开始，便于向两侧手势滑动，自动播始终 +1
         logicalIndex = banners.count * (Self.loopMultiplier / 2)
         DispatchQueue.main.async { [weak self] in
             self?.scrollToLogicalIndex(self?.logicalIndex ?? 0, animated: false)
             self?.startAutoScroll()
         }
+    }
+
+    private func bannerWidth() -> CGFloat {
+        let width = collectionView.bounds.width
+        if width > 1 { return width }
+        return UIScreen.main.bounds.width - Self.horizontalInset * 2
+    }
+
+    private func applyBannerHeight(width: CGFloat, notify: Bool) {
+        guard width > 0 else { return }
+        let height = BannerImageAspectLayout.height(
+            width: width,
+            imageSize: resolvedImageSize,
+            fallbackRatio: Self.fallbackRatio
+        )
+        let heightChanged = abs(height - lastAppliedHeight) > 0.5
+        guard heightChanged else { return }
+        lastAppliedHeight = height
+        heightConstraint?.update(offset: height)
+        if notify {
+            onHeightUpdated?()
+        }
+    }
+
+    private func adoptImageSize(_ size: CGSize) {
+        guard size.width > 1, size.height > 1, resolvedImageSize == nil else { return }
+        resolvedImageSize = size
+        applyBannerHeight(width: bannerWidth(), notify: true)
     }
 
     private var totalItemCount: Int {
@@ -183,6 +228,9 @@ extension ServiceBannerCarouselCell: UICollectionViewDataSource, UICollectionVie
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: BannerSlideCell.reuseID, for: indexPath) as! BannerSlideCell
+        cell.onImageLoaded = { [weak self] size in
+            self?.adoptImageSize(size)
+        }
         cell.configure(banners[realIndex(for: indexPath.item)])
         return cell
     }
@@ -217,11 +265,13 @@ extension ServiceBannerCarouselCell: UICollectionViewDataSource, UICollectionVie
     }
 }
 
-// MARK: - Slide Cell（纯图；比例不符时居中裁剪）
+// MARK: - Slide Cell
 
 private final class BannerSlideCell: UICollectionViewCell {
 
     static let reuseID = "BannerSlideCell"
+
+    var onImageLoaded: ((CGSize) -> Void)?
 
     private let bannerImageView: UIImageView = {
         let iv = UIImageView()
@@ -244,18 +294,22 @@ private final class BannerSlideCell: UICollectionViewCell {
         super.prepareForReuse()
         bannerImageView.kf.cancelDownloadTask()
         bannerImageView.image = nil
+        onImageLoaded = nil
     }
 
     func configure(_ banner: ServiceHubBanner) {
         if banner.hasImage, let urlString = banner.imageUrl, let url = URL(string: urlString) {
-            // scaleAspectFill + clipsToBounds：比例不匹配时裁剪适配 Figma 画幅
             bannerImageView.kf.setImage(
                 with: url,
                 options: [
                     .transition(.fade(0.2)),
                     .scaleFactor(UIScreen.main.scale),
                 ]
-            )
+            ) { [weak self] result in
+                if case .success(let value) = result {
+                    self?.onImageLoaded?(value.image.size)
+                }
+            }
         } else {
             bannerImageView.image = nil
             bannerImageView.backgroundColor = banner.background

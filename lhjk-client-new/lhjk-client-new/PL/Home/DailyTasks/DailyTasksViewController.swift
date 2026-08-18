@@ -25,7 +25,7 @@ final class DailyTasksViewController: BaseViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
-        viewModel.load()
+        viewModel.load(forceRefresh: true)
     }
 
     override func viewDidLayoutSubviews() {

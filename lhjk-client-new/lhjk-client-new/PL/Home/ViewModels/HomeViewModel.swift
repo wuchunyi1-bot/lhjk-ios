@@ -67,6 +67,13 @@ final class HomeViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
+        NotificationCenter.default.publisher(for: .todayMonitorTaskShouldRefresh)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.loadTodayTasks(forceRefresh: true)
+            }
+            .store(in: &cancellables)
+
         applySnapshot()
     }
 
@@ -102,10 +109,10 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
-    func loadTodayTasks() {
+    func loadTodayTasks(forceRefresh: Bool = false) {
         tasksLoadTask?.cancel()
         tasksLoadTask = Task { [weak self] in
-            await self?.fetchTodayTasks()
+            await self?.fetchTodayTasks(forceRefresh: forceRefresh)
         }
     }
 
@@ -161,7 +168,7 @@ final class HomeViewModel: ObservableObject {
     }
 
     @MainActor
-    private func fetchTodayTasks() async {
+    private func fetchTodayTasks(forceRefresh: Bool = false) async {
         guard let userId = resolveUserId() else {
             tasks = []
             applySnapshot()
@@ -172,7 +179,7 @@ final class HomeViewModel: ObservableObject {
         defer { isTasksLoading = false }
 
         do {
-            let remote = try await homeService.getUserTodayMonitorTask(userId: userId)
+            let remote = try await homeService.getUserTodayMonitorTask(userId: userId, forceRefresh: forceRefresh)
             guard !Task.isCancelled else { return }
             tasks = remote.map { $0.asDailyHealthTask() }
             applySnapshot()
@@ -350,11 +357,17 @@ final class HomeViewModel: ObservableObject {
         let hasImage = !(imageUrl?.isEmpty ?? true)
         guard !title.isEmpty || hasImage else { return nil }
 
+        let rawAuthor = (banner.authorName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let author = rawAuthor
+            .components(separatedBy: CharacterSet(charactersIn: "｜|"))
+            .first?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? rawAuthor
+
         return HomeArticleCell.Article(
             id: banner.id,
             tag: banner.labelName ?? "",
             title: title,
-            author: banner.authorName ?? "",
+            author: author,
             reads: ColumnContentMapper.formatReadCount(banner.clickCount),
             imageUrl: hasImage ? imageUrl : nil,
             contentId: banner.contentId

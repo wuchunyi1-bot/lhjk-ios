@@ -2,7 +2,7 @@ import UIKit
 import SnapKit
 import Kingfisher
 
-/// 健康快捷入口 — CMS `quickEntryList`（图标 URL + pageUrl）
+/// 健康快捷入口 — CMS `quickEntryList`（网络图标 URL + pageUrl）
 final class HealthQuickEntriesCell: UITableViewCell {
 
     static let reuseIdentifier = "HealthQuickEntriesCell"
@@ -35,7 +35,7 @@ final class HealthQuickEntriesCell: UITableViewCell {
             $0.top.equalToSuperview().offset(12)
             $0.leading.equalToSuperview().offset(16)
             $0.trailing.equalToSuperview().offset(-16)
-            $0.bottom.equalToSuperview().offset(-12)
+            $0.bottom.equalToSuperview()
         }
 
         let row = UIStackView()
@@ -56,11 +56,23 @@ final class HealthQuickEntriesCell: UITableViewCell {
         let iconBg = UIView()
         iconBg.backgroundColor = UIColor(hexString: "#FFF3EE")
         iconBg.layer.cornerRadius = 24
+        iconBg.clipsToBounds = true
 
         let icon = UIImageView()
         icon.contentMode = .scaleAspectFit
+        icon.clipsToBounds = true
         iconBg.addSubview(icon)
-        if let iconUrl = e.iconUrl, let url = URL(string: iconUrl) {
+
+        icon.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.size.equalTo(36)
+        }
+
+        icon.kf.cancelDownloadTask()
+        if let iconUrl = e.iconUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !iconUrl.isEmpty,
+           let url = URL(string: iconUrl) {
+            icon.tintColor = nil
             icon.kf.setImage(with: url, options: [.transition(.fade(0.15))])
         } else {
             icon.image = UIImage(systemName: "square.grid.2x2.fill")
@@ -79,10 +91,6 @@ final class HealthQuickEntriesCell: UITableViewCell {
         iconBg.snp.makeConstraints {
             $0.top.centerX.equalToSuperview()
             $0.size.equalTo(48)
-        }
-        icon.snp.makeConstraints {
-            $0.center.equalToSuperview()
-            $0.size.equalTo(22)
         }
         label.snp.makeConstraints {
             $0.top.equalTo(iconBg.snp.bottom).offset(6)

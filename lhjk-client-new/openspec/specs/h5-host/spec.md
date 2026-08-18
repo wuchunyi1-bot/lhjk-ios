@@ -49,7 +49,11 @@ H5 hash 路径由 `H5Config` 拼接；饮食运动根路径为 `exercise-food`�
 | 健康评估 | `#/health-assessment` | — | `/me/health-assessment` |
 | 体检报告 | `#/medical-reports` `/detail` `/upload` | 详情 `reportId` | `/me/medical-reports*` |
 | 监测方案 | `#/monitoring-plan` `/{key}` | `type` 可选 | `/me/monitoring-plan` |
-| 资讯详情 | `#/content/detail` | `id` 必填 | 首页健康陪伴等 |
+| 用药 | `#/medication` | — | `/medication` |
+| 营养补剂 | `#/supplement` | — | `/supplement` |
+| 血氧 | `#/spo2` | — | `/spo2`、`/health/metrics/spo2` |
+| 健康陪伴列表 | `#/companion` | — | 首页「更多 ›」、`/companion`、`FundeH5:/companion` |
+| 资讯详情 | `#/content/detail` | `id` 必填 | 首页健康陪伴条目等 |
 | **套餐中间页** | `#/package/bridge` | `packageId` 必填；`hospitalId` 可选 | CMS `FundeH5:/package/bridge?…` |
 
 `meal`：`breakfast` / `lunch` / `dinner` / `snack`。

@@ -26,6 +26,26 @@ enum HealthRoutes {
             )
         }
 
+        // 用药 / 营养补剂 / 血氧短链 → H5（与文档 hash 对齐）
+        r.register(path: "/medication") { _ in
+            WebViewController(
+                urlString: H5Config.medicationPageURL.absoluteString,
+                title: "用药"
+            )
+        }
+        r.register(path: "/supplement") { _ in
+            WebViewController(
+                urlString: H5Config.supplementPageURL.absoluteString,
+                title: "营养补剂"
+            )
+        }
+        r.register(path: "/spo2") { _ in
+            WebViewController(
+                urlString: H5Config.spo2PageURL.absoluteString,
+                title: "血氧"
+            )
+        }
+
         // 原生子页路由保留（深链兼容）；主入口已迁 H5
         r.register(path: "/health/record/profile") { _ in PlaceholderViewController(title: "基础信息") }
         r.register(path: "/health/record/history") { _ in PlaceholderViewController(title: "健康史") }

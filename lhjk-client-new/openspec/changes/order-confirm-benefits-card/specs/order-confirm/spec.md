@@ -1,5 +1,48 @@
 ## ADDED Requirements
 
+### Requirement: 确认订单页面 UI 规范（对齐 Figma 3479:8187）
+
+确认订单页除地址以外的 UI 元素 SHALL 按照 Figma `3479:8187` 设计图实现：
+
+#### Scenario: 页面背景与卡片容器
+- **WHEN** 渲染确认订单页面
+- **THEN** 页面背景色使用 `#FDF6F3`
+- **AND** 卡片容器背景为白色（`#FFFFFF`），圆角为 `16pt`，间距 `12pt`，左右内边距 `16pt`
+
+#### Scenario: 套餐卡片与明细展开/收起
+- **WHEN** 渲染套餐卡片（`OrderConfirmPackageView`）
+- **THEN** 头部展示套餐标题（16pt medium, `#1F2942`）、副标题（14pt regular, `#8591AB`）与金额（¥ 16pt medium + 数字 18pt medium, `#1F2942`）
+- **AND** 套餐内容包含在浅橙色渐变容器中（圆角 12pt），带小冠状图标（`order_confirm_package_icon`，16x16）和「套餐内容」标题
+- **AND** 明细列表展示项目名称（12pt regular）、数量（12pt regular）、金额（12pt medium）
+- **AND** 底部提供居中的「展开 (共N项)」/「收起」操作按钮，右侧带圆形三角图标（`order_confirm_expand_icon` / `order_confirm_collapse_icon`，14x14）
+
+#### Scenario: 三合一选项卡片（备注、优惠券、权益卡）
+- **WHEN** 渲染订单选项区域
+- **THEN** 将订单备注、优惠券、权益卡三项收纳在同一个 16pt 圆角白色卡片容器中，行高 48pt，行间设 0.5pt 分割线
+- **AND** 订单备注行包含文档图标（`order_confirm_remark_icon`，16x16）和「订单备注」标题，未填展示「请填写」（`#717885`）与右箭头
+- **AND** 优惠券行包含礼品图标（`order_confirm_coupon_icon`，16x16）和「优惠券」标题，有可用券或抵扣时展示红色「惠」字角标（`order_confirm_coupon_badge`，14x14）与红色文案（`#F93838`），无可用券展示「暂无可用」
+- **AND** 权益卡行包含盾牌图标（`order_confirm_benefit_icon`，16x16）和「权益卡」标题，有抵扣展示红色抵扣金额，无可用展示「暂无可用」
+
+#### Scenario: 费用明细卡片
+- **WHEN** 渲染费用明细（`OrderConfirmFeeView`）
+- **THEN** 卡片标题「费用明细」（16pt medium, `#1F2942`）
+- **AND** 包含套餐金额、运费、优惠券抵扣（有抵扣为 `#F93838`）、权益卡抵扣（有抵扣为 `#F93838`）
+- **AND** 底部设 0.5pt 分割线，展示「应付金额」（16pt medium）与金额（¥ 16pt medium + 数字 18pt medium, `#F93838`）
+
+#### Scenario: 支付方式卡片
+- **WHEN** 渲染支付方式（`OrderConfirmPayMethodView`）
+- **THEN** 卡片标题「支付方式」（16pt medium, `#1F2942`）
+- **AND** 微信支付行带绿色微信图标（`order_confirm_wechat_icon`，16x16），右侧为单选框（14x14，选中时展示红色圆圈白勾 `order_confirm_radio_selected`，未选中展示 `order_confirm_radio_unselected`）
+- **AND** 支付宝支付行带蓝色支付宝图标（`order_confirm_alipay_icon`，16x16），右侧为单选框（14x14）
+
+#### Scenario: 底部提交栏
+- **WHEN** 渲染底部提交栏（`OrderConfirmSubmitBar`）
+- **THEN** 背景为白色，顶部带 16pt 圆角与轻微投影
+- **AND** 左侧展示「应付金额」标签与大字号价格（¥ 14pt medium + 数字 20pt medium, `#F93838`）
+- **AND** 右侧展示「立即支付」按钮（宽 112pt，高 40pt，圆角 20pt，背景色 `#FF7A50`，白字 14pt medium）
+
+---
+
 ### Requirement: 确认订单权益卡选择
 
 确认订单页 SHALL 支持权益卡多选抵扣，对齐 funde `OrderConfirmView` / `orders-confirm.page.yaml`。

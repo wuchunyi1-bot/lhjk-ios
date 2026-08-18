@@ -2,9 +2,19 @@ import UIKit
 import SnapKit
 import Kingfisher
 
-/// 富德优选商品卡 — 对齐 Figma 3042:1767（153×235 / 图片+文案+购买）
+/// 富德优选商品卡 — 对齐 Figma 3444:5392（153×235 / 图片+文案+购买）
 final class MallProductCell: UICollectionViewCell {
     static let reuseID = "MallProductCell"
+
+    private static let placeholderImage = UIImage(named: "mall_product_placeholder")
+    /// Figma 价格 / 热销角标 `#F93838`
+    private static let hotColor = UIColor(hexString: "#F93838")
+    /// Figma 推荐角标 `#FF7015`
+    private static let recommendColor = UIColor(hexString: "#FF7015")
+    /// Figma 简介 `#6D7381`
+    private static let descColor = UIColor(hexString: "#6D7381")
+    /// Figma 「元起」`#A6ACB8`
+    private static let priceUnitColor = UIColor(hexString: "#A6ACB8")
 
     private var productId: String?
     private var hospitalId: String?
@@ -27,6 +37,7 @@ final class MallProductCell: UICollectionViewCell {
         imgArea.backgroundColor = .fdProductImageBg
         coverImageView.contentMode = .scaleAspectFill
         coverImageView.clipsToBounds = true
+        coverImageView.image = Self.placeholderImage
 
         contentView.addSubview(imgArea)
         imgArea.addSubview(coverImageView)
@@ -36,10 +47,10 @@ final class MallProductCell: UICollectionViewCell {
         }
         coverImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        // Figma：左上角标 rounded-br 12 / rounded-tl 16
+        // Figma：左上角标 rounded-tl ≈15 / rounded-br ≈11
         tagLabel.font = .fdFont(ofSize: 12, weight: .medium)
         tagLabel.textColor = .white
-        tagLabel.backgroundColor = .fdDanger
+        tagLabel.backgroundColor = Self.hotColor
         tagLabel.layer.cornerRadius = 15
         tagLabel.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMaxYCorner]
         tagLabel.clipsToBounds = true
@@ -56,7 +67,7 @@ final class MallProductCell: UICollectionViewCell {
         nameLabel.textColor = .fdText
         nameLabel.numberOfLines = 1
         descLabel.font = .fdFont(ofSize: 10, weight: .regular)
-        descLabel.textColor = .fdSubtext
+        descLabel.textColor = Self.descColor
         descLabel.numberOfLines = 1
         priceLabel.numberOfLines = 1
 
@@ -70,18 +81,21 @@ final class MallProductCell: UICollectionViewCell {
         nameLabel.snp.makeConstraints {
             $0.top.equalTo(imgArea.snp.bottom).offset(10)
             $0.leading.trailing.equalToSuperview().inset(10)
+            $0.height.equalTo(18)
         }
         descLabel.snp.makeConstraints {
             $0.top.equalTo(nameLabel.snp.bottom).offset(2)
             $0.leading.trailing.equalToSuperview().inset(10)
+            $0.height.equalTo(15)
         }
         priceLabel.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(10)
             $0.trailing.lessThanOrEqualTo(buyBtn.snp.leading).offset(-4)
+            $0.centerY.equalTo(buyBtn)
         }
         buyBtn.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(10)
-            $0.centerY.equalTo(priceLabel)
+            $0.top.equalTo(descLabel.snp.bottom).offset(8)
             $0.width.equalTo(47)
             $0.height.equalTo(20)
             $0.bottom.equalToSuperview().inset(10)
@@ -98,7 +112,7 @@ final class MallProductCell: UICollectionViewCell {
         hospitalId = nil
         categoryServiceId = nil
         coverImageView.kf.cancelDownloadTask()
-        coverImageView.image = nil
+        coverImageView.image = Self.placeholderImage
         tagLabel.isHidden = true
     }
 
@@ -107,18 +121,7 @@ final class MallProductCell: UICollectionViewCell {
         descLabel.text = item.subtitle
         priceLabel.attributedText = Self.priceAttributed(from: item.price)
         applyBadge(item.badge)
-
-        if let urlString = item.imageUrl,
-           !urlString.isEmpty,
-           let url = URL(string: urlString) {
-            coverImageView.kf.setImage(with: url) { [weak self] result in
-                if case .failure = result {
-                    self?.coverImageView.image = nil
-                }
-            }
-        } else {
-            coverImageView.image = nil
-        }
+        setCover(urlString: item.imageUrl)
 
         productId = item.id
         hospitalId = item.hospitalId
@@ -130,10 +133,22 @@ final class MallProductCell: UICollectionViewCell {
         descLabel.text = p.desc
         priceLabel.attributedText = Self.priceAttributed(from: p.price)
         applyBadge(p.tag.isEmpty ? nil : p.tag)
-        coverImageView.image = nil
+        setCover(urlString: nil)
         productId = p.id
         hospitalId = nil
         self.categoryServiceId = categoryServiceId
+    }
+
+    private func setCover(urlString: String?) {
+        let placeholder = Self.placeholderImage
+        guard let raw = urlString?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !raw.isEmpty,
+              let url = URL(string: raw) else {
+            coverImageView.kf.cancelDownloadTask()
+            coverImageView.image = placeholder
+            return
+        }
+        coverImageView.kf.setImage(with: url, placeholder: placeholder)
     }
 
     private func applyBadge(_ raw: String?) {
@@ -146,11 +161,12 @@ final class MallProductCell: UICollectionViewCell {
         tagLabel.text = badge
         switch badge {
         case "热销":
-            tagLabel.backgroundColor = .fdDanger
+            tagLabel.backgroundColor = Self.hotColor
+        case "推荐":
+            tagLabel.backgroundColor = Self.recommendColor
         case "新品":
             tagLabel.backgroundColor = .fdInfo
         default:
-            // 推荐 / 其它
             tagLabel.backgroundColor = .fdPrimary
         }
     }
@@ -164,21 +180,21 @@ final class MallProductCell: UICollectionViewCell {
             string: "¥",
             attributes: [
                 .font: UIFont.fdFont(ofSize: 10, weight: .medium),
-                .foregroundColor: UIColor.fdDanger,
+                .foregroundColor: hotColor,
             ]
         ))
         result.append(NSAttributedString(
             string: number,
             attributes: [
                 .font: UIFont.fdFont(ofSize: 14, weight: .medium),
-                .foregroundColor: UIColor.fdDanger,
+                .foregroundColor: hotColor,
             ]
         ))
         result.append(NSAttributedString(
             string: " 元起",
             attributes: [
                 .font: UIFont.fdFont(ofSize: 10, weight: .regular),
-                .foregroundColor: UIColor.fdMuted,
+                .foregroundColor: priceUnitColor,
             ]
         ))
         return result

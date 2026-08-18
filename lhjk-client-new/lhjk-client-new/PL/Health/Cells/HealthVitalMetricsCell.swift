@@ -35,11 +35,17 @@ final class HealthVitalMetricsCell: UITableViewCell {
     }()
 
     private lazy var collectionView: UICollectionView = {
-        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.5), heightDimension: .absolute(144))
+        let itemSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(0.5),
+            heightDimension: .fractionalHeight(1.0)
+        )
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
-        item.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 5, bottom: 0, trailing: 5)
+        item.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 4.5, bottom: 0, trailing: 4.5)
 
-        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(144))
+        let groupSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(144)
+        )
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
 
         let section = NSCollectionLayoutSection(group: group)
@@ -103,7 +109,7 @@ final class HealthVitalMetricsCell: UITableViewCell {
     private func applyCollectionLayout(topSpacing: CGFloat, height: CGFloat) {
         collectionView.snp.remakeConstraints {
             $0.top.equalTo(titleLabel.snp.bottom).offset(topSpacing)
-            $0.leading.trailing.equalToSuperview().inset(7)
+            $0.leading.trailing.equalToSuperview().inset(7.5)
             $0.height.equalTo(height)
             $0.bottom.equalToSuperview().inset(16)
         }

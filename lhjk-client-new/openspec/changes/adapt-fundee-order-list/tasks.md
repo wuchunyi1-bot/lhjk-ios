@@ -10,5 +10,5 @@
 ## 3. Cell
 
 - [x] 3.1 重写 `OrderCardCell`：机构+徽章 / 封面+名称卖点金额 / 操作按钮
-- [x] 3.2 `AppOrderStatus`「待付款」→「待支付」；金额优先 payable
+- [x] 3.2 `AppOrderStatus`「待付款」→「待支付」；金额改为 `price` 优先、`settlementAmount` 兜底（不再用 `payable`）
 - [x] 3.3 操作按钮点击 Toast（真实 API 后续）

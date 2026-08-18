@@ -39,7 +39,7 @@
 - **WHEN** 渲染一条订单
 - **THEN** 自上而下为：
   1. 顶栏：左侧机构图标 + 机构名（`hospitalName`，空则「服务机构」）；右侧状态徽章
-  2. 主体：左侧 72×72 套餐封面（`packageImageUrl`，无图占位文案「套餐」）；右侧套餐名称（最多 2 行）、一句话卖点（`packageDescription`，空则隐藏）、金额右对齐（优先 `payable` 否则 `price`，`fdMono` + 主色）
+  2. 主体：左侧 72×72 套餐封面（`packageImageUrl`，无图占位文案「套餐」）；右侧套餐名称（最多 2 行）、一句话卖点（`packageDescription`，空则隐藏）、金额右对齐（`price != null` 展示 `price`，否则展示 `settlementAmount`，两者皆空展示 `0`；**不得**再用 `payable`）
   3. 底栏（条件）：当前状态允许的操作按钮，右对齐，最多约 2 个
 - **AND** **不得**在卡片主体展示日期范围行作为主信息（对齐 Vue 列表卡）
 

@@ -1,128 +1,188 @@
 import UIKit
 import SnapKit
 
-/// 服务履约区块 Cell
+/// 服务履约卡片视图 — 对齐 Figma 3594:8634
+final class MeServiceFulfillmentCardView: UIView {
+
+    struct StatItem {
+        let label: String
+        let value: String
+        let tabKey: String
+    }
+
+    var onAllOrdersTap: (() -> Void)?
+    var onStatTap: ((Int) -> Void)?
+
+    private let titleLabel = UILabel()
+    private let allOrdersLabel = UILabel()
+    private let allOrdersArrow = UIImageView()
+    private let allOrdersButton = UIButton(type: .custom)
+    private let statsStack = UIStackView()
+    private var valueLabels: [UILabel] = []
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        backgroundColor = .white
+        layer.cornerRadius = 16
+        clipsToBounds = true
+
+        // Title: 服务履约
+        titleLabel.text = "服务履约"
+        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.textColor = UIColor(hexString: "#1F2430")
+        addSubview(titleLabel)
+        titleLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(16)
+            $0.top.equalToSuperview().offset(16)
+        }
+
+        // Right "全部订单" + Arrow
+        allOrdersArrow.image = UIImage(named: "me_list_more_arrow")
+        allOrdersArrow.contentMode = .scaleAspectFit
+        addSubview(allOrdersArrow)
+        allOrdersArrow.snp.makeConstraints {
+            $0.trailing.equalToSuperview().offset(-16)
+            $0.centerY.equalTo(titleLabel)
+            $0.size.equalTo(12)
+        }
+
+        allOrdersLabel.text = "全部订单"
+        allOrdersLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        allOrdersLabel.textColor = UIColor(hexString: "#717885")
+        addSubview(allOrdersLabel)
+        allOrdersLabel.snp.makeConstraints {
+            $0.trailing.equalTo(allOrdersArrow.snp.leading).offset(-2)
+            $0.centerY.equalTo(titleLabel)
+        }
+
+        allOrdersButton.addTarget(self, action: #selector(handleAllOrdersTap), for: .touchUpInside)
+        addSubview(allOrdersButton)
+        allOrdersButton.snp.makeConstraints {
+            $0.trailing.top.equalToSuperview()
+            $0.leading.equalTo(allOrdersLabel.snp.leading).offset(-8)
+            $0.bottom.equalTo(titleLabel.snp.bottom).offset(8)
+        }
+
+        // Stats Stack (top 55pt)
+        statsStack.axis = .horizontal
+        statsStack.distribution = .fillEqually
+        statsStack.alignment = .fill
+        addSubview(statsStack)
+        statsStack.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview()
+            $0.top.equalToSuperview().offset(55)
+            $0.bottom.equalToSuperview().offset(-15)
+        }
+
+        snp.makeConstraints {
+            $0.height.equalTo(110)
+        }
+    }
+
+    func configure(stats: [StatItem]) {
+        statsStack.arrangedSubviews.forEach {
+            statsStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+        valueLabels.removeAll()
+
+        for (index, stat) in stats.enumerated() {
+            let col = UIView()
+            let button = UIButton(type: .custom)
+            button.tag = index
+            button.addTarget(self, action: #selector(handleStatTap(_:)), for: .touchUpInside)
+            col.addSubview(button)
+            button.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+            let valLbl = UILabel()
+            valLbl.text = stat.value
+            valLbl.textColor = UIColor(hexString: "#1F2942")
+            valLbl.font = .fdFont(ofSize: 18, weight: .medium)
+            valLbl.textAlignment = .center
+            valLbl.isUserInteractionEnabled = false
+
+            let lblLbl = UILabel()
+            lblLbl.text = stat.label
+            lblLbl.font = .fdFont(ofSize: 12, weight: .regular)
+            lblLbl.textColor = UIColor(hexString: "#1F2942")
+            lblLbl.textAlignment = .center
+            lblLbl.isUserInteractionEnabled = false
+
+            button.addSubview(valLbl)
+            button.addSubview(lblLbl)
+
+            valLbl.snp.makeConstraints {
+                $0.top.equalToSuperview()
+                $0.centerX.equalToSuperview()
+            }
+            lblLbl.snp.makeConstraints {
+                $0.top.equalTo(valLbl.snp.bottom).offset(4)
+                $0.centerX.equalToSuperview()
+                $0.bottom.equalToSuperview()
+            }
+
+            valueLabels.append(valLbl)
+            statsStack.addArrangedSubview(col)
+        }
+    }
+
+    func updateStatValue(at index: Int, value: String) {
+        guard index < valueLabels.count else { return }
+        valueLabels[index].text = value
+    }
+
+    @objc private func handleAllOrdersTap() {
+        onAllOrdersTap?()
+    }
+
+    @objc private func handleStatTap(_ sender: UIButton) {
+        onStatTap?(sender.tag)
+    }
+}
+
+/// 服务履约 Cell 兼容包装
 final class MeServiceFulfillmentCell: UITableViewCell {
 
     static let reuseIdentifier = "MeServiceFulfillmentCell"
 
-    typealias StatItem = (value: String, label: String, accent: Bool)
-    typealias ServiceItem = (icon: String, iconBg: String, iconColorHex: String, name: String, status: String, statusType: String, detail: String)
+    let cardView = MeServiceFulfillmentCardView()
 
-    private var stats: [StatItem] = []
-    private var services: [ServiceItem] = []
-    var onServiceTap: (() -> Void)?
-    var onStatTap: ((Int) -> Void)?
+    var onAllOrdersTap: (() -> Void)? {
+        get { cardView.onAllOrdersTap }
+        set { cardView.onAllOrdersTap = newValue }
+    }
+
+    var onStatTap: ((Int) -> Void)? {
+        get { cardView.onStatTap }
+        set { cardView.onStatTap = newValue }
+    }
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
         backgroundColor = .clear
-    }
+        contentView.backgroundColor = .clear
 
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    func configure(stats: [StatItem], services: [ServiceItem]) {
-        self.stats = stats; self.services = services
-        contentView.subviews.forEach { $0.removeFromSuperview() }
-        setupUI()
-    }
-
-    private func setupUI() {
-        let card = UIView()
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 18
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 6
-        card.layer.shadowOpacity = 0.03
-        contentView.addSubview(card)
-        card.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
-
-        // Stats row
-        let statsStack = UIStackView(); statsStack.distribution = .fillEqually
-        card.addSubview(statsStack)
-        statsStack.snp.makeConstraints { $0.top.leading.trailing.equalToSuperview().inset(14) }
-
-        for (i, (value, label, accent)) in stats.enumerated() {
-            let col = UIView()
-            let valLbl = UILabel(); valLbl.text = value; valLbl.textColor = accent ? .fdPrimary : .fdText
-            valLbl.font = .fdMonoFont(ofSize: 22, weight: .bold); valLbl.textAlignment = .center
-            let lblLbl = UILabel(); lblLbl.text = label; lblLbl.font = .fdMicro; lblLbl.textColor = .fdSubtext; lblLbl.textAlignment = .center
-            col.addSubview(valLbl); col.addSubview(lblLbl)
-            valLbl.snp.makeConstraints { $0.top.centerX.equalToSuperview() }
-            lblLbl.snp.makeConstraints { $0.top.equalTo(valLbl.snp.bottom).offset(2); $0.centerX.bottom.equalToSuperview() }
-            // Tap on stat to filter orders
-            col.isUserInteractionEnabled = true
-            col.tag = i
-            col.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(statTapped(_:))))
-            statsStack.addArrangedSubview(col)
-        }
-
-        let divider = UIView(); divider.backgroundColor = .fdBorder
-        card.addSubview(divider)
-        divider.snp.makeConstraints { $0.top.equalTo(statsStack.snp.bottom).offset(12); $0.leading.trailing.equalToSuperview().inset(14); $0.height.equalTo(1) }
-
-        // Service rows
-        var prevBottom = divider.snp.bottom
-        for (i, svc) in services.enumerated() {
-            let row = buildServiceRow(svc)
-            card.addSubview(row)
-            row.snp.makeConstraints { make in
-                make.top.equalTo(prevBottom)
-                make.leading.trailing.equalToSuperview().inset(14)
-                if i == services.count - 1 { make.bottom.equalToSuperview() }
-            }
-            prevBottom = row.snp.bottom
+        contentView.addSubview(cardView)
+        cardView.snp.makeConstraints {
+            $0.top.bottom.equalToSuperview()
+            $0.leading.trailing.equalToSuperview().inset(16)
         }
     }
 
-    private func buildServiceRow(_ svc: ServiceItem) -> UIView {
-        let row = UIView()
-        row.isUserInteractionEnabled = true
-        row.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(serviceTapped)))
-
-        let iconView = UIView()
-        iconView.backgroundColor = UIColor(hexString: svc.iconBg)
-        iconView.layer.cornerRadius = 11
-        let iconLbl = UILabel()
-        iconLbl.text = svc.icon; iconLbl.font = .fdCaptionSemibold
-        iconLbl.textColor = UIColor(hexString: svc.iconColorHex)
-        iconView.addSubview(iconLbl)
-        iconLbl.snp.makeConstraints { $0.center.equalToSuperview() }
-
-        let nameLbl = UILabel(); nameLbl.text = svc.name; nameLbl.font = .fdCaptionSemibold; nameLbl.textColor = .fdText
-        let badge = buildBadge(svc.status, type: svc.statusType)
-        let detailLbl = UILabel(); detailLbl.text = svc.detail; detailLbl.font = .fdMicro; detailLbl.textColor = .fdSubtext
-        let arrow = UIImageView(image: UIImage(systemName: "chevron.right")); arrow.tintColor = .fdMuted
-
-        let topDiv = UIView(); topDiv.backgroundColor = .fdBorder
-
-        [topDiv, iconView, nameLbl, badge, detailLbl, arrow].forEach(row.addSubview)
-        topDiv.snp.makeConstraints { $0.top.leading.trailing.equalToSuperview(); $0.height.equalTo(1) }
-        iconView.snp.makeConstraints { $0.top.equalTo(topDiv.snp.bottom).offset(10); $0.leading.equalToSuperview(); $0.size.equalTo(40); $0.bottom.equalToSuperview().offset(-10) }
-        nameLbl.snp.makeConstraints { $0.top.equalTo(iconView); $0.leading.equalTo(iconView.snp.trailing).offset(10) }
-        badge.snp.makeConstraints { $0.centerY.equalTo(nameLbl); $0.leading.equalTo(nameLbl.snp.trailing).offset(6) }
-        detailLbl.snp.makeConstraints { $0.top.equalTo(nameLbl.snp.bottom).offset(2); $0.leading.equalTo(nameLbl) }
-        arrow.snp.makeConstraints { $0.centerY.equalToSuperview(); $0.trailing.equalToSuperview(); $0.size.equalTo(16) }
-
-        return row
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 
-    private func buildBadge(_ text: String, type: String) -> UIView {
-        let badge = UIView(); badge.layer.cornerRadius = 999
-        let label = UILabel(); label.text = text; label.font = .fdMicroSemibold
-        if type == "success" { badge.backgroundColor = .fdSuccessSoft; label.textColor = .fdSuccess }
-        else { badge.backgroundColor = .fdWarningSoft; label.textColor = UIColor(hexString: "#B47300") }
-        badge.addSubview(label)
-        label.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }
-        return badge
-    }
-
-    @objc private func serviceTapped() { onServiceTap?() }
-
-    @objc private func statTapped(_ gesture: UITapGestureRecognizer) {
-        guard let idx = gesture.view?.tag else { return }
-        onStatTap?(idx)
+    func configure(stats: [MeServiceFulfillmentCardView.StatItem]) {
+        cardView.configure(stats: stats)
     }
 }

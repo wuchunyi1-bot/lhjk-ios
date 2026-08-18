@@ -151,13 +151,8 @@ enum HospitalPackageDetailMapper {
         let name = nonEmpty(info?.name) ?? "套餐详情"
         let subtitle = nonEmpty(info?.introduction) ?? nonEmpty(info?.description) ?? ""
         let priceValue = max(0, info?.price ?? 0)
-        let priceText = ServicePackageMoney.yenText(priceValue)
-        let tag: String = {
-            switch info?.recommend {
-            case 1: return "推荐"
-            default: return ""
-            }
-        }()
+        let priceText = priceValue > 0 ? ServicePackageMoney.yenText(priceValue) : "0"
+        let tag: String = HospitalPackageMapper.badgeText(from: info?.recommend) ?? ""
         let tags = splitPeople(info?.applicablePeople)
         let detailText = nonEmpty(info?.description)
             ?? nonEmpty(info?.introduction)
@@ -169,7 +164,7 @@ enum HospitalPackageDetailMapper {
             name: name,
             priceLabel: priceText,
             price: priceValue,
-            priceUnit: priceValue > 0 ? "元起" : "面议",
+            priceUnit: "元起",
             groups: groups.isEmpty ? [emptyRequiredGroup()] : groups
         )
 
@@ -183,7 +178,7 @@ enum HospitalPackageDetailMapper {
             categoryServiceId: nonEmpty(info?.categoryServiceId),
             tag: tag,
             priceText: priceText,
-            priceUnit: priceValue > 0 ? "元起" : "面议",
+            priceUnit: "元起",
             tags: tags,
             detailText: detailText,
             detailImageURLs: [

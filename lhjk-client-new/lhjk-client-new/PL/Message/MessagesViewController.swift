@@ -1,8 +1,8 @@
 import UIKit
 import SnapKit
 
-/// 消息模块根页 — 容器 VC，通过自定义分段 Tab 切换两个子 VC
-/// 对齐 Figma 3042:740（标题行 + 团队对话/通知中心分段 + 圆角白卡列表）
+/// 消息模块根页 — 容器 VC，通过自定义分段 Tab 切换团队对话与通知中心
+/// 对齐 Figma 3444:5583 / 3444:5773（标题行 + 团队对话/通知中心曲线分段 + 自然滚动列表）
 final class MessagesViewController: BaseViewController {
 
     // MARK: - Child VCs
@@ -14,24 +14,23 @@ final class MessagesViewController: BaseViewController {
 
     // MARK: - UI
 
-    /// 与服务 / 健康共用顶栏字号与间距（标题 fdH2 / 副标题 12）
+    /// 顶栏（标题 18pt SemiBold #1F2430 / 副标题 12pt #717885）
     private let brandHeader = TabHubBrandHeaderView()
 
-    /// Figma 3042:740：选中「团队对话」时的曲线背景
-    private let activeTabBackgroundView: UIImageView = {
-        let view = UIImageView(image: UIImage(named: "msg_tab_active"))
-        view.contentMode = .scaleToFill
-        view.isUserInteractionEnabled = false
-        return view
+    /// Tab 曲线背景容器（height 73，裁切展示 375x185 背景图的顶部曲线）
+    private let tabContainerView: UIView = {
+        let v = UIView()
+        v.clipsToBounds = true
+        v.backgroundColor = .clear
+        return v
     }()
 
-    /// Figma 3042:740：选中「通知中心」时的右侧曲线背景
-    private let inactiveTabBackgroundView: UIImageView = {
-        let view = UIImageView(image: UIImage(named: "msg_tab_inactive"))
-        view.contentMode = .scaleToFill
-        view.isUserInteractionEnabled = false
-        view.isHidden = true
-        return view
+    /// 曲线背景图（团队对话 msg_tab_left / 通知中心 msg_tab_right）
+    private let tabBackgroundImageView: UIImageView = {
+        let iv = UIImageView(image: UIImage(named: "msg_tab_left"))
+        iv.contentMode = .scaleToFill
+        iv.isUserInteractionEnabled = false
+        return iv
     }()
 
     private lazy var segmentedControl: MessageSegmentedControl = {
@@ -41,18 +40,14 @@ final class MessagesViewController: BaseViewController {
             MessageSegmentedControl.Item(title: "通知中心", badge: 0),
         ]
         c.onSelect = { [weak self] idx in
-            self?.activeTab = idx == 0 ? "chat" : "noti"
-            self?.chatListVC.view.isHidden = idx != 0
-            self?.notiListVC.view.isHidden = idx == 0
-            self?.updateTabBackground()
-            self?.refreshCurrentChild()
+            self?.switchTab(to: idx)
         }
         return c
     }()
 
     private lazy var containerView: UIView = {
         let v = UIView()
-        v.backgroundColor = .fdBg
+        v.backgroundColor = .clear
         return v
     }()
 
@@ -64,36 +59,36 @@ final class MessagesViewController: BaseViewController {
     }
 
     override func setupUI() {
-        view.backgroundColor = .fdBg
+        view.backgroundColor = UIColor(hexString: "#FDF6F3")
 
         brandHeader.configure(
             title: "消息",
             subtitle: "您的健管团队 7X24 在线",
-            titleColor: .fdText
+            titleColor: UIColor(hexString: "#1F2430")
         )
 
         [
             brandHeader,
-            activeTabBackgroundView,
-            inactiveTabBackgroundView,
+            tabContainerView,
             segmentedControl,
             containerView,
         ].forEach(view.addSubview)
+
+        tabContainerView.addSubview(tabBackgroundImageView)
 
         brandHeader.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
         }
 
-        activeTabBackgroundView.snp.makeConstraints { make in
+        tabContainerView.snp.makeConstraints { make in
             make.top.equalTo(brandHeader.snp.bottom)
             make.leading.trailing.equalToSuperview()
-            make.height.equalTo(185)
+            make.height.equalTo(73)
         }
-        inactiveTabBackgroundView.snp.makeConstraints { make in
-            make.top.equalTo(brandHeader.snp.bottom).offset(6)
-            make.trailing.equalToSuperview()
-            make.width.equalTo(212)
+
+        tabBackgroundImageView.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
             make.height.equalTo(185)
         }
 
@@ -119,14 +114,22 @@ final class MessagesViewController: BaseViewController {
         chatListVC.onDataChanged = { [weak self] in self?.updateSegmentBadges() }
         notiListVC.onDataChanged = { [weak self] in self?.updateSegmentBadges() }
         chatListVC.view.isHidden = false
-        updateTabBackground()
         updateSegmentBadges()
     }
 
-    private func updateTabBackground() {
-        let isChat = activeTab == "chat"
-        activeTabBackgroundView.isHidden = !isChat
-        inactiveTabBackgroundView.isHidden = isChat
+    // MARK: - Tab Switching
+
+    private func switchTab(to index: Int) {
+        let isChat = index == 0
+        activeTab = isChat ? "chat" : "noti"
+
+        UIView.transition(with: tabBackgroundImageView, duration: 0.2, options: .transitionCrossDissolve) { [weak self] in
+            self?.tabBackgroundImageView.image = UIImage(named: isChat ? "msg_tab_left" : "msg_tab_right")
+        }
+
+        chatListVC.view.isHidden = !isChat
+        notiListVC.view.isHidden = isChat
+        refreshCurrentChild()
     }
 
     // MARK: - Actions

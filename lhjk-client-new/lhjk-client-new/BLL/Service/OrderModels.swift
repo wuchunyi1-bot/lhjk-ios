@@ -251,7 +251,11 @@ struct MOrder {
     let parentId: Int64?
     let orderName: String?
     let status: Int?
+    /// 套包金额（不含优惠券、权益卡和运费）；列表卡片金额不使用该字段
     let payable: Double?
+    /// 订单应付金额（套包金额加运费并扣除优惠券、权益卡）
+    let settlementAmount: Double?
+    /// 订单实付金额
     let price: Double?
     let createTime: String?
     let hospitalName: String?
@@ -272,6 +276,8 @@ struct MOrder {
     let canReturnGoods: Bool?
     /// 退款单 ID（提交退货用，非订单 id）
     let refundId: Int64?
+    /// 拒绝退款原因（如果有）
+    let refuseReasons: String?
 
     /// 订单状态枚举
     var orderStatus: AppOrderStatus? {
@@ -284,14 +290,14 @@ struct MOrder {
         orderStatus?.label ?? "未知"
     }
 
-    /// 格式化的价格文本（优先应付）
+    /// 格式化的价格文本
     var priceText: String {
         displayAmountText
     }
 
-    /// 列表金额：优先 `payable`，否则 `price`
+    /// 列表金额：`price`（实付）不为 null 则展示实付，否则展示 `settlementAmount`（应付）
     var displayAmountText: String {
-        let amount = payable ?? price ?? 0
+        let amount = price ?? settlementAmount ?? 0
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.maximumFractionDigits = 2
@@ -339,6 +345,17 @@ struct MOrder {
         return !hasRefundHistory
     }
 
+    /// 拒绝退款/通知栏文案（如果有）
+    var noticeText: String? {
+        guard let reasons = refuseReasons?.trimmingCharacters(in: .whitespacesAndNewlines), !reasons.isEmpty else {
+            return nil
+        }
+        if reasons.hasPrefix("拒绝退款") || reasons.hasPrefix("退款未通过") {
+            return reasons
+        }
+        return "拒绝退款：\(reasons)"
+    }
+
     /// 日期范围文本
     var dateRangeText: String? {
         let start = beginTime ?? createTime
@@ -357,11 +374,11 @@ struct MOrder {
 extension MOrder: Decodable {
 
     enum CodingKeys: String, CodingKey {
-        case id, parentId, orderName, status, payable, price, createTime
+        case id, parentId, orderName, status, payable, settlementAmount, price, createTime
         case hospitalName, doctorName, packageDescription
         case packageType, packageImageUrl, beginTime, endTime, serviceTime
         case packageId, hospitalId, categoryServiceId, renewed
-        case canReturnGoods, refundId
+        case canReturnGoods, refundId, refuseReasons
     }
 
     init(from decoder: Decoder) throws {
@@ -370,8 +387,9 @@ extension MOrder: Decodable {
         parentId            = Self.decodeFlexibleInt64(c, key: .parentId)
         orderName           = try c.decodeIfPresent(String.self, forKey: .orderName)
         status              = HospitalPackageInt.decodeIfPresent(c, key: .status)
-        payable             = try c.decodeIfPresent(Double.self, forKey: .payable)
-        price               = try c.decodeIfPresent(Double.self, forKey: .price)
+        payable             = Self.decodeFlexibleDouble(c, key: .payable)
+        settlementAmount    = Self.decodeFlexibleDouble(c, key: .settlementAmount)
+        price               = Self.decodeFlexibleDouble(c, key: .price)
         createTime          = try c.decodeIfPresent(String.self, forKey: .createTime)
         hospitalName        = try c.decodeIfPresent(String.self, forKey: .hospitalName)
         doctorName          = try c.decodeIfPresent(String.self, forKey: .doctorName)
@@ -387,11 +405,21 @@ extension MOrder: Decodable {
         renewed             = HospitalPackageInt.decodeIfPresent(c, key: .renewed)
         canReturnGoods      = Self.decodeFlexibleBool(c, key: .canReturnGoods)
         refundId            = Self.decodeFlexibleInt64(c, key: .refundId)
+        refuseReasons       = try c.decodeIfPresent(String.self, forKey: .refuseReasons)
     }
 
     private static func decodeFlexibleInt64<K: CodingKey>(_ container: KeyedDecodingContainer<K>, key: K) -> Int64? {
         if let v = try? container.decodeIfPresent(Int64.self, forKey: key) { return v }
         if let s = try? container.decodeIfPresent(String.self, forKey: key) { return Int64(s) }
+        return nil
+    }
+
+    private static func decodeFlexibleDouble<K: CodingKey>(_ container: KeyedDecodingContainer<K>, key: K) -> Double? {
+        if let v = try? container.decodeIfPresent(Double.self, forKey: key) { return v }
+        if let v = try? container.decodeIfPresent(Int.self, forKey: key) { return Double(v) }
+        if let s = try? container.decodeIfPresent(String.self, forKey: key) {
+            return Double(s.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
         return nil
     }
 

@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-/// 编辑卡片 ViewModel — 对齐 funde-client MetricCardEditView（最多 6 张 / 排序 / 保存）
+/// 编辑卡片 ViewModel — 对齐 funde-client MetricCardEditView（显隐 / 排序 / 保存）
 final class MetricCardEditViewModel: ObservableObject {
 
     struct EditCard: Equatable, Identifiable {
@@ -53,16 +53,10 @@ final class MetricCardEditViewModel: ObservableObject {
 
         do {
             let cfg = try await healthPageService.getUserMonitorCardConfig(hospitalId: hospitalId)
-            var shown = (cfg.displayedCard ?? []).compactMap(Self.mapItem)
+            let shown = (cfg.displayedCard ?? []).compactMap(Self.mapItem)
                 .sorted { $0.sortId < $1.sortId }
-            var hide = (cfg.hiddenCard ?? []).compactMap(Self.mapItem)
+            let hide = (cfg.hiddenCard ?? []).compactMap(Self.mapItem)
                 .sorted { $0.sortId < $1.sortId }
-
-            if shown.count > MonitorCardDisplayMapper.maxVisibleCards {
-                let overflow = Array(shown[MonitorCardDisplayMapper.maxVisibleCards...])
-                shown = Array(shown.prefix(MonitorCardDisplayMapper.maxVisibleCards))
-                hide.append(contentsOf: overflow)
-            }
 
             displayed = shown
             hidden = hide
@@ -84,10 +78,6 @@ final class MetricCardEditViewModel: ObservableObject {
 
     @MainActor
     func showCard(_ cardType: Int) {
-        guard displayed.count < MonitorCardDisplayMapper.maxVisibleCards else {
-            toastMessage = "不能超过六张，请重新编辑"
-            return
-        }
         guard let idx = hidden.firstIndex(where: { $0.cardType == cardType }) else { return }
         var card = hidden.remove(at: idx)
         card.sortId = displayed.count

@@ -8,7 +8,7 @@
 - 按 Apifox 扩展 `ColumnContentDTO`：解码 `pageUrl` / `param` / `detail`（`ColumnContentDetailBo`：`authorName`、`clickCount`、`labelName`、`categoryName`、`contentUrl` 等）。
 - `HomeViewModel` 经 `ColumnContentCacheService` 拉取；删除 mock；空/失败隐藏 section。
 - `HomeArticleCell`：缩略图用远程 `imageUrl`；标题/标签/作者/阅读数来自接口；条目点击打开 H5 `#/content/detail?id={内容ID}`（不走 pageUrl）。
-- 「更多 ›」保留，独立 `onMoreTapped`（跳转另定）。
+- 「更多 ›」→ H5 `#/companion`（`H5Config.companionPageURL` / 路由 `/companion`）。
 - `docs/api-inventory.md` 注明 `home_news_code`。
 
 ## Capabilities

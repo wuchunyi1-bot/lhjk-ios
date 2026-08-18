@@ -10,8 +10,7 @@ final class MetricCardCell: UICollectionViewCell {
     private let watermark = UIImageView()
     private let fadeOverlay = UIView()
     private let iconView = UIImageView()
-    private let badgeView = UIView()
-    private let badgeLabel = UILabel()
+    private let badgeLabel = MetricBadgeLabel()
     private let titleLabel = UILabel()
     private let valueLabel = UILabel()
     private let unitLabel = UILabel()
@@ -24,7 +23,7 @@ final class MetricCardCell: UICollectionViewCell {
         contentView.clipsToBounds = true
         contentView.backgroundColor = UIColor(hexString: "#FDFCFC")
 
-        watermark.contentMode = .scaleToFill
+        watermark.contentMode = .scaleAspectFill
         watermark.alpha = 1
         watermark.clipsToBounds = true
 
@@ -40,13 +39,11 @@ final class MetricCardCell: UICollectionViewCell {
 
         iconView.contentMode = .scaleAspectFit
 
-        badgeView.layer.cornerRadius = 12
-        badgeView.clipsToBounds = true
         badgeLabel.font = .fdFont(ofSize: 12, weight: .medium)
-        badgeView.addSubview(badgeLabel)
-        badgeLabel.snp.makeConstraints {
-            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 8, bottom: 2, right: 8))
-        }
+        badgeLabel.textAlignment = .center
+        badgeLabel.layer.cornerRadius = 11
+        badgeLabel.clipsToBounds = true
+        badgeLabel.contentInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
 
         titleLabel.font = .fdFont(ofSize: 12, weight: .regular)
         titleLabel.textColor = .fdSubtext
@@ -60,7 +57,7 @@ final class MetricCardCell: UICollectionViewCell {
         timeLabel.font = .fdFont(ofSize: 12, weight: .regular)
         timeLabel.textColor = .fdText
 
-        [watermark, fadeOverlay, iconView, badgeView, titleLabel, valueLabel, unitLabel, timeLabel].forEach(contentView.addSubview)
+        [watermark, fadeOverlay, iconView, badgeLabel, titleLabel, valueLabel, unitLabel, timeLabel].forEach(contentView.addSubview)
 
         watermark.snp.makeConstraints {
             $0.edges.equalToSuperview()
@@ -73,9 +70,10 @@ final class MetricCardCell: UICollectionViewCell {
             $0.top.leading.equalToSuperview().inset(12)
             $0.size.equalTo(22)
         }
-        badgeView.snp.makeConstraints {
+        badgeLabel.snp.makeConstraints {
             $0.top.equalToSuperview().inset(12)
             $0.trailing.equalToSuperview().inset(12)
+            $0.height.equalTo(22)
         }
         titleLabel.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(12)
@@ -104,20 +102,6 @@ final class MetricCardCell: UICollectionViewCell {
         super.layoutSubviews()
         fadeGradient.frame = fadeOverlay.bounds
     }
-
-    private static let watermarkNames: [String: String] = [
-        "blood-pressure": "metric_bp",
-        "blood-sugar": "metric_bs",
-        "weight": "metric_weight",
-        "temperature": "metric_temperature",
-        "heart-rate": "metric_hr",
-        "sleep": "metric_sleep",
-        "ecg": "metric_ecg",
-        "fundus": "metric_fundus",
-        "exercise": "metric_exercise",
-        "spo2": "metric_spo2",
-        "digestive": "metric_digestive",
-    ]
 
     private static let cardBgs: [String: UIColor] = [
         "blood-pressure": UIColor(hexString: "#FDFCFC"),
@@ -148,7 +132,7 @@ final class MetricCardCell: UICollectionViewCell {
     ) {
         let bg = Self.cardBgs[metricKey] ?? UIColor(hexString: "#FDFCFC")
         contentView.backgroundColor = bg
-        applyBackground(metricKey: metricKey, backgroundUrl: backgroundUrl)
+        applyBackground(backgroundUrl: backgroundUrl)
         watermark.snp.remakeConstraints {
             $0.edges.equalToSuperview()
         }
@@ -163,19 +147,19 @@ final class MetricCardCell: UICollectionViewCell {
         }
 
         let trimmedStatus = status.trimmingCharacters(in: .whitespacesAndNewlines)
-        badgeView.isHidden = trimmedStatus.isEmpty
+        badgeLabel.isHidden = trimmedStatus.isEmpty
+        badgeLabel.text = trimmedStatus
         switch statusType {
         case "warning":
-            badgeView.backgroundColor = UIColor(hexString: "#FFEDED")
+            badgeLabel.backgroundColor = UIColor(hexString: "#FFEDED")
             badgeLabel.textColor = UIColor(hexString: "#DF0340")
         case "info":
-            badgeView.backgroundColor = UIColor(hexString: "#FFF0E0")
+            badgeLabel.backgroundColor = UIColor(hexString: "#FFF0E0")
             badgeLabel.textColor = UIColor(hexString: "#FF6637")
         default:
-            badgeView.backgroundColor = UIColor(hexString: "#E9F6F2")
+            badgeLabel.backgroundColor = UIColor(hexString: "#E9F6F2")
             badgeLabel.textColor = UIColor(hexString: "#2EBA83")
         }
-        badgeLabel.text = trimmedStatus
 
         titleLabel.text = label
         valueLabel.text = value
@@ -185,10 +169,9 @@ final class MetricCardCell: UICollectionViewCell {
         timeLabel.isHidden = time.isEmpty
     }
 
-    /// 背景优先级：`backgroundUrl` → 本地 `metric_*` → 空
-    private func applyBackground(metricKey: String, backgroundUrl: String?) {
+    /// 背景图：从服务端下发 `backgroundUrl` 网络获取
+    private func applyBackground(backgroundUrl: String?) {
         watermark.kf.cancelDownloadTask()
-        let local = Self.watermarkNames[metricKey].flatMap { UIImage(named: $0) }
         let remote = backgroundUrl?
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .nilIfEmpty
@@ -197,16 +180,10 @@ final class MetricCardCell: UICollectionViewCell {
         if let remote {
             watermark.kf.setImage(
                 with: remote,
-                placeholder: local,
                 options: [.transition(.fade(0.15))]
-            ) { [weak self] result in
-                guard let self else { return }
-                if case .failure = result, self.watermark.image == nil {
-                    self.watermark.image = local
-                }
-            }
+            )
         } else {
-            watermark.image = local
+            watermark.image = nil
         }
     }
 
@@ -216,6 +193,26 @@ final class MetricCardCell: UICollectionViewCell {
         watermark.image = nil
         iconView.kf.cancelDownloadTask()
         iconView.image = nil
+        badgeLabel.text = nil
+        badgeLabel.isHidden = true
+    }
+}
+
+// MARK: - Metric Badge Label (Padding)
+
+private final class MetricBadgeLabel: UILabel {
+    var contentInsets = UIEdgeInsets.zero
+
+    override func drawText(in rect: CGRect) {
+        super.drawText(in: rect.inset(by: contentInsets))
+    }
+
+    override var intrinsicContentSize: CGSize {
+        let size = super.intrinsicContentSize
+        return CGSize(
+            width: size.width + contentInsets.left + contentInsets.right,
+            height: size.height + contentInsets.top + contentInsets.bottom
+        )
     }
 }
 

@@ -111,6 +111,26 @@ enum H5Config {
         authenticatedPageURL(path: "health-assessment")
     }
 
+    /// 用药 H5：`#/medication?token&platform=ios`
+    static var medicationPageURL: URL {
+        authenticatedPageURL(path: "medication")
+    }
+
+    /// 营养补剂 H5：`#/supplement?token&platform=ios`
+    static var supplementPageURL: URL {
+        authenticatedPageURL(path: "supplement")
+    }
+
+    /// 血氧 H5：`#/spo2?token&platform=ios`（与 `/health/metrics/spo2` 相同）
+    static var spo2PageURL: URL {
+        authenticatedPageURL(path: "spo2")
+    }
+
+    /// 健康陪伴列表 H5：`#/companion?token&platform=ios`（首页「更多 ›」）
+    static var companionPageURL: URL {
+        authenticatedPageURL(path: "companion")
+    }
+
     /// 构建任意 H5 鉴权 URL：`{base}#/{path}?token&platform=ios&...`
     /// 含套餐中间页 `package/bridge`（点击后经 `FundeBridge` 打开原生套餐详情）。
     static func authenticatedPageURL(path: String, extraQuery: [String: String] = [:]) -> URL {

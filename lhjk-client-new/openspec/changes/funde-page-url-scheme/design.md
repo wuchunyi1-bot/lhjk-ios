@@ -21,7 +21,7 @@
 
 - 不改 Apifox
 - 不发明第三种前缀；无前缀则 no-op
-- 体征卡不走 pageUrl（本来就没有），仅 `quickEntryList` / getByCode 使用
+- 体征卡：有合法 pageUrl 走 `FundePageURL`，否则 `cardType` 兜底；快捷入口 / getByCode 使用 pageUrl
 
 ## Decisions
 
@@ -52,7 +52,7 @@ enum FundePageURL {
 
 - Home：Banner / 金刚区 / 推荐套餐 → `FundePageURL.open`；**健康陪伴除外**（走 `#/content/detail?id=`）
 - Health **快捷入口**（`getCmsConfig.quickEntryList`）：`FundePageURL.open(pageUrl)`
-- Health **体征卡**：无 pageUrl，仅 `cardType` → `/health/metrics/{key}`
+- Health **体征卡**：合法 `pageUrl` 走 `FundePageURL.open`；否则 `cardType` → `/health/metrics/{key}`
 
 ## Risks
 

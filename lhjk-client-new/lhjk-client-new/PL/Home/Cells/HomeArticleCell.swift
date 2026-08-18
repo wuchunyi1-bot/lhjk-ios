@@ -133,6 +133,13 @@ final class HomeArticleCell: UITableViewCell {
         title.textColor = .fdText
         title.numberOfLines = 2
 
+        let author = UILabel()
+        author.text = article.author
+        author.font = .fdFont(ofSize: 12, weight: .regular)
+        author.textColor = .fdSubtext
+        let hasAuthor = !article.author.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        author.isHidden = !hasAuthor
+
         let tag = UILabel()
         tag.font = .fdFont(ofSize: 11, weight: .regular)
         tag.textColor = UIColor(hexString: "#A1733E")
@@ -145,12 +152,6 @@ final class HomeArticleCell: UITableViewCell {
             tag.text = " \(article.tag) "
         }
 
-        let author = UILabel()
-        author.text = article.author
-        author.font = .fdFont(ofSize: 12, weight: .regular)
-        author.textColor = .fdSubtext
-        author.isHidden = article.author.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-
         let reads = UILabel()
         reads.text = article.reads
         reads.font = .fdFont(ofSize: 12, weight: .regular)
@@ -160,8 +161,8 @@ final class HomeArticleCell: UITableViewCell {
 
         row.addSubview(thumb)
         row.addSubview(title)
-        row.addSubview(tag)
         row.addSubview(author)
+        row.addSubview(tag)
         row.addSubview(reads)
 
         thumb.snp.makeConstraints {
@@ -175,14 +176,14 @@ final class HomeArticleCell: UITableViewCell {
             $0.leading.equalTo(thumb.snp.trailing).offset(12)
             $0.trailing.equalToSuperview().inset(12)
         }
-        tag.snp.makeConstraints {
+        author.snp.makeConstraints {
             $0.leading.equalTo(title)
             $0.bottom.equalTo(thumb)
         }
-        author.snp.makeConstraints {
-            if hasTag {
-                $0.leading.equalTo(tag.snp.trailing).offset(6)
-                $0.centerY.equalTo(tag)
+        tag.snp.makeConstraints {
+            if hasAuthor {
+                $0.leading.equalTo(author.snp.trailing).offset(6)
+                $0.centerY.equalTo(author)
             } else {
                 $0.leading.equalTo(title)
                 $0.bottom.equalTo(thumb)
@@ -190,8 +191,14 @@ final class HomeArticleCell: UITableViewCell {
         }
         reads.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(12)
-            $0.centerY.equalTo(author)
-            $0.leading.greaterThanOrEqualTo(author.snp.trailing).offset(4)
+            $0.centerY.equalTo(hasAuthor ? author : (hasTag ? tag : thumb))
+            if hasTag {
+                $0.leading.greaterThanOrEqualTo(tag.snp.trailing).offset(4)
+            } else if hasAuthor {
+                $0.leading.greaterThanOrEqualTo(author.snp.trailing).offset(4)
+            } else {
+                $0.leading.greaterThanOrEqualTo(title)
+            }
         }
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(rowTapped(_:)))

@@ -172,7 +172,7 @@ final class QuotePreviewBar: UIView {
             if reply.isFile {
                 contentLabel.text = "[文件] \(reply.fileName ?? reply.text)"
             } else {
-                contentLabel.text = reply.text
+                contentLabel.text = RongEmoji.symbolToEmoji(reply.text)
             }
         }
     }

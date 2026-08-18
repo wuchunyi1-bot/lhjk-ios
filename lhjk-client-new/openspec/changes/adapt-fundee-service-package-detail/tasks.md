@@ -29,3 +29,18 @@
 
 - [x] 6.1 分组头强制展示「必选 / 单选 / 可选」
 - [x] 6.2 修复 Tab 楼层定位：去掉重复 sticky 扣减，计入 cell inset + 浮动 Tab 高度，动画后二次校正
+
+## 7. 套餐详情 Figma (3449:7764) 样式重构
+
+- [x] 7.1 顶部 Banner：1:1 正方形全宽尺寸，超出截取中间、不够上下留黑，右下角页码角标与悬浮返回按钮
+- [x] 7.2 价格与简介卡：橙红渐变价格条、白色圆角带边框标题简介卡片、推荐/热销印章角标
+- [x] 7.3 权益分组卡片：`#FFFCF8` 背景与 `#FFEEDC` 边框、顶部渐变带「—— 必选/单选/可选 ——」、单选/多选控件样式
+- [x] 7.4 详情长图全量展开：按实际尺寸高度连续加载 `imageDetailsUrl1~3`，不截断
+- [x] 7.5 移除吸顶 Tab：删除浮动 Tab 栏及吸顶滚动监听
+- [x] 7.6 底部栏与整页对齐：112x40 胶囊加购与立即下单按钮、应付总价展示
+- [x] 7.7 修复滑动时权益卡片被挤压遮挡问题：将 TableView 托管 Cell 改为 UIScrollView 原生滚动流布局，修复长图与权益卡片的 AutoLayout 约束冲突
+- [x] 7.8 价格兜底优化：详情页未配置或拿不到价格时统一展示为「¥ 0 元起」，严禁展示「面议」
+- [x] 7.9 套餐详情 Figma 背景图与切图资源精细化对齐：集成价格卡片暗纹背景 `package_detail_price_bg`、权益礼品盒插图 `package_detail_benefits_illust`、印章角标 `package_detail_stamp_recommend` / `package_detail_stamp_hot`、羽翼装饰 `package_detail_wing_left` / `package_detail_wing_right`、Radio/Checkbox 选中切图以及空态 Banner 占位图 `package_detail_banner_placeholder`
+- [x] 7.10 修复价格与简介卡层叠覆盖布局：价格框向上覆盖 Banner 底部 28pt（`customSpacing = -28`，`zPosition = 1`），页码角标上移 40pt 保持在价格条上方 12pt（对齐 Figma 3449:7764）
+
+

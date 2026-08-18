@@ -2,15 +2,22 @@ import UIKit
 import SnapKit
 import Kingfisher
 
-/// 首页 Banner 轮播 — 全宽图；数据来自 `getByCode` + `home_banner_code`
+/// 首页 Banner 轮播 — 全宽图；高度按图片比例计算（宽度固定为屏幕宽）
+/// 数据来自 `getByCode` + `home_banner_code`
 final class HomeBannerCarouselCell: UITableViewCell {
 
     static let reuseID = "HomeBannerCarouselCell"
-    static let bannerHeight: CGFloat = 288
+    /// 375 稿 288 高，仅作图片未加载时的兜底比例
+    static let fallbackRatio: CGFloat = 288.0 / 375.0
 
     var onBannerTap: ((ServiceHubBanner) -> Void)?
+    var onHeightUpdated: (() -> Void)?
 
     private var banners: [ServiceHubBanner] = []
+    private var heightConstraint: Constraint?
+    private var resolvedImageSize: CGSize?
+    private var lastAppliedHeight: CGFloat = 0
+    private var pageWidth: CGFloat = 0
 
     private let scrollView: UIScrollView = {
         let s = UIScrollView()
@@ -30,7 +37,6 @@ final class HomeBannerCarouselCell: UITableViewCell {
     }()
 
     private var timer: Timer?
-    private var pageWidth: CGFloat = 0
     private var slideViews: [UIView] = []
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -44,7 +50,7 @@ final class HomeBannerCarouselCell: UITableViewCell {
         contentView.addSubview(pageControl)
         scrollView.snp.makeConstraints {
             $0.top.leading.trailing.equalToSuperview()
-            $0.height.equalTo(Self.bannerHeight)
+            heightConstraint = $0.height.equalTo(Self.fallbackHeight(for: UIScreen.main.bounds.width)).constraint
             $0.bottom.equalToSuperview()
         }
         pageControl.snp.makeConstraints {
@@ -77,14 +83,10 @@ final class HomeBannerCarouselCell: UITableViewCell {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        let w = scrollView.bounds.width
-        let h = Self.bannerHeight
-        guard w > 0, abs(w - pageWidth) > 0.5 else { return }
-        pageWidth = w
-        for (i, sub) in slideViews.enumerated() {
-            sub.frame = CGRect(x: CGFloat(i) * w, y: 0, width: w, height: h)
-        }
-        scrollView.contentSize = CGSize(width: w * CGFloat(max(banners.count, 1)), height: h)
+        let width = scrollView.bounds.width
+        guard width > 0 else { return }
+        applyBannerHeight(width: width, notify: lastAppliedHeight > 0)
+        layoutSlides(width: width, height: lastAppliedHeight)
     }
 
     func configure(_ banners: [ServiceHubBanner]) {
@@ -96,7 +98,10 @@ final class HomeBannerCarouselCell: UITableViewCell {
 
         if !sameIds {
             pageWidth = 0
+            resolvedImageSize = nil
+            lastAppliedHeight = 0
             buildSlides()
+            applyBannerHeight(width: bannerWidth(), notify: false)
             setNeedsLayout()
             layoutIfNeeded()
         }
@@ -107,6 +112,47 @@ final class HomeBannerCarouselCell: UITableViewCell {
             timer?.invalidate()
             timer = nil
         }
+    }
+
+    private func bannerWidth() -> CGFloat {
+        let width = scrollView.bounds.width
+        return width > 1 ? width : UIScreen.main.bounds.width
+    }
+
+    private static func fallbackHeight(for width: CGFloat) -> CGFloat {
+        BannerImageAspectLayout.height(width: width, imageSize: nil, fallbackRatio: fallbackRatio)
+    }
+
+    private func applyBannerHeight(width: CGFloat, notify: Bool) {
+        guard width > 0 else { return }
+        let height = BannerImageAspectLayout.height(
+            width: width,
+            imageSize: resolvedImageSize,
+            fallbackRatio: Self.fallbackRatio
+        )
+        let heightChanged = abs(height - lastAppliedHeight) > 0.5
+        guard heightChanged else { return }
+        lastAppliedHeight = height
+        heightConstraint?.update(offset: height)
+        layoutSlides(width: width, height: height)
+        if notify {
+            onHeightUpdated?()
+        }
+    }
+
+    private func adoptImageSize(_ size: CGSize) {
+        guard size.width > 1, size.height > 1, resolvedImageSize == nil else { return }
+        resolvedImageSize = size
+        applyBannerHeight(width: bannerWidth(), notify: true)
+    }
+
+    private func layoutSlides(width: CGFloat, height: CGFloat) {
+        guard width > 0, height > 0 else { return }
+        pageWidth = width
+        for (i, sub) in slideViews.enumerated() {
+            sub.frame = CGRect(x: CGFloat(i) * width, y: 0, width: width, height: height)
+        }
+        scrollView.contentSize = CGSize(width: width * CGFloat(max(banners.count, 1)), height: height)
     }
 
     private func buildSlides() {
@@ -127,7 +173,11 @@ final class HomeBannerCarouselCell: UITableViewCell {
             if let urlString = banner.imageUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
                !urlString.isEmpty,
                let url = URL(string: urlString) {
-                imageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+                imageView.kf.setImage(with: url, options: [.transition(.fade(0.2))]) { [weak self] result in
+                    if case .success(let value) = result {
+                        self?.adoptImageSize(value.image.size)
+                    }
+                }
             }
             container.addSubview(imageView)
 

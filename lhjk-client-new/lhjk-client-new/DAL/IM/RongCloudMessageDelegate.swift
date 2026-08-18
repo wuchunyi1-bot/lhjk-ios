@@ -32,11 +32,16 @@ extension RongCloudMessageDelegate: RCIMClientReceiveMessageDelegate {
 
     /// 收到消息回调
     func onReceived(_ message: RCMessage, left: Int32, object: Any?) {
+        let objectName = message.objectName ?? "?"
+        let uid = message.messageUId ?? "nil"
+        let body = ChatMessage.rawContentJSON(from: message.content)
+        print("[RongCloud][raw] objectName=\(objectName) uid=\(uid) msgId=\(message.messageId) left=\(left) body=\(body)")
+
         RongCloudManager.shared.messageReceivedPublisher.send(
             ChatMessage.fromRongCloud(rcMessage: message)
         )
         onMessageReceived?(message)
-        print("[RongCloud] ← message received, type=\(message.objectName ?? "?") left=\(left)")
+        print("[RongCloud] ← message received, type=\(objectName) left=\(left)")
     }
 }
 
@@ -70,7 +75,7 @@ extension ChatMessage {
             thumbHeight = nil
             Self.logNonTextMessageBody(rcMessage)
         } else if let textContent = rcMessage.content as? RCTextMessage {
-            content = textContent.content
+            content = RongEmoji.symbolToEmoji(textContent.content ?? "")
             type = .text
             imagePath = nil
             thumbWidth = nil
@@ -176,91 +181,32 @@ extension ChatMessage {
         }
     }
 
-    /// 调试：打印非文本 IM 消息体（encode JSON / 已知字段）
+    /// 融云 content 原始 JSON（decode 入参）；没有则回退 encode
+    static func rawContentJSON(from content: RCMessageContent?) -> String {
+        guard let content else { return "nil" }
+        if let data = content.rawJSONData, !data.isEmpty,
+           let text = String(data: data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+           !text.isEmpty {
+            return text
+        }
+        if let data = content.encode(),
+           let text = String(data: data, encoding: .utf8),
+           !text.isEmpty {
+            return text
+        }
+        if let text = content as? RCTextMessage {
+            return text.content ?? ""
+        }
+        return String(describing: content)
+    }
+
+    /// 调试：打印 IM 消息体，优先原始 JSON（含尚未接入的新字段）
     private static func logNonTextMessageBody(_ rcMessage: RCMessage) {
         let objectName = rcMessage.objectName ?? "nil"
         let msgId = rcMessage.messageId
         let uid = rcMessage.messageUId ?? "nil"
-
-        var body = "nil"
-        if let content = rcMessage.content {
-            if let data = content.encode(),
-               let json = String(data: data, encoding: .utf8), !json.isEmpty {
-                body = json
-            } else if let image = content as? RCImageMessage {
-                body = "{"
-                    + "\"imageUrl\":\"\(image.imageUrl ?? "")\","
-                    + "\"remoteUrl\":\"\(image.remoteUrl ?? "")\","
-                    + "\"localPath\":\"\(image.localPath ?? "")\","
-                    + "\"thumb\":\(image.thumWidth)x\(image.thumHeight),"
-                    + "\"extra\":\"\(image.extra ?? "")\""
-                    + "}"
-            } else if let voice = content as? RCHQVoiceMessage {
-                body = "{"
-                    + "\"localPath\":\"\(voice.localPath ?? "")\","
-                    + "\"remoteUrl\":\"\(voice.remoteUrl ?? "")\","
-                    + "\"duration\":\(voice.duration),"
-                    + "\"extra\":\"\(voice.extra ?? "")\""
-                    + "}"
-            } else if let file = content as? FileMessage {
-                body = "{"
-                    + "\"fileUrl\":\"\(file.fileUrl ?? "")\","
-                    + "\"fileName\":\"\(file.fileName ?? "")\","
-                    + "\"fileSize\":\"\(file.fileSize ?? "")\","
-                    + "\"fileSuffix\":\"\(file.fileSuffix ?? "")\","
-                    + "\"fileTime\":\(file.fileTime),"
-                    + "\"imageUrl\":\"\(file.imageUrl ?? "")\","
-                    + "\"lastMsgDisplayContent\":\"\(file.lastMsgDisplayContent ?? "")\","
-                    + "\"extra\":\"\(file.extra ?? "")\""
-                    + "}"
-            } else if let video = content as? VideoMessage {
-                body = "{"
-                    + "\"videoUrl\":\"\(video.videoUrl ?? "")\","
-                    + "\"videoCoverImg\":\"\(video.videoCoverImg ?? "")\","
-                    + "\"videoName\":\"\(video.videoName ?? "")\","
-                    + "\"videoTime\":\(video.videoTime),"
-                    + "\"videoSuffix\":\"\(video.videoSuffix ?? "")\","
-                    + "\"lastMsgDisplayContent\":\"\(video.lastMsgDisplayContent ?? "")\","
-                    + "\"extra\":\"\(video.extra ?? "")\""
-                    + "}"
-            } else if let notify = content as? SysNotifyMessage {
-                body = "{"
-                    + "\"title\":\"\(notify.title ?? "")\","
-                    + "\"content\":\"\(notify.content ?? "")\","
-                    + "\"businessData\":\"\(notify.businessData ?? "")\","
-                    + "\"imageUrl\":\"\(notify.imageUrl ?? "")\","
-                    + "\"urlKey\":\"\(notify.urlKey ?? "")\","
-                    + "\"isShowUser\":\(notify.isShowUser),"
-                    + "\"lastMsgDisplayContent\":\"\(notify.lastMsgDisplayContent ?? "")\","
-                    + "\"extra\":\"\(notify.extra ?? "")\""
-                    + "}"
-            } else if let vip = content as? VipMessage {
-                body = "{"
-                    + "\"objectName\":\"AD:Vip\","
-                    + "\"title\":\"\(vip.title ?? "")\","
-                    + "\"content\":\"\(vip.content ?? "")\","
-                    + "\"urlKey\":\"\(vip.urlKey ?? "")\","
-                    + "\"extra\":\"\(vip.extra ?? "")\""
-                    + "}"
-            } else if let comment = content as? ServiceCommentMessage {
-                body = "{"
-                    + "\"objectName\":\"AD:ServiceComment\","
-                    + "\"title\":\"\(comment.title ?? "")\","
-                    + "\"content\":\"\(comment.content ?? "")\","
-                    + "\"extra\":\"\(comment.extra ?? "")\""
-                    + "}"
-            } else if let check = content as? CheckUserMessage {
-                body = "{"
-                    + "\"objectName\":\"AD:CheckUserMsg\","
-                    + "\"title\":\"\(check.title ?? "")\","
-                    + "\"content\":\"\(check.content ?? "")\","
-                    + "\"extra\":\"\(check.extra ?? "")\""
-                    + "}"
-            } else {
-                body = String(describing: content)
-            }
-        }
-
+        let body = rawContentJSON(from: rcMessage.content)
         print("[Chat][non-text] objectName=\(objectName) msgId=\(msgId) uid=\(uid) body=\(body)")
     }
 }

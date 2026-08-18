@@ -1,71 +1,36 @@
 import UIKit
 
-/// 订单详情状态头展示 — 对齐 funde `orderStatusPresentation`
+/// 订单详情状态头 — 对齐 Figma 3546:4382（插画 + 棕色渐变标题）
 struct OrderDetailStatusPresentation {
 
-    enum Tone {
-        case primary
-        case pending
-        case warning
-        case danger
-        case info
-        case success
-        case neutral
-    }
-
-    let tone: Tone
     let title: String
-    let systemImageName: String
-
-    var iconBackgroundColor: UIColor {
-        switch tone {
-        case .primary: return .fdPrimarySoft
-        case .pending: return .fdWarningSoft
-        case .warning: return .fdWarningSoft
-        case .danger: return .fdDangerSoft
-        case .info: return .fdInfoSoft
-        case .success: return .fdSuccessSoft
-        case .neutral: return .fdBg2
-        }
-    }
-
-    var iconTintColor: UIColor {
-        switch tone {
-        case .primary: return .fdPrimary
-        case .pending: return .fdDanger
-        case .warning: return UIColor(hexString: "#B47300")
-        case .danger: return .fdDanger
-        case .info: return .fdInfo
-        case .success: return .fdSuccess
-        case .neutral: return .fdMuted
-        }
-    }
+    let illustrationName: String
 
     static func make(status: AppOrderStatus?, title: String? = nil, preferPrimaryForPending: Bool = false) -> OrderDetailStatusPresentation {
+        _ = preferPrimaryForPending
         let resolvedTitle = title ?? status?.label ?? "订单详情"
+        return OrderDetailStatusPresentation(
+            title: resolvedTitle,
+            illustrationName: illustrationAsset(for: status)
+        )
+    }
+
+    private static func illustrationAsset(for status: AppOrderStatus?) -> String {
         switch status {
         case .pendingPayment:
-            return OrderDetailStatusPresentation(
-                tone: preferPrimaryForPending ? .primary : .pending,
-                title: resolvedTitle,
-                systemImageName: "clock"
-            )
+            return "order_detail_status_pending_pay"
         case .pendingShip:
-            return OrderDetailStatusPresentation(tone: .warning, title: resolvedTitle, systemImageName: "shippingbox")
+            return "order_detail_status_pending_ship"
         case .pendingReceive:
-            return OrderDetailStatusPresentation(tone: .info, title: resolvedTitle, systemImageName: "tray")
+            return "order_detail_status_pending_receive"
         case .inProgress:
-            return OrderDetailStatusPresentation(tone: .info, title: resolvedTitle, systemImageName: "heart")
+            return "order_detail_status_in_use"
         case .completed:
-            return OrderDetailStatusPresentation(tone: .success, title: resolvedTitle, systemImageName: "checkmark.circle")
-        case .cancelled:
-            return OrderDetailStatusPresentation(tone: .neutral, title: resolvedTitle, systemImageName: "xmark.circle")
-        case .overdue:
-            return OrderDetailStatusPresentation(tone: .danger, title: resolvedTitle, systemImageName: "exclamationmark.triangle")
+            return "order_detail_status_completed"
         case .refund, .refundReview:
-            return OrderDetailStatusPresentation(tone: .warning, title: resolvedTitle, systemImageName: "arrow.uturn.left.circle")
-        case .none:
-            return OrderDetailStatusPresentation(tone: .neutral, title: resolvedTitle, systemImageName: "info.circle")
+            return "order_detail_status_refund"
+        case .overdue, .cancelled, .none:
+            return "order_detail_status_overdue"
         }
     }
 }

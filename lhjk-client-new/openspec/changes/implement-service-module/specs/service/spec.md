@@ -89,13 +89,14 @@ Section index 随 `showActivateBanner` 动态偏移；`numberOfSections` 固定 
 ### Business Rules
 
 1. **三好卡提示条**: 与 `VoucherService.isCardActivated` 联动（对应 funde `stores/demo.ts cardActivated`）；已激活时隐藏整段 S0
-2. **精选卡已购** (`current == true`): badge 展示 `status`（如「进行中 · 剩 45 天」）；按钮「查看进度」→ `Router.push("/orders")`
-3. **精选卡未购**: badge「为您推荐」；按钮「了解详情」→ `Router.push("/services/detail", params: ["id": id])`
-4. **弱化视觉**: 卡片内边距 12pt（原 16pt）、code 方块 40pt（原 48pt）、去掉 highlight 装饰 blob；高亮卡仍用 `fdPrimarySoft` 浅底
-5. **就医协助**: 按钮文案「了解详情」（非「申请」）；跳转 `/services/medical-assist`（非自循环 `/services`）
-6. **产品矩阵**: 9 格静态顺序；`current == true` 显示「使用中」角标；点击 → `/services/list` + `params: ["code": code]`
-7. **富德优选**: 最多 6 件；「查看全部 ›」→ `/mall`；商品卡 → `/mall/detail` + `id`
-8. **颜色**: 优先 `UIColor.fd*`；语义色 success 用 `fdSuccess` / `fdSuccessSoft`
+2. **运营 Banner 画幅**: 宽度 = 屏宽 − 32（左右各 16）；高度 = 宽度 × 图片高/宽。未加载前用 Figma `180/344` 兜底，禁止写死 180pt。同一轮播以第一张成功加载的图为准。
+3. **精选卡已购** (`current == true`): badge 展示 `status`（如「进行中 · 剩 45 天」）；按钮「查看进度」→ `Router.push("/orders")`
+4. **精选卡未购**: badge「为您推荐」；按钮「了解详情」→ `Router.push("/services/detail", params: ["id": id])`
+5. **弱化视觉**: 卡片内边距 12pt（原 16pt）、code 方块 40pt（原 48pt）、去掉 highlight 装饰 blob；高亮卡仍用 `fdPrimarySoft` 浅底
+6. **就医协助**: 按钮文案「了解详情」（非「申请」）；跳转 `/services/medical-assist`（非自循环 `/services`）
+7. **产品矩阵**: 对齐 Figma 3444:5255。白卡 343×424 / 圆角 16；标题「德系产品矩阵」18 Medium；3×3 图标 52 + 主标题 14 Medium（健康基础/向好逆转…）+ 副标题 10 Regular `#6D7381`；无等级行、无「使用中」角标。点击 → `/services/list` + `params: ["code": code]`
+8. **富德优选**: 最多 6 件；「查看全部 ›」→ `/mall`；商品卡 → `/mall/detail` + `id`
+9. **颜色**: 优先 `UIColor.fd*`；语义色 success 用 `fdSuccess` / `fdSuccessSoft`
 
 ### Architecture（Hub）
 

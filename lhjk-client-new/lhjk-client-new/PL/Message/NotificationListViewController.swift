@@ -4,7 +4,7 @@ import Combine
 
 /// 通知中心列表 — MessagesViewController 的子 VC
 /// 数据源：单聊会话列表中最新一条会话的历史消息
-/// 白卡容器与团队对话列表对齐 Figma 3042:740
+/// 对齐 Figma 3444:5773：去除外层固定白卡，列表自然滚动，由 Cell 内部自适应首尾圆角白卡
 final class NotificationListViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
     var onDataChanged: (() -> Void)?
@@ -14,55 +14,56 @@ final class NotificationListViewController: UIViewController, UITableViewDataSou
 
     // MARK: - UI
 
-    private lazy var cardView: UIView = {
-        let v = UIView()
-        v.backgroundColor = .fdSurface
-        v.layer.cornerRadius = 16
-        v.clipsToBounds = true
-        return v
-    }()
-
     private lazy var tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
-        tv.backgroundColor = .fdSurface
+        tv.backgroundColor = .clear
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
         tv.contentInsetAdjustmentBehavior = .never
         tv.dataSource = self
         tv.delegate = self
         tv.register(NotificationCell.self, forCellReuseIdentifier: NotificationCell.reuseIdentifier)
-        tv.contentInset = .zero
+        tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 24, right: 0)
+        tv.scrollIndicatorInsets = .zero
         return tv
     }()
 
-    private lazy var emptyLabel: UILabel = {
-        let l = UILabel()
-        l.text = "暂无通知"
-        l.font = .fdCaption
-        l.textColor = .fdMuted
-        l.textAlignment = .center
-        l.isHidden = true
-        return l
+    private lazy var emptyContainer: UIView = {
+        let v = UIView()
+        v.backgroundColor = .white
+        v.layer.cornerRadius = 16
+        v.clipsToBounds = true
+        v.isHidden = true
+
+        let label = UILabel()
+        label.text = "暂无通知"
+        label.font = .fdCaption
+        label.textColor = .fdMuted
+        label.textAlignment = .center
+        v.addSubview(label)
+        label.snp.makeConstraints { $0.center.equalToSuperview() }
+        return v
     }()
 
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .fdBg
-        view.addSubview(cardView)
-        cardView.addSubview(tableView)
-        cardView.addSubview(emptyLabel)
-        cardView.snp.makeConstraints {
-            $0.top.equalToSuperview()
-            $0.leading.trailing.equalToSuperview().inset(12)
-            $0.bottom.equalToSuperview().offset(-25)
+        view.backgroundColor = .clear
+
+        view.addSubview(tableView)
+        view.addSubview(emptyContainer)
+
+        tableView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
         }
-        tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
-        emptyLabel.snp.makeConstraints {
-            $0.center.equalToSuperview()
-            $0.leading.trailing.equalToSuperview().inset(24)
+
+        emptyContainer.snp.makeConstraints { make in
+            make.top.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(12)
+            make.height.equalTo(180)
         }
+
         IMService.shared.notificationsDidChangePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
@@ -103,12 +104,14 @@ final class NotificationListViewController: UIViewController, UITableViewDataSou
     }
 
     private func reloadUI() {
-        emptyLabel.isHidden = !notifications.isEmpty
+        emptyContainer.isHidden = !notifications.isEmpty
         tableView.reloadData()
         onDataChanged?()
     }
 
     // MARK: - UITableView
+
+    func numberOfSections(in tableView: UITableView) -> Int { 1 }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         notifications.count
@@ -116,12 +119,17 @@ final class NotificationListViewController: UIViewController, UITableViewDataSou
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: NotificationCell.reuseIdentifier, for: indexPath) as! NotificationCell
-        cell.configure(notifications[indexPath.row])
+        let count = notifications.count
+        let noti = notifications[indexPath.row]
+        let isSingle = count == 1
+        let isFirst = indexPath.row == 0
+        let isLast = indexPath.row == count - 1
+        cell.configure(noti, isFirst: isFirst, isLast: isLast, isSingle: isSingle)
         return cell
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        UITableView.automaticDimension
+        74
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

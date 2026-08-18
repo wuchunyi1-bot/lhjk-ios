@@ -2,16 +2,19 @@ import UIKit
 import SnapKit
 import Combine
 
-/// 服务套餐详情 — 三段式：Banner / 简介 / 权益+详情连续楼层
+/// 服务套餐详情 — 三段式：Banner / 价格与简介 / 权益与详情连续楼层（对齐 Figma 3449:7764）
 final class ServicePackageDetailViewController: BaseViewController {
 
     private let viewModel: ServicePackageDetailViewModel
     private var cancellables = Set<AnyCancellable>()
 
-    private let tableView = UITableView(frame: .zero, style: .plain)
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
+    private let contentStack = UIStackView()
+
+    private let backButton = UIButton(type: .custom)
     private let orderBar = PackageDetailOrderBarView()
     private let statusLabel = UILabel()
-    private let floatingTabBar = PackageDetailTabBarView()
 
     private var carouselView: PackageDetailCarouselView?
     private let infoView = PackageDetailInfoView()
@@ -19,26 +22,10 @@ final class ServicePackageDetailViewController: BaseViewController {
     private var tierPickerView: PackageDetailTierPickerView?
     private var autoScrollTimer: Timer?
 
-    private enum TableRow: Equatable {
-        case carousel
-        case info
-        case tier
-        case floors
-    }
-
     private var activeTab: PackageDetailTab = .content
     private var tierIndex = 0
-    private var rows: [TableRow] = []
     private var radioPicks: [String: Int] = [:]
     private var checkPicks: [String: Set<Int>] = [:]
-    private var floorsRowY: CGFloat = 0
-    private var isScrollingToFloor = false
-
-    /// floors cell 顶部 inset，与 cellForRow 保持一致
-    private let floorsCellTopInset: CGFloat = 14
-    /// 浮动 Tab 与楼层内容之间的间距
-    private let stickyTabGap: CGFloat = 4
-    private let floatingTabHeight: CGFloat = 44
 
     private var package: ServicePackageDetail? { viewModel.package }
 
@@ -76,35 +63,60 @@ final class ServicePackageDetailViewController: BaseViewController {
 
     deinit { stopAutoScroll() }
 
-    override func setupUI() {
-        view.backgroundColor = .fdBg
-        title = viewModel.isRenewalMode ? "续费规格" : "套餐详情"
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+    }
 
-        tableView.backgroundColor = .clear
-        tableView.separatorStyle = .none
-        tableView.showsVerticalScrollIndicator = false
-        tableView.estimatedRowHeight = 200
-        tableView.rowHeight = UITableView.automaticDimension
-        tableView.dataSource = self
-        tableView.delegate = self
-        tableView.register(ServicePackageHostedCell.self, forCellReuseIdentifier: ServicePackageHostedCell.reuseID)
-        tableView.isHidden = true
-        view.addSubview(tableView)
-        tableView.snp.makeConstraints {
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+
+    override func setupUI() {
+        view.backgroundColor = UIColor(hexString: "#FDF6F4")
+
+        scrollView.backgroundColor = .clear
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.isHidden = true
+        view.addSubview(scrollView)
+        scrollView.snp.makeConstraints {
             $0.top.leading.trailing.equalToSuperview()
             $0.bottom.equalTo(view.safeAreaLayoutGuide)
         }
 
+        scrollView.addSubview(contentView)
+        contentView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+            $0.width.equalTo(scrollView.snp.width)
+        }
+
+        contentStack.axis = .vertical
+        contentStack.spacing = 14
+        contentView.addSubview(contentStack)
+        contentStack.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.bottom.equalToSuperview().offset(-24)
+        }
+
         floorsView.tabDelegate = self
 
-        floatingTabBar.isHidden = true
-        floatingTabBar.backgroundColor = .fdSurface
-        floatingTabBar.delegate = self
-        view.addSubview(floatingTabBar)
-        floatingTabBar.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
-            $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(44)
+        // 悬浮返回按钮（黑色半透明背景）
+        backButton.backgroundColor = UIColor(white: 0, alpha: 0.5)
+        backButton.layer.cornerRadius = 8
+        backButton.clipsToBounds = true
+        let chevron = UIImage(systemName: "chevron.left")?.withConfiguration(
+            UIImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
+        )
+        backButton.setImage(chevron, for: .normal)
+        backButton.tintColor = .white
+        backButton.addTarget(self, action: #selector(didTapBack), for: .touchUpInside)
+        view.addSubview(backButton)
+        backButton.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(6)
+            $0.leading.equalToSuperview().offset(16)
+            $0.size.equalTo(32)
         }
 
         statusLabel.font = .fdBody
@@ -117,6 +129,10 @@ final class ServicePackageDetailViewController: BaseViewController {
             $0.centerY.equalToSuperview().offset(-40)
             $0.leading.trailing.equalToSuperview().inset(24)
         }
+    }
+
+    @objc private func didTapBack() {
+        navigationController?.popViewController(animated: true)
     }
 
     override func bindViewModel() {
@@ -161,7 +177,6 @@ final class ServicePackageDetailViewController: BaseViewController {
         tierPickerView = nil
         tierIndex = 0
         activeTab = .content
-        isScrollingToFloor = false
 
         resetPicks(for: pkg.tiers[tierIndex])
         carouselView = PackageDetailCarouselView(
@@ -177,16 +192,13 @@ final class ServicePackageDetailViewController: BaseViewController {
             tierPickerView = picker
         }
         refreshFloorsView()
-        rebuildRows()
+        rebuildViews()
         setupOrderBar()
-        syncTabSelection(animated: false)
+        floorsView.tabBarView.select(activeTab, animated: false)
 
         statusLabel.isHidden = true
-        tableView.isHidden = false
-        floatingTabBar.isHidden = true
-        tableView.reloadData()
+        scrollView.isHidden = false
         view.layoutIfNeeded()
-        updateFloorsRowY()
         startAutoScroll()
         refreshPayable()
     }
@@ -202,19 +214,42 @@ final class ServicePackageDetailViewController: BaseViewController {
             self.tapCart()
         }
         orderBar.onOrder = { [weak self] in self?.tapOrder() }
-        orderBar.attach(to: view, below: tableView)
-        tableView.contentInset.bottom = 12
+        orderBar.attach(to: view, below: scrollView)
+        scrollView.contentInset.bottom = 12
     }
 
-    private func rebuildRows() {
-        guard package != nil else {
-            rows = []
-            return
+    private func rebuildViews() {
+        contentStack.arrangedSubviews.forEach {
+            contentStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
         }
-        var next: [TableRow] = [.carousel, .info]
-        if tierPickerView != nil { next.append(.tier) }
-        next.append(.floors)
-        rows = next
+        if let carousel = carouselView {
+            contentStack.addArrangedSubview(carousel)
+            // 向上覆盖 Banner 底部 28pt（对齐 Figma 3449:7764）
+            contentStack.setCustomSpacing(-28, after: carousel)
+        }
+        let wrappedInfo = wrapWithHorizontalInsets(infoView)
+        wrappedInfo.layer.zPosition = 1
+        contentStack.addArrangedSubview(wrappedInfo)
+        if let tierPickerView {
+            let wrappedPicker = wrapWithHorizontalInsets(tierPickerView)
+            wrappedPicker.layer.zPosition = 1
+            contentStack.addArrangedSubview(wrappedPicker)
+        }
+        let wrappedFloors = wrapWithHorizontalInsets(floorsView)
+        wrappedFloors.layer.zPosition = 1
+        contentStack.addArrangedSubview(wrappedFloors)
+    }
+
+    private func wrapWithHorizontalInsets(_ view: UIView, insets: CGFloat = 16) -> UIView {
+        let container = UIView()
+        container.backgroundColor = .clear
+        container.addSubview(view)
+        view.snp.makeConstraints {
+            $0.top.bottom.equalToSuperview()
+            $0.leading.trailing.equalToSuperview().inset(insets)
+        }
+        return container
     }
 
     private func refreshFloorsView() {
@@ -230,26 +265,14 @@ final class ServicePackageDetailViewController: BaseViewController {
         )
     }
 
-    private func reloadFloorsContent(heightMayChange: Bool = false) {
-        // 勾选仅改选中态，高度不变；勿 reloadRows，否则托管 floorsView 行高会塌缩。
-        refreshFloorsView()
-        if heightMayChange {
-            tableView.beginUpdates()
-            tableView.endUpdates()
-        }
-        updateFloorsRowY()
-    }
-
     private func resetPicks(for tier: ServicePackageTier) {
         var radios: [String: Int] = [:]
         var checks: [String: Set<Int>] = [:]
         for group in tier.groups {
             switch group.selectMode {
             case .radio:
-                // 单选：默认选中第一个父项
                 radios[group.name] = group.firstParentIndex
             case .checkbox:
-                // 可选：父项按 defaultCheck == 1 初始化，用户可取消
                 let picked = group.items.enumerated().compactMap { idx, item -> Int? in
                     guard !item.isChild else { return nil }
                     return (item.defaultCheck == 1 || item.defaultSelected) ? idx : nil
@@ -274,7 +297,7 @@ final class ServicePackageDetailViewController: BaseViewController {
             guard let self else { return }
             guard group.items.indices.contains(index), !group.items[index].isChild else { return }
             self.radioPicks[group.name] = index
-            self.reloadFloorsContent()
+            self.refreshFloorsView()
             self.refreshPayable()
         }
         view.onCheckToggle = { [weak self] index in
@@ -283,7 +306,7 @@ final class ServicePackageDetailViewController: BaseViewController {
             var set = self.checkPicks[group.name] ?? []
             if set.contains(index) { set.remove(index) } else { set.insert(index) }
             self.checkPicks[group.name] = set
-            self.reloadFloorsContent()
+            self.refreshFloorsView()
             self.refreshPayable()
         }
         return view
@@ -300,7 +323,6 @@ final class ServicePackageDetailViewController: BaseViewController {
         return prices
     }
 
-    /// 已选父项及其子项下标（父选中则子项一并计入）
     private func selectedSubtreeIndices(in group: ServicePackageComboGroup) -> [Int] {
         switch group.selectMode {
         case .required:
@@ -320,133 +342,29 @@ final class ServicePackageDetailViewController: BaseViewController {
     private func refreshPayable() {
         let prices = selectedItemPrices()
         guard !prices.isEmpty else {
-            orderBar.setPayableText("—")
-            return
-        }
-        if prices.allSatisfy({ $0 == 0 }), activeTier?.priceUnit.contains("面议") == true {
-            orderBar.setPayableText("面议")
+            orderBar.setPayableText("0.00")
             return
         }
         let total = prices.reduce(0, +)
         orderBar.setPayableText(ServicePackageMoney.yen(total))
     }
 
-    private func syncTabSelection(animated: Bool) {
-        floorsView.tabBarView.select(activeTab, animated: animated)
-        floatingTabBar.setDetailTabVisible(hasDetailImages)
-        floatingTabBar.select(activeTab, animated: animated)
-    }
-
-    /// 点击 Tab 时，将对应楼层锚点滚到浮动 Tab 正下方
     private func scrollToFloor(_ tab: PackageDetailTab, animated: Bool) {
-        guard let index = rows.firstIndex(of: .floors) else { return }
         if tab == .detail, !hasDetailImages { return }
 
         view.layoutIfNeeded()
-        tableView.layoutIfNeeded()
         floorsView.layoutIfNeeded()
 
-        let cellRect = tableView.rectForRow(at: IndexPath(row: index, section: 0))
-        guard let floorY = floorsView.floorMinY(for: tab) else { return }
+        let anchor = tab == .content ? floorsView.contentFloorAnchor : floorsView.detailFloorAnchor
+        let targetRect = anchor.convert(anchor.bounds, to: scrollView)
+        let targetY = max(0, targetRect.minY - 20)
 
-        let targetY = floorScrollOffset(
-            cellRect: cellRect,
-            floorY: floorY,
-            contentOffsetY: tableView.contentOffset.y
-        )
-        let maxOffset = max(0, tableView.contentSize.height - tableView.bounds.height + tableView.contentInset.bottom)
+        let maxOffset = max(0, scrollView.contentSize.height - scrollView.bounds.height + scrollView.contentInset.bottom)
         let clampedY = min(targetY, maxOffset)
 
-        isScrollingToFloor = true
         activeTab = tab
-        syncTabSelection(animated: true)
-        tableView.setContentOffset(CGPoint(x: 0, y: clampedY), animated: animated)
-
-        let delay = animated ? 0.4 : 0.05
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-            guard let self else { return }
-            self.isScrollingToFloor = false
-            self.updateFloatingTabVisibility()
-            // 动画结束后再校正一次，消除自动行高带来的偏差
-            self.correctFloorOffsetIfNeeded(for: tab)
-        }
-    }
-
-    private func correctFloorOffsetIfNeeded(for tab: PackageDetailTab) {
-        guard let index = rows.firstIndex(of: .floors) else { return }
-        view.layoutIfNeeded()
-        tableView.layoutIfNeeded()
-        floorsView.layoutIfNeeded()
-
-        let cellRect = tableView.rectForRow(at: IndexPath(row: index, section: 0))
-        guard let floorY = floorsView.floorMinY(for: tab) else { return }
-        let targetY = floorScrollOffset(
-            cellRect: cellRect,
-            floorY: floorY,
-            contentOffsetY: tableView.contentOffset.y
-        )
-        let maxOffset = max(0, tableView.contentSize.height - tableView.bounds.height + tableView.contentInset.bottom)
-        let clampedY = min(targetY, maxOffset)
-
-        if abs(tableView.contentOffset.y - clampedY) > 2 {
-            tableView.setContentOffset(CGPoint(x: 0, y: clampedY), animated: false)
-        }
-    }
-
-    /// 楼层锚点滚到可视区顶部；仅当目标位置已越过卡片内 Tab 时才为浮动 Tab 预留高度
-    private func floorScrollOffset(
-        cellRect: CGRect,
-        floorY: CGFloat,
-        contentOffsetY: CGFloat
-    ) -> CGFloat {
-        let tabBarYInContent = floorsRowY + floorsCellTopInset + floorsView.tabBarView.frame.minY
-        let rawTargetY = cellRect.minY + floorsCellTopInset + floorY
-        let willShowFloating = rawTargetY - stickyTabGap >= tabBarYInContent
-            || contentOffsetY + stickyTabGap >= tabBarYInContent
-        let reserved = willShowFloating ? (floatingTabHeight + stickyTabGap) : 0
-        return max(0, rawTargetY - reserved)
-    }
-
-    private func updateFloorsRowY() {
-        guard let index = rows.firstIndex(of: .floors) else {
-            floorsRowY = .greatestFiniteMagnitude
-            return
-        }
-        floorsRowY = tableView.rectForRow(at: IndexPath(row: index, section: 0)).minY
-    }
-
-    private func updateFloatingTabVisibility() {
-        guard package != nil else {
-            floatingTabBar.isHidden = true
-            return
-        }
-        // 卡片内 Tab 顶边滚到 table 可视区顶部附近时显示浮动副本
-        let tabBarYInContent = floorsRowY + floorsCellTopInset + floorsView.tabBarView.frame.minY
-        let shouldShow = tableView.contentOffset.y + stickyTabGap >= tabBarYInContent
-        floatingTabBar.isHidden = !shouldShow
-    }
-
-    private func updateActiveTabFromScroll() {
-        guard hasDetailImages, !isScrollingToFloor else { return }
-        guard let index = rows.firstIndex(of: .floors) else { return }
-
-        view.layoutIfNeeded()
-        let cellRect = tableView.rectForRow(at: IndexPath(row: index, section: 0))
-        guard let detailFloorY = floorsView.floorMinY(for: .detail) else {
-            if activeTab != .content {
-                activeTab = .content
-                syncTabSelection(animated: true)
-            }
-            return
-        }
-
-        // 可视区顶部（扣掉浮动 Tab）越过详情锚点后切到「详情」
-        let viewportTop = tableView.contentOffset.y + floatingTabHeight + stickyTabGap
-        let detailAbsoluteY = cellRect.minY + floorsCellTopInset + detailFloorY
-        let newTab: PackageDetailTab = viewportTop >= detailAbsoluteY - 8 ? .detail : .content
-        guard newTab != activeTab else { return }
-        activeTab = newTab
-        syncTabSelection(animated: true)
+        floorsView.tabBarView.select(activeTab, animated: true)
+        scrollView.setContentOffset(CGPoint(x: 0, y: clampedY), animated: animated)
     }
 
     private func startAutoScroll() {
@@ -465,7 +383,6 @@ final class ServicePackageDetailViewController: BaseViewController {
     private func tapCart() {
         guard package != nil, !viewModel.isSubmitting else { return }
 
-        // 本地原型套餐：不调服务端、不写本地购物车
         guard viewModel.usesRemoteCartAPI else {
             showToast("请选择正式套餐后再加入购物车")
             return
@@ -496,10 +413,8 @@ final class ServicePackageDetailViewController: BaseViewController {
 
     private func tapOrder() {
         guard let pkg = package, !viewModel.isSubmitting else { return }
-        let packageId = pkg.id
         let selectedItems = buildSelectedComboItems()
 
-        // 本地原型套餐：无服务端订单 id，无法拉结算
         guard viewModel.usesRemoteCartAPI else {
             saveOrderDraft(package: pkg, selectedItems: selectedItems)
             showToast("请使用正式套餐下单")
@@ -527,7 +442,6 @@ final class ServicePackageDetailViewController: BaseViewController {
         }
     }
 
-    /// 按当前勾选组装展示/提交用明细（父选中则含子项）
     private func buildSelectedComboItems() -> [ServicePackageComboItem] {
         guard let tier = activeTier else { return [] }
         var items: [ServicePackageComboItem] = []
@@ -552,7 +466,6 @@ final class ServicePackageDetailViewController: BaseViewController {
         PackageOrderDraftStore.shared.save(draft)
     }
 
-    /// 按当前勾选组装提交明细（必选全部 / 单选一项 / 可选已勾选）
     private func buildSelectedSubmitDetails() -> [PackageHospitalDetailSubmitItem] {
         buildSelectedComboItems().compactMap { $0.toSubmitItem() }
     }
@@ -565,47 +478,6 @@ final class ServicePackageDetailViewController: BaseViewController {
                 completion?()
             }
         }
-    }
-}
-
-// MARK: - UITableView
-
-extension ServicePackageDetailViewController: UITableViewDataSource, UITableViewDelegate {
-
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        rows.count
-    }
-
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let row = rows[indexPath.row]
-        let cell = tableView.dequeueReusableCell(
-            withIdentifier: ServicePackageHostedCell.reuseID,
-            for: indexPath
-        ) as! ServicePackageHostedCell
-
-        switch row {
-        case .carousel:
-            if let carousel = carouselView {
-                cell.host(carousel, insets: UIEdgeInsets(top: 8, left: 16, bottom: 0, right: 16))
-            }
-        case .info:
-            cell.host(infoView, insets: UIEdgeInsets(top: 14, left: 16, bottom: 0, right: 16))
-        case .tier:
-            if let tierPickerView {
-                cell.host(tierPickerView, insets: UIEdgeInsets(top: 16, left: 16, bottom: 0, right: 16))
-            }
-        case .floors:
-            cell.host(
-                floorsView,
-                insets: UIEdgeInsets(top: floorsCellTopInset, left: 16, bottom: 24, right: 16)
-            )
-        }
-        return cell
-    }
-
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        updateFloatingTabVisibility()
-        updateActiveTabFromScroll()
     }
 }
 
@@ -625,7 +497,7 @@ extension ServicePackageDetailViewController: PackageDetailTierPickerViewDelegat
         tierIndex = index
         resetPicks(for: pkg.tiers[tierIndex])
         view.configure(tiers: pkg.tiers, selectedIndex: tierIndex, accent: pkg.accent)
-        reloadFloorsContent(heightMayChange: true)
+        refreshFloorsView()
         refreshPayable()
     }
 }

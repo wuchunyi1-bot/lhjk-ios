@@ -210,7 +210,7 @@ extension Conversation {
         guard let content else { return "" }
         switch content {
         case let text as RCTextMessage:
-            return text.content
+            return RongEmoji.symbolToEmoji(text.content ?? "")
         case is RCImageMessage:
             return "[图片]"
         case is RCHQVoiceMessage:
@@ -275,7 +275,7 @@ extension Conversation {
             avatar: meta.avatar,
             status: meta.status,
             serviceScope: meta.serviceScope,
-            lastMessage: lastMsg.isEmpty ? "暂无消息" : lastMsg,
+            lastMessage: lastMsg.isEmpty ? "暂无消息" : RongEmoji.symbolToEmoji(lastMsg),
             lastMessageAt: rc.sentTime,
             lastTime: formatRCTime(rc.sentTime),
             unread: Int(rc.unreadMessageCount),
@@ -333,7 +333,7 @@ extension Conversation {
             avatar: avatarChar,
             status: statusStr,
             serviceScope: group.groupName ?? "日常随访",
-            lastMessage: lastMsg,
+            lastMessage: RongEmoji.symbolToEmoji(lastMsg),
             lastMessageAt: lastMessageAt,
             lastTime: lastTimeStr,
             unread: unread,

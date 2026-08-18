@@ -1,13 +1,22 @@
 import UIKit
 import SnapKit
 
-/// 会话行 Cell — 对齐 Figma 3042:740
+/// 会话行 Cell — 对齐 Figma 3444:5583（消息首页-优化后）
 /// 头像 48 / 名称 16 Medium / 角色胶囊 C36E20@8% / 时间右对齐 12 / 预览单行省略
+/// 卡片背景置于 Cell 内部，首尾自动切 16pt 圆角，列表滚动时背景随 item 自然移动
 final class ConversationCell: UITableViewCell {
 
     static let reuseIdentifier = "ConversationCell"
 
     // MARK: - UI
+
+    /// 单行白色卡片容器（左右 inset 12，首尾行根据位置裁切 16pt 圆角）
+    private let cardContainer: UIView = {
+        let v = UIView()
+        v.backgroundColor = .white
+        v.clipsToBounds = true
+        return v
+    }()
 
     private let avatarView: UIImageView = {
         let iv = UIImageView()
@@ -60,7 +69,7 @@ final class ConversationCell: UITableViewCell {
     private let nameLabel: UILabel = {
         let l = UILabel()
         l.font = .fdFont(ofSize: 16, weight: .medium)
-        l.textColor = .fdText
+        l.textColor = UIColor(hexString: "#1F2430")
         l.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return l
     }()
@@ -108,11 +117,17 @@ final class ConversationCell: UITableViewCell {
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
-        backgroundColor = .fdSurface
-        contentView.backgroundColor = .fdSurface
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
+
+        contentView.addSubview(cardContainer)
+        cardContainer.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(12)
+        }
 
         [avatarView, collageView, badgeLabel, nameLabel, roleTag, previewLabel, timeLabel, separatorLine]
-            .forEach(contentView.addSubview)
+            .forEach(cardContainer.addSubview)
         avatarView.addSubview(avatarPlaceholder)
 
         // 2×2 collage
@@ -133,8 +148,7 @@ final class ConversationCell: UITableViewCell {
 
         avatarView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(12)
-            // Figma 首行头像相对卡片顶部 16pt；84pt 行高下中心上移 2pt
-            make.centerY.equalToSuperview().offset(-2)
+            make.centerY.equalToSuperview()
             make.size.equalTo(48)
         }
         collageView.snp.makeConstraints { $0.edges.equalTo(avatarView) }
@@ -155,25 +169,25 @@ final class ConversationCell: UITableViewCell {
         nameLabel.snp.makeConstraints { make in
             make.top.equalTo(avatarView).offset(2)
             make.leading.equalTo(avatarView.snp.trailing).offset(12)
-            make.trailing.lessThanOrEqualTo(roleTag.snp.leading).offset(-6)
+            make.trailing.lessThanOrEqualTo(roleTag.snp.leading).offset(-4)
         }
 
         roleTag.snp.makeConstraints { make in
             make.centerY.equalTo(nameLabel)
-            make.leading.equalTo(nameLabel.snp.trailing).offset(6)
+            make.leading.equalTo(nameLabel.snp.trailing).offset(4)
             make.trailing.lessThanOrEqualTo(timeLabel.snp.leading).offset(-8)
             make.height.equalTo(18)
         }
 
         previewLabel.snp.makeConstraints { make in
-            make.top.equalTo(nameLabel.snp.bottom).offset(1)
+            make.top.equalTo(nameLabel.snp.bottom).offset(4)
             make.leading.equalTo(nameLabel)
             make.trailing.equalToSuperview().offset(-12)
         }
 
         separatorLine.snp.makeConstraints { make in
             make.leading.equalTo(nameLabel)
-            make.trailing.equalToSuperview().offset(-16)
+            make.trailing.equalToSuperview().offset(-12)
             make.bottom.equalToSuperview()
             make.height.equalTo(0.5)
         }
@@ -183,7 +197,7 @@ final class ConversationCell: UITableViewCell {
 
     // MARK: - Configure
 
-    func configure(_ conv: Conversation, hideSeparator: Bool = false) {
+    func configure(_ conv: Conversation, isFirst: Bool = false, isLast: Bool = false, isSingle: Bool = false) {
         applyAvatar(for: conv)
 
         nameLabel.text = conv.name
@@ -200,7 +214,24 @@ final class ConversationCell: UITableViewCell {
             badgeLabel.isHidden = true
         }
 
-        separatorLine.isHidden = hideSeparator
+        separatorLine.isHidden = isLast || isSingle
+
+        // 动态圆角：单项全圆角，首行上圆角，尾行下圆角，中间无圆角
+        if isSingle {
+            cardContainer.layer.cornerRadius = 16
+            cardContainer.layer.maskedCorners = [
+                .layerMinXMinYCorner, .layerMaxXMinYCorner,
+                .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+            ]
+        } else if isFirst {
+            cardContainer.layer.cornerRadius = 16
+            cardContainer.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        } else if isLast {
+            cardContainer.layer.cornerRadius = 16
+            cardContainer.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        } else {
+            cardContainer.layer.cornerRadius = 0
+        }
     }
 
     // MARK: - Avatar
@@ -241,7 +272,7 @@ final class ConversationCell: UITableViewCell {
             .replacingOccurrences(of: "·", with: "｜")
     }
 
-    /// 按 role 回退到 Figma 导出入像 / 图标
+    /// 按 role 回退到 Figma 导出头像 / 图标
     private static func fallbackAvatar(for conv: Conversation) -> UIImage? {
         let name: String?
         switch conv.role {

@@ -5,7 +5,40 @@ final class HomeService {
 
     static let shared = HomeService()
 
-    private init() {}
+    private var cachedTodayTasks: [UserTodayMonitorTask] = []
+    private var cachedUserId: String?
+    private var cachedCalendarDay: String?
+    private var hasFetchedTodayTasksOnce = false
+    private var inFlightTodayTasksTask: Task<[UserTodayMonitorTask], Error>?
+
+    private init() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleInvalidateNotification),
+            name: .todayMonitorTaskShouldRefresh,
+            object: nil
+        )
+    }
+
+    @objc private func handleInvalidateNotification() {
+        invalidateTodayTasksCache()
+    }
+
+    /// 清空今日任务缓存（登出或任务状态刷新时）
+    func invalidateTodayTasksCache() {
+        cachedTodayTasks = []
+        cachedUserId = nil
+        cachedCalendarDay = nil
+        hasFetchedTodayTasksOnce = false
+        inFlightTodayTasksTask = nil
+    }
+
+    private static func currentCalendarDay() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = .current
+        return formatter.string(from: Date())
+    }
 
     enum HomeServiceError: LocalizedError {
         case missingUserId
@@ -20,27 +53,58 @@ final class HomeService {
     }
 
     /// `GET /v1/scheme/getUserToDayMonitorTask`
-    /// - Parameter userId: 当前用户 ID（雪花字符串）
-    func getUserTodayMonitorTask(userId: String) async throws -> [UserTodayMonitorTask] {
+    /// - Parameters:
+    ///   - userId: 当前用户 ID（雪花字符串）
+    ///   - forceRefresh: 是否强制穿透缓存请求网络
+    func getUserTodayMonitorTask(userId: String, forceRefresh: Bool = false) async throws -> [UserTodayMonitorTask] {
         let trimmed = userId.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw HomeServiceError.missingUserId }
 
-        print("[HomeService] getUserTodayMonitorTask → userId=\(trimmed)")
-
-        let response: APIResponse<[UserTodayMonitorTask]> = try await APIManager.shared.getAsync(
-            path: "/v1/scheme/getUserToDayMonitorTask",
-            parameters: ["userId": trimmed],
-            responseType: APIResponse<[UserTodayMonitorTask]>.self
-        )
-
-        guard response.isSuccess else {
-            print("[HomeService] getUserTodayMonitorTask ✗ code=\(response.code) msg=\(response.msg ?? "")")
-            throw HomeServiceError.requestFailed(response.msg ?? "获取今日任务失败")
+        let today = Self.currentCalendarDay()
+        if !forceRefresh,
+           hasFetchedTodayTasksOnce,
+           cachedUserId == trimmed,
+           cachedCalendarDay == today {
+            print("[HomeService] getUserTodayMonitorTask (cache hit) → userId=\(trimmed) count=\(cachedTodayTasks.count)")
+            return cachedTodayTasks
         }
 
-        let list = response.data ?? []
-        print("[HomeService] getUserTodayMonitorTask ✓ count=\(list.count)")
-        return list
+        if let inFlight = inFlightTodayTasksTask {
+            return try await inFlight.value
+        }
+
+        let task = Task<[UserTodayMonitorTask], Error> {
+            print("[HomeService] getUserTodayMonitorTask → userId=\(trimmed)")
+
+            let response: APIResponse<[UserTodayMonitorTask]> = try await APIManager.shared.getAsync(
+                path: "/v1/scheme/getUserToDayMonitorTask",
+                parameters: ["userId": trimmed],
+                responseType: APIResponse<[UserTodayMonitorTask]>.self
+            )
+
+            guard response.isSuccess else {
+                print("[HomeService] getUserTodayMonitorTask ✗ code=\(response.code) msg=\(response.msg ?? "")")
+                throw HomeServiceError.requestFailed(response.msg ?? "获取今日任务失败")
+            }
+
+            let list = response.data ?? []
+            print("[HomeService] getUserTodayMonitorTask ✓ count=\(list.count)")
+            return list
+        }
+
+        inFlightTodayTasksTask = task
+        defer { inFlightTodayTasksTask = nil }
+
+        do {
+            let list = try await task.value
+            cachedTodayTasks = list
+            cachedUserId = trimmed
+            cachedCalendarDay = today
+            hasFetchedTodayTasksOnce = true
+            return list
+        } catch {
+            throw error
+        }
     }
 
     /// `GET /v1/session/getUserParticipateAllTeam`

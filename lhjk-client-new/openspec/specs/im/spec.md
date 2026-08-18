@@ -559,6 +559,15 @@ App 冷启动
 - **AND** 过滤 `conversationId` 匹配的消息，去重后追加到 `messages` 末尾并插入行、滚动至底
 - **AND** `IMService` 同步将实时消息缓存到 `messagesStore`
 
+#### Scenario: 融云 Emoji 码（RongEmoji-2.2.11）
+文本表情对齐官方 Web SDK [`RongEmoji-2.2.11`](https://cdn.ronghub.com/RongEmoji-2.2.11.min.js)（`RongIMLib.RongIMEmoji`），lang = `zh`。不引入 IMKit / 官方 sprite。
+
+- **WHEN** 展示 `RC:TxtMsg`（气泡、引用预览、会话列表 `lastMessage`）
+- **THEN** 按 `symbolToEmoji` 将 `[色迷迷]` 转为 Unicode `😍`；未收录的 `[图片]` 等原样保留
+- **WHEN** 发送文本或把文本写入引用 `extra`
+- **THEN** 按 `emojiToSymbol` 将 `😍` 转为 `[色迷迷]`，与 Web / Android 互通
+- **AND** 映射表取自该 JS 的 `I` 字典（zh / en / tag），共 129 项
+
 ---
 
 ### Requirement: Notification Center

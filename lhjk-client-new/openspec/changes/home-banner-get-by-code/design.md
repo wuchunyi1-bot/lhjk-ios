@@ -14,7 +14,7 @@
 **Non-Goals:**
 
 - 不改服务 Tab 的 `mall_advertisement`
-- 不强制改首页 Banner 高度/全宽视觉（保持现有 288pt 全宽样式）
+- 首页 Banner 宽度全屏；高度按图片比例（未加载前 `288/375` 兜底），不再写死 288pt
 - 不做独立首页缓存服务（随 `viewWillAppear` 拉取即可；可后续对齐 Hub 预加载）
 
 ## Decisions
@@ -48,4 +48,4 @@ func fetchHospitalBanners() // 仍默认 mall_advertisement
 ## Risks
 
 - [运营未配置 `home_banner_code`] → 首页无 Banner，属预期空态
-- [图比例与 288 高度不符] → `scaleAspectFill` 裁剪，与现本地图策略一致
+- [图比例与 375 稿 288 高不符] → 高度按实际图片宽高比计算；未加载前用 `288/375` 兜底，不再写死 288pt

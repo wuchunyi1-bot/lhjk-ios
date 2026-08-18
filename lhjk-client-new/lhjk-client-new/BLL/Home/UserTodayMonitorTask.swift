@@ -79,9 +79,10 @@ extension UserTodayMonitorTask {
         let title = name.isEmpty ? "\(meta.shortTitle)提醒" : name
         let shortTitle = name.isEmpty ? meta.shortTitle : Self.shorten(name)
 
+        let formattedPlanTime = Self.formatPlanTime(monitorTime)
         var rows: [DailyHealthTask.Row] = []
-        if let t = monitorTime, !t.isEmpty {
-            rows.append(.init(label: "计划时间", value: t))
+        if !formattedPlanTime.isEmpty {
+            rows.append(.init(label: "计划时间", value: formattedPlanTime))
         }
         if done, let v = monitorValue, !v.isEmpty {
             rows.append(.init(label: "监测值", value: v))
@@ -95,12 +96,28 @@ extension UserTodayMonitorTask {
             desc: meta.defaultDesc,
             done: done,
             category: "监测任务",
-            planTime: monitorTime ?? "",
+            planTime: formattedPlanTime,
             actionRoute: resolvedActionRoute(fallback: meta.actionRoute),
             detailRows: rows,
             instructions: meta.instructions,
             completedAt: done ? (createTime ?? monitorTime) : nil
         )
+    }
+
+    private static func formatPlanTime(_ raw: String?) -> String {
+        guard let raw = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
+            return ""
+        }
+        if raw.count == 8 && raw.filter({ $0 == ":" }).count == 2 {
+            return String(raw.prefix(5))
+        }
+        if raw.count >= 16 && raw.contains(" ") {
+            let timePart = raw.split(separator: " ").last.map(String.init) ?? raw
+            if timePart.count >= 5 {
+                return String(timePart.prefix(5))
+            }
+        }
+        return raw
     }
 
     private func resolvedActionRoute(fallback: String) -> String {

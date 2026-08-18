@@ -15,7 +15,6 @@ final class OrderDetailViewController: BaseViewController {
     private let errorLabel = UILabel()
 
     private let statusView = OrderDetailStatusView()
-    private let hintBar = OrderDetailHintBar()
     private let afterSaleCard = OrderDetailCardView()
     private let afterSaleView = OrderDetailAfterSaleView()
     private let packageCard = OrderDetailCardView()
@@ -145,7 +144,6 @@ final class OrderDetailViewController: BaseViewController {
 
         [
             statusView,
-            hintBar,
             afterSaleCard,
             packageCard,
             addressCard,
@@ -156,15 +154,25 @@ final class OrderDetailViewController: BaseViewController {
             infoCard
         ].forEach { contentStack.addArrangedSubview($0) }
 
-        contentStack.setCustomSpacing(4, after: statusView)
-        contentStack.setCustomSpacing(8, after: hintBar)
+        contentStack.setCustomSpacing(12, after: statusView)
 
         actionBar.onAction = { [weak self] action in
             guard let self else { return }
             if action == .cancel, let detail = self.viewModel.detail {
                 OrderCancelFlow.start(from: self, detail: detail) { [weak self] _ in
-                    self?.navigationController?.popViewController(animated: true)
+                    self?.viewModel.load()
                 }
+                return
+            }
+            if action == .pay, let detail = self.viewModel.detail, let orderId = detail.id {
+                Router.shared.push(
+                    "/orders/confirm",
+                    params: [
+                        "orderId": String(orderId),
+                        "entry": "order_pay",
+                    ],
+                    from: self
+                )
                 return
             }
             if action == .confirmShip, let detail = self.viewModel.detail {
@@ -271,7 +279,6 @@ final class OrderDetailViewController: BaseViewController {
                 title: detail.statusTitle
             )
         )
-        hintBar.configure(text: detail.statusHint)
 
         let showsAfterSale = detail.showsAfterSaleInfoCard
         afterSaleCard.isHidden = !showsAfterSale
@@ -291,7 +298,8 @@ final class OrderDetailViewController: BaseViewController {
             expressLogisticsView.configure(
                 lines: detail.logisticsLines,
                 isPickup: false,
-                logisticsSummary: detail.logisticsSummary
+                logisticsSummary: detail.logisticsSummary,
+                orderStatus: detail.orderStatus
             )
         }
 
@@ -300,7 +308,8 @@ final class OrderDetailViewController: BaseViewController {
             pickupLogisticsView.configure(
                 lines: detail.logisticsLines,
                 isPickup: true,
-                logisticsSummary: detail.logisticsSummary
+                logisticsSummary: detail.logisticsSummary,
+                orderStatus: detail.orderStatus
             )
         }
 

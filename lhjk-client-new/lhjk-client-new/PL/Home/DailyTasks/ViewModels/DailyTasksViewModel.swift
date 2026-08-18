@@ -14,6 +14,7 @@ final class DailyTasksViewModel: ObservableObject {
     private let userManager: UserManager
     private let homeService: HomeService
     private var loadTask: Task<Void, Never>?
+    private var cancellables = Set<AnyCancellable>()
 
     var progressPercent: CGFloat {
         guard totalCount > 0 else { return 0 }
@@ -26,17 +27,24 @@ final class DailyTasksViewModel: ObservableObject {
     ) {
         self.userManager = userManager
         self.homeService = homeService
+
+        NotificationCenter.default.publisher(for: .todayMonitorTaskShouldRefresh)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.load(forceRefresh: true)
+            }
+            .store(in: &cancellables)
     }
 
-    func load() {
+    func load(forceRefresh: Bool = false) {
         loadTask?.cancel()
         loadTask = Task { [weak self] in
-            await self?.fetch()
+            await self?.fetch(forceRefresh: forceRefresh)
         }
     }
 
     @MainActor
-    private func fetch() async {
+    private func fetch(forceRefresh: Bool = false) async {
         guard let userId = resolveUserId() else {
             apply([])
             return
@@ -46,7 +54,7 @@ final class DailyTasksViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            let remote = try await homeService.getUserTodayMonitorTask(userId: userId)
+            let remote = try await homeService.getUserTodayMonitorTask(userId: userId, forceRefresh: forceRefresh)
             guard !Task.isCancelled else { return }
             apply(remote.map { $0.asDailyHealthTask() })
         } catch {

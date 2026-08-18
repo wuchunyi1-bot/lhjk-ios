@@ -5,7 +5,7 @@ import Combine
 final class HealthViewModel: ObservableObject {
 
     @Published private(set) var metrics: [HealthMetricDisplayItem] = []
-    @Published private(set) var quickEntries: [HealthQuickEntryDisplayItem] = []
+    @Published private(set) var quickEntries: [HealthQuickEntryDisplayItem] = MonitorCardDisplayMapper.defaultQuickEntries()
     @Published private(set) var isLoading = false
     @Published private(set) var loadError: String?
 

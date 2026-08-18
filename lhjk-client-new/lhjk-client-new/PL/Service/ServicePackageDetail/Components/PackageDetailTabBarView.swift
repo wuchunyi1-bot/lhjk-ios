@@ -10,14 +10,15 @@ protocol PackageDetailTabBarViewDelegate: AnyObject {
     func tabBarView(_ view: PackageDetailTabBarView, didSelect tab: PackageDetailTab)
 }
 
+/// 套餐详情下半区顶部 Tab 头 — 对齐 Figma 3449:7825 / 3449:7946
 final class PackageDetailTabBarView: UIView {
 
     weak var delegate: PackageDetailTabBarViewDelegate?
 
-    private let contentButton = UIButton(type: .system)
-    private let detailButton = UIButton(type: .system)
+    private let watermarkLabel = UILabel()
+    private let contentButton = UIButton(type: .custom)
+    private let detailButton = UIButton(type: .custom)
     private let indicator = UIView()
-    private let border = UIView()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -31,26 +32,23 @@ final class PackageDetailTabBarView: UIView {
         if !visible, detailButton.isSelected {
             select(.content, animated: false)
         }
-        invalidateIntrinsicContentSize()
-        guard bounds.width > 0 else { return }
-        setNeedsLayout()
     }
 
     override var intrinsicContentSize: CGSize {
-        CGSize(width: UIView.noIntrinsicMetric, height: 44)
+        CGSize(width: UIView.noIntrinsicMetric, height: 48)
     }
 
     func select(_ tab: PackageDetailTab, animated: Bool) {
         contentButton.isSelected = tab == .content
         detailButton.isSelected = tab == .detail
-        contentButton.titleLabel?.font = tab == .content ? .fdFont(ofSize: 15, weight: .heavy) : .fdBodySemibold
-        detailButton.titleLabel?.font = tab == .detail ? .fdFont(ofSize: 15, weight: .heavy) : .fdBodySemibold
+        contentButton.titleLabel?.font = tab == .content ? .fdFont(ofSize: 18, weight: .bold) : .fdFont(ofSize: 16, weight: .regular)
+        detailButton.titleLabel?.font = tab == .detail ? .fdFont(ofSize: 18, weight: .bold) : .fdFont(ofSize: 16, weight: .regular)
 
         let target = tab == .content ? contentButton : detailButton
         indicator.snp.remakeConstraints {
-            $0.bottom.equalToSuperview()
-            $0.width.equalTo(32)
-            $0.height.equalTo(3)
+            $0.bottom.equalToSuperview().offset(-4)
+            $0.width.equalTo(26)
+            $0.height.equalTo(4)
             $0.centerX.equalTo(target)
         }
 
@@ -59,11 +57,17 @@ final class PackageDetailTabBarView: UIView {
     }
 
     private func setupUI() {
-        border.backgroundColor = .fdBorder
-        addSubview(border)
-        border.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(1)
+        clipsToBounds = true
+
+        // 水印文字 BENEFITS
+        watermarkLabel.text = "BENEFITS"
+        watermarkLabel.font = .fdFont(ofSize: 52, weight: .bold)
+        watermarkLabel.textColor = UIColor(hexString: "#FFE9C9").withAlphaComponent(0.35)
+        watermarkLabel.transform = CGAffineTransform(shearX: -0.2, y: 0)
+        addSubview(watermarkLabel)
+        watermarkLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(10)
+            $0.centerY.equalToSuperview()
         }
 
         configureButton(contentButton, title: "权益", tag: 0)
@@ -71,45 +75,59 @@ final class PackageDetailTabBarView: UIView {
         contentButton.addTarget(self, action: #selector(tabTapped(_:)), for: .touchUpInside)
         detailButton.addTarget(self, action: #selector(tabTapped(_:)), for: .touchUpInside)
 
-        let stack = UIStackView(arrangedSubviews: [contentButton, detailButton])
-        stack.axis = .horizontal
-        stack.distribution = .fillEqually
-        addSubview(stack)
-        stack.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(border.snp.top).offset(-8)
+        let buttonsStack = UIStackView(arrangedSubviews: [contentButton, detailButton])
+        buttonsStack.axis = .horizontal
+        buttonsStack.spacing = 16
+        buttonsStack.alignment = .center
+        addSubview(buttonsStack)
+        buttonsStack.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(8)
+            $0.top.bottom.equalToSuperview()
         }
 
-        indicator.backgroundColor = .fdPrimary
-        indicator.layer.cornerRadius = 1.5
+        indicator.backgroundColor = UIColor(hexString: "#FD383F")
+        indicator.layer.cornerRadius = 2
         addSubview(indicator)
         indicator.snp.makeConstraints {
-            $0.bottom.equalToSuperview()
-            $0.width.equalTo(32)
-            $0.height.equalTo(3)
+            $0.bottom.equalToSuperview().offset(-4)
+            $0.width.equalTo(26)
+            $0.height.equalTo(4)
             $0.centerX.equalTo(contentButton)
         }
+
+        select(.content, animated: false)
     }
 
     private func configureButton(_ button: UIButton, title: String, tag: Int) {
         button.setTitle(title, for: .normal)
-        button.setTitleColor(.fdSubtext, for: .normal)
-        button.setTitleColor(.fdText, for: .selected)
-        button.titleLabel?.font = .fdBodySemibold
+        button.setTitleColor(UIColor(hexString: "#6D7381"), for: .normal)
+        button.setTitleColor(UIColor(hexString: "#1F2430"), for: .selected)
+        button.titleLabel?.font = .fdFont(ofSize: 16, weight: .regular)
         button.tag = tag
     }
 
     @objc private func tabTapped(_ sender: UIButton) {
-        delegate?.tabBarView(self, didSelect: sender.tag == 0 ? .content : .detail)
+        let tab: PackageDetailTab = sender.tag == 0 ? .content : .detail
+        select(tab, animated: true)
+        delegate?.tabBarView(self, didSelect: tab)
+    }
+}
+
+// MARK: - CGAffineTransform Extension
+
+private extension CGAffineTransform {
+    init(shearX: CGFloat, y: CGFloat) {
+        self.init(a: 1, b: y, c: shearX, d: 1, tx: 0, ty: 0)
     }
 }
 
 // MARK: - Floors
 
-/// 套餐详情下半区 — 白色卡片内：Tab + 权益楼层 + 详情楼层（连续展示）
+/// 套餐详情下半区 — 白色卡片内：Tab + 权益楼层 + 详情全量长图（连续展示）
 final class PackageDetailFloorsView: UIView {
 
     weak var tabDelegate: PackageDetailTabBarViewDelegate?
+    var onHeightChanged: (() -> Void)?
 
     let tabBarView = PackageDetailTabBarView()
     /// 权益楼层锚点（供滚动定位）
@@ -118,6 +136,7 @@ final class PackageDetailFloorsView: UIView {
     let detailFloorAnchor = UIView()
     private let contentStack = UIStackView()
     private let detailView = PackageDetailCardView()
+    private let illustImageView = UIImageView()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -150,7 +169,7 @@ final class PackageDetailFloorsView: UIView {
         setNeedsLayout()
     }
 
-    /// 楼层锚点在 floorsView 坐标系中的 minY（不含 sticky 扣减）
+    /// 楼层锚点在 floorsView 坐标系中的 minY
     func floorMinY(for tab: PackageDetailTab) -> CGFloat? {
         guard bounds.width > 0 else { return nil }
         layoutIfNeeded()
@@ -164,17 +183,32 @@ final class PackageDetailFloorsView: UIView {
     }
 
     private func setupUI() {
-        backgroundColor = .fdSurface
-        layer.cornerRadius = 12
+        backgroundColor = .white
+        layer.cornerRadius = 16
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOpacity = 0.06
         layer.shadowOffset = CGSize(width: 0, height: 2)
         layer.shadowRadius = 8
 
+        illustImageView.image = UIImage(named: "package_detail_benefits_illust")
+        illustImageView.contentMode = .scaleAspectFit
+        illustImageView.alpha = 0.4
+        illustImageView.isUserInteractionEnabled = false
+        addSubview(illustImageView)
+        illustImageView.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(-4)
+            $0.trailing.equalToSuperview().offset(4)
+            $0.size.equalTo(92)
+        }
+
         tabBarView.delegate = self
 
         contentStack.axis = .vertical
-        contentStack.spacing = 10
+        contentStack.spacing = 12
+
+        detailView.onImagesLoaded = { [weak self] in
+            self?.onHeightChanged?()
+        }
 
         let mainStack = UIStackView(arrangedSubviews: [
             tabBarView,
@@ -186,9 +220,9 @@ final class PackageDetailFloorsView: UIView {
         mainStack.axis = .vertical
         mainStack.spacing = 0
         mainStack.isLayoutMarginsRelativeArrangement = true
-        mainStack.layoutMargins = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        mainStack.layoutMargins = UIEdgeInsets(top: 14, left: 14, bottom: 16, right: 14)
         mainStack.setCustomSpacing(12, after: tabBarView)
-        mainStack.setCustomSpacing(12, after: contentStack)
+        mainStack.setCustomSpacing(16, after: contentStack)
         addSubview(mainStack)
 
         contentFloorAnchor.snp.makeConstraints { $0.height.equalTo(0) }
@@ -205,3 +239,4 @@ extension PackageDetailFloorsView: PackageDetailTabBarViewDelegate {
         tabDelegate?.tabBarView(view, didSelect: tab)
     }
 }
+

@@ -3,7 +3,7 @@ import SnapKit
 
 /// 全部订单列表 — 容器 VC
 ///
-/// 管理横向滚动 Tab + 8 个 OrderTabViewController（对齐 funde OrderListView）。
+/// 管理横向滚动 Tab + 8 个 OrderTabViewController（对齐 Figma 3509:9304）。
 final class OrderListViewController: BaseViewController {
 
     // MARK: - Tab 定义（funde 顺序）
@@ -21,8 +21,8 @@ final class OrderListViewController: BaseViewController {
 
     private let tabs: [TabItem] = [
         TabItem(title: "全部", status: nil, statusList: nil, routeKey: "all", emptyText: "暂无订单"),
-        TabItem(title: "待支付", status: 1, statusList: nil, routeKey: "pending_payment", emptyText: "暂无订单"),
-        TabItem(title: "待发货", status: 2, statusList: nil, routeKey: "paid_pending_delivery", emptyText: "暂无订单"),
+        TabItem(title: "待支付", status: 1, statusList: nil, routeKey: "pending_payment", emptyText: "暂无待支付订单"),
+        TabItem(title: "待发货", status: 2, statusList: nil, routeKey: "paid_pending_delivery", emptyText: "暂无待发货订单"),
         TabItem(title: "待收货", status: 3, statusList: nil, routeKey: "pending_receipt", emptyText: "暂无待收货订单"),
         TabItem(title: "使用中", status: 4, statusList: nil, routeKey: "in_progress", emptyText: "暂无使用中订单"),
         TabItem(title: "已逾期", status: 7, statusList: nil, routeKey: "overdue", emptyText: "暂无已逾期订单"),
@@ -51,11 +51,11 @@ final class OrderListViewController: BaseViewController {
     private lazy var tabCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
-        layout.minimumInteritemSpacing = 8
-        layout.minimumLineSpacing = 8
+        layout.minimumInteritemSpacing = 16
+        layout.minimumLineSpacing = 16
 
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        cv.backgroundColor = .fdBg
+        cv.backgroundColor = UIColor(hexString: "#FDF6F3")
         cv.showsHorizontalScrollIndicator = false
         cv.dataSource = self
         cv.delegate = self
@@ -116,15 +116,15 @@ final class OrderListViewController: BaseViewController {
     }
 
     override func setupUI() {
-        view.backgroundColor = .fdBg
+        view.backgroundColor = UIColor(hexString: "#FDF6F3")
 
         let tabContainer = UIView()
-        tabContainer.backgroundColor = .fdBg
+        tabContainer.backgroundColor = UIColor(hexString: "#FDF6F3")
         view.addSubview(tabContainer)
         tabContainer.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide)
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(6)
             make.leading.trailing.equalToSuperview()
-            make.height.equalTo(44)
+            make.height.equalTo(34)
         }
 
         tabContainer.addSubview(tabCollectionView)
@@ -134,7 +134,7 @@ final class OrderListViewController: BaseViewController {
 
         view.addSubview(containerView)
         containerView.snp.makeConstraints { make in
-            make.top.equalTo(tabContainer.snp.bottom)
+            make.top.equalTo(tabContainer.snp.bottom).offset(6)
             make.leading.trailing.bottom.equalToSuperview()
         }
     }
@@ -276,12 +276,12 @@ extension OrderListViewController: UICollectionViewDelegateFlowLayout {
     ) -> CGSize {
         let title = tabs[indexPath.item].title
         let width = title.boundingRect(
-            with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: 30),
+            with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: 32),
             options: .usesLineFragmentOrigin,
-            attributes: [.font: UIFont.fdCaptionSemibold],
+            attributes: [.font: UIFont.fdFont(ofSize: 14, weight: .medium)],
             context: nil
-        ).width + 16
-        return CGSize(width: ceil(width), height: 30)
+        ).width + 4
+        return CGSize(width: max(28, ceil(width)), height: 32)
     }
 
     func collectionView(

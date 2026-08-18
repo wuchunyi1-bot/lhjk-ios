@@ -111,7 +111,7 @@ final class HealthArchiveCardCell: UITableViewCell {
 
         illustView.image = UIImage(named: "health_archive_illust")
         illustView.contentMode = .scaleAspectFit
-        illustView.alpha = 0.66
+        illustView.alpha = 1.0
         illustView.isUserInteractionEnabled = false
 
         // 插画沉底，进度条 / 文案压在上面（对齐 Figma 层级）
@@ -119,7 +119,7 @@ final class HealthArchiveCardCell: UITableViewCell {
         [titleLbl, missBadge, missLabel, progressTrackBg, footerLbl, completeBtn].forEach(card.addSubview)
 
         illustView.snp.makeConstraints {
-            $0.trailing.equalToSuperview().offset(-8)
+            $0.trailing.equalToSuperview().offset(-16)
             $0.top.equalToSuperview().offset(4)
             $0.size.equalTo(98)
         }

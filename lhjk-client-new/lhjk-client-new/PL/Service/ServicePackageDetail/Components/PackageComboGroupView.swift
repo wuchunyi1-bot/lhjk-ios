@@ -1,12 +1,13 @@
 import UIKit
 import SnapKit
 
+/// 套餐权益规则分组卡片 — 对齐 Figma 3449:7828 / 3449:7872 / 3449:7913
 final class PackageComboGroupView: UIView {
 
     var onRadioSelect: ((Int) -> Void)?
     var onCheckToggle: ((Int) -> Void)?
 
-    /// 子项相对父项的左侧缩进（对齐 funde `--fd-s-6` ≈ 24pt）
+    /// 子项相对父项的左侧缩进
     private let childLeadingInset: CGFloat = 24
 
     func configure(
@@ -16,34 +17,17 @@ final class PackageComboGroupView: UIView {
     ) {
         subviews.forEach { $0.removeFromSuperview() }
 
-        let box = DashedBorderView()
-        let isRequired = group.selectMode == .required
-        box.backgroundColor = isRequired ? UIColor(hexString: "#FFF7F8") : .fdSurface
-        box.layer.cornerRadius = 12
-        box.clipsToBounds = true
-        box.borderColor = isRequired ? UIColor(hexString: "#F0708C") : .fdBorder
-        box.dashed = true
-        box.solidBorder = false
-        addSubview(box)
-        box.snp.makeConstraints { $0.edges.equalToSuperview() }
+        backgroundColor = UIColor(hexString: "#FFFCF8")
+        layer.cornerRadius = 16
+        layer.borderWidth = 1
+        layer.borderColor = UIColor(hexString: "#FFEEDC").cgColor
+        clipsToBounds = true
 
-        // 角标必须用「容器 + 固定高度」，UILabel 直接进 UIStackView 会被压成 0 高导致不显示
-        let badge = makeRuleBadge(mode: group.selectMode)
-
-        let divider = UIView()
-        divider.backgroundColor = .fdBorder
-
-        let header = UIView()
-        header.addSubview(badge)
-        header.addSubview(divider)
-        badge.snp.makeConstraints {
-            $0.top.leading.equalToSuperview()
-            $0.height.equalTo(20)
-        }
-        divider.snp.makeConstraints {
-            $0.top.equalTo(badge.snp.bottom).offset(8)
-            $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(1)
+        let header = makeHeaderView(mode: group.selectMode)
+        addSubview(header)
+        header.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.height.equalTo(42)
         }
 
         let rows = UIStackView()
@@ -62,45 +46,53 @@ final class PackageComboGroupView: UIView {
             )
         }
 
-        let stack = UIStackView(arrangedSubviews: [header, rows])
-        stack.axis = .vertical
-        stack.spacing = 0
-        box.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(12) }
+        addSubview(rows)
+        rows.snp.makeConstraints {
+            $0.top.equalTo(header.snp.bottom).offset(8)
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalToSuperview().inset(12)
+        }
     }
 
-    /// checkType → 必选 / 单选 / 可选
-    private func makeRuleBadge(mode: ServicePackageSelectMode) -> UIView {
-        let text: String
+    /// 顶部渐变标题条（—— 必选 / 单选 / 可选 ——）
+    private func makeHeaderView(mode: ServicePackageSelectMode) -> UIView {
+        let container = HeaderGradientView()
+
+        let leftWing = UIImageView(image: UIImage(named: "package_detail_wing_left"))
+        leftWing.contentMode = .scaleAspectFit
+
+        let rightWing = UIImageView(image: UIImage(named: "package_detail_wing_right"))
+        rightWing.contentMode = .scaleAspectFit
+
+        let titleLabel = UILabel()
+        let modeText: String
         switch mode {
-        case .required: text = "必选"
-        case .radio: text = "单选"
-        case .checkbox: text = "可选"
+        case .required: modeText = "必选"
+        case .radio: modeText = "单选"
+        case .checkbox: modeText = "可选"
+        }
+        titleLabel.text = modeText
+        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.textColor = UIColor(hexString: "#A25300")
+        titleLabel.textAlignment = .center
+
+        let stack = UIStackView(arrangedSubviews: [leftWing, titleLabel, rightWing])
+        stack.axis = .horizontal
+        stack.spacing = 8
+        stack.alignment = .center
+
+        leftWing.snp.makeConstraints {
+            $0.width.equalTo(62.5)
+            $0.height.equalTo(3)
+        }
+        rightWing.snp.makeConstraints {
+            $0.width.equalTo(62.5)
+            $0.height.equalTo(3)
         }
 
-        let container = UIView()
-        container.layer.cornerRadius = 10
-        container.clipsToBounds = true
-
-        let label = UILabel()
-        label.text = text
-        label.font = .fdMicroSemibold
-        label.textAlignment = .center
-        label.numberOfLines = 1
-
-        switch mode {
-        case .required:
-            container.backgroundColor = UIColor(hexString: "#FDE3E9")
-            label.textColor = UIColor(hexString: "#E0436B")
-        case .radio, .checkbox:
-            container.backgroundColor = .fdBg2
-            label.textColor = .fdText2
-        }
-
-        container.addSubview(label)
-        label.snp.makeConstraints {
-            $0.top.bottom.equalToSuperview().inset(2)
-            $0.leading.trailing.equalToSuperview().inset(8)
+        container.addSubview(stack)
+        stack.snp.makeConstraints {
+            $0.center.equalToSuperview()
         }
         return container
     }
@@ -112,7 +104,6 @@ final class PackageComboGroupView: UIView {
         checkPicks: Set<Int>
     ) -> Bool {
         let item = group.items[index]
-        // 子项无独立选中态（跟随父项，且不展示控件）
         if item.isChild { return false }
         switch group.selectMode {
         case .required:
@@ -136,30 +127,37 @@ final class PackageComboGroupView: UIView {
 
         let name = UILabel()
         name.text = item.name
-        name.font = .fdBody
+        name.font = .fdFont(ofSize: 14, weight: .regular)
         name.textColor = .fdText
-        name.numberOfLines = 2
+        name.numberOfLines = 0
+        name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
         let qty = UILabel()
         qty.text = item.qtyLabel
-        qty.font = .fdCaption
-        qty.textColor = .fdSubtext
+        qty.font = .fdFont(ofSize: 14, weight: .regular)
+        qty.textColor = .fdText
         qty.setContentHuggingPriority(.required, for: .horizontal)
+        qty.setContentCompressionResistancePriority(.required, for: .horizontal)
+
         let price = UILabel()
         price.text = item.priceLabel
-        price.font = .fdMonoFont(ofSize: 13, weight: .semibold)
+        price.font = .fdMonoFont(ofSize: 14, weight: .medium)
         price.textColor = .fdText
         price.setContentHuggingPriority(.required, for: .horizontal)
-        price.snp.makeConstraints { $0.width.greaterThanOrEqualTo(44) }
+        price.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        // 子项：不展示选择控件，不可点选
         let arranged: [UIView]
         if item.isChild {
+            arranged = [name, qty, price]
+            row.isEnabled = false
+        } else if group.selectMode == .required {
+            // 必选：无选择框，直接左对齐展示
             arranged = [name, qty, price]
             row.isEnabled = false
         } else {
             let ctrl = makeControl(group: group, selected: selected)
             arranged = [ctrl, name, qty, price]
-            row.isEnabled = group.selectMode != .required
+            row.isEnabled = true
         }
 
         let stack = UIStackView(arrangedSubviews: arranged)
@@ -168,6 +166,7 @@ final class PackageComboGroupView: UIView {
         stack.alignment = .center
         stack.isUserInteractionEnabled = false
         row.addSubview(stack)
+
         let leading = item.isChild ? childLeadingInset : 0
         stack.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(leading)
@@ -177,7 +176,7 @@ final class PackageComboGroupView: UIView {
 
         if showDivider {
             let line = UIView()
-            line.backgroundColor = .fdBorder
+            line.backgroundColor = UIColor(hexString: "#FFEEDC")
             row.addSubview(line)
             line.snp.makeConstraints {
                 $0.leading.equalToSuperview().offset(leading)
@@ -204,40 +203,55 @@ final class PackageComboGroupView: UIView {
     }
 
     private func makeControl(group: ServicePackageComboGroup, selected: Bool) -> UIView {
-        let onColor = UIColor(hexString: "#EE4D6F")
-        let box = UIView()
-        box.snp.makeConstraints { $0.size.equalTo(20) }
-
         let isRadio = group.selectMode == .radio
-        box.layer.cornerRadius = isRadio ? 10 : 6
-        box.layer.borderWidth = 1.5
+        let container = UIView()
+        container.snp.makeConstraints { $0.size.equalTo(14) }
 
         if selected {
+            let iv = UIImageView()
+            iv.contentMode = .scaleAspectFit
             if isRadio {
-                box.backgroundColor = .white
-                box.layer.borderColor = onColor.cgColor
-                let dot = UIView()
-                dot.backgroundColor = onColor
-                dot.layer.cornerRadius = 5
-                box.addSubview(dot)
-                dot.snp.makeConstraints { $0.center.equalToSuperview(); $0.size.equalTo(10) }
+                iv.image = UIImage(named: "package_detail_radio_checked")
             } else {
-                box.backgroundColor = onColor
-                box.layer.borderColor = onColor.cgColor
-                let iv = UIImageView(image: UIImage(systemName: "checkmark"))
-                iv.tintColor = .white
-                iv.contentMode = .scaleAspectFit
-                box.addSubview(iv)
-                iv.snp.makeConstraints { $0.center.equalToSuperview(); $0.size.equalTo(12) }
+                iv.image = UIImage(named: "package_detail_checkbox_checked")
             }
+            container.addSubview(iv)
+            iv.snp.makeConstraints { $0.edges.equalToSuperview() }
         } else {
+            let box = UIView()
+            box.layer.cornerRadius = isRadio ? 7 : 3.5
+            box.layer.borderWidth = 0.7
+            box.layer.borderColor = UIColor(hexString: "#535D72").cgColor
             box.backgroundColor = .clear
-            box.layer.borderColor = UIColor.fdBorder.cgColor
+            container.addSubview(box)
+            box.snp.makeConstraints { $0.edges.equalToSuperview() }
         }
 
-        if group.selectMode == .required {
-            box.alpha = 0.85
-        }
-        return box
+        return container
     }
 }
+
+// MARK: - 渐变标题条容器
+
+private final class HeaderGradientView: UIView {
+    private let gradientLayer = CAGradientLayer()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        gradientLayer.colors = [
+            UIColor(hexString: "#FFF7F0").cgColor,
+            UIColor(hexString: "#FFEDDB").cgColor
+        ]
+        gradientLayer.startPoint = CGPoint(x: 0, y: 0.5)
+        gradientLayer.endPoint = CGPoint(x: 1, y: 0.5)
+        layer.insertSublayer(gradientLayer, at: 0)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        gradientLayer.frame = bounds
+    }
+}
+

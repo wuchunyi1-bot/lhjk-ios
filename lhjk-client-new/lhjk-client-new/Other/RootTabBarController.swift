@@ -45,8 +45,8 @@ final class RootTabBarController: UITabBarController {
         let homeNav = BaseNavigationController(rootViewController: homeVC)
         homeNav.tabBarItem = UITabBarItem(
             title: "首页",
-            image: UIImage(systemName: "house"),
-            selectedImage: UIImage(systemName: "house.fill")
+            image: UIImage(named: "tab_home_normal")?.withRenderingMode(.alwaysOriginal),
+            selectedImage: UIImage(named: "tab_home_selected")?.withRenderingMode(.alwaysOriginal)
         )
 
         // 健康
@@ -54,8 +54,8 @@ final class RootTabBarController: UITabBarController {
         let healthNav = BaseNavigationController(rootViewController: healthVC)
         healthNav.tabBarItem = UITabBarItem(
             title: "健康",
-            image: UIImage(systemName: "heart"),
-            selectedImage: UIImage(systemName: "heart.fill")
+            image: UIImage(named: "tab_health_normal")?.withRenderingMode(.alwaysOriginal),
+            selectedImage: UIImage(named: "tab_health_selected")?.withRenderingMode(.alwaysOriginal)
         )
 
         // 服务
@@ -63,8 +63,8 @@ final class RootTabBarController: UITabBarController {
         let serviceNav = BaseNavigationController(rootViewController: serviceVC)
         serviceNav.tabBarItem = UITabBarItem(
             title: "服务",
-            image: UIImage(systemName: "briefcase"),
-            selectedImage: UIImage(systemName: "briefcase.fill")
+            image: UIImage(named: "tab_service_normal")?.withRenderingMode(.alwaysOriginal),
+            selectedImage: UIImage(named: "tab_service_selected")?.withRenderingMode(.alwaysOriginal)
         )
 
         // 消息
@@ -72,8 +72,8 @@ final class RootTabBarController: UITabBarController {
         let msgNav = BaseNavigationController(rootViewController: messageVC)
         msgNav.tabBarItem = UITabBarItem(
             title: "消息",
-            image: UIImage(systemName: "message"),
-            selectedImage: UIImage(systemName: "message.fill")
+            image: UIImage(named: "tab_message_normal")?.withRenderingMode(.alwaysOriginal),
+            selectedImage: UIImage(named: "tab_message_selected")?.withRenderingMode(.alwaysOriginal)
         )
         messageNav = msgNav
 
@@ -82,8 +82,8 @@ final class RootTabBarController: UITabBarController {
         let myNav = BaseNavigationController(rootViewController: myVC)
         myNav.tabBarItem = UITabBarItem(
             title: "我的",
-            image: UIImage(systemName: "person"),
-            selectedImage: UIImage(systemName: "person.fill")
+            image: UIImage(named: "tab_my_normal")?.withRenderingMode(.alwaysOriginal),
+            selectedImage: UIImage(named: "tab_my_selected")?.withRenderingMode(.alwaysOriginal)
         )
 
         viewControllers = [homeNav, healthNav, serviceNav, msgNav, myNav]

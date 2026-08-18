@@ -88,6 +88,7 @@ AD:Vip / ServiceComment / CheckUserMsg → 各自 variant
 | 字段 | 用途 |
 |------|------|
 | `sysNotifyContent` 等 | 四种协议 Content |
+| 顶层 `messageType` | 协议卡整型类型（安卓字段；如监测上传为 `2`）。与 `extra.type`（如 `warning` / `realTime`）不是同一字段 |
 | Resolved.`monitorRows` | 新监测卡行 |
 | Resolved.`dataSourceTag` / `monitorType` | tag / 图标 |
 | `lastMsgDisplayContent` | 会话列表摘要 |

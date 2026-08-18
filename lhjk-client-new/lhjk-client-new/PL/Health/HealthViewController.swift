@@ -2,13 +2,29 @@ import UIKit
 import SnapKit
 import Combine
 
-/// 健康模块 Hub — 对齐 Figma 3021:1121
+/// 健康模块 Hub — 对齐 Figma 3444:4712 / 3021:1121
 ///
-/// Section 0: HealthScoreCardCell（本地）
-/// Section 1: HealthArchiveCardCell（本地）
-/// Section 2: HealthVitalMetricsCell（API）
-/// Section 3: HealthQuickEntriesCell（CMS，可空隐藏）
+/// Section 0: HealthScoreCardCell（健康评分卡）
+/// Section 1: HealthArchiveCardCell（健康档案完整度）
+/// Section 2: HealthQuickEntriesCell（金刚区快捷入口）
+/// Section 3: HealthVitalMetricsCell（体征监测卡片）
 final class HealthViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate {
+
+    private enum SectionType {
+        case score
+        case archive
+        case quickEntries
+        case vitalMetrics
+    }
+
+    private var activeSections: [SectionType] {
+        var list: [SectionType] = [.score, .archive]
+        if !viewModel.quickEntries.isEmpty {
+            list.append(.quickEntries)
+        }
+        list.append(.vitalMetrics)
+        return list
+    }
 
     private let riskScore = 62
     private let riskLevel = "中风险"
@@ -28,8 +44,8 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         tv.delegate = self
         tv.register(HealthScoreCardCell.self, forCellReuseIdentifier: HealthScoreCardCell.reuseIdentifier)
         tv.register(HealthArchiveCardCell.self, forCellReuseIdentifier: HealthArchiveCardCell.reuseIdentifier)
-        tv.register(HealthVitalMetricsCell.self, forCellReuseIdentifier: HealthVitalMetricsCell.reuseIdentifier)
         tv.register(HealthQuickEntriesCell.self, forCellReuseIdentifier: HealthQuickEntriesCell.reuseIdentifier)
+        tv.register(HealthVitalMetricsCell.self, forCellReuseIdentifier: HealthVitalMetricsCell.reuseIdentifier)
         tv.contentInsetAdjustmentBehavior = .never
         tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 90, right: 0)
         tv.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: 90, right: 0)
@@ -84,52 +100,60 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
 
     // MARK: - Sections
 
-    private var sectionCount: Int {
-        viewModel.quickEntries.isEmpty ? 3 : 4
+    func numberOfSections(in tableView: UITableView) -> Int {
+        activeSections.count
     }
-
-    func numberOfSections(in tableView: UITableView) -> Int { sectionCount }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { 1 }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        switch indexPath.section {
-        case 0:
+        guard indexPath.section < activeSections.count else { return UITableViewCell() }
+        switch activeSections[indexPath.section] {
+        case .score:
             let cell = tableView.dequeueReusableCell(withIdentifier: HealthScoreCardCell.reuseIdentifier, for: indexPath) as! HealthScoreCardCell
             cell.configure(riskScore: riskScore, riskLevel: riskLevel)
             return cell
-        case 1:
+        case .archive:
             let cell = tableView.dequeueReusableCell(withIdentifier: HealthArchiveCardCell.reuseIdentifier, for: indexPath) as! HealthArchiveCardCell
             cell.configure(archiveProgress: archiveProgress)
             cell.onCompleteTap = { [weak self] in self?.goToRecord() }
             return cell
-        case 2:
-            let cell = tableView.dequeueReusableCell(withIdentifier: HealthVitalMetricsCell.reuseIdentifier, for: indexPath) as! HealthVitalMetricsCell
-            cell.configure(metrics: viewModel.metrics)
-            cell.onMetricTap = { [weak self] item in
-                guard let self else { return }
-                Router.shared.push(self.viewModel.route(for: item))
-            }
-            cell.onEditTap = { Router.shared.push("/health/metrics/edit") }
-            return cell
-        case 3:
+        case .quickEntries:
             let cell = tableView.dequeueReusableCell(withIdentifier: HealthQuickEntriesCell.reuseIdentifier, for: indexPath) as! HealthQuickEntriesCell
             cell.configure(entries: viewModel.quickEntries)
             cell.onEntryTap = { [weak self] pageUrl in
                 guard let self else { return }
-                let title = self.viewModel.quickEntries.first { $0.pageUrl == pageUrl }?.name
-                FundePageURL.open(pageUrl, title: title, from: self)
+                if pageUrl.hasPrefix("/") {
+                    Router.shared.push(pageUrl)
+                } else {
+                    let title = self.viewModel.quickEntries.first { $0.pageUrl == pageUrl }?.name
+                    FundePageURL.open(pageUrl, title: title, from: self)
+                }
             }
             return cell
-        default:
-            return UITableViewCell()
+        case .vitalMetrics:
+            let cell = tableView.dequeueReusableCell(withIdentifier: HealthVitalMetricsCell.reuseIdentifier, for: indexPath) as! HealthVitalMetricsCell
+            cell.configure(metrics: viewModel.metrics)
+            cell.onMetricTap = { [weak self] item in
+                guard let self else { return }
+                if FundePageURL.canOpen(item.pageUrl) {
+                    FundePageURL.open(item.pageUrl, title: item.label, from: self)
+                } else {
+                    Router.shared.push(self.viewModel.route(for: item))
+                }
+            }
+            cell.onEditTap = { Router.shared.push("/health/metrics/edit") }
+            return cell
         }
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        switch indexPath.section {
-        case 2: return HealthVitalMetricsCell.height(for: viewModel.metrics.count)
-        default: return UITableView.automaticDimension
+        guard indexPath.section < activeSections.count else { return UITableView.automaticDimension }
+        switch activeSections[indexPath.section] {
+        case .vitalMetrics:
+            return HealthVitalMetricsCell.height(for: viewModel.metrics.count)
+        default:
+            return UITableView.automaticDimension
         }
     }
 

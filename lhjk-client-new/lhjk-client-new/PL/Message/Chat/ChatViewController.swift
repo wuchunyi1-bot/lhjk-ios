@@ -54,11 +54,10 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         tv.register(CenteredTipCell.self, forCellReuseIdentifier: CenteredTipCell.reuseID)
         tv.register(VoiceBubbleCell.self, forCellReuseIdentifier: VoiceBubbleCell.reuseID)
         tv.keyboardDismissMode = .interactive
-        tv.refreshControl = refreshControl
         return tv
     }()
 
-    private let refreshControl: UIRefreshControl = {
+    private lazy var refreshControl: UIRefreshControl = {
         let rc = UIRefreshControl()
         rc.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
         return rc
@@ -206,6 +205,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         }
 
         [tableView, inputBar].forEach(view.addSubview)
+        tableView.refreshControl = refreshControl
 
         tableView.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview()

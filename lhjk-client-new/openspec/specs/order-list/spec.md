@@ -34,7 +34,7 @@
 | 8 | 已取消 | 已取消（仅「全部」可见） |
 | 9 | 退款审核中 | 退款审核中（仅在「全部」等 Tab 可见） |
 
-### UI Tab → API 筛选（对齐 funde 8 Tab）
+### UI Tab → API 筛选（对齐 funde 8 Tab 与 Figma 3509:9304）
 
 | Tab | API 参数 |
 |-----|---------|
@@ -47,7 +47,17 @@
 | 退款/售后 | `status=6` |
 | 已完成 | `status=5` |
 
-Tab 使用 UICollectionView 横向滚动；**恰好 8 个**，顺序同表。
+Tab 使用 UICollectionView 横向滚动；**恰好 8 个**，顺序同表。选中项下方展示 18×4pt 圆角橙色指示条（`#FF7A50`），文字加粗为 14pt Medium（`#1F2942`）。
+
+### UI 设计规范（对齐 Figma 3509:9304）
+
+- **页面背景**：`#FDF6F3`
+- **卡片容器**：白色圆角 16pt，内边距 12pt，卡片间距 12pt
+- **卡片头部**：16×16pt 机构图标（`order_institution_icon`）+ 16pt Medium 机构名称（`#1F2430`）+ 右侧 14pt Medium 状态文案（`#FF7A50`，纯文字无胶囊框）
+- **特色通知条（可选）**：当订单包含退款驳回/清算驳回原因（`refuseReasons`）时展示，背景采用粉红渐变装饰条（`order_notice_bg_single` / `order_notice_bg_double`），搭配 14×14pt 红色叹号图标（`order_notice_alert_icon`）及 10pt 警告文案（`#F93838`）
+- **商品/套餐信息区**：`#FFF9F6` 浅粉色底块，圆角 12pt，包含 84×84pt 商品图（无图时展示 `order_package_placeholder`）、14pt Medium 商品标题、14pt Regular 商品简介，以及右下角 12pt 符号与 16pt Medium 金额（`#1F2942`）。金额取值见下方「列表卡片金额展示」
+- **操作按钮**：高度 28pt，最小宽度 77pt，圆角 14pt 胶囊状，12pt Medium 字体。主按钮为纯色填充（`#FF7950`），次按钮为 0.5pt 细边框线框（`#FF7950`）
+- **空状态**：展示 84×84pt 占位图（`order_package_placeholder`）及 14pt Regular 文案（`#8591AB`）
 
 ### Response Data Model: AppOrderListBO
 
@@ -59,8 +69,9 @@ Tab 使用 UICollectionView 横向滚动；**恰好 8 个**，顺序同表。
 | `parentId` | Int64 | 关联父订单 id |
 | `orderName` | String | 订单产品名称 |
 | `status` | Int | 订单状态（1-9） |
-| `payable` | Double | 应付金额 |
-| `price` | Double | 实付金额 |
+| `payable` | Double | 套包金额（不含优惠券、权益卡和运费）；**列表卡片金额不使用该字段** |
+| `settlementAmount` | Double | 订单应付金额（套包金额加运费并扣除优惠券、权益卡） |
+| `price` | Double | 订单实付金额 |
 | `createTime` | String | 创建时间 |
 | `hospitalName` | String | 医院名称 |
 | `doctorName` | String | 医生姓名 |
@@ -88,6 +99,20 @@ Tab 使用 UICollectionView 横向滚动；**恰好 8 个**，顺序同表。
 **待发货**：用户侧仅「取消订单」，不展示「确认发货」。
 
 **确认收货终态**：客户端提交确认收货后刷新；是否进入已完成由后端处理。
+
+### 列表卡片金额展示
+
+卡片右下角金额（如 `¥760`）统一按下表取值，**不再**优先使用 `payable`：
+
+| 条件 | 展示字段 | 含义 |
+|------|----------|------|
+| `price != null` | `price` | 订单实付金额 |
+| `price == null` | `settlementAmount` | 订单应付金额 |
+| 两者均为 `null` | `0` | 兜底，避免空白 |
+
+- `0` 视为有效实付（已支付 0 元），**不得**当作 `null` 回退到 `settlementAmount`
+- 缺失与 JSON `null` 均视为 `price == null`
+- 文案格式：`¥` + 最多 2 位小数（整数不强制补 `.00`）
 
 ### Paginated Response
 
@@ -122,6 +147,25 @@ Apifox 标准分页为中文 key，解码时同时兼容英文别名：
 #### Scenario: 状态标签
 - **WHEN** 订单列表加载完成
 - **THEN** 每个订单卡片显示对应状态的彩色标签
+
+---
+
+### Requirement: 列表卡片金额
+系统 SHALL 按「实付优先、应付兜底」展示订单列表卡片金额。
+
+#### Scenario: 已有实付金额
+- **WHEN** 列表接口 `AppOrderListBO.price` 不为 `null`
+- **THEN** 卡片金额展示 `price`（订单实付金额）
+- **AND** **不得**改用 `payable` 或 `settlementAmount`
+
+#### Scenario: 尚无实付金额
+- **WHEN** `price` 为 `null` 或字段缺失
+- **AND** `settlementAmount` 不为 `null`
+- **THEN** 卡片金额展示 `settlementAmount`（订单应付金额）
+
+#### Scenario: 金额字段均缺失
+- **WHEN** `price` 与 `settlementAmount` 均为 `null`
+- **THEN** 卡片金额展示 `¥0`
 
 ---
 

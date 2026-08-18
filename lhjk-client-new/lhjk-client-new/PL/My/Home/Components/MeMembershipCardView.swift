@@ -1,159 +1,178 @@
 import UIKit
 import SnapKit
 
-/// 会员卡视图 — 对齐 MeView.vue membership-card 多状态
+/// 健康大会员资产卡片 — 对齐 Figma 3594:8603
 final class MeMembershipCardView: UIView {
 
-    var onCardTap: (() -> Void)?
-    var onPrimaryTap: (() -> Void)?
-    var onUpgradeTap: (() -> Void)?
-    var onBenefitsTap: (() -> Void)?
+    struct AssetItem {
+        let label: String
+        let value: String
+        let route: String
+    }
 
-    private let brandLabel = UILabel()
-    private let typeLabel = UILabel()
-    private let benefitLabel = UILabel()
-    private let dateLabel = UILabel()
-    private let actionsStack = UIStackView()
-    private let iconWrap = UIView()
+    var onTitleTap: (() -> Void)?
+    var onRedemptionTap: (() -> Void)?
+    var onAssetTap: ((Int) -> Void)?
+
+    private let bgImageView = UIImageView()
+    private let featherIconView = UIImageView()
+    private let titleLabel = UILabel()
+    private let titleButton = UIButton(type: .custom)
+    private let redemptionLabel = UILabel()
+    private let redemptionArrow = UIImageView()
+    private let redemptionButton = UIButton(type: .custom)
+    private let assetsStack = UIStackView()
+    private var valueLabels: [UILabel] = []
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        layer.cornerRadius = 18
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        layer.cornerRadius = 16
         clipsToBounds = true
-        isUserInteractionEnabled = true
-        addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(cardTapped)))
 
-        let gradient = CAGradientLayer()
-        gradient.colors = [
-            UIColor(hexString: "#FF9A6B").cgColor,
-            UIColor(hexString: "#FF7A50").cgColor,
-            UIColor(hexString: "#F05A3A").cgColor,
-        ]
-        gradient.startPoint = CGPoint(x: 0, y: 0)
-        gradient.endPoint = CGPoint(x: 1, y: 1)
-        gradient.frame = bounds
-        gradient.name = "bg"
-        layer.insertSublayer(gradient, at: 0)
+        bgImageView.image = UIImage(named: "me_membership_card_bg")
+        bgImageView.contentMode = .scaleToFill
+        addSubview(bgImageView)
+        bgImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        iconWrap.backgroundColor = UIColor.white.withAlphaComponent(0.24)
-        iconWrap.layer.cornerRadius = 14
-        let icon = UIImageView(image: UIImage(systemName: "crown.fill"))
-        icon.tintColor = .white
-        icon.contentMode = .scaleAspectFit
-        iconWrap.addSubview(icon)
-        icon.snp.makeConstraints { $0.center.equalToSuperview(); $0.size.equalTo(14) }
-
-        brandLabel.text = "健康大会员"
-        brandLabel.font = .fdBodySemibold
-        brandLabel.textColor = .white
-
-        typeLabel.font = .fdMicroSemibold
-        typeLabel.textColor = UIColor.white.withAlphaComponent(0.96)
-        typeLabel.backgroundColor = UIColor.white.withAlphaComponent(0.2)
-        typeLabel.layer.cornerRadius = 999
-        typeLabel.clipsToBounds = true
-        typeLabel.textAlignment = .center
-
-        benefitLabel.font = .fdCaption
-        benefitLabel.textColor = UIColor.white.withAlphaComponent(0.88)
-        benefitLabel.numberOfLines = 2
-
-        dateLabel.font = .fdCaption
-        dateLabel.textColor = UIColor.white.withAlphaComponent(0.78)
-
-        actionsStack.axis = .horizontal
-        actionsStack.spacing = 8
-        actionsStack.alignment = .center
-        actionsStack.distribution = .fill
-
-        let brandRow = UIStackView(arrangedSubviews: [iconWrap, brandLabel, UIView(), typeLabel])
-        brandRow.axis = .horizontal
-        brandRow.spacing = 8
-        brandRow.alignment = .center
-
-        let content = UIStackView(arrangedSubviews: [benefitLabel, dateLabel])
-        content.axis = .vertical
-        content.spacing = 3
-
-        let root = UIStackView(arrangedSubviews: [brandRow, content, actionsStack])
-        root.axis = .vertical
-        root.spacing = 8
-        addSubview(root)
-
-        iconWrap.snp.makeConstraints { $0.size.equalTo(28) }
-        root.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 14, left: 16, bottom: 14, right: 16)) }
-        snp.makeConstraints { $0.height.greaterThanOrEqualTo(92) }
-    }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        layer.sublayers?.first(where: { $0.name == "bg" })?.frame = bounds
-    }
-
-    struct DisplayConfig {
-        var typeText: String = ""
-        var benefitText: String = ""
-        var dateText: String = ""
-        var primaryActionTitle: String? = nil
-        var upgradeTitle: String? = nil
-        var showsBenefitsButton: Bool = false
-    }
-
-    func configure(_ config: DisplayConfig) {
-        let type = config.typeText
-        typeLabel.isHidden = type.isEmpty
-        if !type.isEmpty {
-            typeLabel.text = "  \(type)  "
+        // Top Row - Left Title
+        featherIconView.image = UIImage(named: "me_member_feather_icon")
+        featherIconView.contentMode = .scaleAspectFit
+        addSubview(featherIconView)
+        featherIconView.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(11.5)
+            $0.top.equalToSuperview().offset(11.5)
+            $0.size.equalTo(20)
         }
 
-        benefitLabel.text = config.benefitText
-        let date = config.dateText
-        dateLabel.isHidden = date.isEmpty
-        dateLabel.text = date
+        titleLabel.text = "健康大会员"
+        titleLabel.font = .fdFont(ofSize: 16, weight: .semibold)
+        titleLabel.textColor = UIColor(hexString: "#754200")
+        addSubview(titleLabel)
+        titleLabel.snp.makeConstraints {
+            $0.leading.equalTo(featherIconView.snp.trailing).offset(2)
+            $0.centerY.equalTo(featherIconView)
+        }
 
-        actionsStack.arrangedSubviews.forEach {
-            actionsStack.removeArrangedSubview($0)
+        titleButton.addTarget(self, action: #selector(handleTitleTap), for: .touchUpInside)
+        addSubview(titleButton)
+        titleButton.snp.makeConstraints {
+            $0.leading.top.equalToSuperview()
+            $0.trailing.equalTo(titleLabel.snp.trailing).offset(8)
+            $0.bottom.equalTo(titleLabel.snp.bottom).offset(8)
+        }
+
+        // Top Row - Right "会员兑换" + Arrow
+        redemptionArrow.image = UIImage(named: "me_list_more_arrow")
+        redemptionArrow.tintColor = UIColor(hexString: "#D18640")
+        redemptionArrow.contentMode = .scaleAspectFit
+        addSubview(redemptionArrow)
+        redemptionArrow.snp.makeConstraints {
+            $0.trailing.equalToSuperview().offset(-16.5)
+            $0.centerY.equalTo(featherIconView)
+            $0.size.equalTo(12)
+        }
+
+        redemptionLabel.text = "会员兑换"
+        redemptionLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        redemptionLabel.textColor = UIColor(hexString: "#D18640")
+        addSubview(redemptionLabel)
+        redemptionLabel.snp.makeConstraints {
+            $0.trailing.equalTo(redemptionArrow.snp.leading).offset(-2)
+            $0.centerY.equalTo(featherIconView)
+        }
+
+        redemptionButton.addTarget(self, action: #selector(handleRedemptionTap), for: .touchUpInside)
+        addSubview(redemptionButton)
+        redemptionButton.snp.makeConstraints {
+            $0.trailing.top.equalToSuperview()
+            $0.leading.equalTo(redemptionLabel.snp.leading).offset(-8)
+            $0.bottom.equalTo(redemptionLabel.snp.bottom).offset(8)
+        }
+
+        // Bottom 4 Columns Stack
+        assetsStack.axis = .horizontal
+        assetsStack.distribution = .fillEqually
+        assetsStack.alignment = .fill
+        addSubview(assetsStack)
+        assetsStack.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview()
+            $0.top.equalToSuperview().offset(42.5)
+            $0.bottom.equalToSuperview()
+        }
+
+        snp.makeConstraints {
+            $0.height.equalTo(132)
+        }
+    }
+
+    func configure(assets: [AssetItem]) {
+        assetsStack.arrangedSubviews.forEach {
+            assetsStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
-        actionsStack.addArrangedSubview(UIView()) // spacer
+        valueLabels.removeAll()
 
-        if let primary = config.primaryActionTitle {
-            actionsStack.addArrangedSubview(makeButton(title: primary, style: .primary, action: #selector(primaryTapped)))
-        }
-        if let upgrade = config.upgradeTitle {
-            actionsStack.addArrangedSubview(makeButton(title: upgrade, style: .soft, action: #selector(upgradeTapped)))
-        }
-        if config.showsBenefitsButton {
-            actionsStack.addArrangedSubview(makeButton(title: "我的权益", style: .soft, action: #selector(benefitsTapped)))
+        for (index, asset) in assets.enumerated() {
+            let col = UIView()
+            let button = UIButton(type: .custom)
+            button.tag = index
+            button.addTarget(self, action: #selector(handleAssetTap(_:)), for: .touchUpInside)
+            col.addSubview(button)
+            button.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+            let valueLbl = UILabel()
+            valueLbl.text = asset.value
+            valueLbl.font = .fdFont(ofSize: 18, weight: .medium)
+            valueLbl.textColor = UIColor(hexString: "#754200")
+            valueLbl.textAlignment = .center
+            valueLbl.isUserInteractionEnabled = false
+
+            let labelLbl = UILabel()
+            labelLbl.text = asset.label
+            labelLbl.font = .fdFont(ofSize: 12, weight: .regular)
+            labelLbl.textColor = UIColor(hexString: "#754200")
+            labelLbl.textAlignment = .center
+            labelLbl.isUserInteractionEnabled = false
+
+            button.addSubview(valueLbl)
+            button.addSubview(labelLbl)
+
+            valueLbl.snp.makeConstraints {
+                $0.top.equalToSuperview().offset(25)
+                $0.centerX.equalToSuperview()
+            }
+            labelLbl.snp.makeConstraints {
+                $0.top.equalTo(valueLbl.snp.bottom).offset(4)
+                $0.centerX.equalToSuperview()
+            }
+
+            valueLabels.append(valueLbl)
+            assetsStack.addArrangedSubview(col)
         }
     }
 
-    private enum Style { case primary, soft }
-
-    private func makeButton(title: String, style: Style, action: Selector) -> UIButton {
-        let b = UIButton(type: .system)
-        b.setTitle(title, for: .normal)
-        b.titleLabel?.font = .fdMicroSemibold
-        b.contentEdgeInsets = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
-        b.layer.cornerRadius = 14
-        b.clipsToBounds = true
-        b.snp.makeConstraints { $0.height.equalTo(28) }
-        switch style {
-        case .primary:
-            b.backgroundColor = UIColor.white.withAlphaComponent(0.95)
-            b.setTitleColor(.fdPrimary, for: .normal)
-        case .soft:
-            b.backgroundColor = UIColor.white.withAlphaComponent(0.2)
-            b.setTitleColor(.white, for: .normal)
-        }
-        b.addTarget(self, action: action, for: .touchUpInside)
-        return b
+    func updateAssetValue(at index: Int, value: String) {
+        guard index < valueLabels.count else { return }
+        valueLabels[index].text = value
     }
 
-    @objc private func cardTapped() { onCardTap?() }
-    @objc private func primaryTapped() { onPrimaryTap?() }
-    @objc private func upgradeTapped() { onUpgradeTap?() }
-    @objc private func benefitsTapped() { onBenefitsTap?() }
+    @objc private func handleTitleTap() {
+        onTitleTap?()
+    }
+
+    @objc private func handleRedemptionTap() {
+        onRedemptionTap?()
+    }
+
+    @objc private func handleAssetTap(_ sender: UIButton) {
+        onAssetTap?(sender.tag)
+    }
 }

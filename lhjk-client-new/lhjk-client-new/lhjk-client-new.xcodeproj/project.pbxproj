@@ -312,6 +312,7 @@
 		A5CB0BCA3021935F0076FAFB /* MetricCardEditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CB0BC63021935F0076FAFB /* MetricCardEditViewModel.swift */; };
 		A5CB0BCB3021935F0076FAFB /* MetricCardEditViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CB0BC83021935F0076FAFB /* MetricCardEditViewController.swift */; };
 		A5CB0BCE302193B20076FAFB /* HealthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CB0BCC302193B20076FAFB /* HealthViewModel.swift */; };
+		A5CE1D0230331A4800A79706 /* RongEmoji.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CE1D0130331A4800A79706 /* RongEmoji.swift */; };
 		A5CF597930077AA40067A4DE /* ServiceListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597830077AA40067A4DE /* ServiceListViewModel.swift */; };
 		A5CF597A30077AA40067A4DE /* HealthMallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597730077AA40067A4DE /* HealthMallViewModel.swift */; };
 		A5CF597C30077C6A0067A4DE /* RetailCategoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597B30077C6A0067A4DE /* RetailCategoryService.swift */; };
@@ -650,6 +651,7 @@
 		A5CB0BC63021935F0076FAFB /* MetricCardEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCardEditViewModel.swift; sourceTree = "<group>"; };
 		A5CB0BC83021935F0076FAFB /* MetricCardEditViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCardEditViewController.swift; sourceTree = "<group>"; };
 		A5CB0BCC302193B20076FAFB /* HealthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthViewModel.swift; sourceTree = "<group>"; };
+		A5CE1D0130331A4800A79706 /* RongEmoji.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RongEmoji.swift; path = DAL/IM/RongEmoji.swift; sourceTree = "<group>"; };
 		A5CF597730077AA40067A4DE /* HealthMallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthMallViewModel.swift; sourceTree = "<group>"; };
 		A5CF597830077AA40067A4DE /* ServiceListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceListViewModel.swift; sourceTree = "<group>"; };
 		A5CF597B30077C6A0067A4DE /* RetailCategoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RetailCategoryService.swift; path = BLL/Service/RetailCategoryService.swift; sourceTree = "<group>"; };
@@ -2207,6 +2209,7 @@
 		ECD3693CC57BA01CDA4D232D /* IM */ = {
 			isa = PBXGroup;
 			children = (
+				A5CE1D0130331A4800A79706 /* RongEmoji.swift */,
 				A5B4800F302DA29400319851 /* NotificationMessageMapper.swift */,
 				A5A6F52B2FFF7D240065C921 /* CustomMessages */,
 				A5A6F52C2FFF7D240065C921 /* GroupVO.swift */,
@@ -2567,6 +2570,7 @@
 				A590FCE42FEA91170056EF52 /* HomeViewController.swift in Sources */,
 				A5A6F51E2FFF7C700065C921 /* VoucherListViewController.swift in Sources */,
 				A590FCE52FEA91170056EF52 /* BodyFigureView.swift in Sources */,
+				A5CE1D0230331A4800A79706 /* RongEmoji.swift in Sources */,
 				A590FCE62FEA91170056EF52 /* BrandHeaderView.swift in Sources */,
 				A5ACE2413000D5C200056C52 /* ServicePackageDetailViewController.swift in Sources */,
 				A590FCE72FEA91170056EF52 /* AppointmentsViewController.swift in Sources */,

@@ -2,7 +2,7 @@ import UIKit
 import SnapKit
 import Combine
 
-/// 确认订单页 — 对齐 funde OrderConfirmView / PRD-605
+/// 确认订单页 — 对齐 Figma 3566:7135
 final class OrderConfirmViewController: BaseViewController {
 
     private let viewModel: OrderConfirmViewModel
@@ -21,9 +21,7 @@ final class OrderConfirmViewController: BaseViewController {
     private let pickupView = OrderConfirmPickupView()
     private let packageCard = OrderConfirmCardView()
     private let packageView = OrderConfirmPackageView()
-    private let remarkRow = OrderConfirmSelectRow()
-    private let couponRow = OrderConfirmSelectRow()
-    private let benefitRow = OrderConfirmSelectRow()
+    private let optionsCard = OrderConfirmOptionsCardView()
     private let feeView = OrderConfirmFeeView()
     private let payMethodView = OrderConfirmPayMethodView()
     private let statusView = OrderDetailStatusView()
@@ -58,7 +56,7 @@ final class OrderConfirmViewController: BaseViewController {
 
     override func setupUI() {
         title = showsOrderListPayPresentation ? "订单详情" : "确认订单"
-        view.backgroundColor = .fdBg
+        view.backgroundColor = UIColor(hexString: "#FDF6F3")
 
         scrollView.showsVerticalScrollIndicator = false
         scrollView.alwaysBounceVertical = true
@@ -96,9 +94,7 @@ final class OrderConfirmViewController: BaseViewController {
             addressCard,
             pickupCard,
             packageCard,
-            remarkRow,
-            couponRow,
-            benefitRow,
+            optionsCard,
             feeView,
             payMethodView,
         ]
@@ -130,9 +126,6 @@ final class OrderConfirmViewController: BaseViewController {
         addressView.onTap = { [weak self] in
             self?.pushAddressSelection()
         }
-        addressView.onCall = { [weak self] in
-            self?.callInstitution()
-        }
         pickupView.onCall = { [weak self] in
             self?.callInstitution()
         }
@@ -140,9 +133,15 @@ final class OrderConfirmViewController: BaseViewController {
             guard let self else { return }
             self.viewModel.contentExpanded.toggle()
         }
-        remarkRow.addTarget(self, action: #selector(tapRemark), for: .touchUpInside)
-        couponRow.addTarget(self, action: #selector(tapCoupon), for: .touchUpInside)
-        benefitRow.addTarget(self, action: #selector(tapBenefit), for: .touchUpInside)
+        optionsCard.onTapRemark = { [weak self] in
+            self?.tapRemark()
+        }
+        optionsCard.onTapCoupon = { [weak self] in
+            self?.tapCoupon()
+        }
+        optionsCard.onTapBenefit = { [weak self] in
+            self?.tapBenefit()
+        }
         payMethodView.onSelect = { [weak self] method in
             self?.viewModel.payMethod = method
         }
@@ -305,23 +304,16 @@ final class OrderConfirmViewController: BaseViewController {
             totalCount: draft.selectedItems.count
         )
 
-        let remarkText = viewModel.remark.trimmingCharacters(in: .whitespacesAndNewlines)
-        remarkRow.configure(
-            title: "订单备注",
-            value: remarkText.isEmpty ? "选填" : remarkText,
-            placeholder: remarkText.isEmpty
+        optionsCard.configureRemark(text: viewModel.remark)
+        optionsCard.configureCoupon(
+            text: viewModel.couponSummaryText,
+            isPlaceholder: viewModel.couponSummaryIsPlaceholder,
+            hasAvailable: viewModel.availableCouponCount > 0 || viewModel.couponDiscount > 0
         )
-        couponRow.configure(
-            title: "优惠券",
-            value: viewModel.couponSummaryText,
-            placeholder: viewModel.couponSummaryIsPlaceholder,
-            emphasis: viewModel.couponDiscount > 0
-        )
-        benefitRow.configure(
-            title: "权益卡",
-            value: viewModel.benefitSummaryText,
-            placeholder: viewModel.benefitSummaryIsPlaceholder,
-            emphasis: viewModel.benefitDiscount > 0
+        optionsCard.configureBenefit(
+            text: viewModel.benefitSummaryText,
+            isPlaceholder: viewModel.benefitSummaryIsPlaceholder,
+            hasDiscount: viewModel.benefitDiscount > 0
         )
 
         feeView.configure(

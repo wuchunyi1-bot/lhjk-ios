@@ -7,6 +7,8 @@ extension Notification.Name {
     static let userDidUpdate = Notification.Name("FDUserDidUpdate")
     /// 默认档案更新通知（登录/冷启动拉取或主动刷新后触发）
     static let defaultArchiveDidUpdate = Notification.Name("FDDefaultArchiveDidUpdate")
+    /// 今日健康监测任务需刷新通知（体征录入完成等）
+    static let todayMonitorTaskShouldRefresh = Notification.Name("FDTodayMonitorTaskShouldRefresh")
 }
 
 // MARK: - UserManager
@@ -154,6 +156,7 @@ final class UserManager {
         UserDefaults.standard.removeObject(forKey: Self.cacheKey)
         UserDefaults.standard.removeObject(forKey: Self.defaultArchiveKey)
         UserDefaults.standard.removeObject(forKey: Self.legacyLoginUserInfoKey)
+        HomeService.shared.invalidateTodayTasksCache()
         print("[UserManager] cleared")
     }
 

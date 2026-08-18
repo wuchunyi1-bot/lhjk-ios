@@ -57,7 +57,7 @@ iOS 已接 `GET /v1/order/getAppOrderList`，status 1–9。保持该 API，仅�
 - 封面：`packageImageUrl`（Kingfisher），无图占位「套餐」
 - 名称：`orderName`
 - 卖点：`packageDescription`
-- 金额：优先 `payable`，否则 `price`
+- 金额：`price != null` 展示 `price`（实付），否则展示 `settlementAmount`（应付）；两者皆空展示 `0`。**不得**再用 `payable`（套包金额）
 - 操作按钮：按状态展示；点击本期 Toast「功能即将开放」（详情点击卡片仍进 `/orders/detail`）
 
 ### 空态

@@ -2,16 +2,24 @@ import Foundation
 import Combine
 import UIKit
 
-/// 我的模块 Hub ViewModel — 对齐 MeView.vue + me.json（无健康大会员）
+/// 我的模块 Hub ViewModel — 对齐 Figma 3594:8470 + funde-client `MeView.vue`
 final class MyViewModel: ObservableObject {
 
-    struct CommonAction {
-        let icon: String
-        let color: UIColor
+    struct MemberAsset: Identifiable {
+        let id = UUID()
         let label: String
+        var value: String
         let route: String
-        /// 角标文案（如卡券可用数）；nil 不展示
-        var badge: String? = nil
+        var accent: Bool = false
+    }
+
+    struct FulfillmentStat: Identifiable {
+        let id = UUID()
+        let label: String
+        let value: String
+        let accent: Bool
+        /// 订单列表 Tab routeKey（见 `OrderListViewController`）
+        let tabKey: String
     }
 
     struct FuncRow {
@@ -31,7 +39,8 @@ final class MyViewModel: ObservableObject {
     @Published var avatarChar: String = "我"
     @Published var avatarURL: String?
 
-    @Published var commonActions: [CommonAction]
+    @Published var memberAssets: [MemberAsset]
+    @Published var fulfillmentStats: [FulfillmentStat]
     @Published var healthManagement: FuncGroup
 
     private let userManager: UserManager
@@ -39,7 +48,8 @@ final class MyViewModel: ObservableObject {
 
     init(userManager: UserManager = AppContainer.shared.userManager) {
         self.userManager = userManager
-        self.commonActions = Self.defaultCommonActions
+        self.memberAssets = Self.defaultMemberAssets
+        self.fulfillmentStats = Self.defaultFulfillmentStats
         self.healthManagement = Self.defaultHealthManagement
 
         NotificationCenter.default.publisher(for: .userDidUpdate)
@@ -59,58 +69,60 @@ final class MyViewModel: ObservableObject {
         avatarURL = user.imageUrl
     }
 
-    /// 刷新「我的卡券」角标（权益卡 + 优惠券待使用数）
+    /// 刷新「权益卡券」数量（权益卡 + 优惠券）
     func refreshVoucherBadge() {
-        applyVoucherBadge(AppContainer.shared.voucherService.meBadgeText)
+        applyVoucherCount(AppContainer.shared.voucherService.meBadgeText)
         Task { [weak self] in
             await AppContainer.shared.voucherService.refreshVoucherBadges()
             await MainActor.run {
-                self?.applyVoucherBadge(AppContainer.shared.voucherService.meBadgeText)
+                self?.applyVoucherCount(AppContainer.shared.voucherService.meBadgeText)
             }
         }
     }
 
-    private func applyVoucherBadge(_ badge: String?) {
-        commonActions = commonActions.map { action in
-            guard action.route == "/me/vouchers" else { return action }
-            return CommonAction(
-                icon: action.icon,
-                color: action.color,
-                label: action.label,
-                route: action.route,
-                badge: badge
-            )
+    private func applyVoucherCount(_ badge: String?) {
+        let count = badge ?? "0"
+        memberAssets = memberAssets.map { asset in
+            guard asset.label == "权益卡券" else { return asset }
+            var copy = asset
+            copy.value = count
+            return copy
         }
     }
 }
 
-// MARK: - Defaults (me.json)
+// MARK: - Defaults (Figma 3594:8470 / me.json)
 
 extension MyViewModel {
 
-    static var defaultCommonActions: [CommonAction] {
+    static var defaultMemberAssets: [MemberAsset] {
         [
-            CommonAction(icon: "doc.text", color: UIColor(hexString: "#FF7A50"), label: "我的订单", route: "/orders"),
-            CommonAction(icon: "calendar", color: UIColor(hexString: "#B47300"), label: "我的预约", route: "/me/appointments"),
-            CommonAction(icon: "ticket", color: UIColor(hexString: "#7B5E9F"), label: "我的卡券", route: "/me/vouchers"),
-            CommonAction(icon: "cart", color: UIColor(hexString: "#3D6FB8"), label: "购物车", route: "/services/cart"),
-            CommonAction(icon: "applewatch", color: UIColor(hexString: "#1F9A6B"), label: "智能设备", route: "/me/devices"),
-            CommonAction(icon: "mappin.and.ellipse", color: UIColor(hexString: "#D6602B"), label: "我的地址", route: "/me/address"),
-            CommonAction(icon: "person.3", color: UIColor(hexString: "#5C8DC9"), label: "家庭成员", route: "/me/family"),
-            CommonAction(icon: "doc.badge.gearshape", color: UIColor(hexString: "#6B7280"), label: "我的保单", route: "/me/policy"),
+            MemberAsset(label: "会员等级", value: "V1", route: "/me/member-level", accent: false),
+            MemberAsset(label: "健康积分", value: "892", route: "/me/points"),
+            MemberAsset(label: "富德币", value: "200", route: "/me/member-level"),
+            MemberAsset(label: "权益卡券", value: "119", route: "/me/vouchers"),
         ]
     }
 
-    /// 对齐 me.json `healthManagementActions`
+    /// 对齐 Figma 3594:8634 与 me.json `fulfillment.stats`
+    static var defaultFulfillmentStats: [FulfillmentStat] {
+        [
+            FulfillmentStat(label: "待支付", value: "3", accent: false, tabKey: "pending_payment"),
+            FulfillmentStat(label: "待收货", value: "1", accent: false, tabKey: "pending_receipt"),
+            FulfillmentStat(label: "使用中", value: "3", accent: false, tabKey: "in_progress"),
+            FulfillmentStat(label: "已完成", value: "3", accent: false, tabKey: "completed"),
+        ]
+    }
+
+    /// 对齐 Figma 3594:8653 与 me.json `healthManagementActions`
     static var defaultHealthManagement: FuncGroup {
         FuncGroup(title: "健康管理", rows: [
-            FuncRow(icon: "doc.text", color: UIColor(hexString: "#7B5E9F"), label: "健康档案", detail: "完整度 72%", route: "/health/record"),
-            FuncRow(icon: "heart.text.square", color: UIColor(hexString: "#1F9A6B"), label: "健康报告", detail: "周报 / 阶段小结", route: "/me/health-report"),
-            FuncRow(icon: "cross.case", color: UIColor(hexString: "#3D6FB8"), label: "体检报告单", detail: "3 份已上传", route: "/me/medical-reports"),
-            FuncRow(icon: "calendar", color: UIColor(hexString: "#B47300"), label: "监测方案", detail: "当前方案生效中", route: "/me/monitoring-plan"),
-            FuncRow(icon: "fork.knife", color: UIColor(hexString: "#D6602B"), label: "饮食方案", detail: "可按档案生成", route: "/me/diet-plan"),
-            FuncRow(icon: "list.clipboard", color: UIColor(hexString: "#E55A2E"), label: "健康评估", detail: "备孕管理版 · 含方案目标", route: "/me/health-assessment"),
-            FuncRow(icon: "checklist", color: UIColor(hexString: "#5C8DC9"), label: "健康测评", detail: "2 项待完成", route: "/me/health-evaluations"),
+            FuncRow(icon: "me_health_report_icon", color: UIColor(hexString: "#1F2942"), label: "健康报告", detail: "周报/月报", route: "/me/health-report"),
+            FuncRow(icon: "me_medical_report_icon", color: UIColor(hexString: "#1F2942"), label: "体检报告单", detail: "3份已上传", route: "/me/medical-reports"),
+            FuncRow(icon: "me_monitoring_plan_icon", color: UIColor(hexString: "#1F2942"), label: "监测方案", detail: "当前方案生效中", route: "/me/monitoring-plan"),
+            FuncRow(icon: "me_diet_plan_icon", color: UIColor(hexString: "#1F2942"), label: "饮食方案", detail: "可按档案生成", route: "/me/diet-plan"),
+            FuncRow(icon: "me_health_assessment_icon", color: UIColor(hexString: "#1F2942"), label: "健康评估", detail: "含健康方案", route: "/me/health-assessment"),
+            FuncRow(icon: "me_health_evaluation_icon", color: UIColor(hexString: "#1F2942"), label: "健康测评", detail: "2项待完成", route: "/me/health-evaluations"),
         ])
     }
 }

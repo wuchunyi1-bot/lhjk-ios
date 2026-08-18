@@ -31,10 +31,10 @@ BLL 层 SHALL 支持通过 `/v1/hospitalPackage/getEnabledRetailHospitalPackageP
 | 字段 | 说明 |
 |------|------|
 | `id` | 套餐 id（详情 `packageId`） |
-| `imageUrl` | 图标 |
+| `imageUrl` | 封面图；空 / 加载失败时展示占位图 `mall_product_placeholder` |
 | `price` | 参考价 |
 | `introduction` | 一句话简介 |
-| `recommend` | 推荐标记（`1` = 推荐） |
+| `recommend` | 角标：`1` = 推荐，`2` = 热销；其它值不展示 |
 
 #### Scenario: 成功分页拉取零售套包
 

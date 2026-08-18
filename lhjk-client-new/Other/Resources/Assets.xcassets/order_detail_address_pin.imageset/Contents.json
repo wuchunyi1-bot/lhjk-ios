@@ -1,0 +1,18 @@
+{
+  "images": [
+    {
+      "filename": "order_detail_address_pin@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "order_detail_address_pin@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

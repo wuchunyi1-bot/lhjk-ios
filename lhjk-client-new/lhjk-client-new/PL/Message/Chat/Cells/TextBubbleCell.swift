@@ -208,7 +208,7 @@ final class TextBubbleCell: UITableViewCell {
                 if reply.isFile {
                     replyContentLabel.text = "[文件] \(reply.fileName ?? reply.text)"
                 } else {
-                    replyContentLabel.text = reply.text
+                    replyContentLabel.text = RongEmoji.symbolToEmoji(reply.text)
                 }
             }
         } else {
@@ -217,7 +217,7 @@ final class TextBubbleCell: UITableViewCell {
 
         // 限制气泡最大宽度：屏幕宽 - 头像区(16+34+9) - 右边距(56) - 气泡内边距(26)
         msgLabel.preferredMaxLayoutWidth = UIScreen.main.bounds.width - 141
-        msgLabel.text = msg.text
+        msgLabel.text = RongEmoji.symbolToEmoji(msg.text ?? "")
         layoutForStaff(isStaff, hasReply: msg.reply != nil)
     }
 

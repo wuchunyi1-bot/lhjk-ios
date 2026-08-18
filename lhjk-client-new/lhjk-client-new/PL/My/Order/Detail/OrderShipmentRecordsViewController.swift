@@ -111,7 +111,12 @@ final class OrderShipmentRecordsViewController: BaseViewController {
         for line in lines {
             let card = OrderDetailCardView()
             let taskView = OrderDetailShipmentTaskCardView()
-            taskView.configure(line: line, isPickup: isPickup, logisticsSummary: summary)
+            taskView.configure(
+                line: line,
+                isPickup: isPickup,
+                logisticsSummary: summary,
+                orderStatus: detail.orderStatus
+            )
             taskView.onCopyTracking = { [weak self] trackingNo in
                 UIPasteboard.general.string = trackingNo
                 self?.showToast("物流单号已复制")

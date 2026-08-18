@@ -48,6 +48,8 @@ enum MyRoutes {
 
         // 占位页面（后续迭代实现）
         r.register(path: "/me/membership")  { _ in MembershipViewController() }
+        r.register(path: "/me/member-level") { _ in MembershipViewController() }
+        r.register(path: "/me/redemptions") { _ in PlaceholderViewController(title: "会员兑换") }
         r.register(path: "/me/membership/open") { _ in PlaceholderViewController(title: "开通会员") }
         r.register(path: "/me/points")      { _ in PointsViewController() }
         r.register(path: "/me/family")      { _ in FamilyViewController() }
@@ -106,6 +108,11 @@ enum MyRoutes {
         r.register(path: "/me/settings/about")          { _ in AboutSettingsViewController() }
         r.register(path: "/me/settings/cancel-account") { _ in CancelAccountViewController() }
         r.register(path: "/me/settings/agreement-center") { _ in AgreementCenterViewController() }
+        r.register(path: "/me/settings/addresses") { params in
+            let selectMode = (params["selectMode"] as? Bool) ?? false
+            let onSelect = params["onSelect"] as? (MAddress) -> Void
+            return AddressListViewController(selectMode: selectMode, onSelect: onSelect)
+        }
 
         // 安全中心三级页（对齐 Vue `/me/settings/security/*`）
         r.register(path: "/me/settings/security/change-phone") { _ in ChangePhoneViewController() }

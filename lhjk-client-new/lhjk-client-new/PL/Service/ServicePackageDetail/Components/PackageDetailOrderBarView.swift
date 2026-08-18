@@ -1,12 +1,14 @@
 import UIKit
 import SnapKit
 
+/// 套餐详情底部操作栏 — 对齐 Figma 3449:7811
 final class PackageDetailOrderBarView: UIView {
 
     var onAddToCart: (() -> Void)?
     var onOrder: (() -> Void)?
 
     private let tipLabel = UILabel()
+    private let symbolLabel = UILabel()
     private let payableLabel = UILabel()
     private let cartButton = UIButton(type: .system)
     private let orderButton = UIButton(type: .system)
@@ -19,7 +21,9 @@ final class PackageDetailOrderBarView: UIView {
     required init?(coder: NSCoder) { fatalError() }
 
     func setPayableText(_ text: String) {
-        payableLabel.text = text
+        // 分离 "¥" 和数字
+        let cleaned = text.replacingOccurrences(of: "¥", with: "").trimmingCharacters(in: .whitespaces)
+        payableLabel.text = cleaned
     }
 
     func configure(renewalMode: Bool) {
@@ -45,63 +49,82 @@ final class PackageDetailOrderBarView: UIView {
     }
 
     private func setupUI() {
-        backgroundColor = UIColor.fdSurface.withAlphaComponent(0.96)
+        backgroundColor = .white
+        layer.cornerRadius = 16
+        layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = 0.05
+        layer.shadowOffset = CGSize(width: 0, height: -2)
+        layer.shadowRadius = 6
 
-        let border = UIView()
-        border.backgroundColor = .fdBorder
-        addSubview(border)
-        border.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-            $0.height.equalTo(1)
-        }
+        tipLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        tipLabel.textColor = .fdText
+        tipLabel.text = "应付"
 
-        let tip = tipLabel
-        tip.font = .fdMicro
-        tip.textColor = .fdSubtext
-        tip.text = "应付"
-        payableLabel.font = .fdMonoFont(ofSize: 20, weight: .heavy)
-        payableLabel.textColor = .fdPrimary
-        let priceStack = UIStackView(arrangedSubviews: [tip, payableLabel])
+        symbolLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        symbolLabel.textColor = UIColor(hexString: "#F93838")
+        symbolLabel.text = "¥"
+
+        payableLabel.font = .fdMonoFont(ofSize: 20, weight: .bold)
+        payableLabel.textColor = UIColor(hexString: "#F93838")
+
+        let priceRow = UIStackView(arrangedSubviews: [symbolLabel, payableLabel])
+        priceRow.axis = .horizontal
+        priceRow.spacing = 2
+        priceRow.alignment = .lastBaseline
+
+        let priceStack = UIStackView(arrangedSubviews: [tipLabel, priceRow])
         priceStack.axis = .vertical
         priceStack.spacing = 2
+        priceStack.alignment = .leading
+
+        let brandOrange = UIColor(hexString: "#FF7A50")
 
         cartButton.setTitle("加入购物车", for: .normal)
-        cartButton.setTitleColor(.fdPrimary, for: .normal)
-        cartButton.titleLabel?.font = .fdBody
-        cartButton.layer.cornerRadius = 22
+        cartButton.setTitleColor(brandOrange, for: .normal)
+        cartButton.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
+        cartButton.backgroundColor = .white
+        cartButton.layer.cornerRadius = 20
         cartButton.layer.borderWidth = 1
-        cartButton.layer.borderColor = UIColor.fdPrimary.cgColor
-        cartButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
+        cartButton.layer.borderColor = brandOrange.cgColor
         cartButton.addTarget(self, action: #selector(tapCart), for: .touchUpInside)
 
         orderButton.setTitle("立即下单", for: .normal)
         orderButton.setTitleColor(.white, for: .normal)
-        orderButton.titleLabel?.font = .fdBodySemibold
-        orderButton.backgroundColor = .fdPrimary
-        orderButton.layer.cornerRadius = 22
-        orderButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 18, bottom: 0, right: 18)
+        orderButton.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
+        orderButton.backgroundColor = brandOrange
+        orderButton.layer.cornerRadius = 20
         orderButton.addTarget(self, action: #selector(tapOrder), for: .touchUpInside)
 
         let actions = UIStackView(arrangedSubviews: [cartButton, orderButton])
         actions.axis = .horizontal
-        actions.spacing = 10
-        cartButton.snp.makeConstraints { $0.height.equalTo(44) }
-        orderButton.snp.makeConstraints { $0.height.equalTo(44) }
+        actions.spacing = 8
+        actions.distribution = .fillEqually
+        cartButton.snp.makeConstraints {
+            $0.width.equalTo(112)
+            $0.height.equalTo(40)
+        }
+        orderButton.snp.makeConstraints {
+            $0.width.equalTo(112)
+            $0.height.equalTo(40)
+        }
 
         addSubview(priceStack)
         addSubview(actions)
+
         priceStack.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(16)
             $0.centerY.equalTo(actions)
         }
         actions.snp.makeConstraints {
             $0.trailing.equalToSuperview().offset(-16)
-            $0.top.equalToSuperview().offset(10)
-            $0.bottom.equalTo(safeAreaLayoutGuide).offset(-10)
-            $0.leading.greaterThanOrEqualTo(priceStack.snp.trailing).offset(12)
+            $0.top.equalToSuperview().offset(12)
+            $0.bottom.equalTo(safeAreaLayoutGuide).offset(-8)
+            $0.leading.greaterThanOrEqualTo(priceStack.snp.trailing).offset(8)
         }
     }
 
     @objc private func tapCart() { onAddToCart?() }
     @objc private func tapOrder() { onOrder?() }
 }
+

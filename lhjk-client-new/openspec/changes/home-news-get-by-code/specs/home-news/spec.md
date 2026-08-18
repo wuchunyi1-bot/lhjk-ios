@@ -43,11 +43,22 @@
 - **WHEN** 用户点击条目但内容 ID 为空
 - **THEN** MUST NOT 崩溃（可 no-op）
 
-### Requirement: 健康陪伴「更多」独立入口
+### Requirement: 健康陪伴「更多」打开列表 H5
 
-健康陪伴区块 MUST 展示「更多 ›」。该按钮点击 MUST 走独立回调，MUST NOT 与条目资讯详情点击共用同一处理逻辑（更多跳转另定）。
+健康陪伴区块 MUST 展示「更多 ›」。该按钮点击 MUST 走独立回调，MUST NOT 与条目资讯详情点击共用同一处理逻辑。
+
+系统 SHALL 打开 H5 健康陪伴列表页：
+
+- Hash 路径：`#/companion`
+- 需登录；打开时 MUST 拼接 `platform=ios`，有登录态时 MUST 拼接 `token`
+- 实现上 SHALL 经 `H5Config.companionPageURL` 构建 URL，并用 `WebViewController` 打开；原生路由 `/companion` 与 CMS `FundeH5:/companion` 等价
 
 #### Scenario: 标题区
 
 - **WHEN** 健康陪伴区块可见
-- **THEN** 展示标题「健康陪伴」与「更多 ›」；点击「更多 ›」触发 `onMoreTapped`（或等价独立入口）
+- **THEN** 展示标题「健康陪伴」与「更多 ›」；点击「更多 ›」打开 `#/companion` H5（导航栏标题「健康陪伴」）
+
+#### Scenario: 深链与 CMS
+
+- **WHEN** `Router.push("/companion")` 或 `pageUrl` 为 `FundeH5:/companion`
+- **THEN** 打开与首页「更多 ›」相同的鉴权 H5 URL

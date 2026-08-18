@@ -1,6 +1,7 @@
 import UIKit
 import SnapKit
 
+/// 套餐详情 1:1 顶部全宽轮播视图
 final class PackageDetailCarouselView: UIView, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
 
     let pageCount: Int
@@ -17,21 +18,22 @@ final class PackageDetailCarouselView: UIView, UICollectionViewDataSource, UICol
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
         cv.isPagingEnabled = true
         cv.showsHorizontalScrollIndicator = false
-        cv.backgroundColor = .clear
+        cv.backgroundColor = .black
         cv.dataSource = self
         cv.delegate = self
         cv.register(PackageDetailCarouselSlideCell.self, forCellWithReuseIdentifier: PackageDetailCarouselSlideCell.reuseID)
-        cv.layer.cornerRadius = 14
-        cv.clipsToBounds = true
         return cv
     }()
 
-    private let pageControl: UIPageControl = {
-        let pc = UIPageControl()
-        pc.currentPageIndicatorTintColor = .fdPrimary
-        pc.pageIndicatorTintColor = UIColor.fdPrimary.withAlphaComponent(0.25)
-        pc.hidesForSinglePage = true
-        return pc
+    private let pageIndicatorLabel: UILabel = {
+        let label = UILabel()
+        label.font = .fdFont(ofSize: 10, weight: .regular)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.backgroundColor = UIColor(white: 0, alpha: 0.5)
+        label.layer.cornerRadius = 10
+        label.clipsToBounds = true
+        return label
     }()
 
     init(labels: [String], imageURLs: [String] = [], accent: UIColor) {
@@ -47,18 +49,24 @@ final class PackageDetailCarouselView: UIView, UICollectionViewDataSource, UICol
         self.accent = accent
         self.pageCount = imageURLs.isEmpty ? self.labels.count : imageURLs.count
         super.init(frame: .zero)
+
         addSubview(collectionView)
-        addSubview(pageControl)
+        addSubview(pageIndicatorLabel)
+
         collectionView.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-            $0.height.equalTo(collectionView.snp.width).multipliedBy(9.0 / 16.0)
+            $0.top.leading.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(collectionView.snp.width)
         }
-        pageControl.snp.makeConstraints {
-            $0.top.equalTo(collectionView.snp.bottom).offset(6)
-            $0.centerX.equalToSuperview()
-            $0.bottom.equalToSuperview()
+
+        pageIndicatorLabel.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalToSuperview().inset(40)
+            $0.height.equalTo(20)
+            $0.width.greaterThanOrEqualTo(32)
         }
-        pageControl.numberOfPages = pageCount
+
+        pageIndicatorLabel.isHidden = pageCount <= 1
+        updateIndicator()
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -70,7 +78,7 @@ final class PackageDetailCarouselView: UIView, UICollectionViewDataSource, UICol
             CGPoint(x: CGFloat(currentPage) * collectionView.bounds.width, y: 0),
             animated: true
         )
-        pageControl.currentPage = currentPage
+        updateIndicator()
     }
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -102,6 +110,11 @@ final class PackageDetailCarouselView: UIView, UICollectionViewDataSource, UICol
     private func updatePage() {
         guard collectionView.bounds.width > 0 else { return }
         currentPage = Int(round(collectionView.contentOffset.x / collectionView.bounds.width))
-        pageControl.currentPage = currentPage
+        updateIndicator()
+    }
+
+    private func updateIndicator() {
+        pageIndicatorLabel.text = " \(currentPage + 1)/\(pageCount) "
     }
 }
+
