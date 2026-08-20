@@ -22,7 +22,7 @@
 ├─ A. 气泡族：Text / Image / Voice
 ├─ B. 媒体族：File（F1/F2/F3）/ Video
 ├─ C. 协议卡：SysNotifyCell
-│     AD:SysNotify → monitorReminder | monitor | sysNotify(C-sys)
+│     AD:SysNotify → 统一卡（messageType 1/2/3）
 │     AD:Vip / ServiceComment / CheckUserMsg
 └─ D. 居中提示：CenteredTipCell（撤回）
 ```
@@ -36,7 +36,7 @@
 | `voice` | `RC:HQVCMsg` | path + 时长 | `VoiceBubbleCell` | 语音 |
 | `file` | `AD:FileMsg` | `fileContent` | `FileBubbleCell` | F1/F2/F3 |
 | `video` | `AD:VideoMsg` | `videoContent` | `VideoBubbleCell` | 视频 |
-| `sysNotify` | `AD:SysNotify` | `sysNotifyContent` → Resolved | `SysNotifyCell` | **C-monitorReminder / C-monitor / C-sys** |
+| `sysNotify` | `AD:SysNotify` | `sysNotifyContent` → Resolved | `SysNotifyCell` | **统一卡（messageType 1/2/3）** |
 | `vip` | `AD:Vip` | `vipContent` | `SysNotifyCell` | C-vip |
 | `serviceComment` | `AD:ServiceComment` | … | `SysNotifyCell` | C-comment |
 | `checkUserMsg` | `AD:CheckUserMsg` | … | `SysNotifyCell` | C-check |
@@ -50,15 +50,23 @@
 | F2 | `richText` | `[团队知识]` |
 | F3 | 其它 | `[文件]` |
 
-### 1.3 SysNotifyCell（handoff 后）
+### 1.3 SysNotifyCell
 
-#### AD:SysNotify — 3 态
+#### AD:SysNotify — 统一卡
 
-| 样式类 | variant | 条件 | UI |
-|--------|---------|------|-----|
-| **C-monitorReminder** | `monitorReminder` | `extra.type == "realTime"` | 提醒卡：圆标 + title + tag + **content** + rows + **去完成**；可点 |
-| **C-monitor** | `monitor` | rows 非空（且非 realTime） | 录入成功卡：圆标 + title + tag + KV/结果/表；不读 content；不可点 |
-| **C-sys** | `sysNotify` | 其它 | title + content；可选封面 |
+所有 SysNotify **同一套 UI**。按顶层 `messageType` 取字段（缺省 1）；**不再**用 `extra.type == realTime` / `rows` 拆三态。
+
+| `messageType` | 字段 | UI |
+|---------------|------|-----|
+| **1** | title + content + imageUrl | 圆标 + 标题 + 可选正文 + 可选 CTA |
+| **2** | title + imageUrl + extra | 圆标 + 标题 + extra.rows + 可选 CTA |
+| **3** | 全部 | 圆标 + 标题 + 正文 + extra.rows + 可选 CTA |
+
+- 圆标：`imageUrl`，空则隐藏（无 SF 兜底）
+- CTA：仅 `urlKey` 非空时展示，文案 `skipTxt`（空→「去查看」）；**仅按钮可点**
+- 跳转：`FundePageURL.open(urlKey)`
+- type 2/3 展示 `extra.dataSourceTag`（空则隐藏）
+- 不画封面；`businessData` 不参与绘制
 
 详见 [`message-cards.md`](./message-cards.md)。
 
@@ -73,13 +81,11 @@
 #### 判定
 
 ```
-AD:SysNotify + extra.type=realTime → monitorReminder
-AD:SysNotify + rows 非空           → monitor
-AD:SysNotify 其它                  → sysNotify（C-sys）
+AD:SysNotify → 统一 sysNotify（按 messageType 1/2/3 取字段）
 AD:Vip / ServiceComment / CheckUserMsg → 各自 variant
 ```
 
-实时提醒可点（未完成）；录入成功协议卡不可点。
+SysNotify 整卡不可点；仅底部按钮在 `urlKey` 非空时跳转。
 
 ---
 
@@ -88,9 +94,10 @@ AD:Vip / ServiceComment / CheckUserMsg → 各自 variant
 | 字段 | 用途 |
 |------|------|
 | `sysNotifyContent` 等 | 四种协议 Content |
-| 顶层 `messageType` | 协议卡整型类型（安卓字段；如监测上传为 `2`）。与 `extra.type`（如 `warning` / `realTime`）不是同一字段 |
-| Resolved.`monitorRows` | 新监测卡行 |
-| Resolved.`dataSourceTag` / `monitorType` | tag / 图标 |
+| 顶层 `messageType` | 协议卡整型：1 title+content+imageUrl；2 title+imageUrl+extra；3 全部。缺省按 1。与 `extra.type` 不是同一字段 |
+| `skipTxt` | SysNotify 跳转按钮文案；`urlKey` 非空时展示，空则「去查看」 |
+| Resolved.`monitorRows` | type 2/3 的 `extra.rows` |
+| Resolved.`dataSourceTag` | type 2/3 的 `extra.dataSourceTag`（空则隐藏 tag） |
 | `lastMsgDisplayContent` | 会话列表摘要 |
 
 展示统一：`IMCardResolver.resolve` → `IMCardResolved` → `SysNotifyCell`。

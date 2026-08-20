@@ -214,14 +214,10 @@ extension ChatMessage {
 // MARK: - Variant
 
 /// 协议卡片子类型
-/// - AD:SysNotify：`monitorReminder`（实时提醒）/ `monitor`（录入成功）/ `sysNotify`（旧 C-sys）
+/// - AD:SysNotify：统一 `sysNotify`（按顶层 `messageType` 1/2/3 取字段）
 /// - 其它 ObjectName：vip / serviceComment / checkUser
 enum IMCardVariant: String {
-    /// 实时提醒：`extra.type == realTime`
-    case monitorReminder = "monitor-reminder"
-    /// 监测上传新卡：`extra.rows` 非空，正文不读 `content`
-    case monitor
-    /// 旧版通用通知（C-sys）：无 rows；读 title + content
+    /// AD:SysNotify 统一卡（数据上传样式）
     case sysNotify = "sys-notify"
     case vip
     case serviceComment = "service-comment"
@@ -254,10 +250,7 @@ enum IMMonitorRow {
             if kind == "table" {
                 let headers = (dict["headers"] as? [Any])?.compactMap { IMCardJSON.stringValue($0) } ?? []
                 let cellsRaw = dict["cells"] as? [Any] ?? []
-                let cells: [[String]] = cellsRaw.compactMap { row in
-                    guard let arr = row as? [Any] else { return nil }
-                    return arr.map { IMCardJSON.stringValue($0) ?? "" }
-                }
+                let cells = parseTableCells(cellsRaw)
                 guard !headers.isEmpty else { return nil }
                 return .table(headers: headers, cells: cells)
             }
@@ -271,11 +264,30 @@ enum IMMonitorRow {
             )
         }
     }
+
+    /// 兼容 `cells` 标准 `[[String]]` 与多包一层 `[[[String]]]`（安卓部分消息会多嵌套）
+    private static func parseTableCells(_ cellsRaw: [Any]) -> [[String]] {
+        cellsRaw.flatMap { flattenTableRows($0) }
+    }
+
+    private static func flattenTableRows(_ item: Any) -> [[String]] {
+        guard let arr = item as? [Any], !arr.isEmpty else { return [] }
+
+        let isScalarRow = arr.allSatisfy { element in
+            !(element is [Any]) && !(element is NSArray)
+        }
+        if isScalarRow {
+            return [arr.map { IMCardJSON.stringValue($0) ?? "" }]
+        }
+        return arr.flatMap { flattenTableRows($0) }
+    }
 }
 
 // MARK: - Tap action
 
 enum IMCardTapAction {
+    /// `FundeApp:` / `FundeH5:` 等 pageUrl
+    case openPageUrl(String)
     case openRoute(String)
     case unavailable(String)
 }
@@ -370,18 +382,67 @@ struct IMCardResolved {
     let rawContent: String
     let imageUrl: String?
     let urlKey: String
+    let skipTxt: String?
+    /// 顶层 `messageType`：1 / 2 / 3；缺省按 1
+    let protocolMessageType: Int?
     let businessData: [String: Any]?
     let extra: [String: Any]?
     let isShowUser: Bool
     let lastMsgDisplayContent: String?
-    /// 改造后监测卡行；`monitor` / `monitorReminder`
     let monitorRows: [IMMonitorRow]
-    /// `extra.dataSourceTag`；提醒卡缺省「监测任务」
     let dataSourceTag: String?
-    /// `extra.monitorType`：pressure/sugar/weight/temperature/diet/sport
     let monitorType: String?
 
-    /// 监测卡圆形图标主题色：仅按 `monitorType`（对齐 funde-client iconMeta）
+    /// 1 / 2 / 3；其它值按 1
+    var resolvedMessageType: Int {
+        switch protocolMessageType {
+        case 2: return 2
+        case 3: return 3
+        default: return 1
+        }
+    }
+
+    var isUnifiedSysNotify: Bool {
+        variant == .sysNotify && objectName == "AD:SysNotify"
+    }
+
+    var showsLeadingIcon: Bool {
+        guard isUnifiedSysNotify else { return false }
+        let url = imageUrl?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return !url.isEmpty
+    }
+
+    var showsBodyContent: Bool {
+        guard isUnifiedSysNotify else { return false }
+        return resolvedMessageType == 1 || resolvedMessageType == 3
+    }
+
+    var showsExtraRows: Bool {
+        guard isUnifiedSysNotify else { return variant == .vip }
+        return resolvedMessageType == 2 || resolvedMessageType == 3
+    }
+
+    var displayRows: [IMMonitorRow] {
+        showsExtraRows && isUnifiedSysNotify ? monitorRows : []
+    }
+
+    /// 上传卡（type 2/3）展示 `extra.dataSourceTag`；空则隐藏
+    var showsDataSourceTag: Bool {
+        guard isUnifiedSysNotify, showsExtraRows else { return false }
+        let tag = dataSourceTag?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return !tag.isEmpty
+    }
+
+    var showsJumpButton: Bool {
+        guard isUnifiedSysNotify else { return false }
+        return !urlKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var jumpButtonTitle: String {
+        let text = skipTxt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return text.isEmpty ? "去查看" : text
+    }
+
     var monitorAccentHex: String {
         switch IMMonitorReminderRoute.normalizeMonitorType(monitorType) {
         case "pressure": return "#B47300"
@@ -390,7 +451,7 @@ struct IMCardResolved {
         case "temperature": return "#2DB983"
         case "diet": return "#3D6FB8"
         case "sport": return "#FF7A50"
-        default: return "#FF7A50"
+        default: return "#1F9A6B"
         }
     }
 
@@ -402,24 +463,16 @@ struct IMCardResolved {
         IMMonitorReminderRoute.isCompleted(extra: extra)
     }
 
-    /// 左图：仅旧 C-sys 在有 imageUrl 时展示
+    /// SysNotify 圆标用 imageUrl，不再用封面大图
     var showsCover: Bool {
-        switch variant {
-        case .sysNotify:
-            return !(imageUrl?.isEmpty ?? true)
-        case .monitor, .monitorReminder, .serviceComment, .checkUser, .vip:
-            return false
-        }
+        false
     }
 
     var bodyText: String {
         switch variant {
-        case .monitor:
-            return "" // 正文来自 rows，不读 content
-        case .monitorReminder:
-            return rawContent
         case .sysNotify:
-            return Self.appendStatus(to: rawContent, extra: extra)
+            guard showsBodyContent else { return "" }
+            return rawContent
         case .vip:
             return rawContent
         case .serviceComment:
@@ -443,16 +496,6 @@ struct IMCardResolved {
                 return ("", line)
             }
     }
-
-    private static func appendStatus(to content: String, extra: [String: Any]?) -> String {
-        guard IMMonitorRow.parseList(from: extra).isEmpty,
-              let status = extra?["status"] as? [String: Any],
-              let statusText = IMCardJSON.stringValue(status["content"]),
-              !statusText.isEmpty else { return content }
-        if content.isEmpty { return statusText }
-        if content.contains(statusText) { return content }
-        return "\(content) \(statusText)"
-    }
 }
 
 // MARK: - Resolver
@@ -468,7 +511,9 @@ enum IMCardResolver {
         businessDataRaw: Any?,
         extraRaw: Any?,
         isShowUser: Bool,
-        lastMsgDisplayContent: String?
+        lastMsgDisplayContent: String?,
+        skipTxt: String? = nil,
+        protocolMessageType: Int? = nil
     ) -> IMCardResolved {
         let urlKey = urlKey ?? ""
         let title = title ?? ""
@@ -476,27 +521,19 @@ enum IMCardResolver {
         let businessData = IMCardJSON.parseObject(businessDataRaw)
         let extra = IMCardJSON.parseObject(extraRaw)
         let monitorRows = IMMonitorRow.parseList(from: extra)
-
-        let variant = resolveVariant(
-            objectName: objectName,
-            extra: extra,
-            monitorRows: monitorRows
-        )
-
+        let variant = resolveVariant(objectName: objectName)
         let tag = IMCardJSON.dataSourceTag(from: extra)
-            ?? (variant == .monitorReminder ? "监测任务" : nil)
-
-        let completed = IMMonitorReminderRoute.isCompleted(extra: extra)
-        let clickable = variant == .monitorReminder && !completed
 
         return IMCardResolved(
             variant: variant,
-            clickable: clickable,
+            clickable: false,
             objectName: objectName,
             title: title.isEmpty && variant == .checkUser ? "核对信息消息" : title,
             rawContent: content,
             imageUrl: imageUrl,
             urlKey: urlKey,
+            skipTxt: skipTxt,
+            protocolMessageType: protocolMessageType,
             businessData: businessData,
             extra: extra,
             isShowUser: isShowUser,
@@ -514,7 +551,7 @@ enum IMCardResolver {
                 if let e = n.extra, !e.isEmpty { return e }
                 return message.extra
             }()
-            let resolved = resolve(
+            return resolve(
                 objectName: SysNotifyMessage.getObjectName(),
                 title: n.title,
                 content: n.content,
@@ -523,16 +560,10 @@ enum IMCardResolver {
                 businessDataRaw: n.businessData,
                 extraRaw: extraRaw,
                 isShowUser: n.isShowUser,
-                lastMsgDisplayContent: n.lastMsgDisplayContent
+                lastMsgDisplayContent: n.lastMsgDisplayContent,
+                skipTxt: n.skipTxt,
+                protocolMessageType: n.messageType
             )
-            if resolved.variant == .monitor || resolved.variant == .monitorReminder {
-                let rawPreview: String = {
-                    if let s = extraRaw as? String { return String(s.prefix(180)) }
-                    return String(String(describing: extraRaw).prefix(180))
-                }()
-                print("[IM-Card] resolve variant=\(resolved.variant.rawValue) tag=\(resolved.dataSourceTag ?? "nil") rawExtra=\(rawPreview)")
-            }
-            return resolved
         }
         if let n = message.vipContent {
             return resolve(
@@ -576,37 +607,17 @@ enum IMCardResolver {
         return nil
     }
 
-    /// AD:SysNotify：realTime → monitorReminder；rows → monitor；否则 sysNotify
-    static func resolveVariant(
-        objectName: String,
-        extra: [String: Any]?,
-        monitorRows: [IMMonitorRow]
-    ) -> IMCardVariant {
+    /// AD:SysNotify 统一为 `sysNotify`；其它 ObjectName 各自 variant。不再按 extra.type / rows 拆三态。
+    static func resolveVariant(objectName: String) -> IMCardVariant {
         if objectName == "AD:ServiceComment" { return .serviceComment }
         if objectName == "AD:CheckUserMsg" { return .checkUser }
         if objectName == "AD:Vip" { return .vip }
-        if objectName == "AD:SysNotify" {
-            let type = IMCardJSON.stringValue(extra?["type"])?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            if type == "realTime" {
-                return .monitorReminder
-            }
-            return monitorRows.isEmpty ? .sysNotify : .monitor
-        }
         return .sysNotify
     }
 
     static func tapAction(for card: IMCardResolved) -> IMCardTapAction? {
-        guard card.variant == .monitorReminder else { return nil }
-        if card.isReminderCompleted {
-            return .unavailable("任务已完成")
-        }
-        let path = IMMonitorReminderRoute.entryPath(
-            urlKey: card.urlKey,
-            monitorType: card.monitorType,
-            title: card.title
-        )
-        return .openRoute(path)
+        guard card.showsJumpButton else { return nil }
+        return .openPageUrl(card.urlKey)
     }
 }
 

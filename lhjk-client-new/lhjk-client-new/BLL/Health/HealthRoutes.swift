@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 /// 健康模块路由注册
 enum HealthRoutes {
@@ -60,6 +61,14 @@ enum HealthRoutes {
 
         // OKOK 广播体脂秤原生测量（不连 GATT）
         r.register(path: "/health/scale/measure") { _ in ScaleBroadcastMeasureViewController() }
+        r.register(path: "/health/scale/devices") { _ in ScaleDeviceSelectViewController() }
+        r.register(path: "/health/scale/bind") { params in
+            ScaleDeviceBindViewController(
+                equipmentTypeId: stringParam(params["equipmentType"]) ?? "",
+                bluetoothName: stringParam(params["bluetoothName"]) ?? "OKOK",
+                displayName: stringParam(params["equipmentName"]) ?? "OKOK 体脂秤"
+            )
+        }
 
         registerAllMetricH5Routes(r)
     }
@@ -107,15 +116,23 @@ enum HealthRoutes {
         title: String? = nil,
         nativeSuffix: String? = nil,
         routeParams: [String: Any] = [:]
-    ) -> WebViewController {
+    ) -> UIViewController {
         let url = H5Config.authenticatedMetricURL(
             metricKey: key,
             nativeSuffix: nativeSuffix,
             routeParams: routeParams
         )
+        let resolvedTitle = title ?? H5Config.metricTitle(for: key)
+        if key == "weight" {
+            return WebViewController(
+                urlString: url.absoluteString,
+                title: resolvedTitle,
+                enablesWeightBle: true
+            )
+        }
         return WebViewController(
             urlString: url.absoluteString,
-            title: title ?? H5Config.metricTitle(for: key)
+            title: resolvedTitle
         )
     }
 

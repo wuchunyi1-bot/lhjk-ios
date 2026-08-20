@@ -111,6 +111,17 @@ enum H5Config {
         authenticatedPageURL(path: "health-assessment")
     }
 
+    /// 健康测评 H5：`#/health-evaluations?token&platform=ios`
+    static var healthEvaluationsPageURL: URL {
+        authenticatedPageURL(path: "health-evaluations")
+    }
+
+    /// 饮食方案 H5：`#/diet-plan?token&platform=ios&date=yyyy-MM-dd`
+    /// `date` 可选；缺省或格式非法时使用当天。
+    static func dietPlanPageURL(date: String? = nil) -> URL {
+        authenticatedPageURL(path: "diet-plan", extraQuery: ["date": resolvedDateYYYYMMDD(date)])
+    }
+
     /// 用药 H5：`#/medication?token&platform=ios`
     static var medicationPageURL: URL {
         authenticatedPageURL(path: "medication")
@@ -239,6 +250,20 @@ enum H5Config {
             urlString = "\(origin)#/\(normalizedPath)?\(queryString)"
         }
         return URL(string: urlString) ?? environment.baseURL
+    }
+
+    /// `yyyy-MM-dd`；非法或空则回当天
+    private static func resolvedDateYYYYMMDD(_ raw: String?) -> String {
+        let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if trimmed.range(of: #"^\d{4}-\d{2}-\d{2}$"#, options: .regularExpression) != nil {
+            return trimmed
+        }
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: Date())
     }
 
     private static func h5OriginBaseURLString() -> String {

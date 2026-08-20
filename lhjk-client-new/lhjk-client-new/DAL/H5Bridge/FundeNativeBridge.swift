@@ -15,13 +15,21 @@ final class FundeNativeBridge: NSObject {
 
     private weak var webView: WKWebView?
     private weak var hostViewController: UIViewController?
+    private let enablesWeightBle: Bool
     private var cancellables = Set<AnyCancellable>()
 
-    init(webView: WKWebView, hostViewController: UIViewController) {
+    init(
+        webView: WKWebView,
+        hostViewController: UIViewController,
+        enablesWeightBle: Bool = false
+    ) {
         self.webView = webView
         self.hostViewController = hostViewController
+        self.enablesWeightBle = enablesWeightBle
         super.init()
-        observeScaleSession()
+        if enablesWeightBle {
+            observeScaleSession()
+        }
     }
 
     func detach() {
@@ -94,8 +102,7 @@ final class FundeNativeBridge: NSObject {
             reject(callbackId, message: "暂不支持 metric=\(metric)")
             return
         }
-        // 体重页初始化横条时拉取状态，同时启动广播扫描会话
-        ScaleBleSessionService.shared.startSession()
+        // 只读状态；会话由体重 H5 宿主 VC 生命周期管理
         respond(callbackId, result: ScaleBleSessionService.shared.statusDictionary(metric: "weight"))
     }
 
@@ -105,8 +112,7 @@ final class FundeNativeBridge: NSObject {
             reject(callbackId, message: "暂不支持 metric=\(metric)")
             return
         }
-        ScaleBleSessionService.shared.startSession()
-        Router.shared.push("/me/devices")
+        Router.shared.push("/health/scale/devices", from: hostViewController)
         respond(callbackId, result: [String: Any]())
     }
 

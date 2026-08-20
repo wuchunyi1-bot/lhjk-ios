@@ -45,7 +45,7 @@ final class MyViewController: BaseViewController {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
         viewModel.loadUserProfile()
-        viewModel.refreshVoucherBadge()
+        viewModel.refreshOverview()
         refreshHeader()
         refreshCards()
     }

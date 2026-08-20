@@ -17,9 +17,14 @@ final class OrderDetailViewModel: ObservableObject {
         self.orderService = orderService
     }
 
-    var bottomActions: [OrderListCardAction] {
+    var fixedBottomActions: [OrderListCardAction] {
         guard let detail else { return [] }
-        return OrderListCardAction.actions(for: detail)
+        return OrderListCardAction.fixedDetailActions(for: detail)
+    }
+
+    var scrollBottomActions: [OrderListCardAction] {
+        guard let detail else { return [] }
+        return OrderListCardAction.scrollDetailActions(for: detail)
     }
 
     var visibleContentLines: [OrderDetailPackageLineBO] {

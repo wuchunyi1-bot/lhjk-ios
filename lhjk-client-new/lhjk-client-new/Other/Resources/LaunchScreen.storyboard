@@ -5,6 +5,8 @@
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 9 format" minToolsVersion="9.0"/>
     </dependencies>
     <scenes>
         <scene sceneID="EHf-IW-A2E">
@@ -14,18 +16,17 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="750" text="lhjk" textAlignment="center" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="GJd-Yh-RWb">
-                                <rect key="frame" x="96.666666666666671" y="410" width="200" height="32"/>
-                                <fontDescription key="fontDescription" type="boldSystem" pointSize="32"/>
-                                <color key="textColor" systemColor="labelColor"/>
-                                <nil key="highlightedColor"/>
-                            </label>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="splash_hero" translatesAutoresizingMaskIntoConstraints="NO" id="splash-hero-img">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                            </imageView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
-                            <constraint firstItem="GJd-Yh-RWb" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="Q3B-4B-h5a"/>
-                            <constraint firstItem="GJd-Yh-RWb" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="moa-c2-u7t"/>
+                            <constraint firstItem="splash-hero-img" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="top" id="hero-top"/>
+                            <constraint firstItem="splash-hero-img" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leading" id="hero-leading"/>
+                            <constraint firstItem="splash-hero-img" firstAttribute="trailing" secondItem="Ze5-6b-2t3" secondAttribute="trailing" id="hero-trailing"/>
+                            <constraint firstItem="splash-hero-img" firstAttribute="bottom" secondItem="Ze5-6b-2t3" secondAttribute="bottom" id="hero-bottom"/>
                         </constraints>
                     </view>
                 </viewController>
@@ -34,4 +35,7 @@
             <point key="canvasLocation" x="53" y="375"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="splash_hero" width="375" height="666"/>
+    </resources>
 </document>

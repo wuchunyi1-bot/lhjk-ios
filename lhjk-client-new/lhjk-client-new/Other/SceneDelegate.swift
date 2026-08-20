@@ -13,45 +13,68 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         window = UIWindow(windowScene: windowScene)
 
-        // 登录态失效：业务码 A0230 / HTTP 401 → 清态 + 全局弹窗
         SessionExpiryCoordinator.shared.presentExpiredUI = { message, onRelogin in
             SessionExpiryPresenter.present(message: message, onRelogin: onRelogin)
         }
         SessionExpiryCoordinator.shared.install()
 
-        let hasToken = UserDefaults.standard.string(forKey: "auth_access_token") != nil
+        presentSplash()
+    }
 
-        if hasToken {
-            // 已登录 → 主界面
-            window?.rootViewController = RootTabBarController()
-            window?.makeKeyAndVisible()
+    // MARK: - Root Routing
 
-            // 冷启动：恢复 IM 连接
+    private func presentSplash() {
+        let splash = SplashViewController()
+        splash.onFinish = { [weak self] in
+            self?.transitionToMainInterface()
+        }
+        window?.rootViewController = splash
+        window?.makeKeyAndVisible()
+    }
+
+    private func transitionToMainInterface() {
+        let nextRoot = makeMainRootViewController()
+        guard let window else { return }
+
+        UIView.transition(
+            with: window,
+            duration: 0.25,
+            options: .transitionCrossDissolve,
+            animations: {
+                window.rootViewController = nextRoot
+            }
+        )
+
+        if UserDefaults.standard.string(forKey: "auth_access_token") != nil {
             restoreIMConnection()
+            bootstrapLoggedInSession()
+        }
+    }
 
-            // 服务 Hub 静态预拉由 RootTabBarController 延迟触发（覆盖冷启动与登录 setRoot）
+    private func makeMainRootViewController() -> UIViewController {
+        let hasToken = UserDefaults.standard.string(forKey: "auth_access_token") != nil
+        if hasToken {
+            return RootTabBarController()
+        }
+        return LoginViewController()
+    }
 
-            // 串行：getCurrentUserBaseInfo → getOArchiveByUserId → archiveComplete 门禁
-            Task {
-                _ = await UserManager.shared.fetchUserInfo()
-                _ = await UserManager.shared.fetchDefaultArchive()
-                let needOnboarding = UserManager.shared.checkNeedOnboarding()
+    private func bootstrapLoggedInSession() {
+        Task {
+            _ = await UserManager.shared.fetchUserInfo()
+            _ = await UserManager.shared.fetchDefaultArchive()
+            let needOnboarding = UserManager.shared.checkNeedOnboarding()
 
-                await MainActor.run {
-                    if needOnboarding {
-                        print("[SceneDelegate] archiveComplete incomplete → presenting onboarding")
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            Router.shared.present("/onboarding")
-                        }
-                    } else {
-                        print("[SceneDelegate] onboarding skip; profile & archive fetch done")
+            await MainActor.run {
+                if needOnboarding {
+                    print("[SceneDelegate] archiveComplete incomplete → presenting onboarding")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        Router.shared.present("/onboarding")
                     }
+                } else {
+                    print("[SceneDelegate] onboarding skip; profile & archive fetch done")
                 }
             }
-        } else {
-            // 未登录 → 登录页
-            window?.rootViewController = LoginViewController()
-            window?.makeKeyAndVisible()
         }
     }
 

@@ -16,7 +16,7 @@ final class MyViewModel: ObservableObject {
     struct FulfillmentStat: Identifiable {
         let id = UUID()
         let label: String
-        let value: String
+        var value: String
         let accent: Bool
         /// 订单列表 Tab routeKey（见 `OrderListViewController`）
         let tabKey: String
@@ -44,10 +44,15 @@ final class MyViewModel: ObservableObject {
     @Published var healthManagement: FuncGroup
 
     private let userManager: UserManager
+    private let userService: UserService
     private var cancellables = Set<AnyCancellable>()
 
-    init(userManager: UserManager = AppContainer.shared.userManager) {
+    init(
+        userManager: UserManager = AppContainer.shared.userManager,
+        userService: UserService = AppContainer.shared.userService
+    ) {
         self.userManager = userManager
+        self.userService = userService
         self.memberAssets = Self.defaultMemberAssets
         self.fulfillmentStats = Self.defaultFulfillmentStats
         self.healthManagement = Self.defaultHealthManagement
@@ -58,7 +63,6 @@ final class MyViewModel: ObservableObject {
             .store(in: &cancellables)
 
         loadUserProfile()
-        refreshVoucherBadge()
     }
 
     func loadUserProfile() {
@@ -69,23 +73,53 @@ final class MyViewModel: ObservableObject {
         avatarURL = user.imageUrl
     }
 
-    /// 刷新「权益卡券」数量（权益卡 + 优惠券）
-    func refreshVoucherBadge() {
-        applyVoucherCount(AppContainer.shared.voucherService.meBadgeText)
+    /// 刷新首页概览（`GET /v1/users/getUserCenterOverview`）
+    func refreshOverview() {
         Task { [weak self] in
-            await AppContainer.shared.voucherService.refreshVoucherBadges()
-            await MainActor.run {
-                self?.applyVoucherCount(AppContainer.shared.voucherService.meBadgeText)
+            guard let self else { return }
+            do {
+                let overview = try await userService.getUserCenterOverview()
+                await MainActor.run {
+                    self.applyOverview(overview)
+                }
+            } catch {
+                print("[MyViewModel] getUserCenterOverview ✗ \(error.localizedDescription)")
             }
         }
     }
 
-    private func applyVoucherCount(_ badge: String?) {
-        let count = badge ?? "0"
+    private func applyOverview(_ overview: UserCenterOverviewVO) {
         memberAssets = memberAssets.map { asset in
-            guard asset.label == "权益卡券" else { return asset }
             var copy = asset
-            copy.value = count
+            switch asset.label {
+            case "会员等级":
+                copy.value = overview.memberLevelText
+            case "健康积分":
+                copy.value = overview.healthPointsText
+            case "富德币":
+                copy.value = overview.fundeCoinText
+            case "权益卡券":
+                copy.value = overview.benefitsCountText
+            default:
+                break
+            }
+            return copy
+        }
+
+        fulfillmentStats = fulfillmentStats.map { stat in
+            var copy = stat
+            switch stat.label {
+            case "待支付":
+                copy.value = overview.pendingPaymentText
+            case "待收货":
+                copy.value = overview.pendingReceiptText
+            case "使用中":
+                copy.value = overview.inUseOrderText
+            case "已完成":
+                copy.value = overview.completedOrderText
+            default:
+                break
+            }
             return copy
         }
     }
@@ -97,20 +131,20 @@ extension MyViewModel {
 
     static var defaultMemberAssets: [MemberAsset] {
         [
-            MemberAsset(label: "会员等级", value: "V1", route: "/me/member-level", accent: false),
-            MemberAsset(label: "健康积分", value: "892", route: "/me/points"),
-            MemberAsset(label: "富德币", value: "200", route: "/me/member-level"),
-            MemberAsset(label: "权益卡券", value: "119", route: "/me/vouchers"),
+            MemberAsset(label: "会员等级", value: "0", route: "/me/member-level", accent: false),
+            MemberAsset(label: "健康积分", value: "0", route: "/me/points"),
+            MemberAsset(label: "富德币", value: "0", route: "/me/member-level"),
+            MemberAsset(label: "权益卡券", value: "0", route: "/me/vouchers"),
         ]
     }
 
     /// 对齐 Figma 3594:8634 与 me.json `fulfillment.stats`
     static var defaultFulfillmentStats: [FulfillmentStat] {
         [
-            FulfillmentStat(label: "待支付", value: "3", accent: false, tabKey: "pending_payment"),
-            FulfillmentStat(label: "待收货", value: "1", accent: false, tabKey: "pending_receipt"),
-            FulfillmentStat(label: "使用中", value: "3", accent: false, tabKey: "in_progress"),
-            FulfillmentStat(label: "已完成", value: "3", accent: false, tabKey: "completed"),
+            FulfillmentStat(label: "待支付", value: "0", accent: false, tabKey: "pending_payment"),
+            FulfillmentStat(label: "待收货", value: "0", accent: false, tabKey: "pending_receipt"),
+            FulfillmentStat(label: "使用中", value: "0", accent: false, tabKey: "in_progress"),
+            FulfillmentStat(label: "已完成", value: "0", accent: false, tabKey: "completed"),
         ]
     }
 

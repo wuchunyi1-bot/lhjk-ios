@@ -12,6 +12,9 @@ protocol UserServiceProtocol {
     /// 获取当前登录用户基础信息（通过 token 识别，无需传参）
     func getCurrentUserBaseInfo() async throws -> SUsers?
 
+    /// 我的 Tab 首页概览（会员资产 + 服务履约统计）
+    func getUserCenterOverview() async throws -> UserCenterOverviewVO
+
     /// 通过用户 ID 获取默认档案（优先未生育状态）
     /// - Parameter userId: 用户雪花 ID（字符串形式）
     func getOArchiveByUserId(_ userId: String) async throws -> OArchive?

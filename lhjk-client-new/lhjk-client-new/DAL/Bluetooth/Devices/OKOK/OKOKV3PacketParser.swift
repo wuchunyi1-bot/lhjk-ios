@@ -22,8 +22,55 @@ struct OKOKScalePacket: Equatable {
     var debugDescription: String {
         "mac=\(macString) weight=\(String(format: "%.2f", weightKg))kg " +
             "raw=\(weightRaw) R=\(resistanceRaw) serial=\(serial) " +
-            "productId=\(String(format: "0x%04X", productId)) attr=0x\(String(format: "%02X", attributes)) " +
+            "productId=\(productIdHex) attr=0x\(String(format: "%02X", attributes)) " +
             "locked=\(isLocked) bodyFat=\(deviceTypeIsBodyFat)"
+    }
+
+    var productIdHex: String {
+        String(format: "0x%04X", productId)
+    }
+}
+
+/// OKOK 产品 ID → 展示型号（厂商未给全量表时，先回退 productId）
+enum OKOKScaleProductCatalog {
+
+    static func displayName(productId: UInt16) -> String {
+        switch productId {
+        default:
+            return "OKOK体脂秤"
+        }
+    }
+
+    static func modelCode(productId: UInt16) -> String {
+        String(format: "0x%04X", productId)
+    }
+}
+
+/// 一帧 OKOK 广播 + 周边 BLE 元数据
+struct OKOKScaleDiscovery: Equatable {
+    let packet: OKOKScalePacket
+    let bluetoothName: String?
+    let rssi: Int
+
+    var modelName: String {
+        OKOKScaleProductCatalog.displayName(productId: packet.productId)
+    }
+
+    var modelCode: String {
+        OKOKScaleProductCatalog.modelCode(productId: packet.productId)
+    }
+
+    /// 型号、蓝牙名、MAC — 便于控制台对照真机
+    var identityLogLine: String {
+        "型号=\(modelName)(\(modelCode)) 蓝牙名=\(resolvedBluetoothName) MAC=\(packet.macString) RSSI=\(rssi)"
+    }
+
+    /// 广播 Local Name；OKOK 单向广播秤多数不带名称，用 MAC 后缀兜底
+    var resolvedBluetoothName: String {
+        let trimmed = bluetoothName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !trimmed.isEmpty { return trimmed }
+        let suffix = packet.macString.split(separator: ":").suffix(2).joined(separator: ":")
+        return suffix.isEmpty ? "(无广播名)" : "OKOK-\(suffix)"
     }
 }
 

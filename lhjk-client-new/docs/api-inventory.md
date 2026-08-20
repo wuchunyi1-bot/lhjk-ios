@@ -16,7 +16,7 @@
 | 不计入本表 | 路由 `/auth/agreement/*`；融云 SDK；OSS 预签名 PUT；媒体 URLSession 下载；`PaymentService`（无 path） |
 | 不写入本表 | App **未调用** 的 Apifox 接口（如 `GET /v1/coupon/getCouponList`）；历史误写 path（如 `getPackageDetail`，已不存在） |
 
-**唯一后端 path 合计：44**（`POST /auth/oauth2/token` 计 1 条）。
+**唯一后端 path 合计：45**（`POST /auth/oauth2/token` 计 1 条）。
 
 ---
 
@@ -35,6 +35,7 @@ App端/
 │   ├── 用户管理
 │   │   ├── POST /v1/users/updateCurrentProfile
 │   │   ├── GET  /v1/users/getCurrentUserBaseInfo
+│   │   ├── GET  /v1/users/getUserCenterOverview
 │   │   ├── POST /v1/users/resetPasswordByMobile
 │   │   ├── POST /v1/users/changeMobile
 │   │   ├── POST /v1/users/cancelCurrentUser
@@ -105,6 +106,7 @@ App端/
 | 3 | GET | `/v1/mobileVerification/sendVerificationCode` | `App端/系统/系统短信管理` | `LoginService` | [发送验证码](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330856e0.md) |
 | 4 | POST | `/v1/users/updateCurrentProfile` | `App端/系统/用户管理` | `UserService` | [修改资料](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/477932114e0.md) |
 | 5 | GET | `/v1/users/getCurrentUserBaseInfo` | `App端/系统/用户管理` | `UserService` / `UserManager` | [当前用户](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/478379956e0.md) |
+| 5a | GET | `/v1/users/getUserCenterOverview` | `App端/系统/用户管理` | `UserService` / `MyViewModel` | [个人中心概览](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503199941e0.md) |
 | 6 | POST | `/v1/users/resetPasswordByMobile` | `App端/系统/用户管理` | `UserService` | [重置密码](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/476633097e0.md) |
 | 7 | POST | `/v1/users/changeMobile` | `App端/系统/用户管理` | `UserService` | [改手机号](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330847e0.md) |
 | 8 | POST | `/v1/users/cancelCurrentUser` | `App端/系统/用户管理` | `UserService` | [注销](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/483911256e0.md) |
@@ -183,6 +185,25 @@ App端/
 | 43 | GET | `/v1/userMonitorCardConfig/getUserMonitorCardConfig` | `App端/监测/用户监测卡片配置` | `HealthPageService` | [查询卡片配置](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657299e0.md) |
 | 44 | POST | `/v1/userMonitorCardConfig/saveUserMonitorCardConfig` | `App端/监测/用户监测卡片配置` | `HealthPageService` | [保存卡片配置](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657298e0.md) |
 
+### 2.7 App端 / 监测 / 设备绑定（蓝牙流程 BLL 封装）
+
+| # | Method | Path | Apifox 层级 | 调用位置 | Apifox（只读） |
+|---|--------|------|-------------|----------|----------------|
+| 45 | GET | `/v1/equipmentUser/getEquipmentUserByParam` | `App端/监测/设备绑定` | `EquipmentBindService` | [绑定列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487304345e0.md) |
+| 46 | GET | `/v1/equipmentUser/getEquipmentByOne` | `App端/监测/设备绑定` | `EquipmentBindService` | [最近设备](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295331e0.md) |
+| 47 | POST | `/v1/equipment/getEquipmenByApp` | `App端/监测/设备` | `EquipmentBindService` | [App 设备型号](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487304342e0.md) |
+| 48 | GET | `/v1/equipment/getCompatibleBluetoothList` | `App端/监测/设备` | `EquipmentBindService` | [蓝牙白名单](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295335e0.md) |
+| 49 | GET | `/v1/equipmentUser/checkEquipmentVaild` | `App端/监测/设备绑定` | `EquipmentBindService` | [库存校验](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295332e0.md) |
+| 50 | GET | `/v1/equipmentUser/checkEquipmentBind` | `App端/监测/设备绑定` | `EquipmentBindService` | [绑定检查](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295333e0.md) |
+| 51 | POST | `/v1/equipmentUser/bindEquipment` | `App端/监测/设备绑定` | `EquipmentBindService` | [绑定设备](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295330e0.md) |
+| 52 | DELETE | `/v1/equipmentUser/deleteEquipmentUserById` | `App端/监测/设备绑定` | `EquipmentBindService` | [解绑](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295334e0.md) |
+| 53 | GET | `/v1/firmware/getFirmwareUrlByParam` | `App端/监测/设备固件` | `EquipmentBindService` | [固件查询](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295336e0.md) |
+| 54 | POST | `/v1/monitor/saveOrUpdateMonitorData` | `监护/监测记录` | `EquipmentBindService` | [监测上报](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487304328e0.md) |
+
+> 后端蓝牙流程图中新 path（如 `bindEquipmentByApp`、`saveHealthData`）**Apifox 暂无**；以 `EquipmentBindService` 已封装 path 为准。规格：`openspec/changes/weight-h5-scale-ble-status/specs/equipment-bind-api/`。
+
+> 设备大类 Query/Body `type`：`2` 血糖、`3` 体重、`4` 血压、`5` 体温、`6` 血氧（`EquipmentCategoryType`）。
+
 > Query / Body 共用：`hospitalId`（数字串）、`code=column_health`（APP）。保存 Body：`addCardVOList[{cardType, cardName?, sortId}]`，不传 `hiddenCardVOList`。规格见 `openspec/changes/health-page-vitals-cms-api/`。
 
 ---
@@ -193,7 +214,7 @@ App端/
 |----------|--------|-------|
 | `BLL/RegisterLogin/LoginService.swift` | 3 | oauth2/token、oauth2/logout、sendVerificationCode |
 | `DAL/Networking/OAuthAuthenticator.swift` | 1（复用） | oauth2/token（refresh） |
-| `BLL/User/UserService.swift` | 8 | users/* ×6、archive/* ×2 |
+| `BLL/User/UserService.swift` | 9 | users/* ×7、archive/* ×2 |
 | `BLL/My/AddressService.swift` | 3 | address/* |
 | `BLL/Service/OrderService.swift` | 8 | order/* ×6、orderClearing/submitReturnGoods、orderPay/orderPay |
 | `BLL/Service/ShoppingCartService.swift` | 3 | shoppingCart/* |
@@ -206,6 +227,7 @@ App端/
 | `BLL/Service/DictionaryService.swift` | 1 | dictionary/getDictionaryByParentId2 |
 | `BLL/Home/HomeService.swift` | 2 | scheme/getUserToDayMonitorTask、session/getUserParticipateAllTeam |
 | `BLL/Health/HealthPageService.swift` | 4 | healthPage/getCmsConfig、monitorHealth/getMonitorCardList、userMonitorCardConfig/* ×2 |
+| `BLL/Health/EquipmentBindService.swift` | 10 | equipmentUser/* ×6、equipment/getEquipmenByApp、equipment/getCompatibleBluetoothList、firmware/getFirmwareUrlByParam、monitor/saveOrUpdateMonitorData |
 | `BLL/Message/IMService.swift` | 1 | session/getGroup |
 | `DAL/IM/RongCloudManager.swift` | 1 | account/addRongImAccount |
 | `DAL/OSS/OSSManager.swift` | 1 | cos/getCosSign |
@@ -222,7 +244,7 @@ App端/
 | `GET /v1/coupon/getCouponList` | Apifox 有文档，**本 App 未调用** |
 | 订单绑定权益卡 / 结算权益抵扣字段 | Apifox **文档暂无**；确认订单本期客户端多选试算（复用 35a），不以假 path 调用 |
 | `/auth/agreement/*` | 协议页路由，非 HTTP API |
-| `/v1/monitor/*` | 体征**录入**类原生 path 当前工程无 Swift 调用（多走 H5）；勿与已接入的 `/v1/monitorHealth/*`、`/v1/healthPage/*`、`/v1/userMonitorCardConfig/*` 混淆 |
+| `/v1/monitor/*`（除 `saveOrUpdateMonitorData`） | 其它体征录入 path 当前工程无 Swift 调用（多走 H5）；**已封装** `saveOrUpdateMonitorData` → `EquipmentBindService`；勿与 `/v1/monitorHealth/*` 混淆 |
 
 ---
 

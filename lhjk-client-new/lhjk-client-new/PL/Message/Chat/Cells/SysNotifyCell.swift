@@ -3,7 +3,7 @@ import SnapKit
 import Kingfisher
 
 /// 融云协议卡片 Cell
-/// - AD:SysNotify：`monitorReminder`（实时提醒）/ `monitor`（录入成功）/ `sysNotify`（C-sys）
+/// - AD:SysNotify：统一上传卡样式，按顶层 `messageType` 1/2/3 取字段
 /// - AD:Vip / ServiceComment / CheckUserMsg
 final class SysNotifyCell: UITableViewCell {
     static let reuseID = "SysNotifyCell"
@@ -145,7 +145,7 @@ final class SysNotifyCell: UITableViewCell {
         return s
     }()
 
-    /// 实时提醒 CTA「去完成 ›」
+    /// SysNotify CTA（`skipTxt`，缺省「去查看」）；仅按钮可点
     private let actionButton: UIButton = {
         let b = UIButton(type: .system)
         b.titleLabel?.font = .fdFont(ofSize: 13, weight: .bold)
@@ -164,7 +164,7 @@ final class SysNotifyCell: UITableViewCell {
 
         [avatarLabel, avatarImageView, metaLabel, cardView].forEach(contentView.addSubview)
         monitorIconCircle.addSubview(monitorIconView)
-        monitorIconView.snp.makeConstraints { $0.center.equalToSuperview(); $0.size.equalTo(14) }
+        monitorIconView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         titleRow.addArrangedSubview(monitorIconCircle)
         titleRow.addArrangedSubview(titleLabel)
@@ -183,6 +183,8 @@ final class SysNotifyCell: UITableViewCell {
         super.prepareForReuse()
         coverImageView.kf.cancelDownloadTask()
         coverImageView.image = nil
+        monitorIconView.kf.cancelDownloadTask()
+        monitorIconView.image = nil
         clearStack(rowsStack)
         clearStack(commentStack)
         resolved = nil
@@ -283,25 +285,10 @@ final class SysNotifyCell: UITableViewCell {
         clearStack(commentStack)
 
         switch card.variant {
-        case .monitorReminder:
-            applyMonitorHeader(card)
-            descLabel.text = card.bodyText
-            descLabel.isHidden = card.bodyText.isEmpty
-            dividerView.isHidden = false
-            rowsStack.isHidden = false
-            rowsStack.spacing = 0
-            populateMonitorRows(card.monitorRows, accent: card.monitorAccentColor)
-            applyReminderAction(card)
+        case .sysNotify:
+            applyUnifiedSysNotify(card)
 
-        case .monitor:
-            applyMonitorHeader(card)
-            descLabel.isHidden = true
-            dividerView.isHidden = false
-            rowsStack.isHidden = false
-            rowsStack.spacing = 0
-            populateMonitorRows(card.monitorRows, accent: card.monitorAccentColor)
-
-        case .sysNotify, .checkUser:
+        case .checkUser:
             descLabel.text = card.bodyText
             descLabel.isHidden = card.bodyText.isEmpty
 
@@ -326,17 +313,50 @@ final class SysNotifyCell: UITableViewCell {
         }
     }
 
-    private func applyMonitorHeader(_ card: IMCardResolved) {
-        // 图标色仅跟 monitorType
-        let accent = card.monitorAccentColor
-        monitorIconCircle.isHidden = false
-        monitorIconCircle.backgroundColor = accent.withAlphaComponent(0.08)
-        monitorIconView.tintColor = accent
-        monitorIconView.image = UIImage(systemName: monitorSymbol(for: card.monitorType))?.withRenderingMode(.alwaysTemplate)
+    private func applyUnifiedSysNotify(_ card: IMCardResolved) {
+        applyLeadingIcon(card)
+        applyDataSourceTag(card)
 
-        // dataSourceTag → 原型 source-tag
+        let body = card.bodyText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if card.showsBodyContent && !body.isEmpty {
+            descLabel.text = body
+            descLabel.isHidden = false
+        } else {
+            descLabel.text = nil
+            descLabel.isHidden = true
+        }
+
+        let rows = card.displayRows
+        if !rows.isEmpty {
+            dividerView.isHidden = false
+            rowsStack.isHidden = false
+            rowsStack.spacing = 0
+            populateMonitorRows(rows, accent: card.monitorAccentColor)
+        }
+
+        applyJumpAction(card)
+    }
+
+    private func applyLeadingIcon(_ card: IMCardResolved) {
+        monitorIconView.kf.cancelDownloadTask()
+        monitorIconView.image = nil
+        guard card.showsLeadingIcon,
+              let urlStr = card.imageUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
+              let url = URL(string: urlStr) else {
+            monitorIconCircle.isHidden = true
+            return
+        }
+        monitorIconCircle.isHidden = false
+        monitorIconCircle.backgroundColor = UIColor(hexString: "#F5F5F5")
+        monitorIconView.contentMode = .scaleAspectFill
+        monitorIconView.clipsToBounds = true
+        monitorIconView.layer.cornerRadius = 14
+        monitorIconView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+    }
+
+    private func applyDataSourceTag(_ card: IMCardResolved) {
         var config = tagButton.configuration ?? .plain()
-        if let tag = card.dataSourceTag?.trimmingCharacters(in: .whitespacesAndNewlines), !tag.isEmpty {
+        if card.showsDataSourceTag, let tag = card.dataSourceTag {
             config.title = tag
             tagButton.configuration = config
             tagButton.isHidden = false
@@ -347,32 +367,17 @@ final class SysNotifyCell: UITableViewCell {
         }
     }
 
-    private func applyReminderAction(_ card: IMCardResolved) {
-        let accent = card.monitorAccentColor
+    private func applyJumpAction(_ card: IMCardResolved) {
+        guard card.showsJumpButton else {
+            actionButton.isHidden = true
+            return
+        }
         actionButton.isHidden = false
-        actionButton.backgroundColor = accent.withAlphaComponent(0.12)
-        actionButton.setTitleColor(accent, for: .normal)
-        if card.isReminderCompleted {
-            actionButton.setTitle("已完成", for: .normal)
-            actionButton.isEnabled = false
-            actionButton.alpha = 0.55
-        } else {
-            actionButton.setTitle("去完成 ›", for: .normal)
-            actionButton.isEnabled = true
-            actionButton.alpha = 1
-        }
-    }
-
-    private func monitorSymbol(for type: String?) -> String {
-        switch IMMonitorReminderRoute.normalizeMonitorType(type) {
-        case "pressure": return "waveform.path.ecg"
-        case "sugar": return "drop.fill"
-        case "weight": return "chart.bar.fill"
-        case "temperature": return "thermometer.medium"
-        case "diet": return "fork.knife"
-        case "sport": return "figure.walk"
-        default: return "heart.fill"
-        }
+        actionButton.isEnabled = true
+        actionButton.alpha = 1
+        actionButton.backgroundColor = UIColor.fdPrimary.withAlphaComponent(0.12)
+        actionButton.setTitleColor(.fdPrimary, for: .normal)
+        actionButton.setTitle(card.jumpButtonTitle, for: .normal)
     }
 
     // MARK: - Monitor rows（对齐 funde-client chat-card__rows）
@@ -616,23 +621,22 @@ final class SysNotifyCell: UITableViewCell {
 
     // MARK: - Layout
 
-    private func layoutForStaff(_ isStaff: Bool, hasCover: Bool, showUser: Bool, card: IMCardResolved?) {
+    private func layoutForStaff(_ isStaff: Bool, hasCover _: Bool, showUser: Bool, card: IMCardResolved?) {
         let metaOffset: ConstraintOffsetTarget = showUser ? 4 : 8
+        let isUnified = card?.isUnifiedSysNotify == true
         let variant = card?.variant
-        let isMonitor = variant == .monitor
-        let isReminder = variant == .monitorReminder
-        let isMonitorLike = isMonitor || isReminder
-        let showRows = isMonitorLike || variant == .vip
+        let showRows = (isUnified && !(card?.displayRows.isEmpty ?? true)) || variant == .vip
         let showComment = variant == .serviceComment
-        let showAction = isReminder && !actionButton.isHidden
+        let showAction = isUnified && (card?.showsJumpButton == true)
         let showDesc: Bool = {
+            if isUnified {
+                return card?.showsBodyContent == true && !(card?.bodyText.isEmpty ?? true)
+            }
             switch variant {
-            case .monitor, .vip: return false
-            case .monitorReminder:
+            case .vip: return false
+            case .checkUser, .serviceComment:
                 return !(card?.bodyText.isEmpty ?? true)
-            case .sysNotify, .checkUser, .serviceComment:
-                return !(card?.bodyText.isEmpty ?? true)
-            case .none: return false
+            default: return false
             }
         }()
 
@@ -666,7 +670,7 @@ final class SysNotifyCell: UITableViewCell {
                 make.top.equalToSuperview().offset(8).priority(999)
             }
             make.bottom.equalToSuperview().offset(-8).priority(999)
-            make.width.equalTo(isMonitorLike ? 268 : 260)
+            make.width.equalTo(isUnified ? 268 : 260)
             if isStaff {
                 make.leading.equalToSuperview().offset(showUser ? 58 : 16)
             } else {
@@ -674,39 +678,22 @@ final class SysNotifyCell: UITableViewCell {
             }
         }
 
-        let pad: CGFloat = isMonitorLike ? 14 : 12
-        let showTag = isMonitorLike && !tagButton.isHidden
+        let pad: CGFloat = isUnified ? 14 : 12
+        let showTag = isUnified && (card?.showsDataSourceTag == true)
 
-        if hasCover {
-            coverImageView.snp.remakeConstraints { make in
-                make.top.leading.trailing.equalToSuperview().inset(pad)
-                make.height.equalTo(120)
-            }
-            titleRow.snp.remakeConstraints { make in
-                make.top.equalTo(coverImageView.snp.bottom).offset(10)
-                make.leading.equalToSuperview().inset(pad)
-                if showTag {
-                    make.trailing.equalTo(tagButton.snp.leading).offset(-8)
-                } else {
-                    make.trailing.equalToSuperview().inset(pad)
-                }
-            }
-        } else {
-            coverImageView.snp.remakeConstraints { make in
-                make.top.leading.equalToSuperview()
-                make.width.height.equalTo(0)
-            }
-            titleRow.snp.remakeConstraints { make in
-                make.top.equalToSuperview().offset(pad)
-                make.leading.equalToSuperview().inset(pad)
-                if showTag {
-                    make.trailing.equalTo(tagButton.snp.leading).offset(-8)
-                } else {
-                    make.trailing.equalToSuperview().inset(pad)
-                }
+        coverImageView.snp.remakeConstraints { make in
+            make.top.leading.equalToSuperview()
+            make.width.height.equalTo(0)
+        }
+        titleRow.snp.remakeConstraints { make in
+            make.top.equalToSuperview().offset(pad)
+            make.leading.equalToSuperview().inset(pad)
+            if showTag {
+                make.trailing.equalTo(tagButton.snp.leading).offset(-8)
+            } else {
+                make.trailing.equalToSuperview().inset(pad)
             }
         }
-
         if showTag {
             tagButton.snp.remakeConstraints { make in
                 make.centerY.equalTo(titleRow)
@@ -720,55 +707,13 @@ final class SysNotifyCell: UITableViewCell {
             }
         }
 
-        // 提醒卡：title → desc → divider → rows → action
-        // 录入成功：title → divider → rows
-        if isReminder {
-            if showDesc {
-                descLabel.snp.remakeConstraints { make in
-                    make.top.equalTo(titleRow.snp.bottom).offset(8)
-                    make.leading.trailing.equalToSuperview().inset(pad)
-                }
-            } else {
-                descLabel.snp.remakeConstraints { make in
-                    make.top.equalTo(titleRow.snp.bottom)
-                    make.leading.equalToSuperview().offset(pad)
-                    make.height.equalTo(0)
-                }
-            }
-            let afterDesc = showDesc ? descLabel.snp.bottom : titleRow.snp.bottom
-            dividerView.snp.remakeConstraints { make in
-                make.top.equalTo(afterDesc).offset(10)
-                make.leading.trailing.equalToSuperview().inset(pad)
-                make.height.equalTo(1 / UIScreen.main.scale)
-            }
-            rowsStack.snp.remakeConstraints { make in
-                make.top.equalTo(dividerView.snp.bottom).offset(2)
-                make.leading.trailing.equalToSuperview().inset(pad)
-            }
-            commentStack.snp.remakeConstraints { make in
-                make.top.equalTo(rowsStack.snp.bottom)
-                make.leading.equalToSuperview().offset(pad)
-                make.height.equalTo(0)
-            }
-            if showAction {
-                actionButton.snp.remakeConstraints { make in
-                    make.top.equalTo(rowsStack.snp.bottom).offset(10)
-                    make.leading.trailing.equalToSuperview().inset(pad)
-                    make.height.equalTo(36)
-                    make.bottom.equalToSuperview().offset(-pad)
-                }
-            } else {
-                actionButton.snp.remakeConstraints { make in
-                    make.top.equalTo(rowsStack.snp.bottom)
-                    make.leading.equalToSuperview().offset(pad)
-                    make.height.equalTo(0)
-                }
-                rowsStack.snp.remakeConstraints { make in
-                    make.top.equalTo(dividerView.snp.bottom).offset(2)
-                    make.leading.trailing.equalToSuperview().inset(pad)
-                    make.bottom.equalToSuperview().offset(-pad)
-                }
-            }
+        if isUnified {
+            layoutUnifiedSysNotify(
+                pad: pad,
+                showDesc: showDesc,
+                showRows: showRows,
+                showAction: showAction
+            )
             return
         }
 
@@ -777,42 +722,30 @@ final class SysNotifyCell: UITableViewCell {
             make.leading.equalToSuperview().offset(pad)
             make.height.equalTo(0)
         }
+        dividerView.snp.remakeConstraints { make in
+            make.top.equalTo(titleRow.snp.bottom)
+            make.leading.equalToSuperview().offset(pad)
+            make.height.equalTo(0)
+        }
 
-        let showDivider = isMonitor
-        if showDivider {
-            dividerView.snp.remakeConstraints { make in
-                make.top.equalTo(titleRow.snp.bottom).offset(10)
+        if showDesc {
+            descLabel.snp.remakeConstraints { make in
+                make.top.equalTo(titleRow.snp.bottom).offset(6)
                 make.leading.trailing.equalToSuperview().inset(pad)
-                make.height.equalTo(1 / UIScreen.main.scale)
             }
         } else {
-            dividerView.snp.remakeConstraints { make in
+            descLabel.snp.remakeConstraints { make in
                 make.top.equalTo(titleRow.snp.bottom)
                 make.leading.equalToSuperview().offset(pad)
                 make.height.equalTo(0)
             }
         }
 
-        let afterHeader = showDivider ? dividerView.snp.bottom : titleRow.snp.bottom
-
-        if showDesc {
-            descLabel.snp.remakeConstraints { make in
-                make.top.equalTo(afterHeader).offset(6)
-                make.leading.trailing.equalToSuperview().inset(pad)
-            }
-        } else {
-            descLabel.snp.remakeConstraints { make in
-                make.top.equalTo(afterHeader)
-                make.leading.equalToSuperview().offset(pad)
-                make.height.equalTo(0)
-            }
-        }
-
-        let afterDesc = showDesc ? descLabel.snp.bottom : afterHeader
+        let afterDesc = showDesc ? descLabel.snp.bottom : titleRow.snp.bottom
 
         if showRows {
             rowsStack.snp.remakeConstraints { make in
-                make.top.equalTo(afterDesc).offset(showDivider ? 2 : 8)
+                make.top.equalTo(afterDesc).offset(8)
                 make.leading.trailing.equalToSuperview().inset(pad)
             }
         } else {
@@ -839,23 +772,107 @@ final class SysNotifyCell: UITableViewCell {
             }
             if showRows {
                 rowsStack.snp.remakeConstraints { make in
-                    make.top.equalTo(afterDesc).offset(showDivider ? 2 : 8)
+                    make.top.equalTo(afterDesc).offset(8)
                     make.leading.trailing.equalToSuperview().inset(pad)
                     make.bottom.equalToSuperview().offset(-pad)
                 }
             } else if showDesc {
                 descLabel.snp.remakeConstraints { make in
-                    make.top.equalTo(afterHeader).offset(6)
+                    make.top.equalTo(titleRow.snp.bottom).offset(6)
                     make.leading.trailing.equalToSuperview().inset(pad)
                     make.bottom.equalToSuperview().offset(-pad)
                 }
             } else {
                 titleRow.snp.remakeConstraints { make in
-                    if hasCover {
-                        make.top.equalTo(coverImageView.snp.bottom).offset(10)
-                    } else {
-                        make.top.equalToSuperview().offset(pad)
-                    }
+                    make.top.equalToSuperview().offset(pad)
+                    make.leading.trailing.equalToSuperview().inset(pad)
+                    make.bottom.equalToSuperview().offset(-pad)
+                }
+            }
+        }
+    }
+
+    /// 统一 SysNotify：title → 可选 content → 可选 rows → 可选 CTA
+    private func layoutUnifiedSysNotify(
+        pad: CGFloat,
+        showDesc: Bool,
+        showRows: Bool,
+        showAction: Bool
+    ) {
+        commentStack.snp.remakeConstraints { make in
+            make.top.equalTo(titleRow.snp.bottom)
+            make.leading.equalToSuperview().offset(pad)
+            make.height.equalTo(0)
+        }
+
+        if showDesc {
+            descLabel.snp.remakeConstraints { make in
+                make.top.equalTo(titleRow.snp.bottom).offset(8)
+                make.leading.trailing.equalToSuperview().inset(pad)
+            }
+        } else {
+            descLabel.snp.remakeConstraints { make in
+                make.top.equalTo(titleRow.snp.bottom)
+                make.leading.equalToSuperview().offset(pad)
+                make.height.equalTo(0)
+            }
+        }
+
+        let afterDesc = showDesc ? descLabel.snp.bottom : titleRow.snp.bottom
+
+        if showRows {
+            dividerView.snp.remakeConstraints { make in
+                make.top.equalTo(afterDesc).offset(10)
+                make.leading.trailing.equalToSuperview().inset(pad)
+                make.height.equalTo(1 / UIScreen.main.scale)
+            }
+            rowsStack.snp.remakeConstraints { make in
+                make.top.equalTo(dividerView.snp.bottom).offset(2)
+                make.leading.trailing.equalToSuperview().inset(pad)
+            }
+        } else {
+            dividerView.snp.remakeConstraints { make in
+                make.top.equalTo(afterDesc)
+                make.leading.equalToSuperview().offset(pad)
+                make.height.equalTo(0)
+            }
+            rowsStack.snp.remakeConstraints { make in
+                make.top.equalTo(afterDesc)
+                make.leading.equalToSuperview().offset(pad)
+                make.height.equalTo(0)
+            }
+        }
+
+        let afterBody = showRows ? rowsStack.snp.bottom : afterDesc
+
+        if showAction {
+            actionButton.snp.remakeConstraints { make in
+                make.top.equalTo(afterBody).offset(10)
+                make.leading.trailing.equalToSuperview().inset(pad)
+                make.height.equalTo(36)
+                make.bottom.equalToSuperview().offset(-pad)
+            }
+        } else {
+            actionButton.snp.remakeConstraints { make in
+                make.top.equalTo(afterBody)
+                make.leading.equalToSuperview().offset(pad)
+                make.height.equalTo(0)
+            }
+            if showRows {
+                rowsStack.snp.remakeConstraints { make in
+                    make.top.equalTo(dividerView.snp.bottom).offset(2)
+                    make.leading.trailing.equalToSuperview().inset(pad)
+                    make.bottom.equalToSuperview().offset(-pad)
+                }
+            } else if showDesc {
+                descLabel.snp.remakeConstraints { make in
+                    make.top.equalTo(titleRow.snp.bottom).offset(8)
+                    make.leading.trailing.equalToSuperview().inset(pad)
+                    make.bottom.equalToSuperview().offset(-pad)
+                }
+            } else {
+                titleRow.snp.remakeConstraints { make in
+                    make.top.equalToSuperview().offset(pad)
                     make.leading.trailing.equalToSuperview().inset(pad)
                     make.bottom.equalToSuperview().offset(-pad)
                 }

@@ -623,6 +623,8 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         guard let card = IMCardResolver.resolve(from: message),
               let action = IMCardResolver.tapAction(for: card) else { return }
         switch action {
+        case .openPageUrl(let pageUrl):
+            FundePageURL.open(pageUrl, from: self)
         case .openRoute(let path):
             Router.shared.push(path)
         case .unavailable(let tip):

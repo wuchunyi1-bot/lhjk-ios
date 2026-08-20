@@ -124,7 +124,6 @@
 		A590FCD52FEA91170056EF52 /* HealthRecordMetricRowCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC382FEA91170056EF52 /* HealthRecordMetricRowCell.swift */; };
 		A590FCD62FEA91170056EF52 /* MyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC712FEA91170056EF52 /* MyViewController.swift */; };
 		A590FCD82FEA91170056EF52 /* CaptchaVerifyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC8D2FEA91170056EF52 /* CaptchaVerifyView.swift */; };
-		A590FCD92FEA91170056EF52 /* HealthEvaluationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC612FEA91170056EF52 /* HealthEvaluationsViewController.swift */; };
 		A590FCDA2FEA91170056EF52 /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC512FEA91170056EF52 /* ChatViewController.swift */; };
 		A590FCDB2FEA91170056EF52 /* HealthReportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC662FEA91170056EF52 /* HealthReportViewController.swift */; };
 		A590FCDC2FEA91170056EF52 /* MetricsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC302FEA91170056EF52 /* MetricsViewController.swift */; };
@@ -141,7 +140,6 @@
 		A590FCEB2FEA91170056EF52 /* HomeServiceBannerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC462FEA91170056EF52 /* HomeServiceBannerCell.swift */; };
 		A590FCED2FEA91170056EF52 /* RiskBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC3C2FEA91170056EF52 /* RiskBarView.swift */; };
 		A590FCEE2FEA91170056EF52 /* VerifyCodeButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC932FEA91170056EF52 /* VerifyCodeButton.swift */; };
-		A590FCF02FEA91170056EF52 /* DietPlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC5D2FEA91170056EF52 /* DietPlanViewController.swift */; };
 		A590FCF22FEA91170056EF52 /* PhoneBindingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC912FEA91170056EF52 /* PhoneBindingView.swift */; };
 		A590FCF42FEA91170056EF52 /* PolicyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FC7D2FEA91170056EF52 /* PolicyViewController.swift */; };
 		A590FCF52FEA91170056EF52 /* HealthMallViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FCA12FEA91170056EF52 /* HealthMallViewController.swift */; };
@@ -168,6 +166,7 @@
 		A5917D212FDFD7FE00878961 /* LoginModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D1D2FDFD7FE00878961 /* LoginModels.swift */; };
 		A5917D222FDFD7FE00878961 /* LoginServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */; };
 		A5917D242FDFD96D00878961 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D232FDFD96D00878961 /* WebViewController.swift */; };
+		A5923B1A30346538007DE182 /* SplashViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5923B1830346538007DE182 /* SplashViewController.swift */; };
 		A599B60830204B9B0012086A /* MessageSegmentedControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A599B60630204B9B0012086A /* MessageSegmentedControl.swift */; };
 		A5A1FCB83013053200A519EB /* OrderStatusActionFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A1FCB73013053200A519EB /* OrderStatusActionFlow.swift */; };
 		A5A6F4B32FFF7A720065C921 /* OrderModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4AE2FFF7A720065C921 /* OrderModels.swift */; };
@@ -288,6 +287,16 @@
 		A5BD9DFF3019FF6D008C44FC /* DailyTasksViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DFD3019FF6D008C44FC /* DailyTasksViewController.swift */; };
 		A5BD9E003019FF6D008C44FC /* DailyHealthTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DFC3019FF6D008C44FC /* DailyHealthTask.swift */; };
 		A5BD9E013019FF6D008C44FC /* DailyTasksViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DFA3019FF6D008C44FC /* DailyTasksViewModel.swift */; };
+		A5BDA396303547E300E306EB /* WeightScaleBleStatusBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA391303547E300E306EB /* WeightScaleBleStatusBarView.swift */; };
+		A5BDA3983035490400E306EB /* WeightScaleBleStatusCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA3973035490400E306EB /* WeightScaleBleStatusCoordinator.swift */; };
+		A5BDA39B30357D3C00E306EB /* EquipmentBindModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA39930357D3C00E306EB /* EquipmentBindModels.swift */; };
+		A5BDA39C30357D3C00E306EB /* EquipmentBindService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA39A30357D3C00E306EB /* EquipmentBindService.swift */; };
+		A5BDA3A43035921300E306EB /* ScaleDeviceSelectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA3A23035921300E306EB /* ScaleDeviceSelectViewController.swift */; };
+		A5BDA3A53035921300E306EB /* ScaleDeviceSelectViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA39F3035921300E306EB /* ScaleDeviceSelectViewModel.swift */; };
+		A5BDA3A63035921300E306EB /* ScaleDeviceItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA3A13035921300E306EB /* ScaleDeviceItem.swift */; };
+		A5BDA3A73035921300E306EB /* ScaleDeviceCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA39D3035921300E306EB /* ScaleDeviceCardCell.swift */; };
+		A5BDA3A93035AAF200E306EB /* ScaleDeviceBindViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA3A83035AAF200E306EB /* ScaleDeviceBindViewController.swift */; };
+		A5BDA3AB3035AB0100E306EB /* ScaleDeviceBindViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA3AA3035AB0100E306EB /* ScaleDeviceBindViewModel.swift */; };
 		A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */; };
 		A5C71AEB3018592B006EA79C /* VoucherBindEntryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AEA3018592B006EA79C /* VoucherBindEntryCell.swift */; };
 		A5C71AEC3018592B006EA79C /* BenefitCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AE83018592B006EA79C /* BenefitCardCell.swift */; };
@@ -453,9 +462,7 @@
 		A590FC572FEA91170056EF52 /* ConversationListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListViewController.swift; sourceTree = "<group>"; };
 		A590FC592FEA91170056EF52 /* AppointmentsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppointmentsViewController.swift; sourceTree = "<group>"; };
 		A590FC5B2FEA91170056EF52 /* DevicesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicesViewController.swift; sourceTree = "<group>"; };
-		A590FC5D2FEA91170056EF52 /* DietPlanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DietPlanViewController.swift; sourceTree = "<group>"; };
 		A590FC5F2FEA91170056EF52 /* FamilyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyViewController.swift; sourceTree = "<group>"; };
-		A590FC612FEA91170056EF52 /* HealthEvaluationsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthEvaluationsViewController.swift; sourceTree = "<group>"; };
 		A590FC632FEA91170056EF52 /* StageReportCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StageReportCell.swift; sourceTree = "<group>"; };
 		A590FC642FEA91170056EF52 /* WeeklyReportCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyReportCell.swift; sourceTree = "<group>"; };
 		A590FC662FEA91170056EF52 /* HealthReportViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthReportViewController.swift; sourceTree = "<group>"; };
@@ -506,6 +513,7 @@
 		A5917D1E2FDFD7FE00878961 /* LoginService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginService.swift; sourceTree = "<group>"; };
 		A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginServiceProtocol.swift; sourceTree = "<group>"; };
 		A5917D232FDFD96D00878961 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WebViewController.swift; path = Other/Common/Base/WebViewController.swift; sourceTree = "<group>"; };
+		A5923B1830346538007DE182 /* SplashViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashViewController.swift; sourceTree = "<group>"; };
 		A594BE4E301C760600D43046 /* lhjk-client-new.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "lhjk-client-new.entitlements"; sourceTree = "<group>"; };
 		A599B60630204B9B0012086A /* MessageSegmentedControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageSegmentedControl.swift; sourceTree = "<group>"; };
 		A5A1FCB73013053200A519EB /* OrderStatusActionFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderStatusActionFlow.swift; sourceTree = "<group>"; };
@@ -627,6 +635,16 @@
 		A5BD9DFA3019FF6D008C44FC /* DailyTasksViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyTasksViewModel.swift; sourceTree = "<group>"; };
 		A5BD9DFC3019FF6D008C44FC /* DailyHealthTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyHealthTask.swift; sourceTree = "<group>"; };
 		A5BD9DFD3019FF6D008C44FC /* DailyTasksViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyTasksViewController.swift; sourceTree = "<group>"; };
+		A5BDA391303547E300E306EB /* WeightScaleBleStatusBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightScaleBleStatusBarView.swift; sourceTree = "<group>"; };
+		A5BDA3973035490400E306EB /* WeightScaleBleStatusCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightScaleBleStatusCoordinator.swift; sourceTree = "<group>"; };
+		A5BDA39930357D3C00E306EB /* EquipmentBindModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EquipmentBindModels.swift; path = BLL/Health/EquipmentBindModels.swift; sourceTree = "<group>"; };
+		A5BDA39A30357D3C00E306EB /* EquipmentBindService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EquipmentBindService.swift; path = BLL/Health/EquipmentBindService.swift; sourceTree = "<group>"; };
+		A5BDA39D3035921300E306EB /* ScaleDeviceCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleDeviceCardCell.swift; sourceTree = "<group>"; };
+		A5BDA39F3035921300E306EB /* ScaleDeviceSelectViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleDeviceSelectViewModel.swift; sourceTree = "<group>"; };
+		A5BDA3A13035921300E306EB /* ScaleDeviceItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleDeviceItem.swift; sourceTree = "<group>"; };
+		A5BDA3A23035921300E306EB /* ScaleDeviceSelectViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleDeviceSelectViewController.swift; sourceTree = "<group>"; };
+		A5BDA3A83035AAF200E306EB /* ScaleDeviceBindViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleDeviceBindViewController.swift; sourceTree = "<group>"; };
+		A5BDA3AA3035AB0100E306EB /* ScaleDeviceBindViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleDeviceBindViewModel.swift; sourceTree = "<group>"; };
 		A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIFont+Funde.swift"; sourceTree = "<group>"; };
 		A5C71AE83018592B006EA79C /* BenefitCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenefitCardCell.swift; sourceTree = "<group>"; };
 		A5C71AE93018592B006EA79C /* CouponCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CouponCardCell.swift; sourceTree = "<group>"; };
@@ -747,6 +765,7 @@
 		7ADE6D91D4D97089B9DCA5E5 /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				A5923B1930346538007DE182 /* Splash */,
 				F32EE9EBD11D7BD9453BE332 /* Resources */,
 				5FACC28499C23F3853EBBF10 /* AppDelegate.swift */,
 				75BC1DDC53A99376450DD2BB /* Common */,
@@ -1048,6 +1067,8 @@
 		A590FC422FEA91170056EF52 /* Health */ = {
 			isa = PBXGroup;
 			children = (
+				A5BDA3A33035921300E306EB /* ScaleDevice */,
+				A5BDA394303547E300E306EB /* Weight */,
 				A5CB0BCD302193B20076FAFB /* ViewModels */,
 				A5CB0BC93021935F0076FAFB /* MetricCardEdit */,
 				A5BD9DF73019D5B4008C44FC /* ScaleMeasure */,
@@ -1142,14 +1163,6 @@
 			path = Devices;
 			sourceTree = "<group>";
 		};
-		A590FC5E2FEA91170056EF52 /* DietPlan */ = {
-			isa = PBXGroup;
-			children = (
-				A590FC5D2FEA91170056EF52 /* DietPlanViewController.swift */,
-			);
-			path = DietPlan;
-			sourceTree = "<group>";
-		};
 		A590FC602FEA91170056EF52 /* Family */ = {
 			isa = PBXGroup;
 			children = (
@@ -1158,14 +1171,6 @@
 				A590FC5F2FEA91170056EF52 /* FamilyViewController.swift */,
 			);
 			path = Family;
-			sourceTree = "<group>";
-		};
-		A590FC622FEA91170056EF52 /* HealthEvaluations */ = {
-			isa = PBXGroup;
-			children = (
-				A590FC612FEA91170056EF52 /* HealthEvaluationsViewController.swift */,
-			);
-			path = HealthEvaluations;
 			sourceTree = "<group>";
 		};
 		A590FC652FEA91170056EF52 /* Cells */ = {
@@ -1310,9 +1315,7 @@
 				A5A6F5132FFF7BFE0065C921 /* Address */,
 				A590FC5A2FEA91170056EF52 /* Appointments */,
 				A590FC5C2FEA91170056EF52 /* Devices */,
-				A590FC5E2FEA91170056EF52 /* DietPlan */,
 				A590FC602FEA91170056EF52 /* Family */,
-				A590FC622FEA91170056EF52 /* HealthEvaluations */,
 				A590FC672FEA91170056EF52 /* HealthReport */,
 				A590FC722FEA91170056EF52 /* Home */,
 				A590FC742FEA91170056EF52 /* Membership */,
@@ -1576,6 +1579,15 @@
 			);
 			name = Extensions;
 			path = Other/Common/Extensions;
+			sourceTree = "<group>";
+		};
+		A5923B1930346538007DE182 /* Splash */ = {
+			isa = PBXGroup;
+			children = (
+				A5923B1830346538007DE182 /* SplashViewController.swift */,
+			);
+			name = Splash;
+			path = Other/Splash;
 			sourceTree = "<group>";
 		};
 		A599B60730204B9B0012086A /* Components */ = {
@@ -1969,6 +1981,52 @@
 			path = DailyTasks;
 			sourceTree = "<group>";
 		};
+		A5BDA392303547E300E306EB /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A5BDA3973035490400E306EB /* WeightScaleBleStatusCoordinator.swift */,
+				A5BDA391303547E300E306EB /* WeightScaleBleStatusBarView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A5BDA394303547E300E306EB /* Weight */ = {
+			isa = PBXGroup;
+			children = (
+				A5BDA392303547E300E306EB /* Components */,
+			);
+			path = Weight;
+			sourceTree = "<group>";
+		};
+		A5BDA39E3035921300E306EB /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A5BDA39D3035921300E306EB /* ScaleDeviceCardCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A5BDA3A03035921300E306EB /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A5BDA3AA3035AB0100E306EB /* ScaleDeviceBindViewModel.swift */,
+				A5BDA39F3035921300E306EB /* ScaleDeviceSelectViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A5BDA3A33035921300E306EB /* ScaleDevice */ = {
+			isa = PBXGroup;
+			children = (
+				A5BDA3A83035AAF200E306EB /* ScaleDeviceBindViewController.swift */,
+				A5BDA39E3035921300E306EB /* Cells */,
+				A5BDA3A03035921300E306EB /* ViewModels */,
+				A5BDA3A13035921300E306EB /* ScaleDeviceItem.swift */,
+				A5BDA3A23035921300E306EB /* ScaleDeviceSelectViewController.swift */,
+			);
+			path = ScaleDevice;
+			sourceTree = "<group>";
+		};
 		A5BFCA372FE38EF1008DA1DF /* UIFont */ = {
 			isa = PBXGroup;
 			children = (
@@ -2081,6 +2139,8 @@
 		B64D5D28AFB9110FDD54A8D6 /* Health */ = {
 			isa = PBXGroup;
 			children = (
+				A5BDA39930357D3C00E306EB /* EquipmentBindModels.swift */,
+				A5BDA39A30357D3C00E306EB /* EquipmentBindService.swift */,
 				A5CB0BC4302193440076FAFB /* HealthPageService.swift */,
 				A5BD9DED3019A33E008C44FC /* ScaleBleSessionService.swift */,
 				C585503B59B93311DEC6A839 /* HealthRoutes.swift */,
@@ -2411,6 +2471,7 @@
 			files = (
 				A5917D242FDFD96D00878961 /* WebViewController.swift in Sources */,
 				EF81F5EA5B41E6A3D6AD7317 /* IMService.swift in Sources */,
+				A5BDA3AB3035AB0100E306EB /* ScaleDeviceBindViewModel.swift in Sources */,
 				8DC19885FA8CBC4AD853552E /* PaymentService.swift in Sources */,
 				A5917D202FDFD7FE00878961 /* LoginService.swift in Sources */,
 				A5917D212FDFD7FE00878961 /* LoginModels.swift in Sources */,
@@ -2537,7 +2598,6 @@
 				A590FCD52FEA91170056EF52 /* HealthRecordMetricRowCell.swift in Sources */,
 				A590FCD62FEA91170056EF52 /* MyViewController.swift in Sources */,
 				A590FCD82FEA91170056EF52 /* CaptchaVerifyView.swift in Sources */,
-				A590FCD92FEA91170056EF52 /* HealthEvaluationsViewController.swift in Sources */,
 				A590FCDA2FEA91170056EF52 /* ChatViewController.swift in Sources */,
 				A590FCDB2FEA91170056EF52 /* HealthReportViewController.swift in Sources */,
 				A5A6F5662FFF8E5D0065C921 /* PointsModels.swift in Sources */,
@@ -2569,6 +2629,7 @@
 				A5A6F4C42FFF7A8B0065C921 /* VoucherModels.swift in Sources */,
 				A590FCE42FEA91170056EF52 /* HomeViewController.swift in Sources */,
 				A5A6F51E2FFF7C700065C921 /* VoucherListViewController.swift in Sources */,
+				A5BDA3A93035AAF200E306EB /* ScaleDeviceBindViewController.swift in Sources */,
 				A590FCE52FEA91170056EF52 /* BodyFigureView.swift in Sources */,
 				A5CE1D0230331A4800A79706 /* RongEmoji.swift in Sources */,
 				A590FCE62FEA91170056EF52 /* BrandHeaderView.swift in Sources */,
@@ -2597,11 +2658,12 @@
 				A5F6AF2130296CED00D1BF74 /* SessionInvalidation.swift in Sources */,
 				A5C71B0130188F8E006EA79C /* SettingsHubItemRow.swift in Sources */,
 				A599B60830204B9B0012086A /* MessageSegmentedControl.swift in Sources */,
+				A5BDA39B30357D3C00E306EB /* EquipmentBindModels.swift in Sources */,
+				A5BDA39C30357D3C00E306EB /* EquipmentBindService.swift in Sources */,
 				A590FCEA2FEA91170056EF52 /* WeeklyReportCell.swift in Sources */,
 				A590FCEB2FEA91170056EF52 /* HomeServiceBannerCell.swift in Sources */,
 				A590FCED2FEA91170056EF52 /* RiskBarView.swift in Sources */,
 				A590FCEE2FEA91170056EF52 /* VerifyCodeButton.swift in Sources */,
-				A590FCF02FEA91170056EF52 /* DietPlanViewController.swift in Sources */,
 				A5BD9DE430199326008C44FC /* TabHubBrandHeaderView.swift in Sources */,
 				A5A6F53A2FFF7E100065C921 /* DebugLogger.swift in Sources */,
 				A590FCF22FEA91170056EF52 /* PhoneBindingView.swift in Sources */,
@@ -2628,9 +2690,14 @@
 				A5A6F4D72FFF7AE80065C921 /* ServiceHubHeaderView.swift in Sources */,
 				A5A6F4D82FFF7AE80065C921 /* HealthPackageCardCell.swift in Sources */,
 				A5A6F4D92FFF7AE80065C921 /* ServiceBannerCarouselCell.swift in Sources */,
+				A5923B1A30346538007DE182 /* SplashViewController.swift in Sources */,
 				A57C6750301AFDB30024A8DD /* HomeService.swift in Sources */,
 				A57C6751301AFDB30024A8DD /* UserTodayMonitorTask.swift in Sources */,
 				A590FD022FEA91170056EF52 /* FamilyViewController.swift in Sources */,
+				A5BDA3A43035921300E306EB /* ScaleDeviceSelectViewController.swift in Sources */,
+				A5BDA3A53035921300E306EB /* ScaleDeviceSelectViewModel.swift in Sources */,
+				A5BDA3A63035921300E306EB /* ScaleDeviceItem.swift in Sources */,
+				A5BDA3A73035921300E306EB /* ScaleDeviceCardCell.swift in Sources */,
 				A56DDEBB30174BAB000E03A0 /* ManagerSelectCell.swift in Sources */,
 				A56DDEBC30174BAB000E03A0 /* ManagerSelectViewModel.swift in Sources */,
 				A56DDEBD30174BAB000E03A0 /* ManagerSelectViewController.swift in Sources */,
@@ -2667,9 +2734,11 @@
 				A5917D062FDFC8EF00878961 /* UIColor+Hex.swift in Sources */,
 				A5917D072FDFC8EF00878961 /* UIViewController+Alert.swift in Sources */,
 				A5917D082FDFC8EF00878961 /* UIView+Shadow.swift in Sources */,
+				A5BDA396303547E300E306EB /* WeightScaleBleStatusBarView.swift in Sources */,
 				A5917D092FDFC8EF00878961 /* UIView+Layout.swift in Sources */,
 				A5917D0A2FDFC8EF00878961 /* UIColor+Theme.swift in Sources */,
 				A5917D0B2FDFC8EF00878961 /* UIButton+Funde.swift in Sources */,
+				A5BDA3983035490400E306EB /* WeightScaleBleStatusCoordinator.swift in Sources */,
 				A5917D0C2FDFC8EF00878961 /* DGCharts+Theme.swift in Sources */,
 				678D746E713E617DA4218CF8 /* BaseViewController.swift in Sources */,
 				E9F251651FF71AEBC2DF03F3 /* BLLProtocol.swift in Sources */,

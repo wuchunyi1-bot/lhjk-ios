@@ -101,6 +101,31 @@ final class UserService: UserServiceProtocol {
         return user
     }
 
+    /// `GET /v1/users/getUserCenterOverview`
+    /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503199941e0.md
+    func getUserCenterOverview() async throws -> UserCenterOverviewVO {
+        print("[UserService] getUserCenterOverview")
+
+        let response: APIResponse<UserCenterOverviewVO> = try await APIManager.shared.getAsync(
+            path: "/v1/users/getUserCenterOverview",
+            parameters: nil,
+            responseType: APIResponse<UserCenterOverviewVO>.self
+        )
+
+        guard response.isSuccess, let overview = response.data else {
+            print("[UserService] getUserCenterOverview ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw UserServiceError.queryFailed(response.msg ?? "")
+        }
+
+        print(
+            "[UserService] getUserCenterOverview ✓ grade=\(overview.gradeName.map(String.init) ?? "nil") "
+                + "point=\(overview.accountPoint.map(String.init) ?? "nil") "
+                + "fundeCoin=\(overview.fundeCoin.map(String.init) ?? "nil") "
+                + "benefits=\(overview.availableBenefitsCount.map(String.init) ?? "nil")"
+        )
+        return overview
+    }
+
     /// `GET /v1/archive/getOArchiveByUserId`
     /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/486441727e0.md
     func getOArchiveByUserId(_ userId: String) async throws -> OArchive? {

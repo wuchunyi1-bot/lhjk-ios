@@ -27,6 +27,7 @@ final class OrderConfirmViewController: BaseViewController {
     private let statusView = OrderDetailStatusView()
     private let infoCard = OrderDetailCardView()
     private let infoView = OrderDetailInfoView()
+    private let scrollActionBar = OrderDetailActionBar(style: .scrollInline)
     private let submitBar = OrderConfirmSubmitBar()
 
     private var showsOrderListPayPresentation: Bool { entry == .orderListPay }
@@ -100,6 +101,7 @@ final class OrderConfirmViewController: BaseViewController {
         ]
         if showsOrderListPayPresentation {
             sections.append(infoCard)
+            sections.append(scrollActionBar)
         }
         sections.forEach { contentStack.addArrangedSubview($0) }
         if showsOrderListPayPresentation {
@@ -149,6 +151,10 @@ final class OrderConfirmViewController: BaseViewController {
             self?.viewModel.submitPay()
         }
         submitBar.onCancel = { [weak self] in
+            self?.handlePendingPaymentCancel()
+        }
+        scrollActionBar.onAction = { [weak self] action in
+            guard action == .cancel else { return }
             self?.handlePendingPaymentCancel()
         }
 
@@ -331,9 +337,15 @@ final class OrderConfirmViewController: BaseViewController {
         submitBar.configure(
             amount: viewModel.payableAmount,
             submitting: viewModel.isSubmitting,
-            showsCancel: showsOrderListPayPresentation,
+            showsCancel: false,
             payTitle: showsOrderListPayPresentation ? "去支付" : nil
         )
+
+        if showsOrderListPayPresentation {
+            scrollActionBar.configure(actions: [.cancel])
+        } else {
+            scrollActionBar.configure(actions: [])
+        }
 
         if showsOrderListPayPresentation {
             statusView.configure(

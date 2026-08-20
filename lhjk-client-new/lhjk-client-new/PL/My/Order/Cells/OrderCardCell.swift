@@ -297,7 +297,7 @@ final class OrderCardCell: UITableViewCell {
             $0.removeFromSuperview()
         }
 
-        let actions = OrderListCardAction.actions(for: order)
+        let actions = OrderListCardAction.listActions(for: order)
         guard !actions.isEmpty else {
             actionsRow.isHidden = true
             return
@@ -392,6 +392,16 @@ enum OrderListCardAction: Equatable {
         }
     }
 
+    /// 列表卡片隐藏，仅在订单详情内展示
+    var isDetailOnlyAction: Bool {
+        switch self {
+        case .cancel, .afterSale, .returnGoods:
+            return true
+        case .pay, .confirmShip, .confirmReceipt, .renew, .settle:
+            return false
+        }
+    }
+
     /// 按订单状态、套餐类型与退款历史展示操作按钮（对齐 PRD 3.4 / 5.8 与 Figma 3509:9304）
     static func actions(for order: MOrder) -> [OrderListCardAction] {
         actions(
@@ -411,6 +421,21 @@ enum OrderListCardAction: Equatable {
             canRenew: detail.canShowRenewAction,
             canReturnGoods: detail.canShowReturnGoodsAction
         )
+    }
+
+    /// 列表卡片可见操作（隐藏取消 / 退款售后 / 去退货）
+    static func listActions(for order: MOrder) -> [OrderListCardAction] {
+        actions(for: order).filter { !$0.isDetailOnlyAction }
+    }
+
+    /// 详情页固定底栏操作（去支付、确认收货等）
+    static func fixedDetailActions(for detail: AppOrderDetailBO) -> [OrderListCardAction] {
+        actions(for: detail).filter { !$0.isDetailOnlyAction }
+    }
+
+    /// 详情页滚动区底部操作（取消 / 退款售后 / 去退货）
+    static func scrollDetailActions(for detail: AppOrderDetailBO) -> [OrderListCardAction] {
+        actions(for: detail).filter(\.isDetailOnlyAction)
     }
 
     static func actions(

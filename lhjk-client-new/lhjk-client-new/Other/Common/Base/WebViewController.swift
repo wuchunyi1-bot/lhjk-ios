@@ -6,9 +6,13 @@ final class WebViewController: BaseViewController {
 
     private let urlString: String
     private let pageTitle: String?
+    private let enablesWeightBle: Bool
+    /// WebView 顶部预留高度（如体重蓝牙横条），不含 safe area
+    var topContentInset: CGFloat = 0
     private weak var previousPopGestureDelegate: UIGestureRecognizerDelegate?
 
     private var bridge: FundeNativeBridge?
+    private var weightBleCoordinator: WeightScaleBleStatusCoordinator?
     private var scriptHandlerProxy: WeakScriptMessageHandler?
     private var didLogInitialLayout = false
 
@@ -54,10 +58,15 @@ final class WebViewController: BaseViewController {
 
     // MARK: - Init
 
-    init(urlString: String, title: String? = nil) {
+    init(urlString: String, title: String? = nil, enablesWeightBle: Bool = false) {
         self.urlString = urlString
         self.pageTitle = title
+        self.enablesWeightBle = enablesWeightBle || Self.urlImpliesWeightMetric(urlString)
         super.init(nibName: nil, bundle: nil)
+        if self.enablesWeightBle {
+            topContentInset = WeightScaleBleStatusCoordinator.topContentInset
+            weightBleCoordinator = WeightScaleBleStatusCoordinator()
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -70,7 +79,11 @@ final class WebViewController: BaseViewController {
         super.viewDidLoad()
         title = pageTitle
         setupBackNavigation()
-        bridge = FundeNativeBridge(webView: webView, hostViewController: self)
+        bridge = FundeNativeBridge(
+            webView: webView,
+            hostViewController: self,
+            enablesWeightBle: enablesWeightBle
+        )
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
     }
 
@@ -78,12 +91,31 @@ final class WebViewController: BaseViewController {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
         installPopGestureDelegateIfNeeded()
+        weightBleCoordinator?.onAppear()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         webView.stopLoading()
         restorePopGestureDelegateIfNeeded()
+        weightBleCoordinator?.onDisappear(isLeaving: isMovingFromParent || isBeingDismissed)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        if enablesWeightBle {
+            weightBleCoordinator?.bringStatusBarToFront(on: view)
+        }
+        guard !didLogInitialLayout else { return }
+        didLogInitialLayout = true
+        logNavigationEvent(
+            "initialLayout",
+            params: [
+                "viewBounds": "\(view.bounds)",
+                "webViewFrame": "\(webView.frame)",
+                "safeAreaInsets": "\(view.safeAreaInsets)",
+            ]
+        )
     }
 
     override func setupUI() {
@@ -93,13 +125,25 @@ final class WebViewController: BaseViewController {
         view.addSubview(progressView)
         view.addSubview(indicator)
 
-        webView.snp.makeConstraints { $0.edges.equalTo(view.safeAreaLayoutGuide) }
+        webView.snp.makeConstraints { make in
+            make.leading.trailing.bottom.equalTo(view.safeAreaLayoutGuide)
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(topContentInset)
+        }
         progressView.snp.makeConstraints { make in
-            make.top.leading.trailing.equalTo(view.safeAreaLayoutGuide)
+            if enablesWeightBle {
+                make.top.equalTo(view.safeAreaLayoutGuide).offset(topContentInset)
+            } else {
+                make.top.equalTo(view.safeAreaLayoutGuide)
+            }
+            make.leading.trailing.equalTo(view.safeAreaLayoutGuide)
             make.height.equalTo(2)
         }
         indicator.snp.makeConstraints { make in
             make.center.equalToSuperview()
+        }
+
+        if enablesWeightBle {
+            weightBleCoordinator?.install(in: self)
         }
 
         guard let url = URL(string: urlString) else {
@@ -121,26 +165,19 @@ final class WebViewController: BaseViewController {
         webView.load(URLRequest(url: url))
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        guard !didLogInitialLayout else { return }
-        didLogInitialLayout = true
-        logNavigationEvent(
-            "initialLayout",
-            params: [
-                "viewBounds": "\(view.bounds)",
-                "webViewFrame": "\(webView.frame)",
-                "safeAreaInsets": "\(view.safeAreaInsets)",
-            ]
-        )
-    }
-
     deinit {
         bridge?.detach()
         let controller = webView.configuration.userContentController
         controller.removeScriptMessageHandler(forName: FundeNativeBridge.packageHandlerName)
         controller.removeScriptMessageHandler(forName: FundeNativeBridge.handlerName)
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress))
+    }
+
+    private static func urlImpliesWeightMetric(_ urlString: String) -> Bool {
+        guard let url = URL(string: urlString) else { return false }
+        let fragment = url.fragment ?? ""
+        let path = fragment.split(separator: "?", maxSplits: 1).first.map(String.init) ?? ""
+        return FundePageURL.isWeightH5Path(path)
     }
 
     // MARK: - Back Navigation
@@ -287,8 +324,9 @@ extension WebViewController: WKNavigationDelegate {
                 "title": webView.title ?? "nil",
             ]
         )
-        // 页面就绪后推一次当前蓝牙状态，便于 H5 横条初始化
-        ScaleBleSessionService.shared.publishStatus()
+        if enablesWeightBle {
+            ScaleBleSessionService.shared.publishStatus()
+        }
         runDomDiagnostics(webView: webView, label: "domDiagnostics")
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
             guard let self, self.isViewLoaded else { return }

@@ -167,8 +167,10 @@ final class SysNotifyMessage: RCMessageContent {
     var imageUrl: String?
     var urlKey: String?
     var lastMsgDisplayContent: String?
-    /// 协议卡顶层类型（安卓 `messageType`，如监测上传为 2）；与 `extra.type` 不是同一字段
+    /// 协议卡顶层类型：1 title+content+imageUrl；2 title+imageUrl+extra；3 全部
     var messageType: Int?
+    /// 跳转按钮文案；`urlKey` 非空时展示
+    var skipTxt: String?
 
     override class func getObjectName() -> String { "AD:SysNotify" }
 
@@ -184,6 +186,9 @@ final class SysNotifyMessage: RCMessageContent {
             lastMsgDisplayContent: lastMsgDisplayContent, extra: extra,
             messageType: messageType, into: dataDict
         )
+        if let skipTxt, !skipTxt.isEmpty {
+            dataDict["skipTxt"] = skipTxt
+        }
         return try? JSONSerialization.data(withJSONObject: dataDict)
     }
 
@@ -203,6 +208,7 @@ final class SysNotifyMessage: RCMessageContent {
             setLastMsgDisplayContent: { self.lastMsgDisplayContent = $0 },
             setMessageType: { self.messageType = $0 }
         )
+        skipTxt = IMCardJSON.stringValue(json["skipTxt"])
     }
 
     override func conversationDigest() -> String? {

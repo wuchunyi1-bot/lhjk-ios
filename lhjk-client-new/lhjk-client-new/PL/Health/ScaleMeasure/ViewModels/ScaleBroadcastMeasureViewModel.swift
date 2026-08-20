@@ -41,7 +41,7 @@ final class ScaleBroadcastMeasureViewModel: ObservableObject {
         phase = .measuring
         buttonTitle = "停止"
         statusText = "测量中，请上秤…"
-        session.startSession()
+        session.startSession(context: .measurePage)
     }
 
     func stopMeasuring(resetUI: Bool = true) {
@@ -68,7 +68,11 @@ final class ScaleBroadcastMeasureViewModel: ObservableObject {
                 guard let self, self.phase == .measuring else { return }
                 self.weightText = Self.formatWeight(packet.weightKg)
                 self.statusText = "测量中…"
-                self.detailText = "设备 \(packet.macString.suffix(8))"
+                if let discovery = self.session.lastDiscovery {
+                    self.detailText = discovery.identityLogLine
+                } else {
+                    self.detailText = "MAC \(packet.macString)"
+                }
             }
             .store(in: &cancellables)
 
@@ -80,7 +84,11 @@ final class ScaleBroadcastMeasureViewModel: ObservableObject {
                 self.phase = .locked
                 self.buttonTitle = "再测一次"
                 self.statusText = "测量完成"
-                self.detailText = "已锁定 · \(packet.macString)"
+                if let discovery = self.session.lastDiscovery {
+                    self.detailText = discovery.identityLogLine
+                } else {
+                    self.detailText = "已锁定 · \(packet.macString)"
+                }
                 self.session.stopSession()
             }
             .store(in: &cancellables)

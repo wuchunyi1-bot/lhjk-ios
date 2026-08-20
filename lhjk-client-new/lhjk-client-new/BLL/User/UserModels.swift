@@ -429,6 +429,108 @@ struct SaveArchiveHospitalDTO {
     let businessManagerId: Int64?
 }
 
+// MARK: - 个人中心概览
+
+/// `GET /v1/users/getUserCenterOverview` 响应 `data`
+/// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503199941e0.md
+struct UserCenterOverviewVO: Decodable, Equatable {
+    /// 会员等级（字典值）
+    let gradeName: Int?
+    /// 健康积分
+    let accountPoint: Int?
+    /// 富德币
+    let fundeCoin: Int?
+    /// 使用中权益卡数量
+    let availableBenefitsCount: Int64?
+    /// 待支付订单数量
+    let pendingPaymentOrderCount: Int?
+    /// 待收货订单数量
+    let pendingReceiptOrderCount: Int?
+    /// 使用中订单数量
+    let inUseOrderCount: Int?
+    /// 已完成订单数量
+    let completedOrderCount: Int?
+
+    var memberLevelText: String {
+        guard let gradeName else { return "0" }
+        return "V\(gradeName)"
+    }
+
+    var healthPointsText: String { Self.countText(accountPoint) }
+    var fundeCoinText: String { Self.countText(fundeCoin) }
+    var benefitsCountText: String { Self.countText(availableBenefitsCount) }
+
+    var pendingPaymentText: String { Self.countText(pendingPaymentOrderCount) }
+    var pendingReceiptText: String { Self.countText(pendingReceiptOrderCount) }
+    var inUseOrderText: String { Self.countText(inUseOrderCount) }
+    var completedOrderText: String { Self.countText(completedOrderCount) }
+
+    private static func countText(_ value: Int?) -> String {
+        countText(value.map(Int64.init))
+    }
+
+    private static func countText(_ value: Int64?) -> String {
+        let n = max(0, Int(value ?? 0))
+        if n >= 10_000 {
+            return compactWanText(n)
+        }
+        if n > 99 { return "99+" }
+        return "\(n)"
+    }
+
+    /// ≥ 10000 时按「万」缩写，如 10000 → `1w`、15000 → `1.5w`
+    private static func compactWanText(_ value: Int) -> String {
+        let wan = Double(value) / 10_000.0
+        let roundedTenth = (wan * 10).rounded() / 10
+        if abs(roundedTenth - roundedTenth.rounded()) < 0.001 {
+            return "\(Int(roundedTenth))w"
+        }
+        return String(format: "%.1fw", roundedTenth)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case gradeName, accountPoint, fundeCoin, availableBenefitsCount
+        case pendingPaymentOrderCount, pendingReceiptOrderCount
+        case inUseOrderCount, completedOrderCount
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        gradeName = Self.decodeInt(c, .gradeName)
+        accountPoint = Self.decodeInt(c, .accountPoint)
+        fundeCoin = Self.decodeInt(c, .fundeCoin)
+        availableBenefitsCount = Self.decodeInt64(c, .availableBenefitsCount)
+        pendingPaymentOrderCount = Self.decodeInt(c, .pendingPaymentOrderCount)
+        pendingReceiptOrderCount = Self.decodeInt(c, .pendingReceiptOrderCount)
+        inUseOrderCount = Self.decodeInt(c, .inUseOrderCount)
+        completedOrderCount = Self.decodeInt(c, .completedOrderCount)
+    }
+
+    private static func decodeInt(
+        _ c: KeyedDecodingContainer<CodingKeys>,
+        _ key: CodingKeys
+    ) -> Int? {
+        if let v = try? c.decodeIfPresent(Int.self, forKey: key) { return v }
+        if let v = try? c.decodeIfPresent(Int64.self, forKey: key) { return Int(v) }
+        if let s = try? c.decodeIfPresent(String.self, forKey: key) {
+            return Int(s.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        return nil
+    }
+
+    private static func decodeInt64(
+        _ c: KeyedDecodingContainer<CodingKeys>,
+        _ key: CodingKeys
+    ) -> Int64? {
+        if let v = try? c.decodeIfPresent(Int64.self, forKey: key) { return v }
+        if let v = try? c.decodeIfPresent(Int.self, forKey: key) { return Int64(v) }
+        if let s = try? c.decodeIfPresent(String.self, forKey: key) {
+            return Int64(s.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        return nil
+    }
+}
+
 // MARK: - 密码重置 & 修改 DTO
 
 /// 手机号验证码重置密码请求体

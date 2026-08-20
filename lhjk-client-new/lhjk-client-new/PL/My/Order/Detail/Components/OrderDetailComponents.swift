@@ -250,6 +250,7 @@ final class OrderDetailInstitutionView: UIView {
     }()
 
     private let titleLabel = UILabel()
+    private let hintContainer = UIView()
     private let hintChip = UILabel()
     private let iconContainer = UIView()
     private let iconView = UIImageView()
@@ -271,15 +272,21 @@ final class OrderDetailInstitutionView: UIView {
         titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
         titleLabel.textColor = OrderDetailFigma.title
 
+        hintContainer.backgroundColor = OrderDetailFigma.chipBg
+        hintContainer.layer.cornerRadius = 11.5
+        hintContainer.layer.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
+        hintContainer.clipsToBounds = true
+
         hintChip.text = "请前往以下机构领取商品/设备"
         hintChip.font = .fdFont(ofSize: 10, weight: .regular)
         hintChip.textColor = OrderDetailFigma.chipText
-        hintChip.textAlignment = .center
-        hintChip.backgroundColor = OrderDetailFigma.chipBg
-        hintChip.layer.cornerRadius = 11
-        hintChip.clipsToBounds = true
-        hintChip.setContentHuggingPriority(.required, for: .horizontal)
-        hintChip.setContentCompressionResistancePriority(.required, for: .horizontal)
+        hintChip.numberOfLines = 1
+        hintContainer.addSubview(hintChip)
+        hintChip.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(12)
+            $0.trailing.lessThanOrEqualToSuperview().offset(-4)
+            $0.centerY.equalToSuperview()
+        }
 
         iconContainer.backgroundColor = OrderDetailFigma.pinBg
         iconContainer.layer.cornerRadius = 6
@@ -304,33 +311,34 @@ final class OrderDetailInstitutionView: UIView {
         nameRow.spacing = 8
         nameRow.alignment = .center
 
-        let header = UIStackView(arrangedSubviews: [titleLabel, hintChip])
-        header.axis = .horizontal
-        header.alignment = .center
-        header.spacing = 8
-        titleLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
-
-        hintChip.snp.makeConstraints {
-            $0.height.equalTo(22)
-            $0.width.greaterThanOrEqualTo(160)
-        }
-
         callBar.onCall = { [weak self] in
             self?.onCall?()
         }
 
-        let root = UIStackView(arrangedSubviews: [header, nameRow, addressLabel])
-        root.axis = .vertical
-        root.spacing = 10
-        root.setCustomSpacing(6, after: nameRow)
+        [titleLabel, hintContainer, nameRow, addressLabel, callBar].forEach(addSubview)
 
-        addSubview(root)
-        addSubview(callBar)
-        root.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview().inset(16)
+        titleLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(16)
+            $0.top.equalToSuperview().offset(16)
+            $0.height.equalTo(24)
+        }
+        hintContainer.snp.makeConstraints {
+            $0.trailing.equalToSuperview()
+            $0.top.equalToSuperview().offset(16)
+            $0.size.equalTo(CGSize(width: 156, height: 23))
+        }
+        nameRow.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(16)
+            $0.trailing.equalToSuperview().inset(16)
+            $0.top.equalToSuperview().offset(52)
+        }
+        addressLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(39)
+            $0.trailing.equalToSuperview().inset(16)
+            $0.top.equalTo(nameRow.snp.bottom).offset(6)
         }
         callBar.snp.makeConstraints {
-            $0.top.equalTo(root.snp.bottom).offset(12)
+            $0.top.equalTo(addressLabel.snp.bottom).offset(12)
             $0.leading.trailing.bottom.equalToSuperview()
             $0.height.equalTo(46)
         }
@@ -340,7 +348,7 @@ final class OrderDetailInstitutionView: UIView {
 
     func configure(detail: AppOrderDetailBO) {
         titleLabel.text = detail.institutionCardTitle
-        hintChip.isHidden = detail.isExpressDelivery
+        hintContainer.isHidden = detail.isExpressDelivery
         nameLabel.text = detail.displayInstitutionName
         addressLabel.text = detail.institutionAddressText
     }
@@ -415,7 +423,7 @@ final class OrderDetailShipmentTaskCardView: UIView {
         layer.cornerRadius = 12
         clipsToBounds = true
 
-        iconView.image = UIImage(named: "order_detail_logistics_icon")
+        iconView.image = UIImage(named: "order_confirm_package_icon")
         iconView.contentMode = .scaleAspectFit
 
         nameLabel.font = .fdFont(ofSize: 14, weight: .medium)
@@ -442,18 +450,18 @@ final class OrderDetailShipmentTaskCardView: UIView {
 
         iconView.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(12)
-            $0.top.equalToSuperview().offset(15)
-            $0.size.equalTo(16)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(20)
         }
         nameLabel.snp.makeConstraints {
             $0.leading.equalTo(iconView.snp.trailing).offset(8)
-            $0.centerY.equalTo(iconView)
+            $0.top.equalToSuperview().offset(14)
             $0.trailing.lessThanOrEqualTo(stampImageView.snp.leading).offset(-4)
         }
         subtitleLabel.snp.makeConstraints {
             $0.leading.equalTo(nameLabel)
-            $0.top.equalTo(nameLabel.snp.bottom).offset(2)
-            $0.bottom.equalToSuperview().offset(-12)
+            $0.top.equalTo(nameLabel.snp.bottom).offset(4)
+            $0.bottom.equalToSuperview().offset(-14)
         }
         copyButton.snp.makeConstraints {
             $0.leading.equalTo(subtitleLabel.snp.trailing).offset(4)
@@ -466,6 +474,7 @@ final class OrderDetailShipmentTaskCardView: UIView {
             $0.top.equalToSuperview()
             $0.size.equalTo(CGSize(width: 60, height: 51))
         }
+        snp.makeConstraints { $0.height.greaterThanOrEqualTo(65) }
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -584,6 +593,7 @@ final class OrderDetailLogisticsView: UIView {
 
         let recordsTitle = isPickup ? "自提记录" : "发货记录"
         recordsLabel.text = "\(recordsTitle) (共\(totalCount)条)"
+        previewStack.isHidden = previewLines.isEmpty
         recordsControl.isHidden = totalCount == 0
     }
 
@@ -630,7 +640,7 @@ final class OrderDetailPackageView: UIView {
         topRow.alignment = .top
         topRow.spacing = 12
 
-        sectionIcon.image = UIImage(named: "order_detail_package_icon")
+        sectionIcon.image = UIImage(named: "order_confirm_package_icon")
         sectionIcon.contentMode = .scaleAspectFit
         sectionIcon.snp.makeConstraints { $0.size.equalTo(16) }
 
@@ -1123,34 +1133,65 @@ final class OrderDetailInfoView: UIView {
 // MARK: - 底部操作栏（对齐 Figma 3546:4382）
 
 final class OrderDetailActionBar: UIView {
+    enum Style {
+        /// 屏幕底部固定操作栏
+        case fixedBottom
+        /// 滚动内容底部内嵌操作栏
+        case scrollInline
+    }
+
     var onAction: ((OrderListCardAction) -> Void)?
 
+    private let style: Style
     private let stack = UIStackView()
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        backgroundColor = .white
-        layer.cornerRadius = 16
-        layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.04
-        layer.shadowOffset = CGSize(width: 0, height: -2)
-        layer.shadowRadius = 8
+    init(style: Style = .fixedBottom) {
+        self.style = style
+        super.init(frame: .zero)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    private func setupUI() {
+        switch style {
+        case .fixedBottom:
+            backgroundColor = .white
+            layer.cornerRadius = 16
+            layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+            layer.shadowColor = UIColor.black.cgColor
+            layer.shadowOpacity = 0.04
+            layer.shadowOffset = CGSize(width: 0, height: -2)
+            layer.shadowRadius = 8
+        case .scrollInline:
+            backgroundColor = .white
+            layer.cornerRadius = 16
+            clipsToBounds = true
+        }
 
         stack.axis = .horizontal
         stack.spacing = 9
         stack.alignment = .fill
         stack.distribution = .fillEqually
         addSubview(stack)
-        stack.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(16)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalTo(safeAreaLayoutGuide).offset(-10)
-            make.height.equalTo(40)
+
+        switch style {
+        case .fixedBottom:
+            stack.snp.makeConstraints { make in
+                make.top.equalToSuperview().offset(16)
+                make.leading.trailing.equalToSuperview().inset(16)
+                make.bottom.equalTo(safeAreaLayoutGuide).offset(-10)
+                make.height.equalTo(40)
+            }
+        case .scrollInline:
+            stack.snp.makeConstraints { make in
+                make.top.equalToSuperview().offset(8)
+                make.leading.trailing.equalToSuperview().inset(16)
+                make.bottom.equalToSuperview().offset(-8)
+                make.height.equalTo(40)
+            }
         }
     }
-
-    required init?(coder: NSCoder) { fatalError() }
 
     func configure(actions: [OrderListCardAction]) {
         stack.arrangedSubviews.forEach {
@@ -1166,10 +1207,12 @@ final class OrderDetailActionBar: UIView {
     }
 
     private func makeButton(action: OrderListCardAction, primary: Bool) -> UIButton {
-        let button = UIButton(type: .system)
+        // `.system` 会忽略 backgroundColor，次级按钮需 `.custom` 才能显示白底
+        let button = UIButton(type: .custom)
         button.setTitle(action.title, for: .normal)
         button.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
         button.layer.cornerRadius = 20
+        button.clipsToBounds = true
         if primary {
             button.backgroundColor = OrderDetailFigma.primaryOrange
             button.setTitleColor(.white, for: .normal)

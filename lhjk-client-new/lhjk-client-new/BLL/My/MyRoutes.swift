@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 /// 「我的」模块路由注册
 enum MyRoutes {
@@ -16,35 +17,32 @@ enum MyRoutes {
         r.register(path: "/me/health-report")    { _ in HealthReportViewController() }
         r.register(path: "/me/appointments")     { _ in AppointmentsViewController() }
         r.register(path: "/me/devices")          { _ in DevicesViewController() }
-        r.register(path: "/me/diet-plan")        { _ in DietPlanViewController() }
 
-        // 监测方案 / 健康评估 → H5
+        // 监测方案 / 健康评估 / 健康测评 / 饮食方案 → H5
         r.register(path: "/me/monitoring-plan") { _ in
-            WebViewController(
-                urlString: H5Config.monitoringPlanPageURL.absoluteString,
-                title: "监测方案"
-            )
-        }
-        r.register(path: "/me/health-assessment") { _ in
-            WebViewController(
-                urlString: H5Config.healthAssessmentPageURL.absoluteString,
-                title: "健康评估"
-            )
+            monitoringPlanWebView()
         }
         r.register(path: "/monitoring-plan") { _ in
-            WebViewController(
-                urlString: H5Config.monitoringPlanPageURL.absoluteString,
-                title: "监测方案"
-            )
+            monitoringPlanWebView()
+        } 
+        r.register(path: "/me/health-assessment") { _ in
+            healthAssessmentWebView()
         }
         r.register(path: "/health-assessment") { _ in
-            WebViewController(
-                urlString: H5Config.healthAssessmentPageURL.absoluteString,
-                title: "健康评估"
-            )
+            healthAssessmentWebView()
         }
-
-        r.register(path: "/me/health-evaluations") { _ in HealthEvaluationsViewController() }
+        r.register(path: "/me/diet-plan") { params in
+            dietPlanWebView(params: params)
+        }
+        r.register(path: "/diet-plan") { params in
+            dietPlanWebView(params: params)
+        }
+        r.register(path: "/me/health-evaluations") { _ in
+            healthEvaluationsWebView()
+        }
+        r.register(path: "/health-evaluations") { _ in
+            healthEvaluationsWebView()
+        }
 
         // 占位页面（后续迭代实现）
         r.register(path: "/me/membership")  { _ in MembershipViewController() }
@@ -203,5 +201,36 @@ enum MyRoutes {
             let entry = OrderConfirmEntry(routeValue: params["entry"] as? String)
             return OrderConfirmViewController(orderId: orderId, serialNumber: serial, entry: entry)
         }
+    }
+
+    // MARK: - H5 宿主
+
+    private static func monitoringPlanWebView() -> UIViewController {
+        WebViewController(
+            urlString: H5Config.monitoringPlanPageURL.absoluteString,
+            title: "监测方案"
+        )
+    }
+
+    private static func healthAssessmentWebView() -> UIViewController {
+        WebViewController(
+            urlString: H5Config.healthAssessmentPageURL.absoluteString,
+            title: "健康评估"
+        )
+    }
+
+    private static func healthEvaluationsWebView() -> UIViewController {
+        WebViewController(
+            urlString: H5Config.healthEvaluationsPageURL.absoluteString,
+            title: "健康测评"
+        )
+    }
+
+    private static func dietPlanWebView(params: [String: Any]) -> UIViewController {
+        let date = params["date"] as? String
+        return WebViewController(
+            urlString: H5Config.dietPlanPageURL(date: date).absoluteString,
+            title: "饮食方案"
+        )
     }
 }

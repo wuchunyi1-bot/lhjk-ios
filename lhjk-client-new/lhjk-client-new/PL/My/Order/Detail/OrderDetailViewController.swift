@@ -31,7 +31,8 @@ final class OrderDetailViewController: BaseViewController {
     private let feeView = OrderDetailFeeView()
     private let infoCard = OrderDetailCardView()
     private let infoView = OrderDetailInfoView()
-    private let actionBar = OrderDetailActionBar()
+    private let scrollActionBar = OrderDetailActionBar(style: .scrollInline)
+    private let actionBar = OrderDetailActionBar(style: .fixedBottom)
     private var actionBarHeightConstraint: Constraint?
 
     init(orderId: Int64) {
@@ -81,6 +82,13 @@ final class OrderDetailViewController: BaseViewController {
             actionBarHeightConstraint = $0.height.equalTo(0).constraint
         }
         actionBarHeightConstraint?.deactivate()
+
+        scrollActionBar.onAction = { [weak self] action in
+            self?.handleOrderAction(action)
+        }
+        actionBar.onAction = { [weak self] action in
+            self?.handleOrderAction(action)
+        }
 
         loadingOverlay.snp.makeConstraints { $0.edges.equalTo(scrollView) }
         loadingIndicator.snp.makeConstraints { $0.center.equalToSuperview() }
@@ -151,66 +159,66 @@ final class OrderDetailViewController: BaseViewController {
             pickupLogisticsCard,
             institutionCard,
             feeCard,
-            infoCard
+            infoCard,
+            scrollActionBar
         ].forEach { contentStack.addArrangedSubview($0) }
 
         contentStack.setCustomSpacing(12, after: statusView)
+    }
 
-        actionBar.onAction = { [weak self] action in
-            guard let self else { return }
-            if action == .cancel, let detail = self.viewModel.detail {
-                OrderCancelFlow.start(from: self, detail: detail) { [weak self] _ in
-                    self?.viewModel.load()
-                }
-                return
+    private func handleOrderAction(_ action: OrderListCardAction) {
+        if action == .cancel, let detail = viewModel.detail {
+            OrderCancelFlow.start(from: self, detail: detail) { [weak self] _ in
+                self?.viewModel.load()
             }
-            if action == .pay, let detail = self.viewModel.detail, let orderId = detail.id {
-                Router.shared.push(
-                    "/orders/confirm",
-                    params: [
-                        "orderId": String(orderId),
-                        "entry": "order_pay",
-                    ],
-                    from: self
-                )
-                return
-            }
-            if action == .confirmShip, let detail = self.viewModel.detail {
-                OrderStatusActionFlow.confirmShipment(from: self, detail: detail) { [weak self] in
-                    self?.viewModel.load()
-                }
-                return
-            }
-            if action == .renew, let detail = self.viewModel.detail {
-                OrderNavigationCoordinator.openPackageRenewal(from: self, detail: detail)
-                return
-            }
-            if action == .confirmReceipt, let detail = self.viewModel.detail {
-                OrderStatusActionFlow.confirmReceipt(from: self, detail: detail) { [weak self] in
-                    self?.viewModel.load()
-                }
-                return
-            }
-            if action == .afterSale, let detail = self.viewModel.detail {
-                OrderStatusActionFlow.afterSale(from: self, detail: detail) { [weak self] in
-                    self?.viewModel.load()
-                }
-                return
-            }
-            if action == .settle, let detail = self.viewModel.detail {
-                OrderStatusActionFlow.settle(from: self, detail: detail) { [weak self] in
-                    self?.viewModel.load()
-                }
-                return
-            }
-            if action == .returnGoods, let detail = self.viewModel.detail {
-                OrderReturnGoodsFlow.present(from: self, detail: detail) { [weak self] in
-                    self?.viewModel.load()
-                }
-                return
-            }
-            self.showToast(self.viewModel.handleAction(action))
+            return
         }
+        if action == .pay, let detail = viewModel.detail, let orderId = detail.id {
+            Router.shared.push(
+                "/orders/confirm",
+                params: [
+                    "orderId": String(orderId),
+                    "entry": "order_pay",
+                ],
+                from: self
+            )
+            return
+        }
+        if action == .confirmShip, let detail = viewModel.detail {
+            OrderStatusActionFlow.confirmShipment(from: self, detail: detail) { [weak self] in
+                self?.viewModel.load()
+            }
+            return
+        }
+        if action == .renew, let detail = viewModel.detail {
+            OrderNavigationCoordinator.openPackageRenewal(from: self, detail: detail)
+            return
+        }
+        if action == .confirmReceipt, let detail = viewModel.detail {
+            OrderStatusActionFlow.confirmReceipt(from: self, detail: detail) { [weak self] in
+                self?.viewModel.load()
+            }
+            return
+        }
+        if action == .afterSale, let detail = viewModel.detail {
+            OrderStatusActionFlow.afterSale(from: self, detail: detail) { [weak self] in
+                self?.viewModel.load()
+            }
+            return
+        }
+        if action == .settle, let detail = viewModel.detail {
+            OrderStatusActionFlow.settle(from: self, detail: detail) { [weak self] in
+                self?.viewModel.load()
+            }
+            return
+        }
+        if action == .returnGoods, let detail = viewModel.detail {
+            OrderReturnGoodsFlow.present(from: self, detail: detail) { [weak self] in
+                self?.viewModel.load()
+            }
+            return
+        }
+        showToast(viewModel.handleAction(action))
     }
 
     override func bindViewModel() {
@@ -332,13 +340,14 @@ final class OrderDetailViewController: BaseViewController {
             showsExpandToggle: true
         )
 
-        let actions = viewModel.bottomActions
-        actionBar.configure(actions: actions)
-        let showsActions = !actions.isEmpty
-        if showsActions {
-            actionBarHeightConstraint?.deactivate()
-        } else {
+        let fixedActions = viewModel.fixedBottomActions
+        let scrollActions = viewModel.scrollBottomActions
+        scrollActionBar.configure(actions: scrollActions)
+        actionBar.configure(actions: fixedActions)
+        if fixedActions.isEmpty {
             actionBarHeightConstraint?.activate()
+        } else {
+            actionBarHeightConstraint?.deactivate()
         }
 
         view.setNeedsLayout()
@@ -380,6 +389,7 @@ final class OrderDetailViewController: BaseViewController {
     }
 
     private func collapseActionBar() {
+        scrollActionBar.configure(actions: [])
         actionBar.configure(actions: [])
         actionBarHeightConstraint?.activate()
     }

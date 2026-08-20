@@ -253,11 +253,11 @@ struct AppOrderDetailBO: Decodable {
     }
 
     var showsExpressLogisticsCard: Bool {
-        isExpressDelivery && !logisticsLines.isEmpty
+        isExpressDelivery
     }
 
     var showsPickupLogisticsCard: Bool {
-        !isExpressDelivery && !logisticsLines.isEmpty
+        !isExpressDelivery
     }
 
     var institutionCardTitle: String {

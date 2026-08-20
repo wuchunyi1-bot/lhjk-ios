@@ -57,7 +57,12 @@ enum FundePageURL {
         switch parse(pageUrl) {
         case .h5(let path, let query):
             let url = H5Config.authenticatedPageURL(path: path, extraQuery: query)
-            let webVC = WebViewController(urlString: url.absoluteString, title: title)
+            let enablesWeightBle = Self.isWeightH5Path(path)
+            let webVC = WebViewController(
+                urlString: url.absoluteString,
+                title: title,
+                enablesWeightBle: enablesWeightBle
+            )
             guard let source = viewController else { return }
             if let nav = source.navigationController {
                 nav.pushViewController(webVC, animated: true)
@@ -78,6 +83,15 @@ enum FundePageURL {
     /// 是否已按前缀规则解析成功
     static func canOpen(_ pageUrl: String?) -> Bool {
         parse(pageUrl) != .none
+    }
+
+    /// `#/weight` 及其子路径需展示体脂秤蓝牙横条
+    static func isWeightH5Path(_ path: String) -> Bool {
+        let normalized = path
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        return normalized == "weight" || normalized.hasPrefix("weight/")
     }
 
     // MARK: - Helpers

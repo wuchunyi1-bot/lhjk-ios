@@ -1,106 +1,55 @@
 # IM 消息卡片 — iOS 实现
 
-> 监测上传：`monitor-im-card-frontend-handoff.md`（v0.4）  
-> UI 对齐：funde-client `ConversationDetailView.vue` chat-card  
-> 实时提醒：`openspec/changes/im-sysnotify-realtime-reminder/`  
-> 代码：`IMCardResolver` / `SysNotifyCell`
+> 代码：`IMCardResolver` / `IMCardResolved` / `SysNotifyCell`  
+> AD:SysNotify **不再**按 `extra.type` / `rows` 拆三态；实时提醒卡已取消。
 
 ---
 
-## AD:SysNotify 三态
+## AD:SysNotify 统一卡
 
-| 识别 | variant | UI |
-|------|---------|-----|
-| `extra.type == "realTime"` | **`monitorReminder`** | 实时提醒：圆标 + title + tag「监测任务」+ **content** + rows + **去完成 ›** |
-| `extra.rows` 非空（且非 realTime） | `monitor` | 录入成功卡：圆标 + title + tag + 分隔线 + KV/结果胶囊/表格；**不读 content**；无 CTA |
-| 其它 | `sysNotify` | 旧 C-sys：title + content；可选封面 |
+所有 `AD:SysNotify` 都是 **同一种卡片样式**（原数据上传卡骨架：圆标 + 标题 + 可选正文 + 可选 extra 行 + 可选底部按钮）。
 
-判定顺序：**先 realTime，再 rows，再兜底 sysNotify**。
+识别只看 **顶层 `messageType`（Int）**，不是 `extra.type`。缺省或其它值按 **1**。
 
-已移除：meal / detection / fetal / appointment（不再按 urlKey 拆）。
-
----
-
-## C-monitorReminder（实时提醒）
-
-对齐截图 + funde-client `monitor-reminder` / `chat-monitor-reminders.ts`。
+| `messageType` | 读取字段 | 忽略 |
+|---------------|----------|------|
+| **1** | `title`、`content`、`imageUrl` | `extra` |
+| **2** | `title`、`imageUrl`、`extra` | `content` |
+| **3** | `title`、`content`、`imageUrl`、`extra` | — |
 
 ```
 ┌─────────────────────────────────┐
-│ (●icon)  title       [监测任务]  │
-│ content 说明文案                  │
-│ ─────────────────────────────── │
-│ 计划时段：…                      │
-│ 计划时间：…                      │
-│ ┌──────── 去完成 › ──────────┐ │
+│ (imageUrl 28pt 圆)  title       │  ← imageUrl 空则隐藏图标，无 SF 兜底
+│ content（仅 type 1 / 3）         │
+│ ─────────────────────────────── │  ← 仅 type 2 / 3 且 extra.rows 非空
+│ extra.rows KV / 结果胶囊 / 表    │
+│ ┌──────── skipTxt ───────────┐ │  ← 仅 urlKey 非空；空文案默认「去查看」
 └─────────────────────────────────┘
 ```
 
-| 元素 | 数据 | 渲染 |
-|------|------|------|
-| 标题 | `title` | 15pt bold |
-| 说明 | `content` | 正文，必展示（可多行） |
-| 类型图标 | `extra.monitorType` | SF Symbol + 主题色圆底（同 C-monitor） |
-| tag | `dataSourceTag`，空则 **「监测任务」** | 灰底胶囊 |
-| KV | `extra.rows` | label：value |
-| CTA | `completed` | `"0"`/空 →「去完成 ›」可点；`"1"` →「已完成」禁用 |
-| 跳转 | `urlKey` + `monitorType` | 优先 `urlKey`（`FundeH5:`）；否则按 `monitorType` 兜底 |
+| 元素 | 规则 |
+|------|------|
+| 圆标 | 顶层 `imageUrl` → Kingfisher 填入 28pt 圆；空则隐藏 |
+| 标题 | 顶层 `title` |
+| 正文 | type 1/3 读 `content`；空则不占位 |
+| extra 行 | type 2/3 解析 `extra.rows`（KV / 结果胶囊 / 表）；`cells` 兼容 `[[String]]` 与多包一层 `[[[String]]]` |
+| 来源 tag | type 2/3 读 `extra.dataSourceTag`（空则隐藏；灰底胶囊贴标题行右侧） |
+| 封面 | **不展示**封面大图 |
+| `businessData` | **不参与绘制** |
+| 头像 | `isShowUser` + `user.portraitUri` 不变 |
+| 会话摘要 | `lastMsgDisplayContent` |
 
-`imageUrl` 可选；主题色 **不** 依赖封面。
+### 跳转
 
-会话摘要：`lastMsgDisplayContent`。
+- **仅底部按钮可点**，整卡不可点。
+- `urlKey` 非空才出按钮；文案 = `skipTxt`，空则「去查看」。
+- 点击走 `FundePageURL.open(urlKey)`（`FundeApp:` / `FundeH5:`）。
 
-### realTime 跳转 · `urlKey` 约定（`FundeH5:`）
+### 示例（type=1 套餐）
 
-下发 `AD:SysNotify` 实时提醒时，**推荐**将 `urlKey` 写成 `FundeH5:` + H5 hash 路径（与 `FundePageURL` / `H5Config` 一致）。客户端去掉前缀后打开 `#/{path}?token&platform=ios`。
+`title=19.9体验会员`，`content` 空，`imageUrl` 有值，`urlKey=FundeApp:/services/pkg?id=…`，`skipTxt=去查看`：
 
-| `extra.monitorType` | 含义 | 推荐 `urlKey` | 实际 H5 |
-|---------------------|------|---------------|---------|
-| `pressure` | 血压录入 | `FundeH5:/blood-pressure/add` | `#/blood-pressure/add` |
-| `sugar` / `glucose` | 血糖录入 | `FundeH5:/blood-sugar/add` | `#/blood-sugar/add` |
-| `weight` | 体重录入 | `FundeH5:/weight/add` | `#/weight/add` |
-| `temperature` | 体温录入 | `FundeH5:/temperature/add` | `#/temperature/add` |
-| `diet` | 饮食录入 | `FundeH5:/exercise-food/add?meal=breakfast` | `#/exercise-food/add?meal=breakfast` |
-| `sport` / `exercise` | 运动打卡 | `FundeH5:/exercise-food/check-in` | `#/exercise-food/check-in` |
-| （未知） | 体征 Hub | `FundeH5:/blood-pressure`（或由客户端兜底 Hub） | 指标首页 |
-
-说明：
-
-- `meal` 可按餐次改为 `lunch` / `dinner` / `snack`；缺省 `breakfast`。
-- 饮食运动 H5 根路径为 **`exercise-food`**（不是 `exercise`）。
-- 历史兼容：生产仍可能下发 `AngelDoctor://tizhong` 等；iOS `IMMonitorReminderRoute` 仍按关键字映射。**新消息请用上表 `FundeH5:`**。
-
----
-
-## C-monitor（录入成功）
-
-```
-┌─────────────────────────────────┐
-│ (●icon)  title          [tag]   │  ← 28 圆图标主题色；tag=dataSourceTag
-│ ─────────────────────────────── │
-│ 标签：值                         │
-│ 测量结果： [偏高]                │
-│ ┌ 食物 │ 克数 │ 热量 ┐          │
-└─────────────────────────────────┘
-```
-
-| 元素 | 数据 | 渲染 |
-|------|------|------|
-| 标题 | `title` | 15pt bold |
-| 类型图标 | `extra.monitorType` | SF Symbol；圆底色仅按 monitorType |
-| 来源 tag | `extra.dataSourceTag` | 空则隐藏 |
-| KV / 结果 / 表 | `rows[]` | 不读 `content`；无 CTA；`clickable=false` |
-
-### monitorType → 图标 / accent（funde iconMeta）
-
-| monitorType | Symbol | accent |
-|-------------|--------|--------|
-| pressure | `waveform.path.ecg` | `#B47300` |
-| sugar / glucose | `drop.fill` | `#E5564B` |
-| weight | `chart.bar.fill` | `#1F9A6B` |
-| temperature | `thermometer.medium` | `#2DB983` |
-| diet | `fork.knife` | `#3D6FB8` |
-| sport | `figure.walk` | `#FF7A50` |
+`[圆标] 19.9体验会员` + 底部「去查看」。
 
 ---
 
