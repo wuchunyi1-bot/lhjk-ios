@@ -1,24 +1,30 @@
 import UIKit
 import SnapKit
 
-enum PackageDetailTab: Equatable {
-    case content
-    case detail
+enum PackageDetailTab: Int, CaseIterable, Equatable {
+    case benefits = 0
+    case detail = 1
 }
 
 protocol PackageDetailTabBarViewDelegate: AnyObject {
     func tabBarView(_ view: PackageDetailTabBarView, didSelect tab: PackageDetailTab)
 }
 
-/// 套餐详情下半区顶部 Tab 头 — 对齐 Figma 3449:7825 / 3449:7946
+// MARK: - 套餐详情 Tab 选择头
+
+/// 套餐详情 Tab 选择头 — 贴边全宽、等宽均分（对齐 Figma 3805:20813 / 3805:21478）
 final class PackageDetailTabBarView: UIView {
 
     weak var delegate: PackageDetailTabBarViewDelegate?
 
-    private let watermarkLabel = UILabel()
-    private let contentButton = UIButton(type: .custom)
+    private let bgGradientLayer = CAGradientLayer()
+    private let bottomDivider = UIView()
+    private let buttonsStack = UIStackView()
+    private let benefitsButton = UIButton(type: .custom)
     private let detailButton = UIButton(type: .custom)
     private let indicator = UIView()
+
+    private(set) var selectedTab: PackageDetailTab = .benefits
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -27,216 +33,324 @@ final class PackageDetailTabBarView: UIView {
 
     required init?(coder: NSCoder) { fatalError() }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        bgGradientLayer.frame = bounds
+        updateIndicatorPosition(animated: false)
+    }
+
     func setDetailTabVisible(_ visible: Bool) {
         detailButton.isHidden = !visible
-        if !visible, detailButton.isSelected {
-            select(.content, animated: false)
+        if !visible, selectedTab == .detail {
+            select(.benefits, animated: false)
+        } else {
+            setNeedsLayout()
         }
     }
 
     override var intrinsicContentSize: CGSize {
-        CGSize(width: UIView.noIntrinsicMetric, height: 48)
+        CGSize(width: UIView.noIntrinsicMetric, height: 56)
     }
 
     func select(_ tab: PackageDetailTab, animated: Bool) {
-        contentButton.isSelected = tab == .content
+        selectedTab = tab
+        benefitsButton.isSelected = tab == .benefits
         detailButton.isSelected = tab == .detail
-        contentButton.titleLabel?.font = tab == .content ? .fdFont(ofSize: 18, weight: .bold) : .fdFont(ofSize: 16, weight: .regular)
-        detailButton.titleLabel?.font = tab == .detail ? .fdFont(ofSize: 18, weight: .bold) : .fdFont(ofSize: 16, weight: .regular)
 
-        let target = tab == .content ? contentButton : detailButton
+        benefitsButton.titleLabel?.font = tab == .benefits ? .fdFont(ofSize: 16, weight: .medium) : .fdFont(ofSize: 16, weight: .regular)
+        detailButton.titleLabel?.font = tab == .detail ? .fdFont(ofSize: 16, weight: .medium) : .fdFont(ofSize: 16, weight: .regular)
+
+        updateIndicatorPosition(animated: animated)
+    }
+
+    private func updateIndicatorPosition(animated: Bool) {
+        let target: UIButton
+        switch selectedTab {
+        case .benefits: target = benefitsButton
+        case .detail: target = detailButton
+        }
+
         indicator.snp.remakeConstraints {
-            $0.bottom.equalToSuperview().offset(-4)
-            $0.width.equalTo(26)
+            $0.bottom.equalToSuperview().offset(-8)
+            $0.width.equalTo(16)
             $0.height.equalTo(4)
             $0.centerX.equalTo(target)
         }
 
-        guard animated else { return }
-        UIView.animate(withDuration: 0.2) { self.layoutIfNeeded() }
-    }
-
-    private func setupUI() {
-        clipsToBounds = true
-
-        // 水印文字 BENEFITS
-        watermarkLabel.text = "BENEFITS"
-        watermarkLabel.font = .fdFont(ofSize: 52, weight: .bold)
-        watermarkLabel.textColor = UIColor(hexString: "#FFE9C9").withAlphaComponent(0.35)
-        watermarkLabel.transform = CGAffineTransform(shearX: -0.2, y: 0)
-        addSubview(watermarkLabel)
-        watermarkLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(10)
-            $0.centerY.equalToSuperview()
-        }
-
-        configureButton(contentButton, title: "权益", tag: 0)
-        configureButton(detailButton, title: "详情", tag: 1)
-        contentButton.addTarget(self, action: #selector(tabTapped(_:)), for: .touchUpInside)
-        detailButton.addTarget(self, action: #selector(tabTapped(_:)), for: .touchUpInside)
-
-        let buttonsStack = UIStackView(arrangedSubviews: [contentButton, detailButton])
-        buttonsStack.axis = .horizontal
-        buttonsStack.spacing = 16
-        buttonsStack.alignment = .center
-        addSubview(buttonsStack)
-        buttonsStack.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(8)
-            $0.top.bottom.equalToSuperview()
-        }
-
-        indicator.backgroundColor = UIColor(hexString: "#FD383F")
-        indicator.layer.cornerRadius = 2
-        addSubview(indicator)
-        indicator.snp.makeConstraints {
-            $0.bottom.equalToSuperview().offset(-4)
-            $0.width.equalTo(26)
-            $0.height.equalTo(4)
-            $0.centerX.equalTo(contentButton)
-        }
-
-        select(.content, animated: false)
-    }
-
-    private func configureButton(_ button: UIButton, title: String, tag: Int) {
-        button.setTitle(title, for: .normal)
-        button.setTitleColor(UIColor(hexString: "#6D7381"), for: .normal)
-        button.setTitleColor(UIColor(hexString: "#1F2430"), for: .selected)
-        button.titleLabel?.font = .fdFont(ofSize: 16, weight: .regular)
-        button.tag = tag
-    }
-
-    @objc private func tabTapped(_ sender: UIButton) {
-        let tab: PackageDetailTab = sender.tag == 0 ? .content : .detail
-        select(tab, animated: true)
-        delegate?.tabBarView(self, didSelect: tab)
-    }
-}
-
-// MARK: - CGAffineTransform Extension
-
-private extension CGAffineTransform {
-    init(shearX: CGFloat, y: CGFloat) {
-        self.init(a: 1, b: y, c: shearX, d: 1, tx: 0, ty: 0)
-    }
-}
-
-// MARK: - Floors
-
-/// 套餐详情下半区 — 白色卡片内：Tab + 权益楼层 + 详情全量长图（连续展示）
-final class PackageDetailFloorsView: UIView {
-
-    weak var tabDelegate: PackageDetailTabBarViewDelegate?
-    var onHeightChanged: (() -> Void)?
-
-    let tabBarView = PackageDetailTabBarView()
-    /// 权益楼层锚点（供滚动定位）
-    let contentFloorAnchor = UIView()
-    /// 详情楼层锚点（供滚动定位）
-    let detailFloorAnchor = UIView()
-    private let contentStack = UIStackView()
-    private let detailView = PackageDetailCardView()
-    private let illustImageView = UIImageView()
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupUI()
-    }
-
-    required init?(coder: NSCoder) { fatalError() }
-
-    func configure(
-        package: ServicePackageDetail,
-        groups: [ServicePackageComboGroup],
-        radioPicks: [String: Int],
-        checkPicks: [String: Set<Int>],
-        makeGroupView: (ServicePackageComboGroup) -> PackageComboGroupView
-    ) {
-        let hasDetail = !package.detailImageURLs.isEmpty
-        tabBarView.setDetailTabVisible(hasDetail)
-        detailView.configure(with: package)
-        detailFloorAnchor.isHidden = !hasDetail
-        detailView.isHidden = !hasDetail
-
-        contentStack.arrangedSubviews.forEach {
-            contentStack.removeArrangedSubview($0)
-            $0.removeFromSuperview()
-        }
-        for group in groups {
-            contentStack.addArrangedSubview(makeGroupView(group))
-        }
-
-        setNeedsLayout()
-    }
-
-    /// 楼层锚点在 floorsView 坐标系中的 minY
-    func floorMinY(for tab: PackageDetailTab) -> CGFloat? {
-        guard bounds.width > 0 else { return nil }
-        layoutIfNeeded()
-        switch tab {
-        case .content:
-            return contentFloorAnchor.convert(contentFloorAnchor.bounds, to: self).minY
-        case .detail:
-            guard !detailFloorAnchor.isHidden else { return nil }
-            return detailFloorAnchor.convert(detailFloorAnchor.bounds, to: self).minY
+        if animated {
+            UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseInOut]) {
+                self.layoutIfNeeded()
+            }
         }
     }
 
     private func setupUI() {
         backgroundColor = .white
+        clipsToBounds = true
         layer.cornerRadius = 16
-        layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.06
-        layer.shadowOffset = CGSize(width: 0, height: 2)
-        layer.shadowRadius = 8
+        layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
 
-        illustImageView.image = UIImage(named: "package_detail_benefits_illust")
-        illustImageView.contentMode = .scaleAspectFit
-        illustImageView.alpha = 0.4
-        illustImageView.isUserInteractionEnabled = false
-        addSubview(illustImageView)
-        illustImageView.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(-4)
-            $0.trailing.equalToSuperview().offset(4)
-            $0.size.equalTo(92)
+        bgGradientLayer.colors = [
+            UIColor.white.cgColor,
+            UIColor(hexString: "#FDF6F4").cgColor
+        ]
+        bgGradientLayer.locations = [0.33, 1.0]
+        bgGradientLayer.startPoint = CGPoint(x: 0.5, y: 0)
+        bgGradientLayer.endPoint = CGPoint(x: 0.5, y: 1)
+        layer.insertSublayer(bgGradientLayer, at: 0)
+
+        bottomDivider.backgroundColor = UIColor(hexString: "#F0F2F5")
+        addSubview(bottomDivider)
+        bottomDivider.snp.makeConstraints {
+            $0.leading.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(0.5)
         }
 
-        tabBarView.delegate = self
+        configureButton(benefitsButton, title: "权益", tag: PackageDetailTab.benefits.rawValue)
+        configureButton(detailButton, title: "详情信息", tag: PackageDetailTab.detail.rawValue)
 
-        contentStack.axis = .vertical
-        contentStack.spacing = 12
+        benefitsButton.addTarget(self, action: #selector(tabTapped(_:)), for: .touchUpInside)
+        detailButton.addTarget(self, action: #selector(tabTapped(_:)), for: .touchUpInside)
 
-        detailView.onImagesLoaded = { [weak self] in
+        buttonsStack.axis = .horizontal
+        buttonsStack.distribution = .fillEqually
+        buttonsStack.alignment = .fill
+        buttonsStack.spacing = 0
+        buttonsStack.addArrangedSubview(benefitsButton)
+        buttonsStack.addArrangedSubview(detailButton)
+
+        addSubview(buttonsStack)
+        buttonsStack.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+
+        indicator.backgroundColor = UIColor(hexString: "#FF7A50")
+        indicator.layer.cornerRadius = 2
+        addSubview(indicator)
+        indicator.snp.makeConstraints {
+            $0.bottom.equalToSuperview().offset(-8)
+            $0.width.equalTo(16)
+            $0.height.equalTo(4)
+            $0.centerX.equalTo(benefitsButton)
+        }
+
+        select(.benefits, animated: false)
+    }
+
+    private func configureButton(_ button: UIButton, title: String, tag: Int) {
+        button.setTitle(title, for: .normal)
+        button.setTitleColor(UIColor(hexString: "#535D72"), for: .normal)
+        button.setTitleColor(UIColor(hexString: "#1F2942"), for: .selected)
+        button.titleLabel?.font = .fdFont(ofSize: 16, weight: .regular)
+        button.tag = tag
+    }
+
+    @objc private func tabTapped(_ sender: UIButton) {
+        guard let tab = PackageDetailTab(rawValue: sender.tag) else { return }
+        select(tab, animated: true)
+        delegate?.tabBarView(self, didSelect: tab)
+    }
+}
+
+// MARK: - 权益独立卡片
+
+/// 套餐详情 — 权益卡片（对齐 Figma 3805:20862）
+final class PackageDetailBenefitsCardView: UIView {
+
+    private let cardView = UIView()
+    private let titleLabel = UILabel()
+    private let groupsStack = UIStackView()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    private func setupUI() {
+        backgroundColor = .clear
+
+        cardView.backgroundColor = .white
+        cardView.layer.cornerRadius = 16
+        cardView.layer.shadowColor = UIColor.black.cgColor
+        cardView.layer.shadowOpacity = 0.04
+        cardView.layer.shadowOffset = CGSize(width: 0, height: 2)
+        cardView.layer.shadowRadius = 6
+
+        addSubview(cardView)
+        cardView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+
+        titleLabel.text = "权益"
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
+        titleLabel.textColor = UIColor(hexString: "#1F2942")
+        cardView.addSubview(titleLabel)
+        titleLabel.snp.makeConstraints {
+            $0.top.leading.equalToSuperview().offset(14)
+        }
+
+        groupsStack.axis = .vertical
+        groupsStack.spacing = 12
+        cardView.addSubview(groupsStack)
+        groupsStack.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(12)
+            $0.leading.trailing.bottom.equalToSuperview().inset(14)
+        }
+    }
+
+    func setGroupViews(_ views: [UIView]) {
+        groupsStack.arrangedSubviews.forEach {
+            groupsStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+        views.forEach { groupsStack.addArrangedSubview($0) }
+    }
+}
+
+// MARK: - 详情信息独立卡片
+
+/// 套餐详情 — 详情信息卡片（对齐 Figma 3805:20929）
+final class PackageDetailDetailCardView: UIView {
+
+    private let cardView = UIView()
+    private let titleLabel = UILabel()
+    private let detailImageViews = PackageDetailCardView()
+
+    var onHeightChanged: (() -> Void)?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    private func setupUI() {
+        backgroundColor = .clear
+
+        cardView.backgroundColor = .white
+        cardView.layer.cornerRadius = 16
+        cardView.layer.shadowColor = UIColor.black.cgColor
+        cardView.layer.shadowOpacity = 0.04
+        cardView.layer.shadowOffset = CGSize(width: 0, height: 2)
+        cardView.layer.shadowRadius = 6
+
+        addSubview(cardView)
+        cardView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+
+        titleLabel.text = "详情信息"
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
+        titleLabel.textColor = UIColor(hexString: "#1F2942")
+        cardView.addSubview(titleLabel)
+        titleLabel.snp.makeConstraints {
+            $0.top.leading.equalToSuperview().offset(14)
+        }
+
+        detailImageViews.onImagesLoaded = { [weak self] in
             self?.onHeightChanged?()
         }
 
-        let mainStack = UIStackView(arrangedSubviews: [
-            tabBarView,
-            contentFloorAnchor,
-            contentStack,
-            detailFloorAnchor,
-            detailView
-        ])
-        mainStack.axis = .vertical
-        mainStack.spacing = 0
-        mainStack.isLayoutMarginsRelativeArrangement = true
-        mainStack.layoutMargins = UIEdgeInsets(top: 14, left: 14, bottom: 16, right: 14)
-        mainStack.setCustomSpacing(12, after: tabBarView)
-        mainStack.setCustomSpacing(16, after: contentStack)
-        addSubview(mainStack)
-
-        contentFloorAnchor.snp.makeConstraints { $0.height.equalTo(0) }
-        detailFloorAnchor.snp.makeConstraints { $0.height.equalTo(0) }
-
-        mainStack.snp.makeConstraints {
-            $0.edges.equalToSuperview()
+        cardView.addSubview(detailImageViews)
+        detailImageViews.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(12)
+            $0.leading.trailing.bottom.equalToSuperview().inset(14)
         }
     }
-}
 
-extension PackageDetailFloorsView: PackageDetailTabBarViewDelegate {
-    func tabBarView(_ view: PackageDetailTabBarView, didSelect tab: PackageDetailTab) {
-        tabDelegate?.tabBarView(view, didSelect: tab)
+    func configure(with pkg: ServicePackageDetail) {
+        detailImageViews.configure(with: pkg)
+        isHidden = pkg.detailImageURLs.isEmpty
     }
 }
 
+// MARK: - 底部保障卡片
+
+/// 套餐详情底部服务保障卡片及协议文案 — 对齐 Figma 3805:21099
+final class PackageDetailGuaranteeView: UIView {
+
+    private let cardView = UIView()
+    private let agreementLabel = UILabel()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    private func setupUI() {
+        backgroundColor = .clear
+
+        cardView.backgroundColor = .white
+        cardView.layer.cornerRadius = 16
+        cardView.layer.shadowColor = UIColor.black.cgColor
+        cardView.layer.shadowOpacity = 0.04
+        cardView.layer.shadowOffset = CGSize(width: 0, height: 2)
+        cardView.layer.shadowRadius = 6
+
+        addSubview(cardView)
+        cardView.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+        }
+
+        let item1 = makeGuaranteeItem(icon: "pkg_guarantee_refund", title: "多学科专业系统")
+        let item2 = makeGuaranteeItem(icon: "pkg_guarantee_response", title: "膳食运动指导")
+        let item3 = makeGuaranteeItem(icon: "pkg_guarantee_team", title: "持证专业团队")
+
+        let stack = UIStackView(arrangedSubviews: [item1, item2, item3])
+        stack.axis = .horizontal
+        stack.distribution = .fillEqually
+        stack.spacing = 8
+        stack.alignment = .center
+
+        cardView.addSubview(stack)
+        stack.snp.makeConstraints {
+            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 14, left: 8, bottom: 14, right: 8))
+        }
+
+        agreementLabel.text = "退款与售后规则以购买页服务协议为准"
+        agreementLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        agreementLabel.textColor = UIColor(hexString: "#8591AB")
+        agreementLabel.textAlignment = .center
+
+        addSubview(agreementLabel)
+        agreementLabel.snp.makeConstraints {
+            $0.top.equalTo(cardView.snp.bottom).offset(12)
+            $0.leading.trailing.bottom.equalToSuperview()
+        }
+    }
+
+    private func makeGuaranteeItem(icon: String, title: String) -> UIView {
+        let container = UIView()
+
+        let iv = UIImageView(image: UIImage(named: icon))
+        iv.contentMode = .scaleAspectFit
+
+        let lbl = UILabel()
+        lbl.text = title
+        lbl.font = .fdFont(ofSize: 14, weight: .regular)
+        lbl.textColor = UIColor(hexString: "#6D7381")
+        lbl.textAlignment = .center
+        lbl.numberOfLines = 1
+
+        let itemStack = UIStackView(arrangedSubviews: [iv, lbl])
+        itemStack.axis = .vertical
+        itemStack.spacing = 6
+        itemStack.alignment = .center
+
+        iv.snp.makeConstraints {
+            $0.size.equalTo(46)
+        }
+
+        container.addSubview(itemStack)
+        itemStack.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+
+        return container
+    }
+}

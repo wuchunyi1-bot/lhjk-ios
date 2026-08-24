@@ -124,7 +124,7 @@ final class MallProductDetailViewController: BaseViewController {
         last = addSection(title: "详情说明", below: last) { card in
             let title = UILabel()
             title.text = copy.scenario
-            title.font = .fdFont(ofSize: 16, weight: .bold)
+            title.font = .fdFont(ofSize: 18, weight: .bold)
             title.textColor = .fdText
             title.numberOfLines = 0
             let desc = UILabel()
@@ -168,7 +168,7 @@ final class MallProductDetailViewController: BaseViewController {
         let bar = UIView()
         let name = UILabel()
         name.text = p.name
-        name.font = .fdFont(ofSize: 18, weight: .bold)
+        name.font = .fdFont(ofSize: 20, weight: .bold)
         name.textColor = .fdText
         name.numberOfLines = 2
         let unit = UILabel()
@@ -249,7 +249,7 @@ final class MallProductDetailViewController: BaseViewController {
 
         let t = UILabel()
         t.text = title
-        t.font = .fdFont(ofSize: 15, weight: .bold)
+        t.font = .fdFont(ofSize: 17, weight: .bold)
         t.textColor = .fdText
         let d = UILabel()
         d.text = desc
@@ -393,7 +393,7 @@ final class MallProductDetailViewController: BaseViewController {
     private func addSection(title: String, below: ConstraintItem, build: (UIView) -> Void) -> ConstraintItem {
         let header = UILabel()
         header.text = title
-        header.font = .fdFont(ofSize: 16, weight: .bold)
+        header.font = .fdFont(ofSize: 18, weight: .bold)
         header.textColor = .fdText
         contentView.addSubview(header)
         header.snp.makeConstraints {
@@ -489,7 +489,7 @@ private final class MallProductHeroView: UIView {
 
         let name = UILabel()
         name.text = product.name
-        name.font = .fdFont(ofSize: 22, weight: .bold)
+        name.font = .fdFont(ofSize: 24, weight: .bold)
         name.textColor = .fdText
         name.textAlignment = .center
         name.numberOfLines = 2

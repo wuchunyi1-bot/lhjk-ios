@@ -32,6 +32,7 @@
 		A514288D3011E1EC00770A5E /* OrderDetailStatusPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A514288C3011E1EC00770A5E /* OrderDetailStatusPresentation.swift */; };
 		A514288F3011FFE100770A5E /* OrderShipmentRecordsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A514288E3011FFE100770A5E /* OrderShipmentRecordsViewController.swift */; };
 		A528D7B130078E1C005B0CA7 /* H5Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = A528D7B030078E1C005B0CA7 /* H5Config.swift */; };
+		A52EB5DC30385ABE009C763D /* ChatBubbleStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A52EB5DB30385ABE009C763D /* ChatBubbleStyle.swift */; };
 		A53EF9D430088E0900ED9E5A /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EF9D230088E0900ED9E5A /* LocationManager.swift */; };
 		A53EF9D630088E2C00ED9E5A /* AddressEditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EF9D530088E2C00ED9E5A /* AddressEditViewModel.swift */; };
 		A53EFC0F3008CEAE00ED9E5A /* MallCategoryTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53EFC0E3008CEAE00ED9E5A /* MallCategoryTabBar.swift */; };
@@ -298,6 +299,11 @@
 		A5BDA3A93035AAF200E306EB /* ScaleDeviceBindViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA3A83035AAF200E306EB /* ScaleDeviceBindViewController.swift */; };
 		A5BDA3AB3035AB0100E306EB /* ScaleDeviceBindViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA3AA3035AB0100E306EB /* ScaleDeviceBindViewModel.swift */; };
 		A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */; };
+		A5C2BBD4303C1C4F00E1FC31 /* WebViewSystemChromeLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C2BBD3303C1C4F00E1FC31 /* WebViewSystemChromeLocalizer.swift */; };
+		A5C2BBD6303C205F00E1FC31 /* VoicePlaybackLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C2BBD5303C205F00E1FC31 /* VoicePlaybackLogger.swift */; };
+		A5C2BBD8303C237900E1FC31 /* VoicePlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C2BBD7303C237900E1FC31 /* VoicePlaybackController.swift */; };
+		A5C2BBDB303C261B00E1FC31 /* OpusVoiceTranscoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C2BBD9303C261B00E1FC31 /* OpusVoiceTranscoder.swift */; };
+		A5C2BBDC303C261B00E1FC31 /* VoiceAssetInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C2BBDA303C261B00E1FC31 /* VoiceAssetInspector.swift */; };
 		A5C71AEB3018592B006EA79C /* VoucherBindEntryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AEA3018592B006EA79C /* VoucherBindEntryCell.swift */; };
 		A5C71AEC3018592B006EA79C /* BenefitCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AE83018592B006EA79C /* BenefitCardCell.swift */; };
 		A5C71AED3018592B006EA79C /* CouponCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AE93018592B006EA79C /* CouponCardCell.swift */; };
@@ -317,6 +323,10 @@
 		A5C7564730259CED004FA15B /* WeChatSDKManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C7564430259CED004FA15B /* WeChatSDKManager.swift */; };
 		A5C7564830259CED004FA15B /* WeChatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C7564330259CED004FA15B /* WeChatModels.swift */; };
 		A5C7564B3025AF23004FA15B /* QRCodeScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C756493025AF23004FA15B /* QRCodeScanner.swift */; };
+		A5C76E713036EA14006E411B /* WeightScaleResultSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C76E6B3036EA14006E411B /* WeightScaleResultSummaryView.swift */; };
+		A5C76E723036EA14006E411B /* WeightScaleResultViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C76E6F3036EA14006E411B /* WeightScaleResultViewController.swift */; };
+		A5C76E733036EA14006E411B /* WeightScaleResultMetricCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C76E6A3036EA14006E411B /* WeightScaleResultMetricCardView.swift */; };
+		A5C76E743036EA14006E411B /* WeightScaleResultViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C76E6D3036EA14006E411B /* WeightScaleResultViewModel.swift */; };
 		A5CB0BC5302193440076FAFB /* HealthPageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CB0BC4302193440076FAFB /* HealthPageService.swift */; };
 		A5CB0BCA3021935F0076FAFB /* MetricCardEditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CB0BC63021935F0076FAFB /* MetricCardEditViewModel.swift */; };
 		A5CB0BCB3021935F0076FAFB /* MetricCardEditViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CB0BC83021935F0076FAFB /* MetricCardEditViewController.swift */; };
@@ -379,6 +389,7 @@
 		A514288C3011E1EC00770A5E /* OrderDetailStatusPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderDetailStatusPresentation.swift; sourceTree = "<group>"; };
 		A514288E3011FFE100770A5E /* OrderShipmentRecordsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderShipmentRecordsViewController.swift; sourceTree = "<group>"; };
 		A528D7B030078E1C005B0CA7 /* H5Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = H5Config.swift; path = Other/Common/H5Config.swift; sourceTree = "<group>"; };
+		A52EB5DB30385ABE009C763D /* ChatBubbleStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBubbleStyle.swift; sourceTree = "<group>"; };
 		A53EF9D230088E0900ED9E5A /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		A53EF9D530088E2C00ED9E5A /* AddressEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressEditViewModel.swift; sourceTree = "<group>"; };
 		A53EFC0E3008CEAE00ED9E5A /* MallCategoryTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MallCategoryTabBar.swift; sourceTree = "<group>"; };
@@ -646,6 +657,11 @@
 		A5BDA3A83035AAF200E306EB /* ScaleDeviceBindViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleDeviceBindViewController.swift; sourceTree = "<group>"; };
 		A5BDA3AA3035AB0100E306EB /* ScaleDeviceBindViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleDeviceBindViewModel.swift; sourceTree = "<group>"; };
 		A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIFont+Funde.swift"; sourceTree = "<group>"; };
+		A5C2BBD3303C1C4F00E1FC31 /* WebViewSystemChromeLocalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WebViewSystemChromeLocalizer.swift; path = Other/Common/WebViewSystemChromeLocalizer.swift; sourceTree = "<group>"; };
+		A5C2BBD5303C205F00E1FC31 /* VoicePlaybackLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicePlaybackLogger.swift; sourceTree = "<group>"; };
+		A5C2BBD7303C237900E1FC31 /* VoicePlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicePlaybackController.swift; sourceTree = "<group>"; };
+		A5C2BBD9303C261B00E1FC31 /* OpusVoiceTranscoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpusVoiceTranscoder.swift; sourceTree = "<group>"; };
+		A5C2BBDA303C261B00E1FC31 /* VoiceAssetInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceAssetInspector.swift; sourceTree = "<group>"; };
 		A5C71AE83018592B006EA79C /* BenefitCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenefitCardCell.swift; sourceTree = "<group>"; };
 		A5C71AE93018592B006EA79C /* CouponCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CouponCardCell.swift; sourceTree = "<group>"; };
 		A5C71AEA3018592B006EA79C /* VoucherBindEntryCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoucherBindEntryCell.swift; sourceTree = "<group>"; };
@@ -665,6 +681,10 @@
 		A5C7564330259CED004FA15B /* WeChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatModels.swift; sourceTree = "<group>"; };
 		A5C7564430259CED004FA15B /* WeChatSDKManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatSDKManager.swift; sourceTree = "<group>"; };
 		A5C756493025AF23004FA15B /* QRCodeScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeScanner.swift; sourceTree = "<group>"; };
+		A5C76E6A3036EA14006E411B /* WeightScaleResultMetricCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightScaleResultMetricCardView.swift; sourceTree = "<group>"; };
+		A5C76E6B3036EA14006E411B /* WeightScaleResultSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightScaleResultSummaryView.swift; sourceTree = "<group>"; };
+		A5C76E6D3036EA14006E411B /* WeightScaleResultViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightScaleResultViewModel.swift; sourceTree = "<group>"; };
+		A5C76E6F3036EA14006E411B /* WeightScaleResultViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightScaleResultViewController.swift; sourceTree = "<group>"; };
 		A5CB0BC4302193440076FAFB /* HealthPageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HealthPageService.swift; path = BLL/Health/HealthPageService.swift; sourceTree = "<group>"; };
 		A5CB0BC63021935F0076FAFB /* MetricCardEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCardEditViewModel.swift; sourceTree = "<group>"; };
 		A5CB0BC83021935F0076FAFB /* MetricCardEditViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCardEditViewController.swift; sourceTree = "<group>"; };
@@ -751,6 +771,7 @@
 		75BC1DDC53A99376450DD2BB /* Common */ = {
 			isa = PBXGroup;
 			children = (
+				A5C2BBD3303C1C4F00E1FC31 /* WebViewSystemChromeLocalizer.swift */,
 				A5B77A5D302B24F70054B2C4 /* FundePageURL.swift */,
 				A5BD9DE330199326008C44FC /* Components */,
 				A528D7B030078E1C005B0CA7 /* H5Config.swift */,
@@ -1671,6 +1692,7 @@
 		A5A6F4FC2FFF7BBD0065C921 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A52EB5DB30385ABE009C763D /* ChatBubbleStyle.swift */,
 				A5A6F4FA2FFF7BBD0065C921 /* MessageActionMenu.swift */,
 				A5A6F4FB2FFF7BBD0065C921 /* QuotePreviewBar.swift */,
 			);
@@ -1807,6 +1829,10 @@
 		A5A6F5472FFF7EFC0065C921 /* Media */ = {
 			isa = PBXGroup;
 			children = (
+				A5C2BBD9303C261B00E1FC31 /* OpusVoiceTranscoder.swift */,
+				A5C2BBDA303C261B00E1FC31 /* VoiceAssetInspector.swift */,
+				A5C2BBD7303C237900E1FC31 /* VoicePlaybackController.swift */,
+				A5C2BBD5303C205F00E1FC31 /* VoicePlaybackLogger.swift */,
 				A5A6F5462FFF7EFC0065C921 /* AudioRecorder.swift */,
 			);
 			name = Media;
@@ -1993,6 +2019,7 @@
 		A5BDA394303547E300E306EB /* Weight */ = {
 			isa = PBXGroup;
 			children = (
+				A5C76E703036EA14006E411B /* ScaleResult */,
 				A5BDA392303547E300E306EB /* Components */,
 			);
 			path = Weight;
@@ -2088,6 +2115,33 @@
 			);
 			name = QRCode;
 			path = DAL/QRCode;
+			sourceTree = "<group>";
+		};
+		A5C76E6C3036EA14006E411B /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A5C76E6A3036EA14006E411B /* WeightScaleResultMetricCardView.swift */,
+				A5C76E6B3036EA14006E411B /* WeightScaleResultSummaryView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A5C76E6E3036EA14006E411B /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A5C76E6D3036EA14006E411B /* WeightScaleResultViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A5C76E703036EA14006E411B /* ScaleResult */ = {
+			isa = PBXGroup;
+			children = (
+				A5C76E6C3036EA14006E411B /* Components */,
+				A5C76E6E3036EA14006E411B /* ViewModels */,
+				A5C76E6F3036EA14006E411B /* WeightScaleResultViewController.swift */,
+			);
+			path = ScaleResult;
 			sourceTree = "<group>";
 		};
 		A5CB0BC73021935F0076FAFB /* ViewModels */ = {
@@ -2493,6 +2547,7 @@
 				A5F6AF2730296D1A00D1BF74 /* SessionExpirySheet.swift in Sources */,
 				A5A6F4B72FFF7A720065C921 /* ServiceModels.swift in Sources */,
 				A5A6F4C62FFF7AA20065C921 /* AppContainer.swift in Sources */,
+				A5C2BBD6303C205F00E1FC31 /* VoicePlaybackLogger.swift in Sources */,
 				A5A6F4B82FFF7A720065C921 /* OrderService.swift in Sources */,
 				A5A6F4B92FFF7A720065C921 /* ServiceCatalogService.swift in Sources */,
 				A5A6F4BA2FFF7A720065C921 /* DictionaryModels.swift in Sources */,
@@ -2535,6 +2590,7 @@
 				A5A6F5382FFF7D9B0065C921 /* LoginViewModel.swift in Sources */,
 				A590FCB32FEA91170056EF52 /* HealthViewController.swift in Sources */,
 				A5B1FB33300A022F0039B16C /* ShoppingCartModels.swift in Sources */,
+				A52EB5DC30385ABE009C763D /* ChatBubbleStyle.swift in Sources */,
 				A5B1FB34300A022F0039B16C /* ShoppingCartService.swift in Sources */,
 				A590FCB42FEA91170056EF52 /* LoginFieldView.swift in Sources */,
 				A590FCB52FEA91170056EF52 /* ServiceViewController.swift in Sources */,
@@ -2576,6 +2632,7 @@
 				A56120D63010B13500505C32 /* OrderCancelRefundSheet.swift in Sources */,
 				A590FCC92FEA91170056EF52 /* MeServiceFulfillmentCell.swift in Sources */,
 				A590FCCB2FEA91170056EF52 /* StageReportCell.swift in Sources */,
+				A5C2BBD8303C237900E1FC31 /* VoicePlaybackController.swift in Sources */,
 				A5A6F5772FFF8EAD0065C921 /* ServiceListModels.swift in Sources */,
 				A590FCCD2FEA91170056EF52 /* ConversationListViewController.swift in Sources */,
 				A590FCCE2FEA91170056EF52 /* FuncRowView.swift in Sources */,
@@ -2634,6 +2691,8 @@
 				A5CE1D0230331A4800A79706 /* RongEmoji.swift in Sources */,
 				A590FCE62FEA91170056EF52 /* BrandHeaderView.swift in Sources */,
 				A5ACE2413000D5C200056C52 /* ServicePackageDetailViewController.swift in Sources */,
+				A5C2BBDB303C261B00E1FC31 /* OpusVoiceTranscoder.swift in Sources */,
+				A5C2BBDC303C261B00E1FC31 /* VoiceAssetInspector.swift in Sources */,
 				A590FCE72FEA91170056EF52 /* AppointmentsViewController.swift in Sources */,
 				A590FCE92FEA91170056EF52 /* HomeTaskCardCell.swift in Sources */,
 				A5A6F5142FFF7BFE0065C921 /* AddressListViewModel.swift in Sources */,
@@ -2679,6 +2738,10 @@
 				A5A6F4CB2FFF7AB80065C921 /* ServiceViewModel.swift in Sources */,
 				A528D7B130078E1C005B0CA7 /* H5Config.swift in Sources */,
 				A590FCFC2FEA91170056EF52 /* HealthArchiveCardCell.swift in Sources */,
+				A5C76E713036EA14006E411B /* WeightScaleResultSummaryView.swift in Sources */,
+				A5C76E723036EA14006E411B /* WeightScaleResultViewController.swift in Sources */,
+				A5C76E733036EA14006E411B /* WeightScaleResultMetricCardView.swift in Sources */,
+				A5C76E743036EA14006E411B /* WeightScaleResultViewModel.swift in Sources */,
 				A590FCFD2FEA91170056EF52 /* DevicesViewController.swift in Sources */,
 				A5A6F53D2FFF7E340065C921 /* HomeViewModel.swift in Sources */,
 				A590FCFE2FEA91170056EF52 /* NotificationSettingsViewController.swift in Sources */,
@@ -2758,6 +2821,7 @@
 				A5C7564830259CED004FA15B /* WeChatModels.swift in Sources */,
 				A576A2202FE8E22E004F6070 /* ECGSimulator.swift in Sources */,
 				A576A2212FE8E22E004F6070 /* ECGChartView.swift in Sources */,
+				A5C2BBD4303C1C4F00E1FC31 /* WebViewSystemChromeLocalizer.swift in Sources */,
 				A5A6F4ED2FFF7B930065C921 /* NotificationCell.swift in Sources */,
 				A576A2222FE8E22E004F6070 /* ECGDataBuffer.swift in Sources */,
 				A5917CE22FDFA7C000878961 /* HomeRoutes.swift in Sources */,

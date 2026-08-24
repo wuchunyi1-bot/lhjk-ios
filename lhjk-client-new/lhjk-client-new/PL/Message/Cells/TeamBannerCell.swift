@@ -25,12 +25,12 @@ final class TeamBannerCell: UITableViewCell {
 
         let mark = UILabel()
         mark.text = "三好共管 · 您的专属团队"
-        mark.font = .fdFont(ofSize: 13, weight: .semibold)
+        mark.font = .fdFont(ofSize: 15, weight: .semibold)
         mark.textColor = .fdText
 
         let badge = UILabel()
         badge.text = "● 3 人在线"
-        badge.font = .fdFont(ofSize: 10, weight: .bold)
+        badge.font = .fdFont(ofSize: 12, weight: .bold)
         badge.textColor = .fdSuccess
         badge.backgroundColor = UIColor(hexString: "#E6F7EF")
         badge.layer.cornerRadius = 8
@@ -39,7 +39,7 @@ final class TeamBannerCell: UITableViewCell {
 
         let body = UILabel()
         body.text = "优先从服务群发起问题，医生、营养师、健管师会协同回复。"
-        body.font = .fdFont(ofSize: 12)
+        body.font = .fdFont(ofSize: 14)
         body.textColor = .fdSubtext
         body.numberOfLines = 0
 

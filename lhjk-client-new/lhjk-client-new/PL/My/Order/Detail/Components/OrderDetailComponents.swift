@@ -76,7 +76,7 @@ final class OrderDetailHintBar: UIView {
         super.init(frame: frame)
         backgroundColor = .fdBg2
         layer.cornerRadius = 8
-        label.font = .fdCaption
+        label.font = .fdFont(ofSize: 13, weight: .regular)
         label.textColor = .fdSubtext
         label.numberOfLines = 0
         addSubview(label)
@@ -103,14 +103,14 @@ final class OrderDetailFulfillmentView: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        titleLabel.font = .fdBodySemibold
+        titleLabel.font = .fdFont(ofSize: 15, weight: .semibold)
         titleLabel.textColor = .fdText
-        personLabel.font = .fdBodySemibold
+        personLabel.font = .fdFont(ofSize: 15, weight: .semibold)
         personLabel.textColor = .fdText
-        detailLabel.font = .fdCaption
+        detailLabel.font = .fdFont(ofSize: 13, weight: .regular)
         detailLabel.textColor = .fdSubtext
         detailLabel.numberOfLines = 0
-        logisticsLabel.font = .fdCaption
+        logisticsLabel.font = .fdFont(ofSize: 13, weight: .regular)
         logisticsLabel.textColor = .fdPrimary
         logisticsLabel.numberOfLines = 0
 
@@ -183,7 +183,7 @@ final class OrderDetailAddressView: UIView {
         }
 
         titleLabel.text = "收货地址"
-        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
         titleLabel.textColor = OrderDetailFigma.title
 
         iconContainer.backgroundColor = OrderDetailFigma.pinBg
@@ -195,11 +195,11 @@ final class OrderDetailAddressView: UIView {
         iconView.snp.makeConstraints { $0.center.equalToSuperview(); $0.size.equalTo(14) }
         iconContainer.snp.makeConstraints { $0.size.equalTo(24) }
 
-        nameLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        nameLabel.font = .fdFont(ofSize: 18, weight: .medium)
         nameLabel.textColor = OrderDetailFigma.title
         nameLabel.numberOfLines = 1
 
-        addressLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        addressLabel.font = .fdFont(ofSize: 16, weight: .regular)
         addressLabel.textColor = OrderDetailFigma.subtitle
         addressLabel.numberOfLines = 2
         addressLabel.lineBreakMode = .byTruncatingTail
@@ -269,7 +269,7 @@ final class OrderDetailInstitutionView: UIView {
             $0.size.equalTo(245)
         }
 
-        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
         titleLabel.textColor = OrderDetailFigma.title
 
         hintContainer.backgroundColor = OrderDetailFigma.chipBg
@@ -278,7 +278,7 @@ final class OrderDetailInstitutionView: UIView {
         hintContainer.clipsToBounds = true
 
         hintChip.text = "请前往以下机构领取商品/设备"
-        hintChip.font = .fdFont(ofSize: 10, weight: .regular)
+        hintChip.font = .fdFont(ofSize: 12, weight: .regular)
         hintChip.textColor = OrderDetailFigma.chipText
         hintChip.numberOfLines = 1
         hintContainer.addSubview(hintChip)
@@ -297,11 +297,11 @@ final class OrderDetailInstitutionView: UIView {
         iconView.snp.makeConstraints { $0.center.equalToSuperview(); $0.size.equalTo(14) }
         iconContainer.snp.makeConstraints { $0.size.equalTo(24) }
 
-        nameLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        nameLabel.font = .fdFont(ofSize: 18, weight: .medium)
         nameLabel.textColor = OrderDetailFigma.title
         nameLabel.numberOfLines = 1
 
-        addressLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        addressLabel.font = .fdFont(ofSize: 16, weight: .regular)
         addressLabel.textColor = OrderDetailFigma.subtitle
         addressLabel.numberOfLines = 2
         addressLabel.lineBreakMode = .byTruncatingTail
@@ -386,7 +386,7 @@ private final class OrderDetailInstitutionCallBar: UIView {
         config.baseForegroundColor = OrderDetailFigma.primaryOrange
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
-            outgoing.font = .fdFont(ofSize: 12, weight: .medium)
+            outgoing.font = .fdFont(ofSize: 14, weight: .medium)
             return outgoing
         }
         button.configuration = config
@@ -426,11 +426,11 @@ final class OrderDetailShipmentTaskCardView: UIView {
         iconView.image = UIImage(named: "order_confirm_package_icon")
         iconView.contentMode = .scaleAspectFit
 
-        nameLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        nameLabel.font = .fdFont(ofSize: 16, weight: .medium)
         nameLabel.textColor = OrderDetailFigma.title
         nameLabel.numberOfLines = 1
 
-        subtitleLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        subtitleLabel.font = .fdFont(ofSize: 14, weight: .regular)
         subtitleLabel.textColor = OrderDetailFigma.subtitle
         subtitleLabel.numberOfLines = 1
         subtitleLabel.lineBreakMode = .byTruncatingTail
@@ -529,13 +529,13 @@ final class OrderDetailLogisticsView: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
         titleLabel.textColor = OrderDetailFigma.title
 
         previewStack.axis = .vertical
         previewStack.spacing = 12
 
-        recordsLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        recordsLabel.font = .fdFont(ofSize: 14, weight: .regular)
         recordsLabel.textColor = OrderDetailFigma.subtitle
         recordsIcon.image = UIImage(named: "order_detail_chevron_right")
         recordsIcon.contentMode = .scaleAspectFit
@@ -619,11 +619,11 @@ final class OrderDetailPackageView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        nameLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        nameLabel.font = .fdFont(ofSize: 18, weight: .medium)
         nameLabel.textColor = OrderDetailFigma.title
         nameLabel.numberOfLines = 2
 
-        introLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        introLabel.font = .fdFont(ofSize: 16, weight: .regular)
         introLabel.textColor = OrderDetailFigma.subtitle
         introLabel.numberOfLines = 1
 
@@ -645,7 +645,7 @@ final class OrderDetailPackageView: UIView {
         sectionIcon.snp.makeConstraints { $0.size.equalTo(16) }
 
         sectionTitleLabel.text = "套餐内容"
-        sectionTitleLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        sectionTitleLabel.font = .fdFont(ofSize: 16, weight: .medium)
         sectionTitleLabel.textColor = OrderDetailFigma.title
 
         let headerStack = UIStackView(arrangedSubviews: [sectionIcon, sectionTitleLabel])
@@ -656,7 +656,7 @@ final class OrderDetailPackageView: UIView {
         contentStack.axis = .vertical
         contentStack.spacing = 12
 
-        toggleTitleLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        toggleTitleLabel.font = .fdFont(ofSize: 14, weight: .regular)
         toggleTitleLabel.textColor = OrderDetailFigma.subtitle
         toggleIcon.contentMode = .scaleAspectFit
         toggleIcon.snp.makeConstraints { $0.size.equalTo(14) }
@@ -726,20 +726,20 @@ final class OrderDetailPackageView: UIView {
 
     private func makeContentRow(_ line: OrderDetailPackageLineBO) -> UIView {
         let name = UILabel()
-        name.font = .fdFont(ofSize: 12, weight: .regular)
+        name.font = .fdFont(ofSize: 14, weight: .regular)
         name.textColor = OrderDetailFigma.title
         name.text = line.displayName
         name.lineBreakMode = .byTruncatingTail
 
         let meta = UILabel()
-        meta.font = .fdFont(ofSize: 12, weight: .regular)
+        meta.font = .fdFont(ofSize: 14, weight: .regular)
         meta.textColor = OrderDetailFigma.title
         meta.text = line.qtyLabel
         meta.textAlignment = .right
         meta.setContentHuggingPriority(.required, for: .horizontal)
 
         let price = UILabel()
-        price.font = .fdFont(ofSize: 12, weight: .medium)
+        price.font = .fdFont(ofSize: 14, weight: .medium)
         price.textColor = OrderDetailFigma.title
         price.text = OrderConfirmMoney.yen(line.priceValue)
         price.textAlignment = .right
@@ -795,7 +795,7 @@ final class OrderDetailFeeView: UIView {
         super.init(frame: frame)
 
         titleLabel.text = "费用明细"
-        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
         titleLabel.textColor = OrderDetailFigma.title
 
         rowsStack.axis = .vertical
@@ -803,7 +803,7 @@ final class OrderDetailFeeView: UIView {
 
         totalDivider.backgroundColor = OrderDetailFigma.divider
 
-        totalLeft.font = .fdFont(ofSize: 16, weight: .medium)
+        totalLeft.font = .fdFont(ofSize: 18, weight: .medium)
         totalLeft.textColor = OrderDetailFigma.title
         totalRight.textAlignment = .right
 
@@ -847,13 +847,13 @@ final class OrderDetailFeeView: UIView {
     private func row(_ title: String, _ value: String, highlight: Bool) -> UIView {
         let left = UILabel()
         left.text = title
-        left.font = .fdFont(ofSize: 14, weight: .regular)
+        left.font = .fdFont(ofSize: 16, weight: .regular)
         left.textColor = OrderDetailFigma.subtitle
         left.setContentHuggingPriority(.required, for: .horizontal)
 
         let right = UILabel()
         right.text = value
-        right.font = .fdFont(ofSize: 14, weight: .medium)
+        right.font = .fdFont(ofSize: 16, weight: .medium)
         right.textColor = highlight ? OrderDetailFigma.priceRed : OrderDetailFigma.title
         right.textAlignment = .right
 
@@ -874,7 +874,7 @@ final class OrderDetailAfterSaleView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         titleLabel.text = "退款/售后信息"
-        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
         titleLabel.textColor = OrderDetailFigma.title
         stack.axis = .vertical
         stack.spacing = 12
@@ -915,12 +915,12 @@ final class OrderDetailAfterSaleView: UIView {
     ) -> UIView {
         let left = UILabel()
         left.text = title
-        left.font = .fdFont(ofSize: 14, weight: .regular)
+        left.font = .fdFont(ofSize: 16, weight: .regular)
         left.textColor = OrderDetailFigma.subtitle
         left.setContentHuggingPriority(.required, for: .horizontal)
         let right = UILabel()
         right.text = value
-        right.font = .fdFont(ofSize: 14, weight: .regular)
+        right.font = .fdFont(ofSize: 16, weight: .regular)
         right.textColor = valueColor
         right.numberOfLines = multiline ? 0 : 1
         right.textAlignment = .right
@@ -963,7 +963,7 @@ final class OrderDetailInfoView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         titleLabel.text = "订单信息"
-        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
         titleLabel.textColor = OrderDetailFigma.title
 
         stack.axis = .vertical
@@ -972,7 +972,7 @@ final class OrderDetailInfoView: UIView {
         expandedStack.axis = .vertical
         expandedStack.spacing = 12
 
-        toggleTitleLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        toggleTitleLabel.font = .fdFont(ofSize: 14, weight: .regular)
         toggleTitleLabel.textColor = OrderDetailFigma.subtitle
         toggleIcon.contentMode = .scaleAspectFit
         toggleIcon.snp.makeConstraints { $0.size.equalTo(14) }
@@ -1065,13 +1065,13 @@ final class OrderDetailInfoView: UIView {
     private func orderNumberRow(_ value: String) -> UIView {
         let left = UILabel()
         left.text = "订单号"
-        left.font = .fdFont(ofSize: 14, weight: .regular)
+        left.font = .fdFont(ofSize: 16, weight: .regular)
         left.textColor = OrderDetailFigma.subtitle
         left.setContentHuggingPriority(.required, for: .horizontal)
 
         let valueLabel = UILabel()
         valueLabel.text = value
-        valueLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        valueLabel.font = .fdFont(ofSize: 16, weight: .regular)
         valueLabel.textColor = OrderDetailFigma.title
         valueLabel.textAlignment = .right
         valueLabel.lineBreakMode = .byTruncatingMiddle
@@ -1102,12 +1102,12 @@ final class OrderDetailInfoView: UIView {
     private func infoRow(_ title: String, _ value: String, mutedValue: Bool = false, multiline: Bool = false) -> UIView {
         let left = UILabel()
         left.text = title
-        left.font = .fdFont(ofSize: 14, weight: .regular)
+        left.font = .fdFont(ofSize: 16, weight: .regular)
         left.textColor = OrderDetailFigma.subtitle
         left.setContentHuggingPriority(.required, for: .horizontal)
         let right = UILabel()
         right.text = value
-        right.font = .fdFont(ofSize: 14, weight: .regular)
+        right.font = .fdFont(ofSize: 16, weight: .regular)
         right.textColor = mutedValue ? OrderDetailFigma.subtitle : OrderDetailFigma.title
         right.numberOfLines = multiline ? 0 : 1
         right.textAlignment = .right
@@ -1210,7 +1210,7 @@ final class OrderDetailActionBar: UIView {
         // `.system` 会忽略 backgroundColor，次级按钮需 `.custom` 才能显示白底
         let button = UIButton(type: .custom)
         button.setTitle(action.title, for: .normal)
-        button.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
+        button.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
         button.layer.cornerRadius = 20
         button.clipsToBounds = true
         if primary {

@@ -32,7 +32,7 @@ final class MeHealthManagementCardView: UIView {
 
         // Title: 健康管理
         titleLabel.text = "健康管理"
-        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
         titleLabel.textColor = UIColor(hexString: "#1F2430")
         addSubview(titleLabel)
         titleLabel.snp.makeConstraints {
@@ -88,7 +88,7 @@ final class MeHealthManagementCardView: UIView {
 
         let titleLbl = UILabel()
         titleLbl.text = row.title
-        titleLbl.font = .fdFont(ofSize: 15, weight: .regular)
+        titleLbl.font = .fdFont(ofSize: 17, weight: .regular)
         titleLbl.textColor = UIColor(hexString: "#1F2942")
         button.addSubview(titleLbl)
         titleLbl.snp.makeConstraints {
@@ -108,7 +108,7 @@ final class MeHealthManagementCardView: UIView {
         if let detail = row.detail, !detail.isEmpty {
             let detailLbl = UILabel()
             detailLbl.text = detail
-            detailLbl.font = .fdFont(ofSize: 13, weight: .regular)
+            detailLbl.font = .fdFont(ofSize: 15, weight: .regular)
             detailLbl.textColor = UIColor(hexString: "#717885")
             detailLbl.textAlignment = .right
             button.addSubview(detailLbl)
@@ -183,11 +183,11 @@ final class MeFuncRowCell: UITableViewCell {
         iconContainer.addSubview(iconImg)
         iconImg.contentMode = .scaleAspectFit
 
-        titleLbl.font = .fdBody
+        titleLbl.font = .fdMyBody
         arrow.tintColor = .fdMuted
         arrow.contentMode = .scaleAspectFit
 
-        detailLbl.font = .fdCaption
+        detailLbl.font = .fdMyCaption
         detailLbl.textColor = .fdMuted
 
         divider.backgroundColor = .fdBorder

@@ -16,7 +16,7 @@ final class OKOKBroadcastScaleHandler: BLEDeviceHandler {
 
     let eventPublisher = PassthroughSubject<OKOKScaleEvent, Never>()
 
-    /// 体重 H5：发出锁定帧后立刻停扫，避免广播继续刷日志
+    /// 锁定后立刻停扫；体重 H5 由 BLL 在 `saveOrUpdateMonitorData` 开始时停扫，此处保持 false
     var stopOnLock = false
 
     /// 主线程同步回调，避免 Combine `receive(on:)` 把锁定帧排到停扫之后丢掉
@@ -30,6 +30,9 @@ final class OKOKBroadcastScaleHandler: BLEDeviceHandler {
     /// 最近一次已发出的锁定键，用于去重（serial + weightRaw + mac）
     private var lastEmittedLockKey: String?
 
+    /// 实时帧日志去重（mac + serial + weight + resistance）
+    private var lastRealtimeLogKey: String?
+
     /// 已打印过设备身份的 MAC，避免实时帧刷屏
     private var loggedIdentityMacs = Set<String>()
 
@@ -38,6 +41,7 @@ final class OKOKBroadcastScaleHandler: BLEDeviceHandler {
         self.bluetooth = bluetooth
         isRunning = true
         lastEmittedLockKey = nil
+        lastRealtimeLogKey = nil
         loggedIdentityMacs.removeAll()
         print("[OKOK-DAL] handler start — subscribe ads + scan allowDuplicates stopOnLock=\(stopOnLock)")
 
@@ -56,6 +60,7 @@ final class OKOKBroadcastScaleHandler: BLEDeviceHandler {
         isRunning = false
         cancellables.removeAll()
         lastEmittedLockKey = nil
+        lastRealtimeLogKey = nil
         loggedIdentityMacs.removeAll()
         let manager = bluetooth
         bluetooth = nil
@@ -69,14 +74,7 @@ final class OKOKBroadcastScaleHandler: BLEDeviceHandler {
     private func handleAdvertisement(_ event: BLEAdvertisementEvent) {
         guard isRunning else { return }
         guard let raw = event.manufacturerData else { return }
-
-        guard let packet = OKOKV3PacketParser.parse(manufacturerData: raw) else {
-            print(
-                "[OKOK-DAL] skip non-OKOK mfg name=\(event.localName ?? "-") " +
-                    "rssi=\(event.rssi) hex=[\(raw.bleHexString)]"
-            )
-            return
-        }
+        guard let packet = OKOKV3PacketParser.parse(manufacturerData: raw) else { return }
 
         let discovery = OKOKScaleDiscovery(
             packet: packet,
@@ -92,10 +90,24 @@ final class OKOKBroadcastScaleHandler: BLEDeviceHandler {
                 return
             }
             lastEmittedLockKey = key
-            print("[OKOK-DAL] LOCKED \(packet.debugDescription) rawMfg=[\(raw.bleHexString)]")
+            packet.printFullMeasurementLog(
+                phase: "锁定",
+                discovery: discovery,
+                peripheralId: event.peripheralId,
+                rawManufacturerHex: raw.bleHexString
+            )
             deliver(.locked(discovery), stopAfter: stopOnLock)
         } else {
-            print("[OKOK-DAL] realtime \(packet.debugDescription) rssi=\(event.rssi)")
+            let logKey = "\(packet.macString)|\(packet.serial)|\(packet.weightRaw)|\(packet.resistanceRaw)"
+            if logKey != lastRealtimeLogKey {
+                lastRealtimeLogKey = logKey
+                packet.printFullMeasurementLog(
+                    phase: "实时",
+                    discovery: discovery,
+                    peripheralId: event.peripheralId,
+                    rawManufacturerHex: raw.bleHexString
+                )
+            }
             deliver(.realtime(discovery), stopAfter: false)
         }
     }

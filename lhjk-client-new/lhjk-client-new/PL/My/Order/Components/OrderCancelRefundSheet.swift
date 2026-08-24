@@ -81,17 +81,17 @@ final class OrderCancelRefundSheet: UIViewController {
 
         cancelBtn.setTitle("取消", for: .normal)
         cancelBtn.setTitleColor(.fdSubtext, for: .normal)
-        cancelBtn.titleLabel?.font = .fdBody
+        cancelBtn.titleLabel?.font = .fdFont(ofSize: 15, weight: .regular)
         cancelBtn.addTarget(self, action: #selector(cancel), for: .touchUpInside)
 
         titleLbl.text = sheetTitle
-        titleLbl.font = .fdBodySemibold
+        titleLbl.font = .fdFont(ofSize: 15, weight: .semibold)
         titleLbl.textColor = .fdText
         titleLbl.textAlignment = .center
 
         submitBtn.setTitle("提交申请", for: .normal)
         submitBtn.setTitleColor(.fdPrimary, for: .normal)
-        submitBtn.titleLabel?.font = .fdBodySemibold
+        submitBtn.titleLabel?.font = .fdFont(ofSize: 15, weight: .semibold)
         submitBtn.addTarget(self, action: #selector(submit), for: .touchUpInside)
 
         activityIndicator.hidesWhenStopped = true
@@ -121,15 +121,15 @@ final class OrderCancelRefundSheet: UIViewController {
         coverImageView.backgroundColor = .fdBorder
         packageCard.addSubview(coverImageView)
 
-        nameLabel.font = .fdBodySemibold
+        nameLabel.font = .fdFont(ofSize: 15, weight: .semibold)
         nameLabel.textColor = .fdText
         nameLabel.numberOfLines = 2
 
-        subtitleLabel.font = .fdCaption
+        subtitleLabel.font = .fdFont(ofSize: 13, weight: .regular)
         subtitleLabel.textColor = .fdSubtext
         subtitleLabel.numberOfLines = 2
 
-        amountLabel.font = .fdBodySemibold
+        amountLabel.font = .fdFont(ofSize: 15, weight: .semibold)
         amountLabel.textColor = .fdPrimary
         amountLabel.setContentHuggingPriority(.required, for: .horizontal)
 
@@ -159,7 +159,7 @@ final class OrderCancelRefundSheet: UIViewController {
         }
 
         reasonTitleLabel.text = "申请退款原因 *"
-        reasonTitleLabel.font = .fdBody
+        reasonTitleLabel.font = .fdFont(ofSize: 15, weight: .regular)
         reasonTitleLabel.textColor = .fdText
         panel.addSubview(reasonTitleLabel)
         reasonTitleLabel.snp.makeConstraints {
@@ -167,7 +167,7 @@ final class OrderCancelRefundSheet: UIViewController {
             $0.leading.trailing.equalToSuperview().inset(16)
         }
 
-        textView.font = .fdBody
+        textView.font = .fdFont(ofSize: 15, weight: .regular)
         textView.textColor = .fdText
         textView.backgroundColor = UIColor(hexString: "#F5F7FA")
         textView.layer.cornerRadius = 8
@@ -178,7 +178,7 @@ final class OrderCancelRefundSheet: UIViewController {
         panel.addSubview(textView)
 
         placeholderLabel.text = "请填写申请退款原因"
-        placeholderLabel.font = .fdBody
+        placeholderLabel.font = .fdFont(ofSize: 15, weight: .regular)
         placeholderLabel.textColor = .fdMuted
         textView.addSubview(placeholderLabel)
         placeholderLabel.snp.makeConstraints {
@@ -187,7 +187,7 @@ final class OrderCancelRefundSheet: UIViewController {
             $0.trailing.equalToSuperview().offset(-10)
         }
 
-        counterLabel.font = .fdCaption
+        counterLabel.font = .fdFont(ofSize: 13, weight: .regular)
         counterLabel.textColor = .fdMuted
         counterLabel.textAlignment = .right
         counterLabel.text = "0/\(maxLength)"
@@ -233,11 +233,7 @@ final class OrderCancelRefundSheet: UIViewController {
     }
 
     private func showHint(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            alert.dismiss(animated: true)
-        }
+        showToastAlert(message, duration: 1.2)
     }
 }
 
@@ -333,11 +329,11 @@ final class OrderSettlementSheet: UIViewController {
         }
 
         titleLabel.text = "确认结算订单？"
-        titleLabel.font = .fdH2
+        titleLabel.font = .fdFont(ofSize: 22, weight: .bold)
         titleLabel.textColor = .fdText
 
         subtitleLabel.text = "提交后该订单将进入退款审核。"
-        subtitleLabel.font = .fdCaption
+        subtitleLabel.font = .fdFont(ofSize: 13, weight: .regular)
         subtitleLabel.textColor = .fdSubtext
         subtitleLabel.numberOfLines = 0
 
@@ -350,15 +346,15 @@ final class OrderSettlementSheet: UIViewController {
         coverImageView.backgroundColor = .fdBorder
         packageCard.addSubview(coverImageView)
 
-        nameLabel.font = .fdBodySemibold
+        nameLabel.font = .fdFont(ofSize: 15, weight: .semibold)
         nameLabel.textColor = .fdText
         nameLabel.numberOfLines = 2
 
-        subtitlePackageLabel.font = .fdCaption
+        subtitlePackageLabel.font = .fdFont(ofSize: 13, weight: .regular)
         subtitlePackageLabel.textColor = .fdSubtext
         subtitlePackageLabel.numberOfLines = 2
 
-        amountLabel.font = .fdBodySemibold
+        amountLabel.font = .fdFont(ofSize: 15, weight: .semibold)
         amountLabel.textColor = .fdPrimary
         amountLabel.setContentHuggingPriority(.required, for: .horizontal)
 
@@ -383,10 +379,10 @@ final class OrderSettlementSheet: UIViewController {
         }
 
         reasonTitleLabel.text = "申请退款原因 *"
-        reasonTitleLabel.font = .fdBodySemibold
+        reasonTitleLabel.font = .fdFont(ofSize: 15, weight: .semibold)
         reasonTitleLabel.textColor = .fdText
 
-        textView.font = .fdBody
+        textView.font = .fdFont(ofSize: 15, weight: .regular)
         textView.textColor = .fdText
         textView.backgroundColor = UIColor(hexString: "#F5F7FA")
         textView.layer.cornerRadius = 8
@@ -396,7 +392,7 @@ final class OrderSettlementSheet: UIViewController {
         textView.delegate = self
 
         placeholderLabel.text = "请填写申请退款原因"
-        placeholderLabel.font = .fdBody
+        placeholderLabel.font = .fdFont(ofSize: 15, weight: .regular)
         placeholderLabel.textColor = .fdMuted
         textView.addSubview(placeholderLabel)
         placeholderLabel.snp.makeConstraints {
@@ -405,14 +401,14 @@ final class OrderSettlementSheet: UIViewController {
             $0.trailing.equalToSuperview().offset(-10)
         }
 
-        counterLabel.font = .fdCaption
+        counterLabel.font = .fdFont(ofSize: 13, weight: .regular)
         counterLabel.textColor = .fdMuted
         counterLabel.textAlignment = .right
         counterLabel.text = "0/\(maxLength)"
 
         rethinkButton.setTitle("再想想", for: .normal)
         rethinkButton.setTitleColor(.fdText, for: .normal)
-        rethinkButton.titleLabel?.font = .fdBody
+        rethinkButton.titleLabel?.font = .fdFont(ofSize: 15, weight: .regular)
         rethinkButton.layer.cornerRadius = 22
         rethinkButton.layer.borderWidth = 1
         rethinkButton.layer.borderColor = UIColor.fdBorder.cgColor
@@ -420,7 +416,7 @@ final class OrderSettlementSheet: UIViewController {
 
         confirmButton.setTitle("确认结算", for: .normal)
         confirmButton.setTitleColor(.white, for: .normal)
-        confirmButton.titleLabel?.font = .fdBodySemibold
+        confirmButton.titleLabel?.font = .fdFont(ofSize: 15, weight: .semibold)
         confirmButton.backgroundColor = .fdPrimary
         confirmButton.layer.cornerRadius = 22
         confirmButton.addTarget(self, action: #selector(confirm), for: .touchUpInside)
@@ -487,11 +483,7 @@ final class OrderSettlementSheet: UIViewController {
     }
 
     private func showHint(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            alert.dismiss(animated: true)
-        }
+        showToastAlert(message, duration: 1.2)
     }
 }
 

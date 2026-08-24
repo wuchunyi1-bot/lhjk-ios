@@ -17,14 +17,14 @@ final class SettingsToggleCell: UIView {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdBodySemibold
+        l.font = .fdMyBodySemibold
         l.textColor = .fdText2
         return l
     }()
 
     private let subtitleLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 11, weight: .regular)
+        l.font = .fdFont(ofSize: 13, weight: .regular)
         l.textColor = .fdSubtext
         l.numberOfLines = 0
         return l

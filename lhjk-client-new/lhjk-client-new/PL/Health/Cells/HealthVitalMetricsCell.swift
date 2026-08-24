@@ -21,7 +21,7 @@ final class HealthVitalMetricsCell: UITableViewCell {
     private let titleLabel: UILabel = {
         let l = UILabel()
         l.text = "体征监测"
-        l.font = .fdFont(ofSize: 16, weight: .medium)
+        l.font = .fdFont(ofSize: 18, weight: .medium)
         l.textColor = .fdText
         return l
     }()
@@ -29,7 +29,7 @@ final class HealthVitalMetricsCell: UITableViewCell {
     private let editButton: UIButton = {
         let b = UIButton(type: .system)
         b.setTitle("编辑卡片 ›", for: .normal)
-        b.titleLabel?.font = .fdFont(ofSize: 12, weight: .regular)
+        b.titleLabel?.font = .fdFont(ofSize: 14, weight: .regular)
         b.setTitleColor(.fdSubtext, for: .normal)
         return b
     }()

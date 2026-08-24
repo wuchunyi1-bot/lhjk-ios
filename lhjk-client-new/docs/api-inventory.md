@@ -124,6 +124,7 @@ App端/
 | 15 | GET | `/v1/archive/getOArchiveByUserId` | `App端/机构/档案管理` | `UserService` | [默认档案](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/486441727e0.md) |
 
 > `#15` 客户端使用 `data.archiveComplete` 作为 `/onboarding` 唯一门禁；另解码 `sex` / `birthday` 等回填字段。Apifox 分享站 `OArchiveVO` 可能尚未同步这些字段（以联调 JSON 为准）。
+| 15b | GET | `/v1/archive/calculateArchiveCompletion` | `App端/机构/档案管理` | `UserService` | 文档暂无（Apifox OAS：`calculateArchiveCompletion`，Query `userId`；响应 `completionPercentage` 0–100） |
 | 16 | POST | `/v1/archive/saveArchiveHospital` | `App端/机构/档案管理` | `UserService` | [保存档案机构](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/491046480e0.md) |
 
 ### 2.4 App端 / 商城
@@ -199,6 +200,8 @@ App端/
 | 52 | DELETE | `/v1/equipmentUser/deleteEquipmentUserById` | `App端/监测/设备绑定` | `EquipmentBindService` | [解绑](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295334e0.md) |
 | 53 | GET | `/v1/firmware/getFirmwareUrlByParam` | `App端/监测/设备固件` | `EquipmentBindService` | [固件查询](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295336e0.md) |
 | 54 | POST | `/v1/monitor/saveOrUpdateMonitorData` | `监护/监测记录` | `EquipmentBindService` | [监测上报](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487304328e0.md) |
+| 55 | POST | `/v1/monitor/getWeightHomePageData` | `监护/监测记录` | `EquipmentBindService` | 文档暂无 / 以代码 path 为准 |
+| 56 | DELETE | `/v1/monitor/delMonitorDataByMonitorId` | `监护/监测记录` | `EquipmentBindService`；体重报告「重新测量」 | 文档暂无 / 以代码 path 为准 |
 
 > 后端蓝牙流程图中新 path（如 `bindEquipmentByApp`、`saveHealthData`）**Apifox 暂无**；以 `EquipmentBindService` 已封装 path 为准。规格：`openspec/changes/weight-h5-scale-ble-status/specs/equipment-bind-api/`。
 
@@ -227,7 +230,7 @@ App端/
 | `BLL/Service/DictionaryService.swift` | 1 | dictionary/getDictionaryByParentId2 |
 | `BLL/Home/HomeService.swift` | 2 | scheme/getUserToDayMonitorTask、session/getUserParticipateAllTeam |
 | `BLL/Health/HealthPageService.swift` | 4 | healthPage/getCmsConfig、monitorHealth/getMonitorCardList、userMonitorCardConfig/* ×2 |
-| `BLL/Health/EquipmentBindService.swift` | 10 | equipmentUser/* ×6、equipment/getEquipmenByApp、equipment/getCompatibleBluetoothList、firmware/getFirmwareUrlByParam、monitor/saveOrUpdateMonitorData |
+| `BLL/Health/EquipmentBindService.swift` | 12 | equipmentUser/* ×6、equipment/getEquipmenByApp、equipment/getCompatibleBluetoothList、firmware/getFirmwareUrlByParam、monitor/saveOrUpdateMonitorData、monitor/getWeightHomePageData、monitor/delMonitorDataByMonitorId |
 | `BLL/Message/IMService.swift` | 1 | session/getGroup |
 | `DAL/IM/RongCloudManager.swift` | 1 | account/addRongImAccount |
 | `DAL/OSS/OSSManager.swift` | 1 | cos/getCosSign |
@@ -244,7 +247,7 @@ App端/
 | `GET /v1/coupon/getCouponList` | Apifox 有文档，**本 App 未调用** |
 | 订单绑定权益卡 / 结算权益抵扣字段 | Apifox **文档暂无**；确认订单本期客户端多选试算（复用 35a），不以假 path 调用 |
 | `/auth/agreement/*` | 协议页路由，非 HTTP API |
-| `/v1/monitor/*`（除 `saveOrUpdateMonitorData`） | 其它体征录入 path 当前工程无 Swift 调用（多走 H5）；**已封装** `saveOrUpdateMonitorData` → `EquipmentBindService`；勿与 `/v1/monitorHealth/*` 混淆 |
+| `/v1/monitor/*`（除 `saveOrUpdateMonitorData`、`getWeightHomePageData`、`delMonitorDataByMonitorId`） | 其它体征录入 path 当前工程无 Swift 调用（多走 H5）；**已封装** `saveOrUpdateMonitorData`、`getWeightHomePageData`、`delMonitorDataByMonitorId` → `EquipmentBindService`；勿与 `/v1/monitorHealth/*` 混淆 |
 
 ---
 

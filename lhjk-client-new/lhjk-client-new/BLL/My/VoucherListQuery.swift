@@ -10,7 +10,7 @@ enum VoucherListQuery {
         transfers: [BenefitTransferRecord],
         filter: BenefitStatusFilter
     ) -> [BenefitListEntry] {
-        let visible: [BenefitCardStatus] = [.available, .redeemed, .expired]
+        let visible: [BenefitCardStatus] = [.pendingBind, .pendingReceive, .available, .redeemed, .expired]
         let filteredCards = cards
             .filter { visible.contains($0.status) }
             .filter { $0.pendingTransferId == nil }
@@ -19,7 +19,7 @@ enum VoucherListQuery {
 
         let filteredTransfers: [BenefitTransferRecord]
         switch filter {
-        case .all:
+        case .all, .pendingReceive:
             filteredTransfers = transfers.filter { $0.status == .waiting }.sorted(by: compareTransfers)
         case .transferRecords:
             filteredTransfers = transfers.sorted(by: compareTransfers)
@@ -30,7 +30,7 @@ enum VoucherListQuery {
         if filter == .transferRecords {
             return filteredTransfers.map { .transfer($0) }
         }
-        if filter == .all {
+        if filter == .all || filter == .pendingReceive {
             var entries: [BenefitListEntry] =
                 filteredCards.map { .card($0) } + filteredTransfers.map { .transfer($0) }
             entries.sort { lhs, rhs in
@@ -69,13 +69,15 @@ enum VoucherListQuery {
         switch entry {
         case .card(let c):
             switch c.status {
-            case .available: return 0
-            case .redeemed: return 2
-            case .expired: return 3
-            case .pendingBind: return 4
+            case .pendingReceive: return 0
+            case .pendingBind: return 1
+            case .available: return 2
+            case .redeemed: return 4
+            case .expired: return 5
+            case .transferred: return 6
             }
         case .transfer:
-            return 1
+            return 3
         }
     }
 
@@ -144,10 +146,12 @@ enum VoucherListQuery {
 
     private static func statusRank(_ s: BenefitCardStatus) -> Int {
         switch s {
-        case .available: return 0
-        case .redeemed: return 1
-        case .expired: return 2
-        case .pendingBind: return 3
+        case .pendingReceive: return 0
+        case .pendingBind: return 1
+        case .available: return 2
+        case .redeemed: return 3
+        case .expired: return 4
+        case .transferred: return 5
         }
     }
 

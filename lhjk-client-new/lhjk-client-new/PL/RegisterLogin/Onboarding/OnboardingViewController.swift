@@ -56,7 +56,7 @@ final class OnboardingViewController: BaseViewController {
     private let titleLabel: UILabel = {
         let l = UILabel()
         l.text = "完善个人信息"
-        l.font = .fdH2
+        l.font = .fdLoginTitle
         l.textColor = .fdText
         l.textAlignment = .center
         return l
@@ -65,7 +65,7 @@ final class OnboardingViewController: BaseViewController {
     private let descLabel: UILabel = {
         let l = UILabel()
         l.text = "填写基础信息，绑定专属服务机构与业务经理"
-        l.font = .fdCaption
+        l.font = .fdLoginMeta
         l.textColor = .fdSubtext
         l.textAlignment = .center
         l.numberOfLines = 0
@@ -87,6 +87,8 @@ final class OnboardingViewController: BaseViewController {
         dp.datePickerMode = .date
         dp.maximumDate = Date()
         dp.preferredDatePickerStyle = .wheels
+        dp.locale = Locale(identifier: "zh_CN")
+        dp.calendar = Calendar(identifier: .gregorian)
         dp.addTarget(self, action: #selector(dateChanged(_:)), for: .valueChanged)
         tf.inputView = dp
 
@@ -121,7 +123,7 @@ final class OnboardingViewController: BaseViewController {
     private let managerHintLabel: UILabel = {
         let l = UILabel()
         l.text = "选择后将自动绑定专属业务经理，享受一对一服务"
-        l.font = .fdMicro
+        l.font = .fdLoginMeta
         l.textColor = .fdMuted
         l.numberOfLines = 0
         return l
@@ -130,7 +132,7 @@ final class OnboardingViewController: BaseViewController {
     private lazy var saveButton: UIButton = {
         let b = UIButton(type: .system)
         b.setTitle("提交信息", for: .normal)
-        b.titleLabel?.font = .fdBodyBold
+        b.titleLabel?.font = .fdLoginButton
         b.setTitleColor(.white, for: .normal)
         b.backgroundColor = .fdPrimary
         b.layer.cornerRadius = 14
@@ -140,7 +142,7 @@ final class OnboardingViewController: BaseViewController {
 
     private let privacyLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdMicro
+        l.font = .fdLoginMeta
         l.textColor = .fdMuted
         l.textAlignment = .center
         l.numberOfLines = 0
@@ -294,7 +296,7 @@ final class OnboardingViewController: BaseViewController {
     private func makeInputField(placeholder: String) -> UITextField {
         let tf = UITextField()
         tf.placeholder = placeholder
-        tf.font = .fdBody
+        tf.font = .fdLoginInput
         tf.textColor = .fdText
         tf.borderStyle = .none
         tf.backgroundColor = .fdSurface2
@@ -311,7 +313,7 @@ final class OnboardingViewController: BaseViewController {
     private func makeGenderButton(title: String, tag: Int) -> UIButton {
         let b = UIButton(type: .system)
         b.setTitle(title, for: .normal)
-        b.titleLabel?.font = .fdBody
+        b.titleLabel?.font = .fdLoginInput
         b.tag = tag
         b.layer.cornerRadius = 12
         b.layer.borderWidth = 1
@@ -323,7 +325,7 @@ final class OnboardingViewController: BaseViewController {
         let b = UIButton(type: .system)
         b.setTitle(placeholder, for: .normal)
         b.setTitleColor(.fdMuted, for: .normal)
-        b.titleLabel?.font = .fdBody
+        b.titleLabel?.font = .fdLoginInput
         b.titleLabel?.lineBreakMode = .byTruncatingTail
         b.backgroundColor = .fdSurface
         b.layer.borderWidth = 1
@@ -360,11 +362,11 @@ final class OnboardingViewController: BaseViewController {
         let l = UILabel()
         let attr = NSMutableAttributedString(
             string: "*",
-            attributes: [.font: UIFont.fdBodySemibold, .foregroundColor: UIColor.fdDanger]
+            attributes: [.font: UIFont.fdLoginInput, .foregroundColor: UIColor.fdDanger]
         )
         attr.append(NSAttributedString(
             string: title,
-            attributes: [.font: UIFont.fdBodySemibold, .foregroundColor: UIColor.fdText]
+            attributes: [.font: UIFont.fdLoginInput, .foregroundColor: UIColor.fdText]
         ))
         l.attributedText = attr
         return l
@@ -374,11 +376,11 @@ final class OnboardingViewController: BaseViewController {
         let l = UILabel()
         let attr = NSMutableAttributedString(
             string: title,
-            attributes: [.font: UIFont.fdBodySemibold, .foregroundColor: UIColor.fdText]
+            attributes: [.font: UIFont.fdLoginInput, .foregroundColor: UIColor.fdText]
         )
         attr.append(NSAttributedString(
             string: " (选填)",
-            attributes: [.font: UIFont.fdCaption, .foregroundColor: UIColor.fdMuted]
+            attributes: [.font: UIFont.fdLoginMeta, .foregroundColor: UIColor.fdMuted]
         ))
         l.attributedText = attr
         return l
@@ -690,12 +692,12 @@ final class OnboardingViewController: BaseViewController {
         if active {
             button.backgroundColor = .fdPrimarySoft
             button.setTitleColor(.fdPrimary, for: .normal)
-            button.titleLabel?.font = .fdBodySemibold
+            button.titleLabel?.font = .fdLoginInput
             button.layer.borderColor = UIColor.fdPrimary.cgColor
         } else {
             button.backgroundColor = .fdSurface
             button.setTitleColor(.fdSubtext, for: .normal)
-            button.titleLabel?.font = .fdBody
+            button.titleLabel?.font = .fdLoginInput
             button.layer.borderColor = UIColor.fdBorder.cgColor
         }
     }

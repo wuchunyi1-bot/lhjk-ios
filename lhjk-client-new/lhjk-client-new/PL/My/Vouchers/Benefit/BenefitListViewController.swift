@@ -13,6 +13,8 @@ final class BenefitListViewController: BaseViewController {
 
     private let tabs: [TabItem] = [
         TabItem(filter: .all, emptyText: "暂无相关权益卡"),
+        TabItem(filter: .pendingBind, emptyText: "暂无待绑定权益卡"),
+        TabItem(filter: .pendingReceive, emptyText: "暂无待领取权益卡"),
         TabItem(filter: .available, emptyText: "暂无待使用权益卡"),
         TabItem(filter: .redeemed, emptyText: "暂无已兑换权益卡"),
         TabItem(filter: .expired, emptyText: "暂无已过期权益卡"),
@@ -30,7 +32,7 @@ final class BenefitListViewController: BaseViewController {
         layout.minimumInteritemSpacing = 8
         layout.minimumLineSpacing = 8
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        cv.backgroundColor = .fdBg
+        cv.backgroundColor = .white
         cv.showsHorizontalScrollIndicator = false
         cv.dataSource = self
         cv.delegate = self
@@ -49,10 +51,10 @@ final class BenefitListViewController: BaseViewController {
     }
 
     override func setupUI() {
-        view.backgroundColor = .fdBg
+        view.backgroundColor = .white
 
         let tabContainer = UIView()
-        tabContainer.backgroundColor = .fdBg
+        tabContainer.backgroundColor = .white
         view.addSubview(tabContainer)
         tabContainer.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview()
@@ -197,7 +199,7 @@ extension BenefitListViewController: UICollectionViewDataSource, UICollectionVie
         let width = title.boundingRect(
             with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: 30),
             options: .usesLineFragmentOrigin,
-            attributes: [.font: UIFont.fdCaptionSemibold],
+            attributes: [.font: UIFont.fdMyCaptionSemibold],
             context: nil
         ).width + 16
         return CGSize(width: ceil(width), height: 30)
@@ -229,7 +231,7 @@ final class BenefitBindViewController: BaseViewController {
     private let keyField: UITextField = {
         let tf = UITextField()
         tf.placeholder = "请输入卡密"
-        tf.font = .fdH3
+        tf.font = .fdMyH3
         tf.textColor = .fdText
         tf.borderStyle = .none
         tf.clearButtonMode = .whileEditing
@@ -309,13 +311,13 @@ final class BenefitBindViewController: BaseViewController {
 
         let introTitle = UILabel()
         introTitle.text = "绑定权益卡"
-        introTitle.font = .fdH2
+        introTitle.font = .fdMyH2
         introTitle.textColor = .fdText
         introTitle.textAlignment = .center
 
         let introSub = UILabel()
         introSub.text = "请输入卡密，或扫码绑定权益卡。"
-        introSub.font = .fdBody
+        introSub.font = .fdMyBody
         introSub.textColor = .fdSubtext
         introSub.textAlignment = .center
         introSub.numberOfLines = 0
@@ -335,7 +337,7 @@ final class BenefitBindViewController: BaseViewController {
             $0.height.equalTo(22)
         }
 
-        errorLabel.font = .fdCaption
+        errorLabel.font = .fdMyCaption
         errorLabel.textColor = .fdDanger
         errorLabel.numberOfLines = 0
         errorLabel.isHidden = true
@@ -346,7 +348,7 @@ final class BenefitBindViewController: BaseViewController {
         scanButton.layer.borderColor = UIColor.fdPrimaryEdge.cgColor
         scanButton.setTitle("  扫码绑定", for: .normal)
         scanButton.setTitleColor(.fdText, for: .normal)
-        scanButton.titleLabel?.font = .fdBodySemibold
+        scanButton.titleLabel?.font = .fdMyBodySemibold
         scanButton.setImage(UIImage(systemName: "qrcode.viewfinder"), for: .normal)
         scanButton.tintColor = .fdPrimary
         scanButton.contentHorizontalAlignment = .left
@@ -361,7 +363,7 @@ final class BenefitBindViewController: BaseViewController {
         }
 
         bindButton.setTitle("立即绑定", for: .normal)
-        bindButton.titleLabel?.font = .fdBodySemibold
+        bindButton.titleLabel?.font = .fdMyBodySemibold
         bindButton.setTitleColor(.white, for: .normal)
         bindButton.backgroundColor = .fdPrimary
         bindButton.layer.cornerRadius = 24
@@ -374,12 +376,12 @@ final class BenefitBindViewController: BaseViewController {
 
         let agreePrefix = UILabel()
         agreePrefix.text = "我已阅读并同意"
-        agreePrefix.font = .fdCaption
+        agreePrefix.font = .fdMyCaption
         agreePrefix.textColor = .fdSubtext
 
         rulesLinkButton.setTitle("《权益卡使用规则》", for: .normal)
         rulesLinkButton.setTitleColor(.fdPrimary, for: .normal)
-        rulesLinkButton.titleLabel?.font = .fdCaptionSemibold
+        rulesLinkButton.titleLabel?.font = .fdMyCaptionSemibold
         rulesLinkButton.addTarget(self, action: #selector(tapRules), for: .touchUpInside)
 
         ruleRow.axis = .horizontal
@@ -423,20 +425,20 @@ final class BenefitBindViewController: BaseViewController {
 
         let title = UILabel()
         title.text = "权益卡已绑定"
-        title.font = .fdH2
+        title.font = .fdMyH2
         title.textColor = .fdText
         title.textAlignment = .center
 
         let sub = UILabel()
         sub.text = "您现在可以使用权益卡兑换套餐"
-        sub.font = .fdBody
+        sub.font = .fdMyBody
         sub.textColor = .fdSubtext
         sub.textAlignment = .center
         sub.numberOfLines = 0
 
         let redeemBtn = UIButton(type: .system)
         redeemBtn.setTitle("去兑换套餐", for: .normal)
-        redeemBtn.titleLabel?.font = .fdBodySemibold
+        redeemBtn.titleLabel?.font = .fdMyBodySemibold
         redeemBtn.setTitleColor(.white, for: .normal)
         redeemBtn.backgroundColor = .fdPrimary
         redeemBtn.layer.cornerRadius = 24
@@ -444,7 +446,7 @@ final class BenefitBindViewController: BaseViewController {
 
         let vouchersBtn = UIButton(type: .system)
         vouchersBtn.setTitle("查看我的权益卡", for: .normal)
-        vouchersBtn.titleLabel?.font = .fdBodySemibold
+        vouchersBtn.titleLabel?.font = .fdMyBodySemibold
         vouchersBtn.setTitleColor(.fdPrimary, for: .normal)
         vouchersBtn.backgroundColor = .fdPrimarySoft
         vouchersBtn.layer.cornerRadius = 24
@@ -494,7 +496,7 @@ final class BenefitBindViewController: BaseViewController {
     private func sectionTitle(_ text: String) -> UILabel {
         let l = UILabel()
         l.text = text
-        l.font = .fdBodySemibold
+        l.font = .fdMyBodySemibold
         l.textColor = .fdText
         return l
     }
@@ -502,7 +504,7 @@ final class BenefitBindViewController: BaseViewController {
     private func sectionBody(_ lines: [String]) -> UILabel {
         let l = UILabel()
         l.numberOfLines = 0
-        l.font = .fdCaption
+        l.font = .fdMyCaption
         l.textColor = .fdSubtext
         l.text = lines.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
         return l
@@ -645,11 +647,7 @@ final class BenefitBindViewController: BaseViewController {
     }
 
     private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
-            alert.dismiss(animated: true)
-        }
+        showToastAlert(message, duration: 1.3)
     }
 }
 
@@ -674,7 +672,7 @@ final class BenefitTransferViewController: BaseViewController {
     private let amountLabel = UILabel()
     private let messageView: UITextView = {
         let tv = UITextView()
-        tv.font = .fdBody
+        tv.font = .fdMyBody
         tv.textColor = .fdText
         tv.backgroundColor = .fdSurface
         tv.layer.cornerRadius = 12
@@ -685,7 +683,7 @@ final class BenefitTransferViewController: BaseViewController {
     }()
     private let counterLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdMicro
+        l.font = .fdMyMicro
         l.textColor = .fdMuted
         l.textAlignment = .right
         l.text = "0/50"
@@ -693,7 +691,7 @@ final class BenefitTransferViewController: BaseViewController {
     }()
     private let hintLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdCaption
+        l.font = .fdMyCaption
         l.textColor = .fdWarning
         l.numberOfLines = 0
         l.text = "赠送后24小时未领取自动退回，期间不可兑换或转赠。"
@@ -727,7 +725,7 @@ final class BenefitTransferViewController: BaseViewController {
         summary.layer.borderWidth = 1
         summary.layer.borderColor = UIColor.fdBorder.cgColor
 
-        cardNameLabel.font = .fdBodyBold
+        cardNameLabel.font = .fdMyBodyBold
         cardNameLabel.textColor = .fdText
         cardNameLabel.text = card.name
         amountLabel.font = .fdNumM
@@ -742,20 +740,20 @@ final class BenefitTransferViewController: BaseViewController {
 
         let msgTitle = UILabel()
         msgTitle.text = "留言（选填）"
-        msgTitle.font = .fdCaptionSemibold
+        msgTitle.font = .fdMyCaptionSemibold
         msgTitle.textColor = .fdText2
 
         messageView.delegate = self
 
         cancelButton.setTitle("我再想想", for: .normal)
-        cancelButton.titleLabel?.font = .fdBodySemibold
+        cancelButton.titleLabel?.font = .fdMyBodySemibold
         cancelButton.setTitleColor(.fdPrimary, for: .normal)
         cancelButton.backgroundColor = .fdPrimarySoft
         cancelButton.layer.cornerRadius = 24
         cancelButton.addTarget(self, action: #selector(tapCancel), for: .touchUpInside)
 
         confirmButton.setTitle("立即赠送", for: .normal)
-        confirmButton.titleLabel?.font = .fdBodySemibold
+        confirmButton.titleLabel?.font = .fdMyBodySemibold
         confirmButton.setTitleColor(.white, for: .normal)
         confirmButton.backgroundColor = .fdPrimary
         confirmButton.layer.cornerRadius = 24
@@ -884,11 +882,7 @@ final class BenefitTransferViewController: BaseViewController {
     }
 
     private func presentToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
-            alert.dismiss(animated: true)
-        }
+        showToastAlert(message, duration: 1.4)
     }
 
     private func presentAlert(title: String?, message: String, onOK: @escaping () -> Void) {
@@ -940,12 +934,12 @@ final class ActivateViewController: BaseViewController {
 
         let heroTitle = UILabel()
         heroTitle.text = "权益卡服务"
-        heroTitle.font = .fdH2
+        heroTitle.font = .fdMyH2
         heroTitle.textColor = .fdText
 
         let heroSub = UILabel()
         heroSub.text = "先绑定企业发放的权益卡，再兑换健康服务套餐。"
-        heroSub.font = .fdBody
+        heroSub.font = .fdMyBody
         heroSub.textColor = .fdText2
         heroSub.numberOfLines = 0
 
@@ -968,10 +962,10 @@ final class ActivateViewController: BaseViewController {
             action: #selector(tapBind)
         )
 
-        redeemSubtitleLabel.font = .fdCaption
+        redeemSubtitleLabel.font = .fdMyCaption
         redeemSubtitleLabel.textColor = .fdText2
         redeemSubtitleLabel.numberOfLines = 0
-        redeemFooterHintLabel.font = .fdCaption
+        redeemFooterHintLabel.font = .fdMyCaption
         redeemFooterHintLabel.textColor = .fdText2
 
         let redeemCard = makeActionCard(
@@ -1062,7 +1056,7 @@ final class ActivateViewController: BaseViewController {
 
         let stepBadge = UILabel()
         stepBadge.text = step
-        stepBadge.font = .fdMicro
+        stepBadge.font = .fdMyMicro
         stepBadge.textColor = stepColor
         stepBadge.backgroundColor = stepBg
         stepBadge.textAlignment = .center
@@ -1091,13 +1085,13 @@ final class ActivateViewController: BaseViewController {
 
         let titleLabel = UILabel()
         titleLabel.text = title
-        titleLabel.font = .fdH3
+        titleLabel.font = .fdMyH3
         titleLabel.textColor = .fdText
 
         let subLabel = subtitleView ?? UILabel()
         if let subtitle {
             subLabel.text = subtitle
-            subLabel.font = .fdCaption
+            subLabel.font = .fdMyCaption
             subLabel.textColor = .fdText2
             subLabel.numberOfLines = 0
         }
@@ -1115,7 +1109,7 @@ final class ActivateViewController: BaseViewController {
         let footerHintLbl = footerHintLabel ?? UILabel()
         if let footerHint {
             footerHintLbl.text = footerHint
-            footerHintLbl.font = .fdCaption
+            footerHintLbl.font = .fdMyCaption
             footerHintLbl.textColor = .fdText2
         }
         footerHintLbl.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -1123,7 +1117,7 @@ final class ActivateViewController: BaseViewController {
 
         let ctaLabel = UILabel()
         ctaLabel.text = cta
-        ctaLabel.font = .fdCaptionSemibold
+        ctaLabel.font = .fdMyCaptionSemibold
         ctaLabel.textColor = .white
         ctaLabel.textAlignment = .center
         ctaLabel.backgroundColor = ctaBg
@@ -1231,14 +1225,14 @@ final class BenefitRedeemViewController: BaseViewController {
         setupHospitalCard()
         setupTabs()
         hintLabel.text = "以下套餐可使用权益卡抵扣，具体抵扣金额以兑换页为准"
-        hintLabel.font = .fdCaption
+        hintLabel.font = .fdMyCaption
         hintLabel.textColor = .fdMuted
         hintLabel.numberOfLines = 0
 
         packageStack.axis = .vertical
         packageStack.spacing = 12
 
-        emptyMessage.font = .fdCaption
+        emptyMessage.font = .fdMyCaption
         emptyMessage.textColor = .fdSubtext
         emptyMessage.textAlignment = .center
         emptyMessage.numberOfLines = 0
@@ -1277,12 +1271,12 @@ final class BenefitRedeemViewController: BaseViewController {
         hospitalIcon.image = UIImage(systemName: "building.2.fill")
         hospitalIcon.snp.makeConstraints { $0.size.equalTo(36) }
 
-        hospitalNameLabel.font = .fdBodySemibold
+        hospitalNameLabel.font = .fdMyBodySemibold
         hospitalNameLabel.textColor = .fdText
         hospitalNameLabel.text = "—"
 
         hospitalBadge.text = "品牌机构"
-        hospitalBadge.font = .fdMicro
+        hospitalBadge.font = .fdMyMicro
         hospitalBadge.textColor = .fdPrimary
         hospitalBadge.backgroundColor = .fdPrimarySoft
         hospitalBadge.textAlignment = .center
@@ -1296,7 +1290,7 @@ final class BenefitRedeemViewController: BaseViewController {
         head.spacing = 8
         head.alignment = .center
 
-        hospitalAddressLabel.font = .fdCaption
+        hospitalAddressLabel.font = .fdMyCaption
         hospitalAddressLabel.textColor = .fdSubtext
         hospitalAddressLabel.numberOfLines = 2
         hospitalAddressLabel.text = ""
@@ -1391,7 +1385,7 @@ final class BenefitRedeemViewController: BaseViewController {
     private func makeTabButton(title: String, categoryId: String?) -> UIButton {
         let btn = UIButton(type: .system)
         btn.setTitle(title, for: .normal)
-        btn.titleLabel?.font = .fdBody
+        btn.titleLabel?.font = .fdMyBody
         btn.tag = categoryId == nil ? -1 : (categoryId.hashValue & 0x7FFF_FFFF)
         btn.accessibilityIdentifier = categoryId ?? ""
         btn.addAction(UIAction { [weak self] _ in
@@ -1408,7 +1402,7 @@ final class BenefitRedeemViewController: BaseViewController {
             let selected = (selectedCategoryId == nil && id.isEmpty)
                 || (selectedCategoryId != nil && id == selectedCategoryId)
             btn.setTitleColor(selected ? .fdPrimary : .fdText2, for: .normal)
-            btn.titleLabel?.font = selected ? .fdBodySemibold : .fdBody
+            btn.titleLabel?.font = selected ? .fdMyBodySemibold : .fdMyBody
             btn.layer.shadowOpacity = 0
             if selected {
                 // underline via bottom border view tag
@@ -1495,7 +1489,7 @@ final class BenefitRedeemViewController: BaseViewController {
         if hasMore {
             let more = UIButton(type: .system)
             more.setTitle("加载更多", for: .normal)
-            more.titleLabel?.font = .fdCaptionSemibold
+            more.titleLabel?.font = .fdMyCaptionSemibold
             more.setTitleColor(.fdPrimary, for: .normal)
             more.addAction(UIAction { [weak self] _ in
                 guard let self, self.hasMore, !self.isLoadingPackages else { return }
@@ -1525,13 +1519,13 @@ final class BenefitRedeemViewController: BaseViewController {
 
         let title = UILabel()
         title.text = item.displayTitle
-        title.font = .fdBodySemibold
+        title.font = .fdMyBodySemibold
         title.textColor = .fdText
         title.numberOfLines = 2
 
         let sub = UILabel()
         sub.text = item.displaySubtitle
-        sub.font = .fdCaption
+        sub.font = .fdMyCaption
         sub.textColor = .fdMuted
         sub.numberOfLines = 2
         sub.isHidden = item.displaySubtitle.isEmpty
@@ -1544,7 +1538,7 @@ final class BenefitRedeemViewController: BaseViewController {
 
         let cta = UIButton(type: .system)
         cta.setTitle("去兑换", for: .normal)
-        cta.titleLabel?.font = .fdCaptionSemibold
+        cta.titleLabel?.font = .fdMyCaptionSemibold
         cta.setTitleColor(.white, for: .normal)
         cta.backgroundColor = .fdPrimary
         cta.layer.cornerRadius = 16

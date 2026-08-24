@@ -41,7 +41,7 @@ final class ManagerSelectViewController: BaseViewController {
         )
         navigationItem.leftBarButtonItem?.tintColor = .fdText
 
-        institutionLabel.font = .fdCaption
+        institutionLabel.font = .fdLoginMeta
         institutionLabel.textColor = .fdSubtext
         institutionLabel.numberOfLines = 2
         if !viewModel.hospitalName.isEmpty {
@@ -53,7 +53,7 @@ final class ManagerSelectViewController: BaseViewController {
             attr.append(NSAttributedString(
                 string: " \(viewModel.hospitalName)",
                 attributes: [
-                    .font: UIFont.fdCaption,
+                    .font: UIFont.fdLoginMeta,
                     .foregroundColor: UIColor.fdSubtext,
                 ]
             ))
@@ -71,7 +71,7 @@ final class ManagerSelectViewController: BaseViewController {
         searchIcon.contentMode = .scaleAspectFit
 
         searchField.placeholder = "搜索姓名、经理号或职位"
-        searchField.font = .fdBody
+        searchField.font = .fdLoginInput
         searchField.textColor = .fdText
         searchField.clearButtonMode = .never
         searchField.returnKeyType = .search
@@ -87,7 +87,7 @@ final class ManagerSelectViewController: BaseViewController {
         searchShell.addSubview(clearButton)
 
         hintLabel.text = "请选择一位业务经理，提交后将自动绑定"
-        hintLabel.font = .fdCaption
+        hintLabel.font = .fdLoginMeta
         hintLabel.textColor = .fdSubtext
 
         tableView.backgroundColor = .clear
@@ -99,13 +99,13 @@ final class ManagerSelectViewController: BaseViewController {
         tableView.keyboardDismissMode = .onDrag
         tableView.register(ManagerSelectCell.self, forCellReuseIdentifier: ManagerSelectCell.reuseID)
 
-        emptyLabel.font = .fdBody
+        emptyLabel.font = .fdLoginInput
         emptyLabel.textColor = .fdMuted
         emptyLabel.textAlignment = .center
         emptyLabel.numberOfLines = 0
         emptyLabel.isHidden = true
 
-        resultCountLabel.font = .fdCaption
+        resultCountLabel.font = .fdLoginMeta
         resultCountLabel.textColor = .fdSubtext
         resultCountLabel.isHidden = true
 

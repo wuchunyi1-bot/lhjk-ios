@@ -77,7 +77,7 @@ DAL
 
 ## Risks / Trade-offs
 
-- [manufacturerData 封装差异] → Parser 在载荷内搜索 `0xC0` 起点，兼容 Company ID / Len+Type 前缀
+- [manufacturerData 封装差异] → 仅允许：载荷以 C0 开头，或去掉 2 字节 Company ID / `0x10 0xFF` 后以 C0 开头；禁止在载荷中部搜索 C0
 - [广播耗电] → 仅测量会话扫描
 - [体重 HTTP 可能已迁 H5] → BLL 先发事件 + 本地最近一次锁定缓存；有 WeightService 再挂保存
 - [ST:LB] → 延后

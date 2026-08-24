@@ -1,10 +1,11 @@
 import UIKit
 import SnapKit
+import Kingfisher
 
-/// 套餐列表卡片 — 对齐 Figma 3021:2175（228×106 / 暖粉底+描边）
+/// 套餐列表卡片 — 对齐 Figma 3760:10430 / 3760:10476（249×107 / 左侧83×83产品图 / 暖粉底+描边）
 final class PackageCardCell: UITableViewCell {
     static let reuseID = "PackageCardCell"
-    static let cardHeight: CGFloat = 106
+    static let cardHeight: CGFloat = 107
 
     private var packageId: String?
     private var hospitalId: String?
@@ -12,68 +13,76 @@ final class PackageCardCell: UITableViewCell {
 
     private let cardView: UIView = {
         let view = UIView()
-        view.backgroundColor = .fdBg
+        view.backgroundColor = UIColor(hexString: "#FFF9F8")
         view.layer.cornerRadius = 12
         view.layer.borderWidth = 0.5
-        view.layer.borderColor = UIColor.fdPrimaryEdge.cgColor
+        view.layer.borderColor = UIColor(hexString: "#FFEAE5").cgColor
         view.clipsToBounds = true
         return view
     }()
 
+    private let coverImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFill
+        iv.layer.cornerRadius = 10
+        iv.clipsToBounds = true
+        iv.backgroundColor = .white
+        iv.image = UIImage(named: "pkg_card_placeholder")
+        return iv
+    }()
+
     private let nameLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdFont(ofSize: 14, weight: .medium)
-        label.textColor = .fdText
+        label.font = .fdFont(ofSize: 16, weight: .medium)
+        label.textColor = UIColor(hexString: "#1F2430")
         label.numberOfLines = 1
+        label.lineBreakMode = .byTruncatingTail
         return label
     }()
 
     private let subtitleLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdFont(ofSize: 12, weight: .regular)
-        label.textColor = .fdSubtext
+        label.font = .fdFont(ofSize: 14, weight: .regular)
+        label.textColor = UIColor(hexString: "#6D7381")
         label.numberOfLines = 1
+        label.lineBreakMode = .byTruncatingTail
         return label
     }()
 
     private let badgeView: UIView = {
         let view = UIView()
-        view.layer.cornerRadius = 10
+        view.layer.cornerRadius = 4
         view.clipsToBounds = true
         view.isHidden = true
         return view
     }()
 
-    private let badgeIcon: UIImageView = {
-        let iv = UIImageView()
-        iv.contentMode = .scaleAspectFit
-        return iv
-    }()
-
     private let badgeLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdFont(ofSize: 10, weight: .medium)
+        label.font = .fdFont(ofSize: 12, weight: .bold)
+        label.textColor = .white
+        label.textAlignment = .center
         return label
     }()
 
-    private let priceLabel = UILabel()
-
-    private lazy var detailButton: UIButton = {
-        let btn = UIButton(type: .system)
-        btn.setTitle("查看详情", for: .normal)
-        btn.titleLabel?.font = .fdFont(ofSize: 12, weight: .medium)
-        btn.setTitleColor(.white, for: .normal)
-        btn.backgroundColor = .fdPrimary
-        btn.layer.cornerRadius = 13
-        btn.addTarget(self, action: #selector(tap), for: .touchUpInside)
-        return btn
-    }()
-
-    private let footerGradient: UIView = {
+    private let footerGradientView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor.fdPrimarySoft.withAlphaComponent(0.7)
+        view.isUserInteractionEnabled = false
         return view
     }()
+
+    private let footerGradientLayer: CAGradientLayer = {
+        let layer = CAGradientLayer()
+        layer.colors = [
+            UIColor(hexString: "#FFF1EE").cgColor,
+            UIColor(hexString: "#FFF1EE").withAlphaComponent(0).cgColor
+        ]
+        layer.startPoint = CGPoint(x: 0, y: 0.5)
+        layer.endPoint = CGPoint(x: 1, y: 0.5)
+        return layer
+    }()
+
+    private let priceLabel = UILabel()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -86,65 +95,68 @@ final class PackageCardCell: UITableViewCell {
 
     required init?(coder: NSCoder) { fatalError() }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        footerGradientLayer.frame = footerGradientView.bounds
+    }
+
     private func setupUI() {
         contentView.addSubview(cardView)
-        cardView.addSubview(footerGradient)
+        cardView.addSubview(footerGradientView)
+        footerGradientView.layer.addSublayer(footerGradientLayer)
+        cardView.addSubview(coverImageView)
         cardView.addSubview(nameLabel)
         cardView.addSubview(subtitleLabel)
         cardView.addSubview(badgeView)
-        badgeView.addSubview(badgeIcon)
         badgeView.addSubview(badgeLabel)
         cardView.addSubview(priceLabel)
-        cardView.addSubview(detailButton)
 
         cardView.snp.makeConstraints {
             $0.top.equalToSuperview()
-            // 右侧列表卡片必须完整留在右栏内，避免越过左侧类目栏
-            $0.leading.equalToSuperview().offset(16)
+            $0.leading.equalToSuperview().offset(10)
             $0.trailing.equalToSuperview().offset(-16)
             $0.bottom.equalToSuperview().offset(-14)
             $0.height.equalTo(Self.cardHeight)
         }
 
-        nameLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(12)
-            $0.leading.equalToSuperview().offset(12)
-            $0.trailing.lessThanOrEqualTo(badgeView.snp.leading).offset(-6)
+        coverImageView.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(11.5)
+            $0.leading.equalToSuperview().offset(11.5)
+            $0.size.equalTo(83)
         }
+
+        badgeView.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(11.5)
+            $0.trailing.equalToSuperview().offset(-8)
+            $0.height.equalTo(15)
+            $0.width.greaterThanOrEqualTo(26)
+        }
+
+        badgeLabel.snp.makeConstraints {
+            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 3, bottom: 0, right: 3))
+        }
+
+        nameLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(11.5)
+            $0.leading.equalTo(coverImageView.snp.trailing).offset(10)
+            $0.trailing.lessThanOrEqualTo(badgeView.snp.leading).offset(-4)
+        }
+
         subtitleLabel.snp.makeConstraints {
             $0.top.equalTo(nameLabel.snp.bottom).offset(6)
             $0.leading.equalTo(nameLabel)
-            $0.trailing.equalToSuperview().inset(12)
+            $0.trailing.equalToSuperview().offset(-8)
         }
-        badgeView.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(10)
-            $0.trailing.equalToSuperview().inset(12)
-            $0.height.equalTo(20)
-        }
-        badgeIcon.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(8)
-            $0.centerY.equalToSuperview()
-            $0.size.equalTo(10)
-        }
-        badgeLabel.snp.makeConstraints {
-            $0.leading.equalTo(badgeIcon.snp.trailing).offset(2)
-            $0.trailing.equalToSuperview().inset(8)
-            $0.centerY.equalToSuperview()
-        }
-        footerGradient.snp.makeConstraints {
+
+        footerGradientView.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(42)
+            $0.height.equalTo(43)
         }
+
         priceLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(12)
-            $0.bottom.equalToSuperview().offset(-14)
-            $0.trailing.lessThanOrEqualTo(detailButton.snp.leading).offset(-8)
-        }
-        detailButton.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(12)
-            $0.bottom.equalToSuperview().offset(-12)
-            $0.width.equalTo(72)
-            $0.height.equalTo(26)
+            $0.leading.equalTo(nameLabel)
+            $0.bottom.equalToSuperview().offset(-11)
+            $0.trailing.lessThanOrEqualToSuperview().offset(-8)
         }
     }
 
@@ -154,6 +166,8 @@ final class PackageCardCell: UITableViewCell {
         hospitalId = nil
         categoryServiceId = nil
         badgeView.isHidden = true
+        coverImageView.kf.cancelDownloadTask()
+        coverImageView.image = UIImage(named: "pkg_card_placeholder")
     }
 
     func configure(_ item: HealthPackageItem, categoryServiceId: String? = nil) {
@@ -164,6 +178,17 @@ final class PackageCardCell: UITableViewCell {
         subtitleLabel.text = item.subtitle.isEmpty ? "健康管理服务套餐" : item.subtitle
         priceLabel.attributedText = Self.priceAttributed(from: item.price)
         applyBadge(item.badge)
+
+        if let rawUrl = item.imageUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !rawUrl.isEmpty, let url = URL(string: rawUrl) {
+            coverImageView.kf.setImage(
+                with: url,
+                placeholder: UIImage(named: "pkg_card_placeholder"),
+                options: [.transition(.fade(0.2))]
+            )
+        } else {
+            coverImageView.image = UIImage(named: "pkg_card_placeholder")
+        }
     }
 
     func configure(_ p: SvcPkg, accent: UIColor) {
@@ -174,12 +199,18 @@ final class PackageCardCell: UITableViewCell {
         subtitleLabel.text = p.subtitle
         priceLabel.attributedText = Self.priceAttributed(from: p.price)
         applyBadge(p.tag.isEmpty ? nil : p.tag)
+        coverImageView.image = UIImage(named: "pkg_card_placeholder")
     }
 
     private func applyBadge(_ raw: String?) {
         guard let badge = raw?.trimmingCharacters(in: .whitespacesAndNewlines),
               !badge.isEmpty, badge != "无" else {
             badgeView.isHidden = true
+            nameLabel.snp.remakeConstraints {
+                $0.top.equalToSuperview().offset(11.5)
+                $0.leading.equalTo(coverImageView.snp.trailing).offset(10)
+                $0.trailing.lessThanOrEqualToSuperview().offset(-8)
+            }
             return
         }
         badgeView.isHidden = false
@@ -187,60 +218,46 @@ final class PackageCardCell: UITableViewCell {
 
         switch badge {
         case "热销":
-            badgeView.backgroundColor = .fdDangerSoft
-            badgeLabel.textColor = .fdDanger
-            badgeIcon.image = UIImage(systemName: "flame.fill")
-            badgeIcon.tintColor = .fdDanger
+            badgeView.backgroundColor = UIColor(hexString: "#DF0340")
         case "推荐":
-            badgeView.backgroundColor = .fdWarningSoft
-            badgeLabel.textColor = .fdPrimary
-            badgeIcon.image = UIImage(systemName: "hand.thumbsup.fill")
-            badgeIcon.tintColor = .fdPrimary
+            badgeView.backgroundColor = UIColor(hexString: "#FF7A50")
         default:
-            badgeView.backgroundColor = .fdPrimarySoft
-            badgeLabel.textColor = .fdPrimary
-            badgeIcon.image = UIImage(systemName: "star.fill")
-            badgeIcon.tintColor = .fdPrimary
+            badgeView.backgroundColor = UIColor(hexString: "#FF7A50")
+        }
+
+        nameLabel.snp.remakeConstraints {
+            $0.top.equalToSuperview().offset(11.5)
+            $0.leading.equalTo(coverImageView.snp.trailing).offset(10)
+            $0.trailing.lessThanOrEqualTo(badgeView.snp.leading).offset(-4)
         }
     }
 
     private static func priceAttributed(from raw: String) -> NSAttributedString {
         let digits = raw.filter { $0.isNumber || $0 == "," || $0 == "." }
         let number = digits.isEmpty ? raw : digits
+        let priceColor = UIColor(hexString: "#F93838")
         let result = NSMutableAttributedString()
         result.append(NSAttributedString(
             string: "¥",
             attributes: [
-                .font: UIFont.fdFont(ofSize: 12, weight: .medium),
-                .foregroundColor: UIColor.fdDanger,
+                .font: UIFont.fdFont(ofSize: 14, weight: .medium),
+                .foregroundColor: priceColor,
             ]
         ))
         result.append(NSAttributedString(
-            string: " \(number)",
+            string: "\(number)",
             attributes: [
                 .font: UIFont.fdFont(ofSize: 16, weight: .medium),
-                .foregroundColor: UIColor.fdDanger,
+                .foregroundColor: priceColor,
             ]
         ))
         result.append(NSAttributedString(
             string: " 元起",
             attributes: [
-                .font: UIFont.fdFont(ofSize: 10, weight: .regular),
-                .foregroundColor: UIColor.fdDanger,
+                .font: UIFont.fdFont(ofSize: 12, weight: .regular),
+                .foregroundColor: priceColor,
             ]
         ))
         return result
-    }
-
-    @objc private func tap() {
-        guard let id = packageId else { return }
-        Router.shared.push(
-            "/services/pkg",
-            params: ServiceRoutes.packageDetailParams(
-                packageId: id,
-                hospitalId: hospitalId,
-                categoryServiceId: categoryServiceId
-            )
-        )
     }
 }

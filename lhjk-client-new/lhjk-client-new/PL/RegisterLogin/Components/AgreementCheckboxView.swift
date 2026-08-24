@@ -18,8 +18,8 @@ final class AgreementCheckboxView: UIView {
         let label = UILabel()
         label.font = .fdLoginMeta
         label.textColor = .fdMuted
-        label.numberOfLines = 2
-        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.textAlignment = .left
         label.isUserInteractionEnabled = true
         return label
     }()
@@ -46,15 +46,15 @@ final class AgreementCheckboxView: UIView {
 
         checkboxButton.addTarget(self, action: #selector(toggleCheck), for: .touchUpInside)
         checkboxButton.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(-8)
-            make.top.equalToSuperview().offset(-4)
+            make.leading.equalToSuperview()
+            make.top.equalToSuperview()
             make.size.equalTo(28)
         }
 
         buildAgreementText()
 
         agreementLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(18)
+            make.leading.equalTo(checkboxButton.snp.trailing).offset(2)
             make.trailing.equalToSuperview()
             make.top.bottom.equalToSuperview()
         }
@@ -67,13 +67,12 @@ final class AgreementCheckboxView: UIView {
         let fullText = "我已阅读并同意 《用户协议》 《隐私政策》与 《健康管理服务知情同意书》"
         let attributed = NSMutableAttributedString(string: fullText)
         let paragraph = NSMutableParagraphStyle()
-        paragraph.alignment = .center
-        paragraph.minimumLineHeight = 18
-        paragraph.maximumLineHeight = 18
+        paragraph.alignment = .left
+        paragraph.minimumLineHeight = 20
+        paragraph.maximumLineHeight = 20
         attributed.setAttributes([
             .font: UIFont.fdLoginMeta,
             .foregroundColor: UIColor.fdMuted,
-            .kern: 0.55,
             .paragraphStyle: paragraph,
         ], range: NSRange(location: 0, length: fullText.count))
 
@@ -109,7 +108,7 @@ final class AgreementCheckboxView: UIView {
 
         let boundingBox = layoutManager.usedRect(for: textContainer)
         let textOffset = CGPoint(
-            x: (label.bounds.width - boundingBox.width) * 0.5 - boundingBox.minX,
+            x: -boundingBox.minX,
             y: (label.bounds.height - boundingBox.height) * 0.5 - boundingBox.minY
         )
         let textPoint = CGPoint(x: point.x - textOffset.x, y: point.y - textOffset.y)

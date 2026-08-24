@@ -48,7 +48,7 @@ final class MallProductCell: UICollectionViewCell {
         coverImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         // Figma：左上角标 rounded-tl ≈15 / rounded-br ≈11
-        tagLabel.font = .fdFont(ofSize: 12, weight: .medium)
+        tagLabel.font = .fdFont(ofSize: 14, weight: .medium)
         tagLabel.textColor = .white
         tagLabel.backgroundColor = Self.hotColor
         tagLabel.layer.cornerRadius = 15
@@ -63,15 +63,15 @@ final class MallProductCell: UICollectionViewCell {
             $0.width.greaterThanOrEqualTo(46)
         }
 
-        nameLabel.font = .fdFont(ofSize: 12, weight: .medium)
+        nameLabel.font = .fdFont(ofSize: 14, weight: .medium)
         nameLabel.textColor = .fdText
         nameLabel.numberOfLines = 1
-        descLabel.font = .fdFont(ofSize: 10, weight: .regular)
+        descLabel.font = .fdFont(ofSize: 12, weight: .regular)
         descLabel.textColor = Self.descColor
         descLabel.numberOfLines = 1
         priceLabel.numberOfLines = 1
 
-        buyBtn.titleLabel?.font = .fdFont(ofSize: 11, weight: .medium)
+        buyBtn.titleLabel?.font = .fdFont(ofSize: 13, weight: .medium)
         buyBtn.setTitle("购买", for: .normal)
         buyBtn.setTitleColor(.white, for: .normal)
         buyBtn.backgroundColor = .fdPrimary
@@ -179,21 +179,21 @@ final class MallProductCell: UICollectionViewCell {
         result.append(NSAttributedString(
             string: "¥",
             attributes: [
-                .font: UIFont.fdFont(ofSize: 10, weight: .medium),
+                .font: UIFont.fdFont(ofSize: 12, weight: .medium),
                 .foregroundColor: hotColor,
             ]
         ))
         result.append(NSAttributedString(
             string: number,
             attributes: [
-                .font: UIFont.fdFont(ofSize: 14, weight: .medium),
+                .font: UIFont.fdFont(ofSize: 16, weight: .medium),
                 .foregroundColor: hotColor,
             ]
         ))
         result.append(NSAttributedString(
             string: " 元起",
             attributes: [
-                .font: UIFont.fdFont(ofSize: 10, weight: .regular),
+                .font: UIFont.fdFont(ofSize: 12, weight: .regular),
                 .foregroundColor: priceUnitColor,
             ]
         ))

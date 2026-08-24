@@ -56,9 +56,9 @@ final class WechatAuthorizationViewController: BaseViewController {
             $0.size.equalTo(22)
         }
 
-        statusTitleLabel.font = .fdBodySemibold
+        statusTitleLabel.font = .fdMyBodySemibold
         statusTitleLabel.textColor = .fdText
-        statusDescLabel.font = .fdCaption
+        statusDescLabel.font = .fdMyCaption
         statusDescLabel.textColor = .fdSubtext
         statusDescLabel.numberOfLines = 0
 
@@ -95,14 +95,14 @@ final class WechatAuthorizationViewController: BaseViewController {
 
         let actionTitle = UILabel()
         actionTitle.text = "微信快捷登录"
-        actionTitle.font = .fdBodySemibold
+        actionTitle.font = .fdMyBodySemibold
         actionTitle.textColor = .fdText
 
-        actionDescLabel.font = .fdBody
+        actionDescLabel.font = .fdMyBody
         actionDescLabel.textColor = .fdSubtext
         actionDescLabel.numberOfLines = 0
 
-        actionButton.titleLabel?.font = .fdBodySemibold
+        actionButton.titleLabel?.font = .fdMyBodySemibold
         actionButton.layer.cornerRadius = 22
         actionButton.addTarget(self, action: #selector(handleAction), for: .touchUpInside)
 
@@ -176,10 +176,6 @@ final class WechatAuthorizationViewController: BaseViewController {
     }
 
     private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            alert.dismiss(animated: true)
-        }
+        showToastAlert(message, duration: 1.5)
     }
 }

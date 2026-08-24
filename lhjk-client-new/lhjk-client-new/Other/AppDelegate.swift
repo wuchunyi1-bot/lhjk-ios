@@ -4,10 +4,20 @@ import UserNotifications
 @main
 final class AppDelegate: UIResponder, UIApplicationDelegate {
 
+    /// 在 `UIApplicationMain` 之前尽早写入语言偏好，供系统相机/相册等控件读取。
+    private static let localeBootstrap: Void = {
+        let defaults = UserDefaults.standard
+        defaults.set(["zh-Hans"], forKey: "AppleLanguages")
+        defaults.set("zh-Hans", forKey: "AppleLocale")
+        defaults.synchronize()
+    }()
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
+        _ = Self.localeBootstrap
+        configureAppLocale()
         // MARK: - SDK 初始化
         configureWindow()
         configurePushNotification(application)
@@ -57,6 +67,14 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     // MARK: - Private Setup
+
+    /// 系统控件（日期选择器 Cancel/Done、权限弹窗、相机等）优先使用简体中文。
+    private func configureAppLocale() {
+        let defaults = UserDefaults.standard
+        defaults.set(["zh-Hans"], forKey: "AppleLanguages")
+        defaults.set("zh-Hans", forKey: "AppleLocale")
+        defaults.synchronize()
+    }
 
     private func configureWindow() {
         // AppDelegate 不再负责 window 管理，由 SceneDelegate 负责

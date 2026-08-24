@@ -65,6 +65,16 @@ final class FundeNativeBridge: NSObject {
         switch action {
         case "navigatePackageDetail":
             handleNavigatePackageDetail(body: body, params: params)
+        case "routeChanged":
+            handleRouteChanged(params: params)
+        case "localizeDateTimeChrome":
+            WebViewSystemChromeLocalizer.localizeVisibleChrome()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                WebViewSystemChromeLocalizer.localizeVisibleChrome()
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                WebViewSystemChromeLocalizer.localizeVisibleChrome()
+            }
         case "ble.getStatus":
             handleBleGetStatus(params: params, callbackId: callbackId)
         case "ble.openManager":
@@ -72,6 +82,12 @@ final class FundeNativeBridge: NSObject {
         default:
             reject(callbackId, message: "未知 action: \(action)")
         }
+    }
+
+    private func handleRouteChanged(params: [String: Any]) {
+        let urlString = Self.stringValue(params["url"])
+        let url = urlString.flatMap { URL(string: $0) } ?? webView?.url
+        (hostViewController as? WebViewController)?.handleURLChanged(url)
     }
 
     /// 文档 `openPackageDetail`：打开 iOS 原生套餐详情

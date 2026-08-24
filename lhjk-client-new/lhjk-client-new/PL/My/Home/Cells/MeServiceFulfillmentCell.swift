@@ -36,7 +36,7 @@ final class MeServiceFulfillmentCardView: UIView {
 
         // Title: 服务履约
         titleLabel.text = "服务履约"
-        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
         titleLabel.textColor = UIColor(hexString: "#1F2430")
         addSubview(titleLabel)
         titleLabel.snp.makeConstraints {
@@ -55,7 +55,7 @@ final class MeServiceFulfillmentCardView: UIView {
         }
 
         allOrdersLabel.text = "全部订单"
-        allOrdersLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        allOrdersLabel.font = .fdFont(ofSize: 14, weight: .regular)
         allOrdersLabel.textColor = UIColor(hexString: "#717885")
         addSubview(allOrdersLabel)
         allOrdersLabel.snp.makeConstraints {
@@ -105,13 +105,13 @@ final class MeServiceFulfillmentCardView: UIView {
             let valLbl = UILabel()
             valLbl.text = stat.value
             valLbl.textColor = UIColor(hexString: "#1F2942")
-            valLbl.font = .fdFont(ofSize: 18, weight: .medium)
+            valLbl.font = .fdFont(ofSize: 20, weight: .medium)
             valLbl.textAlignment = .center
             valLbl.isUserInteractionEnabled = false
 
             let lblLbl = UILabel()
             lblLbl.text = stat.label
-            lblLbl.font = .fdFont(ofSize: 12, weight: .regular)
+            lblLbl.font = .fdFont(ofSize: 14, weight: .regular)
             lblLbl.textColor = UIColor(hexString: "#1F2942")
             lblLbl.textAlignment = .center
             lblLbl.isUserInteractionEnabled = false

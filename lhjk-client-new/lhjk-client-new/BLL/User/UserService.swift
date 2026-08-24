@@ -157,6 +157,35 @@ final class UserService: UserServiceProtocol {
         return archive
     }
 
+    /// `GET /v1/archive/calculateArchiveCompletion`
+    /// Apifox: 机构/档案管理 — 计算档案完善进度
+    func calculateArchiveCompletion(userId: String) async throws -> ArchiveCompletionVO {
+        let trimmed = userId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            print("[UserService] calculateArchiveCompletion → empty userId")
+            throw UserServiceError.queryFailed("用户 ID 无效")
+        }
+
+        print("[UserService] calculateArchiveCompletion → userId=\(trimmed)")
+
+        let response: APIResponse<ArchiveCompletionVO> = try await APIManager.shared.getAsync(
+            path: "/v1/archive/calculateArchiveCompletion",
+            parameters: ["userId": trimmed],
+            responseType: APIResponse<ArchiveCompletionVO>.self
+        )
+
+        guard response.isSuccess, let data = response.data else {
+            print("[UserService] calculateArchiveCompletion ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw UserServiceError.queryFailed(response.msg ?? "")
+        }
+
+        print(
+            "[UserService] calculateArchiveCompletion ✓ completionPercentage="
+                + "\(data.completionPercentage.map(String.init) ?? "nil")"
+        )
+        return data
+    }
+
     // MARK: - 密码/手机号管理
 
     func resetPasswordByMobile(mobile: String, newPwd: String, checkCode: String) async throws {

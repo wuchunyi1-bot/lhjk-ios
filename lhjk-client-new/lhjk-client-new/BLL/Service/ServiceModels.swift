@@ -298,6 +298,8 @@ struct ServiceHubBanner: Sendable {
     let accentHex: String
     let routePath: String?
     let routeParamId: String?
+    /// `getByCode` 的 `contentType`（推荐套餐 `pageUrl` 为空时用于兜底跳转）
+    let contentType: Int?
     /// 资讯等：作者（`detail.authorName`）
     let authorName: String?
     /// 资讯等：浏览次数（`detail.clickCount`）

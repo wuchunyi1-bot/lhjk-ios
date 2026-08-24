@@ -114,7 +114,7 @@ final class PasswordSetupViewController: BaseViewController {
 
         // Step title
         stepTitleLabel = UILabel()
-        stepTitleLabel.font = .fdH2
+        stepTitleLabel.font = .fdMyH2
         stepTitleLabel.textColor = .fdText
         contentView.addSubview(stepTitleLabel)
         stepTitleLabel.snp.makeConstraints { make in
@@ -123,7 +123,7 @@ final class PasswordSetupViewController: BaseViewController {
         }
 
         stepDescLabel = UILabel()
-        stepDescLabel.font = .fdBody
+        stepDescLabel.font = .fdMyBody
         stepDescLabel.textColor = .fdSubtext
         stepDescLabel.numberOfLines = 0
         contentView.addSubview(stepDescLabel)
@@ -143,7 +143,7 @@ final class PasswordSetupViewController: BaseViewController {
 
         // MARK: - Action Button
         actionBtn = UIButton(type: .system)
-        actionBtn.titleLabel?.font = .fdBodyBold
+        actionBtn.titleLabel?.font = .fdMyBodyBold
         actionBtn.setTitleColor(.white, for: .normal)
         actionBtn.backgroundColor = .fdPrimary
         actionBtn.layer.cornerRadius = 27
@@ -166,7 +166,7 @@ final class PasswordSetupViewController: BaseViewController {
 
         let fieldLabel = UILabel()
         fieldLabel.text = "手机号"
-        fieldLabel.font = .fdFont(ofSize: 13, weight: .semibold)
+        fieldLabel.font = .fdFont(ofSize: 15, weight: .semibold)
         fieldLabel.textColor = .fdSubtext
         phoneContainer.addSubview(fieldLabel)
         fieldLabel.snp.makeConstraints { make in
@@ -193,7 +193,7 @@ final class PasswordSetupViewController: BaseViewController {
         parent.addSubview(codeContainer)
 
         codeDescLabel = UILabel()
-        codeDescLabel.font = .fdFont(ofSize: 13)
+        codeDescLabel.font = .fdFont(ofSize: 15)
         codeDescLabel.textColor = .fdSubtext
         codeContainer.addSubview(codeDescLabel)
         codeDescLabel.snp.makeConstraints { make in
@@ -202,7 +202,7 @@ final class PasswordSetupViewController: BaseViewController {
 
         let fieldLabel = UILabel()
         fieldLabel.text = "验证码"
-        fieldLabel.font = .fdFont(ofSize: 13, weight: .semibold)
+        fieldLabel.font = .fdFont(ofSize: 15, weight: .semibold)
         fieldLabel.textColor = .fdSubtext
         codeContainer.addSubview(fieldLabel)
         fieldLabel.snp.makeConstraints { make in
@@ -223,7 +223,7 @@ final class PasswordSetupViewController: BaseViewController {
 
         codeResendBtn = UIButton(type: .system)
         codeResendBtn.setTitle("重新获取", for: .normal)
-        codeResendBtn.titleLabel?.font = .fdFont(ofSize: 13, weight: .bold)
+        codeResendBtn.titleLabel?.font = .fdFont(ofSize: 15, weight: .bold)
         codeResendBtn.setTitleColor(.fdPrimary, for: .normal)
         codeResendBtn.setTitleColor(.fdMuted, for: .disabled)
         codeResendBtn.layer.cornerRadius = 8
@@ -255,7 +255,7 @@ final class PasswordSetupViewController: BaseViewController {
 
         let newPwdLabel = UILabel()
         newPwdLabel.text = "新密码"
-        newPwdLabel.font = .fdFont(ofSize: 13, weight: .semibold)
+        newPwdLabel.font = .fdFont(ofSize: 15, weight: .semibold)
         newPwdLabel.textColor = .fdSubtext
         passwordContainer.addSubview(newPwdLabel)
         newPwdLabel.snp.makeConstraints { make in
@@ -287,7 +287,7 @@ final class PasswordSetupViewController: BaseViewController {
         newPasswordField = UITextField()
         newPasswordField.placeholder = "请设置新密码"
         newPasswordField.isSecureTextEntry = true
-        newPasswordField.font = .fdFont(ofSize: 16)
+        newPasswordField.font = .fdFont(ofSize: 18)
         newPasswordField.textColor = .fdText
         newPwdShell.addSubview(newPasswordField)
 
@@ -310,7 +310,7 @@ final class PasswordSetupViewController: BaseViewController {
 
         let confirmPwdLabel = UILabel()
         confirmPwdLabel.text = "确认新密码"
-        confirmPwdLabel.font = .fdFont(ofSize: 13, weight: .semibold)
+        confirmPwdLabel.font = .fdFont(ofSize: 15, weight: .semibold)
         confirmPwdLabel.textColor = .fdSubtext
         passwordContainer.addSubview(confirmPwdLabel)
         confirmPwdLabel.snp.makeConstraints { make in
@@ -343,7 +343,7 @@ final class PasswordSetupViewController: BaseViewController {
         confirmPasswordField = UITextField()
         confirmPasswordField.placeholder = "请再次输入新密码"
         confirmPasswordField.isSecureTextEntry = true
-        confirmPasswordField.font = .fdFont(ofSize: 16)
+        confirmPasswordField.font = .fdFont(ofSize: 18)
         confirmPasswordField.textColor = .fdText
         confirmPwdShell.addSubview(confirmPasswordField)
         confirmPasswordField.snp.makeConstraints { make in
@@ -529,7 +529,7 @@ final class PasswordSetupViewController: BaseViewController {
         let tf = UITextField()
         tf.placeholder = placeholder
         tf.keyboardType = keyboardType
-        tf.font = .fdFont(ofSize: 16)
+        tf.font = .fdFont(ofSize: 18)
         tf.textColor = .fdText
         tf.layer.cornerRadius = 8
         tf.layer.borderWidth = 1
@@ -587,8 +587,6 @@ final class PasswordSetupViewController: BaseViewController {
     }
 
     private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { alert.dismiss(animated: true) }
+        showToastAlert(message, duration: 1.5)
     }
 }

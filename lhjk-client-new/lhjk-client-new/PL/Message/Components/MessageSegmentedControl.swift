@@ -56,7 +56,7 @@ final class MessageSegmentedControl: UIControl {
             title.isUserInteractionEnabled = false
 
             let badge = UILabel()
-            badge.font = .fdFont(ofSize: 10, weight: .medium)
+            badge.font = .fdFont(ofSize: 12, weight: .medium)
             badge.textColor = .white
             badge.textAlignment = .center
             badge.layer.cornerRadius = 9
@@ -91,7 +91,7 @@ final class MessageSegmentedControl: UIControl {
     private func applySelection() {
         for idx in titleLabels.indices {
             let active = idx == selectedIndex
-            titleLabels[idx].font = .fdFont(ofSize: 16, weight: active ? .medium : .regular)
+            titleLabels[idx].font = .fdFont(ofSize: 18, weight: active ? .medium : .regular)
             titleLabels[idx].textColor = active ? UIColor(hexString: "#1F2430") : UIColor(hexString: "#A7ABB3")
 
             guard idx < badgeLabels.count, idx < items.count else { continue }

@@ -52,6 +52,7 @@ static func authenticatedMetricURL(
 | `manual` | `add` | — |
 | `history` | `records` | — |
 | `detail` | `detail` | `monitorId`；血糖另需 `sugarId` |
+| `scale/result` | `scale/result` | `monitorId`（体重；有阻抗时的体成分报告） |
 | `service` | （无，回首页） | — |
 | `add-diet` | `add` | `meal`（默认 `breakfast`） |
 | `add-motion` | `check-in` | `monitorId` 可选 |
@@ -62,6 +63,7 @@ static func authenticatedMetricURL(
 ```
 #/weight?token=xxx&platform=ios
 #/weight/detail?token=xxx&platform=ios&monitorId=2051465082076262401
+#/weight/scale/result?token=xxx&platform=ios&monitorId=2051465082076262401
 #/exercise-food/add?token=xxx&platform=ios&meal=breakfast
 ```
 

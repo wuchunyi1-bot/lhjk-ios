@@ -13,7 +13,7 @@ final class VideoBubbleCell: UITableViewCell {
 
     private let avatarLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 13, weight: .bold)
+        l.font = .fdFont(ofSize: 15, weight: .bold)
         l.textColor = .white
         l.textAlignment = .center
         l.layer.cornerRadius = 17
@@ -40,7 +40,7 @@ final class VideoBubbleCell: UITableViewCell {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFill
         iv.clipsToBounds = true
-        iv.layer.cornerRadius = 12
+        iv.layer.cornerRadius = ChatBubbleStyle.cornerLarge
         iv.backgroundColor = UIColor.black.withAlphaComponent(0.08)
         return iv
     }()
@@ -54,7 +54,7 @@ final class VideoBubbleCell: UITableViewCell {
 
     private let durationLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 11, weight: .medium)
+        l.font = .fdFont(ofSize: 13, weight: .medium)
         l.textColor = .white
         l.backgroundColor = UIColor.black.withAlphaComponent(0.55)
         l.layer.cornerRadius = 4
@@ -69,6 +69,10 @@ final class VideoBubbleCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
         backgroundColor = .fdBg
+
+        ChatBubbleStyle.configureAvatar(avatarLabel, imageView: avatarImageView)
+        metaLabel.font = ChatBubbleStyle.metaFont
+        metaLabel.textColor = ChatBubbleStyle.metaColor
 
         [avatarLabel, avatarImageView, metaLabel, coverView].forEach(contentView.addSubview)
         coverView.addSubview(playIcon)
@@ -87,23 +91,12 @@ final class VideoBubbleCell: UITableViewCell {
         let isStaff = msg.isStaff
         let video = msg.videoContent
 
-        metaLabel.font = .fdMicro
+        metaLabel.font = ChatBubbleStyle.metaFont
 
-        if let urlStr = msg.portraitUrl, !urlStr.isEmpty, let url = URL(string: urlStr) {
-            avatarImageView.isHidden = false
-            avatarLabel.isHidden = true
-            avatarImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
-        } else {
-            avatarImageView.isHidden = true
-            avatarLabel.isHidden = false
-            avatarLabel.text = isStaff ? (msg.avatar ?? msg.senderName?.prefix(1).description ?? "?") : "我"
-            avatarLabel.backgroundColor = isStaff
-                ? UIColor(hexString: tone)
-                : UIColor(hexString: "#FF7A50")
-        }
+        ChatBubbleStyle.applyAvatar(portraitUrl: msg.portraitUrl, label: avatarLabel, imageView: avatarImageView)
 
         metaLabel.text = isStaff
-            ? [msg.senderName, msg.senderRole, msg.time].compactMap { $0 }.joined(separator: " · ")
+            ? ChatBubbleStyle.staffMetaText(name: msg.senderName)
             : msg.time
         metaLabel.textAlignment = isStaff ? .left : .right
 
@@ -132,35 +125,36 @@ final class VideoBubbleCell: UITableViewCell {
     private func layoutForStaff(_ isStaff: Bool) {
         avatarLabel.snp.remakeConstraints { make in
             if isStaff {
-                make.leading.equalToSuperview().offset(16)
+                make.leading.equalToSuperview().offset(ChatBubbleStyle.horizontalInset)
             } else {
-                make.trailing.equalToSuperview().offset(-16)
+                make.trailing.equalToSuperview().offset(-ChatBubbleStyle.horizontalInset)
             }
             make.top.equalToSuperview().offset(8).priority(999)
-            make.size.equalTo(34)
+            make.size.equalTo(ChatBubbleStyle.avatarSize)
         }
-        avatarImageView.snp.makeConstraints { make in
+        avatarImageView.snp.remakeConstraints { make in
             make.edges.equalTo(avatarLabel)
         }
 
         metaLabel.snp.remakeConstraints { make in
             make.top.equalTo(avatarLabel)
             if isStaff {
-                make.leading.equalTo(avatarLabel.snp.trailing).offset(8)
+                make.leading.equalTo(avatarLabel.snp.trailing).offset(ChatBubbleStyle.avatarToContentGap)
             } else {
-                make.trailing.equalTo(avatarLabel.snp.leading).offset(-8)
+                make.trailing.equalTo(avatarLabel.snp.leading).offset(-ChatBubbleStyle.avatarToContentGap)
             }
         }
 
         coverView.snp.remakeConstraints { make in
-            make.top.equalTo(metaLabel.snp.bottom).offset(4)
+            make.top.equalTo(isStaff ? metaLabel.snp.bottom : avatarLabel.snp.top)
+                .offset(isStaff ? ChatBubbleStyle.nameToBubbleGap : 0)
             make.bottom.equalToSuperview().offset(-8).priority(999)
             make.width.equalTo(200)
             make.height.equalTo(140).priority(750)
             if isStaff {
                 make.leading.equalTo(metaLabel)
             } else {
-                make.trailing.equalTo(metaLabel)
+                make.trailing.equalTo(avatarLabel.snp.leading).offset(-ChatBubbleStyle.avatarToContentGap)
             }
         }
 

@@ -202,11 +202,22 @@ final class ChatViewModel: ObservableObject {
 
     /// 发送语音消息（含乐观更新）
     func sendVoice(localPath: String, duration: Int) {
+        let localMsg = makeLocalMessage(
+            type: .voice,
+            text: nil,
+            imagePath: localPath,
+            thumbWidth: nil,
+            thumbHeight: duration
+        )
+
         let reply = quotedMessage.flatMap { ReplyMessage.from($0) }
         quotedMessage = nil
 
+        messages.append(localMsg)
+        scrollToBottomPublisher.send(true)
+
         Task {
-            let sent = await imService.sendVoice(
+            let sentMsg = await imService.sendVoice(
                 localPath: localPath,
                 duration: duration,
                 conversationId: conversationId,
@@ -214,9 +225,65 @@ final class ChatViewModel: ObservableObject {
                 replyMessage: reply
             )
             await MainActor.run {
-                if let sent,
-                   let localIdx = self.messages.firstIndex(where: { $0.type == .voice && $0.imagePath == localPath }) {
-                    self.messages[localIdx] = sent
+                self.replaceLocalMessage(localId: localMsg.id, with: sentMsg)
+            }
+        }
+    }
+
+    /// 发送文件消息：先上传 OSS，再发融云 AD:FileMsg
+    func sendFile(localURL: URL) {
+        let fileName = localURL.lastPathComponent
+        let ext = localURL.pathExtension.isEmpty ? "bin" : localURL.pathExtension.lowercased()
+        let fileSize = (try? FileManager.default.attributesOfItem(atPath: localURL.path)[.size] as? Int) ?? 0
+        let sizeText = Self.formatFileSize(fileSize)
+
+        let content = FileMessage()
+        content.fileName = fileName
+        content.fileSize = sizeText
+        content.fileSuffix = ext
+        content.fileUrl = localURL.path
+        content.lastMsgDisplayContent = "[文件]"
+
+        var localMsg = makeLocalMessage(
+            type: .file,
+            text: fileName,
+            imagePath: localURL.path,
+            thumbWidth: nil,
+            thumbHeight: nil
+        )
+        localMsg.fileContent = content
+
+        let reply = quotedMessage.flatMap { ReplyMessage.from($0) }
+        quotedMessage = nil
+
+        messages.append(localMsg)
+        scrollToBottomPublisher.send(true)
+
+        Task {
+            do {
+                let data = try Data(contentsOf: localURL)
+                let remoteURL = try await OSSManager.shared.upload(
+                    data: data,
+                    folderName: "im",
+                    ext: ext,
+                    mimeType: Self.mimeType(for: ext)
+                )
+                let sentMsg = await imService.sendFile(
+                    fileUrl: remoteURL,
+                    fileName: fileName,
+                    fileSize: sizeText,
+                    fileSuffix: ext,
+                    conversationId: conversationId,
+                    conversationType: conversationType,
+                    replyMessage: reply
+                )
+                await MainActor.run {
+                    self.replaceLocalMessage(localId: localMsg.id, with: sentMsg)
+                }
+            } catch {
+                print("[Chat] sendFile ✗ \(error.localizedDescription)")
+                await MainActor.run {
+                    self.toastPublisher.send("文件发送失败")
                 }
             }
         }
@@ -344,6 +411,30 @@ final class ChatViewModel: ObservableObject {
         let path = NSTemporaryDirectory() + "rc_img_\(Int(Date().timeIntervalSince1970 * 1000)).jpg"
         try? data.write(to: URL(fileURLWithPath: path))
         return path
+    }
+
+    private static func formatFileSize(_ bytes: Int) -> String {
+        let value = Double(bytes)
+        if value < 1024 { return "\(bytes)B" }
+        if value < 1024 * 1024 { return String(format: "%.1fKB", value / 1024) }
+        return String(format: "%.1fMB", value / (1024 * 1024))
+    }
+
+    private static func mimeType(for ext: String) -> String {
+        switch ext.lowercased() {
+        case "pdf": return "application/pdf"
+        case "doc": return "application/msword"
+        case "docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        case "xls": return "application/vnd.ms-excel"
+        case "xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        case "ppt": return "application/vnd.ms-powerpoint"
+        case "pptx": return "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        case "txt": return "text/plain"
+        case "zip": return "application/zip"
+        case "png": return "image/png"
+        case "jpg", "jpeg": return "image/jpeg"
+        default: return "application/octet-stream"
+        }
     }
 }
 

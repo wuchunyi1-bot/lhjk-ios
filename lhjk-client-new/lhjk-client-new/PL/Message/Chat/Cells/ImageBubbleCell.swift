@@ -18,7 +18,7 @@ final class ImageBubbleCell: UITableViewCell {
 
     private let avatarLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 13, weight: .semibold)
+        l.font = .fdFont(ofSize: 15, weight: .semibold)
         l.textColor = .white
         l.textAlignment = .center
         l.layer.cornerRadius = 17
@@ -28,7 +28,6 @@ final class ImageBubbleCell: UITableViewCell {
     private let avatarImageView: UIImageView = {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFill
-        iv.layer.cornerRadius = 17
         iv.clipsToBounds = true
         iv.isHidden = true
         return iv
@@ -36,8 +35,8 @@ final class ImageBubbleCell: UITableViewCell {
 
     private let metaLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdMicro
-        l.textColor = .fdMuted
+        l.font = ChatBubbleStyle.metaFont
+        l.textColor = ChatBubbleStyle.metaColor
         return l
     }()
 
@@ -45,7 +44,7 @@ final class ImageBubbleCell: UITableViewCell {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFill
         iv.clipsToBounds = true
-        iv.layer.cornerRadius = 12
+        iv.layer.cornerRadius = ChatBubbleStyle.cornerLarge
         iv.backgroundColor = UIColor.black.withAlphaComponent(0.05)
         iv.isUserInteractionEnabled = true
         return iv
@@ -58,6 +57,7 @@ final class ImageBubbleCell: UITableViewCell {
         selectionStyle = .none
         backgroundColor = .fdBg
 
+        ChatBubbleStyle.configureAvatar(avatarLabel, imageView: avatarImageView)
         [avatarLabel, avatarImageView, metaLabel, photoView].forEach(contentView.addSubview)
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
@@ -76,22 +76,13 @@ final class ImageBubbleCell: UITableViewCell {
         let isStaff = msg.isStaff
         imagePath = msg.imagePath
 
-        metaLabel.font = .fdMicro
+        metaLabel.font = ChatBubbleStyle.metaFont
 
-        if let urlStr = msg.portraitUrl, !urlStr.isEmpty, let url = URL(string: urlStr) {
-            avatarImageView.isHidden = false
-            avatarLabel.isHidden = true
-            avatarImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
-        } else {
-            avatarImageView.isHidden = true
-            avatarLabel.isHidden = false
-            avatarLabel.text = isStaff ? (msg.avatar ?? msg.senderName?.prefix(1).description ?? "?") : "我"
-        }
-        avatarLabel.backgroundColor = isStaff
-            ? UIColor(hexString: tone)
-            : UIColor(hexString: "#FF7A50")
+        ChatBubbleStyle.applyAvatar(portraitUrl: msg.portraitUrl, label: avatarLabel, imageView: avatarImageView)
 
-        metaLabel.text = isStaff ? "\(msg.senderName ?? "") · \(msg.senderRole ?? "") · \(msg.time)" : msg.time
+        metaLabel.text = isStaff
+            ? ChatBubbleStyle.staffMetaText(name: msg.senderName)
+            : msg.time
         metaLabel.textAlignment = isStaff ? .left : .right
 
         // 加载缩略图（Kingfisher 自动缓存到内存+磁盘）
@@ -133,12 +124,12 @@ final class ImageBubbleCell: UITableViewCell {
 
         avatarLabel.snp.remakeConstraints { make in
             if isStaff {
-                make.leading.equalToSuperview().offset(16)
+                make.leading.equalToSuperview().offset(ChatBubbleStyle.horizontalInset)
             } else {
-                make.trailing.equalToSuperview().offset(-16)
+                make.trailing.equalToSuperview().offset(-ChatBubbleStyle.horizontalInset)
             }
             make.top.equalToSuperview().offset(8).priority(999)
-            make.size.equalTo(34)
+            make.size.equalTo(ChatBubbleStyle.avatarSize)
         }
         avatarImageView.snp.remakeConstraints { make in
             make.edges.equalTo(avatarLabel)
@@ -147,21 +138,22 @@ final class ImageBubbleCell: UITableViewCell {
         metaLabel.snp.remakeConstraints { make in
             make.top.equalTo(avatarLabel)
             if isStaff {
-                make.leading.equalTo(avatarLabel.snp.trailing).offset(8)
+                make.leading.equalTo(avatarLabel.snp.trailing).offset(ChatBubbleStyle.avatarToContentGap)
             } else {
-                make.trailing.equalTo(avatarLabel.snp.leading).offset(-8)
+                make.trailing.equalTo(avatarLabel.snp.leading).offset(-ChatBubbleStyle.avatarToContentGap)
             }
         }
 
         photoView.snp.remakeConstraints { make in
-            make.top.equalTo(metaLabel.snp.bottom).offset(4)
+            make.top.equalTo(isStaff ? metaLabel.snp.bottom : avatarLabel.snp.top)
+                .offset(isStaff ? ChatBubbleStyle.nameToBubbleGap : 0)
             make.bottom.equalToSuperview().offset(-8).priority(999)
             make.width.equalTo(displayW)
             make.height.equalTo(displayH).priority(750)
             if isStaff {
                 make.leading.equalTo(metaLabel)
             } else {
-                make.trailing.equalTo(metaLabel)
+                make.trailing.equalTo(avatarLabel.snp.leading).offset(-ChatBubbleStyle.avatarToContentGap)
             }
         }
     }

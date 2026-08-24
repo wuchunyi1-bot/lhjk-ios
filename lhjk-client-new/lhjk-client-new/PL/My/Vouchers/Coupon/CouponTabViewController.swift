@@ -18,7 +18,7 @@ final class CouponTabViewController: BaseViewController {
 
     private lazy var tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
-        tv.backgroundColor = .fdBg
+        tv.backgroundColor = .white
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
         tv.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 24, right: 0)
@@ -46,12 +46,12 @@ final class CouponTabViewController: BaseViewController {
         icon.contentMode = .scaleAspectFit
         let title = UILabel()
         title.text = emptyTitle
-        title.font = .fdBodyBold
+        title.font = .fdMyBodyBold
         title.textColor = .fdText
         title.textAlignment = .center
         let subtitle = UILabel()
         subtitle.text = emptySubtitle
-        subtitle.font = .fdCaption
+        subtitle.font = .fdMyCaption
         subtitle.textColor = .fdSubtext
         subtitle.textAlignment = .center
         subtitle.numberOfLines = 0
@@ -88,7 +88,7 @@ final class CouponTabViewController: BaseViewController {
     }
 
     override func setupUI() {
-        view.backgroundColor = .fdBg
+        view.backgroundColor = .white
         view.addSubview(tableView)
         view.addSubview(emptyView)
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }

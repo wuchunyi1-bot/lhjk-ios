@@ -116,6 +116,8 @@ enum ColumnContentJumpType: Int {
     case package = 3
     case activity = 4
     case article = 5
+    /// 套餐中间页 H5（`#/package/bridge?packageId=`）
+    case packageBridge = 6
 }
 
 struct ColumnContentRoute {
@@ -146,6 +148,7 @@ enum ColumnContentMapper {
             accentHex: "#FF7A50",
             routePath: route?.path,
             routeParamId: route?.paramId ?? paramId,
+            contentType: dto.contentType,
             authorName: nonEmpty(dto.detail?.authorName),
             clickCount: dto.detail?.clickCount,
             labelName: nonEmpty(dto.detail?.labelName)
@@ -168,6 +171,8 @@ enum ColumnContentMapper {
             return ColumnContentRoute(path: "/services/pkg", paramId: contentId)
         case .activity:
             return ColumnContentRoute(path: "/services/detail", paramId: contentId)
+        case .packageBridge:
+            return ColumnContentRoute(path: "/package/bridge", paramId: contentId)
         case .article, .none:
             return nil
         }

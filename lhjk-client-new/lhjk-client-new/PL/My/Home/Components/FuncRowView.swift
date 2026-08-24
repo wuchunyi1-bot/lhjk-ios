@@ -21,14 +21,14 @@ final class FuncRowView: UIView {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdBody
+        label.font = .fdMyBody
         label.textColor = .fdText
         return label
     }()
 
     private let detailLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdCaption
+        label.font = .fdMyCaption
         label.textColor = .fdMuted
         label.textAlignment = .right
         return label

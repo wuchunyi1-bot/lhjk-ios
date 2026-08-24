@@ -22,7 +22,7 @@ final class ServiceInstitutionCardView: UIView {
 
     private let nameLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdFont(ofSize: 16, weight: .semibold)
+        label.font = .fdFont(ofSize: 18, weight: .semibold)
         label.textColor = .fdText
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return label
@@ -30,7 +30,7 @@ final class ServiceInstitutionCardView: UIView {
 
     private let typeBadge: UILabel = {
         let label = UILabel()
-        label.font = .fdFont(ofSize: 12, weight: .regular)
+        label.font = .fdFont(ofSize: 14, weight: .regular)
         label.textColor = .fdPrimary
         label.backgroundColor = .clear
         label.layer.cornerRadius = 4
@@ -43,7 +43,7 @@ final class ServiceInstitutionCardView: UIView {
 
     private let metaLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdFont(ofSize: 12, weight: .regular)
+        label.font = .fdFont(ofSize: 14, weight: .regular)
         label.textColor = .fdSubtext
         label.lineBreakMode = .byTruncatingTail
         return label
@@ -54,7 +54,7 @@ final class ServiceInstitutionCardView: UIView {
         let btn = UIButton(type: .system)
         btn.setTitle("切换", for: .normal)
         btn.setTitleColor(.fdPrimary, for: .normal)
-        btn.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
+        btn.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
         btn.setImage(UIImage(named: "institution_switch")?.withRenderingMode(.alwaysOriginal), for: .normal)
         // 文案在左、图标在右
         btn.semanticContentAttribute = .forceRightToLeft

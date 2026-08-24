@@ -29,6 +29,100 @@ struct OKOKScalePacket: Equatable {
     var productIdHex: String {
         String(format: "0x%04X", productId)
     }
+
+    // MARK: - 属性位解码（与 `parseDataDomain` 一致）
+
+    /// bit0：锁定
+    var attributeIsLocked: Bool { isLocked }
+
+    /// bit1–2：小数位
+    var decimalBits: UInt8 { (attributes >> 1) & 0b11 }
+
+    /// bit3–4：重量单位
+    var unitBits: UInt8 { (attributes >> 3) & 0b11 }
+
+    /// bit5：体脂秤类型
+    var attributeIsBodyFatScale: Bool { deviceTypeIsBodyFat }
+
+    var decimalDivisor: Double {
+        switch decimalBits {
+        case 0b01: return 1
+        case 0b10: return 100
+        default: return 10
+        }
+    }
+
+    var decimalLabel: String {
+        switch decimalBits {
+        case 0b01: return "0位小数"
+        case 0b10: return "2位小数"
+        default: return "1位小数"
+        }
+    }
+
+    var unitLabel: String {
+        switch unitBits {
+        case 0b01: return "斤"
+        case 0b10: return "磅(lb)"
+        case 0b11: return "英石(st:lb)"
+        default: return "千克(kg)"
+        }
+    }
+
+    var macBytesHex: String {
+        macBytes.map { String(format: "%02X", $0) }.joined(separator: " ")
+    }
+
+    var attributesBinary: String {
+        String(attributes, radix: 2).padding(toLength: 8, withPad: "0", startingAt: 0)
+    }
+
+    /// 上报 `monitorData.data.impedance`（Ω）；`resistanceRaw` 为 0 或未测到则为 0
+    var impedance: Double {
+        guard resistanceRaw > 0 else { return 0 }
+        return Double(resistanceRaw) / 10.0
+    }
+
+    /// 控制台打印本帧解析出的全部测量字段（调试用）
+    func printFullMeasurementLog(
+        phase: String,
+        discovery: OKOKScaleDiscovery? = nil,
+        peripheralId: UUID? = nil,
+        rawManufacturerHex: String? = nil
+    ) {
+        var lines: [String] = [
+            "[OKOK-Measure] ══ \(phase) ══",
+            "version: 0x\(String(format: "%02X", version))",
+            "serial: \(serial)",
+            "weightRaw: \(weightRaw) (0x\(String(format: "%04X", weightRaw)))",
+            "weightKg: \(String(format: "%.3f", weightKg))",
+            "resistanceRaw: \(resistanceRaw) (0x\(String(format: "%04X", resistanceRaw)))",
+            "impedance: \(String(format: "%.1f", impedance))",
+            "productId: \(productId) (\(productIdHex))",
+            "attributes: 0x\(String(format: "%02X", attributes)) (0b\(attributesBinary))",
+            "  locked(bit0): \(attributeIsLocked)",
+            "  decimalBits(bit1-2): \(decimalBits) → \(decimalLabel), divisor=\(decimalDivisor)",
+            "  unitBits(bit3-4): \(unitBits) → \(unitLabel)",
+            "  bodyFatScale(bit5): \(attributeIsBodyFatScale)",
+            "mac: \(macString)",
+            "macBytes: [\(macBytesHex)]",
+        ]
+        if let discovery {
+            lines.append("bluetoothName: \(discovery.resolvedBluetoothName)")
+            lines.append("broadcastLocalName: \(discovery.bluetoothName ?? "-")")
+            lines.append("rssi: \(discovery.rssi)")
+            lines.append("modelName: \(discovery.modelName)")
+            lines.append("modelCode: \(discovery.modelCode)")
+        }
+        if let peripheralId {
+            lines.append("peripheralId: \(peripheralId.uuidString)")
+        }
+        if let rawManufacturerHex {
+            lines.append("rawManufacturerData: [\(rawManufacturerHex)]")
+        }
+        lines.append("[OKOK-Measure] ════════════════")
+        print(lines.joined(separator: "\n"))
+    }
 }
 
 /// OKOK 产品 ID → 展示型号（厂商未给全量表时，先回退 productId）
@@ -100,42 +194,27 @@ enum OKOKV3PacketParser {
 
     // MARK: - Locate
 
-    /// 在载荷中定位 15 字节数据域（以 0xC0 开头）
+    /// 在载荷中定位 15 字节数据域。
+    /// 厂商规则：自定义数据**必须首字节 `0xC0`**，禁止把载荷中间偶然出现的 `C0` 当成体脂秤。
     static func locateDataDomain(in data: Data) -> Data? {
         let bytes = [UInt8](data)
-        guard !bytes.isEmpty else {
-            print("[OKOK-DAL] locateDataDomain miss — empty data")
-            return nil
+        guard bytes.count >= dataDomainLength else { return nil }
+
+        // 自定义数据本身以 C0 开头
+        if bytes[0] == versionByte {
+            return Data(bytes[0..<dataDomainLength])
         }
 
-        let hex = data.bleHexString
-        print("[OKOK-DAL] locateDataDomain in len=\(bytes.count) hex=[\(hex)]")
+        // iOS manufacturerData = Company ID(2B 小端) + 自定义数据；剥离后必须以 C0 开头
+        if bytes.count >= 2 + dataDomainLength, bytes[2] == versionByte {
+            return Data(bytes[2..<(2 + dataDomainLength)])
+        }
 
         // 完整 AD：Len=0x10, Type=0xFF, 后跟 15B 数据域
         if bytes.count >= 17, bytes[0] == 0x10, bytes[1] == 0xFF, bytes[2] == versionByte {
-            let domain = Data(bytes[2..<17])
-            print("[OKOK-DAL] locateDataDomain hit path=AD(0x10,0xFF,C0) domain=[\(domain.bleHexString)]")
-            return domain
+            return Data(bytes[2..<17])
         }
 
-        // 在任意位置搜索以 C0 开头、其后至少 14 字节的窗口（兼容 Company ID 前缀等）
-        if let idx = bytes.firstIndex(of: versionByte),
-           idx + dataDomainLength <= bytes.count {
-            let slice = Data(bytes[idx..<(idx + dataDomainLength)])
-            if slice.first == versionByte {
-                print("[OKOK-DAL] locateDataDomain hit path=scanC0 offset=\(idx) domain=[\(slice.bleHexString)]")
-                return slice
-            }
-        }
-
-        // 载荷本身即以 C0 开头
-        if bytes.count >= dataDomainLength, bytes[0] == versionByte {
-            let domain = Data(bytes[0..<dataDomainLength])
-            print("[OKOK-DAL] locateDataDomain hit path=rawC0 domain=[\(domain.bleHexString)]")
-            return domain
-        }
-
-        print("[OKOK-DAL] locateDataDomain miss — no C0 domain (need ≥15B from 0xC0)")
         return nil
     }
 

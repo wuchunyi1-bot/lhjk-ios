@@ -24,7 +24,7 @@ final class PackageDetailCarouselSlideCell: UICollectionViewCell {
         imageView.clipsToBounds = true
         contentView.addSubview(imageView)
 
-        label.font = .fdFont(ofSize: 16, weight: .semibold)
+        label.font = .fdFont(ofSize: 18, weight: .semibold)
         label.textAlignment = .center
         label.numberOfLines = 3
         contentView.addSubview(label)

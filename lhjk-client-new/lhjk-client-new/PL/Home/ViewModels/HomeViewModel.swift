@@ -23,7 +23,6 @@ final class HomeViewModel: ObservableObject {
         case articlesCard(String)
     }
 
-    @Published var daysLeft: Int = 45
     @Published var banners: [ServiceHubBanner] = []
     @Published var quickActions: [HomeQuickActionsCell.Action] = []
     @Published var membershipPackages: [HomeMembershipPackagesCell.Package] = []
@@ -206,7 +205,7 @@ final class HomeViewModel: ObservableObject {
             let teams = try await homeService.getUserParticipateAllTeam(userId: userId)
             guard !Task.isCancelled else { return }
             let staff = teams.firstTeamStaff(excludingUserId: userId)
-            teamMembers = staff.enumerated().compactMap { Self.mapTeamMember($0.element, index: $0.offset) }
+            teamMembers = staff.compactMap { Self.mapTeamMember($0) }
             applySnapshot()
         } catch {
             guard !Task.isCancelled else { return }
@@ -276,52 +275,21 @@ final class HomeViewModel: ObservableObject {
     var taskDoneCount: Int { tasks.filter(\.done).count }
     var taskTotalCount: Int { tasks.count }
 
-    private static func mapTeamMember(_ vo: MyDoctorTeamVO, index: Int) -> HomeTeamCardCell.Member? {
+    private static func mapTeamMember(_ vo: MyDoctorTeamVO) -> HomeTeamCardCell.Member? {
         let name = (vo.userName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return nil }
 
-        let role = vo.resolvedRole()
-        let titleText = (vo.position ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let title: String
-        if titleText.isEmpty {
-            switch role {
-            case "doctor": title = "医师"
-            case "nutrition": title = "营养师"
-            default: title = "健康管理师"
-            }
-        } else {
-            title = titleText
-        }
-
-        let fallbackTag: String
-        switch role {
-        case "doctor": fallbackTag = "高血压·心脑血管"
-        case "nutrition": fallbackTag = "慢病饮食干预"
-        default: fallbackTag = "随访｜行为干预"
-        }
-
-        // 接口无在线态：按角色给设计稿同款展示标签（非真实在线探测）
-        let statusPair: (String, String)
-        switch role {
-        case "doctor": statusPair = ("在线", "success")
-        case "nutrition": statusPair = ("今日值班", "warning")
-        default: statusPair = ("您的专属", "success")
-        }
-
-        let placeholders = ["home_team_1", "home_team_2", "home_team_3"]
-
         return HomeTeamCardCell.Member(
-            role: role,
+            role: vo.resolvedRole(),
             initial: String(name.prefix(1)),
             name: name,
-            title: title,
-            tags: vo.resolvedTags(fallback: fallbackTag),
-            status: statusPair.0,
-            statusType: statusPair.1,
+            title: (vo.position ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
+            tags: vo.resolvedTags(),
+            status: "",
+            statusType: "",
             groupId: vo.groupId,
             imageUrl: vo.imageUrl,
-            userId: vo.userId,
-            placeholderImageName: placeholders[min(index, placeholders.count - 1)]
+            userId: vo.userId
         )
     }
 
@@ -347,7 +315,9 @@ final class HomeViewModel: ObservableObject {
         return HomeMembershipPackagesCell.Package(
             id: banner.id,
             imageUrl: imageUrl,
-            pageUrl: banner.pageUrl
+            pageUrl: banner.pageUrl,
+            contentType: banner.contentType,
+            contentId: banner.contentId
         )
     }
 

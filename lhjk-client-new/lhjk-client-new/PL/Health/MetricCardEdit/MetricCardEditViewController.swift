@@ -36,7 +36,7 @@ final class MetricCardEditViewController: BaseViewController {
     private lazy var saveButton: UIButton = {
         let b = UIButton(type: .system)
         b.setTitle("保存", for: .normal)
-        b.titleLabel?.font = .fdFont(ofSize: 16, weight: .semibold)
+        b.titleLabel?.font = .fdFont(ofSize: 18, weight: .semibold)
         b.setTitleColor(.white, for: .normal)
         b.backgroundColor = .fdPrimary
         b.layer.cornerRadius = 24
@@ -301,9 +301,9 @@ private final class MetricEditHeaderView: UICollectionReusableView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        titleLabel.font = .fdFont(ofSize: 13, weight: .medium)
+        titleLabel.font = .fdFont(ofSize: 15, weight: .medium)
         titleLabel.textColor = .fdText
-        hintLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        hintLabel.font = .fdFont(ofSize: 14, weight: .regular)
         hintLabel.textColor = .fdMuted
         addSubview(titleLabel)
         addSubview(hintLabel)
@@ -347,7 +347,7 @@ private final class MetricEditCardCell: UICollectionViewCell {
         iconBg.layer.cornerRadius = 14
         iconView.contentMode = .scaleAspectFit
 
-        label.font = .fdFont(ofSize: 13, weight: .medium)
+        label.font = .fdFont(ofSize: 15, weight: .medium)
         label.textColor = .fdText
         label.textAlignment = .center
 

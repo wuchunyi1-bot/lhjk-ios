@@ -23,4 +23,22 @@ extension UIViewController {
         }
         present(alert, animated: true)
     }
+
+    /// 短时提示（带「确定」按钮，避免系统默认英文 OK）
+    func showToastAlert(_ message: String, duration: TimeInterval = 1.2, completion: (() -> Void)? = nil) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        var didFinish = false
+        let finish: () -> Void = {
+            guard !didFinish else { return }
+            didFinish = true
+            completion?()
+        }
+        alert.addAction(UIAlertAction(title: "确定", style: .default) { _ in
+            alert.dismiss(animated: true, completion: finish)
+        })
+        present(alert, animated: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+            alert.dismiss(animated: true, completion: finish)
+        }
+    }
 }

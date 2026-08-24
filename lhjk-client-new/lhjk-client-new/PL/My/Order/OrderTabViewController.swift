@@ -53,7 +53,7 @@ final class OrderTabViewController: BaseViewController {
 
     private lazy var emptyLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdFont(ofSize: 14, weight: .regular)
+        label.font = .fdFont(ofSize: 16, weight: .regular)
         label.textColor = UIColor(hexString: "#8591AB")
         label.textAlignment = .center
         return label
@@ -297,11 +297,7 @@ final class OrderTabViewController: BaseViewController {
     }
 
     private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            alert.dismiss(animated: true)
-        }
+        showToastAlert(message, duration: 1.5)
     }
 }
 

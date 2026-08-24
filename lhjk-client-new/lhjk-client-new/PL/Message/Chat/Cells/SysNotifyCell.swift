@@ -16,34 +16,30 @@ final class SysNotifyCell: UITableViewCell {
 
     private let avatarLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 13, weight: .bold)
+        l.font = .fdFont(ofSize: 15, weight: .bold)
         l.textColor = .white
         l.textAlignment = .center
-        l.layer.cornerRadius = 17
         l.clipsToBounds = true
         return l
     }()
     private let avatarImageView: UIImageView = {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFill
-        iv.layer.cornerRadius = 17
         iv.clipsToBounds = true
         iv.isHidden = true
         return iv
     }()
     private let metaLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdMicro
-        l.textColor = .fdMuted
+        l.font = ChatBubbleStyle.metaFont
+        l.textColor = ChatBubbleStyle.metaColor
         return l
     }()
 
+    private let cardBackground = ChatBubbleBackgroundView()
     private let cardView: UIView = {
         let v = UIView()
-        v.backgroundColor = .white
-        v.layer.cornerRadius = 18
-        v.layer.borderWidth = 1
-        v.layer.borderColor = UIColor(hexString: "#F0F0F0").cgColor
+        v.backgroundColor = .clear
         return v
     }()
 
@@ -63,16 +59,17 @@ final class SysNotifyCell: UITableViewCell {
         let s = UIStackView()
         s.axis = .horizontal
         s.alignment = .center
-        s.spacing = 10
+        s.spacing = 8
         return s
     }()
 
     private let monitorIconCircle: UIView = {
         let v = UIView()
-        v.layer.cornerRadius = 14
+        v.backgroundColor = ChatBubbleStyle.iconCircleFill
+        v.layer.cornerRadius = ChatBubbleStyle.Card.iconSize / 2
         v.clipsToBounds = true
         v.isHidden = true
-        v.snp.makeConstraints { $0.size.equalTo(28) }
+        v.snp.makeConstraints { $0.size.equalTo(ChatBubbleStyle.Card.iconSize) }
         return v
     }()
 
@@ -84,8 +81,8 @@ final class SysNotifyCell: UITableViewCell {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 15, weight: .bold)
-        l.textColor = .fdText
+        l.font = ChatBubbleStyle.Card.titleFont
+        l.textColor = ChatBubbleStyle.primaryText
         l.numberOfLines = 2
         l.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         l.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -101,13 +98,15 @@ final class SysNotifyCell: UITableViewCell {
         b.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         var config = UIButton.Configuration.plain()
-        config.contentInsets = NSDirectionalEdgeInsets(top: 2, leading: 10, bottom: 2, trailing: 10)
-        config.baseForegroundColor = UIColor(hexString: "#9A9DA8")
-        config.background.backgroundColor = UIColor(hexString: "#F0F0F0")
-        config.background.cornerRadius = 999
+        config.contentInsets = NSDirectionalEdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8)
+        config.baseForegroundColor = ChatBubbleStyle.userFill
+        config.background.backgroundColor = .clear
+        config.background.cornerRadius = 29
+        config.background.strokeColor = ChatBubbleStyle.userFill.withAlphaComponent(0.5)
+        config.background.strokeWidth = 0.5
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var out = incoming
-            out.font = .fdFont(ofSize: 11, weight: .regular)
+            out.font = ChatBubbleStyle.Card.tagFont
             return out
         }
         b.configuration = config
@@ -116,15 +115,15 @@ final class SysNotifyCell: UITableViewCell {
 
     private let dividerView: UIView = {
         let v = UIView()
-        v.backgroundColor = UIColor(hexString: "#F0F0F0")
+        v.backgroundColor = ChatBubbleStyle.dividerColor
         v.isHidden = true
         return v
     }()
 
     private let descLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdBody
-        l.textColor = .fdSubtext
+        l.font = ChatBubbleStyle.Card.bodyFont
+        l.textColor = ChatBubbleStyle.secondaryText
         l.numberOfLines = 0
         return l
     }()
@@ -148,8 +147,8 @@ final class SysNotifyCell: UITableViewCell {
     /// SysNotify CTA（`skipTxt`，缺省「去查看」）；仅按钮可点
     private let actionButton: UIButton = {
         let b = UIButton(type: .system)
-        b.titleLabel?.font = .fdFont(ofSize: 13, weight: .bold)
-        b.layer.cornerRadius = 12
+        b.titleLabel?.font = ChatBubbleStyle.Card.actionFont
+        b.layer.cornerRadius = ChatBubbleStyle.Card.actionHeight / 2
         b.clipsToBounds = true
         b.isHidden = true
         return b
@@ -162,9 +161,13 @@ final class SysNotifyCell: UITableViewCell {
         selectionStyle = .none
         backgroundColor = .fdBg
 
-        [avatarLabel, avatarImageView, metaLabel, cardView].forEach(contentView.addSubview)
+        ChatBubbleStyle.configureAvatar(avatarLabel, imageView: avatarImageView)
+        [avatarLabel, avatarImageView, metaLabel, cardBackground, cardView].forEach(contentView.addSubview)
         monitorIconCircle.addSubview(monitorIconView)
-        monitorIconView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        monitorIconView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.size.equalTo(ChatBubbleStyle.Card.iconGlyphSize)
+        }
 
         titleRow.addArrangedSubview(monitorIconCircle)
         titleRow.addArrangedSubview(titleLabel)
@@ -209,38 +212,21 @@ final class SysNotifyCell: UITableViewCell {
         let isStaff = msg.isStaff
         let showUser = card?.isShowUser ?? true
 
-        metaLabel.font = .fdMicro
+        metaLabel.font = ChatBubbleStyle.metaFont
 
         if showUser {
-            if let urlStr = msg.portraitUrl, !urlStr.isEmpty, let url = URL(string: urlStr) {
-                avatarImageView.isHidden = false
-                avatarLabel.isHidden = true
-                avatarImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
-            } else {
-                avatarImageView.isHidden = true
-                avatarLabel.isHidden = false
-                avatarLabel.text = isStaff
-                    ? (msg.avatar ?? msg.senderName?.prefix(1).description ?? "?")
-                    : "我"
-                avatarLabel.backgroundColor = isStaff
-                    ? UIColor(hexString: tone)
-                    : UIColor(hexString: "#FF7A50")
-            }
+            ChatBubbleStyle.applyAvatar(portraitUrl: msg.portraitUrl, label: avatarLabel, imageView: avatarImageView)
             metaLabel.isHidden = false
             if isStaff {
-                metaLabel.text = [msg.senderName, msg.senderRole, msg.time]
-                    .compactMap { $0 }
-                    .filter { !$0.isEmpty }
-                    .joined(separator: " · ")
+                metaLabel.text = ChatBubbleStyle.staffMetaText(name: msg.senderName)
             } else if let name = msg.senderName, !name.isEmpty {
-                metaLabel.text = [name, msg.time]
-                    .compactMap { $0 }
-                    .filter { !$0.isEmpty }
-                    .joined(separator: " · ")
+                metaLabel.text = name
             } else {
                 metaLabel.text = msg.time
             }
             metaLabel.textAlignment = isStaff ? .left : .right
+            cardBackground.tail = isStaff ? .left : .right
+            cardBackground.fill = .staffGradient
         } else {
             avatarLabel.isHidden = true
             avatarImageView.isHidden = true
@@ -319,7 +305,14 @@ final class SysNotifyCell: UITableViewCell {
 
         let body = card.bodyText.trimmingCharacters(in: .whitespacesAndNewlines)
         if card.showsBodyContent && !body.isEmpty {
-            descLabel.text = body
+            descLabel.attributedText = NSAttributedString(
+                string: body,
+                attributes: [
+                    .font: ChatBubbleStyle.Card.bodyFont,
+                    .foregroundColor: ChatBubbleStyle.secondaryText,
+                    .paragraphStyle: ChatBubbleStyle.cardParagraphStyle,
+                ]
+            )
             descLabel.isHidden = false
         } else {
             descLabel.text = nil
@@ -347,10 +340,10 @@ final class SysNotifyCell: UITableViewCell {
             return
         }
         monitorIconCircle.isHidden = false
-        monitorIconCircle.backgroundColor = UIColor(hexString: "#F5F5F5")
-        monitorIconView.contentMode = .scaleAspectFill
-        monitorIconView.clipsToBounds = true
-        monitorIconView.layer.cornerRadius = 14
+        monitorIconCircle.backgroundColor = ChatBubbleStyle.iconCircleFill
+        monitorIconView.contentMode = .scaleAspectFit
+        monitorIconView.clipsToBounds = false
+        monitorIconView.layer.cornerRadius = 0
         monitorIconView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
     }
 
@@ -375,8 +368,8 @@ final class SysNotifyCell: UITableViewCell {
         actionButton.isHidden = false
         actionButton.isEnabled = true
         actionButton.alpha = 1
-        actionButton.backgroundColor = UIColor.fdPrimary.withAlphaComponent(0.12)
-        actionButton.setTitleColor(.fdPrimary, for: .normal)
+        actionButton.backgroundColor = ChatBubbleStyle.actionFill
+        actionButton.setTitleColor(ChatBubbleStyle.actionText, for: .normal)
         actionButton.setTitle(card.jumpButtonTitle, for: .normal)
     }
 
@@ -424,46 +417,28 @@ final class SysNotifyCell: UITableViewCell {
         let row = UIStackView()
         row.axis = .horizontal
         row.alignment = .center
-        row.spacing = 4
+        row.spacing = 8
         row.distribution = .fill
 
         let left = UILabel()
-        left.font = .fdFont(ofSize: 12)
-        left.textColor = .fdMuted
-        left.text = label.hasSuffix("：") || label.hasSuffix(":") ? label : "\(label)："
+        left.font = ChatBubbleStyle.Card.rowLabelFont
+        left.textColor = ChatBubbleStyle.secondaryText
+        left.text = label.hasSuffix("：") || label.hasSuffix(":") ? label : "\(label)"
         left.setContentHuggingPriority(.required, for: .horizontal)
         left.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         row.addArrangedSubview(left)
 
         if asStatusPill {
-            let accent = resolvedColor(colorHex) ?? fallbackAccent
-            let pillWrap = UIView()
-            pillWrap.backgroundColor = accent.withAlphaComponent(0.12)
-            pillWrap.layer.cornerRadius = 8
-            pillWrap.clipsToBounds = true
-            pillWrap.setContentHuggingPriority(.required, for: .horizontal)
-            pillWrap.setContentCompressionResistancePriority(.required, for: .horizontal)
-
-            let pill = UILabel()
-            pill.text = value
-            pill.font = .fdFont(ofSize: 10, weight: .bold)
-            pill.textColor = accent
-            pill.numberOfLines = 1
-            pill.setContentCompressionResistancePriority(.required, for: .horizontal)
-            pillWrap.addSubview(pill)
-            pill.snp.makeConstraints { make in
-                make.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 8, bottom: 2, right: 8))
-            }
-            row.addArrangedSubview(pillWrap)
+            row.addArrangedSubview(makeStatusPill(text: value, colorHex: colorHex, fallbackAccent: fallbackAccent))
             let spacer = UIView()
             spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
             spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             row.addArrangedSubview(spacer)
         } else {
             let right = UILabel()
-            right.font = .fdFont(ofSize: 12)
-            right.textColor = .fdText
+            right.font = ChatBubbleStyle.Card.rowValueFont
+            right.textColor = ChatBubbleStyle.primaryText
             right.text = value
             right.numberOfLines = 0
             right.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -473,10 +448,40 @@ final class SysNotifyCell: UITableViewCell {
         let wrap = UIView()
         wrap.addSubview(row)
         row.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview().inset(5)
+            make.top.bottom.equalToSuperview().inset(ChatBubbleStyle.Card.rowVerticalInset)
             make.leading.trailing.equalToSuperview()
         }
         return wrap
+    }
+
+    private func statusPillBackground(colorHex: String?, accent: UIColor) -> UIColor {
+        let hex = (colorHex ?? "").uppercased()
+        if hex.contains("2EBA83") { return UIColor(hexString: "#E9F6F2") }
+        if hex.contains("DF0340") { return UIColor(hexString: "#FFEDED") }
+        return accent.withAlphaComponent(0.12)
+    }
+
+    /// 对齐标题行 `tagButton`：Configuration 保证 padding 与 intrinsic size，避免 UIStackView 内 UIView 背景与文字错位
+    private func makeStatusPill(text: String, colorHex: String?, fallbackAccent: UIColor) -> UIButton {
+        let accent = resolvedColor(colorHex) ?? fallbackAccent
+        let button = UIButton(type: .custom)
+        button.isUserInteractionEnabled = false
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        var config = UIButton.Configuration.plain()
+        config.contentInsets = NSDirectionalEdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8)
+        config.baseForegroundColor = accent
+        config.background.backgroundColor = statusPillBackground(colorHex: colorHex, accent: accent)
+        config.background.cornerRadius = 29
+        config.title = text
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var out = incoming
+            out.font = ChatBubbleStyle.Card.statusFont
+            return out
+        }
+        button.configuration = config
+        return button
     }
 
     private func resolvedColor(_ hex: String?) -> UIColor? {
@@ -512,9 +517,9 @@ final class SysNotifyCell: UITableViewCell {
         let stack = UIStackView()
         stack.axis = .vertical
         stack.spacing = 0
-        stack.layer.cornerRadius = 10
+        stack.layer.cornerRadius = 12
         stack.layer.borderWidth = 1
-        stack.layer.borderColor = UIColor(hexString: "#F0F0F0").cgColor
+        stack.layer.borderColor = ChatBubbleStyle.actionFill.cgColor
         stack.clipsToBounds = true
 
         stack.addArrangedSubview(makeTableRow(headers, isHeader: true))
@@ -531,15 +536,15 @@ final class SysNotifyCell: UITableViewCell {
         row.distribution = .fillEqually
         row.spacing = 0
         if isHeader {
-            row.backgroundColor = UIColor(hexString: "#F5F5F5")
+            row.backgroundColor = ChatBubbleStyle.actionFill
         } else {
             row.backgroundColor = .white
         }
         for text in cols {
             let label = UILabel()
             label.text = text
-            label.font = .fdFont(ofSize: 12)
-            label.textColor = isHeader ? .fdSubtext : .fdText
+            label.font = isHeader ? ChatBubbleStyle.Card.rowLabelFont : ChatBubbleStyle.Card.rowValueFont
+            label.textColor = isHeader ? ChatBubbleStyle.userFill : ChatBubbleStyle.primaryText
             label.textAlignment = .left
             label.numberOfLines = 2
             let wrap = UIView()
@@ -548,12 +553,11 @@ final class SysNotifyCell: UITableViewCell {
             }
             wrap.addSubview(label)
             label.snp.makeConstraints { make in
-                make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 10, bottom: 8, right: 10))
+                make.edges.equalToSuperview().inset(UIEdgeInsets(top: isHeader ? 7 : 12, left: 12, bottom: isHeader ? 7 : 12, right: 12))
             }
-            // 底部分隔
             if !isHeader {
                 let line = UIView()
-                line.backgroundColor = UIColor(hexString: "#F0F0F0")
+                line.backgroundColor = ChatBubbleStyle.dividerColor
                 wrap.addSubview(line)
                 line.snp.makeConstraints { make in
                     make.leading.trailing.bottom.equalToSuperview()
@@ -574,11 +578,11 @@ final class SysNotifyCell: UITableViewCell {
             row.alignment = .center
             let nameLabel = UILabel()
             nameLabel.text = name
-            nameLabel.font = .fdFont(ofSize: 12)
+            nameLabel.font = .fdFont(ofSize: 14)
             nameLabel.textColor = .fdMuted
             let stars = UILabel()
             stars.text = "★★★★★"
-            stars.font = .fdFont(ofSize: 14)
+            stars.font = .fdFont(ofSize: 16)
             stars.textColor = UIColor.fdBorder
             row.addArrangedSubview(nameLabel)
             row.addArrangedSubview(stars)
@@ -586,7 +590,7 @@ final class SysNotifyCell: UITableViewCell {
         }
         let input = UILabel()
         input.text = "  评价内容（只读）"
-        input.font = .fdFont(ofSize: 12)
+        input.font = .fdFont(ofSize: 14)
         input.textColor = .fdMuted
         input.backgroundColor = .fdBg2
         input.layer.cornerRadius = 8
@@ -599,7 +603,7 @@ final class SysNotifyCell: UITableViewCell {
         let attr = NSMutableAttributedString(
             string: title,
             attributes: [
-                .font: UIFont.fdFont(ofSize: 15, weight: .bold),
+                .font: UIFont.fdFont(ofSize: 17, weight: .bold),
                 .foregroundColor: UIColor.fdText,
             ]
         )
@@ -643,12 +647,12 @@ final class SysNotifyCell: UITableViewCell {
         if showUser {
             avatarLabel.snp.remakeConstraints { make in
                 if isStaff {
-                    make.leading.equalToSuperview().offset(16)
+                    make.leading.equalToSuperview().offset(ChatBubbleStyle.horizontalInset)
                 } else {
-                    make.trailing.equalToSuperview().offset(-16)
+                    make.trailing.equalToSuperview().offset(-ChatBubbleStyle.horizontalInset)
                 }
                 make.top.equalToSuperview().offset(8).priority(999)
-                make.size.equalTo(34)
+                make.size.equalTo(ChatBubbleStyle.avatarSize)
             }
             avatarImageView.snp.remakeConstraints { make in
                 make.edges.equalTo(avatarLabel)
@@ -656,11 +660,15 @@ final class SysNotifyCell: UITableViewCell {
             metaLabel.snp.remakeConstraints { make in
                 make.top.equalTo(avatarLabel)
                 if isStaff {
-                    make.leading.equalTo(avatarLabel.snp.trailing).offset(8)
+                    make.leading.equalTo(avatarLabel.snp.trailing).offset(ChatBubbleStyle.avatarToContentGap)
                 } else {
-                    make.trailing.equalTo(avatarLabel.snp.leading).offset(-8)
+                    make.trailing.equalTo(avatarLabel.snp.leading).offset(-ChatBubbleStyle.avatarToContentGap)
                 }
             }
+        }
+
+        cardBackground.snp.remakeConstraints { make in
+            make.edges.equalTo(cardView)
         }
 
         cardView.snp.remakeConstraints { make in
@@ -670,15 +678,15 @@ final class SysNotifyCell: UITableViewCell {
                 make.top.equalToSuperview().offset(8).priority(999)
             }
             make.bottom.equalToSuperview().offset(-8).priority(999)
-            make.width.equalTo(isUnified ? 268 : 260)
+            make.width.equalTo(ChatBubbleStyle.cardBubbleWidth())
             if isStaff {
-                make.leading.equalToSuperview().offset(showUser ? 58 : 16)
+                make.leading.equalToSuperview().offset(showUser ? ChatBubbleStyle.contentStartOffset : ChatBubbleStyle.horizontalInset)
             } else {
-                make.trailing.equalToSuperview().offset(showUser ? -58 : -16)
+                make.trailing.equalToSuperview().offset(showUser ? -ChatBubbleStyle.contentStartOffset : -ChatBubbleStyle.horizontalInset)
             }
         }
 
-        let pad: CGFloat = isUnified ? 14 : 12
+        let pad = ChatBubbleStyle.Card.padding
         let showTag = isUnified && (card?.showsDataSourceTag == true)
 
         coverImageView.snp.remakeConstraints { make in
@@ -807,7 +815,7 @@ final class SysNotifyCell: UITableViewCell {
 
         if showDesc {
             descLabel.snp.remakeConstraints { make in
-                make.top.equalTo(titleRow.snp.bottom).offset(8)
+                make.top.equalTo(titleRow.snp.bottom).offset(ChatBubbleStyle.Card.titleToBodyGap)
                 make.leading.trailing.equalToSuperview().inset(pad)
             }
         } else {
@@ -822,12 +830,12 @@ final class SysNotifyCell: UITableViewCell {
 
         if showRows {
             dividerView.snp.remakeConstraints { make in
-                make.top.equalTo(afterDesc).offset(10)
+                make.top.equalTo(afterDesc).offset(ChatBubbleStyle.Card.bodyToDividerGap)
                 make.leading.trailing.equalToSuperview().inset(pad)
                 make.height.equalTo(1 / UIScreen.main.scale)
             }
             rowsStack.snp.remakeConstraints { make in
-                make.top.equalTo(dividerView.snp.bottom).offset(2)
+                make.top.equalTo(dividerView.snp.bottom).offset(ChatBubbleStyle.Card.dividerToRowsGap)
                 make.leading.trailing.equalToSuperview().inset(pad)
             }
         } else {
@@ -847,9 +855,9 @@ final class SysNotifyCell: UITableViewCell {
 
         if showAction {
             actionButton.snp.remakeConstraints { make in
-                make.top.equalTo(afterBody).offset(10)
+                make.top.equalTo(afterBody).offset(ChatBubbleStyle.Card.actionTopGap)
                 make.leading.trailing.equalToSuperview().inset(pad)
-                make.height.equalTo(36)
+                make.height.equalTo(ChatBubbleStyle.Card.actionHeight)
                 make.bottom.equalToSuperview().offset(-pad)
             }
         } else {
@@ -860,13 +868,13 @@ final class SysNotifyCell: UITableViewCell {
             }
             if showRows {
                 rowsStack.snp.remakeConstraints { make in
-                    make.top.equalTo(dividerView.snp.bottom).offset(2)
+                    make.top.equalTo(dividerView.snp.bottom).offset(ChatBubbleStyle.Card.dividerToRowsGap)
                     make.leading.trailing.equalToSuperview().inset(pad)
                     make.bottom.equalToSuperview().offset(-pad)
                 }
             } else if showDesc {
                 descLabel.snp.remakeConstraints { make in
-                    make.top.equalTo(titleRow.snp.bottom).offset(8)
+                    make.top.equalTo(titleRow.snp.bottom).offset(ChatBubbleStyle.Card.titleToBodyGap)
                     make.leading.trailing.equalToSuperview().inset(pad)
                     make.bottom.equalToSuperview().offset(-pad)
                 }

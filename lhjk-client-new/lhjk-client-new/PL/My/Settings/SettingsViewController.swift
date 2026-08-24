@@ -2,7 +2,7 @@ import UIKit
 import SnapKit
 import Kingfisher
 
-/// 设置主页 — 对齐 funde-client `SettingsView.vue`
+/// 设置主页 — 对齐 Figma 3826:32412
 final class SettingsViewController: BaseViewController {
 
     private let cacheSizeKey = "fd_settings_cache_size"
@@ -10,12 +10,12 @@ final class SettingsViewController: BaseViewController {
 
     private let scrollView = UIScrollView()
     private let contentView = UIView()
-    private weak var cacheRow: SettingsHubItemRow?
+    private var generalSection: SettingsSectionCard?
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
-        cacheRow?.descText = currentCacheSizeText()
+        generalSection?.updateSubtitle(at: 0, text: currentCacheSizeText())
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -27,178 +27,115 @@ final class SettingsViewController: BaseViewController {
 
     override func setupUI() {
         title = "设置"
-        view.backgroundColor = UIColor(hexString: "#FFF8F4")
+        view.backgroundColor = UIColor(hexString: "#FDF6F3")
 
         scrollView.showsVerticalScrollIndicator = false
         view.addSubview(scrollView)
         scrollView.snp.makeConstraints { $0.edges.equalToSuperview() }
         scrollView.addSubview(contentView)
-        contentView.snp.makeConstraints { $0.edges.width.equalToSuperview() }
-
-        let groups: [(title: String, items: [SettingsItem])] = [
-            ("账号与安全", [
-                .link(
-                    title: "安全中心",
-                    desc: "手机号、密码与账号管理",
-                    icon: "lock.shield",
-                    route: "/me/settings/security"
-                ),
-            ]),
-            ("地址与设备", [
-                .link(
-                    title: "我的地址",
-                    desc: "收货地址管理",
-                    icon: "mappin.and.ellipse",
-                    route: "/me/settings/addresses"
-                ),
-                .link(
-                    title: "智能设备",
-                    desc: "已绑定的健康监测设备",
-                    icon: "applewatch",
-                    route: "/me/devices"
-                ),
-            ]),
-            ("消息提醒", [
-                .link(
-                    title: "通知设置",
-                    desc: "服务、健康与预约提醒",
-                    icon: "bell",
-                    route: "/me/settings/notifications"
-                ),
-            ]),
-            ("隐私与协议", [
-                .link(
-                    title: "隐私设置",
-                    desc: "系统权限与业务授权",
-                    icon: "hand.raised",
-                    route: "/me/settings/privacy"
-                ),
-                .link(
-                    title: "协议与说明",
-                    desc: "协议、清单与权益卡规则",
-                    icon: "doc.text",
-                    route: "/me/settings/agreement-center"
-                ),
-            ]),
-            ("通用与支持", [
-                .clearCache(
-                    title: "清理缓存",
-                    icon: "paintbrush"
-                ),
-                .link(
-                    title: "关于富德健康",
-                    desc: "品牌、版本与客服信息",
-                    icon: "info.circle",
-                    route: "/me/settings/about"
-                ),
-            ]),
-        ]
-
-        var lastBottom = contentView.snp.top
-
-        for (idx, group) in groups.enumerated() {
-            let section = buildGroup(title: group.title, items: group.items)
-            contentView.addSubview(section)
-            section.snp.makeConstraints { make in
-                make.top.equalTo(lastBottom).offset(idx == 0 ? 12 : 14)
-                make.leading.trailing.equalToSuperview()
-            }
-            lastBottom = section.snp.bottom
-        }
-
-        let logoutWrap = buildLogoutButton()
-        contentView.addSubview(logoutWrap)
-        logoutWrap.snp.makeConstraints { make in
-            make.top.equalTo(lastBottom).offset(20)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-24)
-        }
-    }
-
-    // MARK: - Build
-
-    private enum SettingsItem {
-        case link(title: String, desc: String, icon: String, route: String)
-        case clearCache(title: String, icon: String)
-    }
-
-    private func buildGroup(title: String, items: [SettingsItem]) -> UIView {
-        let wrap = UIView()
-
-        let titleLbl = UILabel()
-        titleLbl.text = title
-        titleLbl.font = .fdCaptionSemibold
-        titleLbl.textColor = .fdSubtext
-        wrap.addSubview(titleLbl)
-        titleLbl.snp.makeConstraints {
-            $0.top.equalToSuperview()
-            $0.leading.trailing.equalToSuperview().inset(16)
-        }
-
-        let card = UIView()
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 12
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 6
-        card.layer.shadowOpacity = 0.03
-        wrap.addSubview(card)
-        card.snp.makeConstraints {
-            $0.top.equalTo(titleLbl.snp.bottom).offset(8)
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.bottom.equalToSuperview()
+        contentView.snp.makeConstraints { make in
+            make.edges.width.equalToSuperview()
         }
 
         let stack = UIStackView()
         stack.axis = .vertical
-        card.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-        for (idx, item) in items.enumerated() {
-            let showDivider = idx < items.count - 1
-            switch item {
-            case let .link(title, desc, icon, route):
-                stack.addArrangedSubview(
-                    SettingsHubItemRow(
-                        title: title,
-                        desc: desc,
-                        systemImage: icon,
-                        showDivider: showDivider,
-                        action: { Router.shared.push(route) }
-                    )
-                )
-            case let .clearCache(title, icon):
-                let row = SettingsHubItemRow(
-                    title: title,
-                    desc: currentCacheSizeText(),
-                    systemImage: icon,
-                    showDivider: showDivider,
-                    action: { [weak self] in self?.handleClearCache() }
-                )
-                cacheRow = row
-                stack.addArrangedSubview(row)
-            }
+        stack.spacing = 12
+        contentView.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview().offset(-24)
         }
 
-        return wrap
+        stack.addArrangedSubview(makeSection(
+            title: "账号与安全",
+            icon: "settings_section_account",
+            items: [
+                .init(
+                    title: "安全中心",
+                    subtitle: "手机号、密码与账号管理",
+                    action: { Router.shared.push("/me/settings/security") }
+                ),
+            ]
+        ))
+
+        stack.addArrangedSubview(makeSection(
+            title: "地址与设备",
+            icon: "settings_section_address",
+            items: [
+                .init(
+                    title: "我的地址",
+                    subtitle: "收货地址管理",
+                    action: { Router.shared.push("/me/settings/addresses") }
+                ),
+                .init(
+                    title: "智能设备",
+                    subtitle: "已绑定的健康监测设备",
+                    action: { Router.shared.push("/me/devices") }
+                ),
+            ]
+        ))
+
+        stack.addArrangedSubview(makeSection(
+            title: "消息提醒",
+            icon: "settings_section_message",
+            items: [
+                .init(
+                    title: "通知设置",
+                    subtitle: "服务、健康与预约提醒",
+                    action: { Router.shared.push("/me/settings/notifications") }
+                ),
+            ]
+        ))
+
+        stack.addArrangedSubview(makeSection(
+            title: "隐私与协议",
+            icon: "settings_section_privacy",
+            items: [
+                .init(
+                    title: "隐私设置",
+                    subtitle: "系统权限与业务授权",
+                    action: { Router.shared.push("/me/settings/privacy") }
+                ),
+                .init(
+                    title: "协议与说明",
+                    subtitle: "协议、清单与权益卡规则",
+                    action: { Router.shared.push("/me/settings/agreement-center") }
+                ),
+            ]
+        ))
+
+        let general = makeSection(
+            title: "通用与支持",
+            icon: "settings_section_general",
+            items: [
+                .init(
+                    title: "清理缓存",
+                    subtitle: currentCacheSizeText(),
+                    action: { [weak self] in self?.handleClearCache() }
+                ),
+                .init(
+                    title: "关于富德健康",
+                    subtitle: "品牌、版本与客服信息",
+                    action: { Router.shared.push("/me/settings/about") }
+                ),
+            ]
+        )
+        generalSection = general
+        stack.addArrangedSubview(general)
+
+        let logoutRow = SettingsLogoutRow { [weak self] in
+            self?.handleLogout()
+        }
+        stack.addArrangedSubview(logoutRow)
     }
 
-    private func buildLogoutButton() -> UIView {
-        let wrap = UIView()
-        let btn = UIButton(type: .system)
-        btn.setTitle("退出登录", for: .normal)
-        btn.setTitleColor(.fdDanger, for: .normal)
-        btn.titleLabel?.font = .fdH3
-        btn.backgroundColor = .fdSurface
-        btn.layer.cornerRadius = 12
-        btn.layer.shadowColor = UIColor.black.cgColor
-        btn.layer.shadowOffset = CGSize(width: 0, height: 1)
-        btn.layer.shadowRadius = 6
-        btn.layer.shadowOpacity = 0.03
-        btn.addTarget(self, action: #selector(handleLogout), for: .touchUpInside)
-        wrap.addSubview(btn)
-        btn.snp.makeConstraints { $0.edges.equalToSuperview(); $0.height.equalTo(48) }
-        return wrap
+    private func makeSection(
+        title: String,
+        icon: String,
+        items: [SettingsSectionCard.Item]
+    ) -> SettingsSectionCard {
+        SettingsSectionCard(sectionTitle: title, iconImageName: icon, items: items)
     }
 
     // MARK: - Cache
@@ -209,7 +146,7 @@ final class SettingsViewController: BaseViewController {
 
     private func handleClearCache() {
         UserDefaults.standard.set("0 B", forKey: cacheSizeKey)
-        cacheRow?.descText = "0 B"
+        generalSection?.updateSubtitle(at: 0, text: "0 B")
         ImageCache.default.clearMemoryCache()
         ImageCache.default.clearDiskCache()
         URLCache.shared.removeAllCachedResponses()
@@ -217,16 +154,12 @@ final class SettingsViewController: BaseViewController {
     }
 
     private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            alert.dismiss(animated: true)
-        }
+        showToastAlert(message, duration: 1.5)
     }
 
     // MARK: - Logout
 
-    @objc private func handleLogout() {
+    private func handleLogout() {
         let alert = UIAlertController(
             title: "确认退出登录",
             message: "退出后需要重新登录才能使用富德健康。",

@@ -95,7 +95,7 @@ final class OrderReturnGoodsSheet: UIViewController {
         }
 
         titleLabel.text = "去退货"
-        titleLabel.font = .fdH3
+        titleLabel.font = .fdFont(ofSize: 18, weight: .semibold)
         titleLabel.textColor = .fdText
         panel.addSubview(titleLabel)
         titleLabel.snp.makeConstraints {
@@ -104,7 +104,7 @@ final class OrderReturnGoodsSheet: UIViewController {
         }
 
         subtitleLabel.text = "请选择退货方式并提交退货信息。"
-        subtitleLabel.font = .fdCaption
+        subtitleLabel.font = .fdFont(ofSize: 13, weight: .regular)
         subtitleLabel.textColor = .fdSubtext
         subtitleLabel.numberOfLines = 0
         panel.addSubview(subtitleLabel)
@@ -133,10 +133,10 @@ final class OrderReturnGoodsSheet: UIViewController {
         addressBox.layer.cornerRadius = 8
 
         addressCaption.text = "送回地址"
-        addressCaption.font = .fdCaption
+        addressCaption.font = .fdFont(ofSize: 13, weight: .regular)
         addressCaption.textColor = .fdSubtext
         addressValue.text = returnAddressText
-        addressValue.font = .fdBodySemibold
+        addressValue.font = .fdFont(ofSize: 15, weight: .semibold)
         addressValue.textColor = .fdText
         addressValue.numberOfLines = 0
         let addressCol = UIStackView(arrangedSubviews: [addressCaption, addressValue])
@@ -151,7 +151,7 @@ final class OrderReturnGoodsSheet: UIViewController {
         logisticsStack.spacing = 16
 
         logisticsCompanyButton.contentHorizontalAlignment = .left
-        logisticsCompanyButton.titleLabel?.font = .fdBody
+        logisticsCompanyButton.titleLabel?.font = .fdFont(ofSize: 15, weight: .regular)
         logisticsCompanyButton.setTitleColor(.fdText, for: .normal)
         logisticsCompanyButton.backgroundColor = .fdSurface
         logisticsCompanyButton.layer.cornerRadius = 8
@@ -161,7 +161,7 @@ final class OrderReturnGoodsSheet: UIViewController {
         logisticsCompanyButton.snp.makeConstraints { $0.height.equalTo(44) }
         logisticsCompanyButton.addTarget(self, action: #selector(pickLogisticsCompany), for: .touchUpInside)
 
-        trackingField.font = .fdBody
+        trackingField.font = .fdFont(ofSize: 15, weight: .regular)
         trackingField.textColor = .fdText
         trackingField.placeholder = "请输入物流单号"
         trackingField.borderStyle = .none
@@ -198,7 +198,7 @@ final class OrderReturnGoodsSheet: UIViewController {
 
         cancelButton.setTitle("取消", for: .normal)
         cancelButton.setTitleColor(.fdText, for: .normal)
-        cancelButton.titleLabel?.font = .fdBodySemibold
+        cancelButton.titleLabel?.font = .fdFont(ofSize: 15, weight: .semibold)
         cancelButton.backgroundColor = .fdSurface
         cancelButton.layer.cornerRadius = 22
         cancelButton.layer.borderWidth = 1
@@ -207,7 +207,7 @@ final class OrderReturnGoodsSheet: UIViewController {
 
         submitButton.setTitle("提交", for: .normal)
         submitButton.setTitleColor(.white, for: .normal)
-        submitButton.titleLabel?.font = .fdBodySemibold
+        submitButton.titleLabel?.font = .fdFont(ofSize: 15, weight: .semibold)
         submitButton.backgroundColor = .fdPrimary
         submitButton.layer.cornerRadius = 22
         submitButton.addTarget(self, action: #selector(submit), for: .touchUpInside)
@@ -227,7 +227,7 @@ final class OrderReturnGoodsSheet: UIViewController {
 
     private func styleMethodButton(_ button: UIButton, title: String) {
         button.setTitle(title, for: .normal)
-        button.titleLabel?.font = .fdBody
+        button.titleLabel?.font = .fdFont(ofSize: 15, weight: .regular)
         button.layer.cornerRadius = 8
         button.layer.borderWidth = 1
         button.backgroundColor = .fdSurface
@@ -238,7 +238,7 @@ final class OrderReturnGoodsSheet: UIViewController {
         let attr = NSMutableAttributedString(
             string: title + " ",
             attributes: [
-                .font: UIFont.fdBodySemibold,
+                .font: UIFont.fdFont(ofSize: 15, weight: .semibold),
                 .foregroundColor: UIColor.fdText,
             ]
         )
@@ -246,7 +246,7 @@ final class OrderReturnGoodsSheet: UIViewController {
             attr.append(NSAttributedString(
                 string: "*",
                 attributes: [
-                    .font: UIFont.fdBodySemibold,
+                    .font: UIFont.fdFont(ofSize: 15, weight: .semibold),
                     .foregroundColor: UIColor.fdDanger,
                 ]
             ))
@@ -353,11 +353,7 @@ final class OrderReturnGoodsSheet: UIViewController {
     }
 
     func presentToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak alert] in
-            alert?.dismiss(animated: true)
-        }
+        showToastAlert(message, duration: 1.2)
     }
 }
 
@@ -474,10 +470,6 @@ enum OrderReturnGoodsFlow {
     }
 
     private static func showToast(on presenter: UIViewController, message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        presenter.present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            alert.dismiss(animated: true)
-        }
+        presenter.showToastAlert(message, duration: 1.5)
     }
 }

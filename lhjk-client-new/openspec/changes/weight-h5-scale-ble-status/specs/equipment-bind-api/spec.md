@@ -103,6 +103,8 @@
 | Method | Path | Service 方法 |
 |--------|------|--------------|
 | POST | `/v1/monitor/saveOrUpdateMonitorData` | `saveMonitorData(_:)` / `saveWeightBluetoothMonitor(...)` |
+| POST | `/v1/monitor/getWeightHomePageData` | `fetchWeightHomePageData(monitorId:)` |
+| DELETE | `/v1/monitor/delMonitorDataByMonitorId` | `deleteMonitorData(monitorId:)` |
 
 #### Scenario: 体重蓝牙上报
 
@@ -116,6 +118,13 @@
 
 - **WHEN** 仅调用 `saveMonitorData`
 - **THEN** MUST NOT 隐式调用 `bindEquipment`
+
+#### Scenario: 删除监测记录
+
+- **WHEN** 原生体重报告页点击「重新测量」
+- **THEN** `deleteMonitorData(monitorId:)` 调用 `DELETE /v1/monitor/delMonitorDataByMonitorId`
+- **AND** Query 仅含当前记录 `monitorId`（URLEncoding），禁止 mock / 假 id
+- **AND** 业务 `code` 非成功时抛错，由 PL Toast，不 pop
 
 ### Requirement: 流程图新 path 约束
 

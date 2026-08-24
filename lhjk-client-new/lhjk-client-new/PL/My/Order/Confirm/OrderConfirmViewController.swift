@@ -480,12 +480,6 @@ final class OrderConfirmViewController: BaseViewController {
     }
 
     private func showToast(_ message: String, completion: (() -> Void)? = nil) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            alert.dismiss(animated: true) {
-                completion?()
-            }
-        }
+        showToastAlert(message, duration: 1.2, completion: completion)
     }
 }

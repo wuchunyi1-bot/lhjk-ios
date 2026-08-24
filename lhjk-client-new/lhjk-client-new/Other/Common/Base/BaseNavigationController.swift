@@ -23,7 +23,7 @@ class BaseNavigationController: UINavigationController {
         appearance.shadowColor = .clear
         appearance.titleTextAttributes = [
             .foregroundColor: UIColor.fdText,
-            .font: UIFont.fdFont(ofSize: 18, weight: .medium)
+            .font: UIFont.fdFont(ofSize: 20, weight: .medium)
         ]
 
         // 全局返回箭头：使用选择套餐页 Figma 返回图标，并隐藏系统返回文案

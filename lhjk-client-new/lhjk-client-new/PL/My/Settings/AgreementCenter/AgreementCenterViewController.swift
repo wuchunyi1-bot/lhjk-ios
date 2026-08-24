@@ -39,7 +39,7 @@ final class AgreementCenterViewController: BaseViewController {
 
         let sectionTitle = UILabel()
         sectionTitle.text = "协议与说明"
-        sectionTitle.font = .fdCaptionSemibold
+        sectionTitle.font = .fdMyCaptionSemibold
         sectionTitle.textColor = .fdSubtext
         content.addSubview(sectionTitle)
         sectionTitle.snp.makeConstraints {
@@ -79,14 +79,14 @@ final class AgreementCenterViewController: BaseViewController {
 
         let title = UILabel()
         title.text = doc.label
-        title.font = .fdBodySemibold
+        title.font = .fdMyBodySemibold
         title.textColor = .fdText
         title.numberOfLines = 0
         title.isUserInteractionEnabled = false
 
         let desc = UILabel()
         desc.text = doc.desc
-        desc.font = .fdFont(ofSize: 11, weight: .regular)
+        desc.font = .fdFont(ofSize: 13, weight: .regular)
         desc.textColor = .fdSubtext
         desc.numberOfLines = 2
         desc.isUserInteractionEnabled = false

@@ -278,7 +278,7 @@ extension OrderListViewController: UICollectionViewDelegateFlowLayout {
         let width = title.boundingRect(
             with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: 32),
             options: .usesLineFragmentOrigin,
-            attributes: [.font: UIFont.fdFont(ofSize: 14, weight: .medium)],
+            attributes: [.font: UIFont.fdFont(ofSize: 18, weight: .medium)],
             context: nil
         ).width + 4
         return CGSize(width: max(28, ceil(width)), height: 32)

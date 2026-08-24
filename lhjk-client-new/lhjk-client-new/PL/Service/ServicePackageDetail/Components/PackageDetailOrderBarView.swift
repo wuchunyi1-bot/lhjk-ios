@@ -52,16 +52,20 @@ final class PackageDetailOrderBarView: UIView {
         backgroundColor = .white
         layer.cornerRadius = 16
         layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.05
-        layer.shadowOffset = CGSize(width: 0, height: -2)
-        layer.shadowRadius = 6
 
-        tipLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        let topBorder = UIView()
+        topBorder.backgroundColor = UIColor(hexString: "#F0F2F5")
+        addSubview(topBorder)
+        topBorder.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.height.equalTo(0.5)
+        }
+
+        tipLabel.font = .fdFont(ofSize: 16, weight: .regular)
         tipLabel.textColor = .fdText
         tipLabel.text = "应付"
 
-        symbolLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        symbolLabel.font = .fdFont(ofSize: 16, weight: .medium)
         symbolLabel.textColor = UIColor(hexString: "#F93838")
         symbolLabel.text = "¥"
 
@@ -82,7 +86,7 @@ final class PackageDetailOrderBarView: UIView {
 
         cartButton.setTitle("加入购物车", for: .normal)
         cartButton.setTitleColor(brandOrange, for: .normal)
-        cartButton.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
+        cartButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
         cartButton.backgroundColor = .white
         cartButton.layer.cornerRadius = 20
         cartButton.layer.borderWidth = 1
@@ -91,7 +95,7 @@ final class PackageDetailOrderBarView: UIView {
 
         orderButton.setTitle("立即下单", for: .normal)
         orderButton.setTitleColor(.white, for: .normal)
-        orderButton.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
+        orderButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
         orderButton.backgroundColor = brandOrange
         orderButton.layer.cornerRadius = 20
         orderButton.addTarget(self, action: #selector(tapOrder), for: .touchUpInside)

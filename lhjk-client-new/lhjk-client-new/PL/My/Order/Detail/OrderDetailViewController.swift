@@ -93,7 +93,7 @@ final class OrderDetailViewController: BaseViewController {
         loadingOverlay.snp.makeConstraints { $0.edges.equalTo(scrollView) }
         loadingIndicator.snp.makeConstraints { $0.center.equalToSuperview() }
 
-        errorLabel.font = .fdBody
+        errorLabel.font = .fdFont(ofSize: 15, weight: .regular)
         errorLabel.textColor = .fdSubtext
         errorLabel.textAlignment = .center
         errorLabel.numberOfLines = 0
@@ -381,11 +381,7 @@ final class OrderDetailViewController: BaseViewController {
 
     private func showToast(_ message: String) {
         guard !message.isEmpty else { return }
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            alert.dismiss(animated: true)
-        }
+        showToastAlert(message, duration: 1.2)
     }
 
     private func collapseActionBar() {

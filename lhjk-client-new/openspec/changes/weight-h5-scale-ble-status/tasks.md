@@ -21,6 +21,7 @@
 - [x] 2.9 `ScaleDeviceSelectViewModel`：并行 `getEquipmentUserByParam` + `getEquipmenByApp`，分支布局与解绑
 - [x] 2.10 `ScaleDeviceSelectViewController` + 设备卡片 UI（选择设备 / 我的设备）
 - [x] 2.11 注册 `/health/scale/devices`；横条「去绑定」与已绑定点击、`ble.openManager` 改走该页
+- [x] 2.14 体重报告页「保存」pop；「重新测量」`delMonitorDataByMonitorId` 成功后清暂停并 pop
 
 ## 3. Verify
 

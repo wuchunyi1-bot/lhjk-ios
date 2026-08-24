@@ -84,7 +84,7 @@ final class CancelAccountViewController: BaseViewController {
 
         let warningLabel = UILabel()
         warningLabel.text = "注销后，您将放弃以下资产和权益："
-        warningLabel.font = .fdBodyBold
+        warningLabel.font = .fdMyBodyBold
         warningLabel.textColor = .fdText
         warningLabel.numberOfLines = 0
         warningView.addSubview(warningLabel)
@@ -112,7 +112,7 @@ final class CancelAccountViewController: BaseViewController {
         // Submit button
         submitBtn = UIButton(type: .system)
         submitBtn.setTitle("申请注销", for: .normal)
-        submitBtn.titleLabel?.font = .fdBodyBold
+        submitBtn.titleLabel?.font = .fdMyBodyBold
         submitBtn.setTitleColor(.white, for: .normal)
         submitBtn.backgroundColor = UIColor(hexString: "#D93025")
         submitBtn.layer.cornerRadius = 27
@@ -147,7 +147,7 @@ final class CancelAccountViewController: BaseViewController {
 
         let resultTitle = UILabel()
         resultTitle.text = "注销成功"
-        resultTitle.font = .fdH2
+        resultTitle.font = .fdMyH2
         resultTitle.textColor = .fdText
         resultTitle.textAlignment = .center
         resultContainer.addSubview(resultTitle)
@@ -158,7 +158,7 @@ final class CancelAccountViewController: BaseViewController {
 
         let resultDesc = UILabel()
         resultDesc.text = "您的账户已成功注销，即将跳转至注册页面。"
-        resultDesc.font = .fdBody
+        resultDesc.font = .fdMyBody
         resultDesc.textColor = .fdSubtext
         resultDesc.textAlignment = .center
         resultDesc.numberOfLines = 0
@@ -216,7 +216,7 @@ final class CancelAccountViewController: BaseViewController {
 
         let titleLabel = UILabel()
         titleLabel.text = title
-        titleLabel.font = .fdBodyBold
+        titleLabel.font = .fdMyBodyBold
         titleLabel.textColor = .fdText
         card.addSubview(titleLabel)
         titleLabel.snp.makeConstraints { make in
@@ -225,7 +225,7 @@ final class CancelAccountViewController: BaseViewController {
 
         let descLabel = UILabel()
         descLabel.text = desc
-        descLabel.font = .fdCaption
+        descLabel.font = .fdMyCaption
         descLabel.textColor = .fdSubtext
         descLabel.numberOfLines = 0
         card.addSubview(descLabel)
@@ -279,11 +279,7 @@ final class CancelAccountViewController: BaseViewController {
     // MARK: - Toast
 
     private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            alert.dismiss(animated: true)
-        }
+        showToastAlert(message, duration: 1.5)
     }
 
     // MARK: - Debug

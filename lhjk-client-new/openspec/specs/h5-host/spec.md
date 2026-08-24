@@ -39,6 +39,7 @@ H5 hash 路径由 `H5Config` 拼接；饮食运动根路径为 `exercise-food`�
 | 页面 | H5 路由 | 额外 Query | iOS 打开 |
 |------|---------|------------|----------|
 | 体重 / 录入 / 记录 / 详情 | `#/weight` `/add` `/records` `/detail` | 详情 `monitorId` 必填 | `/health/metrics/weight` + suffix |
+| 体重体成分报告 | 原生 `WeightScaleResultViewController` | `monitorId` | `/health/metrics/weight/scale/result` |
 | 血压 | `#/blood-pressure` … | 详情 `monitorId` | `/health/metrics/blood-pressure` |
 | 血糖 | `#/blood-sugar` … | 详情 `sugarId`+`monitorId` | `/health/metrics/blood-sugar` |
 | 体温 | `#/temperature` … | — | `/health/metrics/temperature` |

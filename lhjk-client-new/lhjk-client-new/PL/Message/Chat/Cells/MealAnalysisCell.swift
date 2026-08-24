@@ -25,7 +25,7 @@ final class MealAnalysisCell: UITableViewCell {
         cardView.layer.shadowOpacity = 0.04
         cardView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner, .layerMinXMaxYCorner]
 
-        headerLabel.font = .fdFont(ofSize: 12, weight: .semibold)
+        headerLabel.font = .fdFont(ofSize: 14, weight: .semibold)
         headerLabel.textColor = .fdPrimary
 
         photoPlaceholder.backgroundColor = UIColor(hexString: "#F5F0EB")
@@ -36,7 +36,7 @@ final class MealAnalysisCell: UITableViewCell {
         photoIcon.contentMode = .scaleAspectFit
         let photoText = UILabel()
         photoText.text = "餐食照片"
-        photoText.font = .fdFont(ofSize: 12)
+        photoText.font = .fdFont(ofSize: 14)
         photoText.textColor = .fdMuted
 
         [photoIcon, photoText].forEach(photoPlaceholder.addSubview)
@@ -53,11 +53,11 @@ final class MealAnalysisCell: UITableViewCell {
         annotationsStack.axis = .vertical
         annotationsStack.spacing = 7
 
-        commentLabel.font = .fdFont(ofSize: 13)
+        commentLabel.font = .fdFont(ofSize: 15)
         commentLabel.textColor = .fdSubtext
         commentLabel.numberOfLines = 0
 
-        fromLabel.font = .fdFont(ofSize: 11)
+        fromLabel.font = .fdFont(ofSize: 13)
         fromLabel.textColor = .fdSubtext
         fromLabel.textAlignment = .right
 
@@ -132,12 +132,12 @@ final class MealAnalysisCell: UITableViewCell {
 
         let textLabel = UILabel()
         textLabel.text = a.text
-        textLabel.font = .fdFont(ofSize: 13, weight: .semibold)
+        textLabel.font = .fdFont(ofSize: 15, weight: .semibold)
         textLabel.textColor = .fdText
 
         let tipLabel = UILabel()
         tipLabel.text = a.tip
-        tipLabel.font = .fdFont(ofSize: 11)
+        tipLabel.font = .fdFont(ofSize: 13)
         tipLabel.textColor = .fdSubtext
 
         [dot, textLabel, tipLabel].forEach(v.addSubview)

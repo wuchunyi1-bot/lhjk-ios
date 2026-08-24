@@ -56,7 +56,7 @@ final class StageMetricsCardView: UIView {
         // Label
         let label = UILabel()
         label.text = metric.label
-        label.font = .fdMicro
+        label.font = .fdMyMicro
         label.textColor = .fdSubtext
         container.addSubview(label)
         label.snp.makeConstraints { make in
@@ -71,20 +71,20 @@ final class StageMetricsCardView: UIView {
 
         let beforeLabel = UILabel()
         beforeLabel.text = metric.before
-        beforeLabel.font = .fdCaption
+        beforeLabel.font = .fdMyCaption
         beforeLabel.textColor = UIColor(hexString: "#BBBBBB")
         deltaRow.addArrangedSubview(beforeLabel)
 
         let arrowLabel = UILabel()
         arrowLabel.text = "→"
-        arrowLabel.font = .fdCaption
+        arrowLabel.font = .fdMyCaption
         arrowLabel.textColor = UIColor(hexString: "#CCCCCC")
         deltaRow.addArrangedSubview(arrowLabel)
 
         let afterLabel = UILabel()
         let afterText = metric.unit.isEmpty ? metric.after : "\(metric.after)\(metric.unit)"
         afterLabel.text = afterText
-        afterLabel.font = .fdBodyBold
+        afterLabel.font = .fdMyBodyBold
         afterLabel.textColor = metric.isGood ? UIColor(hexString: "#1F9A6B") : .fdText
         deltaRow.addArrangedSubview(afterLabel)
 

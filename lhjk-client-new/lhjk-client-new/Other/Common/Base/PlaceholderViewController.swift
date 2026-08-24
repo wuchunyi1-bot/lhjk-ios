@@ -27,7 +27,7 @@ final class PlaceholderViewController: BaseViewController {
 
         let icon = UILabel()
         icon.text = "🚧"
-        icon.font = .fdFont(ofSize: 48) // decorative emoji
+        icon.font = .fdFont(ofSize: 50) // decorative emoji
         stack.addArrangedSubview(icon)
 
         let label = UILabel()

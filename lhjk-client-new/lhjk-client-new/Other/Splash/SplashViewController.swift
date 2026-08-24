@@ -15,13 +15,6 @@ final class SplashViewController: UIViewController {
         iv.clipsToBounds = true
         return iv
     }()
-
-    private let brandIconView: UIImageView = {
-        let iv = UIImageView(image: UIImage(named: "splash_brand_icon"))
-        iv.contentMode = .scaleAspectFit
-        return iv
-    }()
-
     override func viewDidLoad() {
         super.viewDidLoad()
         // 不用橙色底；hero 未铺满的边角用黑色兜底
@@ -36,15 +29,7 @@ final class SplashViewController: UIViewController {
 
     private func setupUI() {
         view.addSubview(heroImageView)
-        view.addSubview(brandIconView)
-
         heroImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-        brandIconView.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.width.height.equalTo(48)
-            make.bottom.equalToSuperview().offset(-34)
-        }
     }
 
     private func scheduleFinishIfNeeded() {

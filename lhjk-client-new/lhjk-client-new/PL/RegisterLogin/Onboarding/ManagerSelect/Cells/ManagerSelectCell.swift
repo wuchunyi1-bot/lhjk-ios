@@ -9,7 +9,7 @@ final class ManagerSelectCell: UITableViewCell {
 
     private let avatarLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdBodyBold
+        l.font = .fdLoginButton
         l.textColor = .white
         l.textAlignment = .center
         l.backgroundColor = .fdPrimary
@@ -20,21 +20,21 @@ final class ManagerSelectCell: UITableViewCell {
 
     private let nameLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdBodyBold
+        l.font = .fdLoginButton
         l.textColor = .fdText
         return l
     }()
 
     private let codeLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdCaption
+        l.font = .fdLoginMeta
         l.textColor = .fdMuted
         return l
     }()
 
     private let metaLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdCaption
+        l.font = .fdLoginMeta
         l.textColor = .fdSubtext
         return l
     }()

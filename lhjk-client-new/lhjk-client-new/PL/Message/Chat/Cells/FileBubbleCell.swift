@@ -2,159 +2,142 @@ import UIKit
 import SnapKit
 import Kingfisher
 
-/// 文件 / 音频 / 团队知识 气泡 Cell
+/// 文件气泡 Cell — 对齐 Figma 3941:42353
 final class FileBubbleCell: UITableViewCell {
     static let reuseID = "FileBubbleCell"
 
     weak var delegate: ChatCellDelegate?
     private var currentMessage: ChatMessage?
 
-    // MARK: - UI
+    private enum Metrics {
+        static let bubbleWidth: CGFloat = 251
+        static let bubbleHeight: CGFloat = 84
+        static let iconSize = CGSize(width: 31, height: 38)
+        static let inset: CGFloat = 12
+        static let nameIconGap: CGFloat = 12
+    }
 
     private let avatarLabel: UILabel = {
-        let l = UILabel()
-        l.font = .fdFont(ofSize: 13, weight: .bold)
-        l.textColor = .white
-        l.textAlignment = .center
-        l.layer.cornerRadius = 17
-        l.clipsToBounds = true
-        return l
+        let label = UILabel()
+        label.font = .fdFont(ofSize: 15, weight: .bold)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.clipsToBounds = true
+        return label
     }()
+
     private let avatarImageView: UIImageView = {
-        let iv = UIImageView()
-        iv.contentMode = .scaleAspectFill
-        iv.layer.cornerRadius = 17
-        iv.clipsToBounds = true
-        iv.isHidden = true
-        return iv
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        imageView.isHidden = true
+        return imageView
     }()
 
-    private let metaLabel: UILabel = {
-        let l = UILabel()
-        l.font = .fdMicro
-        l.textColor = .fdMuted
-        return l
-    }()
+    private let metaLabel = UILabel()
 
-    private let cardView: UIView = {
-        let v = UIView()
-        v.backgroundColor = .white
-        v.layer.cornerRadius = 12
-        v.layer.borderWidth = 1
-        v.layer.borderColor = UIColor.fdBorder.cgColor
-        return v
-    }()
+    private let bubbleBackground = ChatBubbleBackgroundView()
+    private let bubbleView = UIView()
 
-    private let iconView: UIImageView = {
-        let iv = UIImageView()
-        iv.contentMode = .scaleAspectFit
-        iv.tintColor = .fdPrimary
-        return iv
+    private let fileIconView: UIImageView = {
+        let imageView = UIImageView(image: UIImage(named: "chat_im_file"))
+        imageView.contentMode = .scaleAspectFit
+        return imageView
     }()
 
     private let nameLabel: UILabel = {
-        let l = UILabel()
-        l.font = .fdFont(ofSize: 14, weight: .medium)
-        l.textColor = .fdText
-        l.numberOfLines = 1
-        return l
+        let label = UILabel()
+        label.font = .fdFont(ofSize: 16, weight: .medium)
+        label.textColor = ChatBubbleStyle.primaryText
+        label.numberOfLines = 2
+        label.lineBreakMode = .byTruncatingMiddle
+        label.textAlignment = .left
+        return label
     }()
 
     private let sizeLabel: UILabel = {
-        let l = UILabel()
-        l.font = .fdFont(ofSize: 12)
-        l.textColor = .fdMuted
-        return l
+        let label = UILabel()
+        label.font = .fdFont(ofSize: 14)
+        label.textColor = ChatBubbleStyle.secondaryText
+        label.textAlignment = .left
+        return label
     }()
-
-    // MARK: - Init
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
         backgroundColor = .fdBg
 
-        [avatarLabel, avatarImageView, metaLabel, cardView].forEach(contentView.addSubview)
-        [iconView, nameLabel, sizeLabel].forEach(cardView.addSubview)
+        ChatBubbleStyle.configureAvatar(avatarLabel, imageView: avatarImageView)
+        metaLabel.font = ChatBubbleStyle.metaFont
+        metaLabel.textColor = ChatBubbleStyle.metaColor
+
+        [avatarLabel, avatarImageView, metaLabel, bubbleBackground, bubbleView].forEach(contentView.addSubview)
+        [fileIconView, nameLabel, sizeLabel].forEach(bubbleView.addSubview)
 
         let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
-        cardView.addGestureRecognizer(longPress)
+        bubbleView.addGestureRecognizer(longPress)
     }
 
     required init?(coder: NSCoder) { fatalError() }
-
-    // MARK: - Configure
 
     func configure(_ msg: ChatMessage, tone: String, convRole: ConversationRole) {
         currentMessage = msg
         let isStaff = msg.isStaff
         let file = msg.fileContent
 
-        metaLabel.font = .fdMicro
+        ChatBubbleStyle.applyAvatar(portraitUrl: msg.portraitUrl, label: avatarLabel, imageView: avatarImageView)
 
-        if let urlStr = msg.portraitUrl, !urlStr.isEmpty, let url = URL(string: urlStr) {
-            avatarImageView.isHidden = false
-            avatarLabel.isHidden = true
-            avatarImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+        if isStaff {
+            metaLabel.text = ChatBubbleStyle.staffMetaText(name: msg.senderName)
+            metaLabel.textAlignment = .left
+            bubbleBackground.tail = .left
         } else {
-            avatarImageView.isHidden = true
-            avatarLabel.isHidden = false
-            avatarLabel.text = isStaff ? (msg.avatar ?? msg.senderName?.prefix(1).description ?? "?") : "我"
-            avatarLabel.backgroundColor = isStaff
-                ? UIColor(hexString: tone)
-                : UIColor(hexString: "#FF7A50")
+            metaLabel.text = msg.time
+            metaLabel.textAlignment = .right
+            bubbleBackground.tail = .right
         }
+        bubbleBackground.fill = .staffGradient
 
-        metaLabel.text = isStaff
-            ? [msg.senderName, msg.senderRole, msg.time].compactMap { $0 }.joined(separator: " · ")
-            : msg.time
-        metaLabel.textAlignment = isStaff ? .left : .right
-
-        // 根据文件类型展示不同图标
-        let suffix = file?.fileSuffix ?? ""
-        switch suffix {
-        case "mp3":
-            iconView.image = UIImage(systemName: "waveform")
-            nameLabel.text = file?.fileName ?? "[音频]"
-        case "richText":
-            iconView.image = UIImage(systemName: "doc.richtext")
-            nameLabel.text = file?.fileName ?? "[团队知识]"
-        default:
-            iconView.image = UIImage(systemName: "doc.fill")
-            nameLabel.text = file?.fileName ?? "[文件]"
-        }
+        nameLabel.text = file?.fileName ?? "[文件]"
         sizeLabel.text = (file?.fileSize).flatMap { $0.isEmpty ? nil : $0 } ?? ""
 
-        layoutForStaff(isStaff)
+        layoutBubble(isStaff: isStaff)
     }
 
-    private func layoutForStaff(_ isStaff: Bool) {
+    private func layoutBubble(isStaff: Bool) {
         avatarLabel.snp.remakeConstraints { make in
             if isStaff {
-                make.leading.equalToSuperview().offset(16)
+                make.leading.equalToSuperview().offset(ChatBubbleStyle.horizontalInset)
             } else {
-                make.trailing.equalToSuperview().offset(-16)
+                make.trailing.equalToSuperview().offset(-ChatBubbleStyle.horizontalInset)
             }
             make.top.equalToSuperview().offset(8).priority(999)
-            make.size.equalTo(34)
+            make.size.equalTo(ChatBubbleStyle.avatarSize)
         }
-        avatarImageView.snp.makeConstraints { make in
+        avatarImageView.snp.remakeConstraints { make in
             make.edges.equalTo(avatarLabel)
         }
 
         metaLabel.snp.remakeConstraints { make in
             make.top.equalTo(avatarLabel)
             if isStaff {
-                make.leading.equalTo(avatarLabel.snp.trailing).offset(8)
+                make.leading.equalTo(avatarLabel.snp.trailing).offset(ChatBubbleStyle.avatarToContentGap)
             } else {
-                make.trailing.equalTo(avatarLabel.snp.leading).offset(-8)
+                make.trailing.equalTo(avatarLabel.snp.leading).offset(-ChatBubbleStyle.avatarToContentGap)
             }
         }
 
-        cardView.snp.remakeConstraints { make in
-            make.top.equalTo(metaLabel.snp.bottom).offset(4)
+        bubbleBackground.snp.remakeConstraints { make in
+            make.edges.equalTo(bubbleView)
+        }
+
+        bubbleView.snp.remakeConstraints { make in
+            make.top.equalTo(isStaff ? metaLabel.snp.bottom : avatarLabel.snp.top)
+                .offset(isStaff ? ChatBubbleStyle.nameToBubbleGap : 0)
             make.bottom.equalToSuperview().offset(-8).priority(999)
-            make.width.equalTo(240)
+            make.width.equalTo(Metrics.bubbleWidth)
+            make.height.equalTo(Metrics.bubbleHeight)
             if isStaff {
                 make.leading.equalTo(metaLabel)
             } else {
@@ -162,23 +145,22 @@ final class FileBubbleCell: UITableViewCell {
             }
         }
 
-        iconView.snp.remakeConstraints { make in
-            make.leading.equalToSuperview().offset(12)
-            make.centerY.equalToSuperview()
-            make.size.equalTo(36)
+        // 图标在左，文字在右，均左对齐
+        fileIconView.snp.remakeConstraints { make in
+            make.leading.equalToSuperview().offset(Metrics.inset)
+            make.top.equalToSuperview().offset(Metrics.inset)
+            make.size.equalTo(Metrics.iconSize)
         }
-
         nameLabel.snp.remakeConstraints { make in
-            make.top.equalToSuperview().offset(12)
-            make.leading.equalTo(iconView.snp.trailing).offset(10)
-            make.trailing.equalToSuperview().offset(-12)
+            make.leading.equalTo(fileIconView.snp.trailing).offset(Metrics.nameIconGap)
+            make.trailing.equalToSuperview().inset(Metrics.inset)
+            make.top.equalToSuperview().offset(Metrics.inset)
+            make.bottom.lessThanOrEqualTo(sizeLabel.snp.top).offset(-4)
         }
-
         sizeLabel.snp.remakeConstraints { make in
-            make.top.equalTo(nameLabel.snp.bottom).offset(4)
             make.leading.equalTo(nameLabel)
-            make.trailing.equalToSuperview().offset(-12)
-            make.bottom.equalToSuperview().offset(-12)
+            make.trailing.equalTo(nameLabel)
+            make.bottom.equalToSuperview().inset(Metrics.inset)
         }
     }
 

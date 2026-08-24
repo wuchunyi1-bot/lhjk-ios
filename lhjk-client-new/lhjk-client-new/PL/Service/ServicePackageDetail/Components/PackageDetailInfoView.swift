@@ -1,7 +1,7 @@
 import UIKit
 import SnapKit
 
-/// 套餐详情价格与标题简介区 — 对齐 Figma 3449:7777 / 3449:7785
+/// 套餐详情价格与标题简介区 — 对齐 Figma 3805:20782 / 3805:20790
 final class PackageDetailInfoView: UIView {
 
     private let priceHeaderView = GradientPriceHeaderView()
@@ -29,27 +29,22 @@ final class PackageDetailInfoView: UIView {
 
         titleCardView.backgroundColor = .white
         titleCardView.layer.cornerRadius = 16
-        titleCardView.layer.borderWidth = 1
-        titleCardView.layer.borderColor = UIColor.white.cgColor
-        titleCardView.layer.shadowColor = UIColor.black.cgColor
-        titleCardView.layer.shadowOpacity = 0.06
-        titleCardView.layer.shadowOffset = CGSize(width: 0, height: 2)
-        titleCardView.layer.shadowRadius = 8
-        titleCardView.clipsToBounds = false
+        titleCardView.clipsToBounds = true
 
         addSubview(titleCardView)
         titleCardView.snp.makeConstraints {
             $0.top.equalTo(priceHeaderView.snp.bottom).offset(-29)
             $0.leading.trailing.bottom.equalToSuperview()
         }
+        bringSubviewToFront(titleCardView)
 
         titleLabel.font = .fdFont(ofSize: 20, weight: .bold)
-        titleLabel.textColor = .fdText
+        titleLabel.textColor = UIColor(hexString: "#1F2430")
         titleLabel.numberOfLines = 2
         titleCardView.addSubview(titleLabel)
 
-        subtitleLabel.font = .fdBody
-        subtitleLabel.textColor = .fdSubtext
+        subtitleLabel.font = .fdFont(ofSize: 16, weight: .regular)
+        subtitleLabel.textColor = UIColor(hexString: "#6D7381")
         subtitleLabel.numberOfLines = 2
         titleCardView.addSubview(subtitleLabel)
 
@@ -75,7 +70,6 @@ final class PackageDetailInfoView: UIView {
     }
 
     func configure(with pkg: ServicePackageDetail) {
-        // 价格数字提取（去掉 "¥" 与 "元起"）
         var rawPrice = pkg.priceText.replacingOccurrences(of: "¥", with: "").trimmingCharacters(in: .whitespaces)
         if rawPrice.isEmpty { rawPrice = "\(pkg.tiers.first?.price ?? 0)" }
         let unit = pkg.priceUnit.isEmpty ? "元起" : pkg.priceUnit
@@ -86,9 +80,12 @@ final class PackageDetailInfoView: UIView {
         subtitleLabel.isHidden = pkg.subtitle.isEmpty
 
         let tagText = pkg.tag.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !tagText.isEmpty {
+        if tagText.contains("热销") {
             stampBadge.isHidden = false
-            stampBadge.configure(text: tagText)
+            stampBadge.configure(style: .hot)
+        } else if tagText.contains("推荐") {
+            stampBadge.isHidden = false
+            stampBadge.configure(style: .recommend)
         } else {
             stampBadge.isHidden = true
         }
@@ -100,7 +97,6 @@ final class PackageDetailInfoView: UIView {
 private final class GradientPriceHeaderView: UIView {
 
     private let bgImageView = UIImageView()
-    private let gradientLayer = CAGradientLayer()
     private let symbolLabel = UILabel()
     private let priceLabel = UILabel()
     private let unitLabel = UILabel()
@@ -110,16 +106,7 @@ private final class GradientPriceHeaderView: UIView {
         clipsToBounds = true
         layer.cornerRadius = 20
         layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-
-        gradientLayer.colors = [
-            UIColor(hexString: "#FD383F").cgColor,
-            UIColor(hexString: "#FE3E39").cgColor,
-            UIColor(hexString: "#FE8A54").cgColor
-        ]
-        gradientLayer.locations = [0.0, 0.6, 1.0]
-        gradientLayer.startPoint = CGPoint(x: 0, y: 0.5)
-        gradientLayer.endPoint = CGPoint(x: 1, y: 0.5)
-        layer.insertSublayer(gradientLayer, at: 0)
+        backgroundColor = UIColor(hexString: "#FD383F")
 
         bgImageView.image = UIImage(named: "package_detail_price_bg")
         bgImageView.contentMode = .scaleAspectFill
@@ -130,13 +117,13 @@ private final class GradientPriceHeaderView: UIView {
         }
 
         symbolLabel.text = "¥"
-        symbolLabel.font = .fdFont(ofSize: 18, weight: .bold)
+        symbolLabel.font = .fdFont(ofSize: 20, weight: .bold)
         symbolLabel.textColor = .white
 
-        priceLabel.font = .fdFont(ofSize: 28, weight: .bold)
+        priceLabel.font = .fdFont(ofSize: 30, weight: .bold)
         priceLabel.textColor = .white
 
-        unitLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        unitLabel.font = .fdFont(ofSize: 16, weight: .regular)
         unitLabel.textColor = .white
 
         addSubview(symbolLabel)
@@ -161,11 +148,6 @@ private final class GradientPriceHeaderView: UIView {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        gradientLayer.frame = bounds
-    }
-
     func configure(price: String, unit: String) {
         let cleanPrice = price.trimmingCharacters(in: .whitespacesAndNewlines)
         if cleanPrice.isEmpty || cleanPrice == "0" || cleanPrice.contains("面议") {
@@ -182,6 +164,11 @@ private final class GradientPriceHeaderView: UIView {
 // MARK: - 推荐/热销印章角标
 
 private final class PackageSealStampView: UIView {
+
+    enum Style {
+        case recommend
+        case hot
+    }
 
     private let stampImageView = UIImageView()
 
@@ -201,12 +188,12 @@ private final class PackageSealStampView: UIView {
         }
     }
 
-    func configure(text: String) {
-        if text.contains("热销") {
+    func configure(style: Style) {
+        switch style {
+        case .hot:
             stampImageView.image = UIImage(named: "package_detail_stamp_hot")
-        } else {
+        case .recommend:
             stampImageView.image = UIImage(named: "package_detail_stamp_recommend")
         }
     }
 }
-

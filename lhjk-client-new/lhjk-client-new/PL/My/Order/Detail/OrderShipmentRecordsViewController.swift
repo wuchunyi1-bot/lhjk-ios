@@ -46,7 +46,7 @@ final class OrderShipmentRecordsViewController: BaseViewController {
         view.addSubview(loadingIndicator)
         loadingIndicator.snp.makeConstraints { $0.center.equalToSuperview() }
 
-        emptyLabel.font = .fdBody
+        emptyLabel.font = .fdFont(ofSize: 15, weight: .regular)
         emptyLabel.textColor = .fdSubtext
         emptyLabel.textAlignment = .center
         emptyLabel.numberOfLines = 0
@@ -128,10 +128,6 @@ final class OrderShipmentRecordsViewController: BaseViewController {
     }
 
     private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            alert.dismiss(animated: true)
-        }
+        showToastAlert(message, duration: 1.2)
     }
 }

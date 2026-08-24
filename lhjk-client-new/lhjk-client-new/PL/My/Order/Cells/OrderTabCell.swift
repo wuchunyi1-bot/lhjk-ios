@@ -8,7 +8,7 @@ final class OrderTabCell: UICollectionViewCell {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 14, weight: .regular)
+        l.font = .fdFont(ofSize: 16, weight: .regular)
         l.textAlignment = .center
         return l
     }()
@@ -45,11 +45,11 @@ final class OrderTabCell: UICollectionViewCell {
     func configure(title: String, isSelected: Bool) {
         titleLabel.text = title
         if isSelected {
-            titleLabel.font = .fdFont(ofSize: 14, weight: .medium)
+            titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
             titleLabel.textColor = UIColor(hexString: "#1F2942")
             indicatorView.isHidden = false
         } else {
-            titleLabel.font = .fdFont(ofSize: 14, weight: .regular)
+            titleLabel.font = .fdFont(ofSize: 16, weight: .regular)
             titleLabel.textColor = UIColor(hexString: "#535D72")
             indicatorView.isHidden = true
         }

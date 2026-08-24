@@ -112,7 +112,7 @@ final class MessageActionMenu: UIView {
         btn.setTitle(config.title, for: .normal)
         btn.tintColor = .fdText
         btn.setTitleColor(.fdText, for: .normal)
-        btn.titleLabel?.font = .fdFont(ofSize: 11)
+        btn.titleLabel?.font = .fdFont(ofSize: 13)
 
         // 垂直布局：图标上、文字下
         btn.snp.makeConstraints { make in
@@ -130,7 +130,7 @@ final class MessageActionMenu: UIView {
             cfg.baseForegroundColor = .fdText
             cfg.attributedTitle = AttributedString(
                 config.title,
-                attributes: AttributeContainer([.font: UIFont.fdFont(ofSize: 11)])
+                attributes: AttributeContainer([.font: UIFont.fdFont(ofSize: 13)])
             )
             btn.configuration = cfg
         } else {

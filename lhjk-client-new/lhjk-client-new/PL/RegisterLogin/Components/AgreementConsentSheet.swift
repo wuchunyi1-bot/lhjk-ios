@@ -47,13 +47,13 @@ final class AgreementConsentSheet: UIViewController {
 
         let title = UILabel()
         title.text = "请先阅读并同意相关协议"
-        title.font = .fdH3
+        title.font = .fdMyH3
         title.textColor = .fdText
         title.numberOfLines = 0
 
         let desc = UILabel()
         desc.text = "请先阅读并同意用户协议、隐私政策与健康管理服务知情同意书"
-        desc.font = .fdCaption
+        desc.font = .fdLoginMeta
         desc.textColor = .fdSubtext
         desc.numberOfLines = 0
 
@@ -68,7 +68,7 @@ final class AgreementConsentSheet: UIViewController {
 
         let later = UIButton(type: .system)
         later.setTitle("稍后再看", for: .normal)
-        later.titleLabel?.font = .fdBodySemibold
+        later.titleLabel?.font = .fdLoginInput
         later.setTitleColor(.fdText, for: .normal)
         later.backgroundColor = .fdSurface
         later.layer.cornerRadius = 22
@@ -78,7 +78,7 @@ final class AgreementConsentSheet: UIViewController {
 
         let agree = UIButton(type: .system)
         agree.setTitle("同意并继续", for: .normal)
-        agree.titleLabel?.font = .fdBodySemibold
+        agree.titleLabel?.font = .fdLoginInput
         agree.setTitleColor(.white, for: .normal)
         agree.backgroundColor = .fdPrimary
         agree.layer.cornerRadius = 22
@@ -105,7 +105,7 @@ final class AgreementConsentSheet: UIViewController {
     private func makeLinkButton(title: String, action: Selector) -> UIButton {
         let btn = UIButton(type: .system)
         btn.setTitle(title, for: .normal)
-        btn.titleLabel?.font = .fdCaptionSemibold
+        btn.titleLabel?.font = .fdLoginMeta
         btn.setTitleColor(.fdPrimary, for: .normal)
         btn.contentHorizontalAlignment = .leading
         btn.addTarget(self, action: action, for: .touchUpInside)

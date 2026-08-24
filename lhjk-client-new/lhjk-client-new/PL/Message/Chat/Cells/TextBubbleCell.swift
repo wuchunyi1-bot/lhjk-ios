@@ -2,7 +2,7 @@ import UIKit
 import SnapKit
 import Kingfisher
 
-/// 文本气泡 Cell — staff 左 / user 右
+/// 文本气泡 Cell — staff 左 / user 右（Figma 3876:35332）
 final class TextBubbleCell: UITableViewCell {
     static let reuseID = "TextBubbleCell"
 
@@ -13,17 +13,16 @@ final class TextBubbleCell: UITableViewCell {
     private let avatarImageView: UIImageView = {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFill
-        iv.layer.cornerRadius = 17
         iv.clipsToBounds = true
         iv.isHidden = true
         return iv
     }()
+    private let bubbleBackground = ChatBubbleBackgroundView()
     private let bubbleView = UIView()
     private let msgLabel = UILabel()
-    private let metaLabel = UILabel()   // staff: "name · role · time"
-    private let timeLabel = UILabel()   // user: time under bubble
+    private let metaLabel = UILabel()
+    private let timeLabel = UILabel()
 
-    // 引用回复
     private let replyView: UIView = {
         let v = UIView()
         v.backgroundColor = UIColor(hexString: "#F5F5F5")
@@ -70,32 +69,27 @@ final class TextBubbleCell: UITableViewCell {
         selectionStyle = .none
         backgroundColor = .clear
 
-        avatarLabel.font = .fdFont(ofSize: 13, weight: .bold)
+        avatarLabel.font = .fdFont(ofSize: 15, weight: .bold)
         avatarLabel.textColor = .white
         avatarLabel.textAlignment = .center
-        avatarLabel.layer.cornerRadius = 10
         avatarLabel.clipsToBounds = true
+        ChatBubbleStyle.configureAvatar(avatarLabel, imageView: avatarImageView)
 
-        bubbleView.layer.cornerRadius = 15
-
-        msgLabel.font = .fdBody
+        msgLabel.font = ChatBubbleStyle.textFont
         msgLabel.numberOfLines = 0
 
-        metaLabel.font = .fdMicro
-        metaLabel.textColor = .fdMuted
+        metaLabel.font = ChatBubbleStyle.metaFont
+        metaLabel.textColor = ChatBubbleStyle.metaColor
 
-        timeLabel.font = .fdMicro
-        timeLabel.textColor = .fdMuted
+        timeLabel.font = ChatBubbleStyle.metaFont
+        timeLabel.textColor = ChatBubbleStyle.metaColor
 
-        [avatarLabel, avatarImageView, metaLabel, bubbleView, timeLabel, replyView].forEach(contentView.addSubview)
+        [avatarLabel, avatarImageView, metaLabel, bubbleBackground, bubbleView, timeLabel, replyView].forEach(contentView.addSubview)
         bubbleView.addSubview(msgLabel)
         [replyNameLabel, replyContentLabel, replyImageView, replyVoiceIcon, replyVoiceDurationLabel].forEach(replyView.addSubview)
 
-        // replyView 点击手势
         let replyTap = UITapGestureRecognizer(target: self, action: #selector(handleReplyTap))
         replyView.addGestureRecognizer(replyTap)
-
-        msgLabel.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 13, bottom: 10, right: 13)) }
 
         let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
         bubbleView.addGestureRecognizer(longPress)
@@ -106,8 +100,7 @@ final class TextBubbleCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         currentMessage = nil
-        // 显式清理所有 SnapKit 约束，避免 remakeConstraints 在复用时不彻底
-        [avatarLabel, avatarImageView, metaLabel, bubbleView, timeLabel, replyView].forEach {
+        [avatarLabel, avatarImageView, metaLabel, bubbleBackground, bubbleView, timeLabel, replyView].forEach {
             $0.snp.removeConstraints()
         }
         avatarImageView.image = nil
@@ -130,106 +123,96 @@ final class TextBubbleCell: UITableViewCell {
         currentMessage = msg
         let isStaff = msg.isStaff
 
-        // 每次配置时重设 token 字体，确保 cell 复用时老年模式字号正确
-        metaLabel.font = .fdMicro
-        timeLabel.font = .fdMicro
-        msgLabel.font = .fdBody
+        metaLabel.font = ChatBubbleStyle.metaFont
+        timeLabel.font = ChatBubbleStyle.metaFont
+        msgLabel.font = ChatBubbleStyle.textFont
 
         metaLabel.isHidden = !isStaff
         timeLabel.isHidden = isStaff
 
-        // 头像：优先加载 portraitUrl 图片，fallback 到文字
-        if let urlStr = msg.portraitUrl, !urlStr.isEmpty, let url = URL(string: urlStr) {
-            avatarImageView.isHidden = false
-            avatarLabel.isHidden = true
-            avatarImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
-        } else {
-            avatarImageView.isHidden = true
-            avatarLabel.isHidden = false
-        }
+        ChatBubbleStyle.applyAvatar(portraitUrl: msg.portraitUrl, label: avatarLabel, imageView: avatarImageView)
 
         if isStaff {
-            avatarLabel.text = msg.avatar ?? ""
-            avatarLabel.backgroundColor = UIColor(hexString: tone)
-            metaLabel.text = [msg.senderName, msg.senderRole, msg.time].compactMap { $0 }.joined(separator: " · ")
+            metaLabel.text = ChatBubbleStyle.staffMetaText(name: msg.senderName)
 
-            bubbleView.backgroundColor = .fdSurface
-            bubbleView.layer.shadowColor = UIColor.black.cgColor
-            bubbleView.layer.shadowOffset = CGSize(width: 0, height: 1)
-            bubbleView.layer.shadowRadius = 3
-            bubbleView.layer.shadowOpacity = 0.06
-            bubbleView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner, .layerMinXMaxYCorner]
-            msgLabel.textColor = .fdText
+            bubbleBackground.tail = .left
+            bubbleBackground.fill = .staffGradient
+            msgLabel.textColor = ChatBubbleStyle.primaryText
         } else {
-            avatarLabel.text = "我"
-            avatarLabel.backgroundColor = UIColor(hexString: tone)
             timeLabel.text = msg.time
 
-            bubbleView.backgroundColor = UIColor(hexString: "#FF7A50")
-            bubbleView.layer.shadowColor = nil
-            bubbleView.layer.shadowOpacity = 0
-            bubbleView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMaxYCorner, .layerMinXMaxYCorner]
+            bubbleBackground.tail = .right
+            bubbleBackground.fill = .userSolid
             msgLabel.textColor = .white
         }
 
-        // 引用回复 — 按类型展示不同样式
-        if let reply = msg.reply {
-            replyView.isHidden = false
-            replyNameLabel.text = "回复 \(reply.senderName)"
-
-            // 重置所有子视图可见性
-            replyContentLabel.isHidden = true
-            replyImageView.isHidden = true
-            replyVoiceIcon.isHidden = true
-            replyVoiceDurationLabel.isHidden = true
-
-            if reply.isImage {
-                // 图片引用：缩略图
-                replyImageView.isHidden = false
-                if let url = URL(string: reply.text), url.scheme?.hasPrefix("http") == true {
-                    replyImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
-                }
-            } else if reply.isVoice {
-                // 语音引用：波形图标 + 时长
-                replyVoiceIcon.isHidden = false
-                replyVoiceDurationLabel.isHidden = false
-                if let dur = reply.duration, dur > 0 {
-                    replyVoiceDurationLabel.text = "\(dur)\""
-                }
-            } else if reply.isVideo {
-                // 视频引用：封面缩略图
-                replyImageView.isHidden = false
-                if let url = URL(string: reply.text) {
-                    replyImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
-                }
-            } else {
-                // 文本 / 文件 / 套餐：文字
-                replyContentLabel.isHidden = false
-                if reply.isFile {
-                    replyContentLabel.text = "[文件] \(reply.fileName ?? reply.text)"
-                } else {
-                    replyContentLabel.text = RongEmoji.symbolToEmoji(reply.text)
-                }
-            }
-        } else {
-            replyView.isHidden = true
-        }
-
-        // 限制气泡最大宽度：屏幕宽 - 头像区(16+34+9) - 右边距(56) - 气泡内边距(26)
-        msgLabel.preferredMaxLayoutWidth = UIScreen.main.bounds.width - 141
-        msgLabel.text = RongEmoji.symbolToEmoji(msg.text ?? "")
+        configureReply(msg.reply)
+        msgLabel.preferredMaxLayoutWidth = ChatBubbleStyle.textPreferredMaxWidth()
+        let text = RongEmoji.symbolToEmoji(msg.text ?? "")
+        msgLabel.attributedText = NSAttributedString(
+            string: text,
+            attributes: [
+                .font: ChatBubbleStyle.textFont,
+                .foregroundColor: msgLabel.textColor ?? ChatBubbleStyle.primaryText,
+                .paragraphStyle: ChatBubbleStyle.textParagraphStyle,
+            ]
+        )
         layoutForStaff(isStaff, hasReply: msg.reply != nil)
     }
 
-    /// 统一布局入口：prepareForReuse 已清理旧约束，用 makeConstraints 重建
+    private func configureReply(_ reply: ReplyMessage?) {
+        guard let reply else {
+            replyView.isHidden = true
+            return
+        }
+        replyView.isHidden = false
+        replyNameLabel.text = "回复 \(reply.senderName)"
+        replyContentLabel.isHidden = true
+        replyImageView.isHidden = true
+        replyVoiceIcon.isHidden = true
+        replyVoiceDurationLabel.isHidden = true
+
+        if reply.isImage {
+            replyImageView.isHidden = false
+            if let url = URL(string: reply.text), url.scheme?.hasPrefix("http") == true {
+                replyImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+            }
+        } else if reply.isVoice {
+            replyVoiceIcon.isHidden = false
+            replyVoiceDurationLabel.isHidden = false
+            if let dur = reply.duration, dur > 0 {
+                replyVoiceDurationLabel.text = "\(dur)\""
+            }
+        } else if reply.isVideo {
+            replyImageView.isHidden = false
+            if let url = URL(string: reply.text) {
+                replyImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+            }
+        } else {
+            replyContentLabel.isHidden = false
+            if reply.isFile {
+                replyContentLabel.text = "[文件] \(reply.fileName ?? reply.text)"
+            } else {
+                replyContentLabel.text = RongEmoji.symbolToEmoji(reply.text)
+            }
+        }
+    }
+
     private func layoutForStaff(_ isStaff: Bool, hasReply: Bool) {
+        let inset = UIEdgeInsets(
+            top: ChatBubbleStyle.bubbleInset,
+            left: isStaff ? ChatBubbleStyle.bubbleInsetStaff : ChatBubbleStyle.bubbleInset,
+            bottom: ChatBubbleStyle.bubbleInset,
+            right: ChatBubbleStyle.bubbleInset
+        )
+
         avatarLabel.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(6).priority(999)
-            make.size.equalTo(34)
+            make.size.equalTo(ChatBubbleStyle.avatarSize)
             if isStaff {
-                make.leading.equalToSuperview().offset(16)
+                make.leading.equalToSuperview().offset(ChatBubbleStyle.horizontalInset)
             } else {
-                make.trailing.equalToSuperview().offset(-16)
+                make.trailing.equalToSuperview().offset(-ChatBubbleStyle.horizontalInset)
             }
         }
 
@@ -240,21 +223,29 @@ final class TextBubbleCell: UITableViewCell {
         metaLabel.snp.makeConstraints { make in
             make.top.equalTo(avatarLabel)
             if isStaff {
-                make.leading.equalTo(avatarLabel.snp.trailing).offset(9)
+                make.leading.equalTo(avatarLabel.snp.trailing).offset(ChatBubbleStyle.avatarToContentGap)
             }
+        }
+
+        bubbleBackground.snp.makeConstraints { make in
+            make.edges.equalTo(bubbleView)
         }
 
         bubbleView.snp.makeConstraints { make in
             if isStaff {
-                make.top.equalTo(metaLabel.snp.bottom).offset(4)
+                make.top.equalTo(metaLabel.snp.bottom).offset(ChatBubbleStyle.nameToBubbleGap)
                 make.leading.equalTo(metaLabel)
-                make.trailing.lessThanOrEqualToSuperview().offset(-56).priority(750)
+                make.trailing.lessThanOrEqualToSuperview().offset(-ChatBubbleStyle.oppositeReserve).priority(750)
                 if !hasReply { make.bottom.equalToSuperview().offset(-10).priority(999) }
             } else {
                 make.top.equalTo(avatarLabel)
-                make.trailing.equalTo(avatarLabel.snp.leading).offset(-9)
-                make.leading.greaterThanOrEqualToSuperview().offset(56).priority(750)
+                make.trailing.equalTo(avatarLabel.snp.leading).offset(-ChatBubbleStyle.avatarToContentGap)
+                make.leading.greaterThanOrEqualToSuperview().offset(ChatBubbleStyle.oppositeReserve).priority(750)
             }
+        }
+
+        msgLabel.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(inset)
         }
 
         if hasReply {
@@ -274,18 +265,15 @@ final class TextBubbleCell: UITableViewCell {
                 make.top.leading.equalToSuperview().inset(8)
                 make.trailing.equalToSuperview().offset(-8)
             }
-
             replyContentLabel.snp.makeConstraints { make in
                 make.top.equalTo(replyNameLabel.snp.bottom).offset(2)
                 make.leading.trailing.equalToSuperview().inset(8)
             }
-
             replyImageView.snp.makeConstraints { make in
                 make.top.equalTo(replyNameLabel.snp.bottom).offset(2)
                 make.leading.equalToSuperview().offset(8)
                 make.size.equalTo(32)
             }
-
             replyVoiceIcon.snp.makeConstraints { make in
                 make.top.equalTo(replyNameLabel.snp.bottom).offset(4)
                 make.leading.equalToSuperview().offset(8)
@@ -297,7 +285,6 @@ final class TextBubbleCell: UITableViewCell {
             }
         }
 
-        // user: timeLabel 承接底部，有 reply 时挂在 replyView 下面
         timeLabel.snp.makeConstraints { make in
             if !isStaff {
                 make.trailing.equalTo(bubbleView)

@@ -117,8 +117,8 @@ final class ServiceListViewController: BaseViewController {
         }
         leftTable.snp.makeConstraints {
             $0.top.leading.bottom.equalToSuperview()
-            // Figma 左栏宽 115
-            $0.width.equalTo(115)
+            // Figma 左栏宽 100
+            $0.width.equalTo(100)
         }
         rightTable.snp.makeConstraints {
             $0.top.trailing.bottom.equalToSuperview()

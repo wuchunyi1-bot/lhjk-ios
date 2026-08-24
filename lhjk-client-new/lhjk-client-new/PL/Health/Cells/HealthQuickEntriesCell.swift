@@ -81,7 +81,7 @@ final class HealthQuickEntriesCell: UITableViewCell {
 
         let label = UILabel()
         label.text = e.name
-        label.font = .fdFont(ofSize: 12, weight: .regular)
+        label.font = .fdFont(ofSize: 14, weight: .regular)
         label.textColor = .fdText
         label.textAlignment = .center
         label.numberOfLines = 2

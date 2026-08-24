@@ -20,14 +20,14 @@ final class HomeTaskCardCell: UITableViewCell {
     private let titleLabel: UILabel = {
         let l = UILabel()
         l.text = "今日健康任务"
-        l.font = .fdFont(ofSize: 16, weight: .medium)
+        l.font = .fdFont(ofSize: 18, weight: .medium)
         l.textColor = .fdText
         return l
     }()
 
     private let moreButton: UIButton = {
         let b = UIButton(type: .system)
-        b.titleLabel?.font = .fdFont(ofSize: 12, weight: .regular)
+        b.titleLabel?.font = .fdFont(ofSize: 14, weight: .regular)
         b.setTitleColor(.fdSubtext, for: .normal)
         b.setTitle("查看全部", for: .normal)
         let chevron = UIImage(
@@ -74,7 +74,7 @@ final class HomeTaskCardCell: UITableViewCell {
 
     private let progressCountLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 14, weight: .medium)
+        l.font = .fdFont(ofSize: 16, weight: .medium)
         l.textColor = UIColor(hexString: "#FF7A50")
         l.textAlignment = .right
         return l
@@ -231,7 +231,7 @@ final class HomeTaskCardCell: UITableViewCell {
         iconImageView.clipsToBounds = true
 
         let title = UILabel()
-        title.font = .fdFont(ofSize: 14, weight: .medium)
+        title.font = .fdFont(ofSize: 16, weight: .medium)
         title.textColor = .fdText
         title.text = task.shortTitle.isEmpty ? task.title : task.shortTitle
 
@@ -248,7 +248,7 @@ final class HomeTaskCardCell: UITableViewCell {
         tagsStack.addArrangedSubview(makeCategoryTag(text: categoryText))
 
         let action = UIButton(type: .system)
-        action.titleLabel?.font = .fdFont(ofSize: 12, weight: .medium)
+        action.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
         action.layer.cornerRadius = 14
         action.clipsToBounds = true
 
@@ -321,7 +321,7 @@ final class HomeTaskCardCell: UITableViewCell {
 
         let label = UILabel()
         label.text = time
-        label.font = .fdFont(ofSize: 10, weight: .regular)
+        label.font = .fdFont(ofSize: 12, weight: .regular)
         label.textColor = UIColor(hexString: "#8591AB")
 
         tag.addSubview(icon)
@@ -350,7 +350,7 @@ final class HomeTaskCardCell: UITableViewCell {
 
         let label = UILabel()
         label.text = text
-        label.font = .fdFont(ofSize: 10, weight: .regular)
+        label.font = .fdFont(ofSize: 12, weight: .regular)
         label.textColor = UIColor(hexString: "#FF7950")
 
         tag.addSubview(label)

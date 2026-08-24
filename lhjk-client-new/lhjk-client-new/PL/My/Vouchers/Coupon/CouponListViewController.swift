@@ -13,7 +13,7 @@ final class CouponListViewController: BaseViewController {
     private let tabs: [TabItem] = [
         TabItem(filter: .all, emptyTitle: "暂无相关优惠券"),
         TabItem(filter: .available, emptyTitle: "暂无待使用优惠券"),
-        TabItem(filter: .used, emptyTitle: "暂无已领用优惠券"),
+        TabItem(filter: .used, emptyTitle: "暂无已使用优惠券"),
         TabItem(filter: .expired, emptyTitle: "暂无已过期优惠券"),
     ]
 
@@ -25,14 +25,15 @@ final class CouponListViewController: BaseViewController {
     private lazy var tabCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
-        layout.minimumInteritemSpacing = 8
-        layout.minimumLineSpacing = 8
+        layout.minimumInteritemSpacing = 0
+        layout.minimumLineSpacing = 0
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        cv.backgroundColor = .fdBg
+        cv.backgroundColor = .white
+        cv.isScrollEnabled = false
         cv.showsHorizontalScrollIndicator = false
         cv.dataSource = self
         cv.delegate = self
-        cv.register(OrderTabCell.self, forCellWithReuseIdentifier: OrderTabCell.reuseID)
+        cv.register(CouponFilterTabCell.self, forCellWithReuseIdentifier: CouponFilterTabCell.reuseID)
         return cv
     }()
 
@@ -48,14 +49,14 @@ final class CouponListViewController: BaseViewController {
     }
 
     override func setupUI() {
-        view.backgroundColor = .fdBg
+        view.backgroundColor = .white
 
         let tabContainer = UIView()
-        tabContainer.backgroundColor = .fdBg
+        tabContainer.backgroundColor = .white
         view.addSubview(tabContainer)
         tabContainer.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview()
-            make.height.equalTo(44)
+            make.height.equalTo(48)
         }
         tabContainer.addSubview(tabCollectionView)
         tabCollectionView.snp.makeConstraints { $0.edges.equalToSuperview() }
@@ -69,6 +70,9 @@ final class CouponListViewController: BaseViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        if let layout = tabCollectionView.collectionViewLayout as? UICollectionViewFlowLayout {
+            layout.invalidateLayout()
+        }
         if currentChildVC == nil {
             showChildVC(at: selectedTabIndex)
         }
@@ -160,11 +164,6 @@ final class CouponListViewController: BaseViewController {
         guard index != selectedTabIndex else { return }
         selectedTabIndex = index
         tabCollectionView.reloadData()
-        tabCollectionView.scrollToItem(
-            at: IndexPath(item: index, section: 0),
-            at: .centeredHorizontally,
-            animated: true
-        )
         showChildVC(at: index)
     }
 
@@ -184,9 +183,9 @@ extension CouponListViewController: UICollectionViewDataSource, UICollectionView
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: OrderTabCell.reuseID,
+            withReuseIdentifier: CouponFilterTabCell.reuseID,
             for: indexPath
-        ) as! OrderTabCell
+        ) as! CouponFilterTabCell
         cell.configure(title: tabTitle(at: indexPath.item), isSelected: indexPath.item == selectedTabIndex)
         return cell
     }
@@ -200,14 +199,8 @@ extension CouponListViewController: UICollectionViewDataSource, UICollectionView
         layout collectionViewLayout: UICollectionViewLayout,
         sizeForItemAt indexPath: IndexPath
     ) -> CGSize {
-        let title = tabTitle(at: indexPath.item)
-        let width = title.boundingRect(
-            with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: 30),
-            options: .usesLineFragmentOrigin,
-            attributes: [.font: UIFont.fdCaptionSemibold],
-            context: nil
-        ).width + 16
-        return CGSize(width: ceil(width), height: 30)
+        let tabWidth = collectionView.bounds.width / CGFloat(tabs.count)
+        return CGSize(width: tabWidth, height: 48)
     }
 
     func collectionView(
@@ -215,6 +208,63 @@ extension CouponListViewController: UICollectionViewDataSource, UICollectionView
         layout collectionViewLayout: UICollectionViewLayout,
         insetForSectionAt section: Int
     ) -> UIEdgeInsets {
-        UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        .zero
+    }
+}
+
+// MARK: - CouponFilterTabCell
+
+/// 优惠券筛选 Tab — 对齐 Figma 3838:33165
+private final class CouponFilterTabCell: UICollectionViewCell {
+    static let reuseID = "CouponFilterTabCell"
+
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.textAlignment = .center
+        label.font = .fdFont(ofSize: 16, weight: .regular)
+        return label
+    }()
+
+    private let indicatorView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(hexString: "#FF7A50")
+        view.layer.cornerRadius = 2
+        view.clipsToBounds = true
+        return view
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        contentView.addSubview(titleLabel)
+        contentView.addSubview(indicatorView)
+
+        titleLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(4)
+            make.centerX.equalToSuperview()
+            make.leading.greaterThanOrEqualToSuperview().offset(4)
+            make.trailing.lessThanOrEqualToSuperview().offset(-4)
+        }
+
+        indicatorView.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(4)
+            make.centerX.equalToSuperview()
+            make.width.equalTo(18)
+            make.height.equalTo(4)
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    func configure(title: String, isSelected: Bool) {
+        titleLabel.text = title
+        if isSelected {
+            titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+            titleLabel.textColor = UIColor(hexString: "#1F2942")
+            indicatorView.isHidden = false
+        } else {
+            titleLabel.font = .fdFont(ofSize: 16, weight: .regular)
+            titleLabel.textColor = UIColor(hexString: "#535D72")
+            indicatorView.isHidden = true
+        }
     }
 }

@@ -18,7 +18,9 @@
 
 - **WHEN** 通过厂商过滤
 - **THEN** `OKOKV3PacketParser` 按 V3 数据域解析：版本、流水号、重量（大端）、电阻（大端）、产品 ID、消息体属性、MAC（6 字节）
-- **AND** 若广播外层带 Len=`0x10` + Type=`0xFF`，SHALL 先剥离再按数据域解析；若 `manufacturerData` 前带 2 字节 Company ID，SHALL 在载荷内定位以 `0xC0` 开头的数据域
+- **AND** 若广播外层带 Len=`0x10` + Type=`0xFF`，SHALL 先剥离再按数据域解析
+- **AND** 若 `manufacturerData` 前带 2 字节 Company ID，SHALL 仅当**其后自定义数据首字节为 `0xC0`** 时才识别
+- **AND** MUST NOT 把载荷中部偶然出现的 `0xC0` 当作数据域起点
 
 #### Scenario: 重量与单位
 

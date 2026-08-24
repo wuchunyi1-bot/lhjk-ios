@@ -59,7 +59,7 @@ final class ChangePhoneViewController: BaseViewController {
         // MARK: 说明文字
         let descLabel = UILabel()
         descLabel.text = "更换后，可使用新手机号登录富德健康。"
-        descLabel.font = .fdBody
+        descLabel.font = .fdMyBody
         descLabel.textColor = .fdSubtext
         descLabel.numberOfLines = 0
         contentView.addSubview(descLabel)
@@ -71,7 +71,7 @@ final class ChangePhoneViewController: BaseViewController {
         // MARK: 当前手机号
         let currentTitleLabel = UILabel()
         currentTitleLabel.text = "当前手机号"
-        currentTitleLabel.font = .fdCaption
+        currentTitleLabel.font = .fdMyCaption
         currentTitleLabel.textColor = .fdMuted
         contentView.addSubview(currentTitleLabel)
         currentTitleLabel.snp.makeConstraints { make in
@@ -81,7 +81,7 @@ final class ChangePhoneViewController: BaseViewController {
 
         currentPhoneLabel = UILabel()
         currentPhoneLabel.text = maskPhone(currentPhone)
-        currentPhoneLabel.font = .fdFont(ofSize: 32, weight: .bold)
+        currentPhoneLabel.font = .fdFont(ofSize: 34, weight: .bold)
         currentPhoneLabel.textColor = .fdText
         contentView.addSubview(currentPhoneLabel)
         currentPhoneLabel.snp.makeConstraints { make in
@@ -92,7 +92,7 @@ final class ChangePhoneViewController: BaseViewController {
         // MARK: 新手机号输入
         let newPhoneTitleLabel = UILabel()
         newPhoneTitleLabel.text = "新手机号"
-        newPhoneTitleLabel.font = .fdFont(ofSize: 14, weight: .semibold)
+        newPhoneTitleLabel.font = .fdFont(ofSize: 16, weight: .semibold)
         newPhoneTitleLabel.textColor = .fdSubtext
         contentView.addSubview(newPhoneTitleLabel)
         newPhoneTitleLabel.snp.makeConstraints { make in
@@ -103,7 +103,7 @@ final class ChangePhoneViewController: BaseViewController {
         newPhoneField = UITextField()
         newPhoneField.placeholder = "请输入新手机号"
         newPhoneField.keyboardType = .phonePad
-        newPhoneField.font = .fdFont(ofSize: 16)
+        newPhoneField.font = .fdFont(ofSize: 18)
         newPhoneField.textColor = .fdText
         newPhoneField.layer.cornerRadius = 8
         newPhoneField.layer.borderWidth = 1
@@ -121,7 +121,7 @@ final class ChangePhoneViewController: BaseViewController {
         // MARK: 验证码输入 + 发送按钮
         let codeTitleLabel = UILabel()
         codeTitleLabel.text = "验证码"
-        codeTitleLabel.font = .fdFont(ofSize: 14, weight: .semibold)
+        codeTitleLabel.font = .fdFont(ofSize: 16, weight: .semibold)
         codeTitleLabel.textColor = .fdSubtext
         contentView.addSubview(codeTitleLabel)
         codeTitleLabel.snp.makeConstraints { make in
@@ -140,7 +140,7 @@ final class ChangePhoneViewController: BaseViewController {
         codeField = UITextField()
         codeField.placeholder = "请输入验证码"
         codeField.keyboardType = .numberPad
-        codeField.font = .fdFont(ofSize: 16)
+        codeField.font = .fdFont(ofSize: 18)
         codeField.textColor = .fdText
         codeField.layer.cornerRadius = 8
         codeField.layer.borderWidth = 1
@@ -152,7 +152,7 @@ final class ChangePhoneViewController: BaseViewController {
 
         sendCodeBtn = UIButton(type: .system)
         sendCodeBtn.setTitle("发送验证码", for: .normal)
-        sendCodeBtn.titleLabel?.font = .fdFont(ofSize: 13, weight: .bold)
+        sendCodeBtn.titleLabel?.font = .fdFont(ofSize: 15, weight: .bold)
         sendCodeBtn.setTitleColor(.fdPrimary, for: .normal)
         sendCodeBtn.setTitleColor(.fdMuted, for: .disabled)
         sendCodeBtn.layer.cornerRadius = 8
@@ -202,11 +202,11 @@ final class ChangePhoneViewController: BaseViewController {
 
         let consentText = UILabel()
         consentText.numberOfLines = 0
-        consentText.font = .fdFont(ofSize: 12)
+        consentText.font = .fdFont(ofSize: 14)
         consentText.textColor = .fdSubtext
         let fullText = "我已阅读并同意《用户协议》《隐私政策》与《健康管理服务知情同意书》"
         let attrStr = NSMutableAttributedString(string: fullText, attributes: [
-            .font: UIFont.fdFont(ofSize: 12),
+            .font: UIFont.fdFont(ofSize: 16),
             .foregroundColor: UIColor.fdSubtext
         ])
         // Underline protocol links
@@ -214,7 +214,7 @@ final class ChangePhoneViewController: BaseViewController {
             if let range = fullText.range(of: keyword) {
                 attrStr.addAttributes([
                     .foregroundColor: UIColor.fdPrimary,
-                    .font: UIFont.fdFont(ofSize: 12, weight: .semibold)
+                    .font: UIFont.fdFont(ofSize: 16, weight: .semibold)
                 ], range: NSRange(range, in: fullText))
             }
         }
@@ -230,7 +230,7 @@ final class ChangePhoneViewController: BaseViewController {
         // MARK: 确认更换按钮
         submitBtn = UIButton(type: .system)
         submitBtn.setTitle("确认更换", for: .normal)
-        submitBtn.titleLabel?.font = .fdBodyBold
+        submitBtn.titleLabel?.font = .fdMyBodyBold
         submitBtn.setTitleColor(.white, for: .normal)
         submitBtn.backgroundColor = .fdPrimary
         submitBtn.layer.cornerRadius = 27
@@ -280,7 +280,7 @@ final class ChangePhoneViewController: BaseViewController {
         let layoutManager = NSLayoutManager()
         let textContainer = NSTextContainer(size: .zero)
         let textStorage = NSTextStorage(attributedString: NSAttributedString(string: text, attributes: [
-            .font: UIFont.fdFont(ofSize: 12)
+            .font: UIFont.fdFont(ofSize: 16)
         ]))
         layoutManager.addTextContainer(textContainer)
         textStorage.addLayoutManager(layoutManager)
@@ -419,8 +419,6 @@ final class ChangePhoneViewController: BaseViewController {
     }
 
     private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { alert.dismiss(animated: true) }
+        showToastAlert(message, duration: 1.5)
     }
 }

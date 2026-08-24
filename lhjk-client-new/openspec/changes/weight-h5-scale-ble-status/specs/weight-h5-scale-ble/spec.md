@@ -67,10 +67,50 @@
 #### Scenario: 锁定测量完成
 
 - **WHEN** 体重 H5 宿主会话收到 `OKOKScaleEvent.locked`
+- **AND** 广播 MAC 与 `getEquipmentByOne` 返回的 MAC 规范化后完全一致（`AA:BB:CC:DD:EE:FF`）
 - **THEN** 调用 `POST /v1/monitor/saveOrUpdateMonitorData`（`businessId=4`，`collectionType=2`）保存本次体重
-- **AND** 立即 `stopSession()` 停止广播扫描（绑定关系保留）
+- **AND** 该请求开始发出时立即 `stopSession()` 停止广播扫描（绑定关系保留；上报期间不得重新启扫）
+- **AND** 收到 MAC 匹配的锁定帧时 MUST 同步 `stopSession()`，不得等网络请求返回后再停扫
+- **AND** 测量完成后 MUST 暂停自动启扫，直至用户点击横条「点击重试」或离开体重模块
+- **AND** `/health/metrics/weight/detail`、`/health/metrics/weight/scale/result` 等只读子页 MUST NOT 启扫或展示体脂秤横条
 - **AND** 横条刷新 `lastSyncAt`，展示已绑定未监听（可点「点击重试」再测）
-- **AND** 经 Bridge emit `ble.synced`（含 `weightKg`；保存成功时含 `monitorId`）
+- **AND** 经 Bridge emit `ble.synced`（含 `weightKg`、`impedance`；保存成功时含 `monitorId`）
+- **AND** `impedance > 0` 时跳转原生 `/health/metrics/weight/scale/result`（`WeightScaleResultViewController`，体重报告）
+- **AND** `impedance == 0`（未测到电阻）时跳转 `/health/metrics/weight/detail`（H5 `#/weight/detail`，仅体重详情）
+
+#### Scenario: MAC 与绑定设备不一致
+
+- **WHEN** 扫描到 OKOK 广播，但其 MAC 与 `getEquipmentByOne.mac` 规范化后不一致（或接口未返回 MAC）
+- **THEN** MUST NOT 采用该帧体重/电阻
+- **AND** MUST NOT 调用 `saveOrUpdateMonitorData`
+- **AND** MUST NOT emit `ble.synced`
+
+### Requirement: 原生体重报告页操作
+
+有阻抗的原生体重报告页 SHALL 提供「保存」与「重新测量」。本页打开时监测记录**已经**由 `saveOrUpdateMonitorData` 写入服务端，PL 只调 `EquipmentBindService`，禁止直连 path。
+
+#### Scenario: 保存
+
+- **WHEN** 用户点击「保存」
+- **THEN** MUST NOT 再次调用 `saveOrUpdateMonitorData`
+- **AND** MUST NOT 调用 `delMonitorDataByMonitorId`
+- **AND** MUST NOT 清除测量后自动启扫暂停标记（返回体重页后仍需点横条「点击重试」）
+- **AND** 立即 `pop` 返回上一页（体重 H5），保留本次 `monitorId` 对应记录
+
+#### Scenario: 重新测量
+
+- **WHEN** 用户点击「重新测量」
+- **THEN** 调用 `DELETE /v1/monitor/delMonitorDataByMonitorId`，Query `monitorId` 为当前报告页记录 ID
+- **AND** 删除成功后清除测量后自动启扫暂停标记（`ScaleBleSessionService.clearAutoScanPause`），以便返回体重页后可再次扫描
+- **AND** `pop` 返回上一页
+- **WHEN** 删除请求失败
+- **THEN** Toast 错误信息，停留本页，MUST NOT pop、MUST NOT 清除暂停标记
+
+#### Scenario: 按钮展示
+
+- **WHEN** 报告数据加载成功
+- **THEN** 主按钮为「保存」（品牌主色填充），次按钮为「重新测量」（描边）
+- **AND** 删除进行中两按钮均不可点
 
 ### Requirement: FundeNative 体重 BLE 只读查询
 

@@ -19,6 +19,10 @@ protocol UserServiceProtocol {
     /// - Parameter userId: 用户雪花 ID（字符串形式）
     func getOArchiveByUserId(_ userId: String) async throws -> OArchive?
 
+    /// 计算档案完善进度（0–100）
+    /// `GET /v1/archive/calculateArchiveCompletion?userId=`
+    func calculateArchiveCompletion(userId: String) async throws -> ArchiveCompletionVO
+
     // MARK: - 密码/手机号管理
 
     /// 手机号验证码重置密码

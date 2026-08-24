@@ -39,7 +39,7 @@ final class MallProductGridCell: UITableViewCell {
         label.attributedText = NSAttributedString(
             string: "富德优选",
             attributes: [
-                .font: UIFont.fdFont(ofSize: 18, weight: .medium),
+                .font: UIFont.fdFont(ofSize: 20, weight: .medium),
                 .foregroundColor: UIColor.fdText,
                 .kern: 0.55,
             ]
@@ -50,7 +50,7 @@ final class MallProductGridCell: UITableViewCell {
     private let moreButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("查看全部", for: .normal)
-        button.titleLabel?.font = .fdFont(ofSize: 12, weight: .regular)
+        button.titleLabel?.font = .fdFont(ofSize: 14, weight: .regular)
         let moreColor = UIColor(hexString: "#717885")
         button.setTitleColor(moreColor, for: .normal)
         let chevron = UIImage(

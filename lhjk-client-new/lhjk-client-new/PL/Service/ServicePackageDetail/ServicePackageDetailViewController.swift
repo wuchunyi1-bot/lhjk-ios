@@ -2,7 +2,7 @@ import UIKit
 import SnapKit
 import Combine
 
-/// 服务套餐详情 — 三段式：Banner / 价格与简介 / 权益与详情连续楼层（对齐 Figma 3449:7764）
+/// 服务套餐详情 — 三段式：Banner / 价格与简介 / 独立卡片楼层（对齐 Figma 3805:20762）
 final class ServicePackageDetailViewController: BaseViewController {
 
     private let viewModel: ServicePackageDetailViewModel
@@ -18,11 +18,32 @@ final class ServicePackageDetailViewController: BaseViewController {
 
     private var carouselView: PackageDetailCarouselView?
     private let infoView = PackageDetailInfoView()
-    private let floorsView = PackageDetailFloorsView()
     private var tierPickerView: PackageDetailTierPickerView?
+
+    // 页面内 Tab 选择头（贴边全宽）与三张独立卡片
+    private let inPageTabBarView = PackageDetailTabBarView()
+    private let benefitsCardView = PackageDetailBenefitsCardView()
+    private let detailCardView = PackageDetailDetailCardView()
+    private let guaranteeView = PackageDetailGuaranteeView()
+
     private var autoScrollTimer: Timer?
 
-    private var activeTab: PackageDetailTab = .content
+    // 吸顶区：状态栏占位 + 导航标题 + Tab（对齐 Figma 3805:21131 / 3805:21478）
+    private let stickyHeaderContainer = UIView()
+    private let stickyStatusBarFill = UIView()
+    private let stickyNavBar = UIView()
+    private let stickyBackButton = UIButton(type: .custom)
+    private let stickyTitleLabel = UILabel()
+    private let stickyTabBarView = PackageDetailTabBarView()
+
+    private enum StickyHeaderMetrics {
+        static let navRowHeight: CGFloat = 44
+        static let tabBarHeight: CGFloat = 56
+        static var contentHeight: CGFloat { navRowHeight + tabBarHeight }
+    }
+
+    private var activeTab: PackageDetailTab = .benefits
+    private var isUserScrollingToTab = false
     private var tierIndex = 0
     private var radioPicks: [String: Int] = [:]
     private var checkPicks: [String: Set<Int>] = [:]
@@ -79,6 +100,7 @@ final class ServicePackageDetailViewController: BaseViewController {
         scrollView.backgroundColor = .clear
         scrollView.showsVerticalScrollIndicator = false
         scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.delegate = self
         scrollView.isHidden = true
         view.addSubview(scrollView)
         scrollView.snp.makeConstraints {
@@ -100,7 +122,10 @@ final class ServicePackageDetailViewController: BaseViewController {
             $0.bottom.equalToSuperview().offset(-24)
         }
 
-        floorsView.tabDelegate = self
+        inPageTabBarView.delegate = self
+        detailCardView.onHeightChanged = { [weak self] in
+            self?.view.layoutIfNeeded()
+        }
 
         // 悬浮返回按钮（黑色半透明背景）
         backButton.backgroundColor = UIColor(white: 0, alpha: 0.5)
@@ -119,6 +144,9 @@ final class ServicePackageDetailViewController: BaseViewController {
             $0.size.equalTo(32)
         }
 
+        // 吸顶标题 + Tab
+        setupStickyHeader()
+
         statusLabel.font = .fdBody
         statusLabel.textColor = .fdSubtext
         statusLabel.textAlignment = .center
@@ -129,6 +157,83 @@ final class ServicePackageDetailViewController: BaseViewController {
             $0.centerY.equalToSuperview().offset(-40)
             $0.leading.trailing.equalToSuperview().inset(24)
         }
+    }
+
+    private func setupStickyHeader() {
+        stickyHeaderContainer.backgroundColor = .white
+        stickyHeaderContainer.layer.shadowColor = UIColor.black.cgColor
+        stickyHeaderContainer.layer.shadowOpacity = 0.06
+        stickyHeaderContainer.layer.shadowOffset = CGSize(width: 0, height: 2)
+        stickyHeaderContainer.layer.shadowRadius = 4
+        stickyHeaderContainer.alpha = 0
+        stickyHeaderContainer.isHidden = true
+
+        view.addSubview(stickyHeaderContainer)
+        stickyHeaderContainer.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+        }
+
+        stickyStatusBarFill.backgroundColor = .white
+        stickyHeaderContainer.addSubview(stickyStatusBarFill)
+        stickyStatusBarFill.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.top)
+        }
+
+        stickyNavBar.backgroundColor = .white
+        stickyHeaderContainer.addSubview(stickyNavBar)
+        stickyNavBar.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(StickyHeaderMetrics.navRowHeight)
+        }
+
+        let stickyChevron = UIImage(systemName: "chevron.left")?.withConfiguration(
+            UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+        )
+        stickyBackButton.setImage(stickyChevron, for: .normal)
+        stickyBackButton.tintColor = UIColor(hexString: "#1F2942")
+        stickyBackButton.addTarget(self, action: #selector(didTapBack), for: .touchUpInside)
+        stickyNavBar.addSubview(stickyBackButton)
+        stickyBackButton.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(8)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(44)
+        }
+
+        stickyTitleLabel.font = .fdFont(ofSize: 20, weight: .medium)
+        stickyTitleLabel.textColor = UIColor(hexString: "#1F2942")
+        stickyTitleLabel.textAlignment = .center
+        stickyTitleLabel.lineBreakMode = .byTruncatingTail
+        stickyNavBar.addSubview(stickyTitleLabel)
+        stickyTitleLabel.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.leading.greaterThanOrEqualTo(stickyBackButton.snp.trailing).offset(8)
+            $0.trailing.lessThanOrEqualToSuperview().offset(-52)
+        }
+
+        let navDivider = UIView()
+        navDivider.backgroundColor = UIColor(hexString: "#F0F2F5")
+        stickyNavBar.addSubview(navDivider)
+        navDivider.snp.makeConstraints {
+            $0.leading.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(0.5)
+        }
+
+        stickyTabBarView.delegate = self
+        stickyHeaderContainer.addSubview(stickyTabBarView)
+        stickyTabBarView.snp.makeConstraints {
+            $0.top.equalTo(stickyNavBar.snp.bottom)
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(StickyHeaderMetrics.tabBarHeight)
+            $0.bottom.equalToSuperview()
+        }
+
+        view.bringSubviewToFront(backButton)
+    }
+
+    override var preferredStatusBarStyle: UIStatusBarStyle {
+        stickyHeaderContainer.isHidden ? .lightContent : .darkContent
     }
 
     @objc private func didTapBack() {
@@ -176,7 +281,7 @@ final class ServicePackageDetailViewController: BaseViewController {
         carouselView = nil
         tierPickerView = nil
         tierIndex = 0
-        activeTab = .content
+        activeTab = .benefits
 
         resetPicks(for: pkg.tiers[tierIndex])
         carouselView = PackageDetailCarouselView(
@@ -185,16 +290,18 @@ final class ServicePackageDetailViewController: BaseViewController {
             accent: pkg.accent
         )
         infoView.configure(with: pkg)
+        stickyTitleLabel.text = pkg.name
         if pkg.tiers.count > 1 {
             let picker = PackageDetailTierPickerView()
             picker.delegate = self
             picker.configure(tiers: pkg.tiers, selectedIndex: tierIndex, accent: pkg.accent)
             tierPickerView = picker
         }
-        refreshFloorsView()
+        refreshCards()
         rebuildViews()
         setupOrderBar()
-        floorsView.tabBarView.select(activeTab, animated: false)
+        inPageTabBarView.select(activeTab, animated: false)
+        stickyTabBarView.select(activeTab, animated: false)
 
         statusLabel.isHidden = true
         scrollView.isHidden = false
@@ -225,20 +332,41 @@ final class ServicePackageDetailViewController: BaseViewController {
         }
         if let carousel = carouselView {
             contentStack.addArrangedSubview(carousel)
-            // 向上覆盖 Banner 底部 28pt（对齐 Figma 3449:7764）
+            // 向上覆盖 Banner 底部 28pt（对齐 Figma 3805:20762）
             contentStack.setCustomSpacing(-28, after: carousel)
         }
-        let wrappedInfo = wrapWithHorizontalInsets(infoView)
-        wrappedInfo.layer.zPosition = 1
-        contentStack.addArrangedSubview(wrappedInfo)
+
+        // 1. 商品价格与标题卡片：全宽贴边
+        infoView.layer.zPosition = 1
+        contentStack.addArrangedSubview(infoView)
+
+        // 2. 规格选择卡片（如果有）：16pt margin
         if let tierPickerView {
             let wrappedPicker = wrapWithHorizontalInsets(tierPickerView)
             wrappedPicker.layer.zPosition = 1
             contentStack.addArrangedSubview(wrappedPicker)
         }
-        let wrappedFloors = wrapWithHorizontalInsets(floorsView)
-        wrappedFloors.layer.zPosition = 1
-        contentStack.addArrangedSubview(wrappedFloors)
+
+        // 3. Tab 选择头：全宽贴边
+        inPageTabBarView.layer.zPosition = 1
+        contentStack.addArrangedSubview(inPageTabBarView)
+
+        // 4. 权益独立卡片：16pt margin
+        let wrappedBenefits = wrapWithHorizontalInsets(benefitsCardView)
+        wrappedBenefits.layer.zPosition = 1
+        contentStack.addArrangedSubview(wrappedBenefits)
+
+        // 6. 详情信息独立卡片（若有详情图）：16pt margin
+        if hasDetailImages {
+            let wrappedDetail = wrapWithHorizontalInsets(detailCardView)
+            wrappedDetail.layer.zPosition = 1
+            contentStack.addArrangedSubview(wrappedDetail)
+        }
+
+        // 7. 服务保障独立卡片：16pt margin
+        let wrappedGuarantee = wrapWithHorizontalInsets(guaranteeView)
+        wrappedGuarantee.layer.zPosition = 1
+        contentStack.addArrangedSubview(wrappedGuarantee)
     }
 
     private func wrapWithHorizontalInsets(_ view: UIView, insets: CGFloat = 16) -> UIView {
@@ -252,17 +380,17 @@ final class ServicePackageDetailViewController: BaseViewController {
         return container
     }
 
-    private func refreshFloorsView() {
+    private func refreshCards() {
         guard let package else { return }
-        floorsView.configure(
-            package: package,
-            groups: visibleGroups,
-            radioPicks: radioPicks,
-            checkPicks: checkPicks,
-            makeGroupView: { [weak self] group in
-                self?.makeComboGroupView(group) ?? PackageComboGroupView()
-            }
-        )
+        let groupViews = visibleGroups.map { group in
+            makeComboGroupView(group)
+        }
+        benefitsCardView.setGroupViews(groupViews)
+
+        detailCardView.configure(with: package)
+
+        inPageTabBarView.setDetailTabVisible(hasDetailImages)
+        stickyTabBarView.setDetailTabVisible(hasDetailImages)
     }
 
     private func resetPicks(for tier: ServicePackageTier) {
@@ -297,7 +425,6 @@ final class ServicePackageDetailViewController: BaseViewController {
             guard let self else { return }
             guard group.items.indices.contains(index), !group.items[index].isChild else { return }
             self.radioPicks[group.name] = index
-            self.refreshFloorsView()
             self.refreshPayable()
         }
         view.onCheckToggle = { [weak self] index in
@@ -306,7 +433,6 @@ final class ServicePackageDetailViewController: BaseViewController {
             var set = self.checkPicks[group.name] ?? []
             if set.contains(index) { set.remove(index) } else { set.insert(index) }
             self.checkPicks[group.name] = set
-            self.refreshFloorsView()
             self.refreshPayable()
         }
         return view
@@ -353,18 +479,31 @@ final class ServicePackageDetailViewController: BaseViewController {
         if tab == .detail, !hasDetailImages { return }
 
         view.layoutIfNeeded()
-        floorsView.layoutIfNeeded()
 
-        let anchor = tab == .content ? floorsView.contentFloorAnchor : floorsView.detailFloorAnchor
+        let anchor: UIView
+        switch tab {
+        case .benefits:
+            anchor = benefitsCardView
+        case .detail:
+            anchor = detailCardView
+        }
+
         let targetRect = anchor.convert(anchor.bounds, to: scrollView)
-        let targetY = max(0, targetRect.minY - 20)
+        let topOffset = view.safeAreaInsets.top + StickyHeaderMetrics.contentHeight + 4
+        let targetY = max(0, targetRect.minY - topOffset)
 
         let maxOffset = max(0, scrollView.contentSize.height - scrollView.bounds.height + scrollView.contentInset.bottom)
         let clampedY = min(targetY, maxOffset)
 
         activeTab = tab
-        floorsView.tabBarView.select(activeTab, animated: true)
+        inPageTabBarView.select(activeTab, animated: true)
+        stickyTabBarView.select(activeTab, animated: true)
+
+        isUserScrollingToTab = true
         scrollView.setContentOffset(CGPoint(x: 0, y: clampedY), animated: animated)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+            self?.isUserScrollingToTab = false
+        }
     }
 
     private func startAutoScroll() {
@@ -481,6 +620,52 @@ final class ServicePackageDetailViewController: BaseViewController {
     }
 }
 
+// MARK: - UIScrollViewDelegate
+
+extension ServicePackageDetailViewController: UIScrollViewDelegate {
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let tabPos = inPageTabBarView.convert(inPageTabBarView.bounds, to: view)
+        let stickyThreshold = view.safeAreaInsets.top
+
+        let shouldShowSticky = tabPos.minY <= stickyThreshold
+        if shouldShowSticky != !stickyHeaderContainer.isHidden {
+            stickyHeaderContainer.isHidden = !shouldShowSticky
+            UIView.animate(withDuration: 0.15) {
+                self.stickyHeaderContainer.alpha = shouldShowSticky ? 1.0 : 0.0
+                self.backButton.alpha = shouldShowSticky ? 0.0 : 1.0
+            }
+            backButton.isUserInteractionEnabled = !shouldShowSticky
+            if shouldShowSticky {
+                view.bringSubviewToFront(stickyHeaderContainer)
+            } else {
+                view.bringSubviewToFront(backButton)
+            }
+            setNeedsStatusBarAppearanceUpdate()
+        }
+
+        guard !isUserScrollingToTab else { return }
+
+        // 根据滚动位置自动同步当前高亮 Tab
+        let topCheckPoint = stickyThreshold + StickyHeaderMetrics.contentHeight + 8
+        let benefitsY = benefitsCardView.convert(CGPoint.zero, to: view).y
+        let detailY = detailCardView.convert(CGPoint.zero, to: view).y
+
+        var detectedTab: PackageDetailTab = .benefits
+        if hasDetailImages && detailY <= topCheckPoint {
+            detectedTab = .detail
+        } else if benefitsY <= topCheckPoint + 100 {
+            detectedTab = .benefits
+        }
+
+        if detectedTab != activeTab {
+            activeTab = detectedTab
+            inPageTabBarView.select(detectedTab, animated: true)
+            stickyTabBarView.select(detectedTab, animated: true)
+        }
+    }
+}
+
 // MARK: - Delegates
 
 extension ServicePackageDetailViewController: PackageDetailTabBarViewDelegate {
@@ -497,7 +682,7 @@ extension ServicePackageDetailViewController: PackageDetailTierPickerViewDelegat
         tierIndex = index
         resetPicks(for: pkg.tiers[tierIndex])
         view.configure(tiers: pkg.tiers, selectedIndex: tierIndex, accent: pkg.accent)
-        refreshFloorsView()
+        refreshCards()
         refreshPayable()
     }
 }

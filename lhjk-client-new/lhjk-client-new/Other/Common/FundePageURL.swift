@@ -57,7 +57,7 @@ enum FundePageURL {
         switch parse(pageUrl) {
         case .h5(let path, let query):
             let url = H5Config.authenticatedPageURL(path: path, extraQuery: query)
-            let enablesWeightBle = Self.isWeightH5Path(path)
+            let enablesWeightBle = Self.shouldEnableWeightBle(forH5Path: path)
             let webVC = WebViewController(
                 urlString: url.absoluteString,
                 title: title,
@@ -85,7 +85,16 @@ enum FundePageURL {
         parse(pageUrl) != .none
     }
 
-    /// `#/weight` 及其子路径需展示体脂秤蓝牙横条
+    /// 仅 `#/weight` 体重 H5 首页展示体脂秤蓝牙横条并启扫；跳转其他页面隐藏并关闭蓝牙
+    static func shouldEnableWeightBle(forH5Path path: String) -> Bool {
+        let normalized = path
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        return normalized == "weight"
+    }
+
+    /// 是否体重 H5 路径（含首页及子页面）
     static func isWeightH5Path(_ path: String) -> Bool {
         let normalized = path
             .trimmingCharacters(in: .whitespacesAndNewlines)

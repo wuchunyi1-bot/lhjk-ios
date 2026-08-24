@@ -61,14 +61,14 @@ final class HomeTeamCardCell: UITableViewCell {
     private let titleLabel: UILabel = {
         let l = UILabel()
         l.text = "我的富德健康管家团队"
-        l.font = .fdFont(ofSize: 16, weight: .medium)
+        l.font = .fdFont(ofSize: 18, weight: .medium)
         l.textColor = .fdText
         return l
     }()
 
     private let moreButton: UIButton = {
         let b = UIButton(type: .system)
-        b.titleLabel?.font = .fdFont(ofSize: 12, weight: .regular)
+        b.titleLabel?.font = .fdFont(ofSize: 14, weight: .regular)
         b.setTitleColor(.fdSubtext, for: .normal)
         return b
     }()
@@ -86,6 +86,12 @@ final class HomeTeamCardCell: UITableViewCell {
         contentView.backgroundColor = .clear
         selectionStyle = .none
 
+        preservesSuperviewLayoutMargins = false
+        contentView.preservesSuperviewLayoutMargins = false
+        if #available(iOS 11.0, *) {
+            contentView.directionalLayoutMargins = .zero
+        }
+
         contentView.addSubview(cardView)
         cardView.addSubview(titleLabel)
         cardView.addSubview(moreButton)
@@ -93,7 +99,7 @@ final class HomeTeamCardCell: UITableViewCell {
 
         cardView.snp.makeConstraints {
             $0.top.equalToSuperview().offset(12)
-            $0.leading.trailing.equalToSuperview().inset(16).priority(750)
+            $0.leading.trailing.equalToSuperview().inset(16)
             $0.bottom.equalToSuperview()
         }
         titleLabel.snp.makeConstraints {
@@ -115,8 +121,8 @@ final class HomeTeamCardCell: UITableViewCell {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    func configure(members: [Member], daysLeft: Int) {
-        moreButton.setTitle("服务剩余 \(daysLeft) 天 ›", for: .normal)
+    func configure(members: [Member]) {
+        moreButton.isHidden = true
         membersStack.arrangedSubviews.forEach {
             membersStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
@@ -165,26 +171,27 @@ final class HomeTeamCardCell: UITableViewCell {
 
         if let urlString = member.imageUrl, let url = URL(string: urlString), !urlString.isEmpty {
             avatarLabel.isHidden = true
-            let placeholder = member.placeholderImageName
-            avatarImage.kf.setImage(with: url, options: [.transition(.fade(0.2))]) { result in
+            avatarImage.isHidden = false
+            let placeholder = UIImage(named: "chat_im_avatar")
+            avatarImage.kf.setImage(with: url, placeholder: placeholder, options: [.transition(.fade(0.2))]) { result in
                 if case .failure = result {
-                    avatarImage.image = placeholder.flatMap { UIImage(named: $0) }
-                    avatarLabel.isHidden = avatarImage.image != nil
+                    avatarImage.image = placeholder
+                    avatarLabel.isHidden = placeholder != nil
                 }
             }
-        } else if let name = member.placeholderImageName, let img = UIImage(named: name) {
-            avatarLabel.isHidden = true
-            avatarImage.image = img
         } else {
-            avatarImage.isHidden = true
+            avatarImage.isHidden = false
+            avatarImage.image = UIImage(named: "chat_im_avatar")
+            avatarLabel.isHidden = avatarImage.image != nil
         }
 
         let nameLabel = UILabel()
         nameLabel.text = member.name
-        nameLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        nameLabel.font = .fdFont(ofSize: 16, weight: .medium)
         nameLabel.textColor = .fdText
 
         let titleBadge = makeTitleBadge(member.title)
+        titleBadge.isHidden = member.title.isEmpty
 
         let tagsRow = UIStackView()
         tagsRow.axis = .horizontal
@@ -196,10 +203,11 @@ final class HomeTeamCardCell: UITableViewCell {
         if !member.status.isEmpty {
             tagsRow.addArrangedSubview(makeStatusBadge(member.status, type: member.statusType))
         }
+        tagsRow.isHidden = tagsRow.arrangedSubviews.isEmpty
 
         let messageBtn = UIButton(type: .system)
         messageBtn.setTitle("发消息", for: .normal)
-        messageBtn.titleLabel?.font = .fdFont(ofSize: 12, weight: .medium)
+        messageBtn.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
         messageBtn.setTitleColor(.fdPrimary, for: .normal)
         messageBtn.layer.cornerRadius = 14
         messageBtn.layer.borderWidth = 0.5
@@ -224,6 +232,9 @@ final class HomeTeamCardCell: UITableViewCell {
         nameLabel.snp.makeConstraints {
             $0.leading.equalTo(avatarBg.snp.trailing).offset(14)
             $0.top.equalTo(avatarBg).offset(2)
+            if member.title.isEmpty {
+                $0.trailing.lessThanOrEqualTo(messageBtn.snp.leading).offset(-8)
+            }
         }
         titleBadge.snp.makeConstraints {
             $0.leading.equalTo(nameLabel.snp.trailing).offset(4)
@@ -258,7 +269,7 @@ final class HomeTeamCardCell: UITableViewCell {
         wrap.layer.borderColor = UIColor(hexString: "#2B73FF").withAlphaComponent(0.5).cgColor
         let label = UILabel()
         label.text = text
-        label.font = .fdFont(ofSize: 10, weight: .regular)
+        label.font = .fdFont(ofSize: 12, weight: .regular)
         label.textColor = UIColor(hexString: "#2B73FF")
         wrap.addSubview(label)
         label.snp.makeConstraints {
@@ -285,7 +296,7 @@ final class HomeTeamCardCell: UITableViewCell {
 
         let label = UILabel()
         label.text = text
-        label.font = .fdFont(ofSize: 10, weight: .medium)
+        label.font = .fdFont(ofSize: 12, weight: .medium)
         label.textColor = colors.1
 
         wrap.addSubview(dot)
@@ -343,7 +354,7 @@ private final class TitleBadgeView: UIView {
         layer.cornerRadius = 4
         clipsToBounds = true
 
-        label.font = .fdFont(ofSize: 10, weight: .medium)
+        label.font = .fdFont(ofSize: 12, weight: .medium)
         label.textColor = UIColor(hexString: "#862804")
         addSubview(label)
         label.snp.makeConstraints {

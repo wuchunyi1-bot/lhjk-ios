@@ -63,6 +63,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         Task {
             _ = await UserManager.shared.fetchUserInfo()
             _ = await UserManager.shared.fetchDefaultArchive()
+            _ = await UserManager.shared.fetchArchiveCompletion()
             let needOnboarding = UserManager.shared.checkNeedOnboarding()
 
             await MainActor.run {

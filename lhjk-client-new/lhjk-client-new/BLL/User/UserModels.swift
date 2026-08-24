@@ -531,6 +531,14 @@ struct UserCenterOverviewVO: Decodable, Equatable {
     }
 }
 
+// MARK: - 档案完善进度
+
+/// `GET /v1/archive/calculateArchiveCompletion` 响应 data
+struct ArchiveCompletionVO: Decodable {
+    /// 完成度百分比（0–100）
+    let completionPercentage: Int?
+}
+
 // MARK: - 密码重置 & 修改 DTO
 
 /// 手机号验证码重置密码请求体

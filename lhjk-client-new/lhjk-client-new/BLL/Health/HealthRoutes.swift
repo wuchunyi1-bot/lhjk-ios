@@ -69,6 +69,9 @@ enum HealthRoutes {
                 displayName: stringParam(params["equipmentName"]) ?? "OKOK 体脂秤"
             )
         }
+        r.register(path: "/health/metrics/weight/scale/result") { params in
+            WeightScaleResultViewController(monitorId: stringParam(params["monitorId"]) ?? "")
+        }
 
         registerAllMetricH5Routes(r)
     }
@@ -123,16 +126,20 @@ enum HealthRoutes {
             routeParams: routeParams
         )
         let resolvedTitle = title ?? H5Config.metricTitle(for: key)
+        let enablesWeightBle: Bool
         if key == "weight" {
-            return WebViewController(
-                urlString: url.absoluteString,
-                title: resolvedTitle,
-                enablesWeightBle: true
-            )
+            if let nativeSuffix, !nativeSuffix.isEmpty {
+                enablesWeightBle = FundePageURL.shouldEnableWeightBle(forH5Path: "weight/\(nativeSuffix)")
+            } else {
+                enablesWeightBle = true
+            }
+        } else {
+            enablesWeightBle = false
         }
         return WebViewController(
             urlString: url.absoluteString,
-            title: resolvedTitle
+            title: resolvedTitle,
+            enablesWeightBle: enablesWeightBle
         )
     }
 

@@ -46,7 +46,7 @@ final class ConversationCell: UITableViewCell {
 
     private let avatarPlaceholder: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 16, weight: .semibold)
+        l.font = .fdFont(ofSize: 18, weight: .semibold)
         l.textColor = .white
         l.textAlignment = .center
         l.backgroundColor = .clear
@@ -56,7 +56,7 @@ final class ConversationCell: UITableViewCell {
 
     private let badgeLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 10, weight: .medium)
+        l.font = .fdFont(ofSize: 12, weight: .medium)
         l.textColor = .white
         l.backgroundColor = .fdDanger
         l.textAlignment = .center
@@ -68,7 +68,7 @@ final class ConversationCell: UITableViewCell {
 
     private let nameLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 16, weight: .medium)
+        l.font = .fdFont(ofSize: 18, weight: .medium)
         l.textColor = UIColor(hexString: "#1F2430")
         l.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return l
@@ -76,7 +76,7 @@ final class ConversationCell: UITableViewCell {
 
     private let roleTag: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 12, weight: .regular)
+        l.font = .fdFont(ofSize: 14, weight: .regular)
         l.textColor = UIColor(hexString: "#C36E20")
         l.backgroundColor = UIColor(hexString: "#C36E20").withAlphaComponent(0.08)
         l.layer.cornerRadius = 4
@@ -89,7 +89,7 @@ final class ConversationCell: UITableViewCell {
 
     private let previewLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 12, weight: .regular)
+        l.font = .fdFont(ofSize: 14, weight: .regular)
         l.textColor = UIColor(hexString: "#6D7381")
         l.numberOfLines = 1
         l.lineBreakMode = .byTruncatingTail
@@ -98,7 +98,7 @@ final class ConversationCell: UITableViewCell {
 
     private let timeLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 12, weight: .regular)
+        l.font = .fdFont(ofSize: 14, weight: .regular)
         l.textColor = UIColor(hexString: "#6D7381").withAlphaComponent(0.6)
         l.textAlignment = .right
         l.setContentCompressionResistancePriority(.required, for: .horizontal)

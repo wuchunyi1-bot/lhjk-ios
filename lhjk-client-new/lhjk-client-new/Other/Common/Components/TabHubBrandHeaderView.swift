@@ -18,7 +18,7 @@ final class TabHubBrandHeaderView: UIView {
 
     private let subtitleLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 12, weight: .regular)
+        l.font = .fdFont(ofSize: 14, weight: .regular)
         l.textColor = .fdSubtext
         l.numberOfLines = 1
         l.lineBreakMode = .byTruncatingTail
@@ -27,7 +27,7 @@ final class TabHubBrandHeaderView: UIView {
 
     private let badgeLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 10, weight: .medium)
+        l.font = .fdFont(ofSize: 12, weight: .medium)
         l.textColor = UIColor(hexString: "#FF7802")
         l.backgroundColor = UIColor(hexString: "#FFEEE5")
         l.layer.cornerRadius = 4

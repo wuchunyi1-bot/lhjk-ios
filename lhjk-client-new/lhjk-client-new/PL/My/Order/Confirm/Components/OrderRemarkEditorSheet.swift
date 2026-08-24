@@ -46,17 +46,17 @@ final class OrderRemarkEditorSheet: UIViewController {
 
         cancelBtn.setTitle("取消", for: .normal)
         cancelBtn.setTitleColor(.fdSubtext, for: .normal)
-        cancelBtn.titleLabel?.font = .fdBody
+        cancelBtn.titleLabel?.font = .fdFont(ofSize: 15, weight: .regular)
         cancelBtn.addTarget(self, action: #selector(cancel), for: .touchUpInside)
 
         titleLbl.text = "订单备注"
-        titleLbl.font = .fdBodySemibold
+        titleLbl.font = .fdFont(ofSize: 15, weight: .semibold)
         titleLbl.textColor = .fdText
         titleLbl.textAlignment = .center
 
         saveBtn.setTitle("保存", for: .normal)
         saveBtn.setTitleColor(.fdPrimary, for: .normal)
-        saveBtn.titleLabel?.font = .fdBodySemibold
+        saveBtn.titleLabel?.font = .fdFont(ofSize: 15, weight: .semibold)
         saveBtn.addTarget(self, action: #selector(save), for: .touchUpInside)
 
         let header = UIStackView(arrangedSubviews: [cancelBtn, titleLbl, saveBtn])
@@ -81,7 +81,7 @@ final class OrderRemarkEditorSheet: UIViewController {
             $0.height.equalTo(1)
         }
 
-        textView.font = .fdBody
+        textView.font = .fdFont(ofSize: 15, weight: .regular)
         textView.textColor = .fdText
         textView.backgroundColor = UIColor(hexString: "#F5F7FA")
         textView.layer.cornerRadius = 8
@@ -93,7 +93,7 @@ final class OrderRemarkEditorSheet: UIViewController {
         panel.addSubview(textView)
 
         placeholderLabel.text = "请输入订单备注（选填，最多 \(maxLength) 字）"
-        placeholderLabel.font = .fdBody
+        placeholderLabel.font = .fdFont(ofSize: 15, weight: .regular)
         placeholderLabel.textColor = .fdMuted
         placeholderLabel.numberOfLines = 0
         textView.addSubview(placeholderLabel)
@@ -104,7 +104,7 @@ final class OrderRemarkEditorSheet: UIViewController {
         }
         placeholderLabel.isHidden = !draft.isEmpty
 
-        counterLabel.font = .fdCaption
+        counterLabel.font = .fdFont(ofSize: 13, weight: .regular)
         counterLabel.textColor = .fdMuted
         counterLabel.textAlignment = .right
         counterLabel.text = "\(draft.count)/\(maxLength)"

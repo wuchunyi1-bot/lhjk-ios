@@ -12,6 +12,8 @@ import Foundation
 /// - `POST /v1/equipmentUser/bindEquipment`
 /// - `GET  /v1/firmware/getFirmwareUrlByParam`
 /// - `POST /v1/monitor/saveOrUpdateMonitorData`
+/// - `POST /v1/monitor/getWeightHomePageData`
+/// - `DELETE /v1/monitor/delMonitorDataByMonitorId`
 /// - `DELETE /v1/equipmentUser/deleteEquipmentUserById`
 ///
 /// 流程图中 `/v1/equipment/user/...`、`bindEquipmentByApp` 等新 path **Apifox 暂未发布**，接入时以联调环境为准。
@@ -228,6 +230,35 @@ final class EquipmentBindService {
         )
         print("[Scale-BLL] saveWeightBluetoothMonitor mac=\(mac) name=\(equipmentName) type=\(equipmentType ?? "-")")
         return try await saveMonitorData(request)
+    }
+
+    /// `POST /v1/monitor/getWeightHomePageData` — 体重详情 / 上传成功后拉取记录
+    func fetchWeightHomePageData(monitorId: String? = nil) async throws -> WeightHomePageDataVO? {
+        let request = WeightHomePageDataRequest(
+            businessId: MonitorBusinessId.weight.rawValue,
+            monitorId: nonEmpty(monitorId)
+        )
+        let response: APIResponse<WeightHomePageDataVO> = try await api.postAsync(
+            path: "/v1/monitor/getWeightHomePageData",
+            parameters: encode(request),
+            responseType: APIResponse<WeightHomePageDataVO>.self
+        )
+        try throwIfFailed(response, defaultMessage: "获取体重详情失败")
+        return response.data
+    }
+
+    /// `DELETE /v1/monitor/delMonitorDataByMonitorId`
+    func deleteMonitorData(monitorId: String) async throws {
+        let trimmed = monitorId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw EquipmentBindServiceError.requestFailed("monitorId 无效")
+        }
+        let response: APIResponse<APIDataID> = try await api.deleteAsync(
+            path: "/v1/monitor/delMonitorDataByMonitorId",
+            parameters: ["monitorId": trimmed],
+            responseType: APIResponse<APIDataID>.self
+        )
+        try throwIfFailed(response, defaultMessage: "删除监测数据失败")
     }
 
     // MARK: - Helpers

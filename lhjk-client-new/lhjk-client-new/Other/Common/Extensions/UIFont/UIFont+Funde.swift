@@ -60,117 +60,152 @@ extension UIFont {
 
     // MARK: - Type Scale: Headings
 
-    /// 页面大标题 — 标准 28pt / 老年 34pt，`.bold`
+    /// 页面大标题 — 标准 30pt / 老年 36pt，`.bold`
     /// CSS: --fd-h1
     static var fdH1: UIFont {
-        .fdFont(ofSize: senior ? 34 : 28, weight: .bold)
+        .fdFont(ofSize: senior ? 36 : 30, weight: .bold)
     }
 
-    /// 区块标题 / Topbar 标题 — 标准 22pt / 老年 26pt，`.bold`
+    /// 区块标题 / Topbar 标题 — 标准 24pt / 老年 28pt，`.bold`
     /// CSS: --fd-h2
     static var fdH2: UIFont {
-        .fdFont(ofSize: senior ? 26 : 22, weight: .bold)
+        .fdFont(ofSize: senior ? 28 : 24, weight: .bold)
     }
 
-    /// 小节标题 / 卡片标题 — 标准 18pt / 老年 22pt，`.semibold`
+    /// 小节标题 / 卡片标题 — 标准 20pt / 老年 24pt，`.semibold`
     /// CSS: --fd-h3
     static var fdH3: UIFont {
-        .fdFont(ofSize: senior ? 22 : 18, weight: .semibold)
+        .fdFont(ofSize: senior ? 24 : 20, weight: .semibold)
     }
     /// 小节标题 Regular 变体
     static var fdH3Regular: UIFont {
-        .fdFont(ofSize: senior ? 22 : 18, weight: .regular)
+        .fdFont(ofSize: senior ? 24 : 20, weight: .regular)
     }
 
     // MARK: - Login Figma
 
     /// Figma 登录页品牌标题；工程未内置 DingTalk JinBuTi 时回退系统粗体。
     static var fdLoginTitle: UIFont {
-        UIFont(name: "DingTalk JinBuTi", size: senior ? 38 : 32)
-            ?? .fdFont(ofSize: senior ? 38 : 32, weight: .bold)
+        UIFont(name: "DingTalk JinBuTi", size: senior ? 40 : 34)
+            ?? .fdFont(ofSize: senior ? 40 : 34, weight: .bold)
     }
 
-    /// Figma 登录页输入与标签（14pt）。
+    /// Figma 登录页输入与标签（16pt）。
     static var fdLoginInput: UIFont {
+        .fdFont(ofSize: senior ? 19 : 16, weight: .regular)
+    }
+
+    /// Figma 登录页主按钮（18pt Medium）。
+    static var fdLoginButton: UIFont {
+        .fdFont(ofSize: senior ? 22 : 18, weight: .medium)
+    }
+
+    /// Figma 登录页辅助文案（14pt）。
+    static var fdLoginMeta: UIFont {
         .fdFont(ofSize: senior ? 17 : 14, weight: .regular)
     }
 
-    /// Figma 登录页主按钮（16pt Medium）。
-    static var fdLoginButton: UIFont {
-        .fdFont(ofSize: senior ? 20 : 16, weight: .medium)
+    // MARK: - My Module (+2pt)
+
+    /// 设置 / 个人信息等「我的」子页正文（标准 17pt / 老年 21pt）。
+    static var fdMyBody: UIFont {
+        .fdFont(ofSize: senior ? 21 : 17, weight: .regular)
     }
 
-    /// Figma 登录页辅助文案（12pt）。
-    static var fdLoginMeta: UIFont {
-        .fdFont(ofSize: senior ? 15 : 12, weight: .regular)
+    static var fdMyBodySemibold: UIFont {
+        .fdFont(ofSize: senior ? 21 : 17, weight: .semibold)
+    }
+
+    static var fdMyBodyBold: UIFont {
+        .fdFont(ofSize: senior ? 21 : 17, weight: .bold)
+    }
+
+    static var fdMyCaption: UIFont {
+        .fdFont(ofSize: senior ? 18 : 15, weight: .regular)
+    }
+
+    static var fdMyCaptionSemibold: UIFont {
+        .fdFont(ofSize: senior ? 18 : 15, weight: .semibold)
+    }
+
+    static var fdMyMicro: UIFont {
+        .fdFont(ofSize: senior ? 16 : 13, weight: .regular)
+    }
+
+    static var fdMyH2: UIFont {
+        .fdFont(ofSize: senior ? 28 : 24, weight: .bold)
+    }
+
+    static var fdMyH3: UIFont {
+        .fdFont(ofSize: senior ? 24 : 20, weight: .semibold)
     }
 
     // MARK: - Type Scale: Body
 
-    /// 正文 / 列表项 — 标准 15pt / 老年 19pt，`.regular`
+    /// 正文 / 列表项 — 标准 17pt / 老年 21pt，`.regular`
     /// CSS: --fd-body
     static var fdBody: UIFont {
-        .fdFont(ofSize: senior ? 19 : 15, weight: .regular)
+        .fdFont(ofSize: senior ? 21 : 17, weight: .regular)
     }
 
     /// 正文 Semibold 变体 — 按钮文字、列表行主标签
     static var fdBodySemibold: UIFont {
-        .fdFont(ofSize: senior ? 19 : 15, weight: .semibold)
+        .fdFont(ofSize: senior ? 21 : 17, weight: .semibold)
     }
 
     /// 正文 Bold 变体 — 强调正文
     static var fdBodyBold: UIFont {
-        .fdFont(ofSize: senior ? 19 : 15, weight: .bold)
+        .fdFont(ofSize: senior ? 21 : 17, weight: .bold)
     }
 
     // MARK: - Type Scale: Caption
 
-    /// 说明文字 / 辅助标签 — 标准 13pt / 老年 16pt，`.regular`
+    /// 说明文字 / 辅助标签 — 标准 15pt / 老年 18pt，`.regular`
     /// CSS: --fd-caption
     static var fdCaption: UIFont {
-        .fdFont(ofSize: senior ? 16 : 13, weight: .regular)
+        .fdFont(ofSize: senior ? 18 : 15, weight: .regular)
     }
 
     /// 说明文字 Semibold 变体 — 卡片内小标题、功能标签
     static var fdCaptionSemibold: UIFont {
-        .fdFont(ofSize: senior ? 16 : 13, weight: .semibold)
+        .fdFont(ofSize: senior ? 18 : 15, weight: .semibold)
     }
 
     // MARK: - Type Scale: Micro
 
-    /// 最小级别 — 标准 11pt / 老年 14pt，`.regular`
+    /// 最小级别 — 标准 13pt / 老年 16pt，`.regular`
     /// CSS: --fd-micro — badge 文字、角标、元信息
     static var fdMicro: UIFont {
-        .fdFont(ofSize: senior ? 14 : 11, weight: .regular)
+        .fdFont(ofSize: senior ? 16 : 13, weight: .regular)
     }
 
     /// 最小级别 Semibold 变体 — 小标签、设备名
     static var fdMicroSemibold: UIFont {
-        .fdFont(ofSize: senior ? 14 : 11, weight: .semibold)
+        .fdFont(ofSize: senior ? 16 : 13, weight: .semibold)
     }
 
     /// 最小级别 Bold 变体 — badge 内数字
     static var fdMicroBold: UIFont {
-        .fdFont(ofSize: senior ? 14 : 11, weight: .bold)
+        .fdFont(ofSize: senior ? 16 : 13, weight: .bold)
     }
 
     // MARK: - Type Scale: Numbers (Mono)
 
-    /// 超大数字 — 标准 56pt / 老年 64pt，`.bold`，等宽
+    /// 超大数字 — 标准 58pt / 老年 66pt，`.bold`，等宽
     /// CSS: --fd-num-xl — 健康评分
     static var fdNumXL: UIFont {
-        .fdMonoFont(ofSize: senior ? 64 : 56, weight: .bold)
+        .fdMonoFont(ofSize: senior ? 66 : 58, weight: .bold)
     }
 
-    /// 大数字 — 标准 36pt / 老年 44pt，`.bold`，等宽
+    /// 大数字 — 标准 38pt / 老年 46pt，`.bold`，等宽
     /// CSS: --fd-num-l — 关键指标读数
     static var fdNumL: UIFont {
-        .fdMonoFont(ofSize: senior ? 44 : 36, weight: .bold)
+        .fdMonoFont(ofSize: senior ? 46 : 38, weight: .bold)
     }
 
-    /// 中数字 — 标准 22pt / 老年 26pt，`.bold`，等宽
+    /// 中数字 — 标准 24pt / 老年 28pt，`.bold`，等宽
     /// CSS: --fd-num-m — 统计数值、趋势值
     static var fdNumM: UIFont {
-        .fdMonoFont(ofSize: senior ? 26 : 22, weight: .bold)
+        .fdMonoFont(ofSize: senior ? 28 : 24, weight: .bold)
     }
 }

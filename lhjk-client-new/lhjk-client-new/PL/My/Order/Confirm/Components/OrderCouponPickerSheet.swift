@@ -50,15 +50,15 @@ final class OrderCouponPickerSheet: UIViewController {
 
         skipButton.setTitle("不使用", for: .normal)
         skipButton.setTitleColor(.fdPrimary, for: .normal)
-        skipButton.titleLabel?.font = .fdBodySemibold
+        skipButton.titleLabel?.font = .fdFont(ofSize: 15, weight: .semibold)
         skipButton.addTarget(self, action: #selector(skip), for: .touchUpInside)
 
         titleLabel.text = "选择优惠券"
-        titleLabel.font = .fdH2
+        titleLabel.font = .fdFont(ofSize: 22, weight: .bold)
         titleLabel.textColor = .fdText
 
         subtitleLabel.text = "默认先领取先使用，可选择不使用。"
-        subtitleLabel.font = .fdCaption
+        subtitleLabel.font = .fdFont(ofSize: 13, weight: .regular)
         subtitleLabel.textColor = .fdMuted
         subtitleLabel.numberOfLines = 0
 
@@ -91,7 +91,7 @@ final class OrderCouponPickerSheet: UIViewController {
         }
 
         emptyLabel.text = "暂无可用优惠券"
-        emptyLabel.font = .fdCaption
+        emptyLabel.font = .fdFont(ofSize: 13, weight: .regular)
         emptyLabel.textColor = .fdMuted
         emptyLabel.textAlignment = .center
         emptyLabel.isHidden = !coupons.isEmpty
@@ -102,7 +102,7 @@ final class OrderCouponPickerSheet: UIViewController {
 
         doneButton.setTitle("完成", for: .normal)
         doneButton.setTitleColor(.white, for: .normal)
-        doneButton.titleLabel?.font = .fdBodySemibold
+        doneButton.titleLabel?.font = .fdFont(ofSize: 15, weight: .semibold)
         doneButton.backgroundColor = .fdPrimary
         doneButton.layer.cornerRadius = 22
         doneButton.addTarget(self, action: #selector(done), for: .touchUpInside)
@@ -198,9 +198,9 @@ private final class OrderCouponPickerCell: UITableViewCell {
             $0.size.equalTo(20)
         }
 
-        nameLabel.font = .fdBodySemibold
+        nameLabel.font = .fdFont(ofSize: 15, weight: .semibold)
         nameLabel.textColor = .fdText
-        descLabel.font = .fdCaption
+        descLabel.font = .fdFont(ofSize: 13, weight: .regular)
         descLabel.textColor = .fdMuted
         amountLabel.font = .fdMonoFont(ofSize: 15, weight: .bold)
         amountLabel.textColor = .fdSuccess
@@ -296,18 +296,18 @@ final class OrderBenefitPickerSheet: UIViewController {
 
         skipButton.setTitle(cards.isEmpty ? "" : "不使用", for: .normal)
         skipButton.setTitleColor(.fdPrimary, for: .normal)
-        skipButton.titleLabel?.font = .fdBodySemibold
+        skipButton.titleLabel?.font = .fdFont(ofSize: 15, weight: .semibold)
         skipButton.isHidden = cards.isEmpty
         skipButton.addTarget(self, action: #selector(skip), for: .touchUpInside)
 
         titleLabel.text = "选择权益卡"
-        titleLabel.font = .fdH2
+        titleLabel.font = .fdFont(ofSize: 22, weight: .bold)
         titleLabel.textColor = .fdText
 
         subtitleLabel.text = cards.isEmpty
             ? "当前套餐暂不支持使用权益卡。"
             : "支持多张同时使用，权益卡不抵扣运费。"
-        subtitleLabel.font = .fdCaption
+        subtitleLabel.font = .fdFont(ofSize: 13, weight: .regular)
         subtitleLabel.textColor = .fdMuted
         subtitleLabel.numberOfLines = 0
 
@@ -340,7 +340,7 @@ final class OrderBenefitPickerSheet: UIViewController {
         }
 
         emptyLabel.text = "暂无可用权益卡"
-        emptyLabel.font = .fdCaption
+        emptyLabel.font = .fdFont(ofSize: 13, weight: .regular)
         emptyLabel.textColor = .fdMuted
         emptyLabel.textAlignment = .center
         emptyLabel.isHidden = !cards.isEmpty
@@ -349,7 +349,7 @@ final class OrderBenefitPickerSheet: UIViewController {
             $0.center.equalTo(tableView)
         }
 
-        hintLabel.font = .fdCaption
+        hintLabel.font = .fdFont(ofSize: 13, weight: .regular)
         hintLabel.textColor = .fdMuted
         hintLabel.numberOfLines = 0
         hintLabel.isHidden = cards.isEmpty
@@ -362,7 +362,7 @@ final class OrderBenefitPickerSheet: UIViewController {
 
         doneButton.setTitle(cards.isEmpty ? "我知道了" : "完成", for: .normal)
         doneButton.setTitleColor(.white, for: .normal)
-        doneButton.titleLabel?.font = .fdBodySemibold
+        doneButton.titleLabel?.font = .fdFont(ofSize: 15, weight: .semibold)
         doneButton.backgroundColor = .fdPrimary
         doneButton.layer.cornerRadius = 22
         doneButton.addTarget(self, action: #selector(done), for: .touchUpInside)
@@ -474,9 +474,9 @@ private final class OrderBenefitPickerCell: UITableViewCell {
             $0.size.equalTo(20)
         }
 
-        nameLabel.font = .fdBodySemibold
+        nameLabel.font = .fdFont(ofSize: 15, weight: .semibold)
         nameLabel.textColor = .fdText
-        descLabel.font = .fdCaption
+        descLabel.font = .fdFont(ofSize: 13, weight: .regular)
         descLabel.textColor = .fdMuted
         amountLabel.font = .fdMonoFont(ofSize: 15, weight: .bold)
         amountLabel.textColor = .fdPrimary

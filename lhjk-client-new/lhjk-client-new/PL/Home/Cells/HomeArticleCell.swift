@@ -31,7 +31,7 @@ final class HomeArticleCell: UITableViewCell {
     private let titleLabel: UILabel = {
         let l = UILabel()
         l.text = "健康陪伴"
-        l.font = .fdFont(ofSize: 16, weight: .medium)
+        l.font = .fdFont(ofSize: 18, weight: .medium)
         l.textColor = .fdText
         return l
     }()
@@ -39,7 +39,7 @@ final class HomeArticleCell: UITableViewCell {
     private let moreButton: UIButton = {
         let b = UIButton(type: .system)
         b.setTitle("更多 ›", for: .normal)
-        b.titleLabel?.font = .fdFont(ofSize: 12, weight: .regular)
+        b.titleLabel?.font = .fdFont(ofSize: 14, weight: .regular)
         b.setTitleColor(.fdSubtext, for: .normal)
         return b
     }()
@@ -129,19 +129,19 @@ final class HomeArticleCell: UITableViewCell {
 
         let title = UILabel()
         title.text = article.title
-        title.font = .fdFont(ofSize: 14, weight: .medium)
+        title.font = .fdFont(ofSize: 16, weight: .medium)
         title.textColor = .fdText
         title.numberOfLines = 2
 
         let author = UILabel()
         author.text = article.author
-        author.font = .fdFont(ofSize: 12, weight: .regular)
+        author.font = .fdFont(ofSize: 14, weight: .regular)
         author.textColor = .fdSubtext
         let hasAuthor = !article.author.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         author.isHidden = !hasAuthor
 
         let tag = UILabel()
-        tag.font = .fdFont(ofSize: 11, weight: .regular)
+        tag.font = .fdFont(ofSize: 13, weight: .regular)
         tag.textColor = UIColor(hexString: "#A1733E")
         tag.backgroundColor = UIColor(hexString: "#FAF5EE")
         tag.layer.cornerRadius = 2
@@ -154,7 +154,7 @@ final class HomeArticleCell: UITableViewCell {
 
         let reads = UILabel()
         reads.text = article.reads
-        reads.font = .fdFont(ofSize: 12, weight: .regular)
+        reads.font = .fdFont(ofSize: 14, weight: .regular)
         reads.textColor = .fdSubtext
         reads.textAlignment = .right
         reads.isHidden = article.reads.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

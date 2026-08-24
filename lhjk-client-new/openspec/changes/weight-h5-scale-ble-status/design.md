@@ -21,7 +21,7 @@
 | 未连接 `DISCONNECTED` | 会话未启动或已 `stopSession` |
 | 搜索/连接动画 | 会话活跃时横条转圈（广播扫描中） |
 | 离开体重模块断连 | `WebViewController` `viewWillDisappear` → `WeightScaleBleStatusCoordinator.onDisappear` → `stopSession()` |
-| 测量锁定 | `OKOKScaleEvent.locked` → `saveOrUpdateMonitorData` + `stopSession()` + `ble.synced`（含 `monitorId`） |
+| 测量锁定 | `OKOKScaleEvent.locked` → `saveOrUpdateMonitorData` 开始时 `stopSession()` + `ble.synced`（含 `monitorId`） |
 | 设备管理入口 | 横条「去绑定」与已绑定点击 → `/health/scale/devices` |
 
 ## 架构
@@ -106,6 +106,22 @@ EquipmentBindService
   └── POST bindEquipment           未绑定时
         ↓ 成功
 pop 体重 H5 主页（不上报；锁定后才 saveWeightBluetoothMonitor）
+```
+
+## 原生体重报告页（有阻抗）
+
+锁定且 `impedance > 0` 后进入 `WeightScaleResultViewController`。记录已由 `saveOrUpdateMonitorData` 入库。
+
+| 按钮 | 行为 |
+|------|------|
+| 保存 | 不再次保存；不删除；不清除 `autoScanPausedUntilUserRetry`；`pop` 回体重 H5 |
+| 重新测量 | `EquipmentBindService.deleteMonitorData` → 成功则 `clearAutoScanPause` 并 `pop`；失败 Toast 并停留 |
+
+```
+WeightScaleResultViewController
+        ↓ ViewModel
+EquipmentBindService.deleteMonitorData(monitorId)
+        DELETE /v1/monitor/delMonitorDataByMonitorId?monitorId=
 ```
 
 ## Risks

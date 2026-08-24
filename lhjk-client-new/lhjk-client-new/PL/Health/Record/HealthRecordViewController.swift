@@ -16,7 +16,11 @@ final class HealthRecordViewController: BaseViewController, UITableViewDataSourc
 
     private var userName = "加载中…"
     private var avatarText = "我"
-    private let archiveProgress = HealthRecordMockData.archiveProgress
+
+    private var archiveProgress: Int {
+        UserManager.shared.archiveCompletionPercentage ?? 0
+    }
+
     private let riskItems = HealthRecordMockData.riskItems
     private let latestMetrics = HealthRecordMockData.latestMetrics
     private let lifestyleItems = HealthRecordMockData.lifestyleItems
@@ -47,7 +51,13 @@ final class HealthRecordViewController: BaseViewController, UITableViewDataSourc
         hidesBottomBarWhenPushed = true
         NotificationCenter.default.addObserver(self, selector: #selector(onUserUpdated),
                                                name: .userDidUpdate, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(onArchiveCompletionUpdated),
+                                               name: .archiveCompletionDidUpdate, object: nil)
         loadUserProfile()
+    }
+
+    @objc private func onArchiveCompletionUpdated() {
+        tableView.reloadSections(IndexSet(integer: 0), with: .none)
     }
 
     private func loadUserProfile() {

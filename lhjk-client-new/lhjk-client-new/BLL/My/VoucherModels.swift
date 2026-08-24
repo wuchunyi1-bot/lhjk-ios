@@ -19,15 +19,27 @@ enum VoucherTopTab: Int, CaseIterable {
 
 enum BenefitCardStatus: String, CaseIterable {
     case pendingBind = "待绑定"
+    case pendingReceive = "待领取"
     case available = "待使用"
     case redeemed = "已兑换"
     case expired = "已过期"
+    case transferred = "已转赠"
+
+    var stampImageName: String? {
+        switch self {
+        case .available: return "benefit_stamp_active"
+        case .pendingReceive, .pendingBind: return "benefit_stamp_claiming"
+        case .redeemed: return "benefit_stamp_redeemed"
+        case .expired: return "benefit_stamp_expired"
+        case .transferred: return "benefit_stamp_transferred"
+        }
+    }
 
     var sealTint: UIColor {
         switch self {
         case .available: return .fdWarning
         case .redeemed: return .fdSuccess
-        case .expired, .pendingBind: return .fdMuted
+        case .expired, .pendingBind, .pendingReceive, .transferred: return .fdMuted
         }
     }
 
@@ -35,14 +47,15 @@ enum BenefitCardStatus: String, CaseIterable {
         switch self {
         case .available: return .fdWarningSoft
         case .redeemed: return .fdSuccessSoft
-        case .expired, .pendingBind: return .fdBg2
+        case .expired, .pendingBind, .pendingReceive, .transferred: return .fdBg2
         }
     }
 
-    /// API status → UI；2 待领取不映射为卡状态
+    /// API status → UI
     static func fromAPI(_ status: Int) -> BenefitCardStatus? {
         switch status {
         case BenefitAPIStatus.pendingBind.rawValue: return .pendingBind
+        case BenefitAPIStatus.pendingReceive.rawValue: return .pendingReceive
         case BenefitAPIStatus.available.rawValue: return .available
         case BenefitAPIStatus.redeemed.rawValue: return .redeemed
         case BenefitAPIStatus.expired.rawValue: return .expired
@@ -54,6 +67,13 @@ enum BenefitCardStatus: String, CaseIterable {
 enum BenefitTransferStatus: String {
     case waiting = "等待领取"
     case transferred = "已转赠"
+
+    var stampImageName: String {
+        switch self {
+        case .waiting: return "benefit_stamp_claiming"
+        case .transferred: return "benefit_stamp_transferred"
+        }
+    }
 
     var sealTint: UIColor {
         switch self {
@@ -72,6 +92,8 @@ enum BenefitTransferStatus: String {
 
 enum BenefitStatusFilter: Int, CaseIterable {
     case all = 0
+    case pendingBind
+    case pendingReceive
     case available
     case redeemed
     case expired
@@ -80,6 +102,8 @@ enum BenefitStatusFilter: Int, CaseIterable {
     var title: String {
         switch self {
         case .all: return "全部"
+        case .pendingBind: return "待绑定"
+        case .pendingReceive: return "待领取"
         case .available: return "待使用"
         case .redeemed: return "已兑换"
         case .expired: return "已过期"
@@ -89,6 +113,8 @@ enum BenefitStatusFilter: Int, CaseIterable {
 
     var cardStatus: BenefitCardStatus? {
         switch self {
+        case .pendingBind: return .pendingBind
+        case .pendingReceive: return .pendingReceive
         case .available: return .available
         case .redeemed: return .redeemed
         case .expired: return .expired
@@ -99,6 +125,8 @@ enum BenefitStatusFilter: Int, CaseIterable {
     /// `getCustomerPage` Query status；全部 / 转赠记录不传
     var apiStatus: Int? {
         switch self {
+        case .pendingBind: return BenefitAPIStatus.pendingBind.rawValue
+        case .pendingReceive: return BenefitAPIStatus.pendingReceive.rawValue
         case .available: return BenefitAPIStatus.available.rawValue
         case .redeemed: return BenefitAPIStatus.redeemed.rawValue
         case .expired: return BenefitAPIStatus.expired.rawValue
@@ -171,13 +199,13 @@ enum BenefitListEntry: Equatable {
 enum VoucherCouponStatus: String {
     /// 内部「已领取」——面向用户展示「待使用」
     case received = "已领取"
-    case used = "已领用"
+    case used = "已使用"
     case expired = "已过期"
 
     var displayLabel: String {
         switch self {
         case .received: return "待使用"
-        case .used: return "已领用"
+        case .used: return "已使用"
         case .expired: return "已过期"
         }
     }
@@ -208,7 +236,7 @@ enum CouponStatusFilter: Int, CaseIterable {
         switch self {
         case .all: return "全部"
         case .available: return "待使用"
-        case .used: return "已领用"
+        case .used: return "已使用"
         case .expired: return "已过期"
         }
     }

@@ -25,17 +25,17 @@ final class AIWeeklyReportCell: UITableViewCell {
         cardView.layer.borderColor = UIColor(hexString: "#FCE0D4").cgColor
 
         avatarView.text = "德"
-        avatarView.font = .fdFont(ofSize: 15, weight: .bold)
+        avatarView.font = .fdFont(ofSize: 17, weight: .bold)
         avatarView.textColor = .white
         avatarView.backgroundColor = .fdPrimary
         avatarView.layer.cornerRadius = 18
         avatarView.clipsToBounds = true
         avatarView.textAlignment = .center
 
-        titleLabel.font = .fdFont(ofSize: 14, weight: .bold)
+        titleLabel.font = .fdFont(ofSize: 16, weight: .bold)
         titleLabel.textColor = .fdText
 
-        timeLabel.font = .fdFont(ofSize: 11)
+        timeLabel.font = .fdFont(ofSize: 13)
         timeLabel.textColor = .fdSubtext
 
         scoreRow.backgroundColor = .white
@@ -119,7 +119,7 @@ final class AIWeeklyReportCell: UITableViewCell {
         let afterBlock = scoreBlock(label: "本周评分", score: report.scoreAfter, color: .fdPrimary)
         let delta = UILabel()
         delta.text = "+\(report.scoreAfter - report.scoreBefore)"
-        delta.font = .fdFont(ofSize: 13, weight: .bold)
+        delta.font = .fdFont(ofSize: 15, weight: .bold)
         delta.textColor = UIColor(hexString: "#1F9A6B")
         delta.backgroundColor = UIColor(hexString: "#F0FAF4")
         delta.layer.cornerRadius = 6
@@ -152,12 +152,12 @@ final class AIWeeklyReportCell: UITableViewCell {
 
         let l = UILabel()
         l.text = label
-        l.font = .fdFont(ofSize: 11)
+        l.font = .fdFont(ofSize: 13)
         l.textColor = .fdSubtext
 
         let s = UILabel()
         s.text = "\(score)"
-        s.font = .fdFont(ofSize: 26, weight: .bold)
+        s.font = .fdFont(ofSize: 28, weight: .bold)
         s.textColor = color
 
         v.addArrangedSubview(l)
@@ -180,7 +180,7 @@ final class AIWeeklyReportCell: UITableViewCell {
 
             let text = UILabel()
             text.text = h.text
-            text.font = .fdFont(ofSize: 13)
+            text.font = .fdFont(ofSize: 15)
             text.textColor = .fdText
 
             row.addArrangedSubview(icon)
@@ -205,7 +205,7 @@ final class AIWeeklyReportCell: UITableViewCell {
 
         let label = UILabel()
         label.text = "🎉 获得勋章：\(medal.name)"
-        label.font = .fdFont(ofSize: 12, weight: .semibold)
+        label.font = .fdFont(ofSize: 14, weight: .semibold)
         label.textColor = UIColor(hexString: "#B47300")
 
         [icon, label].forEach(medalView.addSubview)
@@ -226,12 +226,12 @@ final class AIWeeklyReportCell: UITableViewCell {
 
         let tagLabel = UILabel()
         tagLabel.text = "下周目标"
-        tagLabel.font = .fdFont(ofSize: 12, weight: .bold)
+        tagLabel.font = .fdFont(ofSize: 14, weight: .bold)
         tagLabel.textColor = .fdPrimary
 
         let textLabel = UILabel()
         textLabel.text = goal
-        textLabel.font = .fdFont(ofSize: 12)
+        textLabel.font = .fdFont(ofSize: 14)
         textLabel.textColor = .fdSubtext
         textLabel.numberOfLines = 0
 

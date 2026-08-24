@@ -50,11 +50,11 @@ final class HealthScoreCardCell: UITableViewCell {
         ringProgress.image = UIImage(named: "score_ring_progress")
         ringProgress.contentMode = .scaleAspectFit
 
-        ringScoreLabel.font = .fdFont(ofSize: 24, weight: .medium)
+        ringScoreLabel.font = .fdFont(ofSize: 26, weight: .medium)
         ringScoreLabel.textColor = .fdPrimary
         ringScoreLabel.textAlignment = .center
 
-        trendLabel.font = .fdFont(ofSize: 10, weight: .regular)
+        trendLabel.font = .fdFont(ofSize: 12, weight: .regular)
         trendLabel.textColor = UIColor(hexString: "#2EBA83")
 
         trendArrow.image = UIImage(systemName: "arrow.down")
@@ -99,20 +99,20 @@ final class HealthScoreCardCell: UITableViewCell {
         }
         trendArrow.snp.makeConstraints { $0.size.equalTo(10) }
 
-        numLabel.font = .fdFont(ofSize: 34, weight: .medium)
+        numLabel.font = .fdFont(ofSize: 36, weight: .medium)
         numLabel.textColor = UIColor(hexString: "#592F10")
         numLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         badgeView.backgroundColor = UIColor(hexString: "#FFF8EB")
         badgeView.layer.cornerRadius = 12
-        badgeLabel.font = .fdFont(ofSize: 10, weight: .medium)
+        badgeLabel.font = .fdFont(ofSize: 12, weight: .medium)
         badgeLabel.textColor = UIColor(hexString: "#862804")
         badgeView.addSubview(badgeLabel)
         badgeLabel.snp.makeConstraints {
             $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8))
         }
 
-        hintLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        hintLabel.font = .fdFont(ofSize: 14, weight: .regular)
         hintLabel.textColor = .fdSubtext
         hintLabel.numberOfLines = 2
         hintLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -155,11 +155,11 @@ final class HealthScoreCardCell: UITableViewCell {
         noteAvatar.image = UIImage(named: "health_advisor")
         noteAvatar.backgroundColor = UIColor(hexString: "#FFD5AE")
 
-        noteTitle.font = .fdFont(ofSize: 14, weight: .medium)
+        noteTitle.font = .fdFont(ofSize: 16, weight: .medium)
         noteTitle.textColor = UIColor(hexString: "#592F10")
         noteTitle.text = "王顾问·健管师批注"
 
-        noteBody.font = .fdFont(ofSize: 10, weight: .regular)
+        noteBody.font = .fdFont(ofSize: 12, weight: .regular)
         noteBody.textColor = UIColor(hexString: "#592F10")
         noteBody.numberOfLines = 2
 

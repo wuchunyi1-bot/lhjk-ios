@@ -43,7 +43,7 @@ final class VerifyCodeButton: UIButton {
             backgroundColor = .clear
             contentEdgeInsets = .zero
         case .pill:
-            titleLabel?.font = .fdCaptionSemibold
+            titleLabel?.font = .fdLoginMeta
             layer.cornerRadius = 12
             contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
             snp.makeConstraints { $0.height.equalTo(48) }

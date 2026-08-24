@@ -35,13 +35,13 @@ final class MeMembershipCardCell: UITableViewCell {
 
         titleButton.setTitle("健康大会员", for: .normal)
         titleButton.setTitleColor(.fdPrimary, for: .normal)
-        titleButton.titleLabel?.font = .fdH3
+        titleButton.titleLabel?.font = .fdMyH3
         titleButton.contentHorizontalAlignment = .leading
         titleButton.addTarget(self, action: #selector(titleTapped), for: .touchUpInside)
 
         moreButton.setTitle("会员兑换 ›", for: .normal)
         moreButton.setTitleColor(.fdSubtext, for: .normal)
-        moreButton.titleLabel?.font = .fdCaption
+        moreButton.titleLabel?.font = .fdMyCaption
         moreButton.addTarget(self, action: #selector(redemptionTapped), for: .touchUpInside)
 
         assetsStack.axis = .horizontal
@@ -112,7 +112,7 @@ final class MeMembershipCardCell: UITableViewCell {
 
         let labelLbl = UILabel()
         labelLbl.text = asset.label
-        labelLbl.font = .fdMicro
+        labelLbl.font = .fdMyMicro
         labelLbl.textColor = .fdSubtext
         labelLbl.textAlignment = .center
 

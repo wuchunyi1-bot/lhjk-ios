@@ -16,7 +16,7 @@ final class BenefitTabViewController: BaseViewController {
 
     private lazy var tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
-        tv.backgroundColor = .fdBg
+        tv.backgroundColor = .white
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
         tv.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 24, right: 0)
@@ -45,7 +45,7 @@ final class BenefitTabViewController: BaseViewController {
         icon.contentMode = .scaleAspectFit
         let label = UILabel()
         label.text = emptyText
-        label.font = .fdCaption
+        label.font = .fdMyCaption
         label.textColor = .fdMuted
         label.textAlignment = .center
         v.addSubview(icon)
@@ -81,7 +81,7 @@ final class BenefitTabViewController: BaseViewController {
     }
 
     override func setupUI() {
-        view.backgroundColor = .fdBg
+        view.backgroundColor = .white
         view.addSubview(tableView)
         view.addSubview(emptyView)
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
@@ -148,11 +148,7 @@ final class BenefitTabViewController: BaseViewController {
     }
 
     private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
-            alert.dismiss(animated: true)
-        }
+        showToastAlert(message, duration: 1.4)
     }
 
     private func openBind() {

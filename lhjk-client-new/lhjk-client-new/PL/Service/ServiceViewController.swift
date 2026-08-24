@@ -48,6 +48,9 @@ final class ServiceViewController: BaseViewController {
 
     override func setupUI() {
         view.backgroundColor = .fdBg
+        hubHeader.onCartTapped = { [weak self] in
+            Router.shared.push("/services/cart", from: self)
+        }
         view.addSubview(hubHeader)
         view.addSubview(tableView)
 

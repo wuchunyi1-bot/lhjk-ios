@@ -29,14 +29,14 @@ final class NotificationCardCell: UITableViewCell {
         iconView.clipsToBounds = true
         iconImageView.contentMode = .scaleAspectFit
 
-        titleLabel.font = .fdFont(ofSize: 15, weight: .bold)
+        titleLabel.font = .fdFont(ofSize: 17, weight: .bold)
         titleLabel.textColor = .fdText
 
-        bodyLabel.font = .fdFont(ofSize: 13)
+        bodyLabel.font = .fdFont(ofSize: 15)
         bodyLabel.textColor = .fdSubtext
         bodyLabel.numberOfLines = 2
 
-        timeLabel.font = .fdFont(ofSize: 12)
+        timeLabel.font = .fdFont(ofSize: 14)
         timeLabel.textColor = .fdMuted
 
         contentView.addSubview(card)

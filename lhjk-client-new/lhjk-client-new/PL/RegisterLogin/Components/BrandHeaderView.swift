@@ -1,8 +1,8 @@
 import UIKit
 import SnapKit
 
-/// 品牌头部 — Figma 3209:298 / 3209:361 / 标题 slogan 切图
-/// Logo 使用新品牌标（橙底白标），标题与 slogan 用切图。
+/// 品牌头部 — Figma 3209:298 / 3209:361
+/// Logo + 合并后的品牌标题切图（`login_brand_title` 含标题与 slogan）。
 final class BrandHeaderView: UIView {
 
     private let logoImageView: UIImageView = {
@@ -25,17 +25,10 @@ final class BrandHeaderView: UIView {
         return v
     }()
 
-    private let appNameImageView: UIImageView = {
+    private let brandTitleImageView: UIImageView = {
         let iv = UIImageView(image: UIImage(named: "login_brand_title"))
         iv.contentMode = .scaleAspectFit
-        iv.accessibilityLabel = "富德健康"
-        return iv
-    }()
-
-    private let taglineImageView: UIImageView = {
-        let iv = UIImageView(image: UIImage(named: "login_brand_tagline"))
-        iv.contentMode = .scaleAspectFit
-        iv.accessibilityLabel = "全生命周期健康守护数智化平台"
+        iv.accessibilityLabel = "富德健康，全生命周期健康守护数智化平台"
         return iv
     }()
 
@@ -51,8 +44,7 @@ final class BrandHeaderView: UIView {
     private func setupUI() {
         addSubview(logoShadowHost)
         logoShadowHost.addSubview(logoImageView)
-        addSubview(appNameImageView)
-        addSubview(taglineImageView)
+        addSubview(brandTitleImageView)
 
         // Figma 3209:361 — 72×72
         logoShadowHost.snp.makeConstraints { make in
@@ -63,19 +55,12 @@ final class BrandHeaderView: UIView {
             make.edges.equalToSuperview()
         }
 
-        // Figma：logo bottom → 标题 14；slogan 相对 logo bottom 56
-        appNameImageView.snp.makeConstraints { make in
+        // 合并切图 @2x 390×112 → 195×56 pt
+        brandTitleImageView.snp.makeConstraints { make in
             make.top.equalTo(logoShadowHost.snp.bottom).offset(14)
             make.centerX.equalToSuperview()
-            make.width.equalTo(124)
-            make.height.equalTo(29)
-        }
-
-        taglineImageView.snp.makeConstraints { make in
-            make.top.equalTo(logoShadowHost.snp.bottom).offset(56)
-            make.centerX.equalToSuperview()
-            make.width.equalTo(172)
-            make.height.equalTo(12)
+            make.width.equalTo(195)
+            make.height.equalTo(56)
             make.bottom.equalToSuperview()
         }
     }

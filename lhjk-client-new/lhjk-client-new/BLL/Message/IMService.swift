@@ -622,13 +622,14 @@ final class IMService {
     /// 发送文件消息（AD:FileMsg）
     func sendFile(fileUrl: String, fileName: String, fileSize: String,
                   fileSuffix: String, conversationId: String,
+                  conversationType: RCConversationType = .ConversationType_GROUP,
                   replyMessage: ReplyMessage? = nil) async -> ChatMessage? {
         let senderInfo = makeSenderUserInfo()
         let pushContent = "\(senderInfo.name):[文件]"
         let extra = replyMessage.flatMap { ReplyMessage.toExtraJSON($0) }
         let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
             RongCloudManager.shared.sendFileMessage(
-                conversationType: .ConversationType_GROUP,
+                conversationType: conversationType,
                 targetId: conversationId,
                 fileUrl: fileUrl,
                 fileName: fileName,

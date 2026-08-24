@@ -52,6 +52,8 @@ final class BluetoothManager: NSObject {
     private var connectedPeripherals: [UUID: CBPeripheral] = [:]
     private var peripheralServices: [UUID: [BLEService]] = [:]
     private var connectionRetryCount: [UUID: Int] = [:]
+    /// 扫描 dump 去重（同一设备同一载荷只打一次完整信息）
+    private var loggedScanDumpKeys = Set<String>()
 
     private let maxRetryCount = 3
 
@@ -85,6 +87,7 @@ extension BluetoothManager {
         }
         let uuids = serviceUUIDs?.map(\.uuidString).joined(separator: ",") ?? "nil"
         print("[BLE-DAL] startScan allowDuplicates=\(allowDuplicates) services=\(uuids)")
+        loggedScanDumpKeys.removeAll()
         centralManager.scanForPeripherals(
             withServices: serviceUUIDs,
             options: [CBCentralManagerScanOptionAllowDuplicatesKey: allowDuplicates]
@@ -164,35 +167,31 @@ extension BluetoothManager: CBCentralManagerDelegate {
     ) {
         discoveredPeripherals[peripheral.identifier] = peripheral
         let name = peripheral.name ?? advertisementData[CBAdvertisementDataLocalNameKey] as? String
-        let mfg = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data
-        let serviceUUIDs = (advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID])?
-            .map(\.uuidString)
-            .joined(separator: ",") ?? "-"
-        print(
-            "[BLE-DAL] discover name=\(name ?? "-") id=\(peripheral.identifier.uuidString.prefix(8)) " +
-                "rssi=\(RSSI.intValue) services=\(serviceUUIDs) " +
-                "mfg=\(mfg.map { "\($0.count)B[\($0.bleHexString)]" } ?? "nil")"
+        let event = BLEAdvertisementEvent(
+            peripheralId: peripheral.identifier,
+            name: name,
+            rssi: RSSI.intValue,
+            peripheralState: peripheral.state,
+            advertisementData: advertisementData,
+            timestamp: Date()
         )
+        let dumpKey = event.scanDumpKey
+        if loggedScanDumpKeys.insert(dumpKey).inserted {
+            event.printFullAdvertisementLog(tag: "[BLE-Scan]")
+        }
         let model = Peripheral(
             identifier: peripheral.identifier,
             name: name,
             rssi: RSSI.intValue
         )
         discoveredPeripheralsPublisher.send(model)
-        advertisementPublisher.send(
-            BLEAdvertisementEvent(
-                peripheralId: peripheral.identifier,
-                name: name,
-                rssi: RSSI.intValue,
-                advertisementData: advertisementData,
-                timestamp: Date()
-            )
-        )
+        advertisementPublisher.send(event)
     }
 
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         connectedPeripherals[peripheral.identifier] = peripheral
         connectionRetryCount.removeValue(forKey: peripheral.identifier)
+        connectionPublisher.send((peripheral.identifier, true))
         connectionPublisher.send((peripheral.identifier, true))
 
         // 自动发现服务

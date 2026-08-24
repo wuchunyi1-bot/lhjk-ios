@@ -81,7 +81,7 @@ final class HomeQuickActionsCell: UITableViewCell {
 
         let lbl = UILabel()
         lbl.text = action.title
-        lbl.font = .fdFont(ofSize: 12, weight: .regular)
+        lbl.font = .fdFont(ofSize: 14, weight: .regular)
         lbl.textColor = .fdText
         lbl.textAlignment = .center
 

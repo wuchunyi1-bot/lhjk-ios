@@ -89,7 +89,7 @@ final class MatrixGridCell: UITableViewCell {
         title.attributedText = NSAttributedString(
             string: "德系产品矩阵",
             attributes: [
-                .font: UIFont.fdFont(ofSize: 18, weight: .medium),
+                .font: UIFont.fdFont(ofSize: 20, weight: .medium),
                 .foregroundColor: UIColor.fdText,
                 .kern: 0.55,
             ]
@@ -148,7 +148,7 @@ final class MatrixGridCell: UITableViewCell {
             icon.clipsToBounds = true
             let fallback = UILabel()
             fallback.text = m.code
-            fallback.font = .fdFont(ofSize: 14, weight: .medium)
+            fallback.font = .fdFont(ofSize: 16, weight: .medium)
             fallback.textColor = m.accent
             fallback.textAlignment = .center
             icon.addSubview(fallback)
@@ -158,7 +158,7 @@ final class MatrixGridCell: UITableViewCell {
 
         let name = UILabel()
         name.text = Self.displayTitle(m)
-        name.font = .fdFont(ofSize: 14, weight: .medium)
+        name.font = .fdFont(ofSize: 16, weight: .medium)
         name.textColor = .fdText
         name.textAlignment = .center
         name.snp.makeConstraints { $0.height.equalTo(21) }
@@ -166,7 +166,7 @@ final class MatrixGridCell: UITableViewCell {
         let subtitle = Self.displaySubtitle(m)
         let desc = UILabel()
         desc.text = subtitle
-        desc.font = .fdFont(ofSize: 10, weight: .regular)
+        desc.font = .fdFont(ofSize: 12, weight: .regular)
         desc.textColor = UIColor(hexString: "#6D7381")
         desc.textAlignment = .center
         desc.isHidden = subtitle.isEmpty

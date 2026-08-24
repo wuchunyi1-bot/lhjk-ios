@@ -48,6 +48,9 @@ final class LoginViewModel: ObservableObject {
     private let rongCloudManager: RongCloudManager
     private let wechatSDK: WeChatSDKManager
 
+    /// 通知引导关闭后再跳转首页 / Onboarding
+    private var pendingNeedOnboarding = false
+
     // MARK: - Private State
 
     private var smsRequestId: String?
@@ -342,7 +345,6 @@ final class LoginViewModel: ObservableObject {
         await MainActor.run {
             UserDefaults.standard.set(phone, forKey: "current_user_mobile")
             isLoggingIn = false
-            flowStep = .notificationGuide
         }
 
         // 连接 IM
@@ -351,15 +353,23 @@ final class LoginViewModel: ObservableObject {
         // 串行：先拿 userId → 拉默认档案 → 按 archiveComplete 门禁
         _ = await userManager.refreshUserInfo()
         _ = await userManager.refreshDefaultArchive()
+        _ = await userManager.refreshArchiveCompletion()
         let needOnboarding = userManager.checkNeedOnboarding()
 
         await MainActor.run {
-            navigateToHomePublisher.send()
-            if needOnboarding {
-                presentOnboardingPublisher.send()
-            }
-            flowStep = .complete
+            pendingNeedOnboarding = needOnboarding
+            flowStep = .notificationGuide
         }
+    }
+
+    /// 用户处理完通知预引导后进入首页（避免 `setRoot` 把弹窗立刻顶掉）
+    func completePostLoginFlow() {
+        navigateToHomePublisher.send()
+        if pendingNeedOnboarding {
+            presentOnboardingPublisher.send()
+        }
+        pendingNeedOnboarding = false
+        flowStep = .complete
     }
 
     // MARK: - Notification Permission

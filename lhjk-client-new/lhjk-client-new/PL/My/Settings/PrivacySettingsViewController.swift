@@ -42,7 +42,7 @@ final class PrivacySettingsViewController: BaseViewController {
             v.layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.18).cgColor
             let lbl = UILabel()
             lbl.text = "富德健康将严格保护您的隐私。您可以在此管理相关权限："
-            lbl.font = .fdCaption
+            lbl.font = .fdMyCaption
             lbl.textColor = .fdPrimary
             lbl.numberOfLines = 0
             v.addSubview(lbl)
@@ -152,12 +152,12 @@ final class PrivacySettingsViewController: BaseViewController {
 
         let titleLbl = UILabel()
         titleLbl.text = label
-        titleLbl.font = .fdBody
+        titleLbl.font = .fdMyBody
         titleLbl.textColor = .fdText
 
         let valueLbl = UILabel()
         valueLbl.text = value
-        valueLbl.font = .fdCaption
+        valueLbl.font = .fdMyCaption
         valueLbl.textColor = .fdSubtext
 
         let arrow = UIImageView(image: UIImage(systemName: "chevron.right"))
@@ -196,10 +196,6 @@ final class PrivacySettingsViewController: BaseViewController {
     }
 
     private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            alert.dismiss(animated: true)
-        }
+        showToastAlert(message, duration: 1.5)
     }
 }

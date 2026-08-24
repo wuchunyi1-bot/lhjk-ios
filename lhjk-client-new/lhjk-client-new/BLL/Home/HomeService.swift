@@ -217,14 +217,14 @@ struct MyDoctorTeamVO: Decodable, Equatable {
         }
     }
 
-    /// 取 `openBusinessName` 首段，过长截断
-    func resolvedTags(fallback: String) -> String {
+    /// 取 `openBusinessName` 首段，过长截断；无数据返回空字符串
+    func resolvedTags() -> String {
         let raw = (openBusinessName ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !raw.isEmpty else { return fallback }
+        guard !raw.isEmpty else { return "" }
         let first = raw.split(separator: ",").first.map(String.init) ?? raw
         let trimmed = first.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return fallback }
+        guard !trimmed.isEmpty else { return "" }
         return trimmed.count > 12 ? String(trimmed.prefix(12)) : trimmed
     }
 }

@@ -113,11 +113,7 @@ enum OrderNavigationCoordinator {
     }
 
     private static func showToast(_ message: String, on source: UIViewController) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        source.present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            alert.dismiss(animated: true)
-        }
+        source.showToastAlert(message, duration: 1.5)
     }
 
     /// 落到：我的 Tab → 我的订单 → 全部

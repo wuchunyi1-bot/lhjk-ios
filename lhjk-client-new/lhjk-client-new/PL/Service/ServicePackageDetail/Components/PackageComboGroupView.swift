@@ -1,176 +1,240 @@
 import UIKit
 import SnapKit
 
-/// 套餐权益规则分组卡片 — 对齐 Figma 3449:7828 / 3449:7872 / 3449:7913
+// MARK: - Selectable Unit Model
+
+private struct SelectableUnit {
+    let parentIndex: Int
+    let parentItem: ServicePackageComboItem
+    let childIndices: [Int]
+    let childItems: [ServicePackageComboItem]
+}
+
+/// 套餐权益规则分组卡片 — 对齐 Figma 3805:20864 / 3805:20901 / 3805:20932 / 3805:21606
 final class PackageComboGroupView: UIView {
 
     var onRadioSelect: ((Int) -> Void)?
     var onCheckToggle: ((Int) -> Void)?
 
-    /// 子项相对父项的左侧缩进
-    private let childLeadingInset: CGFloat = 24
+    private let headerView = HeaderGradientView()
+    private let titleLabel = UILabel()
+    private let badgeContainer = UIView()
+    private let badgeLabel = UILabel()
+    private let contentStack = UIStackView()
+
+    private var group: ServicePackageComboGroup?
+    private var unitViews: [SelectableUnitView] = []
+    private var currentRadioPick: Int?
+    private var currentCheckPicks: Set<Int> = []
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    private func setupUI() {
+        backgroundColor = .white
+        layer.cornerRadius = 16
+        layer.borderWidth = 1
+        layer.borderColor = UIColor(hexString: "#FFEEDC").cgColor
+        clipsToBounds = true
+
+        addSubview(headerView)
+        headerView.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.height.equalTo(43)
+        }
+
+        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.textColor = UIColor(hexString: "#A25300")
+
+        badgeContainer.backgroundColor = .white
+        badgeContainer.layer.cornerRadius = 10
+        badgeContainer.clipsToBounds = true
+
+        badgeLabel.font = .fdFont(ofSize: 12, weight: .medium)
+        badgeLabel.textColor = UIColor(hexString: "#A25300")
+
+        badgeContainer.addSubview(badgeLabel)
+        badgeLabel.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(8)
+            $0.top.bottom.equalToSuperview().inset(2.5)
+        }
+        badgeContainer.snp.makeConstraints {
+            $0.height.equalTo(20)
+        }
+
+        let headerStack = UIStackView(arrangedSubviews: [titleLabel, badgeContainer])
+        headerStack.axis = .horizontal
+        headerStack.spacing = 6
+        headerStack.alignment = .center
+
+        headerView.addSubview(headerStack)
+        headerStack.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(14)
+            $0.centerY.equalToSuperview()
+        }
+
+        contentStack.axis = .vertical
+        contentStack.spacing = 8
+        addSubview(contentStack)
+        contentStack.snp.makeConstraints {
+            $0.top.equalTo(headerView.snp.bottom).offset(8)
+            $0.leading.trailing.equalToSuperview().inset(10)
+            $0.bottom.equalToSuperview().inset(10)
+        }
+    }
 
     func configure(
         group: ServicePackageComboGroup,
         radioPick: Int?,
         checkPicks: Set<Int>
     ) {
-        subviews.forEach { $0.removeFromSuperview() }
+        self.group = group
+        self.currentRadioPick = radioPick
+        self.currentCheckPicks = checkPicks
 
-        backgroundColor = UIColor(hexString: "#FFFCF8")
-        layer.cornerRadius = 16
-        layer.borderWidth = 1
-        layer.borderColor = UIColor(hexString: "#FFEEDC").cgColor
-        clipsToBounds = true
+        titleLabel.text = group.name
 
-        let header = makeHeaderView(mode: group.selectMode)
-        addSubview(header)
-        header.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-            $0.height.equalTo(42)
-        }
-
-        let rows = UIStackView()
-        rows.axis = .vertical
-        rows.spacing = 0
-
-        for (index, item) in group.items.enumerated() {
-            rows.addArrangedSubview(
-                makeRow(
-                    group: group,
-                    index: index,
-                    item: item,
-                    selected: isSelected(group: group, index: index, radioPick: radioPick, checkPicks: checkPicks),
-                    showDivider: index < group.items.count - 1
-                )
-            )
-        }
-
-        addSubview(rows)
-        rows.snp.makeConstraints {
-            $0.top.equalTo(header.snp.bottom).offset(8)
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.bottom.equalToSuperview().inset(12)
-        }
-    }
-
-    /// 顶部渐变标题条（—— 必选 / 单选 / 可选 ——）
-    private func makeHeaderView(mode: ServicePackageSelectMode) -> UIView {
-        let container = HeaderGradientView()
-
-        let leftWing = UIImageView(image: UIImage(named: "package_detail_wing_left"))
-        leftWing.contentMode = .scaleAspectFit
-
-        let rightWing = UIImageView(image: UIImage(named: "package_detail_wing_right"))
-        rightWing.contentMode = .scaleAspectFit
-
-        let titleLabel = UILabel()
         let modeText: String
-        switch mode {
+        switch group.selectMode {
         case .required: modeText = "必选"
         case .radio: modeText = "单选"
-        case .checkbox: modeText = "可选"
+        case .checkbox: modeText = "多选"
         }
-        titleLabel.text = modeText
-        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
-        titleLabel.textColor = UIColor(hexString: "#A25300")
-        titleLabel.textAlignment = .center
+        badgeLabel.text = modeText
 
-        let stack = UIStackView(arrangedSubviews: [leftWing, titleLabel, rightWing])
-        stack.axis = .horizontal
-        stack.spacing = 8
-        stack.alignment = .center
-
-        leftWing.snp.makeConstraints {
-            $0.width.equalTo(62.5)
-            $0.height.equalTo(3)
-        }
-        rightWing.snp.makeConstraints {
-            $0.width.equalTo(62.5)
-            $0.height.equalTo(3)
+        if group.selectMode == .required {
+            backgroundColor = UIColor(hexString: "#FFFCF8")
+        } else {
+            backgroundColor = .white
         }
 
-        container.addSubview(stack)
-        stack.snp.makeConstraints {
-            $0.center.equalToSuperview()
+        contentStack.arrangedSubviews.forEach {
+            contentStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
         }
-        return container
+        unitViews.removeAll()
+
+        if group.selectMode == .required {
+            contentStack.spacing = 0
+            for (index, item) in group.items.enumerated() {
+                let row = makeRequiredRow(
+                    index: index,
+                    item: item,
+                    showDivider: index < group.items.count - 1
+                )
+                contentStack.addArrangedSubview(row)
+            }
+        } else {
+            contentStack.spacing = 4
+            let units = buildSelectableUnits(from: group)
+            for (unitIndex, unit) in units.enumerated() {
+                let isSelected: Bool
+                switch group.selectMode {
+                case .radio:
+                    isSelected = radioPick == unit.parentIndex
+                case .checkbox:
+                    isSelected = checkPicks.contains(unit.parentIndex)
+                case .required:
+                    isSelected = true
+                }
+
+                let unitView = SelectableUnitView(
+                    mode: group.selectMode,
+                    unit: unit,
+                    isSelected: isSelected
+                )
+
+                unitView.onTap = { [weak self, weak unitView] in
+                    guard let self, let unitView else { return }
+                    self.handleUnitTap(unitView)
+                }
+
+                unitViews.append(unitView)
+                contentStack.addArrangedSubview(unitView)
+            }
+            updateDividers()
+        }
     }
 
-    private func isSelected(
-        group: ServicePackageComboGroup,
-        index: Int,
-        radioPick: Int?,
-        checkPicks: Set<Int>
-    ) -> Bool {
-        let item = group.items[index]
-        if item.isChild { return false }
+    private func handleUnitTap(_ tappedUnit: SelectableUnitView) {
+        guard let group else { return }
         switch group.selectMode {
-        case .required:
-            return true
         case .radio:
-            return radioPick == index
+            currentRadioPick = tappedUnit.unit.parentIndex
+            for uv in unitViews {
+                let sel = uv.unit.parentIndex == currentRadioPick
+                uv.setSelectedState(sel, animated: true)
+            }
+            updateDividers()
+            onRadioSelect?(tappedUnit.unit.parentIndex)
         case .checkbox:
-            return checkPicks.contains(index)
+            let pIndex = tappedUnit.unit.parentIndex
+            if currentCheckPicks.contains(pIndex) {
+                currentCheckPicks.remove(pIndex)
+            } else {
+                currentCheckPicks.insert(pIndex)
+            }
+            tappedUnit.setSelectedState(currentCheckPicks.contains(pIndex), animated: true)
+            updateDividers()
+            onCheckToggle?(pIndex)
+        case .required:
+            break
         }
     }
 
-    private func makeRow(
-        group: ServicePackageComboGroup,
+    private func updateDividers() {
+        guard let group, group.selectMode != .required else { return }
+        for (i, uv) in unitViews.enumerated() {
+            let hasNext = i < unitViews.count - 1
+            let showDivider = hasNext && !uv.isSelected && !unitViews[i + 1].isSelected
+            uv.showBottomDivider(showDivider)
+        }
+    }
+
+    // MARK: - Required Rows
+
+    private func makeRequiredRow(
         index: Int,
         item: ServicePackageComboItem,
-        selected: Bool,
         showDivider: Bool
     ) -> UIView {
-        let row = UIControl()
-        row.tag = index
+        let row = UIView()
 
         let name = UILabel()
         name.text = item.name
-        name.font = .fdFont(ofSize: 14, weight: .regular)
-        name.textColor = .fdText
+        name.font = .fdFont(ofSize: 16, weight: .regular)
+        name.textColor = UIColor(hexString: "#1F2942")
         name.numberOfLines = 0
         name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         let qty = UILabel()
         qty.text = item.qtyLabel
-        qty.font = .fdFont(ofSize: 14, weight: .regular)
-        qty.textColor = .fdText
+        qty.font = .fdFont(ofSize: 16, weight: .regular)
+        qty.textColor = UIColor(hexString: "#1F2942")
         qty.setContentHuggingPriority(.required, for: .horizontal)
         qty.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         let price = UILabel()
         price.text = item.priceLabel
         price.font = .fdMonoFont(ofSize: 14, weight: .medium)
-        price.textColor = .fdText
+        price.textColor = UIColor(hexString: "#1F2942")
         price.setContentHuggingPriority(.required, for: .horizontal)
         price.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        let arranged: [UIView]
-        if item.isChild {
-            arranged = [name, qty, price]
-            row.isEnabled = false
-        } else if group.selectMode == .required {
-            // 必选：无选择框，直接左对齐展示
-            arranged = [name, qty, price]
-            row.isEnabled = false
-        } else {
-            let ctrl = makeControl(group: group, selected: selected)
-            arranged = [ctrl, name, qty, price]
-            row.isEnabled = true
-        }
-
-        let stack = UIStackView(arrangedSubviews: arranged)
+        let stack = UIStackView(arrangedSubviews: [name, qty, price])
         stack.axis = .horizontal
         stack.spacing = 10
         stack.alignment = .center
-        stack.isUserInteractionEnabled = false
         row.addSubview(stack)
 
-        let leading = item.isChild ? childLeadingInset : 0
+        let leading: CGFloat = item.isChild ? 24 : 6
         stack.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(leading)
-            $0.trailing.equalToSuperview()
+            $0.trailing.equalToSuperview().offset(-6)
             $0.top.bottom.equalToSuperview().inset(10)
         }
 
@@ -181,59 +245,283 @@ final class PackageComboGroupView: UIView {
             line.snp.makeConstraints {
                 $0.leading.equalToSuperview().offset(leading)
                 $0.trailing.bottom.equalToSuperview()
-                $0.height.equalTo(1)
+                $0.height.equalTo(0.5)
             }
         }
 
-        guard !item.isChild else { return row }
-
-        switch group.selectMode {
-        case .required:
-            break
-        case .radio:
-            row.addAction(UIAction { [weak self] _ in
-                self?.onRadioSelect?(index)
-            }, for: .touchUpInside)
-        case .checkbox:
-            row.addAction(UIAction { [weak self] _ in
-                self?.onCheckToggle?(index)
-            }, for: .touchUpInside)
-        }
         return row
     }
 
-    private func makeControl(group: ServicePackageComboGroup, selected: Bool) -> UIView {
-        let isRadio = group.selectMode == .radio
-        let container = UIView()
-        container.snp.makeConstraints { $0.size.equalTo(14) }
+    // MARK: - Selectable Units Builder
 
-        if selected {
-            let iv = UIImageView()
-            iv.contentMode = .scaleAspectFit
-            if isRadio {
-                iv.image = UIImage(named: "package_detail_radio_checked")
+    private func buildSelectableUnits(from group: ServicePackageComboGroup) -> [SelectableUnit] {
+        var units: [SelectableUnit] = []
+        var i = 0
+        while i < group.items.count {
+            if !group.items[i].isChild {
+                let parentIndex = i
+                let parentItem = group.items[i]
+                var childIndices: [Int] = []
+                var childItems: [ServicePackageComboItem] = []
+                i += 1
+                while i < group.items.count && group.items[i].isChild {
+                    childIndices.append(i)
+                    childItems.append(group.items[i])
+                    i += 1
+                }
+                units.append(SelectableUnit(
+                    parentIndex: parentIndex,
+                    parentItem: parentItem,
+                    childIndices: childIndices,
+                    childItems: childItems
+                ))
             } else {
-                iv.image = UIImage(named: "package_detail_checkbox_checked")
+                i += 1
             }
-            container.addSubview(iv)
-            iv.snp.makeConstraints { $0.edges.equalToSuperview() }
-        } else {
-            let box = UIView()
-            box.layer.cornerRadius = isRadio ? 7 : 3.5
-            box.layer.borderWidth = 0.7
-            box.layer.borderColor = UIColor(hexString: "#535D72").cgColor
-            box.backgroundColor = .clear
-            container.addSubview(box)
-            box.snp.makeConstraints { $0.edges.equalToSuperview() }
         }
-
-        return container
+        return units
     }
 }
 
-// MARK: - 渐变标题条容器
+// MARK: - 可选项单元视图（严格对齐与平滑切换）
+
+private final class SelectableUnitView: UIControl {
+
+    let mode: ServicePackageSelectMode
+    let unit: SelectableUnit
+
+    var onTap: (() -> Void)?
+
+    private let bgBox = UIView()
+    private let controlImageView = UIImageView()
+    private let parentNameLabel = UILabel()
+    private let parentQtyLabel = UILabel()
+    private let parentPriceLabel = UILabel()
+
+    private var childRows: [ChildRowView] = []
+    private let bottomDividerLine = UIView()
+
+    init(
+        mode: ServicePackageSelectMode,
+        unit: SelectableUnit,
+        isSelected: Bool
+    ) {
+        self.mode = mode
+        self.unit = unit
+        super.init(frame: .zero)
+        self.isSelected = isSelected
+        setupUI()
+        applySelectionState(animated: false)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    private func setupUI() {
+        backgroundColor = .clear
+
+        bgBox.isUserInteractionEnabled = false
+        bgBox.layer.cornerRadius = 12
+        bgBox.backgroundColor = .white
+        addSubview(bgBox)
+        bgBox.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+
+        controlImageView.contentMode = .scaleAspectFit
+        controlImageView.clipsToBounds = true
+        if mode == .radio {
+            controlImageView.layer.cornerRadius = 7
+        } else {
+            controlImageView.layer.cornerRadius = 3.5
+        }
+        addSubview(controlImageView)
+        controlImageView.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(10)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(14)
+        }
+
+        let mainStack = UIStackView()
+        mainStack.axis = .vertical
+        mainStack.spacing = 8
+        mainStack.isUserInteractionEnabled = false
+        addSubview(mainStack)
+        mainStack.snp.makeConstraints {
+            $0.leading.equalTo(controlImageView.snp.trailing).offset(10)
+            $0.trailing.equalToSuperview().inset(10)
+            $0.top.bottom.equalToSuperview().inset(8)
+        }
+
+        let parentRow = UIView()
+
+        parentNameLabel.text = unit.parentItem.name
+        parentNameLabel.font = .fdFont(ofSize: 16, weight: .regular)
+        parentNameLabel.numberOfLines = 0
+        parentNameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        parentRow.addSubview(parentNameLabel)
+
+        parentQtyLabel.text = unit.parentItem.qtyLabel
+        parentQtyLabel.font = .fdFont(ofSize: 16, weight: .regular)
+        parentQtyLabel.setContentHuggingPriority(.required, for: .horizontal)
+        parentQtyLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        parentRow.addSubview(parentQtyLabel)
+
+        parentPriceLabel.text = unit.parentItem.priceLabel
+        parentPriceLabel.font = .fdMonoFont(ofSize: 14, weight: .medium)
+        parentPriceLabel.setContentHuggingPriority(.required, for: .horizontal)
+        parentPriceLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        parentRow.addSubview(parentPriceLabel)
+
+        parentPriceLabel.snp.makeConstraints {
+            $0.trailing.equalToSuperview()
+            $0.centerY.equalToSuperview()
+        }
+
+        parentQtyLabel.snp.makeConstraints {
+            $0.trailing.equalTo(parentPriceLabel.snp.leading).offset(-16)
+            $0.centerY.equalToSuperview()
+        }
+
+        parentNameLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview()
+            $0.trailing.lessThanOrEqualTo(parentQtyLabel.snp.leading).offset(-8)
+            $0.top.bottom.equalToSuperview()
+        }
+
+        mainStack.addArrangedSubview(parentRow)
+
+        for childItem in unit.childItems {
+            let childRow = ChildRowView(item: childItem)
+            childRows.append(childRow)
+            mainStack.addArrangedSubview(childRow)
+        }
+
+        bottomDividerLine.backgroundColor = UIColor(hexString: "#FFEEDC")
+        bottomDividerLine.isHidden = true
+        addSubview(bottomDividerLine)
+        bottomDividerLine.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(10)
+            $0.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(0.5)
+        }
+
+        addTarget(self, action: #selector(didTap), for: .touchUpInside)
+    }
+
+    @objc private func didTap() {
+        onTap?()
+    }
+
+    func setSelectedState(_ selected: Bool, animated: Bool) {
+        guard self.isSelected != selected else { return }
+        self.isSelected = selected
+        applySelectionState(animated: animated)
+    }
+
+    func showBottomDivider(_ show: Bool) {
+        bottomDividerLine.isHidden = !show
+    }
+
+    private func applySelectionState(animated: Bool) {
+        let selected = self.isSelected
+
+        let updates = {
+            if selected {
+                self.bgBox.backgroundColor = UIColor(hexString: "#FFFCF8")
+                self.bgBox.layer.borderWidth = 0.5
+                self.bgBox.layer.borderColor = UIColor(hexString: "#FF9F40").cgColor
+
+                self.controlImageView.layer.borderWidth = 0
+                self.controlImageView.layer.borderColor = nil
+                self.controlImageView.image = self.mode == .radio
+                    ? UIImage(named: "package_detail_radio_checked")
+                    : UIImage(named: "package_detail_checkbox_checked")
+            } else {
+                self.bgBox.backgroundColor = .white
+                self.bgBox.layer.borderWidth = 0
+
+                self.controlImageView.image = nil
+                self.controlImageView.layer.borderWidth = 0.7
+                self.controlImageView.layer.borderColor = UIColor(hexString: "#535D72").cgColor
+            }
+
+            let textColor = selected ? UIColor(hexString: "#A25300") : UIColor(hexString: "#535D72")
+            self.parentNameLabel.textColor = textColor
+            self.parentQtyLabel.textColor = textColor
+            self.parentPriceLabel.textColor = textColor
+
+            for cr in self.childRows {
+                cr.setTextColor(textColor)
+            }
+        }
+
+        if animated {
+            UIView.animate(withDuration: 0.15, delay: 0, options: [.curveEaseInOut], animations: updates)
+        } else {
+            updates()
+        }
+    }
+}
+
+// MARK: - 子项行视图
+
+private final class ChildRowView: UIView {
+
+    private let nameLabel = UILabel()
+    private let qtyLabel = UILabel()
+    private let priceLabel = UILabel()
+
+    init(item: ServicePackageComboItem) {
+        super.init(frame: .zero)
+
+        nameLabel.text = item.name
+        nameLabel.font = .fdFont(ofSize: 16, weight: .regular)
+        nameLabel.numberOfLines = 0
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        addSubview(nameLabel)
+
+        qtyLabel.text = item.qtyLabel
+        qtyLabel.font = .fdFont(ofSize: 16, weight: .regular)
+        qtyLabel.setContentHuggingPriority(.required, for: .horizontal)
+        qtyLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        addSubview(qtyLabel)
+
+        priceLabel.text = item.priceLabel
+        priceLabel.font = .fdMonoFont(ofSize: 14, weight: .medium)
+        priceLabel.setContentHuggingPriority(.required, for: .horizontal)
+        priceLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        addSubview(priceLabel)
+
+        priceLabel.snp.makeConstraints {
+            $0.trailing.equalToSuperview()
+            $0.centerY.equalToSuperview()
+        }
+
+        qtyLabel.snp.makeConstraints {
+            $0.trailing.equalTo(priceLabel.snp.leading).offset(-16)
+            $0.centerY.equalToSuperview()
+        }
+
+        nameLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview()
+            $0.trailing.lessThanOrEqualTo(qtyLabel.snp.leading).offset(-8)
+            $0.top.bottom.equalToSuperview()
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    func setTextColor(_ color: UIColor) {
+        nameLabel.textColor = color
+        qtyLabel.textColor = color
+        priceLabel.textColor = color
+    }
+}
+
+// MARK: - 分组卡片标题背景渐变
 
 private final class HeaderGradientView: UIView {
+
     private let gradientLayer = CAGradientLayer()
 
     override init(frame: CGRect) {
@@ -254,4 +542,3 @@ private final class HeaderGradientView: UIView {
         gradientLayer.frame = bounds
     }
 }
-

@@ -91,7 +91,7 @@ final class SecuritySettingsViewController: BaseViewController {
 
         let titleLbl = UILabel()
         titleLbl.text = "账号状态"
-        titleLbl.font = .fdCaptionSemibold
+        titleLbl.font = .fdMyCaptionSemibold
         titleLbl.textColor = .fdSubtext
         wrap.addSubview(titleLbl)
         titleLbl.snp.makeConstraints {
@@ -125,12 +125,12 @@ final class SecuritySettingsViewController: BaseViewController {
 
         let tipTitle = UILabel()
         tipTitle.text = "账号安全状态良好"
-        tipTitle.font = .fdBodySemibold
+        tipTitle.font = .fdMyBodySemibold
         tipTitle.textColor = .fdText
 
         let tipDesc = UILabel()
         tipDesc.text = "已绑定手机号，建议定期更新登录密码，保护账号与健康数据安全。"
-        tipDesc.font = .fdFont(ofSize: 11, weight: .regular)
+        tipDesc.font = .fdFont(ofSize: 13, weight: .regular)
         tipDesc.textColor = .fdSubtext
         tipDesc.numberOfLines = 0
 
@@ -169,7 +169,7 @@ final class SecuritySettingsViewController: BaseViewController {
 
         let titleLbl = UILabel()
         titleLbl.text = title
-        titleLbl.font = .fdCaptionSemibold
+        titleLbl.font = .fdMyCaptionSemibold
         titleLbl.textColor = .fdSubtext
         wrap.addSubview(titleLbl)
         titleLbl.snp.makeConstraints {
@@ -208,7 +208,7 @@ final class SecuritySettingsViewController: BaseViewController {
 
         let label = UILabel()
         label.text = row.label
-        label.font = .fdBodySemibold
+        label.font = .fdMyBodySemibold
         label.textColor = .fdText
         label.isUserInteractionEnabled = false
 
@@ -256,7 +256,7 @@ final class SecuritySettingsViewController: BaseViewController {
     private func makeValueLabel(_ text: String) -> UILabel {
         let l = UILabel()
         l.text = text
-        l.font = .fdCaption
+        l.font = .fdMyCaption
         l.textColor = .fdSubtext
         l.setContentCompressionResistancePriority(.required, for: .horizontal)
         return l

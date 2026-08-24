@@ -68,7 +68,7 @@ final class HomeHeroCell: UITableViewCell {
     }()
     private let scoreNumLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 38, weight: .bold)
+        l.font = .fdFont(ofSize: 40, weight: .bold)
         l.textColor = .white
         return l
     }()

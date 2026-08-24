@@ -15,6 +15,7 @@ final class WebViewController: BaseViewController {
     private var weightBleCoordinator: WeightScaleBleStatusCoordinator?
     private var scriptHandlerProxy: WeakScriptMessageHandler?
     private var didLogInitialLayout = false
+    private var chromeLocalizationTokens: [NSObjectProtocol] = []
 
     // MARK: - UI
 
@@ -24,6 +25,59 @@ final class WebViewController: BaseViewController {
         self.scriptHandlerProxy = proxy
         userContent.add(proxy, name: FundeNativeBridge.packageHandlerName)
         userContent.add(proxy, name: FundeNativeBridge.handlerName)
+
+        let routeScriptSource = """
+        (function() {
+            function notifyRouteChange() {
+                try {
+                    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.FundeNative) {
+                        window.webkit.messageHandlers.FundeNative.postMessage({
+                            action: 'routeChanged',
+                            params: { url: window.location.href }
+                        });
+                    }
+                } catch(e) {}
+            }
+            window.addEventListener('hashchange', notifyRouteChange);
+            window.addEventListener('popstate', notifyRouteChange);
+            var originalPushState = history.pushState;
+            if (originalPushState) {
+                history.pushState = function() {
+                    var result = originalPushState.apply(this, arguments);
+                    notifyRouteChange();
+                    return result;
+                };
+            }
+            var originalReplaceState = history.replaceState;
+            if (originalReplaceState) {
+                history.replaceState = function() {
+                    var result = originalReplaceState.apply(this, arguments);
+                    notifyRouteChange();
+                    return result;
+                };
+            }
+            document.addEventListener('focusin', function(e) {
+                var target = e.target;
+                if (!target || !target.getAttribute) { return; }
+                var type = (target.getAttribute('type') || '').toLowerCase();
+                if (type === 'time' || type === 'date' || type === 'datetime-local') {
+                    try {
+                        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.FundeNative) {
+                            window.webkit.messageHandlers.FundeNative.postMessage({
+                                action: 'localizeDateTimeChrome'
+                            });
+                        }
+                    } catch (err) {}
+                }
+            }, true);
+        })();
+        """
+        let userScript = WKUserScript(
+            source: routeScriptSource,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false
+        )
+        userContent.addUserScript(userScript)
 
         let config = WKWebViewConfiguration()
         config.userContentController = userContent
@@ -59,13 +113,17 @@ final class WebViewController: BaseViewController {
     // MARK: - Init
 
     init(urlString: String, title: String? = nil, enablesWeightBle: Bool = false) {
-        self.urlString = urlString
+        self.urlString = H5Config.normalizedH5URLString(urlString)
         self.pageTitle = title
-        self.enablesWeightBle = enablesWeightBle || Self.urlImpliesWeightMetric(urlString)
+        let impliesWeight = Self.urlImpliesWeightMetric(self.urlString)
+        self.enablesWeightBle = enablesWeightBle || impliesWeight
         super.init(nibName: nil, bundle: nil)
         if self.enablesWeightBle {
-            topContentInset = WeightScaleBleStatusCoordinator.topContentInset
-            weightBleCoordinator = WeightScaleBleStatusCoordinator()
+            let isInitialWeightHome = Self.isWeightHomePageURL(URL(string: self.urlString))
+            topContentInset = isInitialWeightHome ? WeightScaleBleStatusCoordinator.topContentInset : 0
+            let coordinator = WeightScaleBleStatusCoordinator()
+            coordinator.setVisible(isInitialWeightHome)
+            weightBleCoordinator = coordinator
         }
     }
 
@@ -85,6 +143,32 @@ final class WebViewController: BaseViewController {
             enablesWeightBle: enablesWeightBle
         )
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
+        webView.addObserver(self, forKeyPath: #keyPath(WKWebView.url), options: [.new, .old], context: nil)
+        installSystemChromeLocalization()
+    }
+
+    private func installSystemChromeLocalization() {
+        let center = NotificationCenter.default
+        let names: [Notification.Name] = [
+            UIResponder.keyboardWillShowNotification,
+            UIResponder.keyboardDidShowNotification,
+            UITextField.textDidBeginEditingNotification,
+        ]
+        chromeLocalizationTokens = names.map { name in
+            center.addObserver(forName: name, object: nil, queue: .main) { _ in
+                WebViewSystemChromeLocalizer.localizeVisibleChrome()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                    WebViewSystemChromeLocalizer.localizeVisibleChrome()
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    WebViewSystemChromeLocalizer.localizeVisibleChrome()
+                }
+            }
+        }
+    }
+
+    private func refreshSystemChromeLocalization() {
+        WebViewSystemChromeLocalizer.localizeVisibleChrome()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -92,6 +176,7 @@ final class WebViewController: BaseViewController {
         navigationController?.setNavigationBarHidden(false, animated: animated)
         installPopGestureDelegateIfNeeded()
         weightBleCoordinator?.onAppear()
+        refreshSystemChromeLocalization()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -162,15 +247,32 @@ final class WebViewController: BaseViewController {
             ]
         )
         indicator.startAnimating()
-        webView.load(URLRequest(url: url))
+        var request = URLRequest(url: url)
+        if Self.shouldBypassCache(for: url) {
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+            logNavigationEvent(
+                "loadRequestBypassCache",
+                url: url,
+                params: ["reason": "h5-host"]
+            )
+        }
+        webView.load(request)
+    }
+
+    /// H5 部署后 hash 文件名会变；WKWebView 若缓存旧 index.html 会引用已删除的 JS，nginx 回退 HTML 导致白屏。
+    private static func shouldBypassCache(for url: URL) -> Bool {
+        guard let host = url.host?.lowercased() else { return false }
+        return host.contains("lianhaojiankang.com") || host.hasSuffix(".lhjk.com")
     }
 
     deinit {
+        chromeLocalizationTokens.forEach { NotificationCenter.default.removeObserver($0) }
         bridge?.detach()
         let controller = webView.configuration.userContentController
         controller.removeScriptMessageHandler(forName: FundeNativeBridge.packageHandlerName)
         controller.removeScriptMessageHandler(forName: FundeNativeBridge.handlerName)
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress))
+        webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.url))
     }
 
     private static func urlImpliesWeightMetric(_ urlString: String) -> Bool {
@@ -178,6 +280,48 @@ final class WebViewController: BaseViewController {
         let fragment = url.fragment ?? ""
         let path = fragment.split(separator: "?", maxSplits: 1).first.map(String.init) ?? ""
         return FundePageURL.isWeightH5Path(path)
+    }
+
+    /// 判断 URL 是否为体重 H5 首页（`#/weight`）
+    static func isWeightHomePageURL(_ url: URL?) -> Bool {
+        guard let url = url else { return false }
+        let rawPath: String
+        if let fragment = url.fragment, !fragment.isEmpty {
+            let withoutHash = fragment.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+            rawPath = withoutHash.components(separatedBy: "?").first ?? ""
+        } else {
+            rawPath = url.path
+        }
+        let normalized = rawPath
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        return normalized == "weight"
+    }
+
+    func handleURLChanged(_ url: URL?) {
+        updateWeightBleVisibility(for: url)
+    }
+
+    /// 根据当前 web 页面路由动态控制体重蓝牙横条显示/隐藏及蓝牙开关
+    func updateWeightBleVisibility(for url: URL?) {
+        guard enablesWeightBle, let coordinator = weightBleCoordinator else { return }
+        let isWeightHome = Self.isWeightHomePageURL(url)
+        coordinator.setVisible(isWeightHome)
+
+        let targetInset: CGFloat = isWeightHome ? WeightScaleBleStatusCoordinator.topContentInset : 0
+        guard topContentInset != targetInset else { return }
+        topContentInset = targetInset
+
+        guard isViewLoaded else { return }
+        webView.snp.updateConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(targetInset)
+        }
+        progressView.snp.updateConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(targetInset)
+        }
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
     }
 
     // MARK: - Back Navigation
@@ -241,6 +385,8 @@ final class WebViewController: BaseViewController {
             let progress = Float(webView.estimatedProgress)
             progressView.progress = progress
             progressView.isHidden = progress >= 1.0
+        } else if keyPath == #keyPath(WKWebView.url) {
+            updateWeightBleVisibility(for: webView.url)
         } else {
             super.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
         }
@@ -273,10 +419,6 @@ extension WebViewController: WKNavigationDelegate {
         logNavigationEvent("didReceiveServerRedirect", url: webView.url)
     }
 
-    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
-        logNavigationEvent("didCommit", url: webView.url)
-    }
-
     func webView(
         _ webView: WKWebView,
         decidePolicyFor navigationAction: WKNavigationAction,
@@ -287,6 +429,7 @@ extension WebViewController: WKNavigationDelegate {
             url: navigationAction.request.url,
             params: ["navigationType": navigationAction.navigationType.rawValue]
         )
+        updateWeightBleVisibility(for: navigationAction.request.url ?? webView.url)
         decisionHandler(.allow)
     }
 
@@ -314,6 +457,11 @@ extension WebViewController: WKNavigationDelegate {
         decisionHandler(.allow)
     }
 
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        logNavigationEvent("didCommit", url: webView.url)
+        updateWeightBleVisibility(for: webView.url)
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         indicator.stopAnimating()
         logNavigationEvent(
@@ -324,6 +472,8 @@ extension WebViewController: WKNavigationDelegate {
                 "title": webView.title ?? "nil",
             ]
         )
+        updateWeightBleVisibility(for: webView.url)
+        refreshSystemChromeLocalization()
         if enablesWeightBle {
             ScaleBleSessionService.shared.publishStatus()
         }
@@ -394,7 +544,24 @@ private extension WebViewController {
         (function() {
             var app = document.querySelector('#app');
             var hashPath = (location.hash || '').split('?')[0];
-            var scripts = Array.from(document.scripts || []).map(function(s) { return s.src || '(inline)'; });
+            var scripts = Array.from(document.scripts || []);
+            var scriptInfos = scripts.map(function(s) {
+                return {
+                    src: s.src || '(inline)',
+                    type: s.type || 'text/javascript',
+                    async: !!s.async,
+                    defer: !!s.defer
+                };
+            });
+            var failedScripts = [];
+            scripts.forEach(function(s) {
+                if (!s.src) return;
+                try {
+                    if (s.src && !s.src.includes('inline') && document.querySelector('link[href="' + s.src + '"]')) {
+                        return;
+                    }
+                } catch (e) {}
+            });
             return {
                 readyState: document.readyState,
                 title: document.title,
@@ -403,8 +570,12 @@ private extension WebViewController {
                 bodyTextLength: document.body ? document.body.innerText.length : 0,
                 bodyHTMLLength: document.body ? document.body.innerHTML.length : 0,
                 appHTMLLength: app ? app.innerHTML.length : 0,
+                appChildCount: app ? app.childElementCount : 0,
                 scriptCount: scripts.length,
-                scriptSrcs: scripts.join('|')
+                scriptSrcs: scripts.map(function(s) { return s.src || '(inline)'; }).join('|'),
+                scriptInfos: scriptInfos,
+                hasBootSkeleton: !!(document.querySelector('.boot-skeleton')),
+                userAgent: navigator.userAgent
             };
         })();
         """
@@ -423,7 +594,46 @@ private extension WebViewController {
                 url: webView.url,
                 params: ["result": String(describing: result)]
             )
+            self.detectStaleH5Bundle(webView: webView, diagnostics: result, label: label)
         }
+    }
+
+    func detectStaleH5Bundle(webView: WKWebView, diagnostics: Any?, label: String) {
+        guard let dict = diagnostics as? [String: Any] else { return }
+        let appChildCount = dict["appChildCount"] as? Int ?? 0
+        let bodyTextLength = dict["bodyTextLength"] as? Int ?? 0
+        let hasBootSkeleton = dict["hasBootSkeleton"] as? Bool ?? false
+        let scriptSrcs = dict["scriptSrcs"] as? String ?? ""
+
+        guard appChildCount == 0, bodyTextLength == 0, hasBootSkeleton || scriptSrcs.contains(".js") else {
+            return
+        }
+
+        guard let firstScript = scriptSrcs.split(separator: "|").first(where: { $0.contains(".js") }),
+              let scriptURL = URL(string: String(firstScript)) else {
+            return
+        }
+
+        URLSession.shared.dataTask(with: scriptURL) { [weak self] data, response, error in
+            guard let self else { return }
+            let mime = (response as? HTTPURLResponse)?.allHeaderFields["Content-Type"] as? String ?? "nil"
+            let prefix = data.flatMap { String(data: $0.prefix(32), encoding: .utf8) } ?? "nil"
+            let looksLikeHTML = prefix.contains("<!DOCTYPE") || prefix.contains("<html")
+            let params: [String: Any?] = [
+                "label": label,
+                "scriptURL": Self.redactedURLString(scriptURL.absoluteString),
+                "contentType": mime,
+                "prefix": prefix,
+                "looksLikeHTML": looksLikeHTML,
+                "hint": looksLikeHTML
+                    ? "JS 资源返回了 HTML，多为 H5 发版后缓存了旧 index.html（hash 文件名已失效）"
+                    : "SPA 未挂载，请检查 JS 执行错误或 API 失败",
+                "sessionError": error?.localizedDescription,
+            ]
+            DispatchQueue.main.async {
+                self.logNavigationEvent("h5BundleSuspect", url: webView.url, params: params)
+            }
+        }.resume()
     }
 
     func logNavigationEvent(
@@ -462,12 +672,20 @@ private extension WebViewController {
             return "\(url.scheme ?? "unknown")://\(url.host ?? "unknown")"
         }
 
-        components.query = nil
+        // 保留 `_t` 便于确认缓存穿透参数；脱敏 token 等敏感 query。
+        let cacheBust = components.queryItems?.first(where: { $0.name == "_t" })
+        components.queryItems = cacheBust.map { [$0] }
+
         if let fragment = components.fragment {
-            components.fragment = fragment
+            let pathOnly = fragment
                 .split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false)
                 .first
                 .map(String.init)
+            if pathOnly != fragment {
+                components.fragment = "\(pathOnly ?? fragment)?<redacted>"
+            } else {
+                components.fragment = pathOnly
+            }
         }
         return components.string ?? "\(url.scheme ?? "unknown")://\(url.host ?? "unknown")"
     }

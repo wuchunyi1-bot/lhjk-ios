@@ -14,6 +14,10 @@ final class HomeMembershipPackagesCell: UITableViewCell {
         let imageUrl: String
         /// 栏位 `pageUrl`（`FundeH5:` / `FundeApp:`，见 `FundePageURL`）
         let pageUrl: String?
+        /// `getByCode` 的 `contentType`；`pageUrl` 为空时用于兜底
+        let contentType: Int?
+        /// `getByCode` 的 `contentId`；`contentType == 6` 时作为 `packageId`
+        let contentId: String?
     }
 
     var onPackageTapped: ((Package) -> Void)?
@@ -28,7 +32,7 @@ final class HomeMembershipPackagesCell: UITableViewCell {
     private let titleLabel: UILabel = {
         let l = UILabel()
         l.text = "推荐健康套餐"
-        l.font = .fdFont(ofSize: 16, weight: .medium)
+        l.font = .fdFont(ofSize: 18, weight: .medium)
         l.textColor = .fdText
         return l
     }()

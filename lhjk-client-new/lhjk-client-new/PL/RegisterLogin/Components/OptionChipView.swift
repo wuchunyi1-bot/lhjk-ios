@@ -36,7 +36,7 @@ final class OptionChipView: UIView {
         clipsToBounds = true
 
         titleLabel.text = label
-        titleLabel.font = .fdBody
+        titleLabel.font = .fdLoginInput
         titleLabel.textAlignment = .center
         addSubview(titleLabel)
         titleLabel.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 18, bottom: 0, right: 18)) }
@@ -55,12 +55,12 @@ final class OptionChipView: UIView {
         if isSelected {
             backgroundColor = .fdPrimarySoft
             titleLabel.textColor = .fdPrimary
-            titleLabel.font = .fdBodySemibold
+            titleLabel.font = .fdLoginInput
             layer.borderColor = UIColor.fdPrimary.cgColor
         } else {
             backgroundColor = .fdSurface
             titleLabel.textColor = .fdSubtext
-            titleLabel.font = .fdBody
+            titleLabel.font = .fdLoginInput
             layer.borderColor = UIColor.fdBorder.cgColor
         }
     }

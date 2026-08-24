@@ -39,7 +39,7 @@ final class NotificationCell: UITableViewCell {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 16, weight: .medium)
+        l.font = .fdFont(ofSize: 18, weight: .medium)
         l.textColor = UIColor(hexString: "#1F2430")
         l.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return l
@@ -47,7 +47,7 @@ final class NotificationCell: UITableViewCell {
 
     private let tagBadge: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 12, weight: .regular)
+        l.font = .fdFont(ofSize: 14, weight: .regular)
         l.textColor = UIColor(hexString: "#C36E20")
         l.backgroundColor = UIColor(hexString: "#C36E20").withAlphaComponent(0.08)
         l.layer.cornerRadius = 4
@@ -60,7 +60,7 @@ final class NotificationCell: UITableViewCell {
 
     private let timeLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 12, weight: .regular)
+        l.font = .fdFont(ofSize: 14, weight: .regular)
         l.textColor = UIColor(hexString: "#6D7381").withAlphaComponent(0.6)
         l.textAlignment = .right
         l.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -70,7 +70,7 @@ final class NotificationCell: UITableViewCell {
 
     private let bodyLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 12, weight: .regular)
+        l.font = .fdFont(ofSize: 14, weight: .regular)
         l.textColor = UIColor(hexString: "#6D7381")
         l.numberOfLines = 1
         l.lineBreakMode = .byTruncatingTail

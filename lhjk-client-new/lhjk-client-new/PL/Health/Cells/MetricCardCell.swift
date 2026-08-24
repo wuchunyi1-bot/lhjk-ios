@@ -39,22 +39,22 @@ final class MetricCardCell: UICollectionViewCell {
 
         iconView.contentMode = .scaleAspectFit
 
-        badgeLabel.font = .fdFont(ofSize: 12, weight: .medium)
+        badgeLabel.font = .fdFont(ofSize: 14, weight: .medium)
         badgeLabel.textAlignment = .center
         badgeLabel.layer.cornerRadius = 11
         badgeLabel.clipsToBounds = true
         badgeLabel.contentInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
 
-        titleLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        titleLabel.font = .fdFont(ofSize: 14, weight: .regular)
         titleLabel.textColor = .fdSubtext
 
-        valueLabel.font = .fdFont(ofSize: 20, weight: .medium)
+        valueLabel.font = .fdFont(ofSize: 22, weight: .medium)
         valueLabel.textColor = .fdText
 
-        unitLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        unitLabel.font = .fdFont(ofSize: 14, weight: .regular)
         unitLabel.textColor = .fdSubtext
 
-        timeLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        timeLabel.font = .fdFont(ofSize: 14, weight: .regular)
         timeLabel.textColor = .fdText
 
         [watermark, fadeOverlay, iconView, badgeLabel, titleLabel, valueLabel, unitLabel, timeLabel].forEach(contentView.addSubview)

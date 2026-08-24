@@ -15,7 +15,7 @@ final class PackageDetailTierPickerView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         titleLabel.text = "选择档次"
-        titleLabel.font = .fdFont(ofSize: 15, weight: .heavy)
+        titleLabel.font = .fdFont(ofSize: 17, weight: .heavy)
         titleLabel.textColor = .fdText
         addSubview(titleLabel)
         titleLabel.snp.makeConstraints {

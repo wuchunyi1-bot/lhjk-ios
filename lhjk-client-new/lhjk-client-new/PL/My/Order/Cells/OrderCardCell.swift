@@ -68,7 +68,7 @@ final class OrderCardCell: UITableViewCell {
         institutionIcon.contentMode = .scaleAspectFit
         institutionIcon.snp.makeConstraints { $0.size.equalTo(16) }
 
-        institutionLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        institutionLabel.font = .fdFont(ofSize: 18, weight: .medium)
         institutionLabel.textColor = UIColor(hexString: "#1F2430")
         institutionLabel.lineBreakMode = .byTruncatingTail
 
@@ -77,7 +77,7 @@ final class OrderCardCell: UITableViewCell {
         instRow.spacing = 6
         instRow.alignment = .center
 
-        statusLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        statusLabel.font = .fdFont(ofSize: 16, weight: .medium)
         statusLabel.textColor = UIColor(hexString: "#FF7A50")
         statusLabel.textAlignment = .right
         statusLabel.setContentHuggingPriority(.required, for: .horizontal)
@@ -135,7 +135,7 @@ final class OrderCardCell: UITableViewCell {
             make.size.equalTo(14)
         }
 
-        noticeLabel.font = .fdFont(ofSize: 10, weight: .regular)
+        noticeLabel.font = .fdFont(ofSize: 12, weight: .regular)
         noticeLabel.textColor = UIColor(hexString: "#F93838")
         noticeLabel.numberOfLines = 0
         noticeBannerView.addSubview(noticeLabel)
@@ -166,7 +166,7 @@ final class OrderCardCell: UITableViewCell {
             make.bottom.lessThanOrEqualToSuperview().offset(-12)
         }
 
-        nameLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        nameLabel.font = .fdFont(ofSize: 16, weight: .medium)
         nameLabel.textColor = UIColor(hexString: "#1F2430")
         nameLabel.numberOfLines = 2
         packageInfoContainer.addSubview(nameLabel)
@@ -176,7 +176,7 @@ final class OrderCardCell: UITableViewCell {
             make.top.equalToSuperview().offset(12)
         }
 
-        introLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        introLabel.font = .fdFont(ofSize: 16, weight: .regular)
         introLabel.textColor = UIColor(hexString: "#8591AB")
         introLabel.numberOfLines = 1
         introLabel.lineBreakMode = .byTruncatingTail
@@ -188,7 +188,7 @@ final class OrderCardCell: UITableViewCell {
         }
 
         // 价格部分（右下角）
-        priceSymbolLabel.font = .fdFont(ofSize: 12, weight: .medium)
+        priceSymbolLabel.font = .fdFont(ofSize: 14, weight: .medium)
         priceSymbolLabel.textColor = UIColor(hexString: "#1F2942")
         priceSymbolLabel.text = "¥ "
 
@@ -314,7 +314,7 @@ final class OrderCardCell: UITableViewCell {
     private func makeActionButton(action: OrderListCardAction, primary: Bool) -> UIButton {
         let button = UIButton(type: .system)
         button.setTitle(action.title, for: .normal)
-        button.titleLabel?.font = .fdFont(ofSize: 12, weight: .medium)
+        button.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
         button.layer.cornerRadius = 14
         button.clipsToBounds = true
 

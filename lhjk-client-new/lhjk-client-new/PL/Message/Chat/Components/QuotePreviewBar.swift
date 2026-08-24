@@ -21,7 +21,7 @@ final class QuotePreviewBar: UIView {
 
     private lazy var nameLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 11)
+        l.font = .fdFont(ofSize: 13)
         l.textColor = .fdPrimary
         return l
     }()
@@ -29,7 +29,7 @@ final class QuotePreviewBar: UIView {
     /// 文本预览（非媒体类型使用）
     private lazy var contentLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 12)
+        l.font = .fdFont(ofSize: 14)
         l.textColor = .fdSubtext
         l.numberOfLines = 1
         l.lineBreakMode = .byTruncatingTail
@@ -61,7 +61,7 @@ final class QuotePreviewBar: UIView {
     }()
     private lazy var voiceDurationLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 12)
+        l.font = .fdFont(ofSize: 14)
         l.textColor = .fdSubtext
         return l
     }()

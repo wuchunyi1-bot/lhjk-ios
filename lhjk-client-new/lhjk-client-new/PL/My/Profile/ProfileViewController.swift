@@ -148,7 +148,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         avatarImageView.contentMode = .scaleAspectFill
         avatarImageView.isUserInteractionEnabled = false
 
-        avatarTextLabel.font = .fdFont(ofSize: 34, weight: .bold)
+        avatarTextLabel.font = .fdFont(ofSize: 36, weight: .bold)
         avatarTextLabel.textColor = .white
         avatarTextLabel.textAlignment = .center
         avatarImageView.addSubview(avatarTextLabel)
@@ -156,7 +156,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
         let hint = UILabel()
         hint.text = "点击更换头像"
-        hint.font = .fdCaption
+        hint.font = .fdMyCaption
         hint.textColor = .fdSubtext
 
         avatarSection.addSubview(avatarImageView)
@@ -206,7 +206,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
             let title = UILabel()
             title.text = section.title
-            title.font = .fdCaptionSemibold
+            title.font = .fdMyCaptionSemibold
             title.textColor = .fdText
             groupStack.addArrangedSubview(title)
             groupStack.setCustomSpacing(6, after: title)
@@ -241,7 +241,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
         // title 左对齐（必填项前缀红色 *）— 对齐 ProfileView.vue .info-row__label
         let label = UILabel()
-        label.font = .fdBody
+        label.font = .fdMyBody
         label.textColor = .fdSubtext
         label.textAlignment = .left
         label.setContentHuggingPriority(.required, for: .horizontal)
@@ -250,14 +250,14 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             let attr = NSMutableAttributedString(
                 string: "*",
                 attributes: [
-                    .font: UIFont.fdBody,
+                    .font: UIFont.fdMyBody,
                     .foregroundColor: UIColor(hexString: "#E54D2E")
                 ]
             )
             attr.append(NSAttributedString(
                 string: field.label,
                 attributes: [
-                    .font: UIFont.fdBody,
+                    .font: UIFont.fdMyBody,
                     .foregroundColor: UIColor.fdSubtext
                 ]
             ))
@@ -268,7 +268,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
         // value 右对齐并占满剩余空间 — 对齐 .info-row__value
         let value = UILabel()
-        value.font = .fdBody
+        value.font = .fdMyBody
         value.textColor = .fdText
         value.textAlignment = .right
         value.lineBreakMode = .byTruncatingTail
@@ -294,7 +294,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         } else {
             let arrow = UILabel()
             arrow.text = "›"
-            arrow.font = .fdFont(ofSize: 16, weight: .regular)
+            arrow.font = .fdFont(ofSize: 18, weight: .regular)
             arrow.textColor = .fdMuted
             arrow.setContentHuggingPriority(.required, for: .horizontal)
             arrow.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -479,7 +479,9 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         picker.delegate = self
         picker.sourceType = .photoLibrary
         picker.allowsEditing = true
-        present(picker, animated: true)
+        present(picker, animated: true) {
+            WebViewSystemChromeLocalizer.scheduleLocalizationAfterPresentingPicker()
+        }
     }
 
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
@@ -564,10 +566,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     }
 
     private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            alert.dismiss(animated: true)
-        }
+        showToastAlert(message, duration: 1.5)
     }
 }

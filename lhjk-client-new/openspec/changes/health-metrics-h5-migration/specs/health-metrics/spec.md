@@ -80,6 +80,7 @@
 | `manual` | `add` | — |
 | `history` | `records` | — |
 | `detail` | `detail` | `monitorId`；血糖另加 `sugarId` |
+| `scale/result` | `scale/result` | `monitorId`（体重体成分报告） |
 | `add-diet` | `add` | `meal`（`breakfast`/`lunch`/`dinner`/`snack`，缺省 `breakfast`） |
 | `add-motion` | `check-in` | `monitorId` 可选 |
 
@@ -87,6 +88,11 @@
 
 - **WHEN** 打开 `/health/metrics/weight/detail` 且 `params.monitorId` 有值
 - **THEN** URL 为 `#/weight/detail?token=...&platform=ios&monitorId={id}`
+
+#### Scenario: 体重体成分报告深链
+
+- **WHEN** 打开 `/health/metrics/weight/scale/result` 且 `params.monitorId` 有值
+- **THEN** 打开原生 `WeightScaleResultViewController`，请求 `getWeightHomePageData` 展示体成分报告
 
 #### Scenario: 血糖详情深链
 

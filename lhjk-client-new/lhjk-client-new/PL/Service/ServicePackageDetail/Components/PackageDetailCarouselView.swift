@@ -27,7 +27,7 @@ final class PackageDetailCarouselView: UIView, UICollectionViewDataSource, UICol
 
     private let pageIndicatorLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdFont(ofSize: 10, weight: .regular)
+        label.font = .fdFont(ofSize: 12, weight: .regular)
         label.textColor = .white
         label.textAlignment = .center
         label.backgroundColor = UIColor(white: 0, alpha: 0.5)

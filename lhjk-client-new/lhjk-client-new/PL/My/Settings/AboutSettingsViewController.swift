@@ -80,13 +80,13 @@ final class AboutSettingsViewController: BaseViewController {
 
         let nameLabel = UILabel()
         nameLabel.text = "富德健康"
-        nameLabel.font = .fdFont(ofSize: 20, weight: .heavy)
+        nameLabel.font = .fdFont(ofSize: 22, weight: .heavy)
         nameLabel.textColor = .fdText
         nameLabel.textAlignment = .center
 
         let sloganLabel = UILabel()
         sloganLabel.text = "健康生命 · 美好生活"
-        sloganLabel.font = .fdCaption
+        sloganLabel.font = .fdMyCaption
         sloganLabel.textColor = .fdSubtext
         sloganLabel.textAlignment = .center
 
@@ -168,12 +168,12 @@ final class AboutSettingsViewController: BaseViewController {
 
         let titleLbl = UILabel()
         titleLbl.text = label
-        titleLbl.font = .fdBodySemibold
+        titleLbl.font = .fdMyBodySemibold
         titleLbl.textColor = .fdText2
 
         let valueLbl = UILabel()
         valueLbl.text = value
-        valueLbl.font = .fdCaption
+        valueLbl.font = .fdMyCaption
         valueLbl.textColor = .fdSubtext
         valueLbl.setContentCompressionResistancePriority(.required, for: .horizontal)
 
@@ -224,13 +224,13 @@ final class AboutSettingsViewController: BaseViewController {
 
         let copyright = UILabel()
         copyright.text = "Copyright © 2026 富德健康"
-        copyright.font = .fdMicro
+        copyright.font = .fdMyMicro
         copyright.textColor = .fdMuted
         copyright.textAlignment = .center
 
         let icp = UILabel()
         icp.text = "粤ICP备xxxxx号"
-        icp.font = .fdMicro
+        icp.font = .fdMyMicro
         icp.textColor = .fdMuted
         icp.textAlignment = .center
 
@@ -258,10 +258,6 @@ final class AboutSettingsViewController: BaseViewController {
     }
 
     private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            alert.dismiss(animated: true)
-        }
+        showToastAlert(message, duration: 1.5)
     }
 }

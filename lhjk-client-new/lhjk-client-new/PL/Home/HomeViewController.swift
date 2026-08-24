@@ -14,7 +14,7 @@ final class HomeViewController: BaseViewController {
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
         tv.contentInsetAdjustmentBehavior = .never
-        tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 90, right: 0)
+        tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
         tv.sectionHeaderHeight = 0
         tv.sectionFooterHeight = 0
         tv.estimatedSectionHeaderHeight = 0
@@ -29,10 +29,16 @@ final class HomeViewController: BaseViewController {
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateTableBottomInsetIfNeeded()
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
         setNeedsStatusBarAppearanceUpdate()
+        updateTableBottomInsetIfNeeded()
         viewModel.loadUserProfile()
         viewModel.loadBanners()
         viewModel.loadQuickLinks()
@@ -94,6 +100,15 @@ final class HomeViewController: BaseViewController {
             .store(in: &cancellables)
     }
 
+    /// 按 TabBar 实际高度（含 Home Indicator 安全区）动态留白，避免 iPhone X 等机型底部被遮挡。
+    private func updateTableBottomInsetIfNeeded() {
+        guard let tabBar = tabBarController?.tabBar, !tabBar.isHidden else { return }
+        let bottom = tabBar.frame.height + 12
+        guard abs(tableView.contentInset.bottom - bottom) > 0.5 else { return }
+        tableView.contentInset.bottom = bottom
+        tableView.verticalScrollIndicatorInsets.bottom = bottom
+    }
+
     /// 仅在 tableView 已挂到 window 时 apply，避免层级外布局告警
     private func applyHomeSnapshot(
         _ snapshot: NSDiffableDataSourceSnapshot<HomeViewModel.HomeSection, HomeViewModel.HomeItem>
@@ -104,6 +119,28 @@ final class HomeViewController: BaseViewController {
 
     private func handleColumnContentPageUrl(_ pageUrl: String?) {
         FundePageURL.open(pageUrl, from: self)
+    }
+
+    private func handleHealthServicePackageTap(_ package: HomeMembershipPackagesCell.Package) {
+        if FundePageURL.canOpen(package.pageUrl) {
+            FundePageURL.open(package.pageUrl, from: self)
+            return
+        }
+
+        guard package.contentType == ColumnContentJumpType.packageBridge.rawValue else { return }
+        let contentId = package.contentId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !contentId.isEmpty else { return }
+
+        var extraQuery: [String: String] = ["contentId": contentId]
+        if let contentType = package.contentType {
+            extraQuery["contentType"] = String(contentType)
+        }
+        if let hospitalId = HealthPageService.resolveHospitalId() {
+            extraQuery["hospitalId"] = hospitalId
+        }
+        let url = H5Config.authenticatedPageURL(path: "package/bridge", extraQuery: extraQuery)
+        let webVC = WebViewController(urlString: url.absoluteString)
+        navigationController?.pushViewController(webVC, animated: true)
     }
 
     private func handleArticlesMoreTapped() {
@@ -149,12 +186,12 @@ final class HomeViewController: BaseViewController {
             let cell = tv.dequeueReusableCell(withIdentifier: HomeMembershipPackagesCell.reuseID, for: indexPath) as! HomeMembershipPackagesCell
             cell.configure(packages: viewModel.membershipPackages)
             cell.onPackageTapped = { [weak self] package in
-                self?.handleColumnContentPageUrl(package.pageUrl)
+                self?.handleHealthServicePackageTap(package)
             }
             return cell
         case .teamList:
             let cell = tv.dequeueReusableCell(withIdentifier: HomeTeamCardCell.reuseID, for: indexPath) as! HomeTeamCardCell
-            cell.configure(members: viewModel.teamMembers, daysLeft: viewModel.daysLeft)
+            cell.configure(members: viewModel.teamMembers)
             cell.onMessageTapped = { member in
                 guard let groupId = member.groupId, !groupId.isEmpty else { return }
                 // 会话 id = groupId，直接进聊天详情（见 home-doctor-team / im spec）

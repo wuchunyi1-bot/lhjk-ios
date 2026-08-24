@@ -13,13 +13,21 @@ final class WeightScaleBleStatusCoordinator {
     private let bleStatusBar = WeightScaleBleStatusBarView()
     private var cancellables = Set<AnyCancellable>()
     private let scaleService = ScaleBleSessionService.shared
+    private let equipmentBindService: EquipmentBindService
     private var appearTask: Task<Void, Never>?
+    private var lastNavigatedMonitorId: String?
+    private(set) var isVisible: Bool = true
+
+    init(equipmentBindService: EquipmentBindService = AppContainer.shared.equipmentBindService) {
+        self.equipmentBindService = equipmentBindService
+    }
 
     func install(in host: UIViewController) {
         hostViewController = host
         guard let hostView = host.view else { return }
 
         hostView.addSubview(bleStatusBar)
+        bleStatusBar.isHidden = !isVisible
         bleStatusBar.snp.makeConstraints { make in
             make.top.equalTo(hostView.safeAreaLayoutGuide)
             make.leading.trailing.equalTo(hostView).inset(16)
@@ -32,32 +40,58 @@ final class WeightScaleBleStatusCoordinator {
         scaleService.statusPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.refreshBleStatusBar()
+                guard let self, self.isVisible else { return }
+                self.refreshBleStatusBar()
             }
             .store(in: &cancellables)
 
         AppContainer.shared.bluetoothManager.statePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.refreshBleStatusBar()
+                guard let self, self.isVisible else { return }
+                self.refreshBleStatusBar()
             }
             .store(in: &cancellables)
 
-        refreshBleStatusBar()
-        bringStatusBarToFront(on: hostView)
+        scaleService.syncedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] payload in
+                guard let self, self.isVisible else { return }
+                self.handleBleSynced(payload)
+            }
+            .store(in: &cancellables)
+
+        if isVisible {
+            refreshBleStatusBar()
+            bringStatusBarToFront(on: hostView)
+        }
+    }
+
+    func setVisible(_ visible: Bool) {
+        guard isVisible != visible else { return }
+        isVisible = visible
+        bleStatusBar.isHidden = !visible
+        if visible {
+            bringStatusBarToFront()
+            onAppear()
+        } else {
+            onDisappear(isLeaving: false)
+        }
     }
 
     func bringStatusBarToFront(on hostView: UIView? = nil) {
+        guard isVisible else { return }
         let container = hostView ?? hostViewController?.view
         container?.bringSubviewToFront(bleStatusBar)
     }
 
     func onAppear() {
+        guard isVisible else { return }
         appearTask?.cancel()
         appearTask = Task { @MainActor [weak self] in
-            guard let self else { return }
+            guard let self, self.isVisible else { return }
             await self.scaleService.prepareWeightHostSession()
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, self.isVisible else { return }
             self.refreshBleStatusBar()
         }
     }
@@ -65,11 +99,54 @@ final class WeightScaleBleStatusCoordinator {
     func onDisappear(isLeaving: Bool) {
         appearTask?.cancel()
         appearTask = nil
-        guard isLeaving else { return }
         scaleService.stopSession()
+        guard isLeaving else { return }
+        lastNavigatedMonitorId = nil
+        scaleService.clearAutoScanPause()
     }
 
     // MARK: - Private
+
+    private func handleBleSynced(_ payload: [String: Any]) {
+        guard let monitorId = payload["monitorId"] as? String else { return }
+        let trimmed = monitorId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != lastNavigatedMonitorId else { return }
+        lastNavigatedMonitorId = trimmed
+
+        let hasImpedance = Self.impedanceValue(from: payload) > 0
+        let route = hasImpedance
+            ? "/health/metrics/weight/scale/result"
+            : "/health/metrics/weight/detail"
+
+        Task { @MainActor [weak self] in
+            guard let self, let host = self.hostViewController else { return }
+            if !hasImpedance {
+                do {
+                    _ = try await self.equipmentBindService.fetchWeightHomePageData(monitorId: trimmed)
+                    print("[Weight-BLE] getWeightHomePageData ok monitorId=\(trimmed)")
+                } catch {
+                    print("[Weight-BLE] getWeightHomePageData failed — \(error.localizedDescription)")
+                }
+            }
+            print("[Weight-BLE] open result hasImpedance=\(hasImpedance) route=\(route) monitorId=\(trimmed)")
+            Router.shared.push(
+                route,
+                params: ["monitorId": trimmed],
+                from: host
+            )
+        }
+    }
+
+    private static func impedanceValue(from payload: [String: Any]) -> Double {
+        if let value = payload["impedance"] as? Double { return value }
+        if let value = payload["impedance"] as? NSNumber { return value.doubleValue }
+        if let value = payload["impedance"] as? Int { return Double(value) }
+        if let value = payload["impedance"] as? String,
+           let parsed = Double(value.trimmingCharacters(in: .whitespacesAndNewlines)) {
+            return parsed
+        }
+        return 0
+    }
 
     private func refreshBleStatusBar() {
         let bluetooth = AppContainer.shared.bluetoothManager
@@ -119,6 +196,7 @@ final class WeightScaleBleStatusCoordinator {
     }
 
     private func handleStatusBarTap() {
+        guard isVisible else { return }
         guard let host = hostViewController else { return }
         let status = scaleService.currentStatus(metric: "weight")
         let bluetooth = AppContainer.shared.bluetoothManager
@@ -137,9 +215,9 @@ final class WeightScaleBleStatusCoordinator {
 
         appearTask?.cancel()
         appearTask = Task { @MainActor [weak self] in
-            guard let self else { return }
-            await self.scaleService.prepareWeightHostSession()
-            guard !Task.isCancelled else { return }
+            guard let self, self.isVisible else { return }
+            await self.scaleService.resumeScanAfterUserRetry()
+            guard !Task.isCancelled, self.isVisible else { return }
             self.refreshBleStatusBar()
         }
     }

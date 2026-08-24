@@ -54,20 +54,20 @@ final class SessionExpirySheet: UIViewController {
 
         let title = UILabel()
         title.text = "登录状态已过期"
-        title.font = .fdH3
+        title.font = .fdMyH3
         title.textColor = .fdText
         title.textAlignment = .center
 
         let desc = UILabel()
         desc.text = message
-        desc.font = .fdCaption
+        desc.font = .fdLoginMeta
         desc.textColor = .fdSubtext
         desc.textAlignment = .center
         desc.numberOfLines = 0
 
         let button = UIButton(type: .system)
         button.setTitle("重新登录", for: .normal)
-        button.titleLabel?.font = .fdBodySemibold
+        button.titleLabel?.font = .fdLoginInput
         button.setTitleColor(.white, for: .normal)
         button.backgroundColor = .fdPrimary
         button.layer.cornerRadius = 14

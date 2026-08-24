@@ -4,21 +4,24 @@ import Combine
 import Kingfisher
 import AVFoundation
 import RongIMLibCore
+import UniformTypeIdentifiers
 
 /// 消息 Cell 长按回调协议
 protocol ChatCellDelegate: AnyObject {
     func cellDidLongPress(_ cell: UITableViewCell, message: ChatMessage)
     func cellDidTapReply(_ cell: UITableViewCell, message: ChatMessage)
     func cellDidTapIMCard(_ cell: UITableViewCell, message: ChatMessage)
+    func cellVoicePlaybackFailed(_ cell: UITableViewCell, message: String)
 }
 
 extension ChatCellDelegate {
     func cellDidTapReply(_ cell: UITableViewCell, message: ChatMessage) {}
     func cellDidTapIMCard(_ cell: UITableViewCell, message: ChatMessage) {}
+    func cellVoicePlaybackFailed(_ cell: UITableViewCell, message: String) {}
 }
 
 /// 聊天详情页 — 参考 funde-client ConversationDetailView.vue
-final class ChatViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, ChatCellDelegate {
+final class ChatViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UIDocumentPickerDelegate, ChatCellDelegate, ChatInputBarDelegate {
 
     // MARK: - ViewModel
 
@@ -28,9 +31,40 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     // MARK: - UI State
 
     private var inputBottomConstraint: Constraint?
-    private var isVoiceMode = false
+    private var isVoiceCancelled = false
     private let audioRecorder = AudioRecorder()
+    private let quoteVoicePlayback = VoicePlaybackController()
     private var actionMenu: MessageActionMenu?
+
+    private let recordingOverlay: UIView = {
+        let view = UIView()
+        view.isHidden = true
+        view.isUserInteractionEnabled = false
+        view.backgroundColor = .clear
+        return view
+    }()
+
+    private let recordingBgView: UIImageView = {
+        let imageView = UIImageView(image: UIImage(named: "chat_input_recordingBg"))
+        imageView.contentMode = .scaleToFill
+        imageView.clipsToBounds = true
+        return imageView
+    }()
+
+    private let recordingHintLabel: UILabel = {
+        let label = UILabel()
+        label.font = .fdFont(ofSize: 16)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.text = "松手 发语音"
+        return label
+    }()
+
+    private let recordingLineView: UIImageView = {
+        let imageView = UIImageView(image: UIImage(named: "chat_input_recordingLine"))
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
     private var quotePreviewBar: QuotePreviewBar?
 
     // MARK: - UI
@@ -63,91 +97,10 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         return rc
     }()
 
-    // Input bar
-    private lazy var inputBar: UIView = {
-        let v = UIView()
-        v.backgroundColor = .white
-        v.layer.shadowColor = UIColor.black.cgColor
-        v.layer.shadowOffset = CGSize(width: 0, height: -1)
-        v.layer.shadowRadius = 3
-        v.layer.shadowOpacity = 0.04
-        return v
-    }()
-
-    private lazy var quickReplyScroll: UIScrollView = {
-        let sv = UIScrollView()
-        sv.showsHorizontalScrollIndicator = false
-        return sv
-    }()
-
-    private lazy var quickReplyStack: UIStackView = {
-        let s = UIStackView()
-        s.axis = .horizontal
-        s.spacing = 8
-        return s
-    }()
-
-    private lazy var toolBtns: [UIButton] = {
-        let icons = ["doc.text", "mic.fill", "photo"]
-        return icons.enumerated().map { idx, icon in
-            let b = UIButton(type: .system)
-            b.setImage(UIImage(systemName: icon), for: .normal)
-            b.tintColor = .fdPrimary
-            b.backgroundColor = .fdBg2
-            b.layer.cornerRadius = 10
-            b.snp.makeConstraints { $0.size.equalTo(32) }
-            if idx == 1 {
-                b.addTarget(self, action: #selector(toggleVoiceMode), for: .touchUpInside)
-            } else if idx == 2 {
-                b.addTarget(self, action: #selector(showImagePicker), for: .touchUpInside)
-            }
-            return b
-        }
-    }()
-
-    private lazy var textField: UITextField = {
-        let tf = UITextField()
-        tf.placeholder = "发消息给..."
-        tf.font = .fdBody
-        tf.backgroundColor = UIColor(hexString: "#FFF8F5")
-        tf.layer.cornerRadius = 18
-        tf.layer.borderWidth = 1
-        tf.layer.borderColor = UIColor.fdBorder.cgColor
-        tf.returnKeyType = .send
-        tf.delegate = self
-        tf.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 13, height: 0))
-        tf.leftViewMode = .always
-        tf.addTarget(self, action: #selector(textChanged), for: .editingChanged)
-        return tf
-    }()
-
-    private lazy var sendBtn: UIButton = {
-        let b = UIButton(type: .system)
-        b.setTitle("发送", for: .normal)
-        b.titleLabel?.font = .fdFont(ofSize: 13, weight: .bold)
-        b.setTitleColor(.white, for: .normal)
-        b.backgroundColor = .fdPrimary
-        b.layer.cornerRadius = 18
-        b.addTarget(self, action: #selector(sendMessage), for: .touchUpInside)
-        b.isEnabled = false
-        b.setTitleColor(.fdMuted, for: .disabled)
-        return b
-    }()
-
-    private lazy var voiceInputButton: UIButton = {
-        let b = UIButton(type: .system)
-        b.setTitle("按住 说话", for: .normal)
-        b.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
-        b.setTitleColor(.fdText, for: .normal)
-        b.backgroundColor = .fdSurface
-        b.layer.cornerRadius = 18
-        b.layer.borderWidth = 1
-        b.layer.borderColor = UIColor.fdBorder.cgColor
-        b.isHidden = true
-        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleVoiceLongPress(_:)))
-        longPress.minimumPressDuration = 0.1
-        b.addGestureRecognizer(longPress)
-        return b
+    private lazy var chatInputBar: ChatInputBar = {
+        let bar = ChatInputBar()
+        bar.delegate = self
+        return bar
     }()
 
     // MARK: - Init
@@ -181,60 +134,43 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         view.backgroundColor = .fdBg
         title = viewModel.conversation?.name ?? "通知"
 
-        // Input bar assembly
-        let toolsRow = UIStackView(arrangedSubviews: toolBtns)
-        toolsRow.axis = .horizontal
-        toolsRow.spacing = 6
-
-        let inputRow = UIStackView(arrangedSubviews: [toolsRow, textField, voiceInputButton, sendBtn])
-        inputRow.axis = .horizontal
-        inputRow.spacing = 8
-        inputRow.alignment = .center
-
-        quickReplyScroll.addSubview(quickReplyStack)
-        quickReplyStack.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)) }
-        quickReplyStack.snp.makeConstraints { $0.height.equalTo(quickReplyScroll) }
-
-        let stack = UIStackView(arrangedSubviews: [quickReplyScroll, inputRow])
-        stack.axis = .vertical
-        stack.spacing = 8
-        inputBar.addSubview(stack)
-        stack.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(8)
-            make.leading.trailing.equalToSuperview().inset(12)
-        }
-
-        [tableView, inputBar].forEach(view.addSubview)
+        [tableView, chatInputBar].forEach(view.addSubview)
         tableView.refreshControl = refreshControl
+
+        view.addSubview(recordingOverlay)
+        recordingOverlay.addSubview(recordingBgView)
+        recordingOverlay.addSubview(recordingLineView)
+        recordingOverlay.addSubview(recordingHintLabel)
+
+        recordingOverlay.snp.makeConstraints { $0.edges.equalToSuperview() }
+        recordingBgView.snp.makeConstraints { make in
+            make.leading.trailing.bottom.equalToSuperview()
+            make.height.greaterThanOrEqualTo(300)
+        }
+        recordingLineView.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.width.equalTo(183)
+            make.height.equalTo(6)
+            make.bottom.equalTo(chatInputBar.snp.top).offset(-36)
+        }
+        recordingHintLabel.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.bottom.equalTo(recordingLineView.snp.top).offset(-28)
+        }
 
         tableView.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(chatInputBar.snp.top)
         }
 
-        inputBar.snp.makeConstraints { make in
-            make.top.equalTo(tableView.snp.bottom)
+        chatInputBar.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview()
-            inputBottomConstraint = make.bottom.equalTo(view.safeAreaLayoutGuide).constraint
-            make.bottom.equalTo(inputRow.snp.bottom).offset(max(8, view.safeAreaInsets.bottom))
-        }
-
-        sendBtn.snp.makeConstraints { $0.width.equalTo(56); $0.height.equalTo(36) }
-        textField.snp.makeConstraints { $0.height.equalTo(36) }
-        voiceInputButton.snp.makeConstraints { $0.height.equalTo(36) }
-
-        // 底部安全区域填充白色，与 inputBar 颜色一致
-        let safeAreaFill = UIView()
-        safeAreaFill.backgroundColor = .white
-        view.addSubview(safeAreaFill)
-        safeAreaFill.snp.makeConstraints { make in
-            make.top.equalTo(inputBar.snp.bottom)
-            make.leading.trailing.bottom.equalToSuperview()
+            inputBottomConstraint = make.bottom.equalToSuperview().constraint
         }
 
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
 
-        setupQuickReplyButtons()
         loadMessages()
     }
 
@@ -292,30 +228,88 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             .store(in: &cancellables)
     }
 
-    // MARK: - Quick Replies (UI)
+    // MARK: - Context Header
 
-    private func setupQuickReplyButtons() {
-        for r in viewModel.quickReplies() {
-            let btn = UIButton(type: .system)
-            btn.setTitle(r, for: .normal)
-            btn.titleLabel?.font = .fdFont(ofSize: 12)
-            btn.setTitleColor(.fdSubtext, for: .normal)
-            btn.backgroundColor = .fdSurface
-            btn.layer.cornerRadius = 16
-            btn.layer.borderWidth = 1
-            btn.layer.borderColor = UIColor.fdBorder.cgColor
-            btn.contentEdgeInsets = UIEdgeInsets(top: 6, left: 10, bottom: 6, right: 10)
-            btn.addTarget(self, action: #selector(quickReplyTapped(_:)), for: .touchUpInside)
-            quickReplyStack.addArrangedSubview(btn)
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        guard let conv = viewModel.conversation else { return nil }
+
+        let wrapper = UIView()
+        wrapper.backgroundColor = .clear
+
+        let card = UIView()
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 12
+        card.layer.borderWidth = 1
+        card.layer.borderColor = UIColor.white.cgColor
+
+        let titleLabel = UILabel()
+        titleLabel.text = conv.title
+        titleLabel.font = .fdFont(ofSize: 14, weight: .bold)
+        titleLabel.textColor = .fdText
+
+        let separatorLabel = UILabel()
+        separatorLabel.text = "｜ \(conv.serviceScope)"
+        separatorLabel.font = .fdFont(ofSize: 14)
+        separatorLabel.textColor = .fdSubtext
+        separatorLabel.lineBreakMode = .byTruncatingTail
+
+        let statusContainer = UIView()
+        statusContainer.backgroundColor = UIColor(hexString: "#F4FFF8")
+        statusContainer.layer.cornerRadius = 11
+
+        let statusDot = UIView()
+        statusDot.backgroundColor = .fdSuccess
+        statusDot.layer.cornerRadius = 2
+
+        let statusLabel = UILabel()
+        statusLabel.text = conv.status
+        statusLabel.font = .fdFont(ofSize: 12, weight: .medium)
+        statusLabel.textColor = .fdSuccess
+
+        [titleLabel, separatorLabel, statusContainer].forEach(card.addSubview)
+        [statusDot, statusLabel].forEach(statusContainer.addSubview)
+        wrapper.addSubview(card)
+
+        card.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 16, bottom: 8, right: 16))
+            make.height.equalTo(46)
         }
+
+        titleLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(12)
+            make.centerY.equalToSuperview()
+        }
+
+        separatorLabel.snp.makeConstraints { make in
+            make.leading.equalTo(titleLabel.snp.trailing).offset(2)
+            make.centerY.equalTo(titleLabel)
+            make.trailing.lessThanOrEqualTo(statusContainer.snp.leading).offset(-8)
+        }
+
+        statusContainer.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-12)
+            make.centerY.equalToSuperview()
+            make.height.equalTo(22)
+        }
+
+        statusDot.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(14)
+            make.centerY.equalToSuperview()
+            make.size.equalTo(4)
+        }
+
+        statusLabel.snp.makeConstraints { make in
+            make.leading.equalTo(statusDot.snp.trailing).offset(4)
+            make.trailing.equalToSuperview().offset(-14)
+            make.centerY.equalToSuperview()
+        }
+
+        return wrapper
     }
 
-    @objc private func quickReplyTapped(_ sender: UIButton) {
-        guard let text = sender.title(for: .normal) else { return }
-        viewModel.sendText(text)
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        54
     }
-
-    // MARK: - Data Loading
 
     private func loadMessages() {
         Task {
@@ -403,88 +397,12 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         }
     }
 
-    // MARK: - Context Header
-
-    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        guard let conv = viewModel.conversation else { return nil }
-        let header = UIView()
-        header.backgroundColor = UIColor.white.withAlphaComponent(0.72)
-        header.layer.cornerRadius = 12
-        header.layer.borderWidth = 1
-        header.layer.borderColor = UIColor.fdBorder.cgColor
-
-        let titleLabel = UILabel()
-        titleLabel.text = conv.title
-        titleLabel.font = .fdFont(ofSize: 12, weight: .bold)
-        titleLabel.textColor = .fdText
-
-        let descLabel = UILabel()
-        descLabel.text = conv.serviceScope
-        descLabel.font = .fdFont(ofSize: 12)
-        descLabel.textColor = .fdSubtext
-
-        let statusBadge = UILabel()
-        statusBadge.text = conv.status
-        statusBadge.font = .fdFont(ofSize: 10, weight: .bold)
-        statusBadge.textColor = UIColor(hexString: conv.role.toneHex)
-        statusBadge.backgroundColor = UIColor(hexString: conv.role.toneHex).withAlphaComponent(0.12)
-        statusBadge.layer.cornerRadius = 8
-        statusBadge.clipsToBounds = true
-        statusBadge.textAlignment = .center
-
-        [titleLabel, descLabel, statusBadge].forEach(header.addSubview)
-        titleLabel.snp.makeConstraints { make in
-            make.top.leading.equalToSuperview().inset(10)
-        }
-        descLabel.snp.makeConstraints { make in
-            make.leading.equalTo(titleLabel)
-            make.centerY.equalTo(titleLabel)
-            make.leading.equalTo(titleLabel.snp.trailing).offset(6)
-            make.trailing.lessThanOrEqualTo(statusBadge.snp.leading).offset(-8)
-        }
-        statusBadge.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-10)
-            make.centerY.equalTo(titleLabel)
-            make.height.equalTo(20)
-            make.width.greaterThanOrEqualTo(56)
-        }
-        descLabel.snp.remakeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(4)
-            make.leading.trailing.equalToSuperview().inset(10)
-            make.bottom.equalToSuperview().offset(-10)
-        }
-
-        return header
-    }
-
-    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        return UITableView.automaticDimension
-    }
-
-    // MARK: - Send
-
-    @objc private func sendMessage() {
-        guard let text = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return }
-        viewModel.sendText(text)
-        textField.text = ""
-        updateSendBtn()
-    }
-
-    @objc private func textChanged() {
-        updateSendBtn()
-    }
-
-    private func updateSendBtn() {
-        let hasText = !(textField.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
-        sendBtn.isEnabled = hasText
-        sendBtn.backgroundColor = hasText ? .fdPrimary : .fdBorder
-    }
-
     // MARK: - Keyboard
 
     @objc private func keyboardWillShow(_ n: Notification) {
+        guard chatInputBar.activePanel == .none else { return }
         guard let kb = n.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
-        inputBottomConstraint?.update(offset: -kb.height + view.safeAreaInsets.bottom)
+        inputBottomConstraint?.update(offset: -kb.height)
         UIView.animate(withDuration: 0.25) { self.view.layoutIfNeeded() }
         scrollToBottom(animated: false)
     }
@@ -492,75 +410,6 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     @objc private func keyboardWillHide(_ n: Notification) {
         inputBottomConstraint?.update(offset: 0)
         UIView.animate(withDuration: 0.25) { self.view.layoutIfNeeded() }
-    }
-
-    // MARK: - Voice
-
-    @objc private func toggleVoiceMode() {
-        isVoiceMode.toggle()
-        textField.isHidden = isVoiceMode
-        sendBtn.isHidden = isVoiceMode
-        voiceInputButton.isHidden = !isVoiceMode
-        if isVoiceMode {
-            textField.resignFirstResponder()
-        }
-    }
-
-    @objc private func handleVoiceLongPress(_ gesture: UILongPressGestureRecognizer) {
-        let location = gesture.location(in: voiceInputButton)
-        let isCancelled = location.y < -60
-
-        switch gesture.state {
-        case .began:
-            guard awaitPermission() else { return }
-            voiceInputButton.setTitle("松开 发送", for: .normal)
-            voiceInputButton.backgroundColor = UIColor(hexString: "#FF7A50").withAlphaComponent(0.15)
-            let fm = MediaFileManager()
-            let url = URL(fileURLWithPath: fm.basePath(.temp) + "/voice_\(Int(Date().timeIntervalSince1970)).wav")
-            try? audioRecorder.startRecording(to: url)
-            let generator = UIImpactFeedbackGenerator(style: .medium)
-            generator.impactOccurred()
-
-        case .changed:
-            if isCancelled {
-                voiceInputButton.setTitle("松开 取消", for: .normal)
-                voiceInputButton.backgroundColor = UIColor.red.withAlphaComponent(0.1)
-            } else {
-                voiceInputButton.setTitle("松开 发送", for: .normal)
-                voiceInputButton.backgroundColor = UIColor(hexString: "#FF7A50").withAlphaComponent(0.15)
-            }
-
-        case .ended:
-            voiceInputButton.setTitle("按住 说话", for: .normal)
-            voiceInputButton.backgroundColor = .fdSurface
-
-            if isCancelled {
-                audioRecorder.cancelRecording()
-            } else {
-                guard audioRecorder.isRecording || audioRecorder.isPaused else { break }
-                let duration = Int(audioRecorder.currentDuration)
-                guard duration >= 1, let url = audioRecorder.stopRecording() else { break }
-                viewModel.sendVoice(localPath: url.path, duration: duration)
-            }
-
-        case .cancelled, .failed:
-            voiceInputButton.setTitle("按住 说话", for: .normal)
-            voiceInputButton.backgroundColor = .fdSurface
-            audioRecorder.cancelRecording()
-
-        default: break
-        }
-    }
-
-    private func awaitPermission() -> Bool {
-        let semaphore = DispatchSemaphore(value: 0)
-        var granted = false
-        Task {
-            granted = await audioRecorder.requestPermission()
-            semaphore.signal()
-        }
-        semaphore.wait()
-        return granted
     }
 
     // MARK: - Long Press Menu
@@ -579,6 +428,10 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         menu.configure(above: cellRect, in: view, actions: actions)
         view.addSubview(menu)
         actionMenu = menu
+    }
+
+    func cellVoicePlaybackFailed(_ cell: UITableViewCell, message: String) {
+        showToast(message)
     }
 
     private func handleAction(_ action: MessageActionMenu.Action, message: ChatMessage) {
@@ -644,10 +497,10 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         bar.onTap = { [weak self] in
             self?.handleQuotePreviewTap(reply: reply)
         }
-        view.insertSubview(bar, belowSubview: inputBar)
+        view.insertSubview(bar, belowSubview: chatInputBar)
         bar.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(inputBar.snp.top)
+            make.bottom.equalTo(chatInputBar.snp.top)
             make.height.equalTo(52)
         }
         quotePreviewBar = bar
@@ -671,33 +524,58 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     // MARK: - Voice Playback
 
     private func playVoice(urlPath: String) {
+        print("[Voice] quotePlay ref=\(urlPath)")
         if urlPath.hasPrefix("/"), FileManager.default.fileExists(atPath: urlPath) {
-            playAudioFile(url: URL(fileURLWithPath: urlPath))
+            playAudioFile(url: URL(fileURLWithPath: urlPath), messageId: -1)
             return
         }
-        guard let remoteURL = URL(string: urlPath) else { return }
+        guard let remoteURL = URL(string: urlPath) else {
+            print("[Voice] quotePlay ✗ invalid url ref=\(urlPath)")
+            return
+        }
         showToast("正在加载语音...")
         Task {
-            let (tempURL, _) = try await URLSession.shared.download(from: remoteURL)
-            await MainActor.run {
-                playAudioFile(url: tempURL)
+            do {
+                let (tempURL, _) = try await URLSession.shared.download(from: remoteURL)
+                await MainActor.run {
+                    VoicePlaybackLogger.logRemoteDownload(
+                        url: remoteURL,
+                        tempPath: tempURL.path,
+                        destPath: nil,
+                        error: nil
+                    )
+                    playAudioFile(url: tempURL, messageId: -1)
+                }
+            } catch {
+                await MainActor.run {
+                    VoicePlaybackLogger.logRemoteDownload(
+                        url: remoteURL,
+                        tempPath: nil,
+                        destPath: nil,
+                        error: error
+                    )
+                    showToast("语音播放失败")
+                }
             }
         }
     }
 
-    private func playAudioFile(url: URL) {
-        do {
-            let player = try AVAudioPlayer(contentsOf: url)
-            player.prepareToPlay()
-            player.play()
-        } catch {
-            print("[Chat] playVoice ✗ error: \(error.localizedDescription)")
-            showToast("语音播放失败")
-        }
+    private func playAudioFile(url: URL, messageId: Int) {
+        quoteVoicePlayback.play(
+            url: url,
+            messageId: messageId,
+            onStarted: {},
+            onFinished: {},
+            onFailed: { [weak self] _ in
+                self?.showToast("语音播放失败")
+            }
+        )
     }
 
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         actionMenu?.dismiss()
+        chatInputBar.dismissPanel()
+        chatInputBar.resignTextInput()
     }
 
     // MARK: - Helpers
@@ -709,7 +587,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         container.clipsToBounds = true
         let label = UILabel()
         label.text = message
-        label.font = .fdFont(ofSize: 14)
+        label.font = .fdFont(ofSize: 16)
         label.textColor = .white
         label.textAlignment = .center
         container.addSubview(label)
@@ -734,12 +612,139 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     }
 }
 
-// MARK: - UITextFieldDelegate
+// MARK: - ChatInputBarDelegate
 
-extension ChatViewController: UITextFieldDelegate {
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        sendMessage()
-        return true
+extension ChatViewController {
+    func chatInputBarDidTapToggleMode(_ bar: ChatInputBar) {
+        if !bar.isVoiceMode {
+            requestMicPermissionIfNeeded()
+            bar.dismissPanel()
+        }
+        bar.setVoiceMode(!bar.isVoiceMode)
+    }
+
+    func chatInputBarDidTapEmoji(_ bar: ChatInputBar) {
+        if bar.isVoiceMode {
+            bar.setVoiceMode(false, animated: false)
+        }
+        let nextPanel: ChatInputBar.Panel = bar.activePanel == .emoji ? .none : .emoji
+        bar.setPanel(nextPanel)
+        if nextPanel == .emoji {
+            inputBottomConstraint?.update(offset: 0)
+            UIView.animate(withDuration: 0.25) { self.view.layoutIfNeeded() }
+            scrollToBottom(animated: false)
+        }
+    }
+
+    func chatInputBarDidTapMore(_ bar: ChatInputBar) {
+        if bar.isVoiceMode {
+            bar.setVoiceMode(false, animated: false)
+        }
+        let nextPanel: ChatInputBar.Panel = bar.activePanel == .more ? .none : .more
+        bar.setPanel(nextPanel)
+        if nextPanel == .more {
+            inputBottomConstraint?.update(offset: 0)
+            UIView.animate(withDuration: 0.25) { self.view.layoutIfNeeded() }
+            scrollToBottom(animated: false)
+        }
+    }
+
+    func chatInputBarDidTapPhoto(_ bar: ChatInputBar) {
+        bar.dismissPanel()
+        showImagePicker()
+    }
+
+    func chatInputBarDidTapFile(_ bar: ChatInputBar) {
+        bar.dismissPanel()
+        showDocumentPicker()
+    }
+
+    func chatInputBar(_ bar: ChatInputBar, didChangeText text: String) {}
+
+    func chatInputBarDidSend(_ bar: ChatInputBar) {
+        let trimmed = bar.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        viewModel.sendText(trimmed)
+        bar.text = ""
+    }
+
+    func chatInputBarDidBeginVoicePress(_ bar: ChatInputBar) {
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized:
+            guard beginVoiceRecording() else { return }
+            showRecordingOverlay(isCancelled: false)
+        case .notDetermined:
+            requestMicPermissionIfNeeded()
+        default:
+            showToast("请在设置中开启麦克风权限")
+        }
+    }
+
+    func chatInputBarDidUpdateVoicePress(_ bar: ChatInputBar, isCancelled: Bool) {
+        isVoiceCancelled = isCancelled
+        showRecordingOverlay(isCancelled: isCancelled)
+    }
+
+    func chatInputBarDidEndVoicePress(_ bar: ChatInputBar, isCancelled: Bool) {
+        hideRecordingOverlay()
+        if isCancelled || isVoiceCancelled {
+            audioRecorder.cancelRecording()
+            return
+        }
+        guard audioRecorder.isRecording || audioRecorder.isPaused else { return }
+        let duration = Int(audioRecorder.currentDuration)
+        guard duration >= 1, let url = audioRecorder.stopRecording() else {
+            showToast("说话时间太短")
+            return
+        }
+        viewModel.sendVoice(localPath: url.path, duration: duration)
+    }
+
+    private func requestMicPermissionIfNeeded() {
+        let status = AVCaptureDevice.authorizationStatus(for: .audio)
+        switch status {
+        case .authorized:
+            return
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
+                DispatchQueue.main.async {
+                    if !granted {
+                        self?.showToast("需要麦克风权限才能发送语音")
+                    }
+                }
+            }
+        default:
+            showToast("请在设置中开启麦克风权限")
+        }
+    }
+
+    @discardableResult
+    private func beginVoiceRecording() -> Bool {
+        guard !audioRecorder.isRecording else { return true }
+        isVoiceCancelled = false
+        let fm = MediaFileManager()
+        let url = URL(fileURLWithPath: fm.basePath(.temp) + "/voice_\(Int(Date().timeIntervalSince1970)).wav")
+        do {
+            try audioRecorder.startRecording(to: url)
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            print("[Chat-PL] startRecording ✓ \(url.lastPathComponent)")
+            return true
+        } catch {
+            print("[Chat-PL] startRecording ✗ \(error.localizedDescription)")
+            showToast("录音失败")
+            return false
+        }
+    }
+
+    private func showRecordingOverlay(isCancelled: Bool) {
+        recordingHintLabel.text = isCancelled ? "松手 取消" : "松手 发语音"
+        recordingOverlay.isHidden = false
+        view.bringSubviewToFront(recordingOverlay)
+    }
+
+    private func hideRecordingOverlay() {
+        recordingOverlay.isHidden = true
+        recordingHintLabel.text = "松手 发语音"
     }
 }
 
@@ -767,7 +772,9 @@ extension ChatViewController {
         let picker = UIImagePickerController()
         picker.sourceType = .camera
         picker.delegate = self
-        present(picker, animated: true)
+        present(picker, animated: true) {
+            WebViewSystemChromeLocalizer.scheduleLocalizationAfterPresentingPicker()
+        }
     }
 
     private func openPhotoLibrary() {
@@ -775,7 +782,9 @@ extension ChatViewController {
         let picker = UIImagePickerController()
         picker.sourceType = .photoLibrary
         picker.delegate = self
-        present(picker, animated: true)
+        present(picker, animated: true) {
+            WebViewSystemChromeLocalizer.scheduleLocalizationAfterPresentingPicker()
+        }
     }
 
     func imagePickerController(_ picker: UIImagePickerController,
@@ -794,6 +803,625 @@ extension ChatViewController {
         let previewVC = ImagePreviewViewController(imagePath: path)
         previewVC.modalPresentationStyle = .fullScreen
         present(previewVC, animated: true)
+    }
+
+    private func showDocumentPicker() {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [UTType.item], asCopy: true)
+        picker.allowsMultipleSelection = false
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        guard let url = urls.first else { return }
+        let didAccess = url.startAccessingSecurityScopedResource()
+        defer {
+            if didAccess { url.stopAccessingSecurityScopedResource() }
+        }
+        let tempURL = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("rc_file_\(Int(Date().timeIntervalSince1970 * 1000))_\(url.lastPathComponent)")
+        do {
+            if FileManager.default.fileExists(atPath: tempURL.path) {
+                try FileManager.default.removeItem(at: tempURL)
+            }
+            try FileManager.default.copyItem(at: url, to: tempURL)
+            viewModel.sendFile(localURL: tempURL)
+        } catch {
+            print("[Chat-PL] copy file ✗ \(error.localizedDescription)")
+            showToast("无法读取该文件")
+        }
+    }
+}
+
+// MARK: - Chat Input Bar
+
+protocol ChatInputBarDelegate: AnyObject {
+    func chatInputBarDidTapToggleMode(_ bar: ChatInputBar)
+    func chatInputBarDidTapEmoji(_ bar: ChatInputBar)
+    func chatInputBarDidTapMore(_ bar: ChatInputBar)
+    func chatInputBarDidTapPhoto(_ bar: ChatInputBar)
+    func chatInputBarDidTapFile(_ bar: ChatInputBar)
+    func chatInputBar(_ bar: ChatInputBar, didChangeText text: String)
+    func chatInputBarDidSend(_ bar: ChatInputBar)
+    func chatInputBarDidBeginVoicePress(_ bar: ChatInputBar)
+    func chatInputBarDidUpdateVoicePress(_ bar: ChatInputBar, isCancelled: Bool)
+    func chatInputBarDidEndVoicePress(_ bar: ChatInputBar, isCancelled: Bool)
+}
+
+/// 聊天详情底部输入区 — 对齐 Figma 3876:34690 / 35344 / 34873
+final class ChatInputBar: UIView {
+
+    enum Panel {
+        case none
+        case more
+        case emoji
+    }
+
+    weak var delegate: ChatInputBarDelegate?
+
+    private(set) var isVoiceMode = false
+    private(set) var activePanel: Panel = .none
+
+    var placeholderText: String = "发信息给..." {
+        didSet { updateInputPresentation() }
+    }
+
+    var text: String {
+        get { textField.text ?? "" }
+        set {
+            textField.text = newValue
+            updateInputPresentation()
+        }
+    }
+
+    private enum Layout {
+        static let rowHeight: CGFloat = 66
+        static let collapsedHeight: CGFloat = 66
+        static let morePanelHeight: CGFloat = 157
+        static let emojiPanelHeight: CGFloat = 232
+        static let morePanelContentHeight: CGFloat = morePanelHeight - collapsedHeight
+        static let emojiPanelContentHeight: CGFloat = emojiPanelHeight - collapsedHeight
+        static let horizontalInset: CGFloat = 16
+        static let leftButtonLeading: CGFloat = 14
+        static let leftButtonSize = CGSize(width: 52, height: 52)
+        static let rightButtonTrailing: CGFloat = 12
+        static let rightButtonSize = CGSize(width: 56, height: 56)
+        static let fieldHeight: CGFloat = 48
+        static let fieldTrailingGap: CGFloat = 4
+        /// 左侧按钮压入输入框约 50pt，占位/文字从 56pt 起（对齐 Figma 35346）
+        static let textLeadingInset: CGFloat = leftButtonLeading + leftButtonSize.width - horizontalInset + 6
+        static let iconSize: CGFloat = 24
+        static let panelItemSize: CGFloat = 44
+        static let panelItemCorner: CGFloat = 14
+        static let panelItemLeading: CGFloat = 20
+        static let panelItemSpacing: CGFloat = 42
+        static let panelItemTop: CGFloat = 13
+    }
+
+    private let backgroundView: UIView = {
+        let view = UIView()
+        view.layer.cornerRadius = 16
+        view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        view.clipsToBounds = true
+        return view
+    }()
+
+    private let backgroundGradient = CAGradientLayer()
+    private let contentRow = UIView()
+
+    private let centerFieldView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .white
+        view.layer.cornerRadius = 24
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.white.cgColor
+        view.clipsToBounds = true
+        return view
+    }()
+
+    private let leftButtonWrap = UIView()
+    private let rightButtonWrap = UIView()
+
+    private lazy var leftButton: UIButton = makeToolbarButton(action: #selector(toggleModeTapped))
+
+    private lazy var rightButton: UIButton = makeToolbarButton(action: #selector(moreTapped))
+
+    private lazy var fieldEmojiButton: UIButton = {
+        let button = UIButton(type: .custom)
+        button.addTarget(self, action: #selector(emojiTapped), for: .touchUpInside)
+        return button
+    }()
+
+    private lazy var voiceLabel: UILabel = {
+        let label = UILabel()
+        label.text = "按住说话"
+        label.font = .fdFont(ofSize: 16, weight: .medium)
+        label.textColor = .fdText
+        label.textAlignment = .center
+        label.isUserInteractionEnabled = true
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleVoiceLongPress(_:)))
+        longPress.minimumPressDuration = 0.1
+        label.addGestureRecognizer(longPress)
+        return label
+    }()
+
+    private lazy var textField: UITextField = {
+        let field = UITextField()
+        field.font = .fdFont(ofSize: 16)
+        field.textColor = .fdText
+        field.backgroundColor = .white
+        field.returnKeyType = .send
+        field.delegate = self
+        field.addTarget(self, action: #selector(textFieldChanged), for: .editingChanged)
+        return field
+    }()
+
+    private lazy var placeholderLabel: UILabel = {
+        let label = UILabel()
+        label.font = .fdFont(ofSize: 16)
+        label.textColor = UIColor(hexString: "#8591AB")
+        label.text = placeholderText
+        label.isUserInteractionEnabled = false
+        return label
+    }()
+
+    private let panelContainer = UIView()
+    private var panelAreaHeightConstraint: Constraint?
+
+    private lazy var photoItem = makePanelItem(
+        iconName: "chat_input_img",
+        title: "图片",
+        action: #selector(photoTapped)
+    )
+
+    private lazy var fileItem = makePanelItem(
+        iconName: "chat_input_file",
+        title: "文件",
+        action: #selector(fileTapped)
+    )
+
+    private lazy var emojiCollection: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.minimumInteritemSpacing = 4
+        layout.minimumLineSpacing = 8
+        layout.itemSize = CGSize(width: 36, height: 36)
+        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        cv.backgroundColor = .clear
+        cv.showsVerticalScrollIndicator = false
+        cv.dataSource = self
+        cv.delegate = self
+        cv.register(ChatEmojiCell.self, forCellWithReuseIdentifier: ChatEmojiCell.reuseID)
+        return cv
+    }()
+
+    private var heightConstraint: Constraint?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+        updateInputPresentation()
+        updateHeight(animated: false)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        backgroundGradient.frame = backgroundView.bounds
+    }
+
+    override func safeAreaInsetsDidChange() {
+        super.safeAreaInsetsDidChange()
+        updateHeight(animated: false)
+    }
+
+    func setVoiceMode(_ enabled: Bool, animated: Bool = true) {
+        guard isVoiceMode != enabled else { return }
+        isVoiceMode = enabled
+        if enabled {
+            textField.resignFirstResponder()
+            activePanel = .none
+        }
+        updateInputPresentation()
+        updateHeight(animated: animated)
+    }
+
+    func setPanel(_ panel: Panel, animated: Bool = true) {
+        activePanel = panel
+        if panel != .none {
+            textField.resignFirstResponder()
+        }
+        updateInputPresentation()
+        updateHeight(animated: animated)
+    }
+
+    func dismissPanel() {
+        guard activePanel != .none else { return }
+        activePanel = .none
+        updateInputPresentation()
+        updateHeight(animated: true)
+    }
+
+    func focusTextInput() {
+        setVoiceMode(false, animated: false)
+        if activePanel != .none {
+            setPanel(.none, animated: false)
+        }
+        textField.becomeFirstResponder()
+    }
+
+    func resignTextInput() {
+        textField.resignFirstResponder()
+    }
+
+    private func setupUI() {
+        backgroundColor = .clear
+        backgroundGradient.colors = [
+            UIColor.white.cgColor,
+            UIColor(hexString: "#FDF6F3").cgColor
+        ]
+        backgroundGradient.locations = [0.06566, 0.23239]
+        backgroundGradient.startPoint = CGPoint(x: 0.5, y: 0)
+        backgroundGradient.endPoint = CGPoint(x: 0.5, y: 1)
+        backgroundView.layer.insertSublayer(backgroundGradient, at: 0)
+
+        addSubview(backgroundView)
+        addSubview(contentRow)
+        addSubview(panelContainer)
+
+        backgroundView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        contentRow.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.height.equalTo(Layout.rowHeight)
+        }
+
+        panelContainer.snp.makeConstraints { make in
+            make.top.equalTo(contentRow.snp.bottom)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalToSuperview()
+            panelAreaHeightConstraint = make.height.equalTo(0).constraint
+        }
+
+        contentRow.addSubview(centerFieldView)
+        contentRow.addSubview(rightButtonWrap)
+        contentRow.addSubview(leftButtonWrap)
+
+        leftButtonWrap.addSubview(leftButton)
+        rightButtonWrap.addSubview(rightButton)
+
+        rightButtonWrap.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().inset(Layout.rightButtonTrailing)
+            make.centerY.equalToSuperview()
+            make.size.equalTo(Layout.rightButtonSize)
+        }
+
+        leftButtonWrap.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(Layout.leftButtonLeading)
+            make.centerY.equalToSuperview()
+            make.size.equalTo(Layout.leftButtonSize)
+        }
+
+        centerFieldView.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(Layout.horizontalInset)
+            make.trailing.equalTo(rightButtonWrap.snp.leading).offset(-Layout.fieldTrailingGap)
+            make.centerY.equalToSuperview()
+            make.height.equalTo(Layout.fieldHeight)
+        }
+
+        leftButton.snp.makeConstraints { $0.edges.equalToSuperview() }
+        rightButton.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        centerFieldView.addSubview(voiceLabel)
+        centerFieldView.addSubview(textField)
+        centerFieldView.addSubview(placeholderLabel)
+        centerFieldView.addSubview(fieldEmojiButton)
+
+        let centerTap = UITapGestureRecognizer(target: self, action: #selector(centerFieldTapped))
+        centerTap.cancelsTouchesInView = false
+        centerTap.delegate = self
+        centerFieldView.addGestureRecognizer(centerTap)
+
+        panelContainer.addSubview(photoItem.view)
+        panelContainer.addSubview(fileItem.view)
+        panelContainer.addSubview(emojiCollection)
+
+        voiceLabel.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        textField.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(Layout.textLeadingInset)
+            make.trailing.equalTo(fieldEmojiButton.snp.leading).offset(-8)
+            make.centerY.equalToSuperview()
+            make.height.equalTo(21)
+        }
+
+        placeholderLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(Layout.textLeadingInset)
+            make.trailing.lessThanOrEqualTo(fieldEmojiButton.snp.leading).offset(-8)
+            make.centerY.equalToSuperview()
+        }
+
+        fieldEmojiButton.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().inset(12)
+            make.centerY.equalToSuperview()
+            make.size.equalTo(Layout.iconSize)
+        }
+
+        photoItem.view.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(Layout.panelItemLeading)
+            make.top.equalToSuperview().offset(Layout.panelItemTop)
+            make.width.equalTo(Layout.panelItemSize)
+        }
+
+        fileItem.view.snp.makeConstraints { make in
+            make.leading.equalTo(photoItem.view.snp.trailing).offset(Layout.panelItemSpacing)
+            make.top.equalTo(photoItem.view)
+            make.width.equalTo(Layout.panelItemSize)
+        }
+
+        emojiCollection.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(12)
+            make.top.equalToSuperview().offset(8)
+            make.bottom.equalToSuperview().inset(8)
+        }
+
+        snp.makeConstraints { make in
+            heightConstraint = make.height.equalTo(totalBarHeight()).constraint
+        }
+
+        applyAssetIcon(fieldEmojiButton, asset: "chat_input_emoji", size: Layout.iconSize)
+        updateInputPresentation()
+    }
+
+    private func panelContentHeight(for panel: Panel) -> CGFloat {
+        switch panel {
+        case .none: return 0
+        case .more: return Layout.morePanelContentHeight
+        case .emoji: return Layout.emojiPanelContentHeight
+        }
+    }
+
+    private func makeToolbarButton(action: Selector) -> UIButton {
+        let button = UIButton(type: .custom)
+        button.adjustsImageWhenHighlighted = false
+        button.imageView?.contentMode = .scaleAspectFit
+        button.addTarget(self, action: action, for: .touchUpInside)
+        return button
+    }
+
+    private func applyAssetButton(_ button: UIButton, asset: String) {
+        guard let image = UIImage(named: asset) else {
+            print("[Chat-PL] missing asset \(asset)")
+            return
+        }
+        button.setImage(image.withRenderingMode(.alwaysOriginal), for: .normal)
+        button.backgroundColor = .clear
+    }
+
+    private func applyAssetIcon(_ button: UIButton, asset: String, size: CGFloat) {
+        guard let image = UIImage(named: asset) else {
+            print("[Chat-PL] missing asset \(asset)")
+            return
+        }
+        button.setImage(image.withRenderingMode(.alwaysTemplate), for: .normal)
+        button.tintColor = UIColor(hexString: "#1F2942")
+        button.backgroundColor = .clear
+        button.contentHorizontalAlignment = .center
+        button.contentVerticalAlignment = .center
+        button.imageView?.contentMode = .scaleAspectFit
+    }
+
+    override func didMoveToSuperview() {
+        super.didMoveToSuperview()
+        updateHeight(animated: false)
+    }
+
+    private func totalBarHeight() -> CGFloat {
+        let content: CGFloat
+        switch activePanel {
+        case .none: content = Layout.collapsedHeight
+        case .more: content = Layout.morePanelHeight
+        case .emoji: content = Layout.emojiPanelHeight
+        }
+        return content + safeAreaInsets.bottom
+    }
+
+    private func makePanelItem(iconName: String, title: String, action: Selector) -> (view: UIView, button: UIButton) {
+        let container = UIView()
+        let tile = UIView()
+        tile.backgroundColor = .white
+        tile.layer.cornerRadius = Layout.panelItemCorner
+        tile.layer.borderWidth = 1
+        tile.layer.borderColor = UIColor(hexString: "#FFE0D3").cgColor
+
+        let button = UIButton(type: .custom)
+        button.addTarget(self, action: action, for: .touchUpInside)
+
+        let iconView = UIImageView()
+        iconView.contentMode = .scaleAspectFit
+        iconView.isUserInteractionEnabled = false
+        iconView.image = UIImage(named: iconName)?.withRenderingMode(.alwaysOriginal)
+
+        let label = UILabel()
+        label.text = title
+        label.font = .fdFont(ofSize: 14, weight: .medium)
+        label.textColor = .fdText
+        label.textAlignment = .center
+
+        container.addSubview(tile)
+        tile.addSubview(iconView)
+        tile.addSubview(button)
+        container.addSubview(label)
+
+        tile.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.size.equalTo(Layout.panelItemSize)
+        }
+        iconView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+        button.snp.makeConstraints { $0.edges.equalToSuperview() }
+        label.snp.makeConstraints { make in
+            make.top.equalTo(tile.snp.bottom).offset(4)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
+
+        return (container, button)
+    }
+
+    private func updateInputPresentation() {
+        let showVoice = isVoiceMode
+        voiceLabel.isHidden = !showVoice
+        textField.isHidden = showVoice
+        placeholderLabel.isHidden = showVoice
+        fieldEmojiButton.isHidden = false
+
+        if !showVoice {
+            placeholderLabel.text = placeholderText
+            placeholderLabel.isHidden = !(textField.text ?? "").isEmpty
+        }
+
+        if showVoice {
+            applyAssetButton(leftButton, asset: "chat_input_keybord")
+        } else {
+            applyAssetButton(leftButton, asset: "chat_input_voice")
+        }
+        applyAssetButton(rightButton, asset: "chat_input_plus")
+        applyAssetIcon(fieldEmojiButton, asset: "chat_input_emoji", size: Layout.iconSize)
+
+        let panelHeight = panelContentHeight(for: activePanel)
+        panelContainer.isHidden = panelHeight == 0
+        panelAreaHeightConstraint?.update(offset: panelHeight)
+        photoItem.view.isHidden = activePanel != .more
+        fileItem.view.isHidden = activePanel != .more
+        emojiCollection.isHidden = activePanel != .emoji
+        if activePanel == .emoji {
+            emojiCollection.reloadData()
+            emojiCollection.layoutIfNeeded()
+        }
+    }
+
+    private func updateHeight(animated: Bool) {
+        heightConstraint?.update(offset: totalBarHeight())
+
+        guard animated else { return }
+        UIView.animate(withDuration: 0.25) {
+            self.superview?.layoutIfNeeded()
+        }
+    }
+
+    @objc private func textFieldChanged() {
+        placeholderLabel.isHidden = !(textField.text ?? "").isEmpty
+        delegate?.chatInputBar(self, didChangeText: textField.text ?? "")
+    }
+
+    @objc private func centerFieldTapped() {
+        guard !isVoiceMode else { return }
+        focusTextInput()
+    }
+
+    @objc private func toggleModeTapped() {
+        delegate?.chatInputBarDidTapToggleMode(self)
+    }
+
+    @objc private func emojiTapped() {
+        delegate?.chatInputBarDidTapEmoji(self)
+    }
+
+    @objc private func moreTapped() {
+        delegate?.chatInputBarDidTapMore(self)
+    }
+
+    @objc private func photoTapped() {
+        delegate?.chatInputBarDidTapPhoto(self)
+    }
+
+    @objc private func fileTapped() {
+        delegate?.chatInputBarDidTapFile(self)
+    }
+
+    @objc private func handleVoiceLongPress(_ gesture: UILongPressGestureRecognizer) {
+        let location = gesture.location(in: voiceLabel)
+        let isCancelled = location.y < -60
+
+        switch gesture.state {
+        case .began:
+            dismissPanel()
+            voiceLabel.text = "按住说话"
+            voiceLabel.textColor = .fdText
+            delegate?.chatInputBarDidBeginVoicePress(self)
+        case .changed:
+            delegate?.chatInputBarDidUpdateVoicePress(self, isCancelled: isCancelled)
+        case .ended:
+            voiceLabel.text = "按住说话"
+            voiceLabel.textColor = .fdText
+            delegate?.chatInputBarDidEndVoicePress(self, isCancelled: isCancelled)
+        case .cancelled, .failed:
+            voiceLabel.text = "按住说话"
+            voiceLabel.textColor = .fdText
+            delegate?.chatInputBarDidEndVoicePress(self, isCancelled: true)
+        default:
+            break
+        }
+    }
+}
+
+extension ChatInputBar: UITextFieldDelegate, UICollectionViewDataSource, UICollectionViewDelegate, UIGestureRecognizerDelegate {
+    func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+        if activePanel != .none {
+            setPanel(.none, animated: false)
+        }
+        return true
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        let point = touch.location(in: centerFieldView)
+        if fieldEmojiButton.frame.contains(point) { return false }
+        return true
+    }
+
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        delegate?.chatInputBarDidSend(self)
+        return false
+    }
+
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        RongEmoji.allEmojis.count
+    }
+
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChatEmojiCell.reuseID, for: indexPath) as! ChatEmojiCell
+        cell.configure(RongEmoji.allEmojis[indexPath.item])
+        return cell
+    }
+
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let emoji = RongEmoji.allEmojis[indexPath.item]
+        textField.text = (textField.text ?? "") + emoji
+        textFieldChanged()
+    }
+}
+
+private final class ChatEmojiCell: UICollectionViewCell {
+    static let reuseID = "ChatEmojiCell"
+
+    private let label: UILabel = {
+        let l = UILabel()
+        l.font = .systemFont(ofSize: 28)
+        l.textAlignment = .center
+        return l
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        contentView.addSubview(label)
+        label.snp.makeConstraints { $0.edges.equalToSuperview() }
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    func configure(_ emoji: String) {
+        label.text = emoji
     }
 }
 

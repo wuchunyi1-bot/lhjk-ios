@@ -22,7 +22,7 @@ struct BleWeightStatus: Equatable {
 
 /// 会话场景 — 体重 H5 / 测量 / 设备绑定行为不同
 enum ScaleSessionContext {
-    /// 体重 H5：服务端已绑才上报，锁定不写入本地绑定
+    /// 体重 H5：必须与 `getEquipmentByOne` 的 MAC 严格匹配才读数/上报
     case weightH5Host
     /// 测量页：仅称重 UI，锁定可写本地绑定，不上报
     case measurePage
@@ -86,6 +86,8 @@ final class ScaleBleSessionService {
     private var serverBindingState: ServerWeightBindingState?
     private var bluetoothStateCancellable: AnyCancellable?
     private var isReportingMonitor = false
+    /// 本次测量完成后暂停自动启扫，直到用户点横条「点击重试」或离开体重模块
+    private var autoScanPausedUntilUserRetry = false
 
     private let lastLockedStorageKey = "fd_okok_last_locked_scale"
     private let boundMacStorageKey = "fd_okok_bound_mac"
@@ -131,12 +133,21 @@ final class ScaleBleSessionService {
         }
     }
 
-    /// 体重 H5 进页：先查绑定设备，仅在有设备时启扫
+    /// 体重 H5 进页：先查绑定设备，仅在有 MAC 且未暂停自动启扫时开扫
     func prepareWeightHostSession() async {
+        if autoScanPausedUntilUserRetry {
+            print("[Scale-BLL] prepareWeightHostSession skipped — waiting for user retry after measurement")
+            stopSession()
+            publishStatus()
+            return
+        }
         let hasDevice = await refreshBindingState()
-        if hasDevice {
+        if hasDevice, preferredMacFilter != nil {
             startSession(context: .weightH5Host)
         } else {
+            if hasDevice {
+                print("[Scale-BLL] skip scan — getEquipmentByOne missing MAC")
+            }
             stopSession()
         }
     }
@@ -144,13 +155,23 @@ final class ScaleBleSessionService {
     /// 开始测量会话（扫描广播，不连接）
     /// - Parameter restart: `true` 时若已在扫则先停再开（绑定页需去掉 MAC 过滤）
     func startSession(context: ScaleSessionContext = .weightH5Host, restart: Bool = false) {
+        if isReportingMonitor {
+            print("[Scale-BLL] startSession ignored — saveOrUpdateMonitorData in flight")
+            publishStatus()
+            return
+        }
         if restart, isActive {
             stopSession()
         }
         sessionContext = context
-        handler?.stopOnLock = (context == .weightH5Host)
+        handler?.stopOnLock = false
+        if context == .weightH5Host, preferredMacFilter == nil {
+            print("[Scale-BLL] startSession ignored — weight H5 requires getEquipmentByOne MAC")
+            publishStatus()
+            return
+        }
         guard !isActive else {
-            print("[Scale-BLL] startSession ignored — already active context=\(context) stopOnLock=\(handler?.stopOnLock == true)")
+            print("[Scale-BLL] startSession ignored — already active context=\(context)")
             publishStatus()
             return
         }
@@ -177,8 +198,8 @@ final class ScaleBleSessionService {
         }
 
         let macHint = preferredMacFilter ?? "none"
-        h.stopOnLock = (context == .weightH5Host)
-        print("[Scale-BLL] startSession context=\(context) macFilter=\(macHint) stopOnLock=\(h.stopOnLock) — begin broadcast scan")
+        h.stopOnLock = false
+        print("[Scale-BLL] startSession context=\(context) macFilter=\(macHint) — begin broadcast scan")
         h.start(bluetooth: bluetooth)
         publishStatus()
     }
@@ -192,6 +213,17 @@ final class ScaleBleSessionService {
         handler?.stop()
         handler = nil
         publishStatus()
+    }
+
+    /// 横条「点击重试」：清除测量后暂停标记并重新启扫
+    func resumeScanAfterUserRetry() async {
+        autoScanPausedUntilUserRetry = false
+        await prepareWeightHostSession()
+    }
+
+    /// 离开体重模块时调用，下次进页可自动启扫
+    func clearAutoScanPause() {
+        autoScanPausedUntilUserRetry = false
     }
 
     /// 供 Bridge `ble.getStatus`
@@ -257,7 +289,6 @@ final class ScaleBleSessionService {
             lastDiscovery = discovery
             let packet = discovery.packet
             print("[Scale-BLL] 体脂秤[实时] \(discovery.identityLogLine)")
-            print("[Scale-BLL] realtime \(packet.debugDescription)")
             realtimePublisher.send(packet)
             publishStatus()
         case .locked(let discovery):
@@ -266,7 +297,6 @@ final class ScaleBleSessionService {
             lastDiscovery = discovery
             let packet = discovery.packet
             print("[Scale-BLL] 体脂秤[锁定] \(discovery.identityLogLine)")
-            print("[Scale-BLL] locked \(packet.debugDescription)")
             lastLockedPacket = packet
             lockedPublisher.send(packet)
 
@@ -279,23 +309,34 @@ final class ScaleBleSessionService {
             if sessionContext == .measurePage {
                 bindDeviceLocally(from: discovery)
             }
-            let shouldStopScanAfterLock = sessionContext == .weightH5Host
-            publishStatus()
-            emitSynced(for: discovery)
-            if shouldStopScanAfterLock {
-                print("[Scale-BLL] weight H5 locked — stop broadcast scan")
+            if sessionContext == .weightH5Host {
+                autoScanPausedUntilUserRetry = true
+                print("[Scale-BLL] weight H5 locked — stop broadcast scan immediately")
                 stopSession()
             }
+            publishStatus()
+            emitSynced(for: discovery)
         }
     }
 
     private func acceptsDiscovery(_ discovery: OKOKScaleDiscovery, phase: String) -> Bool {
         if sessionContext == .deviceBind { return true }
-        // 体重 H5 锁定帧就是本次测量，不再因 MAC 格式差异丢掉上报
-        if sessionContext == .weightH5Host, phase == "locked" { return true }
-        guard let filter = preferredMacFilter else { return true }
+
         let packetMac = Self.normalizeMac(discovery.packet.macString)
-        let matched = Self.macsMatch(packetMac, filter)
+        if sessionContext == .weightH5Host {
+            guard let boundMac = preferredMacFilter else {
+                print("[Scale-BLL] drop \(phase) — no getEquipmentByOne MAC")
+                return false
+            }
+            let matched = packetMac == boundMac
+            if !matched {
+                print("[Scale-BLL] drop \(phase) packetMac=\(packetMac ?? "-") boundMac=\(boundMac)")
+            }
+            return matched
+        }
+
+        guard let filter = preferredMacFilter else { return true }
+        let matched = packetMac == filter
         if !matched {
             print("[Scale-BLL] drop \(phase) packetMac=\(packetMac ?? "-") filter=\(filter)")
         }
@@ -311,20 +352,23 @@ final class ScaleBleSessionService {
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            var payload = self.makeSyncedPayload(discovery: discovery)
+            var monitorId = ""
 
             if shouldReportToServer {
+                let packetMac = Self.normalizeMac(packet.macString)
+                let boundMac = self.preferredMacFilter
+                guard packetMac != nil, packetMac == boundMac else {
+                    print("[Scale-BLL] skip saveOrUpdateMonitorData — MAC mismatch packet=\(packetMac ?? "-") bound=\(boundMac ?? "-")")
+                    return
+                }
                 if self.isReportingMonitor {
                     print("[Scale-BLL] skip saveOrUpdateMonitorData — already reporting")
                 } else {
                     self.isReportingMonitor = true
                     defer { self.isReportingMonitor = false }
                     do {
-                        print("[Scale-BLL] POST /v1/monitor/saveOrUpdateMonitorData weight=\(packet.weightKg) mac=\(packet.macString)")
-                        let monitorId = try await self.reportLockedMeasurement(discovery: discovery)
-                        if !monitorId.isEmpty {
-                            payload["monitorId"] = monitorId
-                        }
+                        print("[Scale-BLL] POST /v1/monitor/saveOrUpdateMonitorData weight=\(packet.weightKg) impedance=\(packet.impedance)")
+                        monitorId = try await self.reportLockedMeasurement(discovery: discovery)
                         print("[Scale-BLL] saveOrUpdateMonitorData ok monitorId=\(monitorId)")
                     } catch {
                         print("[Scale-BLL] saveOrUpdateMonitorData failed — \(error.localizedDescription)")
@@ -333,7 +377,12 @@ final class ScaleBleSessionService {
                 }
             }
 
+            var payload = self.makeSyncedPayload(discovery: discovery)
             payload["weightKg"] = packet.weightKg
+            payload["impedance"] = packet.impedance
+            if !monitorId.isEmpty {
+                payload["monitorId"] = monitorId
+            }
             self.syncedPublisher.send(payload)
             self.publishStatus()
         }
@@ -357,14 +406,8 @@ final class ScaleBleSessionService {
         let payload = WeightBluetoothMonitorData(
             recordTimeMs: now,
             weightKg: packet.weightKg,
-            bmi: nil,
-            bodyFatScaleMonitor: packet.deviceTypeIsBodyFat,
-            bodyFat: nil,
-            muscle: nil,
-            bodyWater: nil,
-            basalMetabolism: nil,
-            fatVolume: nil,
-            bone: nil
+            bodyFatScaleMonitor: true,
+            impedance: packet.impedance
         )
         return try await equipmentBindService.saveWeightBluetoothMonitor(
             mac: packet.macString,
@@ -402,6 +445,7 @@ final class ScaleBleSessionService {
         let packet = discovery.packet
         var payload: [String: Any] = [
             "weightKg": packet.weightKg,
+            "impedance": packet.impedance,
             "resistanceRaw": packet.resistanceRaw,
             "mac": packet.macString,
             "productId": packet.productId,
@@ -476,8 +520,8 @@ final class ScaleBleSessionService {
             return nil
         }
         let hex = trimmed.uppercased().filter(\.isHexDigit)
-        guard hex.count >= 12 else { return nil }
-        return String(hex.suffix(12))
+        guard hex.count == 12 else { return nil }
+        return hex
     }
 
     /// `getEquipmentByOne` 返回有效设备：至少含 MAC 或 deviceId

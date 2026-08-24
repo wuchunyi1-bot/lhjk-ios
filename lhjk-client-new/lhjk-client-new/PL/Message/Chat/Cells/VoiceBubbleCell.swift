@@ -3,45 +3,33 @@ import SnapKit
 import Kingfisher
 import AVFoundation
 
-/// 语音气泡 Cell — 波形图标 + 时长，宽度随 duration 变化
+/// 语音气泡 Cell — 波形图标 + 时长（Figma 3876:35332）
 final class VoiceBubbleCell: UITableViewCell {
     static let reuseID = "VoiceBubbleCell"
 
     weak var delegate: ChatCellDelegate?
     private var currentMessage: ChatMessage?
 
-    // MARK: - UI
-
     private let avatarLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 13, weight: .bold)
+        l.font = .fdFont(ofSize: 15, weight: .bold)
         l.textColor = .white
         l.textAlignment = .center
-        l.layer.cornerRadius = 17
         l.clipsToBounds = true
         return l
     }()
     private let avatarImageView: UIImageView = {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFill
-        iv.layer.cornerRadius = 17
         iv.clipsToBounds = true
         iv.isHidden = true
         return iv
     }()
 
-    private let metaLabel: UILabel = {
-        let l = UILabel()
-        l.font = .fdMicro
-        l.textColor = .fdMuted
-        return l
-    }()
+    private let metaLabel = UILabel()
 
-    private let bubbleView: UIView = {
-        let v = UIView()
-        v.layer.cornerRadius = 15
-        return v
-    }()
+    private let bubbleBackground = ChatBubbleBackgroundView()
+    private let bubbleView = UIView()
 
     private let iconView: UIImageView = {
         let iv = UIImageView(image: UIImage(systemName: "waveform"))
@@ -49,11 +37,7 @@ final class VoiceBubbleCell: UITableViewCell {
         return iv
     }()
 
-    private let durationLabel: UILabel = {
-        let l = UILabel()
-        l.font = .fdFont(ofSize: 14)
-        return l
-    }()
+    private let durationLabel = UILabel()
 
     private let unreadDot: UIView = {
         let v = UIView()
@@ -63,21 +47,23 @@ final class VoiceBubbleCell: UITableViewCell {
         return v
     }()
 
-    // MARK: - Playback
-
-    private var player: AVAudioPlayer?
+    private var playbackController = VoicePlaybackController()
     private var currentAudioPath: String?
     private var currentMessageId: Int = 0
     private var isPlaying = false
-
-    // MARK: - Init
+    private var didRetryVoiceDownload = false
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
         backgroundColor = .fdBg
 
-        [avatarLabel, avatarImageView, metaLabel, bubbleView].forEach(contentView.addSubview)
+        ChatBubbleStyle.configureAvatar(avatarLabel, imageView: avatarImageView)
+        metaLabel.font = ChatBubbleStyle.metaFont
+        metaLabel.textColor = ChatBubbleStyle.metaColor
+        durationLabel.font = ChatBubbleStyle.textFont
+
+        [avatarLabel, avatarImageView, metaLabel, bubbleBackground, bubbleView].forEach(contentView.addSubview)
         [iconView, durationLabel, unreadDot].forEach(bubbleView.addSubview)
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(togglePlay))
@@ -96,58 +82,50 @@ final class VoiceBubbleCell: UITableViewCell {
         currentAudioPath = nil
     }
 
-    // MARK: - Configure
-
     func configure(_ msg: ChatMessage, tone: String, convRole: ConversationRole) {
         currentMessage = msg
         let isStaff = msg.isStaff
         let seconds = msg.thumbHeight ?? 0
 
-        metaLabel.font = .fdMicro
-
-        // 停止上一个播放
         stopPlayback()
         currentAudioPath = msg.imagePath
         currentMessageId = msg.messageId
-        print("[VoiceBubble] configure → path=\(msg.imagePath ?? "nil") duration=\(seconds) msgId=\(currentMessageId)")
+        didRetryVoiceDownload = false
         updatePlayIcon(false)
 
-        if let urlStr = msg.portraitUrl, !urlStr.isEmpty, let url = URL(string: urlStr) {
-            avatarImageView.isHidden = false
-            avatarLabel.isHidden = true
-            avatarImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
-        } else {
-            avatarImageView.isHidden = true
-            avatarLabel.isHidden = false
-            avatarLabel.text = isStaff ? (msg.avatar ?? msg.senderName?.prefix(1).description ?? "?") : "我"
-        }
-        avatarLabel.backgroundColor = isStaff
-            ? UIColor(hexString: tone)
-            : UIColor(hexString: "#FF7A50")
+        ChatBubbleStyle.applyAvatar(portraitUrl: msg.portraitUrl, label: avatarLabel, imageView: avatarImageView)
 
-        metaLabel.text = isStaff
-            ? [msg.senderName, msg.senderRole, msg.time].compactMap { $0 }.joined(separator: " · ")
-            : msg.time
-        metaLabel.textAlignment = isStaff ? .left : .right
+        if isStaff {
+            metaLabel.text = ChatBubbleStyle.staffMetaText(name: msg.senderName)
+            metaLabel.textAlignment = .left
+            bubbleBackground.tail = .left
+            bubbleBackground.fill = .staffGradient
+            iconView.tintColor = ChatBubbleStyle.primaryText
+            durationLabel.textColor = ChatBubbleStyle.primaryText
+            iconView.transform = .identity
+        } else {
+            metaLabel.text = msg.time
+            metaLabel.textAlignment = .right
+            bubbleBackground.tail = .right
+            bubbleBackground.fill = .userSolid
+            iconView.tintColor = .white
+            durationLabel.textColor = .white
+            iconView.transform = CGAffineTransform(scaleX: -1, y: 1)
+        }
 
         durationLabel.text = "\(seconds)\""
-        iconView.tintColor = isStaff ? .fdText : .white
-        durationLabel.textColor = isStaff ? .fdText : .white
-        bubbleView.backgroundColor = isStaff ? .fdSurface : UIColor(hexString: "#FF7A50")
-
-        // staff 图标朝右，user 图标朝左（镜像）
-        iconView.transform = isStaff ? .identity : CGAffineTransform(scaleX: -1, y: 1)
-
         layoutForStaff(isStaff, seconds: seconds)
     }
 
-    // MARK: - Playback Actions
-
     @objc private func togglePlay() {
-        print("[VoiceBubble] togglePlay called, isPlaying=\(isPlaying)")
         if isPlaying {
             stopPlayback()
         } else {
+            VoicePlaybackLogger.logTap(
+                messageId: currentMessageId,
+                duration: currentMessage?.thumbHeight,
+                audioRef: currentAudioPath
+            )
             startPlayback()
         }
     }
@@ -158,23 +136,33 @@ final class VoiceBubbleCell: UITableViewCell {
     }
 
     private func startPlayback() {
-        // 1. 本地文件存在 → 直接播放
+        if currentMessageId > 0 {
+            RongCloudManager.shared.logVoiceMessageMeta(messageId: currentMessageId)
+        }
+
         if let path = currentAudioPath, !path.isEmpty, path.hasPrefix("/") {
+            VoicePlaybackLogger.logSource("localPath", messageId: currentMessageId, detail: path)
             playFile(URL(fileURLWithPath: path))
             return
         }
 
-        // 2. messageId 有效 → 通过融云 SDK 下载
         if currentMessageId > 0 {
-            print("[VoiceBubble] downloading via SDK msgId=\(currentMessageId)")
+            VoicePlaybackLogger.logSource("rongCloudDownload", messageId: currentMessageId)
             updatePlayIcon(true)
             RongCloudManager.shared.downloadMediaMessage(currentMessageId) { [weak self] localPath in
-                guard let self, let localPath else {
-                    print("[VoiceBubble] ✗ SDK download failed msgId=\(self?.currentMessageId ?? 0)")
-                    DispatchQueue.main.async { self?.updatePlayIcon(false) }
+                guard let self else { return }
+                guard let localPath else {
+                    DispatchQueue.main.async {
+                        VoicePlaybackLogger.logDownloadResult(
+                            messageId: self.currentMessageId,
+                            success: false,
+                            localPath: nil,
+                            error: "sdk returned nil"
+                        )
+                        self.updatePlayIcon(false)
+                    }
                     return
                 }
-                print("[VoiceBubble] ✓ SDK downloaded: \(localPath)")
                 DispatchQueue.main.async {
                     self.currentAudioPath = localPath
                     self.playFile(URL(fileURLWithPath: localPath))
@@ -183,82 +171,147 @@ final class VoiceBubbleCell: UITableViewCell {
             return
         }
 
-        // 3. messageId 不可用 → 尝试直接下载 remoteUrl
         if let urlStr = currentAudioPath, !urlStr.isEmpty,
            let remoteURL = URL(string: urlStr) {
-            print("[VoiceBubble] downloading via URL: \(urlStr)")
+            VoicePlaybackLogger.logSource(
+                "urlSession",
+                messageId: currentMessageId,
+                detail: "url=\(urlStr)"
+            )
             updatePlayIcon(true)
             URLSession.shared.downloadTask(with: remoteURL) { [weak self] tempURL, _, error in
-                guard let self, let tempURL = tempURL, error == nil else {
-                    print("[VoiceBubble] ✗ URL download failed: \(error?.localizedDescription ?? "nil")")
-                    DispatchQueue.main.async { self?.updatePlayIcon(false) }
+                guard let self else { return }
+                if let error {
+                    VoicePlaybackLogger.logRemoteDownload(
+                        url: remoteURL,
+                        tempPath: tempURL?.path,
+                        destPath: nil,
+                        error: error
+                    )
+                    DispatchQueue.main.async { self.updatePlayIcon(false) }
                     return
                 }
-                // 移动到持久位置
-                let dest = URL(fileURLWithPath: NSTemporaryDirectory() + "voice_\(Int(Date().timeIntervalSince1970)).m4a")
+                guard let tempURL else {
+                    VoicePlaybackLogger.logRemoteDownload(
+                        url: remoteURL,
+                        tempPath: nil,
+                        destPath: nil,
+                        error: NSError(
+                            domain: "VoicePlayback",
+                            code: -1,
+                            userInfo: [NSLocalizedDescriptionKey: "empty temp file"]
+                        )
+                    )
+                    DispatchQueue.main.async { self.updatePlayIcon(false) }
+                    return
+                }
+                let ext = remoteURL.pathExtension.isEmpty ? "m4a" : remoteURL.pathExtension
+                let dest = URL(
+                    fileURLWithPath: NSTemporaryDirectory()
+                        + "voice_\(Int(Date().timeIntervalSince1970)).\(ext)"
+                )
                 try? FileManager.default.removeItem(at: dest)
                 do {
                     try FileManager.default.moveItem(at: tempURL, to: dest)
-                    print("[VoiceBubble] ✓ URL downloaded: \(dest.path)")
+                    VoicePlaybackLogger.logRemoteDownload(
+                        url: remoteURL,
+                        tempPath: tempURL.path,
+                        destPath: dest.path,
+                        error: nil
+                    )
                     DispatchQueue.main.async {
                         self.currentAudioPath = dest.path
                         self.playFile(dest)
                     }
                 } catch {
-                    print("[VoiceBubble] ✗ move file failed: \(error)")
+                    VoicePlaybackLogger.logRemoteDownload(
+                        url: remoteURL,
+                        tempPath: tempURL.path,
+                        destPath: dest.path,
+                        error: error
+                    )
                     DispatchQueue.main.async { self.updatePlayIcon(false) }
                 }
             }.resume()
             return
         }
 
-        print("[VoiceBubble] ✗ no local path, no messageId, no remote URL — cannot play")
+        print("[Voice] play ✗ no playable source messageId=\(currentMessageId) ref=\(currentAudioPath ?? "nil")")
     }
 
     private func playFile(_ url: URL) {
-        let exists = FileManager.default.fileExists(atPath: url.path)
-        print("[VoiceBubble] play: \(url.path), exists=\(exists)")
-        guard exists else { updatePlayIcon(false); return }
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-            try AVAudioSession.sharedInstance().setActive(true)
-            player = try AVAudioPlayer(contentsOf: url)
-            player?.delegate = self
-            player?.play()
-            isPlaying = true
-            updatePlayIcon(true)
-            print("[VoiceBubble] ✓ playing, duration=\(player?.duration ?? 0)")
-        } catch {
-            print("[VoiceBubble] ✗ failed: \(error)")
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            VoicePlaybackLogger.logMissingFile(path: url.path, messageId: currentMessageId)
             updatePlayIcon(false)
+            return
+        }
+
+        playbackController.play(
+            url: url,
+            messageId: currentMessageId,
+            onStarted: { [weak self] in
+                self?.isPlaying = true
+                self?.updatePlayIcon(true)
+            },
+            onFinished: { [weak self] in
+                self?.isPlaying = false
+                self?.updatePlayIcon(false)
+            },
+            onFailed: { [weak self] error in
+                guard let self else { return }
+                self.isPlaying = false
+                self.updatePlayIcon(false)
+                let message = (error as? LocalizedError)?.errorDescription ?? "语音播放失败"
+                self.delegate?.cellVoicePlaybackFailed(self, message: message)
+                self.retryPlaybackAfterFailure(originalURL: url)
+            }
+        )
+    }
+
+    /// AVAudioPlayer / AVPlayer 均失败后，尝试重新从融云拉取媒体文件（仅一次）
+    private func retryPlaybackAfterFailure(originalURL: URL) {
+        guard currentMessageId > 0, !didRetryVoiceDownload else { return }
+        didRetryVoiceDownload = true
+        print("[Voice] retry download messageId=\(currentMessageId)")
+        RongCloudManager.shared.downloadMediaMessage(currentMessageId) { [weak self] localPath in
+            guard let self else { return }
+            DispatchQueue.main.async {
+                guard let localPath, localPath != originalURL.path else {
+                    VoicePlaybackLogger.logDownloadResult(
+                        messageId: self.currentMessageId,
+                        success: false,
+                        localPath: localPath,
+                        error: "retry returned same or nil path"
+                    )
+                    return
+                }
+                self.currentAudioPath = localPath
+                self.playFile(URL(fileURLWithPath: localPath))
+            }
         }
     }
 
     private func stopPlayback() {
-        print("[VoiceBubble] stopPlayback")
-        player?.stop()
-        player = nil
+        playbackController.stop()
         isPlaying = false
         updatePlayIcon(false)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
     private func updatePlayIcon(_ playing: Bool) {
         iconView.image = UIImage(systemName: playing ? "waveform.circle.fill" : "waveform")
     }
 
-    // MARK: - Layout
-
     private func layoutForStaff(_ isStaff: Bool, seconds: Int) {
-        let bubbleWidth = voiceBubbleWidth(seconds: seconds)
+        let maxBubbleW = ChatBubbleStyle.maxContentBubbleWidth()
+        let bubbleWidth = voiceBubbleWidth(seconds: seconds, maxWidth: maxBubbleW)
 
         avatarLabel.snp.remakeConstraints { make in
             make.top.equalToSuperview().offset(8).priority(999)
-            make.size.equalTo(34)
+            make.size.equalTo(ChatBubbleStyle.avatarSize)
             if isStaff {
-                make.leading.equalToSuperview().offset(16)
+                make.leading.equalToSuperview().offset(ChatBubbleStyle.horizontalInset)
             } else {
-                make.trailing.equalToSuperview().offset(-16)
+                make.trailing.equalToSuperview().offset(-ChatBubbleStyle.horizontalInset)
             }
         }
         avatarImageView.snp.remakeConstraints { make in
@@ -268,32 +321,37 @@ final class VoiceBubbleCell: UITableViewCell {
         metaLabel.snp.remakeConstraints { make in
             make.top.equalTo(avatarLabel)
             if isStaff {
-                make.leading.equalTo(avatarLabel.snp.trailing).offset(8)
+                make.leading.equalTo(avatarLabel.snp.trailing).offset(ChatBubbleStyle.avatarToContentGap)
             } else {
-                make.trailing.equalTo(avatarLabel.snp.leading).offset(-8)
+                make.trailing.equalTo(avatarLabel.snp.leading).offset(-ChatBubbleStyle.avatarToContentGap)
             }
         }
 
+        bubbleBackground.snp.remakeConstraints { make in
+            make.edges.equalTo(bubbleView)
+        }
+
         bubbleView.snp.remakeConstraints { make in
-            make.top.equalTo(metaLabel.snp.bottom).offset(4)
+            make.top.equalTo(isStaff ? metaLabel.snp.bottom : avatarLabel.snp.top)
+                .offset(isStaff ? ChatBubbleStyle.nameToBubbleGap : 0)
             make.bottom.equalToSuperview().offset(-8).priority(999)
             make.width.equalTo(bubbleWidth)
             make.height.equalTo(40)
             if isStaff {
                 make.leading.equalTo(metaLabel)
             } else {
-                make.trailing.equalTo(metaLabel)
+                make.trailing.equalTo(avatarLabel.snp.leading).offset(-ChatBubbleStyle.avatarToContentGap)
             }
         }
 
         if isStaff {
             iconView.snp.remakeConstraints { make in
-                make.leading.equalToSuperview().offset(12)
+                make.leading.equalToSuperview().offset(ChatBubbleStyle.bubbleInset)
                 make.centerY.equalToSuperview()
                 make.size.equalTo(20)
             }
             durationLabel.snp.remakeConstraints { make in
-                make.trailing.equalToSuperview().offset(-10)
+                make.trailing.equalToSuperview().offset(-ChatBubbleStyle.bubbleInset)
                 make.centerY.equalToSuperview()
             }
             unreadDot.snp.remakeConstraints { make in
@@ -303,32 +361,19 @@ final class VoiceBubbleCell: UITableViewCell {
             }
         } else {
             durationLabel.snp.remakeConstraints { make in
-                make.leading.equalToSuperview().offset(10)
+                make.leading.equalToSuperview().offset(ChatBubbleStyle.bubbleInset)
                 make.centerY.equalToSuperview()
             }
             iconView.snp.remakeConstraints { make in
-                make.trailing.equalToSuperview().offset(-12)
+                make.trailing.equalToSuperview().offset(-ChatBubbleStyle.bubbleInset)
                 make.centerY.equalToSuperview()
                 make.size.equalTo(20)
             }
         }
     }
 
-    /// 气泡宽度随秒数变化：1s=60pt, 60s=160pt
-    private func voiceBubbleWidth(seconds: Int) -> CGFloat {
-        let minWidth: CGFloat = 60
-        let maxWidth: CGFloat = 160
-        let width = minWidth + CGFloat(min(seconds, 60)) * (maxWidth - minWidth) / 60.0
-        return width
-    }
-}
-
-// MARK: - AVAudioPlayerDelegate
-
-extension VoiceBubbleCell: AVAudioPlayerDelegate {
-    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        isPlaying = false
-        updatePlayIcon(false)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    private func voiceBubbleWidth(seconds: Int, maxWidth: CGFloat) -> CGFloat {
+        let minWidth: CGFloat = 72
+        return minWidth + CGFloat(min(seconds, 60)) * (maxWidth - minWidth) / 60.0
     }
 }

@@ -494,22 +494,86 @@ final class RongCloudManager {
     }
 
     /// 下载媒体消息（语音），完成后 localPath 可用
+    func logVoiceMessageMeta(messageId: Int) {
+        guard messageId > 0 else { return }
+        client.getMessage(messageId) { message in
+            guard let message else {
+                print("[Voice] meta messageId=\(messageId) message not found")
+                return
+            }
+            if let voice = message.content as? RCHQVoiceMessage {
+                VoicePlaybackLogger.logRongCloudVoiceMeta(
+                    messageId: messageId,
+                    objectName: message.objectName,
+                    duration: Int(voice.duration),
+                    format: voice.format,
+                    sampleRate: voice.sampleRate,
+                    channels: voice.numberOfChannels,
+                    remoteUrl: voice.remoteUrl,
+                    localPath: voice.localPath
+                )
+            } else {
+                print(
+                    "[Voice] meta messageId=\(messageId) objectName=\(message.objectName ?? "nil") "
+                    + "contentType=\(type(of: message.content))"
+                )
+            }
+        }
+    }
+
+    /// 下载媒体消息（语音），完成后 localPath 可用
     func downloadMediaMessage(_ messageId: Int, completion: @escaping (String?) -> Void) {
         client.getMessage(messageId) { [weak self] message in
             guard let self, let message else {
                 print("[RongCloud] downloadMedia ✗ msgId=\(messageId) message not found")
+                VoicePlaybackLogger.logDownloadResult(
+                    messageId: messageId,
+                    success: false,
+                    localPath: nil,
+                    error: "message not found"
+                )
                 completion(nil)
                 return
             }
+
+            if let voice = message.content as? RCHQVoiceMessage {
+                VoicePlaybackLogger.logRongCloudVoiceMeta(
+                    messageId: messageId,
+                    objectName: message.objectName,
+                    duration: Int(voice.duration),
+                    format: voice.format,
+                    sampleRate: voice.sampleRate,
+                    channels: voice.numberOfChannels,
+                    remoteUrl: voice.remoteUrl,
+                    localPath: voice.localPath
+                )
+            } else {
+                print(
+                    "[Voice] meta messageId=\(messageId) objectName=\(message.objectName ?? "nil") "
+                    + "contentType=\(type(of: message.content))"
+                )
+            }
+
             self.client.downloadMediaMessage(
                 message,
                 progressBlock: nil,
                 successBlock: { localPath in
                     print("[RongCloud] downloadMedia ✓ msgId=\(messageId) path=\(localPath)")
+                    VoicePlaybackLogger.logDownloadResult(
+                        messageId: messageId,
+                        success: true,
+                        localPath: localPath
+                    )
                     completion(localPath)
                 },
                 errorBlock: { errorCode in
                     print("[RongCloud] downloadMedia ✗ msgId=\(messageId) code=\(errorCode.rawValue)")
+                    VoicePlaybackLogger.logDownloadResult(
+                        messageId: messageId,
+                        success: false,
+                        localPath: nil,
+                        error: "rongCloud code=\(errorCode.rawValue)"
+                    )
                     completion(nil)
                 },
                 cancel: nil

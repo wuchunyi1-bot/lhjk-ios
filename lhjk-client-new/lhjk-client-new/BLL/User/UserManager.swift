@@ -7,6 +7,8 @@ extension Notification.Name {
     static let userDidUpdate = Notification.Name("FDUserDidUpdate")
     /// 默认档案更新通知（登录/冷启动拉取或主动刷新后触发）
     static let defaultArchiveDidUpdate = Notification.Name("FDDefaultArchiveDidUpdate")
+    /// 档案完善进度更新通知（`calculateArchiveCompletion` 拉取后触发）
+    static let archiveCompletionDidUpdate = Notification.Name("FDArchiveCompletionDidUpdate")
     /// 今日健康监测任务需刷新通知（体征录入完成等）
     static let todayMonitorTaskShouldRefresh = Notification.Name("FDTodayMonitorTaskShouldRefresh")
 }
@@ -30,6 +32,7 @@ final class UserManager {
 
     private static let cacheKey = "cached_user_info"
     private static let defaultArchiveKey = "cached_default_archive"
+    private static let archiveCompletionKey = "cached_archive_completion_percentage"
     /// 历史登录摘要缓存（已废弃，启动时清理）
     private static let legacyLoginUserInfoKey = "cached_login_user_info"
 
@@ -41,11 +44,17 @@ final class UserManager {
     /// 默认档案（`getOArchiveByUserId`）— 本地持久化；`archiveComplete` 为 onboarding 门禁
     private(set) var defaultArchive: OArchive?
 
+    /// 档案完善进度（`calculateArchiveCompletion`）— 0–100，本地持久化
+    private(set) var archiveCompletionPercentage: Int?
+
     /// 是否已完成首次详情拉取（同一生命周期内 `fetchUserInfo` 只发一次请求）
     private var hasFetched = false
 
     /// 是否已完成首次默认档案拉取
     private var hasFetchedArchive = false
+
+    /// 是否已完成首次档案完善进度拉取
+    private var hasFetchedArchiveCompletion = false
 
     // MARK: - Init
 
@@ -61,6 +70,11 @@ final class UserManager {
            let archive = try? JSONDecoder().decode(OArchive.self, from: data) {
             self.defaultArchive = archive
             print("[UserManager] loaded defaultArchive — id=\(archive.id ?? "nil") archiveComplete=\(archive.archiveComplete.map(String.init) ?? "nil")")
+        }
+        if UserDefaults.standard.object(forKey: Self.archiveCompletionKey) != nil {
+            let cached = UserDefaults.standard.integer(forKey: Self.archiveCompletionKey)
+            self.archiveCompletionPercentage = cached
+            print("[UserManager] loaded archiveCompletionPercentage — \(cached)%")
         }
     }
 
@@ -147,14 +161,53 @@ final class UserManager {
         return archive
     }
 
+    // MARK: - 档案完善进度
+
+    /// 拉取档案完善进度（首次发网，后续读内存）。须先有 `currentUser.id`。
+    @discardableResult
+    func fetchArchiveCompletion() async -> Int? {
+        if hasFetchedArchiveCompletion { return archiveCompletionPercentage }
+        hasFetchedArchiveCompletion = true
+        return await refreshArchiveCompletion()
+    }
+
+    /// 强制刷新档案完善进度
+    @discardableResult
+    func refreshArchiveCompletion(userId: String? = nil) async -> Int? {
+        let id = (userId ?? resolvedUserId)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !id.isEmpty else {
+            print("[UserManager] refreshArchiveCompletion → no userId, skip")
+            return archiveCompletionPercentage
+        }
+
+        print("[UserManager] refreshArchiveCompletion → GET calculateArchiveCompletion userId=\(id)")
+        guard let vo = try? await UserService.shared.calculateArchiveCompletion(userId: id) else {
+            print("[UserManager] refreshArchiveCompletion → request failed, keeping cached data")
+            return archiveCompletionPercentage
+        }
+
+        let raw = vo.completionPercentage ?? 0
+        let clamped = min(100, max(0, raw))
+        archiveCompletionPercentage = clamped
+        UserDefaults.standard.set(clamped, forKey: Self.archiveCompletionKey)
+        await MainActor.run {
+            NotificationCenter.default.post(name: .archiveCompletionDidUpdate, object: clamped)
+        }
+        print("[UserManager] refreshArchiveCompletion ✓ \(clamped)%")
+        return clamped
+    }
+
     /// 登出：用户详情 / 默认档案一并清除
     func clear() {
         currentUser = nil
         defaultArchive = nil
+        archiveCompletionPercentage = nil
         hasFetched = false
         hasFetchedArchive = false
+        hasFetchedArchiveCompletion = false
         UserDefaults.standard.removeObject(forKey: Self.cacheKey)
         UserDefaults.standard.removeObject(forKey: Self.defaultArchiveKey)
+        UserDefaults.standard.removeObject(forKey: Self.archiveCompletionKey)
         UserDefaults.standard.removeObject(forKey: Self.legacyLoginUserInfoKey)
         HomeService.shared.invalidateTodayTasksCache()
         print("[UserManager] cleared")

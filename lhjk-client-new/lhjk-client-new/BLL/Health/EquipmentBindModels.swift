@@ -432,44 +432,202 @@ struct SaveMonitorDataResultVO: Decodable {
     }
 }
 
-/// 体重蓝牙监测 `monitorData.data` 字段构建
+/// 体重蓝牙监测 `monitorData.data` 字段构建（对齐 Apifox `saveOrUpdateMonitorData` 体重蓝牙样例）
 struct WeightBluetoothMonitorData {
     let recordTimeMs: Int64
     let weightKg: Double
-    let bmi: Double?
+    /// 体脂秤固定传 `1`；仅体重/未测到阻抗时 `impedance` 传 `0`
     let bodyFatScaleMonitor: Bool
-    let bodyFat: Int?
-    let muscle: Int?
-    let bodyWater: Int?
-    let basalMetabolism: Int?
-    let fatVolume: Int?
-    let bone: Int?
+    /// 阻抗（Ω）；`resistanceRaw` 为 0 时传 `0`
+    let impedance: Double
 
     func asDictionary() -> [String: SaveMonitorJSONValue] {
-        var data: [String: SaveMonitorJSONValue] = [
-            "recordTime": .string(String(recordTimeMs)),
-            "weight": .string(Self.formatWeight(weightKg)),
+        [
+            "recordTime": .int(Int(recordTimeMs)),
+            "weight": .double(Self.roundedWeight(weightKg)),
             "bodyFatScaleMonitor": .int(bodyFatScaleMonitor ? 1 : 0),
+            "impedance": .double(Self.roundedImpedance(impedance)),
         ]
-        if let bmi {
-            data["bmi"] = .string(String(format: "%.1f", bmi))
-        }
-        if let bodyFat { data["bodyFat"] = .int(bodyFat) }
-        if let muscle { data["muscle"] = .int(muscle) }
-        if let bodyWater { data["bodyWater"] = .int(bodyWater) }
-        if let basalMetabolism { data["basalMetabolism"] = .int(basalMetabolism) }
-        if let fatVolume { data["fatVolume"] = .int(fatVolume) }
-        if let bone { data["bone"] = .int(bone) }
-        return data
     }
 
-    private static func formatWeight(_ kg: Double) -> String {
+    private static func roundedWeight(_ kg: Double) -> Double {
         let hundredths = (kg * 100).rounded() / 100
         let tenths = (kg * 10).rounded() / 10
         if abs(hundredths - tenths) < 0.001 {
-            return String(format: "%.1f", tenths)
+            return tenths
         }
-        return String(format: "%.2f", hundredths)
+        return hundredths
+    }
+
+    private static func roundedImpedance(_ value: Double) -> Double {
+        guard value > 0 else { return 0 }
+        return (value * 10).rounded() / 10
+    }
+}
+
+/// `POST /v1/monitor/getWeightHomePageData` 请求
+struct WeightHomePageDataRequest: Encodable {
+    let businessId: Int
+    let monitorId: String?
+}
+
+/// `getWeightHomePageData.data.bodyCompositionResults[]`
+struct WeightBodyCompositionItemVO: Decodable {
+    let code: Int?
+    let name: String?
+    let unit: String?
+    let value: Double?
+    let monitorResults: String?
+    let color: String?
+    let monitorResultDescription: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case code, name, unit, value, monitorResults, color, monitorResultDescription
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        code = JSONFlexible.int(c, .code)
+        name = JSONFlexible.string(c, .name)
+        unit = JSONFlexible.string(c, .unit)
+        value = JSONFlexible.double(c, .value)
+        monitorResults = JSONFlexible.string(c, .monitorResults)
+        color = JSONFlexible.string(c, .color)
+        monitorResultDescription = JSONFlexible.string(c, .monitorResultDescription)
+    }
+}
+
+/// `POST /v1/monitor/getWeightHomePageData` 响应 `data`
+struct WeightHomePageDataVO: Decodable {
+    let weight: Double?
+    let bmi: Double?
+    let monitorResults: String?
+    let color: String?
+    let description: String?
+    let recordTime: Int64?
+    let monitorId: String?
+    let showStatus: Int?
+    let increasedWeight: Double?
+    let recommendStr: String?
+    let weekRecommend: String?
+    let distanceTarget: String?
+    let bodyFatScaleMonitor: Int?
+    let bodyFat: Double?
+    let muscle: Double?
+    let bodyWater: Double?
+    let basalMetabolism: Double?
+    let fatVolume: Double?
+    let bone: Double?
+    let impedance: Double?
+    let bodyAge: Double?
+    let visceralFat: Double?
+    let proteinRate: Double?
+    let proteinWeight: Double?
+    let skeletalMuscleRate: Double?
+    let skeletalMuscleMass: Double?
+    let waterWeight: Double?
+    let muscleWeight: Double?
+    let fatControl: Double?
+    let leanBodyMass: Double?
+    let idealWeight: Double?
+    let boneMass: Double?
+    let dataSource: String?
+    let targetWeight: Double?
+    let bodyCompositionResults: [WeightBodyCompositionItemVO]
+
+    private enum CodingKeys: String, CodingKey {
+        case weight, bmi, monitorResults, color, description, recordTime, monitorId
+        case showStatus, increasedWeight, recommendStr, weekRecommend, distanceTarget
+        case bodyFatScaleMonitor, bodyFat, muscle, bodyWater, basalMetabolism, fatVolume, bone
+        case impedance, bodyAge, visceralFat, proteinRate, proteinWeight
+        case skeletalMuscleRate, skeletalMuscleMass, waterWeight, muscleWeight
+        case fatControl, leanBodyMass, idealWeight, boneMass, dataSource, targetWeight
+        case bodyCompositionResults
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        weight = JSONFlexible.double(c, .weight)
+        bmi = JSONFlexible.double(c, .bmi)
+        monitorResults = JSONFlexible.string(c, .monitorResults)
+        color = JSONFlexible.string(c, .color)
+        description = JSONFlexible.string(c, .description)
+        recordTime = JSONFlexible.int64(c, .recordTime)
+        monitorId = JSONFlexible.string(c, .monitorId)
+        showStatus = JSONFlexible.int(c, .showStatus)
+        increasedWeight = JSONFlexible.double(c, .increasedWeight)
+        recommendStr = JSONFlexible.string(c, .recommendStr)
+        weekRecommend = JSONFlexible.string(c, .weekRecommend)
+        distanceTarget = JSONFlexible.string(c, .distanceTarget)
+        bodyFatScaleMonitor = JSONFlexible.int(c, .bodyFatScaleMonitor)
+        bodyFat = JSONFlexible.double(c, .bodyFat)
+        muscle = JSONFlexible.double(c, .muscle)
+        bodyWater = JSONFlexible.double(c, .bodyWater)
+        basalMetabolism = JSONFlexible.double(c, .basalMetabolism)
+        fatVolume = JSONFlexible.double(c, .fatVolume)
+        bone = JSONFlexible.double(c, .bone)
+        impedance = JSONFlexible.double(c, .impedance)
+        bodyAge = JSONFlexible.double(c, .bodyAge)
+        visceralFat = JSONFlexible.double(c, .visceralFat)
+        proteinRate = JSONFlexible.double(c, .proteinRate)
+        proteinWeight = JSONFlexible.double(c, .proteinWeight)
+        skeletalMuscleRate = JSONFlexible.double(c, .skeletalMuscleRate)
+        skeletalMuscleMass = JSONFlexible.double(c, .skeletalMuscleMass)
+        waterWeight = JSONFlexible.double(c, .waterWeight)
+        muscleWeight = JSONFlexible.double(c, .muscleWeight)
+        fatControl = JSONFlexible.double(c, .fatControl)
+        leanBodyMass = JSONFlexible.double(c, .leanBodyMass)
+        idealWeight = JSONFlexible.double(c, .idealWeight)
+        boneMass = JSONFlexible.double(c, .boneMass)
+        dataSource = JSONFlexible.string(c, .dataSource)
+        targetWeight = JSONFlexible.double(c, .targetWeight)
+        bodyCompositionResults = (try? c.decodeIfPresent([WeightBodyCompositionItemVO].self, forKey: .bodyCompositionResults)) ?? []
+    }
+}
+
+/// 后端数字字段经常以 String / Int / Double 混返
+private enum JSONFlexible {
+    static func string<K: CodingKey>(_ c: KeyedDecodingContainer<K>, _ key: K) -> String? {
+        if let s = try? c.decodeIfPresent(String.self, forKey: key) {
+            let trimmed = s.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        if let n = try? c.decodeIfPresent(Int64.self, forKey: key) { return String(n) }
+        if let n = try? c.decodeIfPresent(Int.self, forKey: key) { return String(n) }
+        if let n = try? c.decodeIfPresent(Double.self, forKey: key) { return String(n) }
+        return nil
+    }
+
+    static func int<K: CodingKey>(_ c: KeyedDecodingContainer<K>, _ key: K) -> Int? {
+        if let n = try? c.decodeIfPresent(Int.self, forKey: key) { return n }
+        if let n = try? c.decodeIfPresent(Int64.self, forKey: key) { return Int(n) }
+        if let s = try? c.decodeIfPresent(String.self, forKey: key) {
+            return Int(s.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        if let n = try? c.decodeIfPresent(Double.self, forKey: key) { return Int(n) }
+        return nil
+    }
+
+    static func int64<K: CodingKey>(_ c: KeyedDecodingContainer<K>, _ key: K) -> Int64? {
+        if let n = try? c.decodeIfPresent(Int64.self, forKey: key) { return n }
+        if let n = try? c.decodeIfPresent(Int.self, forKey: key) { return Int64(n) }
+        if let s = try? c.decodeIfPresent(String.self, forKey: key) {
+            let trimmed = s.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let v = Int64(trimmed) { return v }
+            if let d = Double(trimmed) { return Int64(d) }
+        }
+        if let n = try? c.decodeIfPresent(Double.self, forKey: key) { return Int64(n) }
+        return nil
+    }
+
+    static func double<K: CodingKey>(_ c: KeyedDecodingContainer<K>, _ key: K) -> Double? {
+        if let n = try? c.decodeIfPresent(Double.self, forKey: key) { return n }
+        if let n = try? c.decodeIfPresent(Int.self, forKey: key) { return Double(n) }
+        if let n = try? c.decodeIfPresent(Int64.self, forKey: key) { return Double(n) }
+        if let s = try? c.decodeIfPresent(String.self, forKey: key) {
+            return Double(s.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        return nil
     }
 }
 

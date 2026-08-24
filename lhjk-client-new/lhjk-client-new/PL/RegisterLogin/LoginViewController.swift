@@ -27,6 +27,8 @@ final class LoginViewController: BaseViewController {
     // MARK: - Constants
 
     private let horizontalPadding: CGFloat = 24
+    /// 双输入框区域底边到登录主按钮顶边的间距（密码模式内含「忘记密码」行）
+    private let loginSubmitGapBelowFields: CGFloat = 52
     private var didBuildLoginUI = false
 
     // MARK: - UI
@@ -87,7 +89,7 @@ final class LoginViewController: BaseViewController {
     private lazy var forgotPasswordButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("忘记密码", for: .normal)
-        btn.titleLabel?.font = .fdCaption
+        btn.titleLabel?.font = .fdLoginMeta
         btn.setTitleColor(.fdPrimary, for: .normal)
         btn.addTarget(self, action: #selector(showForgotPassword), for: .touchUpInside)
         return btn
@@ -138,7 +140,7 @@ final class LoginViewController: BaseViewController {
     private let forgotTitleLabel: UILabel = {
         let l = UILabel()
         l.text = "找回密码"
-        l.font = .fdBodySemibold
+        l.font = .fdFont(ofSize: 17, weight: .semibold)
         l.textColor = .fdText
         return l
     }()
@@ -146,7 +148,7 @@ final class LoginViewController: BaseViewController {
     private let forgotDescLabel: UILabel = {
         let l = UILabel()
         l.text = "请输入注册手机号并完成短信验证，验证通过后可重新设置登录密码。"
-        l.font = .fdCaption
+        l.font = .fdLoginMeta
         l.textColor = .fdSubtext
         l.numberOfLines = 0
         return l
@@ -383,9 +385,7 @@ final class LoginViewController: BaseViewController {
             break
         case .notificationGuide:
             dismissPhoneBinding()
-            showNotificationGuide { [weak self] in
-                // Guide dismissed, navigation handled by publishers
-            }
+            showNotificationGuide()
         case .complete:
             break
         }
@@ -506,7 +506,7 @@ final class LoginViewController: BaseViewController {
         resetHeadBack.snp.makeConstraints { $0.size.equalTo(28) }
         let resetTitle = UILabel()
         resetTitle.text = "设置新密码"
-        resetTitle.font = .fdBodySemibold
+        resetTitle.font = .fdFont(ofSize: 17, weight: .semibold)
         resetTitle.textColor = .fdText
         let resetHead = UIStackView(arrangedSubviews: [resetHeadBack, resetTitle])
         resetHead.axis = .horizontal
@@ -546,9 +546,9 @@ final class LoginViewController: BaseViewController {
 
         contentView.addSubview(forgotPasswordButton)
         forgotPasswordButton.snp.makeConstraints { make in
-            make.top.equalTo(passwordFieldsContainer.snp.bottom)
+            make.top.equalTo(passwordFieldsContainer.snp.bottom).offset(4)
             make.trailing.equalTo(passwordFieldsContainer)
-            make.height.equalTo(28)
+            make.height.equalTo(32)
         }
         forgotPasswordButton.isHidden = true
 
@@ -588,9 +588,7 @@ final class LoginViewController: BaseViewController {
         contentView.addSubview(agreementCheckbox)
         agreementCheckbox.snp.makeConstraints { make in
             make.top.equalTo(sessionExpiredLabel.snp.bottom).offset(14)
-            make.centerX.equalToSuperview()
-            make.width.equalTo(263)
-            make.height.equalTo(36)
+            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
             make.bottom.lessThanOrEqualToSuperview().offset(-34)
         }
         agreementCheckbox.onUserAgreementTap = { [weak self] in
@@ -649,7 +647,10 @@ final class LoginViewController: BaseViewController {
             self.submitButton.snp.remakeConstraints { make in
                 switch step {
                 case .login:
-                    make.top.equalToSuperview().offset(448)
+                    let fieldsBottom = isSMS
+                        ? self.smsFieldsContainer.snp.bottom
+                        : self.passwordFieldsContainer.snp.bottom
+                    make.top.equalTo(fieldsBottom).offset(self.loginSubmitGapBelowFields)
                 case .forgot:
                     make.top.equalTo(self.forgotFieldsContainer.snp.bottom).offset(20)
                 case .resetPassword:
@@ -856,17 +857,21 @@ final class LoginViewController: BaseViewController {
 
     // MARK: - Notification Permission
 
-    private func showNotificationGuide(completion: @escaping () -> Void) {
+    private func showNotificationGuide() {
+        guard notificationGuideView == nil else { return }
         let guide = NotificationGuideView()
         guide.onEnable = { [weak self] in
-            self?.requestNotificationPermission { _ in
-                self?.dismissNotificationGuide()
-                completion()
+            self?.requestNotificationPermission { status in
+                self?.viewModel.reportNotificationPermission(status: status)
+                self?.dismissNotificationGuide {
+                    self?.viewModel.completePostLoginFlow()
+                }
             }
         }
         guide.onSkip = { [weak self] in
-            self?.dismissNotificationGuide()
-            completion()
+            self?.dismissNotificationGuide {
+                self?.viewModel.completePostLoginFlow()
+            }
         }
 
         view.addSubview(guide)
@@ -876,12 +881,13 @@ final class LoginViewController: BaseViewController {
         UIView.animate(withDuration: 0.25) { guide.alpha = 1 }
     }
 
-    private func dismissNotificationGuide() {
+    private func dismissNotificationGuide(completion: (() -> Void)? = nil) {
         UIView.animate(withDuration: 0.25) {
             self.notificationGuideView?.alpha = 0
         } completion: { _ in
             self.notificationGuideView?.removeFromSuperview()
             self.notificationGuideView = nil
+            completion?()
         }
     }
 

@@ -23,13 +23,16 @@ final class MyViewController: BaseViewController {
 
     // Header Area
     private let headerView = UIView()
+    private let headerInfoStack = UIStackView()
     private let headerWatermarkView = UIImageView()
+    private let avatarContainerView = UIView()
     private let avatarButton = UIButton(type: .custom)
     private let avatarImageView = UIImageView()
     private let avatarCharLabel = UILabel()
     private let nameButton = UIButton(type: .custom)
     private let nameLabel = UILabel()
-    private let healthArchiveButton = UIButton(type: .custom)
+    private let healthArchiveImageView = UIImageView()
+    private let healthArchiveTapButton = UIButton(type: .custom)
     private let settingsButton = UIButton(type: .custom)
 
     // Cards
@@ -82,7 +85,7 @@ final class MyViewController: BaseViewController {
         contentView.addSubview(headerView)
         headerView.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview()
-            make.height.equalTo(72)
+            make.height.equalTo(64)
         }
 
         // Settings Button (top right)
@@ -95,58 +98,68 @@ final class MyViewController: BaseViewController {
             make.size.equalTo(24)
         }
 
-        // Avatar (top left)
-        avatarButton.layer.cornerRadius = 23
-        avatarButton.layer.borderWidth = 1
-        avatarButton.layer.borderColor = UIColor.white.cgColor
-        avatarButton.backgroundColor = UIColor(hexString: "#FFEDD9")
-        avatarButton.clipsToBounds = true
-        avatarButton.addTarget(self, action: #selector(pushProfile), for: .touchUpInside)
-        headerView.addSubview(avatarButton)
-        avatarButton.snp.makeConstraints { make in
-            make.centerY.equalToSuperview()
+        // 头像 + 昵称 + 健康档案：横向排列，垂直居中对齐
+        headerInfoStack.axis = .horizontal
+        headerInfoStack.alignment = .center
+        headerInfoStack.spacing = 8
+        headerView.addSubview(headerInfoStack)
+        headerInfoStack.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(16)
+            make.centerY.equalToSuperview()
+            make.trailing.lessThanOrEqualTo(settingsButton.snp.leading).offset(-8)
+        }
+
+        // Avatar — Figma 3773:12953：46×46，0.958pt 白描边
+        avatarContainerView.backgroundColor = UIColor(hexString: "#FFEDD9")
+        avatarContainerView.layer.cornerRadius = 23
+        avatarContainerView.layer.borderWidth = 0.958
+        avatarContainerView.layer.borderColor = UIColor.white.cgColor
+        avatarContainerView.clipsToBounds = true
+        avatarContainerView.snp.makeConstraints { make in
             make.size.equalTo(46)
         }
+        headerInfoStack.addArrangedSubview(avatarContainerView)
+
+        avatarButton.backgroundColor = .clear
+        avatarButton.addTarget(self, action: #selector(pushProfile), for: .touchUpInside)
+        avatarContainerView.addSubview(avatarButton)
+        avatarButton.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         avatarImageView.contentMode = .scaleAspectFill
         avatarImageView.clipsToBounds = true
         avatarButton.addSubview(avatarImageView)
         avatarImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        avatarCharLabel.font = .fdFont(ofSize: 20, weight: .semibold)
+        avatarCharLabel.font = .fdFont(ofSize: 22, weight: .semibold)
         avatarCharLabel.textColor = UIColor(hexString: "#754200")
         avatarCharLabel.textAlignment = .center
         avatarButton.addSubview(avatarCharLabel)
         avatarCharLabel.snp.makeConstraints { $0.center.equalToSuperview() }
 
-        // Name
-        nameLabel.font = .fdFont(ofSize: 18, weight: .medium)
+        // Name — 18pt Medium（登录态昵称需比 16pt 更醒目）
+        nameLabel.font = .fdFont(ofSize: 20, weight: .medium)
         nameLabel.textColor = UIColor(hexString: "#1F2942")
         nameButton.addSubview(nameLabel)
         nameLabel.snp.makeConstraints { $0.edges.equalToSuperview() }
         nameButton.addTarget(self, action: #selector(pushProfile), for: .touchUpInside)
-        headerView.addSubview(nameButton)
         nameButton.snp.makeConstraints { make in
-            make.leading.equalTo(avatarButton.snp.trailing).offset(12)
-            make.top.equalToSuperview().offset(6)
-            make.height.equalTo(26)
-            make.trailing.lessThanOrEqualTo(settingsButton.snp.leading).offset(-8)
-        }
-
-        // Health Archive Tag Button (自然宽高 79x28，居左对齐)
-        healthArchiveButton.setImage(UIImage(named: "me_health_archive_tag"), for: .normal)
-        healthArchiveButton.imageView?.contentMode = .scaleAspectFit
-        healthArchiveButton.contentHorizontalAlignment = .leading
-        healthArchiveButton.contentVerticalAlignment = .center
-        healthArchiveButton.addTarget(self, action: #selector(pushHealthProfile), for: .touchUpInside)
-        headerView.addSubview(healthArchiveButton)
-        healthArchiveButton.snp.makeConstraints { make in
-            make.leading.equalTo(nameButton)
-            make.top.equalTo(nameButton.snp.bottom).offset(4)
-            make.width.equalTo(79)
             make.height.equalTo(28)
         }
+        headerInfoStack.addArrangedSubview(nameButton)
+
+        // Health Archive Tag — Figma 3773:13147：100×33
+        healthArchiveImageView.image = UIImage(named: "me_health_archive_tag")
+        healthArchiveImageView.contentMode = .scaleAspectFit
+        healthArchiveImageView.snp.makeConstraints { make in
+            make.width.equalTo(100)
+            make.height.equalTo(33)
+        }
+        headerInfoStack.addArrangedSubview(healthArchiveImageView)
+
+        healthArchiveTapButton.backgroundColor = .clear
+        healthArchiveTapButton.addTarget(self, action: #selector(pushHealthProfile), for: .touchUpInside)
+        headerView.addSubview(healthArchiveTapButton)
+        healthArchiveTapButton.snp.makeConstraints { $0.edges.equalTo(healthArchiveImageView) }
     }
 
     private func setupCards() {
@@ -168,10 +181,10 @@ final class MyViewController: BaseViewController {
             make.height.equalTo(132)
         }
 
-        // Watermark V in top right (底部严格贴紧会员卡顶部)
+        // Watermark V — 置于 header 下层，仅露出会员卡上方装饰，不遮挡健康档案
         headerWatermarkView.image = UIImage(named: "me_header_v_watermark")
         headerWatermarkView.contentMode = .scaleAspectFit
-        contentView.insertSubview(headerWatermarkView, belowSubview: membershipCardView)
+        contentView.insertSubview(headerWatermarkView, belowSubview: headerView)
         headerWatermarkView.snp.makeConstraints { make in
             make.trailing.equalToSuperview().offset(-44)
             make.bottom.equalTo(membershipCardView.snp.top)
@@ -234,12 +247,12 @@ final class MyViewController: BaseViewController {
         if let urlStr = viewModel.avatarURL, let url = URL(string: urlStr) {
             avatarCharLabel.isHidden = true
             avatarImageView.isHidden = false
-            avatarImageView.kf.setImage(with: url)
+            let placeholder = UIImage(named: "chat_im_avatar")
+            avatarImageView.kf.setImage(with: url, placeholder: placeholder)
         } else {
-            avatarCharLabel.isHidden = false
-            avatarImageView.isHidden = true
-            avatarCharLabel.text = viewModel.avatarChar
-            avatarImageView.image = nil
+            avatarCharLabel.isHidden = true
+            avatarImageView.isHidden = false
+            avatarImageView.image = UIImage(named: "chat_im_avatar")
         }
         nameLabel.text = viewModel.userName
     }

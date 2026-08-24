@@ -35,7 +35,9 @@ enum RongEmoji {
         return result
     }
 
-    // MARK: - RongEmoji-2.2.11 `I` 表（zh / en / tag）
+    static var allEmojis: [String] {
+        table.map(\.tag)
+    }
 
     private static let table: [(zh: String, en: String, tag: String)] = [
         ("笑脸", "Smiley Face", "😃"),

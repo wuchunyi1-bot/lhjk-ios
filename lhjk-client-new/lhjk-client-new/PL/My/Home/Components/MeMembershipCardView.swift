@@ -53,7 +53,7 @@ final class MeMembershipCardView: UIView {
         }
 
         titleLabel.text = "健康大会员"
-        titleLabel.font = .fdFont(ofSize: 16, weight: .semibold)
+        titleLabel.font = .fdFont(ofSize: 18, weight: .semibold)
         titleLabel.textColor = UIColor(hexString: "#754200")
         addSubview(titleLabel)
         titleLabel.snp.makeConstraints {
@@ -81,7 +81,7 @@ final class MeMembershipCardView: UIView {
         }
 
         redemptionLabel.text = "会员兑换"
-        redemptionLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        redemptionLabel.font = .fdFont(ofSize: 16, weight: .regular)
         redemptionLabel.textColor = UIColor(hexString: "#D18640")
         addSubview(redemptionLabel)
         redemptionLabel.snp.makeConstraints {
@@ -130,14 +130,14 @@ final class MeMembershipCardView: UIView {
 
             let valueLbl = UILabel()
             valueLbl.text = asset.value
-            valueLbl.font = .fdFont(ofSize: 18, weight: .medium)
+            valueLbl.font = .fdFont(ofSize: 20, weight: .medium)
             valueLbl.textColor = UIColor(hexString: "#754200")
             valueLbl.textAlignment = .center
             valueLbl.isUserInteractionEnabled = false
 
             let labelLbl = UILabel()
             labelLbl.text = asset.label
-            labelLbl.font = .fdFont(ofSize: 12, weight: .regular)
+            labelLbl.font = .fdFont(ofSize: 14, weight: .regular)
             labelLbl.textColor = UIColor(hexString: "#754200")
             labelLbl.textAlignment = .center
             labelLbl.isUserInteractionEnabled = false

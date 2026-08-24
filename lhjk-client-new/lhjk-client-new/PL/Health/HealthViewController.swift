@@ -28,7 +28,10 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
 
     private let riskScore = 62
     private let riskLevel = "中风险"
-    private let archiveProgress = 72
+
+    private var archiveProgress: Int {
+        UserManager.shared.archiveCompletionPercentage ?? 0
+    }
 
     private let viewModel = HealthViewModel()
     private var cancellables = Set<AnyCancellable>()
@@ -47,8 +50,8 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         tv.register(HealthQuickEntriesCell.self, forCellReuseIdentifier: HealthQuickEntriesCell.reuseIdentifier)
         tv.register(HealthVitalMetricsCell.self, forCellReuseIdentifier: HealthVitalMetricsCell.reuseIdentifier)
         tv.contentInsetAdjustmentBehavior = .never
-        tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 90, right: 0)
-        tv.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: 90, right: 0)
+        tv.contentInset = .zero
+        tv.scrollIndicatorInsets = .zero
         tv.estimatedRowHeight = 200
         tv.rowHeight = UITableView.automaticDimension
         if #available(iOS 15.0, *) { tv.sectionHeaderTopPadding = 0 }
@@ -58,7 +61,22 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        updateTableBottomInsetIfNeeded()
+        refreshArchiveCompletionUI()
         viewModel.load()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateTableBottomInsetIfNeeded()
+    }
+
+    private func updateTableBottomInsetIfNeeded() {
+        guard let tabBar = tabBarController?.tabBar, !tabBar.isHidden else { return }
+        let bottom = tabBar.frame.height + 12
+        guard abs(tableView.contentInset.bottom - bottom) > 0.5 else { return }
+        tableView.contentInset.bottom = bottom
+        tableView.verticalScrollIndicatorInsets.bottom = bottom
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -68,12 +86,7 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
 
     override func setupUI() {
         view.backgroundColor = .fdBg
-        brandHeader.configure(
-            title: "我的健康",
-            subtitle: "档案完整度 \(archiveProgress)%",
-            titleColor: .fdText,
-            badge: riskLevel
-        )
+        refreshArchiveCompletionUI()
         view.addSubview(brandHeader)
         view.addSubview(tableView)
         brandHeader.snp.makeConstraints {
@@ -87,6 +100,13 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
     }
 
     override func bindViewModel() {
+        NotificationCenter.default.publisher(for: .archiveCompletionDidUpdate)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshArchiveCompletionUI()
+            }
+            .store(in: &cancellables)
+
         viewModel.$metrics
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.tableView.reloadData() }
@@ -171,5 +191,17 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
 
     @objc private func goToRecord() {
         Router.shared.push("/health/record")
+    }
+
+    private func refreshArchiveCompletionUI() {
+        brandHeader.configure(
+            title: "我的健康",
+            subtitle: "档案完整度 \(archiveProgress)%",
+            titleColor: .fdText,
+            badge: riskLevel
+        )
+        if isViewLoaded {
+            tableView.reloadData()
+        }
     }
 }

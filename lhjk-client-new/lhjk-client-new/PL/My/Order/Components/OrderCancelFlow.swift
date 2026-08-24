@@ -264,10 +264,6 @@ enum OrderCancelFlow {
     }
 
     private static func showToast(_ message: String, on presenter: UIViewController) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        presenter.present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            alert.dismiss(animated: true)
-        }
+        presenter.showToastAlert(message, duration: 1.5)
     }
 }

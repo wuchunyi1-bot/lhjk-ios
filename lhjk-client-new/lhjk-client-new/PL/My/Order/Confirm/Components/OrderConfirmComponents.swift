@@ -51,7 +51,7 @@ final class OrderConfirmFulfillmentView: UIView {
         super.init(frame: frame)
 
         titleLabel.text = "收货方式"
-        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
         titleLabel.textColor = OrderConfirmFigma.title
 
         optionStack.axis = .horizontal
@@ -118,7 +118,7 @@ private final class OrderConfirmFulfillmentOptionView: UIControl {
         }
 
         titleLabel.text = title
-        titleLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
         titleLabel.textColor = OrderConfirmFigma.title
 
         contentStack.axis = .horizontal
@@ -212,18 +212,18 @@ final class OrderConfirmAddressView: UIView {
             $0.height.equalTo(27)
         }
 
-        personLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        personLabel.font = .fdFont(ofSize: 18, weight: .medium)
         personLabel.textColor = OrderConfirmFigma.title
         personLabel.setContentHuggingPriority(.required, for: .horizontal)
         personLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
-        mobileLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        mobileLabel.font = .fdFont(ofSize: 18, weight: .medium)
         mobileLabel.textColor = OrderConfirmFigma.title
         mobileLabel.setContentHuggingPriority(.required, for: .horizontal)
         mobileLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         personStack.addArrangedSubview(personLabel)
         personStack.addArrangedSubview(mobileLabel)
 
-        addressLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        addressLabel.font = .fdFont(ofSize: 16, weight: .regular)
         addressLabel.textColor = OrderConfirmFigma.subtitle
         addressLabel.numberOfLines = 1
         addressLabel.lineBreakMode = .byTruncatingTail
@@ -253,7 +253,7 @@ final class OrderConfirmAddressView: UIView {
         }
 
         selectButton.setTitle("去选择", for: .normal)
-        selectButton.titleLabel?.font = .fdFont(ofSize: 12, weight: .medium)
+        selectButton.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
         selectButton.setTitleColor(OrderConfirmFigma.primary, for: .normal)
         selectButton.layer.cornerRadius = 14
         selectButton.layer.borderWidth = 0.5
@@ -341,7 +341,7 @@ final class OrderConfirmPickupView: UIView {
         backgroundView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         titleLabel.text = "自提地址"
-        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
         titleLabel.textColor = OrderConfirmFigma.title
         addSubview(titleLabel)
         titleLabel.snp.makeConstraints {
@@ -362,7 +362,7 @@ final class OrderConfirmPickupView: UIView {
         }
 
         hintLabel.text = "请前往以下机构领取商品/设备"
-        hintLabel.font = .fdFont(ofSize: 10, weight: .regular)
+        hintLabel.font = .fdFont(ofSize: 12, weight: .regular)
         hintLabel.textColor = OrderConfirmFigma.hintText
         hintLabel.numberOfLines = 1
         hintContainer.addSubview(hintLabel)
@@ -388,7 +388,7 @@ final class OrderConfirmPickupView: UIView {
             $0.size.equalTo(12)
         }
 
-        institutionLabel.font = .fdFont(ofSize: 16, weight: .regular)
+        institutionLabel.font = .fdFont(ofSize: 18, weight: .regular)
         institutionLabel.textColor = OrderConfirmFigma.title
         institutionLabel.numberOfLines = 1
         addSubview(institutionLabel)
@@ -399,7 +399,7 @@ final class OrderConfirmPickupView: UIView {
             $0.height.equalTo(27)
         }
 
-        addressLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        addressLabel.font = .fdFont(ofSize: 16, weight: .regular)
         addressLabel.textColor = OrderConfirmFigma.subtitle
         addressLabel.numberOfLines = 1
         addressLabel.lineBreakMode = .byTruncatingTail
@@ -451,7 +451,7 @@ private final class OrderConfirmInstitutionCallBar: UIView {
         iconView.isUserInteractionEnabled = false
         iconView.snp.makeConstraints { $0.size.equalTo(14) }
         titleLabel.text = "联系机构"
-        titleLabel.font = .fdFont(ofSize: 12, weight: .medium)
+        titleLabel.font = .fdFont(ofSize: 14, weight: .medium)
         titleLabel.textColor = OrderConfirmFigma.primary
         titleLabel.isUserInteractionEnabled = false
 
@@ -498,11 +498,11 @@ final class OrderConfirmPackageView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        nameLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        nameLabel.font = .fdFont(ofSize: 18, weight: .medium)
         nameLabel.textColor = UIColor(hexString: "#1F2942")
         nameLabel.numberOfLines = 2
 
-        introLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        introLabel.font = .fdFont(ofSize: 16, weight: .regular)
         introLabel.textColor = UIColor(hexString: "#8591AB")
         introLabel.numberOfLines = 1
 
@@ -526,7 +526,7 @@ final class OrderConfirmPackageView: UIView {
         sectionIcon.snp.makeConstraints { $0.size.equalTo(16) }
 
         sectionTitleLabel.text = "套餐内容"
-        sectionTitleLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        sectionTitleLabel.font = .fdFont(ofSize: 16, weight: .medium)
         sectionTitleLabel.textColor = UIColor(hexString: "#1F2942")
 
         let headerStack = UIStackView(arrangedSubviews: [sectionIcon, sectionTitleLabel])
@@ -543,7 +543,7 @@ final class OrderConfirmPackageView: UIView {
         contentStack.spacing = 12
 
         // 展开/收起按钮
-        toggleTitleLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        toggleTitleLabel.font = .fdFont(ofSize: 14, weight: .regular)
         toggleTitleLabel.textColor = UIColor(hexString: "#8591AB")
 
         toggleIcon.contentMode = .scaleAspectFit
@@ -616,20 +616,20 @@ final class OrderConfirmPackageView: UIView {
 
     private func makeContentRow(_ item: PackageOrderDraftItem) -> UIView {
         let name = UILabel()
-        name.font = .fdFont(ofSize: 12, weight: .regular)
+        name.font = .fdFont(ofSize: 14, weight: .regular)
         name.textColor = UIColor(hexString: "#1F2942")
         name.text = item.name
         name.lineBreakMode = .byTruncatingTail
 
         let meta = UILabel()
-        meta.font = .fdFont(ofSize: 12, weight: .regular)
+        meta.font = .fdFont(ofSize: 14, weight: .regular)
         meta.textColor = UIColor(hexString: "#1F2942")
         meta.text = item.unit.isEmpty ? item.qty : "\(item.qty)\(item.unit)"
         meta.textAlignment = .right
         meta.setContentHuggingPriority(.required, for: .horizontal)
 
         let price = UILabel()
-        price.font = .fdFont(ofSize: 12, weight: .medium)
+        price.font = .fdFont(ofSize: 14, weight: .medium)
         price.textColor = UIColor(hexString: "#1F2942")
         price.text = OrderConfirmMoney.yen(item.price)
         price.textAlignment = .right
@@ -773,7 +773,7 @@ final class OrderConfirmOptionsCardView: UIView {
         icon.snp.makeConstraints { $0.size.equalTo(16) }
 
         titleLabel.text = title
-        titleLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
         titleLabel.textColor = UIColor(hexString: "#1F2942")
 
         let leftStack = UIStackView(arrangedSubviews: [icon, titleLabel])
@@ -782,7 +782,7 @@ final class OrderConfirmOptionsCardView: UIView {
         leftStack.alignment = .center
         leftStack.isUserInteractionEnabled = false
 
-        valueLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        valueLabel.font = .fdFont(ofSize: 14, weight: .regular)
         valueLabel.textColor = UIColor(hexString: "#717885")
         valueLabel.textAlignment = .right
         valueLabel.lineBreakMode = .byTruncatingTail
@@ -816,7 +816,7 @@ final class OrderConfirmOptionsCardView: UIView {
         couponIcon.snp.makeConstraints { $0.size.equalTo(16) }
 
         couponTitleLabel.text = "优惠券"
-        couponTitleLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        couponTitleLabel.font = .fdFont(ofSize: 16, weight: .medium)
         couponTitleLabel.textColor = UIColor(hexString: "#1F2942")
 
         let leftStack = UIStackView(arrangedSubviews: [couponIcon, couponTitleLabel])
@@ -828,7 +828,7 @@ final class OrderConfirmOptionsCardView: UIView {
         couponBadge.contentMode = .scaleAspectFit
         couponBadge.snp.makeConstraints { $0.size.equalTo(14) }
 
-        couponValueLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        couponValueLabel.font = .fdFont(ofSize: 14, weight: .regular)
         couponValueLabel.textColor = UIColor(hexString: "#717885")
         couponValueLabel.textAlignment = .right
         couponValueLabel.lineBreakMode = .byTruncatingTail
@@ -906,7 +906,7 @@ final class OrderConfirmFeeView: UIView {
         super.init(frame: frame)
 
         titleLabel.text = "费用明细"
-        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
         titleLabel.textColor = UIColor(hexString: "#1F2942")
 
         rowsStack.axis = .vertical
@@ -915,7 +915,7 @@ final class OrderConfirmFeeView: UIView {
         divider.backgroundColor = UIColor(hexString: "#F0F0F0")
 
         totalLeft.text = "应付金额"
-        totalLeft.font = .fdFont(ofSize: 16, weight: .medium)
+        totalLeft.font = .fdFont(ofSize: 18, weight: .medium)
         totalLeft.textColor = UIColor(hexString: "#1F2942")
 
         totalRight.textAlignment = .right
@@ -960,13 +960,13 @@ final class OrderConfirmFeeView: UIView {
     private func row(_ title: String, _ value: String, isHighlight: Bool) -> UIView {
         let left = UILabel()
         left.text = title
-        left.font = .fdFont(ofSize: 14, weight: .regular)
+        left.font = .fdFont(ofSize: 16, weight: .regular)
         left.textColor = UIColor(hexString: "#1F2942")
         left.setContentHuggingPriority(.required, for: .horizontal)
 
         let right = UILabel()
         right.text = value
-        right.font = .fdFont(ofSize: 14, weight: .medium)
+        right.font = .fdFont(ofSize: 16, weight: .medium)
         right.textColor = isHighlight ? UIColor(hexString: "#F93838") : UIColor(hexString: "#1F2942")
         right.textAlignment = .right
 
@@ -1003,7 +1003,7 @@ final class OrderConfirmPayMethodView: UIView {
         super.init(frame: frame)
 
         titleLabel.text = "支付方式"
-        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
         titleLabel.textColor = UIColor(hexString: "#1F2942")
 
         // 微信
@@ -1060,7 +1060,7 @@ final class OrderConfirmPayMethodView: UIView {
         icon.snp.makeConstraints { $0.size.equalTo(16) }
 
         titleLabel.text = title
-        titleLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        titleLabel.font = .fdFont(ofSize: 16, weight: .regular)
         titleLabel.textColor = UIColor(hexString: "#1F2942")
 
         let leftStack = UIStackView(arrangedSubviews: [icon, titleLabel])
@@ -1129,11 +1129,11 @@ final class OrderConfirmSubmitBar: UIView {
         layer.shadowRadius = 8
 
         label.text = "应付金额"
-        label.font = .fdFont(ofSize: 14, weight: .regular)
+        label.font = .fdFont(ofSize: 16, weight: .regular)
         label.textColor = UIColor(hexString: "#1F2430")
 
         cancelButton.setTitle("取消订单", for: .normal)
-        cancelButton.titleLabel?.font = .fdFont(ofSize: 14, weight: .regular)
+        cancelButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .regular)
         cancelButton.setTitleColor(UIColor(hexString: "#535D72"), for: .normal)
         cancelButton.backgroundColor = .white
         cancelButton.layer.cornerRadius = 20
@@ -1144,7 +1144,7 @@ final class OrderConfirmSubmitBar: UIView {
         cancelButton.isHidden = true
 
         payButton.setTitle("立即支付", for: .normal)
-        payButton.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
+        payButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
         payButton.setTitleColor(.white, for: .normal)
         payButton.backgroundColor = UIColor(hexString: "#FF7A50")
         payButton.layer.cornerRadius = 20

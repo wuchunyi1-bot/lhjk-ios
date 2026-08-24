@@ -1,42 +1,85 @@
 import UIKit
 import SnapKit
 
-/// 优惠券票券卡 — 对齐 funde `.coupon-card`
+/// 优惠券票券卡 — 对齐 Figma 3838:32984（343×99 基准等比缩放）
 final class CouponCardCell: UITableViewCell {
     static let reuseID = "CouponCardCell"
 
     var onUse: (() -> Void)?
     var onToggleRules: (() -> Void)?
 
+    /// Figma 375 设计稿下卡片 343×99
+    private enum Design {
+        static let cardWidth: CGFloat = 343
+        static let cardHeight: CGFloat = 99
+        static let leftSectionWidth: CGFloat = 98
+        static let rightSectionWidth: CGFloat = 46   // 343 - 297
+        static let middleLeading: CGFloat = 111
+        static let middleToRightGap: CGFloat = 8
+        static let middleTop: CGFloat = 16
+        static let ribbonWidth: CGFloat = 47
+        static let ribbonHeight: CGFloat = 41
+        static let ribbonOutsideOffset: CGFloat = -6
+
+        static var aspectRatio: CGFloat { cardHeight / cardWidth }
+        static var leftSectionRatio: CGFloat { leftSectionWidth / cardWidth }
+        static var rightSectionRatio: CGFloat { rightSectionWidth / cardWidth }
+        static var middleLeadingRatio: CGFloat { middleLeading / cardWidth }
+        static var leftToMiddleGapRatio: CGFloat { (middleLeading - leftSectionWidth) / cardWidth }
+        static var middleToRightGapRatio: CGFloat { middleToRightGap / cardWidth }
+        static var middleTopRatio: CGFloat { middleTop / cardHeight }
+        static var ribbonWidthRatio: CGFloat { ribbonWidth / cardWidth }
+        static var ribbonHeightRatio: CGFloat { ribbonHeight / cardWidth }
+    }
+
     private let card = UIView()
-    private let statusBadge = UILabel()
+
+    private let ticketView = UIView()
+    private let ticketBgImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFill
+        iv.clipsToBounds = true
+        return iv
+    }()
+
+    private let ribbonImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFit
+        return iv
+    }()
+
+    private let leftSectionGuide = UILayoutGuide()
+    private let leftMiddleGapGuide = UILayoutGuide()
+    private let rightGapGuide = UILayoutGuide()
+    private let rightSectionGuide = UILayoutGuide()
+
     private let amountLabel = UILabel()
     private let thresholdLabel = UILabel()
+
     private let nameLabel = UILabel()
     private let validityLabel = UILabel()
-    private let rulesButton = UIButton(type: .system)
+    private let rulesButton = UIButton(type: .custom)
+    private let rulesChevron = UIImageView()
     private let rulesStack = UIStackView()
-    private let useButton = UIButton(type: .system)
-    private let dashLayer = CAShapeLayer()
+
+    private let actionButton = UIButton(type: .custom)
+    private let actionLabel = UILabel()
+
+    private var ticketBottomToRules: Constraint?
+    private var ticketBottomToCard: Constraint?
+    private var middleTopConstraint: Constraint?
+    private var ribbonTopConstraint: Constraint?
+    private var ribbonLeadingConstraint: Constraint?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
         backgroundColor = .clear
-        contentView.backgroundColor = .fdBg
+        contentView.backgroundColor = .white
         setupUI()
     }
 
     required init?(coder: NSCoder) { fatalError() }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: 96, y: 8))
-        path.addLine(to: CGPoint(x: 96, y: max(8, card.bounds.height - 8)))
-        dashLayer.path = path.cgPath
-        dashLayer.frame = card.bounds
-    }
 
     override func prepareForReuse() {
         super.prepareForReuse()
@@ -48,184 +91,319 @@ final class CouponCardCell: UITableViewCell {
         }
         rulesStack.isHidden = true
         rulesButton.isHidden = false
-        card.alpha = 1
-        card.backgroundColor = .fdSurface
-        card.layer.borderColor = UIColor.fdPrimaryEdge.cgColor
     }
 
     func configure(_ item: VoucherCouponAsset, expanded: Bool) {
-        amountLabel.text = item.benefitText
-        thresholdLabel.text = item.thresholdText
-        nameLabel.text = item.name
-        validityLabel.text = item.effectiveEndAt.isEmpty
-            ? "有效期至 —"
-            : "有效期至 \(item.effectiveEndAt)"
-        statusBadge.text = " \(item.status.displayLabel) "
-        useButton.isHidden = item.status != .received
+        let isActive = item.status == .received
+
+        ticketBgImageView.image = UIImage(named: isActive ? "coupon_card_bg_active" : "coupon_card_bg_inactive")
 
         switch item.status {
         case .received:
-            statusBadge.backgroundColor = .fdPrimary
-            card.alpha = 1
-            card.backgroundColor = .fdSurface
-            card.layer.borderColor = UIColor.fdPrimaryEdge.cgColor
+            ribbonImageView.image = UIImage(named: "coupon_ribbon_active")
         case .used:
-            statusBadge.backgroundColor = .fdSuccess
-            card.alpha = 1
-            card.backgroundColor = .fdSurface
-            card.layer.borderColor = UIColor.fdPrimaryEdge.cgColor
+            ribbonImageView.image = UIImage(named: "coupon_ribbon_used")
         case .expired:
-            statusBadge.backgroundColor = .fdMuted
-            card.alpha = 0.72
-            card.backgroundColor = .fdBg2
-            card.layer.borderColor = UIColor.fdBorder.cgColor
+            ribbonImageView.image = UIImage(named: "coupon_ribbon_expired")
         }
+
+        setAmountAndThreshold(item, isActive: isActive)
+
+        nameLabel.text = item.name
+        nameLabel.textColor = isActive ? UIColor(hexString: "#1F2942") : UIColor(hexString: "#8591AB")
+
+        validityLabel.text = item.effectiveEndAt.isEmpty
+            ? "有效期至 —"
+            : "有效期至 \(item.effectiveEndAt)"
+
+        configureAction(for: item.status)
 
         let hasRules = item.hasExpandableRules
         rulesButton.isHidden = !hasRules
-        let chevron = expanded ? "chevron.up" : "chevron.down"
-        rulesButton.setImage(UIImage(systemName: chevron), for: .normal)
-        rulesButton.setTitle("使用规则 ", for: .normal)
+        let chevronName = expanded ? "chevron.up" : "chevron.down"
+        rulesChevron.image = UIImage(systemName: chevronName)?.withRenderingMode(.alwaysTemplate)
 
         rulesStack.arrangedSubviews.forEach {
             rulesStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
-        rulesStack.isHidden = !expanded || !hasRules
+
         if expanded, hasRules {
-            // 标题对齐 Apifox：rule 仅影响业务/套餐；机构与排除商品标题固定
-            if !item.businessCategories.isEmpty {
-                rulesStack.addArrangedSubview(
-                    makeRuleLine("\(item.scopeRule.prefix)业务：\(item.businessCategories.joined(separator: "、"))")
-                )
-            }
-            if !item.packageNames.isEmpty {
-                rulesStack.addArrangedSubview(
-                    makeRuleLine("\(item.scopeRule.prefix)套餐：\(item.packageNames.joined(separator: "、"))")
-                )
-            }
-            if !item.institutionNames.isEmpty {
-                rulesStack.addArrangedSubview(
-                    makeRuleLine("适用机构：\(item.institutionNames.joined(separator: "、"))")
-                )
-            }
-            if !item.excludedProductNames.isEmpty {
-                rulesStack.addArrangedSubview(
-                    makeRuleLine("不参与折扣的商品：\(item.excludedProductNames.joined(separator: "、"))")
-                )
-            }
-            if let desc = item.ruleDescription, !desc.isEmpty {
-                rulesStack.addArrangedSubview(makeRuleLine(desc))
-            }
+            rulesStack.isHidden = false
+            ticketBottomToCard?.deactivate()
+            ticketBottomToRules?.activate()
+            appendRules(for: item)
+        } else {
+            rulesStack.isHidden = true
+            ticketBottomToRules?.deactivate()
+            ticketBottomToCard?.activate()
         }
-        setNeedsLayout()
     }
 
     private func setupUI() {
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 14
-        card.layer.borderWidth = 1
-        card.layer.borderColor = UIColor.fdPrimaryEdge.cgColor
+        card.layer.cornerRadius = 16
         card.clipsToBounds = true
         contentView.addSubview(card)
 
-        dashLayer.strokeColor = UIColor.fdPrimaryEdge.cgColor
-        dashLayer.lineWidth = 1
-        dashLayer.lineDashPattern = [4, 3]
-        dashLayer.fillColor = nil
-        card.layer.addSublayer(dashLayer)
+        card.addSubview(ticketView)
+        ticketView.clipsToBounds = true
+        ticketView.addSubview(ticketBgImageView)
+        ticketView.addSubview(ribbonImageView)
+        ticketView.addSubview(actionButton)
 
-        statusBadge.font = .fdMicroBold
-        statusBadge.textColor = .white
-        statusBadge.clipsToBounds = true
-        statusBadge.layer.cornerRadius = 6
-        statusBadge.layer.maskedCorners = [.layerMaxXMaxYCorner]
+        ticketView.addLayoutGuide(leftSectionGuide)
+        ticketView.addLayoutGuide(leftMiddleGapGuide)
+        ticketView.addLayoutGuide(rightGapGuide)
+        ticketView.addLayoutGuide(rightSectionGuide)
 
-        amountLabel.font = .fdNumM
-        amountLabel.textColor = .fdPrimary
         amountLabel.textAlignment = .center
-        thresholdLabel.font = .fdMicroSemibold
-        thresholdLabel.textColor = .fdPrimary
+        amountLabel.numberOfLines = 1
+        thresholdLabel.font = .fdFont(ofSize: 14, weight: .medium)
         thresholdLabel.textAlignment = .center
         thresholdLabel.adjustsFontSizeToFitWidth = true
+        thresholdLabel.minimumScaleFactor = 0.8
 
-        let left = UIStackView(arrangedSubviews: [amountLabel, thresholdLabel])
-        left.axis = .vertical
-        left.spacing = 4
-        left.alignment = .center
+        let leftStack = UIStackView(arrangedSubviews: [amountLabel, thresholdLabel])
+        leftStack.axis = .vertical
+        leftStack.spacing = 4
+        leftStack.alignment = .center
+        ticketView.addSubview(leftStack)
 
-        nameLabel.font = .fdBodyBold
-        nameLabel.textColor = .fdText
+        nameLabel.font = .fdFont(ofSize: 18, weight: .medium)
+        nameLabel.textColor = UIColor(hexString: "#1F2942")
         nameLabel.lineBreakMode = .byTruncatingTail
-        validityLabel.font = .fdMicro
-        validityLabel.textColor = .fdSubtext
+        nameLabel.numberOfLines = 1
 
-        rulesButton.titleLabel?.font = .fdMicro
-        rulesButton.setTitleColor(.fdSubtext, for: .normal)
-        rulesButton.tintColor = .fdSubtext
-        rulesButton.semanticContentAttribute = .forceRightToLeft
-        rulesButton.contentHorizontalAlignment = .leading
+        validityLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        validityLabel.textColor = UIColor(hexString: "#8591AB")
+
+        let rulesTitle = UILabel()
+        rulesTitle.text = "使用规则"
+        rulesTitle.font = .fdFont(ofSize: 14, weight: .regular)
+        rulesTitle.textColor = UIColor(hexString: "#8591AB")
+        rulesChevron.tintColor = UIColor(hexString: "#8591AB")
+        rulesChevron.contentMode = .scaleAspectFit
+
+        let rulesHeader = UIStackView(arrangedSubviews: [rulesTitle, rulesChevron])
+        rulesHeader.axis = .horizontal
+        rulesHeader.spacing = 2
+        rulesHeader.alignment = .center
+        rulesHeader.isUserInteractionEnabled = false
+        rulesChevron.snp.makeConstraints { $0.size.equalTo(12) }
+
+        rulesButton.addSubview(rulesHeader)
+        rulesHeader.snp.makeConstraints { $0.edges.equalToSuperview() }
         rulesButton.addTarget(self, action: #selector(toggleRules), for: .touchUpInside)
+
+        let middleStack = UIStackView(arrangedSubviews: [nameLabel, validityLabel, rulesButton])
+        middleStack.axis = .vertical
+        middleStack.spacing = 6
+        middleStack.alignment = .leading
+        ticketView.addSubview(middleStack)
 
         rulesStack.axis = .vertical
         rulesStack.spacing = 4
+        rulesStack.alignment = .leading
         rulesStack.isHidden = true
+        card.addSubview(rulesStack)
 
-        let body = UIStackView(arrangedSubviews: [nameLabel, validityLabel, rulesButton, rulesStack])
-        body.axis = .vertical
-        body.spacing = 2
-        body.alignment = .leading
-        body.setCustomSpacing(4, after: rulesButton)
-
-        useButton.setTitle("去使用", for: .normal)
-        useButton.titleLabel?.font = .fdCaptionSemibold
-        useButton.setTitleColor(.white, for: .normal)
-        useButton.backgroundColor = .fdPrimary
-        useButton.layer.cornerRadius = 16
-        useButton.addTarget(self, action: #selector(useTapped), for: .touchUpInside)
-
-        card.addSubview(statusBadge)
-        card.addSubview(left)
-        card.addSubview(body)
-        card.addSubview(useButton)
+        actionLabel.numberOfLines = 0
+        actionLabel.textAlignment = .center
+        actionLabel.isUserInteractionEnabled = false
+        actionButton.addSubview(actionLabel)
+        actionButton.addTarget(self, action: #selector(useTapped), for: .touchUpInside)
 
         card.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview().inset(6)
             make.leading.trailing.equalToSuperview().inset(16)
         }
-        statusBadge.snp.makeConstraints { make in
-            make.top.leading.equalToSuperview()
-            make.height.equalTo(18)
+
+        ticketView.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.height.equalTo(ticketView.snp.width).multipliedBy(Design.aspectRatio)
+            ticketBottomToCard = make.bottom.equalToSuperview().constraint
+            ticketBottomToRules = make.bottom.equalTo(rulesStack.snp.top).offset(-10).constraint
         }
-        left.snp.makeConstraints { make in
-            make.leading.equalToSuperview()
-            make.top.equalToSuperview().offset(22)
-            make.width.equalTo(96)
-            make.bottom.lessThanOrEqualToSuperview().inset(12)
+        ticketBottomToRules?.deactivate()
+
+        ticketBgImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        rightSectionGuide.snp.makeConstraints { make in
+            make.trailing.top.bottom.equalToSuperview()
+            make.width.equalToSuperview().multipliedBy(Design.rightSectionRatio)
         }
-        body.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(108)
-            make.trailing.equalToSuperview().inset(80)
-            make.top.equalToSuperview().offset(14)
+
+        rightGapGuide.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.trailing.equalTo(rightSectionGuide.snp.leading)
+            make.width.equalToSuperview().multipliedBy(Design.middleToRightGapRatio)
+        }
+
+        leftSectionGuide.snp.makeConstraints { make in
+            make.leading.top.bottom.equalToSuperview()
+            make.width.equalToSuperview().multipliedBy(Design.leftSectionRatio)
+        }
+
+        leftMiddleGapGuide.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.leading.equalTo(leftSectionGuide.snp.trailing)
+            make.width.equalToSuperview().multipliedBy(Design.leftToMiddleGapRatio)
+        }
+
+        actionButton.snp.makeConstraints { make in
+            make.edges.equalTo(rightSectionGuide)
+        }
+
+        actionLabel.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.lessThanOrEqualToSuperview()
+        }
+
+        leftStack.snp.makeConstraints { make in
+            make.center.equalTo(leftSectionGuide)
+            make.leading.greaterThanOrEqualTo(leftSectionGuide.snp.leading).offset(2)
+            make.trailing.lessThanOrEqualTo(leftSectionGuide.snp.trailing).offset(-2)
+        }
+
+        ribbonImageView.snp.makeConstraints { make in
+            ribbonTopConstraint = make.top.equalToSuperview().constraint
+            ribbonLeadingConstraint = make.leading.equalToSuperview().constraint
+            make.width.equalToSuperview().multipliedBy(Design.ribbonWidthRatio)
+            make.height.equalTo(ticketView.snp.width).multipliedBy(Design.ribbonHeightRatio)
+        }
+
+        middleStack.snp.makeConstraints { make in
+            make.leading.equalTo(leftMiddleGapGuide.snp.trailing)
+            make.trailing.equalTo(rightGapGuide.snp.leading)
+            middleTopConstraint = make.top.equalToSuperview().constraint
+            make.bottom.lessThanOrEqualToSuperview()
+        }
+
+        rulesStack.snp.makeConstraints { make in
+            make.leading.equalTo(middleStack)
+            make.trailing.equalToSuperview()
             make.bottom.equalToSuperview().inset(12)
         }
-        useButton.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(20)
-            make.trailing.equalToSuperview().inset(12)
-            make.height.equalTo(32)
-            make.width.greaterThanOrEqualTo(58)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let ticketWidth = ticketView.bounds.width
+        middleTopConstraint?.update(offset: ticketView.bounds.height * Design.middleTopRatio)
+        let ribbonOffset = ticketWidth * Design.ribbonOutsideOffset / Design.cardWidth
+        ribbonTopConstraint?.update(offset: ribbonOffset)
+        ribbonLeadingConstraint?.update(offset: ribbonOffset)
+    }
+
+    private func configureAction(for status: VoucherCouponStatus) {
+        switch status {
+        case .received:
+            setVerticalActionText("去使用", color: UIColor(hexString: "#FF7A50"), weight: .medium)
+            actionButton.isUserInteractionEnabled = true
+        case .used:
+            setVerticalActionText("已使用", color: UIColor(hexString: "#8591AB"), weight: .regular)
+            actionButton.isUserInteractionEnabled = false
+        case .expired:
+            setVerticalActionText("已过期", color: UIColor(hexString: "#8591AB"), weight: .regular)
+            actionButton.isUserInteractionEnabled = false
+        }
+    }
+
+    private func setVerticalActionText(_ text: String, color: UIColor, weight: UIFont.Weight) {
+        let font = UIFont.fdFont(ofSize: 18, weight: weight)
+        let attr = NSMutableAttributedString()
+        for (index, char) in text.enumerated() {
+            if index > 0 {
+                attr.append(NSAttributedString(string: "\n"))
+            }
+            attr.append(NSAttributedString(
+                string: String(char),
+                attributes: [.font: font, .foregroundColor: color]
+            ))
+        }
+        let style = NSMutableParagraphStyle()
+        style.lineSpacing = 1
+        style.alignment = .center
+        attr.addAttribute(.paragraphStyle, value: style, range: NSRange(location: 0, length: attr.length))
+        actionLabel.attributedText = attr
+    }
+
+    private func setAmountAndThreshold(_ item: VoucherCouponAsset, isActive: Bool) {
+        let color = isActive ? UIColor(hexString: "#F93838") : UIColor(hexString: "#8591AB")
+        thresholdLabel.textColor = color
+        thresholdLabel.text = item.thresholdText
+
+        let text = item.benefitText
+        if text.hasPrefix("¥") {
+            let num = text.trimmingCharacters(in: CharacterSet(charactersIn: "¥ ")).trimmingCharacters(in: .whitespaces)
+            let attr = NSMutableAttributedString(
+                string: "¥ ",
+                attributes: [.font: UIFont.fdFont(ofSize: 20, weight: .medium), .foregroundColor: color]
+            )
+            attr.append(NSAttributedString(
+                string: num,
+                attributes: [.font: UIFont.fdFont(ofSize: 26, weight: .bold), .foregroundColor: color]
+            ))
+            amountLabel.attributedText = attr
+        } else if text.hasSuffix("折") {
+            let num = text.replacingOccurrences(of: "折", with: "").trimmingCharacters(in: .whitespaces)
+            let attr = NSMutableAttributedString(
+                string: num,
+                attributes: [.font: UIFont.fdFont(ofSize: 26, weight: .bold), .foregroundColor: color]
+            )
+            attr.append(NSAttributedString(
+                string: " 折",
+                attributes: [.font: UIFont.fdFont(ofSize: 20, weight: .medium), .foregroundColor: color]
+            ))
+            amountLabel.attributedText = attr
+        } else {
+            amountLabel.attributedText = NSAttributedString(
+                string: text,
+                attributes: [.font: UIFont.fdFont(ofSize: 26, weight: .bold), .foregroundColor: color]
+            )
+        }
+    }
+
+    private func appendRules(for item: VoucherCouponAsset) {
+        if !item.businessCategories.isEmpty {
+            rulesStack.addArrangedSubview(
+                makeRuleLine("\(item.scopeRule.prefix)业务：\(item.businessCategories.joined(separator: "、"))")
+            )
+        }
+        if !item.packageNames.isEmpty {
+            rulesStack.addArrangedSubview(
+                makeRuleLine("\(item.scopeRule.prefix)套餐：\(item.packageNames.joined(separator: "、"))")
+            )
+        }
+        if !item.institutionNames.isEmpty {
+            rulesStack.addArrangedSubview(
+                makeRuleLine("适用机构：\(item.institutionNames.joined(separator: "、"))")
+            )
+        }
+        if !item.excludedProductNames.isEmpty {
+            rulesStack.addArrangedSubview(
+                makeRuleLine("不参与折扣的商品：\(item.excludedProductNames.joined(separator: "、"))")
+            )
+        }
+        if let desc = item.ruleDescription, !desc.isEmpty {
+            rulesStack.addArrangedSubview(makeRuleLine(desc))
         }
     }
 
     private func makeRuleLine(_ text: String) -> UILabel {
-        let l = UILabel()
-        l.text = text
-        l.font = .fdMicro
-        l.textColor = .fdSubtext
-        l.numberOfLines = 0
-        return l
+        let label = UILabel()
+        label.text = text
+        label.font = .fdFont(ofSize: 13, weight: .regular)
+        label.textColor = UIColor(hexString: "#8591AB")
+        label.numberOfLines = 0
+        return label
     }
 
-    @objc private func useTapped() { onUse?() }
-    @objc private func toggleRules() { onToggleRules?() }
+    @objc private func useTapped() {
+        onUse?()
+    }
+
+    @objc private func toggleRules() {
+        onToggleRules?()
+    }
 }

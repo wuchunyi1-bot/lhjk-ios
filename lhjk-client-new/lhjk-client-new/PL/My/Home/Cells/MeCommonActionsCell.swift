@@ -92,7 +92,7 @@ final class MeCommonActionsCell: UITableViewCell {
         if let badgeText = action.badge, !badgeText.isEmpty {
             let badge = UILabel()
             badge.text = badgeText
-            badge.font = .fdMicroSemibold
+            badge.font = .fdMyMicro
             badge.textColor = .white
             badge.textAlignment = .center
             badge.backgroundColor = .fdPrimary
@@ -110,7 +110,7 @@ final class MeCommonActionsCell: UITableViewCell {
 
         let label = UILabel()
         label.text = action.label
-        label.font = .fdMicroSemibold
+        label.font = .fdMyMicro
         label.textColor = .fdText2
         label.textAlignment = .center
         label.isUserInteractionEnabled = false

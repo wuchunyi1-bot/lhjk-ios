@@ -65,7 +65,7 @@ final class NotificationSettingsViewController: BaseViewController {
 
         let title = UILabel()
         title.text = "手机系统通知"
-        title.font = .fdCaptionSemibold
+        title.font = .fdMyCaptionSemibold
         title.textColor = .fdSubtext
         wrap.addSubview(title)
         title.snp.makeConstraints {
@@ -86,13 +86,13 @@ final class NotificationSettingsViewController: BaseViewController {
 
         let label = UILabel()
         label.text = "手机系统通知"
-        label.font = .fdBodySemibold
+        label.font = .fdMyBodySemibold
         label.textColor = .fdText
         label.isUserInteractionEnabled = false
 
         let desc = UILabel()
         desc.text = "关闭后，App 无法向您推送服务与健康提醒"
-        desc.font = .fdFont(ofSize: 11, weight: .regular)
+        desc.font = .fdFont(ofSize: 13, weight: .regular)
         desc.textColor = .fdSubtext
         desc.numberOfLines = 2
         desc.isUserInteractionEnabled = false
@@ -103,7 +103,7 @@ final class NotificationSettingsViewController: BaseViewController {
         textStack.isUserInteractionEnabled = false
 
         let value = UILabel()
-        value.font = .fdCaption
+        value.font = .fdMyCaption
         value.textColor = .fdPrimary
         value.setContentCompressionResistancePriority(.required, for: .horizontal)
         value.isUserInteractionEnabled = false
@@ -138,7 +138,7 @@ final class NotificationSettingsViewController: BaseViewController {
 
         let title = UILabel()
         title.text = "通知提醒"
-        title.font = .fdCaptionSemibold
+        title.font = .fdMyCaptionSemibold
         title.textColor = .fdSubtext
         wrap.addSubview(title)
         title.snp.makeConstraints {
@@ -244,10 +244,6 @@ final class NotificationSettingsViewController: BaseViewController {
     }
 
     private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            alert.dismiss(animated: true)
-        }
+        showToastAlert(message, duration: 1.5)
     }
 }

@@ -31,7 +31,7 @@ final class NotificationGuideView: UIView {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.text = "开启通知，及时获取健康提醒和保单服务动态。"
-        label.font = .fdH3
+        label.font = .fdMyH3
         label.textColor = .fdText
         label.textAlignment = .center
         label.numberOfLines = 0
@@ -41,7 +41,7 @@ final class NotificationGuideView: UIView {
     private let descriptionLabel: UILabel = {
         let label = UILabel()
         label.text = "我们会提醒您查看健康服务进度、重要通知和账号安全提醒。"
-        label.font = .fdCaption
+        label.font = .fdLoginMeta
         label.textColor = .fdSubtext
         label.textAlignment = .center
         label.numberOfLines = 0
@@ -58,7 +58,7 @@ final class NotificationGuideView: UIView {
     private lazy var enableButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("去开启", for: .normal)
-        btn.titleLabel?.font = .fdBodyBold
+        btn.titleLabel?.font = .fdLoginButton
         btn.setTitleColor(.white, for: .normal)
         btn.backgroundColor = .fdPrimary
         btn.layer.cornerRadius = 18
@@ -69,7 +69,7 @@ final class NotificationGuideView: UIView {
     private lazy var skipButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("暂不开启", for: .normal)
-        btn.titleLabel?.font = .fdBody
+        btn.titleLabel?.font = .fdLoginInput
         btn.setTitleColor(.fdSubtext, for: .normal)
         btn.addTarget(self, action: #selector(tapSkip), for: .touchUpInside)
         return btn

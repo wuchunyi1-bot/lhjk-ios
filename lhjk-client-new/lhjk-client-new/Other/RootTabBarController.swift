@@ -99,14 +99,14 @@ final class RootTabBarController: UITabBarController {
         normal.iconColor = .fdMuted
         normal.titleTextAttributes = [
             .foregroundColor: UIColor.fdMuted,
-            .font: UIFont.fdFont(ofSize: 12, weight: .regular),
+            .font: UIFont.fdFont(ofSize: 14, weight: .regular),
         ]
 
         let selected = appearance.stackedLayoutAppearance.selected
         selected.iconColor = .fdPrimary
         selected.titleTextAttributes = [
             .foregroundColor: UIColor.fdPrimary,
-            .font: UIFont.fdFont(ofSize: 12, weight: .medium),
+            .font: UIFont.fdFont(ofSize: 14, weight: .medium),
         ]
 
         tabBar.standardAppearance = appearance
@@ -114,6 +114,35 @@ final class RootTabBarController: UITabBarController {
         tabBar.isTranslucent = false
         tabBar.tintColor = .fdPrimary
         tabBar.unselectedItemTintColor = .fdMuted
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        adjustTabBarItemsForHomeIndicator()
+    }
+
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        adjustTabBarItemsForHomeIndicator()
+    }
+
+    /// iPhone X 等带 Home Indicator 机型：上移图标与标题，避免与底部横条重叠。
+    private func adjustTabBarItemsForHomeIndicator() {
+        let bottomInset = view.safeAreaInsets.bottom
+        let titleOffset = bottomInset > 0 ? UIOffset(horizontal: 0, vertical: -6) : .zero
+        let imageInsets = bottomInset > 0
+            ? UIEdgeInsets(top: 4, left: 0, bottom: -4, right: 0)
+            : .zero
+
+        viewControllers?.forEach { vc in
+            guard let item = vc.tabBarItem else { return }
+            if item.titlePositionAdjustment != titleOffset {
+                item.titlePositionAdjustment = titleOffset
+            }
+            if item.imageInsets != imageInsets {
+                item.imageInsets = imageInsets
+            }
+        }
     }
 
     // MARK: - Badge

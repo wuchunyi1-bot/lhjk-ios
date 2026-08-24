@@ -25,6 +25,7 @@ final class ProfileFieldEditorSheet: UIViewController {
     private let datePicker = UIDatePicker()
     private let optionsStack = UIStackView()
     private let optionsScroll = UIScrollView()
+    private var panelBottomConstraint: Constraint?
 
     init(title: String, kind: FieldKind, current: String) {
         self.fieldTitle = title
@@ -36,6 +37,10 @@ final class ProfileFieldEditorSheet: UIViewController {
     }
 
     required init?(coder: NSCoder) { fatalError() }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -53,17 +58,17 @@ final class ProfileFieldEditorSheet: UIViewController {
 
         cancelBtn.setTitle("取消", for: .normal)
         cancelBtn.setTitleColor(.fdSubtext, for: .normal)
-        cancelBtn.titleLabel?.font = .fdBody
+        cancelBtn.titleLabel?.font = .fdMyBody
         cancelBtn.addTarget(self, action: #selector(cancel), for: .touchUpInside)
 
         titleLbl.text = "编辑\(fieldTitle)"
-        titleLbl.font = .fdBodySemibold
+        titleLbl.font = .fdMyBodySemibold
         titleLbl.textColor = .fdText
         titleLbl.textAlignment = .center
 
         saveBtn.setTitle("保存", for: .normal)
         saveBtn.setTitleColor(UIColor(hexString: "#3D6FB8"), for: .normal)
-        saveBtn.titleLabel?.font = .fdBodySemibold
+        saveBtn.titleLabel?.font = .fdMyBodySemibold
         saveBtn.addTarget(self, action: #selector(save), for: .touchUpInside)
 
         let hd = UIStackView(arrangedSubviews: [cancelBtn, titleLbl, saveBtn])
@@ -93,7 +98,7 @@ final class ProfileFieldEditorSheet: UIViewController {
         case .text(let keyboard, let maxLength):
             textField.text = draft
             textField.placeholder = "请输入\(fieldTitle)"
-            textField.font = .fdBody
+            textField.font = .fdMyBody
             textField.textColor = .fdText
             textField.keyboardType = keyboard
             textField.backgroundColor = UIColor(hexString: "#F5F7FA")
@@ -104,6 +109,7 @@ final class ProfileFieldEditorSheet: UIViewController {
             textField.leftViewMode = .always
             textField.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
             textField.rightViewMode = .always
+            textField.inputAccessoryView = makeInputAccessory()
             textField.addTarget(self, action: #selector(textChanged), for: .editingChanged)
             textField.tag = maxLength
             panel.addSubview(textField)
@@ -117,6 +123,8 @@ final class ProfileFieldEditorSheet: UIViewController {
         case .date:
             datePicker.datePickerMode = .date
             datePicker.preferredDatePickerStyle = .wheels
+            datePicker.locale = Locale(identifier: "zh_CN")
+            datePicker.calendar = Calendar(identifier: .gregorian)
             datePicker.maximumDate = Date()
             datePicker.minimumDate = Calendar.current.date(from: DateComponents(year: 1920, month: 1, day: 1))
             let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
@@ -148,7 +156,7 @@ final class ProfileFieldEditorSheet: UIViewController {
                 btn.setTitle(opt, for: .normal)
                 btn.contentHorizontalAlignment = .left
                 btn.contentEdgeInsets = UIEdgeInsets(top: 12, left: 14, bottom: 12, right: 14)
-                btn.titleLabel?.font = .fdBody
+                btn.titleLabel?.font = .fdMyBody
                 btn.layer.cornerRadius = 8
                 btn.layer.borderWidth = 1
                 applyOptionStyle(btn, selected: opt == draft)
@@ -164,8 +172,16 @@ final class ProfileFieldEditorSheet: UIViewController {
         }
 
         panel.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
+            $0.leading.trailing.equalToSuperview()
+            panelBottomConstraint = $0.bottom.equalToSuperview().constraint
         }
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillChangeFrame(_:)),
+            name: UIResponder.keyboardWillChangeFrameNotification,
+            object: nil
+        )
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -173,17 +189,48 @@ final class ProfileFieldEditorSheet: UIViewController {
         if case .text = kind { textField.becomeFirstResponder() }
     }
 
+    private func makeInputAccessory() -> UIToolbar {
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+        let flex = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let done = UIBarButtonItem(title: "完成", style: .done, target: self, action: #selector(dismissKeyboard))
+        toolbar.items = [flex, done]
+        return toolbar
+    }
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+
+    @objc private func keyboardWillChangeFrame(_ notification: Notification) {
+        guard case .text = kind else { return }
+        guard
+            let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+            let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval,
+            let curveRaw = notification.userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt
+        else { return }
+
+        let keyboardInView = view.convert(frame, from: nil)
+        let overlap = max(0, view.bounds.maxY - keyboardInView.minY)
+        panelBottomConstraint?.update(offset: -overlap)
+
+        let options = UIView.AnimationOptions(rawValue: curveRaw << 16)
+        UIView.animate(withDuration: duration, delay: 0, options: options) {
+            self.view.layoutIfNeeded()
+        }
+    }
+
     private func applyOptionStyle(_ btn: UIButton, selected: Bool) {
         if selected {
             btn.backgroundColor = UIColor(hexString: "#3D6FB8").withAlphaComponent(0.08)
             btn.layer.borderColor = UIColor(hexString: "#3D6FB8").cgColor
             btn.setTitleColor(UIColor(hexString: "#3D6FB8"), for: .normal)
-            btn.titleLabel?.font = .fdBodySemibold
+            btn.titleLabel?.font = .fdMyBodySemibold
         } else {
             btn.backgroundColor = UIColor(hexString: "#F7F8FA")
             btn.layer.borderColor = UIColor.fdBorder.cgColor
             btn.setTitleColor(.fdText, for: .normal)
-            btn.titleLabel?.font = .fdBody
+            btn.titleLabel?.font = .fdMyBody
         }
     }
 
@@ -208,24 +255,18 @@ final class ProfileFieldEditorSheet: UIViewController {
             value = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         }
         guard !value.isEmpty else {
-            showToast("请填写\(fieldTitle)")
+            showToastAlert("请填写\(fieldTitle)")
             return
         }
         if fieldTitle == "姓名", value.count < 2 {
-            showToast("请输入真实姓名")
+            showToastAlert("请输入真实姓名")
             return
         }
         if fieldTitle == "邮箱", !value.contains("@") {
-            showToast("请输入正确的邮箱格式")
+            showToastAlert("请输入正确的邮箱格式")
             return
         }
         onSave?(value)
         dismiss(animated: true)
-    }
-
-    private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { alert.dismiss(animated: true) }
     }
 }

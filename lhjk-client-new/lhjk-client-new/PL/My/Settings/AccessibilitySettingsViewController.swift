@@ -69,12 +69,12 @@ final class AccessibilitySettingsViewController: BaseViewController {
 
             let title = UILabel()
             title.text = "看得清，点得准"
-            title.font = .fdFont(ofSize: 19, weight: .heavy)
+            title.font = .fdFont(ofSize: 21, weight: .heavy)
             title.textColor = .fdText
 
             let desc = UILabel()
             desc.text = "放大文字和关键按钮，减少复杂入口，适合需要更轻松操作的用户。"
-            desc.font = .fdBody
+            desc.font = .fdMyBody
             desc.textColor = .fdSubtext
             desc.numberOfLines = 0
 

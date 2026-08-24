@@ -46,19 +46,19 @@ final class HealthArchiveCardCell: UITableViewCell {
             $0.height.equalTo(155)
         }
 
-        titleLbl.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLbl.font = .fdFont(ofSize: 18, weight: .medium)
         titleLbl.textColor = .fdText
         titleLbl.text = "健康档案完整度"
 
         missBadge.text = "缺"
-        missBadge.font = .fdFont(ofSize: 10, weight: .medium)
+        missBadge.font = .fdFont(ofSize: 12, weight: .medium)
         missBadge.textColor = .white
         missBadge.backgroundColor = UIColor(hexString: "#DF0340")
         missBadge.textAlignment = .center
         missBadge.layer.cornerRadius = 4
         missBadge.clipsToBounds = true
 
-        missLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        missLabel.font = .fdFont(ofSize: 14, weight: .regular)
         missLabel.textColor = UIColor(hexString: "#DF0340")
         missLabel.text = "心电图/家族病史"
 
@@ -74,9 +74,9 @@ final class HealthArchiveCardCell: UITableViewCell {
         progressTrackBg.addSubview(pctLabel)
         progressTrackBg.addSubview(pctUnit)
 
-        pctLabel.font = .fdFont(ofSize: 18, weight: .medium)
+        pctLabel.font = .fdFont(ofSize: 20, weight: .medium)
         pctLabel.textColor = .fdPrimary
-        pctUnit.font = .fdFont(ofSize: 12, weight: .medium)
+        pctUnit.font = .fdFont(ofSize: 14, weight: .medium)
         pctUnit.textColor = .fdPrimary
         pctUnit.text = "%"
 
@@ -102,7 +102,7 @@ final class HealthArchiveCardCell: UITableViewCell {
         footerLbl.numberOfLines = 1
 
         completeBtn.setTitle("去补全", for: .normal)
-        completeBtn.titleLabel?.font = .fdFont(ofSize: 12, weight: .medium)
+        completeBtn.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
         completeBtn.setTitleColor(.white, for: .normal)
         completeBtn.backgroundColor = .fdPrimary
         completeBtn.layer.cornerRadius = 14
@@ -161,15 +161,15 @@ final class HealthArchiveCardCell: UITableViewCell {
         pctLabel.text = "\(archiveProgress)"
         let attr = NSMutableAttributedString(
             string: "补全后 ",
-            attributes: [.font: UIFont.fdFont(ofSize: 12, weight: .regular), .foregroundColor: UIColor.fdSubtext]
+            attributes: [.font: UIFont.fdFont(ofSize: 14, weight: .regular), .foregroundColor: UIColor.fdSubtext]
         )
         attr.append(NSAttributedString(
             string: "+20",
-            attributes: [.font: UIFont.fdFont(ofSize: 14, weight: .medium), .foregroundColor: UIColor.fdPrimary]
+            attributes: [.font: UIFont.fdFont(ofSize: 16, weight: .medium), .foregroundColor: UIColor.fdPrimary]
         ))
         attr.append(NSAttributedString(
             string: " 健康分·解锁家族风险图谱",
-            attributes: [.font: UIFont.fdFont(ofSize: 12, weight: .regular), .foregroundColor: UIColor.fdSubtext]
+            attributes: [.font: UIFont.fdFont(ofSize: 14, weight: .regular), .foregroundColor: UIColor.fdSubtext]
         ))
         footerLbl.attributedText = attr
         setNeedsLayout()

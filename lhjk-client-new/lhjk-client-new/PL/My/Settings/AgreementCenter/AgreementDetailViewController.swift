@@ -63,21 +63,21 @@ final class AgreementDetailViewController: BaseViewController {
 
         let intro = UILabel()
         intro.text = doc.intro
-        intro.font = .fdBody
+        intro.font = .fdMyBody
         intro.textColor = .fdText
         intro.numberOfLines = 0
         stack.addArrangedSubview(intro)
 
         let updated = UILabel()
         updated.text = "更新日期：\(doc.updatedAt)"
-        updated.font = .fdCaption
+        updated.font = .fdMyCaption
         updated.textColor = .fdSubtext
         stack.addArrangedSubview(updated)
 
         for block in doc.blocks {
             let heading = UILabel()
             heading.text = block.heading
-            heading.font = .fdBodySemibold
+            heading.font = .fdMyBodySemibold
             heading.textColor = .fdText
             heading.numberOfLines = 0
             stack.addArrangedSubview(heading)
@@ -85,7 +85,7 @@ final class AgreementDetailViewController: BaseViewController {
             for p in block.paragraphs {
                 let body = UILabel()
                 body.text = p
-                body.font = .fdBody
+                body.font = .fdMyBody
                 body.textColor = .fdSubtext
                 body.numberOfLines = 0
                 stack.addArrangedSubview(body)
