@@ -40,9 +40,12 @@ actor RetailCategoryService {
 
     /// 通过健康管理节点反查业务分类根 → 电商零售一级 → 二级类目
     private func fetchRetailSecondaryCategory() async throws -> ServiceRecommendCategory? {
-        let healthNodes = try await dictionaryService.fetchNodes(
-            parentId: DictionaryService.serviceRecommendCategoryParentId
-        )
+        var healthNodes = DictionaryCacheService.shared.rootNodes(for: .packageCategory)
+        if healthNodes.isEmpty {
+            healthNodes = try await dictionaryService.fetchNodes(
+                parentId: DictionaryService.serviceRecommendCategoryParentId
+            )
+        }
         guard let healthRoot = healthNodes.first else { return nil }
 
         guard let businessRootId = Self.nonEmpty(healthRoot.parentId),

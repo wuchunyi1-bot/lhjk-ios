@@ -4,7 +4,7 @@ import Combine
 
 /// 收货地址编辑页（新增 / 修改）
 ///
-/// 对齐 funde-client AddressEditView + PRD 04：收货人、手机号、所在地区+定位、详细地址、默认地址。
+/// 对齐 funde-client AddressEditView + PRD 04：收货人、手机号、所在地区+定位、详细地址、默认地址（仅用户手动开关）。
 /// 保存接口不变：`POST /v1/address/saveOrUpdateAddress`。
 final class AddressEditViewController: BaseViewController {
 
@@ -91,16 +91,6 @@ final class AddressEditViewController: BaseViewController {
         return s
     }()
 
-    private let defaultHintLabel: UILabel = {
-        let l = UILabel()
-        l.text = "第一个地址将自动设为默认地址"
-        l.font = .fdCaption
-        l.textColor = .fdSubtext
-        l.numberOfLines = 0
-        l.isHidden = true
-        return l
-    }()
-
     private lazy var saveButton: UIButton = {
         var cfg = UIButton.Configuration.filled()
         cfg.title = "保存地址"
@@ -119,8 +109,8 @@ final class AddressEditViewController: BaseViewController {
 
     // MARK: - Init
 
-    init(address: MAddress? = nil, existingAddressCount: Int = 0) {
-        self.viewModel = AddressEditViewModel(address: address, existingAddressCount: existingAddressCount)
+    init(address: MAddress? = nil) {
+        self.viewModel = AddressEditViewModel(address: address)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -287,13 +277,6 @@ final class AddressEditViewController: BaseViewController {
         }
         last = defaultCard.snp.bottom
 
-        contentView.addSubview(defaultHintLabel)
-        defaultHintLabel.snp.makeConstraints { make in
-            make.top.equalTo(last).offset(8)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-        last = defaultHintLabel.snp.bottom
-
         contentView.addSubview(saveButton)
         saveButton.snp.makeConstraints { make in
             make.top.equalTo(last).offset(24)
@@ -458,8 +441,6 @@ final class AddressEditViewController: BaseViewController {
         addressPlaceholderLabel.isHidden = !viewModel.address.isEmpty
         codeField.text = viewModel.code
         defaultSwitch.isOn = viewModel.isDefault
-        defaultSwitch.isEnabled = viewModel.isDefaultSwitchEnabled
-        defaultHintLabel.isHidden = viewModel.isDefaultSwitchEnabled
         refreshRegionLabel()
     }
 
@@ -515,27 +496,18 @@ final class AddressEditViewController: BaseViewController {
     }
 
     private func presentRegionEditor() {
-        let alert = UIAlertController(title: "编辑所在地区", message: "请填写省、市、区", preferredStyle: .alert)
-        alert.addTextField { [weak self] tf in
-            tf.placeholder = "省份"
-            tf.text = self?.viewModel.province
+        let current = RegionSelection(
+            province: viewModel.province,
+            city: viewModel.city,
+            district: viewModel.area
+        )
+        let sheet = RegionPickerSheet(title: "所在地区", mode: .provinceCityArea, current: current)
+        sheet.onSave = { [weak self] selection in
+            self?.viewModel.province = selection.province
+            self?.viewModel.city = selection.city
+            self?.viewModel.area = selection.district
         }
-        alert.addTextField { [weak self] tf in
-            tf.placeholder = "城市"
-            tf.text = self?.viewModel.city
-        }
-        alert.addTextField { [weak self] tf in
-            tf.placeholder = "区/县"
-            tf.text = self?.viewModel.area
-        }
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
-        alert.addAction(UIAlertAction(title: "确定", style: .default) { [weak self] _ in
-            guard let fields = alert.textFields, fields.count >= 3 else { return }
-            self?.viewModel.province = fields[0].text ?? ""
-            self?.viewModel.city = fields[1].text ?? ""
-            self?.viewModel.area = fields[2].text ?? ""
-        })
-        present(alert, animated: true)
+        present(sheet, animated: true)
     }
 
     // MARK: - Keyboard

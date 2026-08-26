@@ -34,18 +34,37 @@ final class ChangePhoneViewController: BaseViewController {
 
     // MARK: - Lifecycle
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        currentPhone = UserDefaults.standard.string(forKey: "current_user_mobile") ?? ""
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        currentPhone = resolveCurrentPhone()
+        currentPhoneLabel?.text = maskPhone(currentPhone)
     }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        newPhoneField.becomeFirstResponder()
+    override func viewDidLoad() {
+        // 须在 super.viewDidLoad（会调 setupUI）之前取号，否则当前手机号为空
+        currentPhone = resolveCurrentPhone()
+        super.viewDidLoad()
+        configureKeyboardDismiss()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillShow(_:)),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide(_:)),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     override func setupUI() {
-        title = "更换手机号"
+        title = "修改手机号"
         view.backgroundColor = .fdBg
 
         scrollView.showsVerticalScrollIndicator = false
@@ -58,7 +77,7 @@ final class ChangePhoneViewController: BaseViewController {
 
         // MARK: 说明文字
         let descLabel = UILabel()
-        descLabel.text = "更换后，可使用新手机号登录富德健康。"
+        descLabel.text = "更换后将使用新手机号登录富德健康，并用于接收服务与安全提醒。"
         descLabel.font = .fdMyBody
         descLabel.textColor = .fdSubtext
         descLabel.numberOfLines = 0
@@ -70,7 +89,7 @@ final class ChangePhoneViewController: BaseViewController {
 
         // MARK: 当前手机号
         let currentTitleLabel = UILabel()
-        currentTitleLabel.text = "当前手机号"
+        currentTitleLabel.text = "当前绑定手机号"
         currentTitleLabel.font = .fdMyCaption
         currentTitleLabel.textColor = .fdMuted
         contentView.addSubview(currentTitleLabel)
@@ -347,6 +366,14 @@ final class ChangePhoneViewController: BaseViewController {
 
     // MARK: - Helpers
 
+    private func resolveCurrentPhone() -> String {
+        let fromUser = UserManager.shared.currentUser?.mobile?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !fromUser.isEmpty { return fromUser }
+        return UserDefaults.standard.string(forKey: "current_user_mobile")?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
     private func validatePhone(_ phone: String) -> Bool {
         let pattern = "^1[3-9]\\d{9}$"
         return phone.range(of: pattern, options: .regularExpression) != nil
@@ -420,5 +447,43 @@ final class ChangePhoneViewController: BaseViewController {
 
     private func showToast(_ message: String) {
         showToastAlert(message, duration: 1.5)
+    }
+
+    // MARK: - Keyboard
+
+    private func configureKeyboardDismiss() {
+        let dismissTap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        dismissTap.cancelsTouchesInView = false
+        view.addGestureRecognizer(dismissTap)
+        attachDoneToolbar(to: newPhoneField)
+        attachDoneToolbar(to: codeField)
+    }
+
+    private func attachDoneToolbar(to field: UITextField) {
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+        let flex = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let done = UIBarButtonItem(title: "完成", style: .done, target: self, action: #selector(dismissKeyboard))
+        done.tintColor = .fdPrimary
+        toolbar.items = [flex, done]
+        field.inputAccessoryView = toolbar
+    }
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+
+    @objc private func keyboardWillShow(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let kbFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+        let kbInView = view.convert(kbFrame, from: nil)
+        let overlap = max(0, view.bounds.maxY - kbInView.minY)
+        scrollView.contentInset.bottom = overlap
+        scrollView.verticalScrollIndicatorInsets.bottom = overlap
+    }
+
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        scrollView.contentInset.bottom = 0
+        scrollView.verticalScrollIndicatorInsets.bottom = 0
     }
 }

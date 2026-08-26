@@ -13,7 +13,6 @@ enum LoginFlowStep {
     case privacyCheck
     case privacyPrompt(PrivacyVersionInfo)
     case loginForm
-    case captchaVerify(String)
     case notificationGuide
     case complete
 }
@@ -147,14 +146,13 @@ final class LoginViewModel: ObservableObject {
 
     // MARK: - Send Code
 
-    func sendVerificationCode(phone: String) {
+    func requestVerificationCode(phone: String, type: SMSVerificationType = .login) {
         phoneNumber = phone
         guard validatePhone(phone) == nil else {
             toastPublisher.send("请输入正确的手机号")
             return
         }
-        // captcha 验证 → 由 VC 展示 UI，完成后调用 sendCodeAfterCaptcha
-        flowStep = .captchaVerify(phone)
+        sendCodeAfterCaptcha(phone: phone, captchaToken: "", type: type)
     }
 
     func sendCodeAfterCaptcha(phone: String, captchaToken: String, type: SMSVerificationType = .login) {
@@ -349,6 +347,8 @@ final class LoginViewModel: ObservableObject {
 
         // 连接 IM
         rongCloudManager.fetchTokenAndConnect()
+
+        await DictionaryCacheService.shared.sync()
 
         // 串行：先拿 userId → 拉默认档案 → 按 archiveComplete 门禁
         _ = await userManager.refreshUserInfo()

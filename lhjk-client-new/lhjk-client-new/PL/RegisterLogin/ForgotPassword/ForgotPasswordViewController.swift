@@ -96,7 +96,6 @@ final class ForgotPasswordViewController: BaseViewController {
     // MARK: - State
 
     private var isSubmitting = false
-    private var captchaToken: String?
 
     /// 重置成功后回传手机号
     var onResetSuccess: ((String) -> Void)?
@@ -180,30 +179,19 @@ final class ForgotPasswordViewController: BaseViewController {
         let phone = phoneField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
         guard validatePhone(phone) else { return }
 
-        // Show captcha first (mock in V1.0)
-        showCaptchaVerify { [weak self] token in
-            guard let self = self else { return }
-            self.captchaToken = token
-            Task {
-                do {
-                    _ = try await LoginService.shared.sendVerificationCode(to: phone, type: .resetPassword)
-                    await MainActor.run {
-                        self.codeButton.startCountdown()
-                        self.showToast("验证码已发送")
-                    }
-                } catch {
-                    await MainActor.run {
-                        self.showToast(error.localizedDescription)
-                    }
+        Task {
+            do {
+                _ = try await LoginService.shared.sendVerificationCode(to: phone, type: .resetPassword)
+                await MainActor.run {
+                    self.codeButton.startCountdown()
+                    self.showToast("验证码已发送")
+                }
+            } catch {
+                await MainActor.run {
+                    self.showToast(error.localizedDescription)
                 }
             }
         }
-    }
-
-    private func showCaptchaVerify(completion: @escaping (String) -> Void) {
-        // V1.0: mock captcha, skip UI and directly callback
-        let mockToken = "captcha_reset_\(UUID().uuidString.prefix(8))"
-        completion(mockToken)
     }
 
     // MARK: - Submit

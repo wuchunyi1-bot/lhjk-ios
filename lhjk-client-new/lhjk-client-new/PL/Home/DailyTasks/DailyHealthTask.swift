@@ -20,6 +20,11 @@ struct DailyHealthTask: Equatable {
     let instructions: String?
     let completedAt: String?
 
+    /// 是否存在可跳转的路由（与 `done` / isComplete 无关；无路由时「去完成」仍展示，点击不跳转）
+    var hasNavigableRoute: Bool {
+        !actionRoute.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     struct IconStyle {
         let systemName: String
         let background: UIColor
@@ -43,6 +48,7 @@ struct DailyHealthTask: Equatable {
         "medicine": .init(systemName: "pills", background: UIColor(hexString: "#F3EEFF"), tint: UIColor(hexString: "#7C5CC4")),
         "supplement": .init(systemName: "cross.vial", background: UIColor(hexString: "#FFF3EE"), tint: UIColor(hexString: "#E55A2E")),
         "oxygen": .init(systemName: "lungs", background: UIColor(hexString: "#EAF3FF"), tint: UIColor(hexString: "#3D6FB8")),
+        "sleep": .init(systemName: "moon.zzz.fill", background: UIColor(hexString: "#EEF0FF"), tint: UIColor(hexString: "#5B6FD8")),
         "temperature": .init(systemName: "thermometer", background: UIColor(hexString: "#E6F7EF"), tint: UIColor(hexString: "#2DB983")),
         "heart-rate": .init(systemName: "waveform.path.ecg", background: UIColor(hexString: "#FCE9E6"), tint: UIColor(hexString: "#E5564B")),
     ]

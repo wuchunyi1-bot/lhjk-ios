@@ -61,6 +61,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     private func bootstrapLoggedInSession() {
         Task {
+            await DictionaryCacheService.shared.sync()
             _ = await UserManager.shared.fetchUserInfo()
             _ = await UserManager.shared.fetchDefaultArchive()
             _ = await UserManager.shared.fetchArchiveCompletion()

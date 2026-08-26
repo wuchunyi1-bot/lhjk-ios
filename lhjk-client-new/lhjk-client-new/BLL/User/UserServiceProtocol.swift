@@ -19,6 +19,9 @@ protocol UserServiceProtocol {
     /// - Parameter userId: 用户雪花 ID（字符串形式）
     func getOArchiveByUserId(_ userId: String) async throws -> OArchive?
 
+    /// 手机端修改档案字段（如 `whetherPregnancy`）
+    func saveOrUpdateArchiveByMobile(archive: OArchive, whetherPregnancy: Int?) async throws
+
     /// 计算档案完善进度（0–100）
     /// `GET /v1/archive/calculateArchiveCompletion?userId=`
     func calculateArchiveCompletion(userId: String) async throws -> ArchiveCompletionVO

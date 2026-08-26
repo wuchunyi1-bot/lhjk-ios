@@ -10,9 +10,9 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     // MARK: - Field Keys
 
     private enum FieldKey: String {
-        case name, gender, birthday, phone, email
+        case name, gender, birthday, phone, email, whetherPregnancy
         case occupation, education, idType, idNumber
-        case nationality, ethnic, nativePlace, residence, district, address
+        case nationality, ethnic, nativePlace, residence, address
     }
 
     private enum FieldKind {
@@ -20,6 +20,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         case text(keyboard: UIKeyboardType, maxLength: Int)
         case select(options: [String])
         case date
+        case region(RegionPickerSheet.Mode)
     }
 
     private struct FieldDef {
@@ -35,58 +36,103 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         let fields: [FieldDef]
     }
 
-    // MARK: - Options (对齐 ProfileView.vue)
+    // MARK: - Options
 
     private static let genderOptions = ["男", "女"]
-    private static let occupationOptions = ["在职人员", "学生", "自由职业", "退休", "无业"]
-    private static let educationOptions = ["小学", "初中", "高中/中专", "大专", "本科", "硕士及以上"]
-    private static let idTypeOptions = ["居民身份证", "护照", "军官证", "港澳通行证", "台胞证"]
-    private static let nationalityOptions = ["中国", "中国香港", "中国澳门", "中国台湾", "其他"]
-    private static let ethnicOptions = ["汉族", "蒙古族", "回族", "藏族", "维吾尔族", "其他"]
-    private static let provinceOptions = ["北京市", "上海市", "广东省", "江苏省", "浙江省", "四川省"]
-    private static let districtOptions = ["浦东新区", "黄浦区", "徐汇区", "长宁区", "静安区", "天河区", "越秀区"]
+    private static let pregnancyOptions = ["是", "否"]
+    /// 字典未拉取完成时的占位（成功同步后由 `DictionaryCacheService` 覆盖）
+    private static let fallbackOccupationOptions = ["在职人员", "学生", "自由职业", "退休", "无业"]
+    private static let fallbackEducationOptions = ["小学", "初中", "高中/中专", "大专", "本科", "硕士及以上"]
+    private static let fallbackIdTypeOptions = ["居民身份证", "护照", "军官证", "港澳通行证", "台胞证"]
+    private static let fallbackNationalityOptions = ["中国", "中国香港", "中国澳门", "中国台湾", "其他"]
+    private static let fallbackEthnicOptions = ["汉族", "蒙古族", "回族", "藏族", "维吾尔族", "其他"]
 
-    /// 证件类型中文 ↔ Int（1…5）
-    private static let idTypeToInt: [String: Int] = [
-        "居民身份证": 1, "护照": 2, "军官证": 3, "港澳通行证": 4, "台胞证": 5
-    ]
-    private static let idTypeFromInt: [Int: String] = [
-        1: "居民身份证", 2: "护照", 3: "军官证", 4: "港澳通行证", 5: "台胞证"
-    ]
+    private var sections: [SectionDef] = []
 
-    private lazy var sections: [SectionDef] = [
-        SectionDef(title: "个人基础信息", fields: [
+    private func buildProfileSections() -> [SectionDef] {
+        let dict = DictionaryCacheService.shared
+        let occupationOptions = resolvedOptions(dict.optionNames(parent: .occupation), fallback: Self.fallbackOccupationOptions)
+        let educationOptions = resolvedOptions(dict.optionNames(parent: .education), fallback: Self.fallbackEducationOptions)
+        let idTypeOptions = resolvedOptions(dict.optionNames(parent: .idType), fallback: Self.fallbackIdTypeOptions)
+        let nationalityOptions = resolvedOptions(dict.optionNames(parent: .nationality), fallback: Self.fallbackNationalityOptions)
+        let ethnicOptions = resolvedOptions(dict.optionNames(parent: .ethnicity), fallback: Self.fallbackEthnicOptions)
+
+        var basicFields: [FieldDef] = [
             FieldDef(key: .name, label: "姓名", kind: .text(keyboard: .default, maxLength: 20), placeholder: "请输入姓名", required: true),
             FieldDef(key: .gender, label: "性别", kind: .select(options: Self.genderOptions), placeholder: "请选择"),
+        ]
+        if isFemaleForProfileUI {
+            basicFields.append(
+                FieldDef(key: .whetherPregnancy, label: "是否孕妇", kind: .select(options: Self.pregnancyOptions), placeholder: "请选择")
+            )
+        }
+        basicFields.append(contentsOf: [
             FieldDef(key: .birthday, label: "出生日期", kind: .date, placeholder: "请选择日期"),
             FieldDef(key: .phone, label: "手机号", kind: .readonly, placeholder: "未设置"),
             FieldDef(key: .email, label: "邮箱", kind: .text(keyboard: .emailAddress, maxLength: 100), placeholder: "请输入邮箱"),
-        ]),
-        SectionDef(title: "身份与职业", fields: [
-            FieldDef(key: .occupation, label: "职业", kind: .select(options: Self.occupationOptions), placeholder: "请选择"),
-            FieldDef(key: .education, label: "文化程度", kind: .select(options: Self.educationOptions), placeholder: "请选择"),
-            FieldDef(key: .idType, label: "证件类型", kind: .select(options: Self.idTypeOptions), placeholder: "请选择"),
-            FieldDef(key: .idNumber, label: "证件号码", kind: .text(keyboard: .asciiCapable, maxLength: 18), placeholder: "请输入证件号码"),
-        ]),
-        SectionDef(title: "地区信息", fields: [
-            FieldDef(key: .nationality, label: "国籍", kind: .select(options: Self.nationalityOptions), placeholder: "请选择"),
-            FieldDef(key: .ethnic, label: "民族", kind: .select(options: Self.ethnicOptions), placeholder: "请选择"),
-            FieldDef(key: .nativePlace, label: "籍贯", kind: .select(options: Self.provinceOptions), placeholder: "请选择"),
-            FieldDef(key: .residence, label: "现居地", kind: .select(options: Self.provinceOptions), placeholder: "请选择"),
-            FieldDef(key: .district, label: "省/区", kind: .select(options: Self.districtOptions), placeholder: "请选择"),
-            FieldDef(key: .address, label: "详细地址", kind: .text(keyboard: .default, maxLength: 100), placeholder: "请输入详细地址"),
-        ]),
-    ]
+        ])
+
+        return [
+            SectionDef(title: "个人基础信息", fields: basicFields),
+            SectionDef(title: "身份与职业", fields: [
+                FieldDef(key: .occupation, label: "职业", kind: .select(options: occupationOptions), placeholder: "请选择"),
+                FieldDef(key: .education, label: "文化程度", kind: .select(options: educationOptions), placeholder: "请选择"),
+                FieldDef(key: .idType, label: "证件类型", kind: .select(options: idTypeOptions), placeholder: "请选择"),
+                FieldDef(key: .idNumber, label: "证件号码", kind: .text(keyboard: .asciiCapable, maxLength: 18), placeholder: "请输入证件号码"),
+            ]),
+            SectionDef(title: "地区信息", fields: [
+                FieldDef(key: .nationality, label: "国籍", kind: .select(options: nationalityOptions), placeholder: "请选择"),
+                FieldDef(key: .ethnic, label: "民族", kind: .select(options: ethnicOptions), placeholder: "请选择"),
+                FieldDef(key: .nativePlace, label: "籍贯", kind: .region(.provinceCity), placeholder: "请选择省、市"),
+                FieldDef(key: .residence, label: "现居地", kind: .region(.provinceCityArea), placeholder: "请选择省、市、区"),
+                FieldDef(key: .address, label: "详细地址", kind: .text(keyboard: .default, maxLength: 100), placeholder: "请输入详细地址"),
+            ]),
+        ]
+    }
+
+    private func resolvedOptions(_ primary: [String], fallback: [String]) -> [String] {
+        primary.isEmpty ? fallback : primary
+    }
+
+    private func selectOptions(for key: FieldKey, fallback: [String]) -> [String] {
+        let dict = DictionaryCacheService.shared
+        switch key {
+        case .occupation:
+            return resolvedOptions(dict.optionNames(parent: .occupation), fallback: fallback)
+        case .education:
+            return resolvedOptions(dict.optionNames(parent: .education), fallback: fallback)
+        case .idType:
+            return resolvedOptions(dict.optionNames(parent: .idType), fallback: fallback)
+        case .nationality:
+            return resolvedOptions(dict.optionNames(parent: .nationality), fallback: fallback)
+        case .ethnic:
+            return resolvedOptions(dict.optionNames(parent: .ethnicity), fallback: fallback)
+        default:
+            return fallback
+        }
+    }
 
     // MARK: - State
 
     private var values: [FieldKey: String] = [:]
     private var valueLabels: [FieldKey: UILabel] = [:]
+    private var nativePlaceRegion = RegionSelection()
+    private var residenceRegion = RegionSelection()
+
+    private var isFemaleForProfileUI: Bool {
+        switch values[.gender] {
+        case "女": return true
+        case "男": return false
+        default: return UserManager.shared.isFemaleUser
+        }
+    }
 
     // MARK: - UI
 
     private let scrollView = UIScrollView()
     private let contentView = UIView()
+    private let infoCard = UIView()
+    private let infoStack = UIStackView()
     private let avatarSection = UIControl()
     private let avatarImageView = UIImageView()
     private let avatarTextLabel = UILabel()
@@ -99,12 +145,34 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         super.viewDidLoad()
         NotificationCenter.default.addObserver(self, selector: #selector(onUserUpdated),
                                                name: .userDidUpdate, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(onDictionaryUpdated),
+                                               name: DictionaryCacheService.didUpdateNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(onArchiveUpdated),
+                                               name: .defaultArchiveDidUpdate, object: nil)
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func onDictionaryUpdated() {
+        rebuildProfileForm()
+    }
+
+    @objc private func onArchiveUpdated() {
+        applyArchivePregnancyValue()
+        refreshAllValueLabels()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
-        loadUserProfile()
+        Task {
+            if UserManager.shared.defaultArchive == nil {
+                _ = await UserManager.shared.fetchDefaultArchive()
+            }
+            await MainActor.run { loadUserProfile() }
+        }
     }
 
     override func viewDidLayoutSubviews() {
@@ -115,6 +183,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     override func setupUI() {
         title = "个人信息"
         view.backgroundColor = .fdBg
+        sections = buildProfileSections()
 
         scrollView.showsVerticalScrollIndicator = false
         view.addSubview(scrollView)
@@ -174,24 +243,32 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     }
 
     private func buildInfoCard() {
-        let card = UIView()
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 12
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 6
-        card.layer.shadowOpacity = 0.03
-        contentView.addSubview(card)
-        card.snp.makeConstraints {
+        infoCard.backgroundColor = .fdSurface
+        infoCard.layer.cornerRadius = 12
+        infoCard.layer.shadowColor = UIColor.black.cgColor
+        infoCard.layer.shadowOffset = CGSize(width: 0, height: 1)
+        infoCard.layer.shadowRadius = 6
+        infoCard.layer.shadowOpacity = 0.03
+        contentView.addSubview(infoCard)
+        infoCard.snp.makeConstraints {
             $0.top.equalTo(avatarSection.snp.bottom).offset(8)
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.bottom.equalToSuperview().offset(-32)
         }
 
-        let stack = UIStackView()
-        stack.axis = .vertical
-        card.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)) }
+        infoStack.axis = .vertical
+        infoCard.addSubview(infoStack)
+        infoStack.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)) }
+
+        rebuildInfoCardContent()
+    }
+
+    private func rebuildInfoCardContent() {
+        infoStack.arrangedSubviews.forEach { view in
+            infoStack.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
+        valueLabels.removeAll()
 
         for (idx, section) in sections.enumerated() {
             let group = UIView()
@@ -225,8 +302,14 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
                 }
             }
 
-            stack.addArrangedSubview(group)
+            infoStack.addArrangedSubview(group)
         }
+    }
+
+    private func rebuildProfileForm() {
+        sections = buildProfileSections()
+        rebuildInfoCardContent()
+        refreshAllValueLabels()
     }
 
     private func makeRow(_ field: FieldDef) -> UIView {
@@ -319,6 +402,13 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     private func loadUserProfile() {
         guard let user = UserManager.shared.currentUser else { return }
         applyUserData(user)
+        rebuildProfileForm()
+    }
+
+    private func applyArchivePregnancyValue() {
+        values[.whetherPregnancy] = UserManager.whetherPregnancyDisplay(
+            UserManager.shared.defaultArchive?.whetherPregnancy
+        )
     }
 
     @objc private func onUserUpdated() {
@@ -341,19 +431,26 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         }
 
         values[.name] = user.chineseName ?? user.surname ?? ""
-        values[.gender] = Self.sexDisplay(user.sex)
+        values[.gender] = UserManager.sexDisplayLabel(user.sex)
+        applyArchivePregnancyValue()
         values[.birthday] = user.birthday ?? ""
         values[.phone] = maskPhone(user.mobile)
         values[.email] = user.email ?? ""
         values[.occupation] = user.career ?? ""
         values[.education] = user.education ?? ""
-        values[.idType] = Self.idTypeDisplay(user.idType)
+        values[.idType] = idTypeDisplay(user.idType)
         values[.idNumber] = user.idNumber ?? ""
         values[.nationality] = user.nationality ?? ""
         values[.ethnic] = user.ethnic ?? ""
-        values[.nativePlace] = user.province ?? user.householdProvince ?? ""
-        values[.residence] = user.addressProvince ?? ""
-        values[.district] = user.addressArea ?? user.addressCity ?? ""
+        nativePlaceRegion = RegionSelection(
+            province: user.province ?? user.householdProvince ?? "",
+            city: user.cities ?? user.householdCity ?? ""
+        )
+        residenceRegion = RegionSelection(
+            province: user.addressProvince ?? "",
+            city: user.addressCity ?? "",
+            district: user.addressArea ?? ""
+        )
         values[.address] = user.address ?? ""
 
         refreshAllValueLabels()
@@ -369,7 +466,15 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
     private func applyValueLabel(_ field: FieldDef) {
         guard let label = valueLabels[field.key] else { return }
-        let raw = values[field.key] ?? ""
+        let raw: String
+        switch field.key {
+        case .nativePlace:
+            raw = nativePlaceRegion.twoLevelDisplay
+        case .residence:
+            raw = residenceRegion.threeLevelDisplay
+        default:
+            raw = values[field.key] ?? ""
+        }
         if raw.isEmpty {
             label.text = field.placeholder
             if case .readonly = field.kind {
@@ -386,14 +491,29 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     // MARK: - Editor
 
     private func openEditor(for field: FieldDef) {
+        if case .region(let mode) = field.kind {
+            let current: RegionSelection
+            switch field.key {
+            case .nativePlace: current = nativePlaceRegion
+            case .residence: current = residenceRegion
+            default: current = RegionSelection()
+            }
+            let sheet = RegionPickerSheet(title: field.label, mode: mode, current: current)
+            sheet.onSave = { [weak self] selection in
+                self?.commitRegionField(field, selection: selection)
+            }
+            present(sheet, animated: true)
+            return
+        }
+
         let sheetKind: ProfileFieldEditorSheet.FieldKind
         switch field.kind {
-        case .readonly:
+        case .readonly, .region:
             return
         case .text(let keyboard, let maxLength):
             sheetKind = .text(keyboard: keyboard, maxLength: maxLength)
         case .select(let options):
-            sheetKind = .select(options: options)
+            sheetKind = .select(options: selectOptions(for: field.key, fallback: options))
         case .date:
             sheetKind = .date
         }
@@ -409,6 +529,19 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         present(sheet, animated: true)
     }
 
+    private func commitRegionField(_ field: FieldDef, selection: RegionSelection) {
+        switch field.key {
+        case .nativePlace:
+            nativePlaceRegion = selection
+        case .residence:
+            residenceRegion = selection
+        default:
+            return
+        }
+        applyValueLabel(field)
+        saveRegionField(field)
+    }
+
     private func commitField(_ field: FieldDef, value: String) {
         values[field.key] = value
         applyValueLabel(field)
@@ -416,6 +549,33 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     }
 
     // MARK: - Save
+
+    private func saveRegionField(_ field: FieldDef) {
+        var payload = SUsersOnboardingPayload()
+        payload.mobile = UserDefaults.standard.string(forKey: "current_user_mobile")
+
+        switch field.key {
+        case .nativePlace:
+            payload.province = nativePlaceRegion.province
+            payload.cities = nativePlaceRegion.city
+        case .residence:
+            payload.addressProvince = residenceRegion.province
+            payload.addressCity = residenceRegion.city
+            payload.addressArea = residenceRegion.district
+        default:
+            return
+        }
+
+        Task {
+            do {
+                _ = try await UserService.shared.updateCurrentProfile(payload)
+                _ = await UserManager.shared.refreshUserInfo()
+                await MainActor.run { showToast("\(field.label)已保存") }
+            } catch {
+                await MainActor.run { showToast("保存失败: \(error.localizedDescription)") }
+            }
+        }
+    }
 
     private func saveField(_ field: FieldDef, value: String) {
         var payload = SUsersOnboardingPayload()
@@ -432,6 +592,11 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             }
         case .gender:
             payload.sex = value == "男" ? "1" : (value == "女" ? "2" : nil)
+            saveGenderField(field, value: value, payload: payload)
+            return
+        case .whetherPregnancy:
+            savePregnancyField(field, value: value)
+            return
         case .birthday:
             payload.birthday = value
             payload.age = Self.age(from: value)
@@ -442,22 +607,16 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         case .education:
             payload.education = value
         case .idType:
-            payload.idType = Self.idTypeToInt[value]
+            payload.idType = DictionaryCacheService.shared.intValue(parent: .idType, name: value)
         case .idNumber:
             payload.idNumber = value
         case .nationality:
             payload.nationality = value
         case .ethnic:
             payload.ethnic = value
-        case .nativePlace:
-            payload.province = value
-        case .residence:
-            payload.addressProvince = value
-        case .district:
-            payload.addressArea = value
         case .address:
             payload.address = value
-        case .phone:
+        case .phone, .nativePlace, .residence:
             return
         }
 
@@ -469,6 +628,63 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             } catch {
                 await MainActor.run { showToast("保存失败: \(error.localizedDescription)") }
             }
+        }
+    }
+
+    private func saveGenderField(_ field: FieldDef, value: String, payload: SUsersOnboardingPayload) {
+        Task {
+            do {
+                _ = try await UserService.shared.updateCurrentProfile(payload)
+                _ = await UserManager.shared.refreshUserInfo()
+                if value == "男" {
+                    await clearPregnancyForMaleIfNeeded()
+                }
+                await MainActor.run {
+                    rebuildProfileForm()
+                    showToast("\(field.label)已保存")
+                }
+            } catch {
+                await MainActor.run { showToast("保存失败: \(error.localizedDescription)") }
+            }
+        }
+    }
+
+    private func savePregnancyField(_ field: FieldDef, value: String) {
+        guard let pregnancy = UserManager.whetherPregnancyInt(from: value) else {
+            showToast("请选择是否孕妇")
+            return
+        }
+        guard let archive = UserManager.shared.defaultArchive else {
+            showToast("档案未加载，请稍后重试")
+            return
+        }
+
+        Task {
+            do {
+                try await UserService.shared.saveOrUpdateArchiveByMobile(
+                    archive: archive,
+                    whetherPregnancy: pregnancy
+                )
+                _ = await UserManager.shared.refreshDefaultArchive()
+                await MainActor.run { showToast("\(field.label)已保存") }
+            } catch {
+                await MainActor.run { showToast("保存失败: \(error.localizedDescription)") }
+            }
+        }
+    }
+
+    private func clearPregnancyForMaleIfNeeded() async {
+        guard let archive = UserManager.shared.defaultArchive else { return }
+        guard archive.whetherPregnancy == 1 else {
+            await MainActor.run { values[.whetherPregnancy] = "" }
+            return
+        }
+        do {
+            try await UserService.shared.saveOrUpdateArchiveByMobile(archive: archive, whetherPregnancy: 0)
+            _ = await UserManager.shared.refreshDefaultArchive()
+            await MainActor.run { values[.whetherPregnancy] = "" }
+        } catch {
+            print("[Profile] clear pregnancy failed: \(error.localizedDescription)")
         }
     }
 
@@ -546,17 +762,8 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         return "\(phone.prefix(3))****\(phone.suffix(4))"
     }
 
-    private static func sexDisplay(_ sex: String?) -> String {
-        switch sex {
-        case "1": return "男"
-        case "2": return "女"
-        default: return ""
-        }
-    }
-
-    private static func idTypeDisplay(_ type: Int?) -> String {
-        guard let type else { return "" }
-        return idTypeFromInt[type] ?? ""
+    private func idTypeDisplay(_ type: Int?) -> String {
+        DictionaryCacheService.shared.label(parent: .idType, intValue: type) ?? ""
     }
 
     private static func age(from dateStr: String) -> Int? {

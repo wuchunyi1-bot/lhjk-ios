@@ -75,8 +75,7 @@ final class DailyTasksViewModel: ObservableObject {
     }
 
     func actionRoute(for task: DailyHealthTask) -> String? {
-        guard !task.done else { return nil }
-        let route = task.actionRoute.trimmingCharacters(in: .whitespacesAndNewlines)
-        return route.isEmpty ? "/health/metrics" : route
+        guard !task.done, task.hasNavigableRoute else { return nil }
+        return task.actionRoute.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

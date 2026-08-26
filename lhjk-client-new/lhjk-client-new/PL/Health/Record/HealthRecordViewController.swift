@@ -21,6 +21,14 @@ final class HealthRecordViewController: BaseViewController, UITableViewDataSourc
         UserManager.shared.archiveCompletionPercentage ?? 0
     }
 
+    private var userGenderText: String {
+        UserManager.sexDisplayLabel(UserManager.shared.resolvedSexCode)
+    }
+
+    private var userPregnancyText: String {
+        UserManager.whetherPregnancyDisplay(UserManager.shared.defaultArchive?.whetherPregnancy)
+    }
+
     private let riskItems = HealthRecordMockData.riskItems
     private let latestMetrics = HealthRecordMockData.latestMetrics
     private let lifestyleItems = HealthRecordMockData.lifestyleItems
@@ -53,10 +61,16 @@ final class HealthRecordViewController: BaseViewController, UITableViewDataSourc
                                                name: .userDidUpdate, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(onArchiveCompletionUpdated),
                                                name: .archiveCompletionDidUpdate, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(onArchiveUpdated),
+                                               name: .defaultArchiveDidUpdate, object: nil)
         loadUserProfile()
     }
 
     @objc private func onArchiveCompletionUpdated() {
+        tableView.reloadSections(IndexSet(integer: 0), with: .none)
+    }
+
+    @objc private func onArchiveUpdated() {
         tableView.reloadSections(IndexSet(integer: 0), with: .none)
     }
 
@@ -74,6 +88,12 @@ final class HealthRecordViewController: BaseViewController, UITableViewDataSourc
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        Task {
+            if UserManager.shared.defaultArchive == nil {
+                _ = await UserManager.shared.fetchDefaultArchive()
+            }
+            await MainActor.run { loadUserProfile() }
+        }
     }
 
     override func setupUI() {
@@ -97,7 +117,14 @@ final class HealthRecordViewController: BaseViewController, UITableViewDataSourc
             guard let cell = tableView.dequeueReusableCell(withIdentifier: HealthRecordUserInfoCell.reuseIdentifier, for: indexPath) as? HealthRecordUserInfoCell else {
                 return UITableViewCell()
             }
-            cell.configure(userName: userName, avatarText: avatarText, archiveProgress: archiveProgress)
+            cell.configure(
+                userName: userName,
+                avatarText: avatarText,
+                archiveProgress: archiveProgress,
+                genderText: userGenderText,
+                pregnancyText: userPregnancyText,
+                showPregnancy: UserManager.shared.isFemaleUser
+            )
             cell.onSixDimTap = { [weak self] in self?.goToSixDim() }
             return cell
 

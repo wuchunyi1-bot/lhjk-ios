@@ -206,7 +206,8 @@ final class HomeViewController: BaseViewController {
                 totalCount: viewModel.taskTotalCount
             )
             cell.onTaskAction = { task in
-                let route = task.actionRoute.isEmpty ? "/health/metrics" : task.actionRoute
+                let route = task.actionRoute.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !route.isEmpty else { return }
                 Router.shared.push(route)
             }
             cell.onViewAll = {

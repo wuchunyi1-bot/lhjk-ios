@@ -282,15 +282,9 @@ struct OrderSettlementDetailBO: Decodable {
         )
     }
 
-    /// `billingType`: 1 天, 2 月, 3 次, 4 件
+    /// `billingType`: 字典 `packageUnit`
     private static func billingUnit(_ type: Int?) -> String {
-        switch type {
-        case 1: return "天"
-        case 2: return "月"
-        case 3: return "次"
-        case 4: return "件"
-        default: return "份"
-        }
+        DictionaryCacheService.shared.billingUnitLabel(type, default: "份")
     }
 
     private func nonEmpty(_ value: String?) -> String? {

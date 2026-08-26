@@ -20,9 +20,10 @@ final class PackageDetailOrderBarView: UIView {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    func setPayableText(_ text: String) {
-        // 分离 "¥" 和数字
-        let cleaned = text.replacingOccurrences(of: "¥", with: "").trimmingCharacters(in: .whitespaces)
+    func setPayableAmount(_ amount: Double) {
+        let cleaned = ServicePackageMoney.comboDisplayYen(amount)
+            .replacingOccurrences(of: "¥", with: "")
+            .trimmingCharacters(in: .whitespaces)
         payableLabel.text = cleaned
     }
 
@@ -69,7 +70,7 @@ final class PackageDetailOrderBarView: UIView {
         symbolLabel.textColor = UIColor(hexString: "#F93838")
         symbolLabel.text = "¥"
 
-        payableLabel.font = .fdMonoFont(ofSize: 20, weight: .bold)
+        payableLabel.font = .fdFont(ofSize: 16, weight: .medium)
         payableLabel.textColor = UIColor(hexString: "#F93838")
 
         let priceRow = UIStackView(arrangedSubviews: [symbolLabel, payableLabel])

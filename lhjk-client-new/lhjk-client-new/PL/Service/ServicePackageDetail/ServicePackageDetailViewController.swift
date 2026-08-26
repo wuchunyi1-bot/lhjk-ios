@@ -468,11 +468,11 @@ final class ServicePackageDetailViewController: BaseViewController {
     private func refreshPayable() {
         let prices = selectedItemPrices()
         guard !prices.isEmpty else {
-            orderBar.setPayableText("0.00")
+            orderBar.setPayableAmount(0)
             return
         }
         let total = prices.reduce(0, +)
-        orderBar.setPayableText(ServicePackageMoney.yen(total))
+        orderBar.setPayableAmount(total)
     }
 
     private func scrollToFloor(_ tab: PackageDetailTab, animated: Bool) {

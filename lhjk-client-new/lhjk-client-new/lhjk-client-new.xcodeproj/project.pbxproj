@@ -299,6 +299,9 @@
 		A5BDA3A93035AAF200E306EB /* ScaleDeviceBindViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA3A83035AAF200E306EB /* ScaleDeviceBindViewController.swift */; };
 		A5BDA3AB3035AB0100E306EB /* ScaleDeviceBindViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA3AA3035AB0100E306EB /* ScaleDeviceBindViewModel.swift */; };
 		A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */; };
+		A5C13254303D750B0047F06D /* MainTabBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C13253303D750B0047F06D /* MainTabBarView.swift */; };
+		A5C13257303D8CB70047F06D /* ActivateViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C13255303D8CB70047F06D /* ActivateViewController.swift */; };
+		A5C13259303D9F3B0047F06D /* CacheCleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C13258303D9F3B0047F06D /* CacheCleanupService.swift */; };
 		A5C2BBD4303C1C4F00E1FC31 /* WebViewSystemChromeLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C2BBD3303C1C4F00E1FC31 /* WebViewSystemChromeLocalizer.swift */; };
 		A5C2BBD6303C205F00E1FC31 /* VoicePlaybackLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C2BBD5303C205F00E1FC31 /* VoicePlaybackLogger.swift */; };
 		A5C2BBD8303C237900E1FC31 /* VoicePlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C2BBD7303C237900E1FC31 /* VoicePlaybackController.swift */; };
@@ -327,6 +330,10 @@
 		A5C76E723036EA14006E411B /* WeightScaleResultViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C76E6F3036EA14006E411B /* WeightScaleResultViewController.swift */; };
 		A5C76E733036EA14006E411B /* WeightScaleResultMetricCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C76E6A3036EA14006E411B /* WeightScaleResultMetricCardView.swift */; };
 		A5C76E743036EA14006E411B /* WeightScaleResultViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C76E6D3036EA14006E411B /* WeightScaleResultViewModel.swift */; };
+		A5C7B73F303E9196008D89A5 /* DictionaryCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C7B73E303E9196008D89A5 /* DictionaryCacheService.swift */; };
+		A5C7B741303E9D08008D89A5 /* ChinaRegionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C7B740303E9D08008D89A5 /* ChinaRegionService.swift */; };
+		A5C7B743303E9D22008D89A5 /* RegionPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C7B742303E9D22008D89A5 /* RegionPickerSheet.swift */; };
+		A5C7B745303E9D3D008D89A5 /* map.json in Resources */ = {isa = PBXBuildFile; fileRef = A5C7B744303E9D3D008D89A5 /* map.json */; };
 		A5CB0BC5302193440076FAFB /* HealthPageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CB0BC4302193440076FAFB /* HealthPageService.swift */; };
 		A5CB0BCA3021935F0076FAFB /* MetricCardEditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CB0BC63021935F0076FAFB /* MetricCardEditViewModel.swift */; };
 		A5CB0BCB3021935F0076FAFB /* MetricCardEditViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CB0BC83021935F0076FAFB /* MetricCardEditViewController.swift */; };
@@ -657,6 +664,9 @@
 		A5BDA3A83035AAF200E306EB /* ScaleDeviceBindViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleDeviceBindViewController.swift; sourceTree = "<group>"; };
 		A5BDA3AA3035AB0100E306EB /* ScaleDeviceBindViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleDeviceBindViewModel.swift; sourceTree = "<group>"; };
 		A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIFont+Funde.swift"; sourceTree = "<group>"; };
+		A5C13253303D750B0047F06D /* MainTabBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabBarView.swift; sourceTree = "<group>"; };
+		A5C13255303D8CB70047F06D /* ActivateViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivateViewController.swift; sourceTree = "<group>"; };
+		A5C13258303D9F3B0047F06D /* CacheCleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheCleanupService.swift; sourceTree = "<group>"; };
 		A5C2BBD3303C1C4F00E1FC31 /* WebViewSystemChromeLocalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WebViewSystemChromeLocalizer.swift; path = Other/Common/WebViewSystemChromeLocalizer.swift; sourceTree = "<group>"; };
 		A5C2BBD5303C205F00E1FC31 /* VoicePlaybackLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicePlaybackLogger.swift; sourceTree = "<group>"; };
 		A5C2BBD7303C237900E1FC31 /* VoicePlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicePlaybackController.swift; sourceTree = "<group>"; };
@@ -685,6 +695,10 @@
 		A5C76E6B3036EA14006E411B /* WeightScaleResultSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightScaleResultSummaryView.swift; sourceTree = "<group>"; };
 		A5C76E6D3036EA14006E411B /* WeightScaleResultViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightScaleResultViewModel.swift; sourceTree = "<group>"; };
 		A5C76E6F3036EA14006E411B /* WeightScaleResultViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightScaleResultViewController.swift; sourceTree = "<group>"; };
+		A5C7B73E303E9196008D89A5 /* DictionaryCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DictionaryCacheService.swift; path = BLL/Service/DictionaryCacheService.swift; sourceTree = "<group>"; };
+		A5C7B740303E9D08008D89A5 /* ChinaRegionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChinaRegionService.swift; sourceTree = "<group>"; };
+		A5C7B742303E9D22008D89A5 /* RegionPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionPickerSheet.swift; sourceTree = "<group>"; };
+		A5C7B744303E9D3D008D89A5 /* map.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = map.json; path = Other/Resources/map.json; sourceTree = "<group>"; };
 		A5CB0BC4302193440076FAFB /* HealthPageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HealthPageService.swift; path = BLL/Health/HealthPageService.swift; sourceTree = "<group>"; };
 		A5CB0BC63021935F0076FAFB /* MetricCardEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCardEditViewModel.swift; sourceTree = "<group>"; };
 		A5CB0BC83021935F0076FAFB /* MetricCardEditViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCardEditViewController.swift; sourceTree = "<group>"; };
@@ -970,6 +984,8 @@
 		A57D2F1D2FDC0647002E43BA /* My */ = {
 			isa = PBXGroup;
 			children = (
+				A5C7B740303E9D08008D89A5 /* ChinaRegionService.swift */,
+				A5C13258303D9F3B0047F06D /* CacheCleanupService.swift */,
 				A5F6AF283029724D00D1BF74 /* BenefitGiftShareBuilder.swift */,
 				A5C71AF830185CF6006EA79C /* VoucherListQuery.swift */,
 				A5A6F4BD2FFF7A8B0065C921 /* AddressModels.swift */,
@@ -1332,6 +1348,7 @@
 		A590FC8A2FEA91170056EF52 /* My */ = {
 			isa = PBXGroup;
 			children = (
+				A5C13256303D8CB70047F06D /* Activate */,
 				A5A6F51D2FFF7C700065C921 /* Vouchers */,
 				A5A6F5132FFF7BFE0065C921 /* Address */,
 				A590FC5A2FEA91170056EF52 /* Appointments */,
@@ -1877,6 +1894,7 @@
 		A5ACE2393000CC8A00056C52 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A5C7B742303E9D22008D89A5 /* RegionPickerSheet.swift */,
 				A5ACE2383000CC8A00056C52 /* ProfileFieldEditorSheet.swift */,
 			);
 			path = Components;
@@ -1938,6 +1956,7 @@
 		A5BD9DE330199326008C44FC /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A5C13253303D750B0047F06D /* MainTabBarView.swift */,
 				A5BD9DE230199326008C44FC /* TabHubBrandHeaderView.swift */,
 			);
 			name = Components;
@@ -2060,6 +2079,14 @@
 				A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */,
 			);
 			path = UIFont;
+			sourceTree = "<group>";
+		};
+		A5C13256303D8CB70047F06D /* Activate */ = {
+			isa = PBXGroup;
+			children = (
+				A5C13255303D8CB70047F06D /* ActivateViewController.swift */,
+			);
+			path = Activate;
 			sourceTree = "<group>";
 		};
 		A5C71AF030185CD6006EA79C /* Benefit */ = {
@@ -2223,6 +2250,7 @@
 		C4193BC7FCD37A9D67D93F74 /* Service */ = {
 			isa = PBXGroup;
 			children = (
+				A5C7B73E303E9196008D89A5 /* DictionaryCacheService.swift */,
 				A5F6AF2A3029E03C00D1BF74 /* ColumnContentCacheService.swift */,
 				A56DDEB130174B8E000E03A0 /* DoctorModels.swift */,
 				A56DDEB230174B8E000E03A0 /* DoctorService.swift */,
@@ -2338,6 +2366,7 @@
 		F32EE9EBD11D7BD9453BE332 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				A5C7B744303E9D3D008D89A5 /* map.json */,
 				62E9EC642D4693434806DE88 /* Info.plist */,
 				7A38C4AFEC723E4B6C12D675 /* LaunchScreen.storyboard */,
 				DCE57F7A320AD8DA12CD7236 /* Assets.xcassets */,
@@ -2432,6 +2461,7 @@
 			files = (
 				A3AADC4D6DF2A11DC4DA077F /* LaunchScreen.storyboard in Resources */,
 				D5A7A19BFB9910F4E8AD2FCD /* Assets.xcassets in Resources */,
+				A5C7B745303E9D3D008D89A5 /* map.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2573,6 +2603,7 @@
 				CC5AFA75E6FC57E098F3107B /* NetworkMonitor.swift in Sources */,
 				A56120A830106CC600505C32 /* CouponModels.swift in Sources */,
 				A56120A930106CC600505C32 /* CouponService.swift in Sources */,
+				A5C7B73F303E9196008D89A5 /* DictionaryCacheService.swift in Sources */,
 				1406F12781B85941BC234E2B /* OAuthAuthenticator.swift in Sources */,
 				9F5D324E0D90EB682A0A77B4 /* OAuthCredential.swift in Sources */,
 				D0C0F9A29B4ED9D6FB4A6C01 /* AlipayChannel.swift in Sources */,
@@ -2589,6 +2620,7 @@
 				A590FCB22FEA91170056EF52 /* SettingsViewController.swift in Sources */,
 				A5A6F5382FFF7D9B0065C921 /* LoginViewModel.swift in Sources */,
 				A590FCB32FEA91170056EF52 /* HealthViewController.swift in Sources */,
+				A5C7B743303E9D22008D89A5 /* RegionPickerSheet.swift in Sources */,
 				A5B1FB33300A022F0039B16C /* ShoppingCartModels.swift in Sources */,
 				A52EB5DC30385ABE009C763D /* ChatBubbleStyle.swift in Sources */,
 				A5B1FB34300A022F0039B16C /* ShoppingCartService.swift in Sources */,
@@ -2668,6 +2700,7 @@
 				A590FCDD2FEA91170056EF52 /* MetricCardCell.swift in Sources */,
 				A5A6F4E12FFF7B3D0065C921 /* ChangePhoneViewController.swift in Sources */,
 				A5A6F4E22FFF7B3D0065C921 /* CancelAccountViewController.swift in Sources */,
+				A5C13254303D750B0047F06D /* MainTabBarView.swift in Sources */,
 				A5CB0BC5302193440076FAFB /* HealthPageService.swift in Sources */,
 				A56DDEAE30172D4D000E03A0 /* OrderReturnGoodsSheet.swift in Sources */,
 				A5A6F4E32FFF7B3D0065C921 /* SecuritySettingsViewController.swift in Sources */,
@@ -2683,6 +2716,7 @@
 				A5A6F4C12FFF7A8B0065C921 /* VoucherService.swift in Sources */,
 				A5A6F4C22FFF7A8B0065C921 /* AddressModels.swift in Sources */,
 				A5A6F4C32FFF7A8B0065C921 /* AddressService.swift in Sources */,
+				A5C13259303D9F3B0047F06D /* CacheCleanupService.swift in Sources */,
 				A5A6F4C42FFF7A8B0065C921 /* VoucherModels.swift in Sources */,
 				A590FCE42FEA91170056EF52 /* HomeViewController.swift in Sources */,
 				A5A6F51E2FFF7C700065C921 /* VoucherListViewController.swift in Sources */,
@@ -2771,6 +2805,7 @@
 				A56120C43010A31C00505C32 /* OrderCouponPickerSheet.swift in Sources */,
 				A56120C53010A31C00505C32 /* OrderCardCell.swift in Sources */,
 				A56120C63010A31C00505C32 /* OrderDetailViewController.swift in Sources */,
+				A5C13257303D8CB70047F06D /* ActivateViewController.swift in Sources */,
 				A56120C73010A31C00505C32 /* OrderDetailViewModel.swift in Sources */,
 				A56120C83010A31C00505C32 /* OrderConfirmViewModel.swift in Sources */,
 				A56120C93010A31C00505C32 /* OrderTabCell.swift in Sources */,
@@ -2841,6 +2876,7 @@
 				A5A6F5032FFF7BBD0065C921 /* CenteredTipCell.swift in Sources */,
 				A5A6F5042FFF7BBD0065C921 /* MessageActionMenu.swift in Sources */,
 				A5A6F5052FFF7BBD0065C921 /* VoiceBubbleCell.swift in Sources */,
+				A5C7B741303E9D08008D89A5 /* ChinaRegionService.swift in Sources */,
 				A5A6F5062FFF7BBD0065C921 /* QuotePreviewBar.swift in Sources */,
 				A5A6F5072FFF7BBD0065C921 /* SystemMessageCell.swift in Sources */,
 				A5A6F5722FFF8EA30065C921 /* PackageCardCell.swift in Sources */,

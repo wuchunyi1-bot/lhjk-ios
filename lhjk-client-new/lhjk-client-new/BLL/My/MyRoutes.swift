@@ -149,8 +149,7 @@ enum MyRoutes {
         }
         r.register(path: "/me/address/edit")     { params in
             let address = params["address"] as? MAddress
-            let count = params["existingAddressCount"] as? Int ?? 0
-            return AddressEditViewController(address: address, existingAddressCount: count)
+            return AddressEditViewController(address: address)
         }
         r.register(path: "/me/health-profile") { _ in
             WebViewController(

@@ -192,13 +192,7 @@ struct AppOrderDetailBO: Decodable {
     }
 
     var paymentTypeLabel: String {
-        switch paymentType {
-        case 1: return "微信支付"
-        case 2: return "支付宝"
-        case 3: return "现金支付"
-        case 4: return "银行卡转账"
-        default: return "—"
-        }
+        DictionaryCacheService.shared.label(parent: .paymentMethod, intValue: paymentType) ?? "—"
     }
 
     var packageAmount: Double {
@@ -500,13 +494,7 @@ struct OrderDetailPackageLineBO: Decodable {
     }
 
     private static func billingUnit(_ type: Int?) -> String {
-        switch type {
-        case 1: return "天"
-        case 2: return "月"
-        case 3: return "次"
-        case 4: return "件"
-        default: return "份"
-        }
+        DictionaryCacheService.shared.billingUnitLabel(type, default: "份")
     }
 
     private static func decodeFlexibleInt<K: CodingKey>(

@@ -148,10 +148,11 @@ final class HealthArchiveCardCell: UITableViewCell {
             $0.bottom.equalToSuperview().inset(14)
             $0.trailing.lessThanOrEqualTo(completeBtn.snp.leading).offset(-8)
         }
+        completeBtn.setContentCompressionResistancePriority(.required, for: .horizontal)
+        completeBtn.setContentHuggingPriority(.required, for: .horizontal)
         completeBtn.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(12)
             $0.centerY.equalTo(footerLbl)
-            $0.width.equalTo(70)
             $0.height.equalTo(28)
         }
     }

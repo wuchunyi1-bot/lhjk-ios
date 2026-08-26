@@ -7,8 +7,11 @@ enum MessageRoutes {
     static func register() {
         let r = Router.shared
 
-        // 消息根页（分段 Tab：团队对话 + 通知中心）
-        r.register(path: "/messages") { _ in MessagesViewController() }
+        // 消息根页 = Tab Bar「消息」，切 Tab 不 push（push 会 hidesBottomBarWhenPushed）
+        r.register(path: "/messages") { _ in
+            RootTabBarController.selectMessageTab()
+            return nil
+        }
 
         // 会话详情
         r.register(path: "/conversations/:id") { params in

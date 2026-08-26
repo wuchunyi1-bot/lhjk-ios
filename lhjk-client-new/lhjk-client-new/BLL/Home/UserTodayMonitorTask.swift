@@ -12,7 +12,7 @@ struct UserTodayMonitorTask: Decodable, Equatable {
     let isComplete: Int?
     let monitorTime: String?
     let monitorValue: String?
-    /// 1 血糖 / 2 血压 / 3 体重 / 4 心率（旧端胎心）
+    /// 监测类型（基础字典「监测类型」）：1 睡眠 / 2 血压 / 3 运动 / 4 体重 / 5 血糖 / 6 体温 / 7 血氧
     let type: Int?
     let mealType: Int?
     let userId: String?
@@ -121,11 +121,17 @@ extension UserTodayMonitorTask {
     }
 
     private func resolvedActionRoute(fallback: String) -> String {
+        guard Self.isNavigableMonitorType(type) else { return "" }
         if let skip = skipUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
            skip.hasPrefix("/") {
             return Self.normalizeToAddRouteIfNeeded(skip)
         }
         return fallback
+    }
+
+    /// 2–7 为可跳转类型；路由以字典校验 + 本地 path 表，展示文案仍用硬编码 meta
+    private static func isNavigableMonitorType(_ type: Int?) -> Bool {
+        DictionaryCacheService.shared.isNavigableMonitorTaskType(type)
     }
 
     /// 指标展示首页 → 录入 add；已是 add/manual 则不变
@@ -136,7 +142,10 @@ extension UserTodayMonitorTask {
         // /health/metrics/{key}
         if parts.count == 3, parts[0] == "health", parts[1] == "metrics" {
             let key = parts[2]
-            let addable: Set<String> = ["blood-pressure", "blood-sugar", "weight", "heart-rate"]
+            let addable: Set<String> = [
+                "blood-pressure", "blood-sugar", "weight", "heart-rate",
+                "temperature", "spo2",
+            ]
             if addable.contains(key) {
                 return "/health/metrics/\(key)/add"
             }
@@ -160,14 +169,26 @@ extension UserTodayMonitorTask {
     }
 
     private static func displayMeta(for type: Int?) -> DisplayMeta {
+        let base = legacyDisplayMeta(for: type)
+        let route = DictionaryCacheService.shared.monitorTaskActionRoute(type) ?? base.actionRoute
+        return DisplayMeta(
+            iconKey: base.iconKey,
+            shortTitle: base.shortTitle,
+            actionRoute: route,
+            defaultDesc: base.defaultDesc,
+            instructions: base.instructions
+        )
+    }
+
+    private static func legacyDisplayMeta(for type: Int?) -> DisplayMeta {
         switch type {
         case 1:
             return .init(
-                iconKey: "glucose",
-                shortTitle: "血糖监测",
-                actionRoute: "/health/metrics/blood-sugar/add",
-                defaultDesc: "请按时完成今日血糖监测并上传数据。",
-                instructions: "采血前清洁双手；空腹监测需至少禁食 8 小时。"
+                iconKey: "sleep",
+                shortTitle: "睡眠监测",
+                actionRoute: "",
+                defaultDesc: "请按时完成今日睡眠记录并上传数据。",
+                instructions: "建议固定作息时间，记录真实睡眠时长与质量。"
             )
         case 2:
             return .init(
@@ -179,25 +200,49 @@ extension UserTodayMonitorTask {
             )
         case 3:
             return .init(
+                iconKey: "exercise",
+                shortTitle: "运动记录",
+                actionRoute: "/health/metrics/exercise/home",
+                defaultDesc: "请完成今日饮食或运动记录并上传数据。",
+                instructions: "如实记录当日饮食与运动情况，便于健管师评估。"
+            )
+        case 4:
+            return .init(
                 iconKey: "weight",
                 shortTitle: "体重监测",
                 actionRoute: "/health/metrics/weight/add",
                 defaultDesc: "请完成今日体重测量并上传数据。",
                 instructions: "建议固定时间、空腹、着轻便衣物测量。"
             )
-        case 4:
+        case 5:
             return .init(
-                iconKey: "heart-rate",
-                shortTitle: "心率监测",
-                actionRoute: "/health/metrics/heart-rate/add",
-                defaultDesc: "请完成今日心率监测并上传数据。",
-                instructions: "保持安静状态后测量，避免剧烈运动后立刻读数。"
+                iconKey: "glucose",
+                shortTitle: "血糖监测",
+                actionRoute: "/health/metrics/blood-sugar/add",
+                defaultDesc: "请按时完成今日血糖监测并上传数据。",
+                instructions: "采血前清洁双手；空腹监测需至少禁食 8 小时。"
+            )
+        case 6:
+            return .init(
+                iconKey: "temperature",
+                shortTitle: "体温监测",
+                actionRoute: "/health/metrics/temperature/add",
+                defaultDesc: "请完成今日体温测量并上传数据。",
+                instructions: "测量前静息 5 分钟；避免刚运动、进食或沐浴后立即测温。"
+            )
+        case 7:
+            return .init(
+                iconKey: "oxygen",
+                shortTitle: "血氧监测",
+                actionRoute: "/health/metrics/spo2/add",
+                defaultDesc: "请完成今日血氧测量并上传数据。",
+                instructions: "保持手指温暖、清洁；测量时保持静止直至读数稳定。"
             )
         default:
             return .init(
                 iconKey: "pressure",
                 shortTitle: "健康监测",
-                actionRoute: "/health/metrics",
+                actionRoute: "",
                 defaultDesc: "请按时完成今日健康监测任务。",
                 instructions: nil
             )

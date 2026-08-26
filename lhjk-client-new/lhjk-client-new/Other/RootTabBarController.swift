@@ -99,14 +99,14 @@ final class RootTabBarController: UITabBarController {
         normal.iconColor = .fdMuted
         normal.titleTextAttributes = [
             .foregroundColor: UIColor.fdMuted,
-            .font: UIFont.fdFont(ofSize: 14, weight: .regular),
+            .font: UIFont.fdFont(ofSize: 12, weight: .regular),
         ]
 
         let selected = appearance.stackedLayoutAppearance.selected
         selected.iconColor = .fdPrimary
         selected.titleTextAttributes = [
             .foregroundColor: UIColor.fdPrimary,
-            .font: UIFont.fdFont(ofSize: 14, weight: .medium),
+            .font: UIFont.fdFont(ofSize: 12, weight: .medium),
         ]
 
         tabBar.standardAppearance = appearance
@@ -114,34 +114,11 @@ final class RootTabBarController: UITabBarController {
         tabBar.isTranslucent = false
         tabBar.tintColor = .fdPrimary
         tabBar.unselectedItemTintColor = .fdMuted
-    }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        adjustTabBarItemsForHomeIndicator()
-    }
-
-    override func viewSafeAreaInsetsDidChange() {
-        super.viewSafeAreaInsetsDidChange()
-        adjustTabBarItemsForHomeIndicator()
-    }
-
-    /// iPhone X 等带 Home Indicator 机型：上移图标与标题，避免与底部横条重叠。
-    private func adjustTabBarItemsForHomeIndicator() {
-        let bottomInset = view.safeAreaInsets.bottom
-        let titleOffset = bottomInset > 0 ? UIOffset(horizontal: 0, vertical: -6) : .zero
-        let imageInsets = bottomInset > 0
-            ? UIEdgeInsets(top: 4, left: 0, bottom: -4, right: 0)
-            : .zero
-
+        // 24pt 自定义图标 + 标题需控制字号；布局交给系统 safe area，勿再改 item insets。
         viewControllers?.forEach { vc in
-            guard let item = vc.tabBarItem else { return }
-            if item.titlePositionAdjustment != titleOffset {
-                item.titlePositionAdjustment = titleOffset
-            }
-            if item.imageInsets != imageInsets {
-                item.imageInsets = imageInsets
-            }
+            vc.tabBarItem?.imageInsets = .zero
+            vc.tabBarItem?.titlePositionAdjustment = .zero
         }
     }
 
@@ -176,5 +153,47 @@ extension RootTabBarController {
         static let service = 2
         static let message = 3
         static let my = 4
+    }
+
+    /// `/messages`：切到消息 Tab 根页，不 push 新栈（避免 `hidesBottomBarWhenPushed` 藏掉底部栏）
+    static func selectMessageTab() {
+        let switchTab = {
+            guard let tabBar = findInKeyWindow() else { return }
+            if tabBar.presentedViewController != nil {
+                tabBar.dismiss(animated: false)
+            }
+            if let nav = tabBar.viewControllers?[Tab.message] as? UINavigationController,
+               nav.viewControllers.count > 1 {
+                nav.popToRootViewController(animated: false)
+            }
+            tabBar.selectedIndex = Tab.message
+        }
+        if Thread.isMainThread {
+            switchTab()
+        } else {
+            DispatchQueue.main.async(execute: switchTab)
+        }
+    }
+
+    private static func findInKeyWindow() -> RootTabBarController? {
+        let window = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow }
+        return find(in: window?.rootViewController)
+    }
+
+    private static func find(in root: UIViewController?) -> RootTabBarController? {
+        if let tab = root as? RootTabBarController { return tab }
+        if let nav = root as? UINavigationController {
+            return find(in: nav.visibleViewController) ?? nav.viewControllers.compactMap { find(in: $0) }.first
+        }
+        if let tab = root as? UITabBarController {
+            return find(in: tab.selectedViewController) ?? tab.viewControllers?.compactMap { find(in: $0) }.first
+        }
+        if let presented = root?.presentedViewController, let found = find(in: presented) {
+            return found
+        }
+        return root?.children.compactMap { find(in: $0) }.first
     }
 }

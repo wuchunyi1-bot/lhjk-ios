@@ -260,13 +260,9 @@ enum HospitalPackageMapper {
         )
     }
 
-    /// `recommend`：1 推荐，2 热销；其它值不展示角标
+    /// `recommend` → 字典 `packageBadge` 的 `value`
     static func badgeText(from recommend: Int?) -> String? {
-        switch recommend {
-        case 1: return "推荐"
-        case 2: return "热销"
-        default: return nil
-        }
+        DictionaryCacheService.shared.packageBadgeLabel(recommend: recommend)
     }
 
     private static func nonEmpty(_ value: String?) -> String? {

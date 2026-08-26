@@ -11,7 +11,7 @@ struct DictionaryQueryBO: Encodable {
 // MARK: - 字典项 DTO
 
 /// 数据字典项 — Apifox: SDictionary
-struct SDictionary: Decodable {
+struct SDictionary: Codable {
     let id: String
     let sortId: Int?
     let parentId: String?
@@ -21,6 +21,28 @@ struct SDictionary: Decodable {
     let english: String?
     let status: Int?
     let children: [SDictionary]?
+
+    init(
+        id: String,
+        sortId: Int? = nil,
+        parentId: String? = nil,
+        name: String? = nil,
+        value: String? = nil,
+        description: String? = nil,
+        english: String? = nil,
+        status: Int? = nil,
+        children: [SDictionary]? = nil
+    ) {
+        self.id = id
+        self.sortId = sortId
+        self.parentId = parentId
+        self.name = name
+        self.value = value
+        self.description = description
+        self.english = english
+        self.status = status
+        self.children = children
+    }
 
     private enum CodingKeys: String, CodingKey {
         case id, sortId, parentId, name, value, description, english, status, children
@@ -37,6 +59,19 @@ struct SDictionary: Decodable {
         english = try c.decodeIfPresent(String.self, forKey: .english)
         status = try c.decodeIfPresent(Int.self, forKey: .status)
         children = try c.decodeIfPresent([SDictionary].self, forKey: .children)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encodeIfPresent(sortId, forKey: .sortId)
+        try c.encodeIfPresent(parentId, forKey: .parentId)
+        try c.encodeIfPresent(name, forKey: .name)
+        try c.encodeIfPresent(value, forKey: .value)
+        try c.encodeIfPresent(description, forKey: .description)
+        try c.encodeIfPresent(english, forKey: .english)
+        try c.encodeIfPresent(status, forKey: .status)
+        try c.encodeIfPresent(children, forKey: .children)
     }
 
     private static func decodeFlexibleString<K: CodingKey>(

@@ -58,6 +58,12 @@ enum H5Config {
             "add": "add",
             "manual": "add",
         ],
+        "temperature": [
+            "add": "add",
+        ],
+        "spo2": [
+            "add": "add",
+        ],
         "exercise": [
             "home": "",
             "add-diet": "add",

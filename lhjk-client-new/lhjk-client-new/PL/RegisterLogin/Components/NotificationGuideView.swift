@@ -2,9 +2,10 @@ import UIKit
 import SnapKit
 
 /// 推送通知权限预引导弹窗
-/// 参考 funde-client PRD 3.7: 登录成功后先展示预引导，再请求系统权限
+/// 参考 funde-client PRD 3.7: 登录成功后先展示预引导
 ///
-/// 用户点击"去开启"后调用系统权限；"暂不开启"则跳过，均不阻塞进入首页。
+/// - 仅在系统通知未授权时展示
+/// - 「去开启」跳转系统 App 设置；「暂不开启」跳过，均进入首页
 final class NotificationGuideView: UIView {
 
     // MARK: - Callbacks

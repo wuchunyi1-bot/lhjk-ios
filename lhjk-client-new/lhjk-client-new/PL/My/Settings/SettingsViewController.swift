@@ -1,21 +1,26 @@
 import UIKit
 import SnapKit
-import Kingfisher
 
 /// 设置主页 — 对齐 Figma 3826:32412
 final class SettingsViewController: BaseViewController {
 
-    private let cacheSizeKey = "fd_settings_cache_size"
-    private let defaultCacheSize = "12.8 MB"
-
+    private let cacheCleanup: CacheCleanupService
     private let scrollView = UIScrollView()
     private let contentView = UIView()
     private var generalSection: SettingsSectionCard?
+    private var isClearingCache = false
+
+    init(cacheCleanup: CacheCleanupService = AppContainer.shared.cacheCleanupService) {
+        self.cacheCleanup = cacheCleanup
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
-        generalSection?.updateSubtitle(at: 0, text: currentCacheSizeText())
+        refreshCacheSize()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -111,7 +116,7 @@ final class SettingsViewController: BaseViewController {
             items: [
                 .init(
                     title: "清理缓存",
-                    subtitle: currentCacheSizeText(),
+                    subtitle: "计算中...",
                     action: { [weak self] in self?.handleClearCache() }
                 ),
                 .init(
@@ -140,17 +145,32 @@ final class SettingsViewController: BaseViewController {
 
     // MARK: - Cache
 
-    private func currentCacheSizeText() -> String {
-        UserDefaults.standard.string(forKey: cacheSizeKey) ?? defaultCacheSize
+    private func refreshCacheSize() {
+        guard !isClearingCache else { return }
+        Task { [weak self] in
+            guard let self else { return }
+            let text = await self.cacheCleanup.formattedSize()
+            await MainActor.run {
+                guard !self.isClearingCache else { return }
+                self.generalSection?.updateSubtitle(at: 0, text: text)
+            }
+        }
     }
 
     private func handleClearCache() {
-        UserDefaults.standard.set("0 B", forKey: cacheSizeKey)
-        generalSection?.updateSubtitle(at: 0, text: "0 B")
-        ImageCache.default.clearMemoryCache()
-        ImageCache.default.clearDiskCache()
-        URLCache.shared.removeAllCachedResponses()
-        showToast("清理成功")
+        guard !isClearingCache else { return }
+        isClearingCache = true
+        generalSection?.updateSubtitle(at: 0, text: "清理中...")
+        Task { [weak self] in
+            guard let self else { return }
+            await self.cacheCleanup.clear()
+            let text = await self.cacheCleanup.formattedSize()
+            await MainActor.run {
+                self.isClearingCache = false
+                self.generalSection?.updateSubtitle(at: 0, text: text)
+                self.showToast("清理成功")
+            }
+        }
     }
 
     private func showToast(_ message: String) {

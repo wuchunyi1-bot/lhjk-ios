@@ -40,7 +40,9 @@ final class OrderReturnGoodsSheet: UIViewController {
 
     private var selectedMethod: Method?
     private var selectedCompany: String?
-    private let logisticsCompanies = ["顺丰速运", "京东物流", "中通快递", "圆通速递"]
+    private var logisticsCompanies: [String] {
+        DictionaryCacheService.shared.optionNames(parent: .logistics)
+    }
 
     init(returnAddress: String? = nil) {
         let trimmed = returnAddress?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -307,8 +309,13 @@ final class OrderReturnGoodsSheet: UIViewController {
 
     @objc private func pickLogisticsCompany() {
         guard !isSubmitting else { return }
+        let companies = logisticsCompanies
+        guard !companies.isEmpty else {
+            presentToast("物流列表加载中，请稍后重试")
+            return
+        }
         let sheet = UIAlertController(title: "选择物流名称", message: nil, preferredStyle: .actionSheet)
-        for name in logisticsCompanies {
+        for name in companies {
             sheet.addAction(UIAlertAction(title: name, style: .default) { [weak self] _ in
                 self?.selectedCompany = name
                 self?.updateLogisticsCompanyTitle()

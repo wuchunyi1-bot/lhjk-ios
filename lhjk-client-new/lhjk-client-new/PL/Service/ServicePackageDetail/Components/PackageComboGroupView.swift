@@ -1,6 +1,71 @@
 import UIKit
 import SnapKit
 
+private enum ComboBenefitRowMetrics {
+    static let qtyColumnWidth: CGFloat = 52
+    static let priceColumnWidth: CGFloat = 64
+    /// 天数列与价格列间距；略大以便天数列整体左移
+    static let columnGap: CGFloat = 18
+}
+
+/// 权益单行：名称 + 天数列 + 价格列（列宽固定，多行之间上下对齐）
+private final class ComboBenefitRowView: UIView {
+
+    private let nameLabel = UILabel()
+    private let qtyLabel = UILabel()
+    private let priceLabel = UILabel()
+
+    init(item: ServicePackageComboItem, priceWeight: UIFont.Weight = .medium) {
+        super.init(frame: .zero)
+
+        nameLabel.text = item.name
+        nameLabel.font = .fdFont(ofSize: 16, weight: .regular)
+        nameLabel.textColor = UIColor(hexString: "#1F2942")
+        nameLabel.numberOfLines = 0
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        qtyLabel.text = item.qtyLabel
+        qtyLabel.font = .fdFont(ofSize: 16, weight: .regular)
+        qtyLabel.textColor = UIColor(hexString: "#1F2942")
+        qtyLabel.textAlignment = .right
+
+        priceLabel.text = ServicePackageMoney.comboDisplayYen(item.priceValue)
+        priceLabel.font = .fdFont(ofSize: 16, weight: priceWeight)
+        priceLabel.textColor = UIColor(hexString: "#1F2942")
+        priceLabel.textAlignment = .right
+
+        addSubview(nameLabel)
+        addSubview(qtyLabel)
+        addSubview(priceLabel)
+
+        priceLabel.snp.makeConstraints {
+            $0.trailing.equalToSuperview()
+            $0.centerY.equalToSuperview()
+            $0.width.equalTo(ComboBenefitRowMetrics.priceColumnWidth)
+        }
+
+        qtyLabel.snp.makeConstraints {
+            $0.trailing.equalTo(priceLabel.snp.leading).offset(-ComboBenefitRowMetrics.columnGap)
+            $0.centerY.equalToSuperview()
+            $0.width.equalTo(ComboBenefitRowMetrics.qtyColumnWidth)
+        }
+
+        nameLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview()
+            $0.trailing.lessThanOrEqualTo(qtyLabel.snp.leading).offset(-8)
+            $0.top.bottom.equalToSuperview()
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    func setTextColor(_ color: UIColor) {
+        nameLabel.textColor = color
+        qtyLabel.textColor = color
+        priceLabel.textColor = color
+    }
+}
+
 // MARK: - Selectable Unit Model
 
 private struct SelectableUnit {
@@ -204,38 +269,13 @@ final class PackageComboGroupView: UIView {
     ) -> UIView {
         let row = UIView()
 
-        let name = UILabel()
-        name.text = item.name
-        name.font = .fdFont(ofSize: 16, weight: .regular)
-        name.textColor = UIColor(hexString: "#1F2942")
-        name.numberOfLines = 0
-        name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-
-        let qty = UILabel()
-        qty.text = item.qtyLabel
-        qty.font = .fdFont(ofSize: 16, weight: .regular)
-        qty.textColor = UIColor(hexString: "#1F2942")
-        qty.setContentHuggingPriority(.required, for: .horizontal)
-        qty.setContentCompressionResistancePriority(.required, for: .horizontal)
-
-        let price = UILabel()
-        price.text = item.priceLabel
-        price.font = .fdMonoFont(ofSize: 14, weight: .medium)
-        price.textColor = UIColor(hexString: "#1F2942")
-        price.setContentHuggingPriority(.required, for: .horizontal)
-        price.setContentCompressionResistancePriority(.required, for: .horizontal)
-
-        let stack = UIStackView(arrangedSubviews: [name, qty, price])
-        stack.axis = .horizontal
-        stack.spacing = 10
-        stack.alignment = .center
-        row.addSubview(stack)
-
         let leading: CGFloat = item.isChild ? 24 : 6
-        stack.snp.makeConstraints {
+        let benefitRow = ComboBenefitRowView(item: item, priceWeight: .medium)
+        row.addSubview(benefitRow)
+        benefitRow.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(leading)
             $0.trailing.equalToSuperview().offset(-6)
-            $0.top.bottom.equalToSuperview().inset(10)
+            $0.top.bottom.equalToSuperview().inset(12)
         }
 
         if showDivider {
@@ -294,11 +334,9 @@ private final class SelectableUnitView: UIControl {
 
     private let bgBox = UIView()
     private let controlImageView = UIImageView()
-    private let parentNameLabel = UILabel()
-    private let parentQtyLabel = UILabel()
-    private let parentPriceLabel = UILabel()
+    private let parentRowView: ComboBenefitRowView
 
-    private var childRows: [ChildRowView] = []
+    private var childRows: [ComboBenefitRowView] = []
     private let bottomDividerLine = UIView()
 
     init(
@@ -308,6 +346,7 @@ private final class SelectableUnitView: UIControl {
     ) {
         self.mode = mode
         self.unit = unit
+        self.parentRowView = ComboBenefitRowView(item: unit.parentItem, priceWeight: .medium)
         super.init(frame: .zero)
         self.isSelected = isSelected
         setupUI()
@@ -343,7 +382,7 @@ private final class SelectableUnitView: UIControl {
 
         let mainStack = UIStackView()
         mainStack.axis = .vertical
-        mainStack.spacing = 8
+        mainStack.spacing = 12
         mainStack.isUserInteractionEnabled = false
         addSubview(mainStack)
         mainStack.snp.makeConstraints {
@@ -352,46 +391,10 @@ private final class SelectableUnitView: UIControl {
             $0.top.bottom.equalToSuperview().inset(8)
         }
 
-        let parentRow = UIView()
-
-        parentNameLabel.text = unit.parentItem.name
-        parentNameLabel.font = .fdFont(ofSize: 16, weight: .regular)
-        parentNameLabel.numberOfLines = 0
-        parentNameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        parentRow.addSubview(parentNameLabel)
-
-        parentQtyLabel.text = unit.parentItem.qtyLabel
-        parentQtyLabel.font = .fdFont(ofSize: 16, weight: .regular)
-        parentQtyLabel.setContentHuggingPriority(.required, for: .horizontal)
-        parentQtyLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
-        parentRow.addSubview(parentQtyLabel)
-
-        parentPriceLabel.text = unit.parentItem.priceLabel
-        parentPriceLabel.font = .fdMonoFont(ofSize: 14, weight: .medium)
-        parentPriceLabel.setContentHuggingPriority(.required, for: .horizontal)
-        parentPriceLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
-        parentRow.addSubview(parentPriceLabel)
-
-        parentPriceLabel.snp.makeConstraints {
-            $0.trailing.equalToSuperview()
-            $0.centerY.equalToSuperview()
-        }
-
-        parentQtyLabel.snp.makeConstraints {
-            $0.trailing.equalTo(parentPriceLabel.snp.leading).offset(-16)
-            $0.centerY.equalToSuperview()
-        }
-
-        parentNameLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview()
-            $0.trailing.lessThanOrEqualTo(parentQtyLabel.snp.leading).offset(-8)
-            $0.top.bottom.equalToSuperview()
-        }
-
-        mainStack.addArrangedSubview(parentRow)
+        mainStack.addArrangedSubview(parentRowView)
 
         for childItem in unit.childItems {
-            let childRow = ChildRowView(item: childItem)
+            let childRow = ComboBenefitRowView(item: childItem, priceWeight: .regular)
             childRows.append(childRow)
             mainStack.addArrangedSubview(childRow)
         }
@@ -446,9 +449,7 @@ private final class SelectableUnitView: UIControl {
             }
 
             let textColor = selected ? UIColor(hexString: "#A25300") : UIColor(hexString: "#535D72")
-            self.parentNameLabel.textColor = textColor
-            self.parentQtyLabel.textColor = textColor
-            self.parentPriceLabel.textColor = textColor
+            self.parentRowView.setTextColor(textColor)
 
             for cr in self.childRows {
                 cr.setTextColor(textColor)
@@ -460,61 +461,6 @@ private final class SelectableUnitView: UIControl {
         } else {
             updates()
         }
-    }
-}
-
-// MARK: - 子项行视图
-
-private final class ChildRowView: UIView {
-
-    private let nameLabel = UILabel()
-    private let qtyLabel = UILabel()
-    private let priceLabel = UILabel()
-
-    init(item: ServicePackageComboItem) {
-        super.init(frame: .zero)
-
-        nameLabel.text = item.name
-        nameLabel.font = .fdFont(ofSize: 16, weight: .regular)
-        nameLabel.numberOfLines = 0
-        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        addSubview(nameLabel)
-
-        qtyLabel.text = item.qtyLabel
-        qtyLabel.font = .fdFont(ofSize: 16, weight: .regular)
-        qtyLabel.setContentHuggingPriority(.required, for: .horizontal)
-        qtyLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
-        addSubview(qtyLabel)
-
-        priceLabel.text = item.priceLabel
-        priceLabel.font = .fdMonoFont(ofSize: 14, weight: .medium)
-        priceLabel.setContentHuggingPriority(.required, for: .horizontal)
-        priceLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
-        addSubview(priceLabel)
-
-        priceLabel.snp.makeConstraints {
-            $0.trailing.equalToSuperview()
-            $0.centerY.equalToSuperview()
-        }
-
-        qtyLabel.snp.makeConstraints {
-            $0.trailing.equalTo(priceLabel.snp.leading).offset(-16)
-            $0.centerY.equalToSuperview()
-        }
-
-        nameLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview()
-            $0.trailing.lessThanOrEqualTo(qtyLabel.snp.leading).offset(-8)
-            $0.top.bottom.equalToSuperview()
-        }
-    }
-
-    required init?(coder: NSCoder) { fatalError() }
-
-    func setTextColor(_ color: UIColor) {
-        nameLabel.textColor = color
-        qtyLabel.textColor = color
-        priceLabel.textColor = color
     }
 }
 

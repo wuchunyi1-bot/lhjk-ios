@@ -17,7 +17,6 @@ final class AddressEditViewModel: ObservableObject {
 
     @Published private(set) var isSaving = false
     @Published private(set) var isLocating = false
-    @Published private(set) var isDefaultSwitchEnabled = true
 
     let saveSucceeded = PassthroughSubject<Void, Never>()
     let toastMessage = PassthroughSubject<String, Never>()
@@ -25,7 +24,6 @@ final class AddressEditViewModel: ObservableObject {
     // MARK: - Dependencies
 
     private let existingAddress: MAddress?
-    private let isFirstAddress: Bool
     private let addressService: AddressService
     private let locationManager: LocationManager
 
@@ -53,7 +51,6 @@ final class AddressEditViewModel: ObservableObject {
 
     init(
         address: MAddress? = nil,
-        existingAddressCount: Int = 0,
         addressService: AddressService = AppContainer.shared.addressService,
         locationManager: LocationManager = AppContainer.shared.locationManager
     ) {
@@ -70,18 +67,6 @@ final class AddressEditViewModel: ObservableObject {
             self.address = address.address ?? ""
             code = address.code ?? ""
             isDefault = address.isDefaultAddress
-            // 仅有这一条地址时不可取消默认
-            isFirstAddress = existingAddressCount <= 1
-        } else {
-            isFirstAddress = existingAddressCount == 0
-            if isFirstAddress {
-                isDefault = true
-            }
-        }
-
-        if isFirstAddress {
-            isDefault = true
-            isDefaultSwitchEnabled = false
         }
     }
 
@@ -129,7 +114,7 @@ final class AddressEditViewModel: ObservableObject {
             id: existingAddress?.id,
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             mobile: mobile.trimmingCharacters(in: .whitespacesAndNewlines),
-            isDefault: (isFirstAddress || isDefault) ? 1 : 0,
+            isDefault: isDefault ? 1 : 0,
             province: province.trimmingCharacters(in: .whitespacesAndNewlines),
             city: city.trimmingCharacters(in: .whitespacesAndNewlines),
             area: area.trimmingCharacters(in: .whitespacesAndNewlines),

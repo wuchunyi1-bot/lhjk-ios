@@ -10,6 +10,8 @@ enum HealthRoutes {
         "blood-sugar": ["add", "manual", "history", "service", "detail"],
         "weight": ["add", "manual", "history", "service", "detail"],
         "heart-rate": ["add", "manual"],
+        "temperature": ["add"],
+        "spo2": ["add"],
         "exercise": ["home", "add-diet", "add-motion", "search"],
     ]
 

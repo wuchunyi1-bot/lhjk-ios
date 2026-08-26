@@ -398,8 +398,9 @@ struct MonitorHealthCardVO: Decodable, Equatable {
         resultType = HealthFlexible.decodeInt(c, key: .resultType)
         result = try c.decodeIfPresent(String.self, forKey: .result)
         allResultList = HealthFlexible.decodeIntArray(c, key: .allResultList)
-        monitorData = try c.decodeIfPresent([String: HealthJSONValue].self, forKey: .monitorData)
-        dietSportData = try c.decodeIfPresent([String: HealthJSONValue].self, forKey: .dietSportData)
+        // 嵌套 object/array 不得拖垮整张卡（饮食运动 dietSportData 含 diet[] / calculateCaloricVo）
+        monitorData = try? c.decodeIfPresent([String: HealthJSONValue].self, forKey: .monitorData)
+        dietSportData = try? c.decodeIfPresent([String: HealthJSONValue].self, forKey: .dietSportData)
         iconUrl = try c.decodeIfPresent(String.self, forKey: .iconUrl)
         backgroundUrl = try c.decodeIfPresent(String.self, forKey: .backgroundUrl)
         pageUrl = try c.decodeIfPresent(String.self, forKey: .pageUrl)
@@ -492,15 +493,37 @@ enum HealthFlexible {
     }
 }
 
-/// 柔性 JSON 值，用于 `monitorData` / `dietSportData`
+/// 柔性 JSON 值，用于 `monitorData` / `dietSportData`（含嵌套 object / array）
 enum HealthJSONValue: Decodable, Equatable {
     case string(String)
     case int(Int64)
     case double(Double)
     case bool(Bool)
+    case object([String: HealthJSONValue])
+    case array([HealthJSONValue])
     case null
 
     init(from decoder: Decoder) throws {
+        if let keyed = try? decoder.container(keyedBy: HealthJSONKey.self) {
+            var dict: [String: HealthJSONValue] = [:]
+            for key in keyed.allKeys {
+                dict[key.stringValue] = (try? keyed.decode(HealthJSONValue.self, forKey: key)) ?? .null
+            }
+            self = .object(dict)
+            return
+        }
+        if var unkeyed = try? decoder.unkeyedContainer() {
+            var arr: [HealthJSONValue] = []
+            while !unkeyed.isAtEnd {
+                if let v = try? unkeyed.decode(HealthJSONValue.self) {
+                    arr.append(v)
+                } else {
+                    break
+                }
+            }
+            self = .array(arr)
+            return
+        }
         let c = try decoder.singleValueContainer()
         if c.decodeNil() { self = .null; return }
         if let b = try? c.decode(Bool.self) { self = .bool(b); return }
@@ -520,9 +543,21 @@ enum HealthJSONValue: Decodable, Equatable {
             let formatted = String(format: "%g", d)
             return formatted
         case .bool(let b): return b ? "1" : "0"
-        case .null: return nil
+        case .object, .array, .null: return nil
         }
     }
+
+    var objectValue: [String: HealthJSONValue]? {
+        if case .object(let dict) = self { return dict }
+        return nil
+    }
+}
+
+private struct HealthJSONKey: CodingKey {
+    var stringValue: String
+    var intValue: Int?
+    init?(stringValue: String) { self.stringValue = stringValue; self.intValue = nil }
+    init?(intValue: Int) { self.stringValue = String(intValue); self.intValue = intValue }
 }
 
 // MARK: - Display mapping
@@ -556,7 +591,7 @@ struct HealthQuickEntryDisplayItem: Equatable {
 
 enum MonitorCardDisplayMapper {
 
-    /// cardType：2血压 / 3血糖 / 4体温 / 5体重 / 10饮食运动
+    /// cardType：2血压 / 3血糖 / 4体温 / 5体重 / 10饮食运动 / 11用药 / 12营养补剂 / 13血氧
     static func metricKey(for cardType: Int?) -> String {
         switch cardType {
         case 2: return "blood-pressure"
@@ -564,13 +599,21 @@ enum MonitorCardDisplayMapper {
         case 4: return "temperature"
         case 5: return "weight"
         case 10: return "exercise"
+        case 11: return "medication"
+        case 12: return "supplement"
+        case 13: return "spo2"
         default: return "blood-pressure"
         }
     }
 
     /// 体征卡兜底跳转：无合法 pageUrl 时按 cardType
     static func route(for cardType: Int?) -> String {
-        "/health/metrics/\(metricKey(for: cardType))"
+        switch cardType {
+        case 11: return "/medication"
+        case 12: return "/supplement"
+        case 13: return "/spo2"
+        default: return "/health/metrics/\(metricKey(for: cardType))"
+        }
     }
 
     static func iconSF(for metricKey: String) -> String {
@@ -586,6 +629,8 @@ enum MonitorCardDisplayMapper {
         case "exercise": return "figure.walk"
         case "spo2": return "lungs.fill"
         case "digestive": return "cross.case.fill"
+        case "medication": return "pills.fill"
+        case "supplement": return "leaf.fill"
         default: return "heart.text.square.fill"
         }
     }
@@ -596,16 +641,17 @@ enum MonitorCardDisplayMapper {
             let key = metricKey(for: type)
             let mapped = extractValueUnit(from: card)
             let time = formatTime(card.monitorTime, scene: card.monitorTimeType)
-            let status = (card.result ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let rawStatus = (card.result ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let name = (card.cardName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let status = displayStatus(raw: rawStatus, value: mapped.value, cardType: type)
             return HealthMetricDisplayItem(
                 cardType: type,
                 metricKey: key,
                 label: name.isEmpty ? defaultLabel(for: key) : name,
                 value: mapped.value,
                 unit: mapped.unit,
-                status: status.isEmpty ? (mapped.value == "--" ? "" : "正常") : status,
-                statusType: statusType(for: card.resultType, hasValue: mapped.value != "--"),
+                status: status,
+                statusType: statusType(for: card.resultType, result: status, hasValue: mapped.value != "--"),
                 iconSF: iconSF(for: key),
                 iconUrl: nonempty(card.iconUrl),
                 backgroundUrl: nonempty(card.backgroundUrl),
@@ -670,7 +716,11 @@ enum MonitorCardDisplayMapper {
     // MARK: Private helpers
 
     private static func defaultLabel(for key: String) -> String {
-        H5Config.metricTitle(for: key)
+        switch key {
+        case "medication": return "用药"
+        case "supplement": return "营养补剂"
+        default: return H5Config.metricTitle(for: key)
+        }
     }
 
     private static func nonempty(_ s: String?) -> String? {
@@ -678,13 +728,25 @@ enum MonitorCardDisplayMapper {
         return t.isEmpty ? nil : t
     }
 
-    private static func statusType(for resultType: Int?, hasValue: Bool) -> String {
+    /// 用药 / 营养补剂无 result 时不伪造「正常」
+    private static func displayStatus(raw: String, value: String, cardType: Int) -> String {
+        if !raw.isEmpty { return raw }
+        if value == "--" { return "" }
+        if cardType == 11 || cardType == 12 { return "" }
+        return "正常"
+    }
+
+    private static func statusType(for resultType: Int?, result: String, hasValue: Bool) -> String {
         guard hasValue else { return "success" }
         switch resultType {
         case 2, 3: return "warning"
         case 4: return "info"
-        default: return "success"
+        default: break
         }
+        if result.contains("偏") || result.contains("异常") {
+            return "warning"
+        }
+        return "success"
     }
 
     private static func formatTime(_ ms: Int64?, scene: String?) -> String {
@@ -713,6 +775,25 @@ enum MonitorCardDisplayMapper {
         let data = card.monitorData ?? [:]
         let diet = card.dietSportData ?? [:]
 
+        switch card.cardType {
+        case 11, 12:
+            if let count = string(in: data, keys: ["count"]) {
+                let unit = string(in: data, keys: ["unit"]) ?? "次"
+                return (count, unit)
+            }
+        case 13:
+            if let oxygen = string(in: data, keys: ["oxygen", "spo2", "value"]) {
+                let unit = string(in: data, keys: ["unit"]) ?? "%"
+                return (oxygen, unit)
+            }
+        case 10:
+            if let mapped = extractDietSport(diet) {
+                return mapped
+            }
+        default:
+            break
+        }
+
         // 血压：highBloodPressure / lowBloodPressure
         if let sys = string(in: data, keys: ["highBloodPressure", "systolic", "sbp", "high"]),
            let dia = string(in: data, keys: ["lowBloodPressure", "diastolic", "dbp", "low"]) {
@@ -732,22 +813,53 @@ enum MonitorCardDisplayMapper {
             return (t, unit)
         }
 
+        // 血氧（无 cardType 或走通用路径）
+        if let oxygen = string(in: data, keys: ["oxygen", "spo2"]) {
+            let unit = string(in: data, keys: ["unit"]) ?? "%"
+            return (oxygen, unit)
+        }
+
+        // 用药 / 营养补剂次数
+        if let count = string(in: data, keys: ["count"]) {
+            let unit = string(in: data, keys: ["unit"]) ?? "次"
+            return (count, unit)
+        }
+
         // 通用 value（血糖等）
         if let v = string(in: data, keys: ["value", "monitorValue", "resultValue", "dataValue"]) {
             let unit = string(in: data, keys: ["unit", "monitorUnit"]) ?? ""
             return (v, unit)
         }
 
-        // 饮食运动
+        if let mapped = extractDietSport(diet) {
+            return mapped
+        }
+
+        return ("--", "")
+    }
+
+    /// 饮食运动：优先已摄入热量 `intake`，否则推荐/总量
+    private static func extractDietSport(_ diet: [String: HealthJSONValue]) -> (value: String, unit: String)? {
+        let nested = diet["calculateCaloricVo"]?.objectValue ?? [:]
+        if let intake = string(in: diet, keys: ["intake"])
+            ?? string(in: nested, keys: ["intake", "finalIntake"]) {
+            return (intake, "kcal")
+        }
+        if let total = string(in: diet, keys: ["totalCalories"])
+            ?? string(in: nested, keys: ["finalIntake"]) {
+            return (total, "kcal")
+        }
+        if let remain = string(in: diet, keys: ["remainingIntake"]) {
+            return (remain, "kcal")
+        }
         if let steps = string(in: diet, keys: ["steps", "step", "sportSteps"]) {
             return (steps, "步")
         }
         if let v = string(in: diet, keys: ["value", "calorie", "calories"]) {
-            let unit = string(in: diet, keys: ["unit"]) ?? ""
+            let unit = string(in: diet, keys: ["unit"]) ?? "kcal"
             return (v, unit)
         }
-
-        return ("--", "")
+        return nil
     }
 
     private static func string(in dict: [String: HealthJSONValue], keys: [String]) -> String? {

@@ -130,6 +130,43 @@ final class UserManager {
         return fromUser.isEmpty ? nil : fromUser
     }
 
+    /// 当前用户性别码："1" 男 / "2" 女
+    var resolvedSexCode: String? {
+        let userSex = currentUser?.sex?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if userSex == "1" || userSex == "2" { return userSex }
+        let archiveSex = defaultArchive?.sex?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if archiveSex == "1" || archiveSex == "2" { return archiveSex }
+        return nil
+    }
+
+    var isFemaleUser: Bool {
+        resolvedSexCode == "2"
+    }
+
+    static func sexDisplayLabel(_ sex: String?) -> String {
+        switch sex?.trimmingCharacters(in: .whitespacesAndNewlines) {
+        case "1": return "男"
+        case "2": return "女"
+        default: return ""
+        }
+    }
+
+    static func whetherPregnancyDisplay(_ value: Int?) -> String {
+        switch value {
+        case 1: return "是"
+        case 0: return "否"
+        default: return ""
+        }
+    }
+
+    static func whetherPregnancyInt(from label: String) -> Int? {
+        switch label.trimmingCharacters(in: .whitespacesAndNewlines) {
+        case "是": return 1
+        case "否": return 0
+        default: return nil
+        }
+    }
+
     /// 拉取默认档案（首次发网，后续读内存）。须先有 `currentUser.id`。
     @discardableResult
     func fetchDefaultArchive() async -> OArchive? {

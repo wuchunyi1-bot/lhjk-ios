@@ -179,11 +179,70 @@ final class UserService: UserServiceProtocol {
             throw UserServiceError.queryFailed(response.msg ?? "")
         }
 
-        print(
-            "[UserService] calculateArchiveCompletion ✓ completionPercentage="
+        print("[UserService] calculateArchiveCompletion ✓ completionPercentage="
                 + "\(data.completionPercentage.map(String.init) ?? "nil")"
         )
         return data
+    }
+
+    /// `POST /v1/archive/saveOrUpdateArchiveByMobile` — 手机端修改档案（如是否孕妇）
+    func saveOrUpdateArchiveByMobile(
+        archive: OArchive,
+        whetherPregnancy: Int? = nil
+    ) async throws {
+        guard let params = Self.mobileArchiveBody(from: archive, whetherPregnancy: whetherPregnancy) else {
+            print("[UserService] saveOrUpdateArchiveByMobile → incomplete archive")
+            throw UserServiceError.saveFailed("档案数据不完整，无法保存")
+        }
+
+        print("[UserService] saveOrUpdateArchiveByMobile → id=\(archive.id ?? "nil") whetherPregnancy=\(params["whetherPregnancy"] ?? "nil")")
+
+        let response: APIResponse<EmptyResponse> = try await APIManager.shared.postAsync(
+            path: "/v1/archive/saveOrUpdateArchiveByMobile",
+            parameters: params,
+            responseType: APIResponse<EmptyResponse>.self
+        )
+
+        guard response.isSuccess else {
+            print("[UserService] saveOrUpdateArchiveByMobile ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw UserServiceError.saveFailed(response.msg ?? "")
+        }
+        print("[UserService] saveOrUpdateArchiveByMobile ✓")
+    }
+
+    // MARK: - Private
+
+    /// Apifox `OArchive` 必填：userId、hospitalId、status、height、weight
+    private static func mobileArchiveBody(
+        from archive: OArchive,
+        whetherPregnancy: Int?
+    ) -> [String: Any]? {
+        guard
+            let userId = intParam(archive.userId),
+            let hospitalId = intParam(archive.hospitalId),
+            let status = archive.status,
+            let height = archive.height,
+            let weight = archive.weight
+        else { return nil }
+
+        var params: [String: Any] = [
+            "userId": userId,
+            "hospitalId": hospitalId,
+            "status": status,
+            "height": height,
+            "weight": weight,
+        ]
+        if let id = intParam(archive.id) { params["id"] = id }
+        let pregnancy = whetherPregnancy ?? archive.whetherPregnancy ?? 0
+        params["whetherPregnancy"] = pregnancy
+        return params
+    }
+
+    private static func intParam(_ raw: String?) -> Int64? {
+        guard let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
+            return nil
+        }
+        return Int64(trimmed)
     }
 
     // MARK: - 密码/手机号管理

@@ -56,8 +56,10 @@ final class AgreementCheckboxView: UIView {
         agreementLabel.snp.makeConstraints { make in
             make.leading.equalTo(checkboxButton.snp.trailing).offset(2)
             make.trailing.equalToSuperview()
-            make.top.bottom.equalToSuperview()
+            make.top.equalToSuperview()
+            make.bottom.equalToSuperview().priority(.high)
         }
+        agreementLabel.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleLabelTap(_:)))
         agreementLabel.addGestureRecognizer(tap)

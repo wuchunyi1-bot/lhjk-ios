@@ -18,6 +18,25 @@ enum ServicePackageMoney {
     static func yenText(_ value: Double) -> String {
         value > 0 ? yen(value) : "面议"
     }
+
+    /// 套餐权益 / 底部应付：整数不带小数，与小程序一致
+    static func comboDisplayYen(_ value: Double) -> String {
+        let safe = max(0, value)
+        let rounded = (safe * 100).rounded() / 100
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = ","
+        if rounded.truncatingRemainder(dividingBy: 1) == 0 {
+            formatter.minimumFractionDigits = 0
+            formatter.maximumFractionDigits = 0
+        } else {
+            formatter.minimumFractionDigits = 2
+            formatter.maximumFractionDigits = 2
+        }
+        let num = formatter.string(from: NSNumber(value: rounded))
+            ?? String(format: rounded.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.2f", rounded)
+        return "¥\(num)"
+    }
 }
 
 // MARK: - 服务机构

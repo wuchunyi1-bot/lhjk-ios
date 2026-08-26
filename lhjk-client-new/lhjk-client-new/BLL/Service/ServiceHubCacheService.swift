@@ -41,18 +41,15 @@ actor ServiceHubCacheService {
     private var generation = 0
 
     private let columnContentCache: ColumnContentCacheService
-    private let dictionaryService: DictionaryService
     private let hospitalPackageService: HospitalPackageService
     private let retailCategoryService: RetailCategoryService
 
     init(
         columnContentCache: ColumnContentCacheService = .shared,
-        dictionaryService: DictionaryService = .shared,
         hospitalPackageService: HospitalPackageService = .shared,
         retailCategoryService: RetailCategoryService = .shared
     ) {
         self.columnContentCache = columnContentCache
-        self.dictionaryService = dictionaryService
         self.hospitalPackageService = hospitalPackageService
         self.retailCategoryService = retailCategoryService
     }
@@ -266,22 +263,20 @@ actor ServiceHubCacheService {
     }
 
     private func fetchMatrix() async -> FetchList<ProductMatrixItem> {
-        do {
-            let items = try await dictionaryService.fetchProductMatrix()
-            return FetchList(items: items, ok: true)
-        } catch {
-            print("[ServiceHubCache] fetchMatrix failed: \(error.localizedDescription)")
-            return FetchList(items: [], ok: false)
+        var items = DictionaryCacheService.shared.productMatrix()
+        if items.isEmpty {
+            await DictionaryCacheService.shared.sync()
+            items = DictionaryCacheService.shared.productMatrix()
         }
+        return FetchList(items: items, ok: !items.isEmpty)
     }
 
     private func fetchCategories() async -> FetchList<ServiceRecommendCategory> {
-        do {
-            let items = try await dictionaryService.fetchRecommendCategories()
-            return FetchList(items: items, ok: true)
-        } catch {
-            print("[ServiceHubCache] fetchCategories failed: \(error.localizedDescription)")
-            return FetchList(items: [], ok: false)
+        var items = DictionaryCacheService.shared.recommendCategories()
+        if items.isEmpty {
+            await DictionaryCacheService.shared.sync()
+            items = DictionaryCacheService.shared.recommendCategories()
         }
+        return FetchList(items: items, ok: !items.isEmpty)
     }
 }

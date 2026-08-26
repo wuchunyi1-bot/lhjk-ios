@@ -44,6 +44,9 @@ final class PasswordSetupViewController: BaseViewController {
     private var countdown = 0
     private var timer: Timer?
     private var showPassword = false
+    private var showConfirmPassword = false
+    /// 验证码是否已至少发送过一次（登录态进入后不自动发送）
+    private var hasSentCode = false
 
     // MARK: - UI Elements
 
@@ -62,6 +65,7 @@ final class PasswordSetupViewController: BaseViewController {
     private var newPasswordField: UITextField!
     private var confirmPasswordField: UITextField!
     private var togglePasswordBtn: UIButton!
+    private var toggleConfirmPasswordBtn: UIButton!
 
     // Common
     private var actionBtn: UIButton!
@@ -82,6 +86,10 @@ final class PasswordSetupViewController: BaseViewController {
             action: #selector(handleBack)
         )
 
+        let dismissTap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        dismissTap.cancelsTouchesInView = false
+        view.addGestureRecognizer(dismissTap)
+
         // 登录态：跳过 Step 1，直接发验证码
         if case .loggedIn(let phone) = mode {
             enteredPhone = phone
@@ -91,11 +99,10 @@ final class PasswordSetupViewController: BaseViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        if mode.isLoggedIn {
-            // 登录态直接发验证码
-            sendCode(for: enteredPhone)
-        } else if step == .phone {
+        if step == .phone {
             phoneField.becomeFirstResponder()
+        } else if step == .code {
+            codeField.becomeFirstResponder()
         }
     }
 
@@ -346,9 +353,21 @@ final class PasswordSetupViewController: BaseViewController {
         confirmPasswordField.font = .fdFont(ofSize: 18)
         confirmPasswordField.textColor = .fdText
         confirmPwdShell.addSubview(confirmPasswordField)
+
+        toggleConfirmPasswordBtn = UIButton(type: .system)
+        toggleConfirmPasswordBtn.setImage(UIImage(systemName: "eye.slash"), for: .normal)
+        toggleConfirmPasswordBtn.tintColor = .fdMuted
+        toggleConfirmPasswordBtn.addTarget(self, action: #selector(toggleConfirmPasswordVisibility), for: .touchUpInside)
+        confirmPwdShell.addSubview(toggleConfirmPasswordBtn)
+        toggleConfirmPasswordBtn.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-8)
+            make.centerY.equalToSuperview()
+            make.size.equalTo(44)
+        }
+
         confirmPasswordField.snp.makeConstraints { make in
             make.leading.equalTo(lockIcon2.snp.trailing).offset(10)
-            make.trailing.equalToSuperview().offset(-14)
+            make.trailing.equalTo(toggleConfirmPasswordBtn.snp.leading).offset(-8)
             make.centerY.equalToSuperview()
         }
 
@@ -375,7 +394,18 @@ final class PasswordSetupViewController: BaseViewController {
         case .code:
             title = "填写验证码"
             stepTitleLabel.text = "填写验证码"
-            codeDescLabel.text = "验证码已发送至 \(maskPhone(enteredPhone))"
+            if hasSentCode {
+                codeDescLabel.text = "验证码已发送至 \(maskPhone(enteredPhone))"
+            } else {
+                codeDescLabel.text = "验证码将发送至 \(maskPhone(enteredPhone))，请点击右侧按钮获取"
+            }
+            if !hasSentCode && countdown == 0 {
+                UIView.performWithoutAnimation {
+                    codeResendBtn.setTitle("发送验证码", for: .normal)
+                    codeResendBtn.layoutIfNeeded()
+                }
+                codeResendBtn.isEnabled = true
+            }
             actionBtn.setTitle("下一步", for: .normal)
             actionBtn.isHidden = false
         case .resetPassword:
@@ -421,7 +451,9 @@ final class PasswordSetupViewController: BaseViewController {
     // MARK: - Send Code
 
     private func sendCode(for phone: String) {
+        hasSentCode = true
         startCountdown()
+        codeDescLabel.text = "验证码已发送至 \(maskPhone(phone))"
         Task {
             do {
                 _ = try await LoginService.shared.sendVerificationCode(to: phone, type: .resetPassword)
@@ -432,6 +464,14 @@ final class PasswordSetupViewController: BaseViewController {
                 await MainActor.run {
                     showToast("发送失败，请稍后重试")
                     stopCountdown()
+                    hasSentCode = false
+                    if step == .code {
+                        codeDescLabel.text = "验证码将发送至 \(maskPhone(phone))，请点击右侧按钮获取"
+                        UIView.performWithoutAnimation {
+                            codeResendBtn.setTitle("发送验证码", for: .normal)
+                            codeResendBtn.layoutIfNeeded()
+                        }
+                    }
                 }
             }
         }
@@ -444,8 +484,8 @@ final class PasswordSetupViewController: BaseViewController {
             return
         }
         enteredPhone = phone
-        sendCode(for: phone)
         step = .code
+        sendCode(for: phone)
     }
 
     private func handleVerifyCode() {
@@ -511,6 +551,7 @@ final class PasswordSetupViewController: BaseViewController {
     }
 
     @objc private func resendCodeTapped() {
+        guard !enteredPhone.isEmpty else { return }
         stopCountdown()
         sendCode(for: enteredPhone)
     }
@@ -518,9 +559,15 @@ final class PasswordSetupViewController: BaseViewController {
     @objc private func togglePasswordVisibility() {
         showPassword.toggle()
         newPasswordField.isSecureTextEntry = !showPassword
-        confirmPasswordField.isSecureTextEntry = !showPassword
         let imageName = showPassword ? "eye" : "eye.slash"
         togglePasswordBtn.setImage(UIImage(systemName: imageName), for: .normal)
+    }
+
+    @objc private func toggleConfirmPasswordVisibility() {
+        showConfirmPassword.toggle()
+        confirmPasswordField.isSecureTextEntry = !showConfirmPassword
+        let imageName = showConfirmPassword ? "eye" : "eye.slash"
+        toggleConfirmPasswordBtn.setImage(UIImage(systemName: imageName), for: .normal)
     }
 
     // MARK: - Helpers
@@ -537,7 +584,20 @@ final class PasswordSetupViewController: BaseViewController {
         tf.backgroundColor = .fdSurface
         tf.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 52))
         tf.leftViewMode = .always
+        if keyboardType == .phonePad || keyboardType == .numberPad {
+            let toolbar = UIToolbar()
+            toolbar.sizeToFit()
+            let flex = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+            let done = UIBarButtonItem(title: "完成", style: .done, target: self, action: #selector(dismissKeyboard))
+            done.tintColor = .fdPrimary
+            toolbar.items = [flex, done]
+            tf.inputAccessoryView = toolbar
+        }
         return tf
+    }
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
     }
 
     private func validatePhone(_ phone: String) -> Bool {
@@ -574,7 +634,7 @@ final class PasswordSetupViewController: BaseViewController {
         countdown = 0
         codeResendBtn.isEnabled = true
         UIView.performWithoutAnimation {
-            codeResendBtn.setTitle("重新获取", for: .normal)
+            codeResendBtn.setTitle(hasSentCode ? "重新获取" : "发送验证码", for: .normal)
             codeResendBtn.layoutIfNeeded()
         }
     }

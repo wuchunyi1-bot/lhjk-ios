@@ -27,7 +27,11 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
     }
 
     private let riskScore = 62
-    private let riskLevel = "中风险"
+
+    private var riskLevelText: String {
+        let level = UserManager.shared.defaultArchive?.riskLevel
+        return DictionaryCacheService.shared.label(parent: .riskLevel, intValue: level) ?? "—"
+    }
 
     private var archiveProgress: Int {
         UserManager.shared.archiveCompletionPercentage ?? 0
@@ -107,6 +111,20 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
             }
             .store(in: &cancellables)
 
+        NotificationCenter.default.publisher(for: DictionaryCacheService.didUpdateNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshArchiveCompletionUI()
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .defaultArchiveDidUpdate)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshArchiveCompletionUI()
+            }
+            .store(in: &cancellables)
+
         viewModel.$metrics
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.tableView.reloadData() }
@@ -131,7 +149,7 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         switch activeSections[indexPath.section] {
         case .score:
             let cell = tableView.dequeueReusableCell(withIdentifier: HealthScoreCardCell.reuseIdentifier, for: indexPath) as! HealthScoreCardCell
-            cell.configure(riskScore: riskScore, riskLevel: riskLevel)
+            cell.configure(riskScore: riskScore, riskLevel: riskLevelText)
             return cell
         case .archive:
             let cell = tableView.dequeueReusableCell(withIdentifier: HealthArchiveCardCell.reuseIdentifier, for: indexPath) as! HealthArchiveCardCell
@@ -198,7 +216,7 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
             title: "我的健康",
             subtitle: "档案完整度 \(archiveProgress)%",
             titleColor: .fdText,
-            badge: riskLevel
+            badge: riskLevelText
         )
         if isViewLoaded {
             tableView.reloadData()

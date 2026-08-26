@@ -62,6 +62,8 @@ extension UIColor {
     static let fdSubtext = UIColor(hexString: "#6B7280")
     /// 最弱文字、元信息  #9AA0AC
     static let fdMuted = UIColor(hexString: "#9AA0AC")
+    /// TabBar 未选中图标/标题（与 tab_*_normal 切图主色一致）  #8591AB
+    static let fdTabInactive = UIColor(hexString: "#8591AB")
     /// 常规描边（暖色调）  #ECE4DD
     static let fdBorder = UIColor(hexString: "#ECE4DD")
     /// 强调描边  #D9D0C7

@@ -13,6 +13,7 @@ final class HealthRecordUserInfoCell: UITableViewCell {
     private let avatarLabel = UILabel()
     private let avatarGradient = CAGradientLayer()
     private let nameLbl = UILabel()
+    private let metaLbl = UILabel()
     private let tagView = UIView(); private let tagLabel = UILabel()
     private let progressLabel = UILabel(); private let pctLabel = UILabel()
     private let progressBg = UIView(); private let progressFill = UIView()
@@ -44,6 +45,9 @@ final class HealthRecordUserInfoCell: UITableViewCell {
 
         // Name + tag
         nameLbl.font = .fdH2; nameLbl.textColor = .fdText
+        metaLbl.font = .fdMicro
+        metaLbl.textColor = .fdSubtext
+        metaLbl.numberOfLines = 2
         tagView.backgroundColor = .fdPrimarySoft; tagView.layer.cornerRadius = 4
         tagLabel.text = "本人"; tagLabel.font = .fdMicroSemibold; tagLabel.textColor = .fdPrimary
         tagView.addSubview(tagLabel); tagLabel.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 1, left: 6, bottom: 1, right: 6)) }
@@ -62,7 +66,7 @@ final class HealthRecordUserInfoCell: UITableViewCell {
             fillWidthConstraint = make.width.equalTo(0).constraint
         }
 
-        let metaStack = UIStackView(arrangedSubviews: [nameRow, progressTextRow, progressBg]); metaStack.axis = .vertical; metaStack.spacing = 4; metaStack.alignment = .leading
+        let metaStack = UIStackView(arrangedSubviews: [nameRow, metaLbl, progressTextRow, progressBg]); metaStack.axis = .vertical; metaStack.spacing = 4; metaStack.alignment = .leading
         progressBg.snp.makeConstraints { $0.width.equalTo(110); $0.height.equalTo(8) }
 
         let leftStack = UIStackView(arrangedSubviews: [avatarView, metaStack]); leftStack.spacing = 12; leftStack.alignment = .center
@@ -89,11 +93,29 @@ final class HealthRecordUserInfoCell: UITableViewCell {
 
     // MARK: - Configure
 
-    func configure(userName: String, avatarText: String, archiveProgress: Int) {
+    func configure(
+        userName: String,
+        avatarText: String,
+        archiveProgress: Int,
+        genderText: String,
+        pregnancyText: String?,
+        showPregnancy: Bool
+    ) {
         avatarLabel.text = avatarText
         nameLbl.text = userName
         pctLabel.text = "\(archiveProgress)%"
         fillWidthConstraint?.update(offset: 110 * CGFloat(archiveProgress) / 100.0)
+
+        if genderText.isEmpty {
+            metaLbl.isHidden = true
+            metaLbl.text = nil
+        } else if showPregnancy, let pregnancyText, !pregnancyText.isEmpty {
+            metaLbl.isHidden = false
+            metaLbl.text = "\(genderText) · 是否孕妇：\(pregnancyText)"
+        } else {
+            metaLbl.isHidden = false
+            metaLbl.text = genderText
+        }
     }
 
     @objc private func didTapSixDim() { onSixDimTap?() }
