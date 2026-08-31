@@ -102,11 +102,11 @@ final class AgreementDetailViewController: BaseViewController {
     private static let docs: [String: Doc] = [
         "user": Doc(
             title: "用户协议",
-            intro: "本协议用于说明您在使用富德健康平台账号、服务预约、健康档案与消息沟通功能时的基本权利义务。",
+            intro: "本协议用于说明您在使用富德联好健康平台账号、服务预约、健康档案与消息沟通功能时的基本权利义务。",
             updatedAt: "2026-06-25",
             blocks: [
                 Block(heading: "一、服务范围", paragraphs: [
-                    "富德健康为您提供账号登录、健康数据查看、服务预约、消息沟通、保单权益查询等线上服务，具体以页面展示和实际开通权益为准。",
+                    "富德联好健康为您提供账号登录、健康数据查看、服务预约、消息沟通、保单权益查询等线上服务，具体以页面展示和实际开通权益为准。",
                     "您理解并同意，部分健康管理服务需要结合线下履约、保险权益或第三方服务能力完成，页面展示不构成医疗诊断结论。",
                 ]),
                 Block(heading: "二、账号使用", paragraphs: [

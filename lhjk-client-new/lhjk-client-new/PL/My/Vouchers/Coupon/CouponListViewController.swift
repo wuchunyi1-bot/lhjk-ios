@@ -54,12 +54,15 @@ final class CouponListViewController: BaseViewController {
         let tabContainer = UIView()
         tabContainer.backgroundColor = .white
         view.addSubview(tabContainer)
+        tabContainer.addSubview(tabCollectionView)
         tabContainer.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview()
-            make.height.equalTo(48)
+            make.height.equalTo(52)
         }
-        tabContainer.addSubview(tabCollectionView)
-        tabCollectionView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        tabCollectionView.snp.makeConstraints { make in
+            make.leading.trailing.bottom.equalToSuperview()
+            make.top.equalToSuperview().offset(6)
+        }
 
         view.addSubview(containerView)
         containerView.snp.makeConstraints { make in
@@ -200,7 +203,7 @@ extension CouponListViewController: UICollectionViewDataSource, UICollectionView
         sizeForItemAt indexPath: IndexPath
     ) -> CGSize {
         let tabWidth = collectionView.bounds.width / CGFloat(tabs.count)
-        return CGSize(width: tabWidth, height: 48)
+        return CGSize(width: tabWidth, height: 46)
     }
 
     func collectionView(
@@ -238,9 +241,10 @@ private final class CouponFilterTabCell: UICollectionViewCell {
         contentView.addSubview(titleLabel)
         contentView.addSubview(indicatorView)
 
+        // 标题固定垂直位置；下划线始终占位，选中仅改透明度，避免文字上下跳动
         titleLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(4)
             make.centerX.equalToSuperview()
+            make.centerY.equalToSuperview().offset(2)
             make.leading.greaterThanOrEqualToSuperview().offset(4)
             make.trailing.lessThanOrEqualToSuperview().offset(-4)
         }
@@ -260,11 +264,11 @@ private final class CouponFilterTabCell: UICollectionViewCell {
         if isSelected {
             titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
             titleLabel.textColor = UIColor(hexString: "#1F2942")
-            indicatorView.isHidden = false
+            indicatorView.alpha = 1
         } else {
             titleLabel.font = .fdFont(ofSize: 16, weight: .regular)
             titleLabel.textColor = UIColor(hexString: "#535D72")
-            indicatorView.isHidden = true
+            indicatorView.alpha = 0
         }
     }
 }

@@ -27,6 +27,8 @@ final class HomeViewModel: ObservableObject {
     @Published var quickActions: [HomeQuickActionsCell.Action] = []
     @Published var membershipPackages: [HomeMembershipPackagesCell.Package] = []
     @Published var teamMembers: [HomeTeamCardCell.Member] = []
+    /// 管家团队服务剩余天数；`nil` 或 `<= 0` 时不展示标题右侧文案
+    @Published var teamServiceDaysLeft: Int?
     @Published var tasks: [DailyHealthTask] = []
     @Published var articles: [HomeArticleCell.Article] = []
     @Published var snapshot = NSDiffableDataSourceSnapshot<HomeSection, HomeItem>()
@@ -194,6 +196,7 @@ final class HomeViewModel: ObservableObject {
     private func fetchDoctorTeam() async {
         guard let userId = resolveUserId() else {
             teamMembers = []
+            teamServiceDaysLeft = nil
             applySnapshot()
             return
         }
@@ -202,17 +205,29 @@ final class HomeViewModel: ObservableObject {
         defer { isTeamLoading = false }
 
         do {
-            let teams = try await homeService.getUserParticipateAllTeam(userId: userId)
+            async let teamsTask = homeService.getUserParticipateAllTeam(userId: userId)
+            async let remainTask = homeService.getRemainServiceTime()
+
+            let teams = try await teamsTask
+            let remainVO = try? await remainTask
             guard !Task.isCancelled else { return }
+
             let staff = teams.firstTeamStaff(excludingUserId: userId)
             teamMembers = staff.compactMap { Self.mapTeamMember($0) }
+            teamServiceDaysLeft = Self.normalizedServiceDaysLeft(remainVO?.remainDays)
             applySnapshot()
         } catch {
             guard !Task.isCancelled else { return }
             print("[HomeViewModel] loadDoctorTeam ✗ \(error.localizedDescription)")
             teamMembers = []
+            teamServiceDaysLeft = nil
             applySnapshot()
         }
+    }
+
+    private static func normalizedServiceDaysLeft(_ raw: Int?) -> Int? {
+        guard let raw, raw > 0 else { return nil }
+        return raw
     }
 
     private func resolveUserId() -> String? {

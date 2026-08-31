@@ -4,7 +4,8 @@ import SnapKit
 /// 微信授权 — 对齐 PRD-205 / WechatAuthorizationView.vue
 final class WechatAuthorizationViewController: BaseViewController {
 
-    private let wechatNicknameKey = "fd_wechat_nickname"
+    private var isBound: Bool = false
+    private var isLoading: Bool = false
 
     private let statusTitleLabel = UILabel()
     private let statusDescLabel = UILabel()
@@ -14,7 +15,7 @@ final class WechatAuthorizationViewController: BaseViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
-        refresh()
+        fetchBindStatus()
     }
 
     override func setupUI() {
@@ -126,21 +127,31 @@ final class WechatAuthorizationViewController: BaseViewController {
         refresh()
     }
 
-    private var nickname: String {
-        UserDefaults.standard.string(forKey: wechatNicknameKey) ?? ""
+    /// 查询微信绑定状态：`GET /v1/users/getWechatBindStatus`
+    private func fetchBindStatus() {
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let status = try await UserService.shared.getWechatBindStatus()
+                let bound = status.bound ?? false
+                await MainActor.run {
+                    self.isBound = bound
+                    self.refresh()
+                }
+            } catch {
+                print("[WechatAuth] fetchBindStatus ✗ \(error.localizedDescription)")
+            }
+        }
     }
 
     private func refresh() {
-        let bound = !nickname.isEmpty
-        statusTitleLabel.text = bound ? "微信已绑定" : "尚未绑定微信"
-        statusDescLabel.text = bound
-            ? "当前微信：\(nickname)"
-            : "绑定后可使用微信快捷登录富德健康。"
-        actionDescLabel.text = bound
+        statusTitleLabel.text = isBound ? "微信已绑定" : "尚未绑定微信"
+        statusDescLabel.text = "绑定后可使用微信快捷登录富德联好健康。"
+        actionDescLabel.text = isBound
             ? "如不再使用当前微信快捷登录，可解除绑定。"
             : "绑定微信后，下次可直接使用微信登录，无需重复输入手机号。"
 
-        if bound {
+        if isBound {
             actionButton.setTitle("解绑微信", for: .normal)
             actionButton.setTitleColor(.fdPrimary, for: .normal)
             actionButton.backgroundColor = .fdSurface
@@ -155,23 +166,98 @@ final class WechatAuthorizationViewController: BaseViewController {
     }
 
     @objc private func handleAction() {
-        if nickname.isEmpty {
-            UserDefaults.standard.set("富德健康用户", forKey: wechatNicknameKey)
-            refresh()
-            showToast("微信已绑定")
+        if isBound {
+            showUnbindConfirmAlert()
         } else {
-            let alert = UIAlertController(
-                title: "确认解绑微信？",
-                message: "解绑后，将不能使用当前微信快捷登录富德健康。",
-                preferredStyle: .alert
-            )
-            alert.addAction(UIAlertAction(title: "暂不解绑", style: .cancel))
-            alert.addAction(UIAlertAction(title: "确认解绑", style: .destructive) { [weak self] _ in
-                UserDefaults.standard.removeObject(forKey: self?.wechatNicknameKey ?? "")
-                self?.refresh()
-                self?.showToast("微信已解绑")
-            })
-            present(alert, animated: true)
+            performBind()
+        }
+    }
+
+    /// 绑定微信：调用微信 SDK 获取 Auth Code，再调用 `POST /v1/users/bindWechat`
+    private func performBind() {
+        guard !isLoading else { return }
+
+        if !WeChatSDKManager.shared.isWeChatInstalled {
+            showToast("当前设备未安装微信")
+            return
+        }
+
+        isLoading = true
+        actionButton.isEnabled = false
+
+        Task { [weak self] in
+            guard let self else { return }
+            defer {
+                Task { @MainActor in
+                    self.isLoading = false
+                    self.actionButton.isEnabled = true
+                }
+            }
+            do {
+                let authResult = try await WeChatSDKManager.shared.sendAuth()
+                let code = authResult.code
+                try await UserService.shared.bindWechat(code: code)
+                await MainActor.run {
+                    self.isBound = true
+                    self.refresh()
+                    self.showToast("微信绑定成功")
+                }
+                _ = await UserManager.shared.refreshUserInfo()
+            } catch let sdkErr as WeChatSDKError {
+                await MainActor.run {
+                    if sdkErr != .userCancelled {
+                        self.showToast(sdkErr.localizedDescription)
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self.showToast(error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    private func showUnbindConfirmAlert() {
+        let alert = UIAlertController(
+            title: "确认解绑微信？",
+            message: "解绑后，将不能使用当前微信快捷登录富德联好健康。",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "暂不解绑", style: .cancel))
+        alert.addAction(UIAlertAction(title: "确认解绑", style: .destructive) { [weak self] _ in
+            self?.performUnbind()
+        })
+        present(alert, animated: true)
+    }
+
+    /// 解除绑定微信：调用 `POST /v1/users/unbindWechat`
+    private func performUnbind() {
+        guard !isLoading else { return }
+
+        isLoading = true
+        actionButton.isEnabled = false
+
+        Task { [weak self] in
+            guard let self else { return }
+            defer {
+                Task { @MainActor in
+                    self.isLoading = false
+                    self.actionButton.isEnabled = true
+                }
+            }
+            do {
+                try await UserService.shared.unbindWechat()
+                await MainActor.run {
+                    self.isBound = false
+                    self.refresh()
+                    self.showToast("微信已解绑")
+                }
+                _ = await UserManager.shared.refreshUserInfo()
+            } catch {
+                await MainActor.run {
+                    self.showToast(error.localizedDescription)
+                }
+            }
         }
     }
 

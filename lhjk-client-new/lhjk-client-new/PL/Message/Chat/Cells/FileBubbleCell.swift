@@ -8,6 +8,7 @@ final class FileBubbleCell: UITableViewCell {
 
     weak var delegate: ChatCellDelegate?
     private var currentMessage: ChatMessage?
+    var onTapFile: ((ChatMessage) -> Void)?
 
     private enum Metrics {
         static let bubbleWidth: CGFloat = 251
@@ -77,6 +78,9 @@ final class FileBubbleCell: UITableViewCell {
 
         let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
         bubbleView.addGestureRecognizer(longPress)
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+        bubbleView.addGestureRecognizer(tap)
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -100,7 +104,7 @@ final class FileBubbleCell: UITableViewCell {
         bubbleBackground.fill = .staffGradient
 
         nameLabel.text = file?.fileName ?? "[文件]"
-        sizeLabel.text = (file?.fileSize).flatMap { $0.isEmpty ? nil : $0 } ?? ""
+        sizeLabel.text = ChatBubbleStyle.displayFileSize(file?.fileSize)
 
         layoutBubble(isStaff: isStaff)
     }
@@ -167,5 +171,16 @@ final class FileBubbleCell: UITableViewCell {
     @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
         guard gesture.state == .began, let msg = currentMessage else { return }
         delegate?.cellDidLongPress(self, message: msg)
+    }
+
+    @objc private func handleTap() {
+        guard let msg = currentMessage else { return }
+        onTapFile?(msg)
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        onTapFile = nil
+        currentMessage = nil
     }
 }

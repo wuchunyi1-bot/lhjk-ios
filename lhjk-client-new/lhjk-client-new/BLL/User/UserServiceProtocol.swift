@@ -36,4 +36,18 @@ protocol UserServiceProtocol {
 
     /// 修改当前登录用户密码
     func changeCurrentPassword(oldPwd: String, newPwd: String) async throws
+
+    // MARK: - 微信绑定管理
+
+    /// 查询当前用户微信绑定状态
+    /// `GET /v1/users/getWechatBindStatus`
+    func getWechatBindStatus() async throws -> WechatBindStatusVO
+
+    /// 为当前用户绑定微信账号
+    /// `POST /v1/users/bindWechat`
+    func bindWechat(code: String) async throws
+
+    /// 解除当前用户的微信账号绑定
+    /// `POST /v1/users/unbindWechat`
+    func unbindWechat() async throws
 }

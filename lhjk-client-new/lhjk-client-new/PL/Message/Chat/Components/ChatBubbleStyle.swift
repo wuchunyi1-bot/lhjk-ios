@@ -20,6 +20,9 @@ enum ChatBubbleStyle {
   static let avatarToContentGap: CGFloat = 8
   static let bubbleInset: CGFloat = 12
   static let bubbleInsetStaff: CGFloat = 11
+  /// 正文与气泡上下边距（上略小，避免行高撑开后视觉上偏下）
+  static let bubbleTextInsetTop: CGFloat = 10
+  static let bubbleTextInsetBottom: CGFloat = 12
   static let nameToBubbleGap: CGFloat = 4
   /// 对侧留白（普通气泡最大宽度计算）
   static let oppositeReserve: CGFloat = 56
@@ -58,6 +61,39 @@ enum ChatBubbleStyle {
   static let primaryText = UIColor(hexString: "#1F2942")
   static let secondaryText = UIColor(hexString: "#8591AB")
   static let userFill = UIColor(hexString: "#FF7A50")
+
+  /// 将字节数或纯数字字符串格式化为带单位的文件大小（B / KB / MB）
+  static func displayFileSize(_ raw: String?) -> String {
+    guard let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
+      return ""
+    }
+
+    let lower = trimmed.lowercased()
+    if lower.hasSuffix("kb") || lower.hasSuffix("mb") || lower.hasSuffix("gb") {
+      return trimmed
+    }
+
+    if let bytes = Int(trimmed) {
+      return formatFileSize(bytes: bytes)
+    }
+
+    if let bytes = Double(trimmed).map { Int($0) } {
+      return formatFileSize(bytes: bytes)
+    }
+
+    if lower.hasSuffix("b"), let bytes = Int(trimmed.dropLast()) {
+      return formatFileSize(bytes: bytes)
+    }
+
+    return trimmed
+  }
+
+  static func formatFileSize(bytes: Int) -> String {
+    let value = Double(bytes)
+    if value < 1024 { return "\(bytes)B" }
+    if value < 1024 * 1024 { return String(format: "%.1fKB", value / 1024) }
+    return String(format: "%.1fMB", value / (1024 * 1024))
+  }
   static let staffGradientTop = UIColor(hexString: "#FFFAF7")
   static let staffGradientBottom = UIColor.white
   static let dividerColor = UIColor(hexString: "#EEEEEE")
@@ -67,8 +103,26 @@ enum ChatBubbleStyle {
 
   static var textParagraphStyle: NSParagraphStyle {
     let style = NSMutableParagraphStyle()
-    style.lineHeightMultiple = 1.5
+    let lineHeight = ceil(textFont.lineHeight * 1.5)
+    style.minimumLineHeight = lineHeight
+    style.maximumLineHeight = lineHeight
     return style
+  }
+
+  /// 聊天气泡正文（固定行高 + baseline 微调，避免 UILabel 内文字偏下）
+  static func attributedBubbleText(_ text: String, color: UIColor) -> NSAttributedString {
+    let font = textFont
+    let lineHeight = ceil(font.lineHeight * 1.5)
+    let baselineOffset = (lineHeight - font.lineHeight) / 2
+    return NSAttributedString(
+      string: text,
+      attributes: [
+        .font: font,
+        .foregroundColor: color,
+        .paragraphStyle: textParagraphStyle,
+        .baselineOffset: baselineOffset,
+      ]
+    )
   }
 
   static var cardParagraphStyle: NSParagraphStyle {
@@ -88,6 +142,12 @@ enum ChatBubbleStyle {
     static let rowVerticalInset: CGFloat = 6
     static let actionTopGap: CGFloat = 12
     static let actionHeight: CGFloat = 34
+    /// SysNotify 表格行：列内水平边距（小于 card padding，列间距更紧凑）
+    static let tableColumnHorizontalInset: CGFloat = 6
+    static let tableHeaderVerticalInset: CGFloat = 6
+    static let tableCellVerticalInset: CGFloat = 8
+    /// rows 区（含表格）相对卡片左右边距，略小于 padding 以加宽展示区
+    static let rowsContentInset: CGFloat = 8
     static let iconSize: CGFloat = 22
     static let iconGlyphSize: CGFloat = 14
 

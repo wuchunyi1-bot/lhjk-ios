@@ -15,6 +15,17 @@ final class SplashViewController: UIViewController {
         iv.clipsToBounds = true
         return iv
     }()
+
+    private let copyrightLabel: UILabel = {
+        let l = UILabel()
+        l.numberOfLines = 2
+        l.textAlignment = .center
+        l.textColor = UIColor.white.withAlphaComponent(0.85)
+        l.font = .systemFont(ofSize: 10, weight: .regular)
+        l.text = "Copyright © 2024-2026 深圳市富德联好健康服务有限公司 版权所有\n粤ICP备2023016723号-1"
+        return l
+    }()
+
     override func viewDidLoad() {
         super.viewDidLoad()
         // 不用橙色底；hero 未铺满的边角用黑色兜底
@@ -29,7 +40,12 @@ final class SplashViewController: UIViewController {
 
     private func setupUI() {
         view.addSubview(heroImageView)
+        view.addSubview(copyrightLabel)
         heroImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        copyrightLabel.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-8)
+        }
     }
 
     private func scheduleFinishIfNeeded() {

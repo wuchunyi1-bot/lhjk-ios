@@ -20,6 +20,9 @@ protocol LoginServiceProtocol {
     ///   - type: 验证码类型（`.login` / `.changePhone` / `.setPassword` / `.resetPassword`）
     func sendVerificationCode(to phone: String, type: SMSVerificationType) async throws -> SMSResponse
 
+    /// 校验短信验证码是否正确（忘记密码等场景在设置新密码前调用）
+    func checkSmsCode(mobile: String, checkCode: String, type: SMSVerificationType) async throws
+
     // MARK: - Login
 
     /// 验证码登录（新用户自动注册）
@@ -47,8 +50,12 @@ protocol LoginServiceProtocol {
     /// 查询登录态和账号状态
     func getSessionStatus() async throws -> SessionStatus
 
-    /// 记录通知授权结果
-    func reportNotificationPermission(status: NotificationPermissionStatus) async throws
+    /// 记录通知授权结果（关闭「开启消息通知弹窗」时上报，PRD auth_notification_prompt_action）
+    func reportNotificationPermission(
+        status: NotificationPermissionStatus,
+        promptAction: NotificationPromptService.PromptAction?,
+        systemAuthorized: Bool
+    ) async throws
 
     // MARK: - Token Storage
 

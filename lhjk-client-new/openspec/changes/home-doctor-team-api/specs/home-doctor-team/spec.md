@@ -2,7 +2,7 @@
 
 ### Requirement: 拉取用户参与的健康管家团队
 
-系统 SHALL 通过 `GET /v1/session/getUserParticipateAllTeam` 获取当前用户参与的团队成员，并驱动首页「我的富德健康管家团队」卡片列表。
+系统 SHALL 通过 `GET /v1/session/getUserParticipateAllTeam` 获取当前用户参与的团队成员，并驱动首页「我的富德联好健康管家团队」卡片列表。
 
 文档：[获取用户所参与的所有团队](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495580451e0.md)
 
@@ -53,6 +53,34 @@
 - **WHEN** 请求失败，或 `data` 为 null / 空数组 / 过滤后无成员
 - **THEN** 团队列表为空，不展示团队 Section
 - **AND** **不得**使用本地 mock 假数据顶替
+
+### Requirement: 展示居家服务剩余天数
+
+系统 SHALL 通过 `GET /v1/schemeArchive/getRemainServiceTime` 获取当前用户居家服务剩余时间，并在团队卡片标题右侧展示。
+
+#### Scenario: 请求与并行加载
+
+- **WHEN** 首页拉取管家团队且用户已登录
+- **THEN** 与 `getUserParticipateAllTeam` 并行发起 GET `/v1/schemeArchive/getRemainServiceTime`
+- **AND** 无 Query 参数，使用 Bearer 鉴权
+
+#### Scenario: 展示剩余天数
+
+- **WHEN** 响应成功且 `data.remainDays > 0`
+- **THEN** 团队卡片标题右侧展示「服务剩余 N 天 ›」（N = `remainDays`）
+- **WHEN** `remainDays` 为 null、`0` 或负数
+- **THEN** 隐藏标题右侧文案
+
+#### Scenario: 剩余时间失败
+
+- **WHEN** `getRemainServiceTime` 失败
+- **THEN** 静默处理，仅隐藏右侧文案
+- **AND** 团队成员列表仍按团队接口结果展示（若有）
+
+#### Scenario: 点击剩余天数
+
+- **WHEN** 用户点击「服务剩余 N 天 ›」
+- **THEN** 跳转 `/orders`，`tab=in_progress`（使用中订单 Tab）
 
 #### Scenario: 删除 mock
 

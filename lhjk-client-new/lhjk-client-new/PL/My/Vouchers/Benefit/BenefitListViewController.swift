@@ -36,7 +36,7 @@ final class BenefitListViewController: BaseViewController {
         cv.showsHorizontalScrollIndicator = false
         cv.dataSource = self
         cv.delegate = self
-        cv.register(OrderTabCell.self, forCellWithReuseIdentifier: OrderTabCell.reuseID)
+        cv.register(BenefitFilterTabCell.self, forCellWithReuseIdentifier: BenefitFilterTabCell.reuseID)
         return cv
     }()
 
@@ -56,12 +56,15 @@ final class BenefitListViewController: BaseViewController {
         let tabContainer = UIView()
         tabContainer.backgroundColor = .white
         view.addSubview(tabContainer)
+        tabContainer.addSubview(tabCollectionView)
         tabContainer.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview()
-            make.height.equalTo(44)
+            make.height.equalTo(52)
         }
-        tabContainer.addSubview(tabCollectionView)
-        tabCollectionView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        tabCollectionView.snp.makeConstraints { make in
+            make.leading.trailing.bottom.equalToSuperview()
+            make.top.equalToSuperview().offset(6)
+        }
 
         view.addSubview(containerView)
         containerView.snp.makeConstraints { make in
@@ -179,9 +182,9 @@ extension BenefitListViewController: UICollectionViewDataSource, UICollectionVie
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: OrderTabCell.reuseID,
+            withReuseIdentifier: BenefitFilterTabCell.reuseID,
             for: indexPath
-        ) as! OrderTabCell
+        ) as! BenefitFilterTabCell
         cell.configure(title: tabTitle(at: indexPath.item), isSelected: indexPath.item == selectedTabIndex)
         return cell
     }
@@ -202,7 +205,7 @@ extension BenefitListViewController: UICollectionViewDataSource, UICollectionVie
             attributes: [.font: UIFont.fdMyCaptionSemibold],
             context: nil
         ).width + 16
-        return CGSize(width: ceil(width), height: 30)
+        return CGSize(width: ceil(width), height: 46)
     }
 
     func collectionView(
@@ -214,8 +217,72 @@ extension BenefitListViewController: UICollectionViewDataSource, UICollectionVie
     }
 }
 
-/// 绑定权益卡 — 对齐 Figma 4086:3936
+// MARK: - BenefitFilterTabCell
+
+/// 权益卡筛选 Tab — 与优惠券 `CouponFilterTabCell` 垂直居中一致
+private final class BenefitFilterTabCell: UICollectionViewCell {
+    static let reuseID = "BenefitFilterTabCell"
+
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.textAlignment = .center
+        label.font = .fdFont(ofSize: 16, weight: .regular)
+        return label
+    }()
+
+    private let indicatorView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(hexString: "#FF7A50")
+        view.layer.cornerRadius = 2
+        view.clipsToBounds = true
+        return view
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        contentView.addSubview(titleLabel)
+        contentView.addSubview(indicatorView)
+
+        titleLabel.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.centerY.equalToSuperview().offset(2)
+            make.leading.greaterThanOrEqualToSuperview().offset(4)
+            make.trailing.lessThanOrEqualToSuperview().offset(-4)
+        }
+
+        indicatorView.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(4)
+            make.centerX.equalToSuperview()
+            make.width.equalTo(18)
+            make.height.equalTo(4)
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    func configure(title: String, isSelected: Bool) {
+        titleLabel.text = title
+        if isSelected {
+            titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+            titleLabel.textColor = UIColor(hexString: "#1F2942")
+            indicatorView.alpha = 1
+        } else {
+            titleLabel.font = .fdFont(ofSize: 16, weight: .regular)
+            titleLabel.textColor = UIColor(hexString: "#535D72")
+            indicatorView.alpha = 0
+        }
+    }
+}
+
+/// 绑定权益卡 — 对齐 Figma 4086:3936 / 4086:3990
 final class BenefitBindViewController: BaseViewController {
+
+    private enum Layout {
+        /// 背景图设计稿 375×300
+        static let heroHeightRatio: CGFloat = 300.0 / 375.0
+        /// 设计稿 keyBox.top(293) = hero.bottom(300) − 7，输入框顶边略压住背景底缘
+        static let keyBoxHeroOverlap: CGFloat = 7
+    }
 
     var onBound: (() -> Void)?
 
@@ -230,14 +297,20 @@ final class BenefitBindViewController: BaseViewController {
     private let noteTitleBrown = UIColor(hexString: "#592F10")
     private let noteBodyBrown = UIColor(hexString: "#592F10").withAlphaComponent(0.6)
 
-    private let scrollView = UIScrollView()
-    private let formStack = UIStackView()
-    private let successStack = UIStackView()
+    private let heroImageView: UIImageView = {
+        let iv = UIImageView(image: UIImage(named: "benefit_bind_bg"))
+        iv.contentMode = .scaleAspectFill
+        iv.clipsToBounds = true
+        return iv
+    }()
+
+    private let formContainer = UIView()
+    private let successContainer = UIView()
 
     private let keyField: UITextField = {
         let tf = UITextField()
         tf.font = .fdFont(ofSize: 14, weight: .regular)
-        tf.textColor = .fdText
+        tf.textColor = UIColor(hexString: "#1F2430")
         tf.borderStyle = .none
         tf.clearButtonMode = .whileEditing
         tf.autocapitalizationType = .none
@@ -250,7 +323,7 @@ final class BenefitBindViewController: BaseViewController {
             string: "请输入卡密",
             attributes: [
                 .font: UIFont.fdFont(ofSize: 14, weight: .regular),
-                .foregroundColor: UIColor.fdTabInactive,
+                .foregroundColor: UIColor(hexString: "#8591AB"),
             ]
         )
         return tf
@@ -260,9 +333,10 @@ final class BenefitBindViewController: BaseViewController {
     private let errorLabel = UILabel()
     private let scanButton = UIButton(type: .custom)
     private let bindButton = UIButton(type: .custom)
+    private var bindButtonTopConstraint: Constraint?
     private let agreeButton = UIButton(type: .custom)
-    private let rulesLinkButton = UIButton(type: .system)
-    private let ruleRow = UIStackView()
+    private let agreementLabel = UILabel()
+    private let ruleWrap = UIView()
 
     init(voucherService: VoucherService = AppContainer.shared.voucherService) {
         self.voucherService = voucherService
@@ -275,39 +349,92 @@ final class BenefitBindViewController: BaseViewController {
 
     override func setupUI() {
         title = "绑定权益卡"
-        view.backgroundColor = .fdBg
+        view.backgroundColor = UIColor(hexString: "#FDF6F3")
+        extendedLayoutIncludesOpaqueBars = true
+        edgesForExtendedLayout = .all
         hidesBottomBarWhenPushed = true
 
-        scrollView.keyboardDismissMode = .onDrag
-        scrollView.showsVerticalScrollIndicator = false
-        scrollView.alwaysBounceVertical = true
-        view.addSubview(scrollView)
-        scrollView.snp.makeConstraints { $0.edges.equalTo(view.safeAreaLayoutGuide) }
+        view.addSubview(heroImageView)
+        heroImageView.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.height.equalTo(view.snp.width).multipliedBy(Layout.heroHeightRatio)
+        }
+
+        view.addSubview(formContainer)
+        formContainer.backgroundColor = .clear
+        formContainer.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
 
         buildForm()
         buildSuccess()
 
-        scrollView.addSubview(formStack)
-        scrollView.addSubview(successStack)
-        formStack.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview()
-            make.leading.trailing.equalToSuperview()
-            make.width.equalTo(scrollView)
-        }
-        successStack.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(24)
-            make.width.equalTo(scrollView).offset(-48)
-        }
-        successStack.isHidden = true
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tap.cancelsTouchesInView = false
+        view.addGestureRecognizer(tap)
 
         keyField.delegate = self
         keyField.addTarget(self, action: #selector(keyChanged), for: .editingChanged)
     }
 
-    private func buildForm() {
-        let hero = makeHeroHeader()
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+        setupTransparentNavigationBar()
+    }
 
-        keyBox.backgroundColor = .fdSurface
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        restoreDefaultNavigationBar()
+    }
+
+    private func setupTransparentNavigationBar() {
+        guard let navigationController else { return }
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithTransparentBackground()
+        appearance.shadowColor = .clear
+        appearance.titleTextAttributes = [
+            .foregroundColor: UIColor(hexString: "#1F2430"),
+            .font: UIFont.fdFont(ofSize: 18, weight: .medium)
+        ]
+        let backImage = UIImage.fdNavBack
+        appearance.setBackIndicatorImage(backImage, transitionMaskImage: backImage)
+        let backButtonAppearance = UIBarButtonItemAppearance()
+        backButtonAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.clear]
+        backButtonAppearance.highlighted.titleTextAttributes = [.foregroundColor: UIColor.clear]
+        appearance.backButtonAppearance = backButtonAppearance
+
+        navigationController.navigationBar.standardAppearance = appearance
+        navigationController.navigationBar.scrollEdgeAppearance = appearance
+        navigationController.navigationBar.compactAppearance = appearance
+        navigationController.navigationBar.isTranslucent = true
+    }
+
+    private func restoreDefaultNavigationBar() {
+        guard let navigationController else { return }
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = .fdBg
+        appearance.shadowColor = .clear
+        appearance.titleTextAttributes = [
+            .foregroundColor: UIColor.fdText,
+            .font: UIFont.fdFont(ofSize: 20, weight: .medium)
+        ]
+        let backImage = UIImage.fdNavBack
+        appearance.setBackIndicatorImage(backImage, transitionMaskImage: backImage)
+        let backButtonAppearance = UIBarButtonItemAppearance()
+        backButtonAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.clear]
+        backButtonAppearance.highlighted.titleTextAttributes = [.foregroundColor: UIColor.clear]
+        appearance.backButtonAppearance = backButtonAppearance
+
+        navigationController.navigationBar.standardAppearance = appearance
+        navigationController.navigationBar.scrollEdgeAppearance = appearance
+        navigationController.navigationBar.compactAppearance = appearance
+        navigationController.navigationBar.isTranslucent = false
+    }
+
+    private func buildForm() {
+        keyBox.backgroundColor = .white
         keyBox.layer.cornerRadius = 12
         keyBox.clipsToBounds = true
 
@@ -337,15 +464,15 @@ final class BenefitBindViewController: BaseViewController {
             $0.height.equalTo(22)
         }
 
-        errorLabel.font = .fdFont(ofSize: 12, weight: .regular)
-        errorLabel.textColor = .fdDanger
+        errorLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        errorLabel.textColor = UIColor(hexString: "#F93838")
         errorLabel.numberOfLines = 0
         errorLabel.isHidden = true
 
         bindButton.setTitle("立即绑定", for: .normal)
         bindButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
         bindButton.setTitleColor(.white, for: .normal)
-        bindButton.backgroundColor = .fdPrimary
+        bindButton.backgroundColor = UIColor(hexString: "#FF7950")
         bindButton.layer.cornerRadius = 25.5
         bindButton.clipsToBounds = true
         bindButton.addTarget(self, action: #selector(tapBind), for: .touchUpInside)
@@ -364,141 +491,98 @@ final class BenefitBindViewController: BaseViewController {
         scanButton.titleEdgeInsets = UIEdgeInsets(top: 0, left: 3, bottom: 0, right: -3)
         scanButton.addTarget(self, action: #selector(tapScan), for: .touchUpInside)
 
-        agreeButton.setImage(UIImage(named: "login_checkbox"), for: .normal)
-        agreeButton.setImage(UIImage(named: "login_checkbox_checked"), for: .selected)
+        let unchecked = UIImage(named: "login_checkbox")?.withRenderingMode(.alwaysOriginal)
+        let checked = UIImage(named: "login_checkbox_checked")?.withRenderingMode(.alwaysOriginal)
+        agreeButton.setImage(unchecked, for: .normal)
+        agreeButton.setImage(checked, for: .selected)
+        agreeButton.imageEdgeInsets = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
         agreeButton.addTarget(self, action: #selector(toggleAgree), for: .touchUpInside)
-        agreeButton.snp.makeConstraints { $0.size.equalTo(22) }
 
-        let agreePrefix = UILabel()
-        agreePrefix.text = "我已阅读并同意 "
-        agreePrefix.font = .fdFont(ofSize: 12, weight: .regular)
-        agreePrefix.textColor = .fdMuted
+        let fullText = "我已阅读并同意 《权益卡使用规则》"
+        let attributed = NSMutableAttributedString(string: fullText)
+        attributed.setAttributes([
+            .font: UIFont.fdFont(ofSize: 12, weight: .regular),
+            .foregroundColor: UIColor(hexString: "#9AA0AC"),
+        ], range: NSRange(location: 0, length: fullText.count))
+        if let range = fullText.range(of: "《权益卡使用规则》") {
+            attributed.addAttributes([
+                .foregroundColor: UIColor.fdPrimary,
+            ], range: NSRange(range, in: fullText))
+        }
+        agreementLabel.attributedText = attributed
+        agreementLabel.numberOfLines = 1
+        agreementLabel.isUserInteractionEnabled = true
+        agreementLabel.addGestureRecognizer(
+            UITapGestureRecognizer(target: self, action: #selector(handleAgreementLabelTap(_:)))
+        )
 
-        rulesLinkButton.setTitle("《权益卡使用规则》", for: .normal)
-        rulesLinkButton.setTitleColor(.fdPrimary, for: .normal)
-        rulesLinkButton.titleLabel?.font = .fdFont(ofSize: 12, weight: .regular)
-        rulesLinkButton.addTarget(self, action: #selector(tapRules), for: .touchUpInside)
-        rulesLinkButton.contentEdgeInsets = .zero
-
-        ruleRow.axis = .horizontal
-        ruleRow.alignment = .center
-        ruleRow.spacing = 6
-        ruleRow.addArrangedSubview(agreeButton)
-        ruleRow.addArrangedSubview(agreePrefix)
-        ruleRow.addArrangedSubview(rulesLinkButton)
-        let ruleWrap = UIView()
-        ruleWrap.addSubview(ruleRow)
-        ruleRow.snp.makeConstraints { $0.centerX.equalToSuperview(); $0.top.bottom.equalToSuperview() }
+        ruleWrap.addSubview(agreeButton)
+        ruleWrap.addSubview(agreementLabel)
+        agreeButton.snp.makeConstraints { make in
+            make.leading.top.equalToSuperview()
+            make.size.equalTo(28)
+            make.bottom.equalToSuperview()
+        }
+        agreementLabel.snp.makeConstraints { make in
+            make.leading.equalTo(agreeButton.snp.trailing).offset(2)
+            make.trailing.equalToSuperview()
+            make.centerY.equalTo(agreeButton)
+        }
+        agreementLabel.setContentHuggingPriority(.required, for: .horizontal)
+        agreementLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         let noteCard = makeNotesCard()
 
-        let formPad = UIView()
-        let padded = UIStackView(arrangedSubviews: [keyBox, bindButton, scanButton, ruleWrap])
-        padded.axis = .vertical
-        padded.spacing = 20
-        padded.setCustomSpacing(28, after: keyBox)
-        padded.setCustomSpacing(24, after: scanButton)
-        formPad.addSubview(padded)
-        padded.snp.makeConstraints {
-            $0.top.bottom.equalToSuperview()
-            $0.leading.trailing.equalToSuperview().inset(24)
-        }
-        formPad.addSubview(errorLabel)
-        errorLabel.snp.makeConstraints {
-            $0.top.equalTo(keyBox.snp.bottom).offset(6)
-            $0.leading.trailing.equalTo(padded)
+        formContainer.addSubview(keyBox)
+        formContainer.addSubview(errorLabel)
+        formContainer.addSubview(bindButton)
+        formContainer.addSubview(scanButton)
+        formContainer.addSubview(ruleWrap)
+        formContainer.addSubview(noteCard)
+
+        keyBox.snp.makeConstraints { make in
+            make.top.equalTo(heroImageView.snp.bottom).offset(-Layout.keyBoxHeroOverlap)
+            make.leading.trailing.equalToSuperview().inset(24)
+            make.height.equalTo(48)
         }
 
-        let notePad = UIView()
-        notePad.addSubview(noteCard)
-        noteCard.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(18)
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.bottom.equalToSuperview().offset(-24)
+        errorLabel.snp.makeConstraints { make in
+            make.top.equalTo(keyBox.snp.bottom).offset(12)
+            make.leading.trailing.equalTo(keyBox)
         }
 
-        formStack.axis = .vertical
-        formStack.spacing = 0
-        formStack.addArrangedSubview(hero)
-        formStack.addArrangedSubview(formPad)
-        formStack.addArrangedSubview(notePad)
-
-        keyBox.snp.makeConstraints { $0.height.equalTo(48) }
-        scanButton.snp.makeConstraints { $0.height.equalTo(51) }
-        bindButton.snp.makeConstraints { $0.height.equalTo(51) }
-    }
-
-    private func makeHeroHeader() -> UIView {
-        let header = UIView()
-        header.clipsToBounds = true
-
-        let heroImage = UIImageView(image: UIImage(named: "benefit_bind_hero"))
-        heroImage.contentMode = .scaleAspectFill
-        heroImage.clipsToBounds = true
-
-        let fade = UIView()
-        let fadeLayer = CAGradientLayer()
-        fadeLayer.colors = [
-            UIColor.fdBg.withAlphaComponent(0).cgColor,
-            UIColor.fdBg.cgColor,
-        ]
-        fadeLayer.name = "heroFade"
-        fadeLayer.startPoint = CGPoint(x: 0.5, y: 0)
-        fadeLayer.endPoint = CGPoint(x: 0.5, y: 1)
-        fade.layer.addSublayer(fadeLayer)
-
-        let cards = UIImageView(image: UIImage(named: "benefit_bind_cards"))
-        cards.contentMode = .scaleAspectFit
-
-        let title = UILabel()
-        title.text = "绑定权益卡"
-        title.font = .fdFont(ofSize: 20, weight: .semibold)
-        title.textColor = titleBrown
-        title.textAlignment = .center
-
-        let subtitle = UILabel()
-        subtitle.text = "请输入卡密，或扫码绑定权益卡"
-        subtitle.font = .fdFont(ofSize: 14, weight: .regular)
-        subtitle.textColor = subtitleBrown
-        subtitle.textAlignment = .center
-        subtitle.numberOfLines = 0
-
-        header.addSubview(heroImage)
-        header.addSubview(fade)
-        header.addSubview(cards)
-        header.addSubview(title)
-        header.addSubview(subtitle)
-
-        header.snp.makeConstraints { $0.height.equalTo(202) }
-        heroImage.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-            $0.height.equalTo(header.snp.width).multipliedBy(212.0 / 375.0)
-        }
-        fade.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(heroImage)
-            $0.height.equalTo(80)
-        }
-        cards.snp.makeConstraints {
-            $0.top.equalToSuperview()
-            $0.centerX.equalToSuperview()
-            $0.size.equalTo(160)
-        }
-        title.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(132)
-            $0.centerX.equalToSuperview()
-            $0.leading.trailing.equalToSuperview().inset(24)
-        }
-        subtitle.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(161)
-            $0.centerX.equalToSuperview()
-            $0.leading.trailing.equalToSuperview().inset(24)
+        bindButton.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(24)
+            make.height.equalTo(51)
+            self.bindButtonTopConstraint = make.top.equalTo(keyBox.snp.bottom).offset(28).constraint
         }
 
-        return header
+        scanButton.snp.makeConstraints { make in
+            make.top.equalTo(bindButton.snp.bottom).offset(20)
+            make.leading.trailing.equalTo(bindButton)
+            make.height.equalTo(51)
+        }
+
+        ruleWrap.snp.makeConstraints { make in
+            make.top.equalTo(scanButton.snp.bottom).offset(24)
+            make.centerX.equalToSuperview()
+        }
+
+        noteCard.snp.makeConstraints { make in
+            make.top.equalTo(ruleWrap.snp.bottom).offset(34)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.height.equalTo(195)
+        }
     }
 
     private func buildSuccess() {
+        successContainer.isHidden = true
+        view.addSubview(successContainer)
+        successContainer.snp.makeConstraints { make in
+            make.top.equalTo(heroImageView.snp.bottom)
+            make.leading.trailing.equalToSuperview().inset(24)
+        }
+
         let iconBox = UIView()
         iconBox.backgroundColor = .fdSuccessSoft
         iconBox.layer.cornerRadius = 32
@@ -541,15 +625,15 @@ final class BenefitBindViewController: BaseViewController {
         vouchersBtn.layer.borderColor = scanOrange.cgColor
         vouchersBtn.addTarget(self, action: #selector(tapGoVouchers), for: .touchUpInside)
 
+        let successStack = UIStackView(arrangedSubviews: [iconBox, title, sub, redeemBtn, vouchersBtn])
         successStack.axis = .vertical
         successStack.alignment = .center
         successStack.spacing = 12
-        successStack.addArrangedSubview(iconBox)
-        successStack.addArrangedSubview(title)
-        successStack.addArrangedSubview(sub)
         successStack.setCustomSpacing(28, after: sub)
-        successStack.addArrangedSubview(redeemBtn)
-        successStack.addArrangedSubview(vouchersBtn)
+        successContainer.addSubview(successStack)
+        successStack.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
         redeemBtn.snp.makeConstraints { $0.height.equalTo(51); $0.width.equalTo(successStack.snp.width) }
         vouchersBtn.snp.makeConstraints { $0.height.equalTo(51); $0.width.equalTo(successStack.snp.width) }
     }
@@ -562,7 +646,7 @@ final class BenefitBindViewController: BaseViewController {
         let bg = CAGradientLayer()
         bg.colors = [
             UIColor(hexString: "#FFF1E5").cgColor,
-            UIColor.fdBg.cgColor,
+            UIColor(hexString: "#FDF6F3").cgColor,
         ]
         bg.startPoint = CGPoint(x: 0.15, y: 0)
         bg.endPoint = CGPoint(x: 0.85, y: 1)
@@ -602,7 +686,7 @@ final class BenefitBindViewController: BaseViewController {
         let l = UILabel()
         l.numberOfLines = 0
         let paragraph = NSMutableParagraphStyle()
-        paragraph.lineHeightMultiple = 1.5
+        paragraph.lineSpacing = 4
         paragraph.headIndent = 14
         let text = lines.map { "•  \($0)" }.joined(separator: "\n")
         l.attributedText = NSAttributedString(string: text, attributes: [
@@ -620,7 +704,7 @@ final class BenefitBindViewController: BaseViewController {
 
     private func layoutNamedGradients(in root: UIView) {
         root.layer.sublayers?.forEach { layer in
-            guard layer.name == "noteGradient" || layer.name == "heroFade" else { return }
+            guard layer.name == "noteGradient" else { return }
             layer.frame = root.bounds
         }
         root.subviews.forEach { layoutNamedGradients(in: $0) }
@@ -630,14 +714,38 @@ final class BenefitBindViewController: BaseViewController {
         setError(nil)
     }
 
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+
     @objc private func toggleAgree() {
         agreed.toggle()
         agreeButton.isSelected = agreed
         setError(nil)
     }
 
-    @objc private func tapRules() {
-        Router.shared.push("/auth/agreement/benefit-card")
+    @objc private func handleAgreementLabelTap(_ gesture: UITapGestureRecognizer) {
+        guard let label = gesture.view as? UILabel, let text = label.text as NSString? else { return }
+        let point = gesture.location(in: label)
+        let layoutManager = NSLayoutManager()
+        let textContainer = NSTextContainer(size: .zero)
+        let textStorage = NSTextStorage(attributedString: label.attributedText ?? NSAttributedString(string: ""))
+        layoutManager.addTextContainer(textContainer)
+        textStorage.addLayoutManager(layoutManager)
+        textContainer.lineFragmentPadding = 0
+        textContainer.lineBreakMode = label.lineBreakMode
+        textContainer.maximumNumberOfLines = label.numberOfLines
+        textContainer.size = label.bounds.size
+        let glyphIndex = layoutManager.glyphIndex(for: point, in: textContainer)
+        guard glyphIndex != NSNotFound else { return }
+        let charRange = layoutManager.characterRange(
+            forGlyphRange: NSRange(location: glyphIndex, length: 1),
+            actualGlyphRange: nil
+        )
+        let linkRange = text.range(of: "《权益卡使用规则》")
+        if linkRange.location != NSNotFound, NSIntersectionRange(charRange, linkRange).length > 0 {
+            Router.shared.push("/auth/agreement/benefit-card")
+        }
     }
 
     @objc private func tapScan() {
@@ -663,7 +771,7 @@ final class BenefitBindViewController: BaseViewController {
     @objc private func tapBind() {
         view.endEditing(true)
         guard agreed else {
-            shake(ruleRow)
+            shake(ruleWrap)
             return
         }
         // 输入框内容原样提交，不做 trim / 大小写 / 过滤
@@ -743,14 +851,16 @@ final class BenefitBindViewController: BaseViewController {
     private func showSuccessState() {
         showingSuccess = true
         view.endEditing(true)
-        formStack.isHidden = true
-        successStack.isHidden = false
+        formContainer.isHidden = true
+        successContainer.isHidden = false
     }
 
     private func setError(_ message: String?) {
         let text = message?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         errorLabel.text = text
-        errorLabel.isHidden = text.isEmpty
+        let hasError = !text.isEmpty
+        errorLabel.isHidden = !hasError
+        bindButtonTopConstraint?.update(offset: hasError ? 56 : 28)
     }
 
     private func shake(_ target: UIView) {
@@ -1038,6 +1148,7 @@ final class BenefitRedeemViewController: BaseViewController {
     private let tabsStack = UIStackView()
 
     private let hintBar = UIView()
+    private let hintBackgroundImageView = UIImageView()
     private let hintIcon = UIImageView()
     private let hintLabel = UILabel()
 
@@ -1069,7 +1180,7 @@ final class BenefitRedeemViewController: BaseViewController {
 
     override func setupUI() {
         title = "兑换套餐"
-        view.backgroundColor = .fdBg
+        view.backgroundColor = UIColor(hexString: "#FDF6F4")
         hidesBottomBarWhenPushed = true
 
         view.addSubview(scrollView)
@@ -1100,12 +1211,12 @@ final class BenefitRedeemViewController: BaseViewController {
         contentStack.addArrangedSubview(loadingIndicator)
 
         hospitalDivider.snp.makeConstraints { $0.height.equalTo(0.5) }
-        tabsScroll.snp.makeConstraints { $0.height.equalTo(48) }
+        tabsScroll.snp.makeConstraints { $0.height.equalTo(32) }
         hintBar.snp.makeConstraints { $0.height.equalTo(42) }
 
         contentStack.setCustomSpacing(18, after: hospitalDivider)
-        contentStack.setCustomSpacing(12, after: tabsScroll)
-        contentStack.setCustomSpacing(12, after: hintBar)
+        contentStack.setCustomSpacing(15, after: tabsScroll)
+        contentStack.setCustomSpacing(0, after: hintBar)
         contentStack.setCustomSpacing(24, after: packageStack)
     }
 
@@ -1126,8 +1237,8 @@ final class BenefitRedeemViewController: BaseViewController {
         hospitalIcon.snp.makeConstraints { $0.size.equalTo(42) }
 
         hospitalNameLabel.font = .fdFont(ofSize: 16, weight: .semibold)
-        hospitalNameLabel.textColor = .fdText
-        hospitalNameLabel.text = "富德健康"
+        hospitalNameLabel.textColor = UIColor(hexString: "#1F2430")
+        hospitalNameLabel.text = "富德联好健康"
         hospitalNameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         let badge = PaddedLabel()
@@ -1145,7 +1256,7 @@ final class BenefitRedeemViewController: BaseViewController {
 
         let nameRow = UIStackView(arrangedSubviews: [hospitalNameLabel, badge])
         nameRow.axis = .horizontal
-        nameRow.spacing = 6
+        nameRow.spacing = 5
         nameRow.alignment = .center
 
         hospitalAddressLabel.font = .fdFont(ofSize: 12, weight: .regular)
@@ -1156,7 +1267,7 @@ final class BenefitRedeemViewController: BaseViewController {
 
         let textCol = UIStackView(arrangedSubviews: [nameRow, hospitalAddressLabel])
         textCol.axis = .vertical
-        textCol.spacing = 6
+        textCol.spacing = 5
         textCol.alignment = .leading
 
         let row = UIStackView(arrangedSubviews: [hospitalIcon, textCol])
@@ -1167,10 +1278,10 @@ final class BenefitRedeemViewController: BaseViewController {
         row.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.top.equalToSuperview().offset(18)
-            $0.bottom.equalToSuperview().offset(-12)
+            $0.bottom.equalToSuperview().offset(-16)
         }
 
-        hospitalDivider.backgroundColor = .fdBorder
+        hospitalDivider.backgroundColor = UIColor(hexString: "#FCE4DB")
     }
 
     private func setupTabs() {
@@ -1188,22 +1299,10 @@ final class BenefitRedeemViewController: BaseViewController {
     }
 
     private func setupHintBar() {
-        hintBar.backgroundColor = .white
-        hintBar.layer.cornerRadius = 16
-        hintBar.layer.borderWidth = 1
-        hintBar.layer.borderColor = UIColor.white.cgColor
-        hintBar.clipsToBounds = true
-
-        let gradient = CAGradientLayer()
-        gradient.colors = [
-            UIColor.white.cgColor,
-            UIColor(hexString: "#FDF6F4").cgColor
-        ]
-        gradient.locations = [0.21, 1.0]
-        gradient.startPoint = CGPoint(x: 0.5, y: 0)
-        gradient.endPoint = CGPoint(x: 0.5, y: 1)
-        gradient.name = "hintGradient"
-        hintBar.layer.insertSublayer(gradient, at: 0)
+        hintBackgroundImageView.image = UIImage(named: "redeem_hint_bg")
+        hintBackgroundImageView.contentMode = .scaleToFill
+        hintBar.addSubview(hintBackgroundImageView)
+        hintBackgroundImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         hintIcon.image = UIImage(named: "redeem_hint_horn")
         hintIcon.contentMode = .scaleAspectFit
@@ -1224,13 +1323,6 @@ final class BenefitRedeemViewController: BaseViewController {
             $0.leading.equalToSuperview().offset(15)
             $0.trailing.lessThanOrEqualToSuperview().offset(-15)
             $0.centerY.equalToSuperview()
-        }
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        if let gradient = hintBar.layer.sublayers?.first(where: { $0.name == "hintGradient" }) as? CAGradientLayer {
-            gradient.frame = hintBar.bounds
         }
     }
 
@@ -1287,7 +1379,7 @@ final class BenefitRedeemViewController: BaseViewController {
 
     private func applyHospital(_ info: BenefitsRedeemPageInfoVO) {
         let name = info.hospitalName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        hospitalNameLabel.text = name.isEmpty ? "富德健康" : name
+        hospitalNameLabel.text = name.isEmpty ? "富德联好健康" : name
         let addr = info.hospitalAddress?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         hospitalAddressLabel.text = addr.isEmpty ? "全国服务网络｜距离最近" : addr
         if let logo = info.hospitalLogo?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -1304,7 +1396,7 @@ final class BenefitRedeemViewController: BaseViewController {
     }
 
     private func applyHospitalFallback() {
-        hospitalNameLabel.text = "富德健康"
+        hospitalNameLabel.text = "富德联好健康"
         hospitalAddressLabel.text = "全国服务网络｜距离最近"
         hospitalIcon.image = UIImage(named: "redeem_brand_logo")
     }
@@ -1474,7 +1566,7 @@ private final class RedeemCategoryTabControl: UIControl {
         titleLabel.textColor = isTabSelected
             ? UIColor(hexString: "#1F2942")
             : UIColor(hexString: "#535D72")
-        underline.isHidden = !isTabSelected
+        underline.alpha = isTabSelected ? 1 : 0
     }
 }
 
@@ -1495,6 +1587,7 @@ private final class RedeemPackageCardView: UIView {
         backgroundColor = .white
         layer.cornerRadius = 16
         clipsToBounds = true
+        isUserInteractionEnabled = true
 
         thumbView.contentMode = .scaleAspectFill
         thumbView.clipsToBounds = true
@@ -1502,12 +1595,12 @@ private final class RedeemPackageCardView: UIView {
         thumbView.backgroundColor = .fdProductImageBg
 
         titleLabel.font = .fdFont(ofSize: 14, weight: .medium)
-        titleLabel.textColor = .fdText
+        titleLabel.textColor = UIColor(hexString: "#1F2430")
         titleLabel.numberOfLines = 1
         titleLabel.lineBreakMode = .byTruncatingTail
 
         subtitleLabel.font = .fdFont(ofSize: 14, weight: .regular)
-        subtitleLabel.textColor = .fdTabInactive
+        subtitleLabel.textColor = UIColor(hexString: "#8591AB")
         subtitleLabel.numberOfLines = 1
         subtitleLabel.lineBreakMode = .byTruncatingTail
 
@@ -1518,6 +1611,7 @@ private final class RedeemPackageCardView: UIView {
         redeemButton.titleLabel?.font = .fdFont(ofSize: 12, weight: .medium)
         redeemButton.backgroundColor = .fdPrimary
         redeemButton.layer.cornerRadius = 14
+        redeemButton.clipsToBounds = true
         redeemButton.addTarget(self, action: #selector(tapRedeem), for: .touchUpInside)
 
         addSubview(thumbView)
@@ -1533,16 +1627,12 @@ private final class RedeemPackageCardView: UIView {
         titleLabel.snp.makeConstraints {
             $0.leading.equalTo(thumbView.snp.trailing).offset(12)
             $0.top.equalToSuperview().offset(12)
-            $0.trailing.equalToSuperview().offset(-12)
+            $0.trailing.lessThanOrEqualToSuperview().offset(-12)
         }
         subtitleLabel.snp.makeConstraints {
             $0.leading.equalTo(titleLabel)
             $0.top.equalTo(titleLabel.snp.bottom).offset(4)
-            $0.trailing.equalToSuperview().offset(-12)
-        }
-        priceLabel.snp.makeConstraints {
-            $0.leading.equalTo(titleLabel)
-            $0.bottom.equalToSuperview().offset(-14)
+            $0.trailing.lessThanOrEqualToSuperview().offset(-12)
         }
         redeemButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().offset(-12)
@@ -1550,6 +1640,13 @@ private final class RedeemPackageCardView: UIView {
             $0.width.equalTo(70)
             $0.height.equalTo(28)
         }
+        priceLabel.snp.makeConstraints {
+            $0.leading.equalTo(titleLabel)
+            $0.centerY.equalTo(redeemButton)
+            $0.trailing.lessThanOrEqualTo(redeemButton.snp.leading).offset(-8)
+        }
+
+        addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tapCard)))
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -1576,6 +1673,8 @@ private final class RedeemPackageCardView: UIView {
     }
 
     @objc private func tapRedeem() { onRedeem?() }
+
+    @objc private func tapCard() { onRedeem?() }
 
     private static func priceAttributed(amount: Double) -> NSAttributedString {
         let num = formatPrice(amount)

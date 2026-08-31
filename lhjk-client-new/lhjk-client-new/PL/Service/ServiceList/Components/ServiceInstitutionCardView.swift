@@ -1,7 +1,7 @@
 import UIKit
 import SnapKit
 
-/// 套餐列表机构卡片 — 对齐 Figma 3021:2241
+/// 套餐列表机构卡片 — 对齐 Figma 3021:2241 / 3760:10603
 final class ServiceInstitutionCardView: UIView {
 
     var onSwitchTap: (() -> Void)?
@@ -22,28 +22,32 @@ final class ServiceInstitutionCardView: UIView {
 
     private let nameLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdFont(ofSize: 18, weight: .semibold)
+        label.font = .fdFont(ofSize: 16, weight: .semibold)
         label.textColor = .fdText
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return label
     }()
 
-    private let typeBadge: UILabel = {
+    private let typeBadgeContainer: UIView = {
+        let view = UIView()
+        view.layer.cornerRadius = 4
+        view.layer.borderWidth = 0.5
+        view.layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.5).cgColor
+        view.clipsToBounds = true
+        return view
+    }()
+
+    private let typeBadgeLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdFont(ofSize: 14, weight: .regular)
+        label.font = .fdFont(ofSize: 12, weight: .regular)
         label.textColor = .fdPrimary
-        label.backgroundColor = .clear
-        label.layer.cornerRadius = 4
-        label.layer.borderWidth = 0.5
-        label.layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.5).cgColor
-        label.clipsToBounds = true
         label.textAlignment = .center
         return label
     }()
 
     private let metaLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdFont(ofSize: 14, weight: .regular)
+        label.font = .fdFont(ofSize: 12, weight: .regular)
         label.textColor = .fdSubtext
         label.lineBreakMode = .byTruncatingTail
         return label
@@ -54,9 +58,8 @@ final class ServiceInstitutionCardView: UIView {
         let btn = UIButton(type: .system)
         btn.setTitle("切换", for: .normal)
         btn.setTitleColor(.fdPrimary, for: .normal)
-        btn.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
+        btn.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
         btn.setImage(UIImage(named: "institution_switch")?.withRenderingMode(.alwaysOriginal), for: .normal)
-        // 文案在左、图标在右
         btn.semanticContentAttribute = .forceRightToLeft
         btn.contentEdgeInsets = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
         btn.imageEdgeInsets = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: -2)
@@ -80,13 +83,18 @@ final class ServiceInstitutionCardView: UIView {
             $0.size.equalTo(22)
         }
 
-        let titleRow = UIStackView(arrangedSubviews: [nameLabel, typeBadge])
+        typeBadgeContainer.addSubview(typeBadgeLabel)
+        typeBadgeLabel.snp.makeConstraints {
+            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 4, bottom: 2, right: 4))
+        }
+
+        let titleRow = UIStackView(arrangedSubviews: [nameLabel, typeBadgeContainer])
         titleRow.axis = .horizontal
         titleRow.spacing = 8
         titleRow.alignment = .center
 
-        typeBadge.setContentHuggingPriority(.required, for: .horizontal)
-        typeBadge.setContentCompressionResistancePriority(.required, for: .horizontal)
+        typeBadgeContainer.setContentHuggingPriority(.required, for: .horizontal)
+        typeBadgeContainer.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         let infoStack = UIStackView(arrangedSubviews: [titleRow, metaLabel])
         infoStack.axis = .vertical
@@ -115,15 +123,12 @@ final class ServiceInstitutionCardView: UIView {
             $0.centerY.equalTo(iconView)
             $0.trailing.lessThanOrEqualTo(switchButton.snp.leading).offset(-4)
         }
-        typeBadge.snp.makeConstraints {
-            $0.height.equalTo(18)
-        }
         snp.makeConstraints { $0.height.equalTo(78) }
     }
 
     func configure(_ display: ServiceListInstitutionDisplay) {
         nameLabel.text = display.name
-        typeBadge.text = "  \(display.typeLabel)  "
+        typeBadgeLabel.text = display.typeLabel
         let address = display.address.trimmingCharacters(in: .whitespacesAndNewlines)
         let distance = display.distance.trimmingCharacters(in: .whitespacesAndNewlines)
         if address.isEmpty {

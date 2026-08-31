@@ -50,9 +50,13 @@
 
 #### Scenario: 进入设置新密码
 
-- **WHEN** 找回步骤校验手机号与验证码通过
+- **WHEN** 找回步骤用户点击下一步且手机号、验证码格式合法
+- **THEN** 调用 `GET /v1/mobileVerification/checkedSmsCode`（`mobile`、`checkCode`、`type=2`）校验验证码
+- **WHEN** 校验成功
 - **THEN** 切换至「设置新密码」步骤
 - **AND** 展示新密码、确认新密码与提交
+- **WHEN** 校验失败
+- **THEN** Toast 展示服务端错误（如验证码错误/过期），停留找回步骤
 
 #### Scenario: 重置成功
 

@@ -30,4 +30,5 @@ WechatPayChannel → WeChatSDKManager.pay
 
 - 支付二次校验：`openspec/specs/payment/`
 - 权益卡赠送：`giftBenefit` 成功后 `WeChatSDKManager.shareMiniProgram`（见 `openspec/specs/vouchers/`）
+- 微信账号绑定与解绑：安全中心与微信授权页调用 `WeChatSDKManager.sendAuth`、`GET /v1/users/getWechatBindStatus`、`POST /v1/users/bindWechat`、`POST /v1/users/unbindWechat`
 - 登录换票：`LoginService` 后续接 `sendAuth` 返回的 `code`

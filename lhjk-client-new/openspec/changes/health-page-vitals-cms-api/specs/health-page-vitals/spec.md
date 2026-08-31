@@ -113,6 +113,53 @@ CMS 空壳路径（仅 `monitorCardMeta`）无 `backgroundUrl`，MUST 走本地�
 - **WHEN** `cardType` 不在已知集合
 - **THEN** 该卡片不进入 Hub 展示映射（或跳过），不影响其它卡片
 
+### Requirement: 饮食运动卡（cardType = 10）
+
+系统 SHALL 在 Hub 体征网格以独立布局渲染饮食运动卡（Figma 3543:3425）：图标 + 标题「饮食运动」+ 状态徽标 + 三列热量 + 时间；不得用单值+单位布局替代。
+
+热量数字只展示整数（向 0 截断，不四舍五入）。「还可摄入」展示值下限为 0，不出现负数。
+
+字段映射：
+
+| 展示 | 数据来源 |
+|------|----------|
+| 今日摄入 | `dietSportData.intake`（否则 `calculateCaloricVo.intake`） |
+| 今日消耗 | `dietSportData.sport.consumeNum` |
+| 还可摄入 | `dietSportData.remainingIntake`，`< 0` 时展示 `0` |
+| 推荐摄入 | `calculateCaloricVo.finalIntake`（否则 `totalCalories`） |
+
+圆环进度：
+
+```
+ratio = remaining / recommended     // remaining、recommended 同上
+ratio = clamp(ratio, 0, 1)          // >1 取 1，<0 取 0
+progress = 1 - ratio
+```
+
+推荐摄入 `<= 0` 时 `progress = 0`（环全灰、无进度弧）。进度弧从 12 点起沿**逆时针**填充。线宽按设计稿 52pt 直径、3pt 描边随卡片缩放。
+
+标题与三列之间 MUST 留出间距，标题垂直方向压缩优先级为 required，避免「饮食运动」底部被三列盖住。
+
+#### Scenario: 还可摄入为正且小于推荐
+
+- **WHEN** remaining=279、recommended=627
+- **THEN** ratio≈0.445，圆环进度≈0.555；中心数字展示 `279`
+
+#### Scenario: 还可摄入为 0 或负数
+
+- **WHEN** remainingIntake ≤ 0
+- **THEN** 中心数字展示 `0`；ratio 钳为 0；圆环画满（progress=1）
+
+#### Scenario: 还可摄入大于推荐
+
+- **WHEN** remaining / recommended > 1
+- **THEN** ratio 取 1；圆环为空（progress=0）
+
+#### Scenario: 无推荐热量
+
+- **WHEN** finalIntake 与 totalCalories 均缺失或为 0
+- **THEN** 圆环全灰（progress=0）；三列数字仍按整数规则展示
+
 ### Requirement: 柔性字段解码
 
 系统 SHALL 兼容后端将 `monitorTime`、数值 id、`sortId` 等以字符串下发的情况，解码为 Int/Int64 而不导致整包失败。

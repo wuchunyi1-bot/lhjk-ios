@@ -1,6 +1,6 @@
 ## Why
 
-首页「我的富德健康管家团队」仍使用本地 mock 成员；需接入 `GET /v1/session/getUserParticipateAllTeam`，用真实团队成员驱动卡片列表，并在无数据时展示空态。
+首页「我的富德联好健康管家团队」仍使用本地 mock 成员；需接入 `GET /v1/session/getUserParticipateAllTeam`，用真实团队成员驱动卡片列表，并在无数据时展示空态。
 
 ## What Changes
 
@@ -14,7 +14,7 @@
 
 ### New Capabilities
 
-- `home-doctor-team`: 首页富德健康管家团队 API 接入与列表绑定
+- `home-doctor-team`: 首页富德联好健康管家团队 API 接入与列表绑定
 
 ### Modified Capabilities
 
@@ -27,4 +27,4 @@
 - `PL/Home/Cells/HomeTeamCardCell.swift`
 - `PL/Home/HomeViewController.swift`
 - Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495580451e0.md
-- 「服务剩余 N 天」不在本接口范围内，仍暂用现有 `daysLeft`（后续会员/订单接口）
+- 服务剩余天数：`GET /v1/schemeArchive/getRemainServiceTime`（`RemainServiceTimeVO.remainDays`）驱动标题右侧「服务剩余 N 天 ›」

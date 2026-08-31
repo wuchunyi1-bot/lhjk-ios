@@ -55,16 +55,15 @@ final class MessageSegmentedControl: UIControl {
             title.text = item.title
             title.isUserInteractionEnabled = false
 
-            let badge = UILabel()
-            badge.font = .fdFont(ofSize: 12, weight: .medium)
-            badge.textColor = .white
-            badge.textAlignment = .center
+            let badge = UnreadBadgeCountLabel()
+            badge.backgroundColor = .clear
             badge.layer.cornerRadius = 9
             badge.clipsToBounds = true
             badge.isUserInteractionEnabled = false
+            // 左右内边距：单数字仍保持正圆，多位数横向撑开
             badge.snp.makeConstraints {
-                $0.width.greaterThanOrEqualTo(18)
                 $0.height.equalTo(18)
+                $0.width.greaterThanOrEqualTo(18)
             }
 
             let row = UIStackView(arrangedSubviews: [title, badge])

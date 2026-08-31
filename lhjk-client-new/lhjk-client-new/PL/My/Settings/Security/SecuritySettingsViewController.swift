@@ -18,6 +18,7 @@ final class SecuritySettingsViewController: BaseViewController {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
         refreshValues()
+        loadWechatBindStatus()
     }
 
     override func setupUI() {
@@ -276,9 +277,25 @@ final class SecuritySettingsViewController: BaseViewController {
         if let nick = UserDefaults.standard.string(forKey: wechatNicknameKey), !nick.isEmpty {
             wechatValueLabel?.text = nick
         } else if let openId = UserManager.shared.currentUser?.openIdWechat, !openId.isEmpty {
-            wechatValueLabel?.text = "微信用户"
+            wechatValueLabel?.text = "已绑定"
         } else {
             wechatValueLabel?.text = "未绑定"
+        }
+    }
+
+    /// 查询微信绑定状态：`GET /v1/users/getWechatBindStatus`
+    private func loadWechatBindStatus() {
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let status = try await UserService.shared.getWechatBindStatus()
+                let isBound = status.bound ?? false
+                await MainActor.run {
+                    self.wechatValueLabel?.text = isBound ? "已绑定" : "未绑定"
+                }
+            } catch {
+                print("[SecuritySettings] loadWechatBindStatus ✗ \(error.localizedDescription)")
+            }
         }
     }
 

@@ -168,6 +168,7 @@ final class OrderConfirmAddressView: UIView {
     private let chevronView = UIImageView()
     private let selectButton = UIButton(type: .system)
     private var heightConstraint: Constraint?
+    private var addressBottomConstraint: Constraint?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -209,7 +210,6 @@ final class OrderConfirmAddressView: UIView {
             $0.leading.equalToSuperview().offset(68)
             $0.top.equalToSuperview().offset(12)
             $0.trailing.lessThanOrEqualTo(chevronGroup.snp.leading).offset(-12)
-            $0.height.equalTo(27)
         }
 
         personLabel.font = .fdFont(ofSize: 18, weight: .medium)
@@ -225,14 +225,13 @@ final class OrderConfirmAddressView: UIView {
 
         addressLabel.font = .fdFont(ofSize: 16, weight: .regular)
         addressLabel.textColor = OrderConfirmFigma.subtitle
-        addressLabel.numberOfLines = 1
-        addressLabel.lineBreakMode = .byTruncatingTail
+        addressLabel.numberOfLines = 0
         addSubview(addressLabel)
         addressLabel.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(68)
-            $0.top.equalToSuperview().offset(41)
+            $0.top.equalTo(personStack.snp.bottom).offset(4)
             $0.trailing.equalToSuperview().offset(-12)
-            $0.height.equalTo(27)
+            addressBottomConstraint = $0.bottom.equalToSuperview().offset(-12).constraint
         }
 
         chevronCircle.image = UIImage(named: "order_confirm_address_chevron_circle")
@@ -268,7 +267,7 @@ final class OrderConfirmAddressView: UIView {
         }
 
         snp.makeConstraints {
-            heightConstraint = $0.height.equalTo(80).constraint
+            heightConstraint = $0.height.equalTo(72).constraint
         }
     }
 
@@ -294,7 +293,8 @@ final class OrderConfirmAddressView: UIView {
             personStack.snp.updateConstraints { $0.top.equalToSuperview().offset(12) }
             chevronGroup.isHidden = false
             selectButton.isHidden = true
-            heightConstraint?.update(offset: 80)
+            addressBottomConstraint?.activate()
+            heightConstraint?.deactivate()
         } else {
             personLabel.text = "暂无默认地址"
             mobileLabel.text = nil
@@ -306,7 +306,8 @@ final class OrderConfirmAddressView: UIView {
             personStack.snp.updateConstraints { $0.top.equalToSuperview().offset(23) }
             chevronGroup.isHidden = true
             selectButton.isHidden = false
-            heightConstraint?.update(offset: 72)
+            addressBottomConstraint?.deactivate()
+            heightConstraint?.activate()
         }
         setNeedsLayout()
     }
@@ -329,7 +330,7 @@ final class OrderConfirmPickupView: UIView {
     private let institutionLabel = UILabel()
     private let addressLabel = UILabel()
     private let callBar = OrderConfirmInstitutionCallBar()
-    private var heightConstraint: Constraint?
+    private var callBarHeightConstraint: Constraint?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -343,87 +344,86 @@ final class OrderConfirmPickupView: UIView {
         titleLabel.text = "自提地址"
         titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
         titleLabel.textColor = OrderConfirmFigma.title
-        addSubview(titleLabel)
-        titleLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(16)
-            $0.top.equalToSuperview().offset(16)
-            $0.height.equalTo(24)
-        }
+        titleLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         hintContainer.backgroundColor = OrderConfirmFigma.hintBackground
         hintContainer.layer.cornerRadius = 11.5
         hintContainer.layer.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
         hintContainer.clipsToBounds = true
-        addSubview(hintContainer)
-        hintContainer.snp.makeConstraints {
-            $0.trailing.equalToSuperview()
-            $0.top.equalToSuperview().offset(16)
-            $0.size.equalTo(CGSize(width: 156, height: 23))
-        }
 
         hintLabel.text = "请前往以下机构领取商品/设备"
         hintLabel.font = .fdFont(ofSize: 12, weight: .regular)
         hintLabel.textColor = OrderConfirmFigma.hintText
         hintLabel.numberOfLines = 1
+        hintContainer.setContentHuggingPriority(.required, for: .horizontal)
+        hintContainer.setContentCompressionResistancePriority(.required, for: .horizontal)
         hintContainer.addSubview(hintLabel)
         hintLabel.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(12)
-            $0.trailing.lessThanOrEqualToSuperview().offset(-4)
-            $0.centerY.equalToSuperview()
+            $0.trailing.equalToSuperview().offset(-8)
+            $0.top.bottom.equalToSuperview().inset(4)
         }
 
         pinContainer.backgroundColor = OrderConfirmFigma.pinBackground
         pinContainer.layer.cornerRadius = 8
         pinContainer.clipsToBounds = true
-        addSubview(pinContainer)
-        pinContainer.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(16)
-            $0.top.equalToSuperview().offset(58)
-            $0.size.equalTo(16)
-        }
         pinView.contentMode = .scaleAspectFit
         pinContainer.addSubview(pinView)
         pinView.snp.makeConstraints {
             $0.center.equalToSuperview()
             $0.size.equalTo(12)
         }
+        pinContainer.snp.makeConstraints { $0.size.equalTo(16) }
 
         institutionLabel.font = .fdFont(ofSize: 18, weight: .regular)
         institutionLabel.textColor = OrderConfirmFigma.title
-        institutionLabel.numberOfLines = 1
-        addSubview(institutionLabel)
-        institutionLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(39)
-            $0.top.equalToSuperview().offset(52)
-            $0.trailing.equalToSuperview().offset(-12)
-            $0.height.equalTo(27)
-        }
+        institutionLabel.numberOfLines = 0
 
         addressLabel.font = .fdFont(ofSize: 16, weight: .regular)
         addressLabel.textColor = OrderConfirmFigma.subtitle
-        addressLabel.numberOfLines = 1
-        addressLabel.lineBreakMode = .byTruncatingTail
-        addSubview(addressLabel)
-        addressLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(39)
-            $0.top.equalToSuperview().offset(81)
-            $0.trailing.equalToSuperview().offset(-12)
-            $0.height.equalTo(27)
-        }
+        addressLabel.numberOfLines = 0
 
-        addSubview(callBar)
-        callBar.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(-8)
-            $0.trailing.equalToSuperview().offset(8)
-            $0.top.equalToSuperview().offset(120)
-            $0.height.equalTo(46)
-        }
+        let institutionCol = UIStackView(arrangedSubviews: [institutionLabel, addressLabel])
+        institutionCol.axis = .vertical
+        institutionCol.spacing = 6
+
+        let institutionRow = UIStackView(arrangedSubviews: [pinContainer, institutionCol])
+        institutionRow.axis = .horizontal
+        institutionRow.spacing = 7
+        institutionRow.alignment = .top
+
         callBar.onCall = { [weak self] in
             self?.onCall?()
         }
 
-        snp.makeConstraints {
-            heightConstraint = $0.height.equalTo(158).constraint
+        addSubview(titleLabel)
+        addSubview(hintContainer)
+        titleLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(16)
+            $0.top.equalToSuperview().offset(16)
+        }
+        hintContainer.snp.makeConstraints {
+            $0.trailing.equalToSuperview()
+            $0.centerY.equalTo(titleLabel)
+            $0.leading.greaterThanOrEqualTo(titleLabel.snp.trailing).offset(8)
+        }
+
+        let contentStack = UIStackView(arrangedSubviews: [institutionRow])
+        contentStack.axis = .vertical
+        contentStack.spacing = 12
+        addSubview(contentStack)
+        addSubview(callBar)
+        contentStack.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(16)
+            $0.trailing.equalToSuperview()
+            $0.top.equalTo(titleLabel.snp.bottom).offset(12)
+        }
+
+        callBar.snp.makeConstraints {
+            $0.top.equalTo(contentStack.snp.bottom).offset(12)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalToSuperview()
+            callBarHeightConstraint = $0.height.equalTo(46).constraint
         }
     }
 
@@ -433,7 +433,7 @@ final class OrderConfirmPickupView: UIView {
         institutionLabel.text = name
         addressLabel.text = address
         callBar.isHidden = !showCall
-        heightConstraint?.update(offset: showCall ? 158 : 112)
+        callBarHeightConstraint?.update(offset: showCall ? 46 : 0)
     }
 }
 
@@ -1135,10 +1135,21 @@ final class OrderConfirmSubmitBar: UIView {
         cancelButton.setTitle("取消订单", for: .normal)
         cancelButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .regular)
         cancelButton.setTitleColor(UIColor(hexString: "#535D72"), for: .normal)
-        cancelButton.backgroundColor = .white
+        cancelButton.backgroundColor = .clear
         cancelButton.layer.cornerRadius = 20
         cancelButton.layer.borderWidth = 1
         cancelButton.layer.borderColor = UIColor(hexString: "#E5E7EB").cgColor
+        if #available(iOS 15.0, *) {
+            var config = UIButton.Configuration.plain()
+            config.cornerStyle = .capsule
+            config.title = "取消订单"
+            config.baseForegroundColor = UIColor(hexString: "#535D72")
+            config.background.backgroundColor = .clear
+            config.background.strokeColor = UIColor(hexString: "#E5E7EB")
+            config.background.strokeWidth = 1
+            config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 18, bottom: 0, trailing: 18)
+            cancelButton.configuration = config
+        }
         cancelButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 18, bottom: 0, right: 18)
         cancelButton.addTarget(self, action: #selector(tapCancel), for: .touchUpInside)
         cancelButton.isHidden = true

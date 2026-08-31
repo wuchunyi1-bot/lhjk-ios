@@ -419,30 +419,31 @@ final class RongCloudManager {
         )
     }
 
-    /// 发送图片消息
+    /// 发送图片消息（图片已上传 OSS，`imageUrl` 写入 extra 并设置 `remoteUrl`）
     /// - Parameter senderUserInfo: 发送者信息（userId / name / portrait），由上层 BLL 传入
     func sendImageMessage(
         conversationType: RCConversationType,
         targetId: String,
         image: UIImage,
+        imageUrl: String,
         extra: String? = nil,
         senderUserInfo: RCUserInfo? = nil,
         completion: @escaping (RCMessage?, RCErrorCode) -> Void
     ) {
         let imgMsg = RCImageMessage(image: image)
+        imgMsg.remoteUrl = imageUrl
         imgMsg.extra = extra
         if let senderInfo = senderUserInfo {
             imgMsg.senderUserInfo = senderInfo
         }
 
-        client.sendMediaMessage(
+        client.sendMessage(
             conversationType,
             targetId: targetId,
             content: imgMsg,
             pushContent: nil,
             pushData: nil,
             attached: nil,
-            progress: nil,
             success: { [weak self] messageId in
                 guard let self = self else { return }
                 print("[RongCloud] sendImageMessage ✓ messageId=\(messageId) → messageSentPublisher.send(\(targetId))")
@@ -454,8 +455,7 @@ final class RongCloudManager {
             error: { [weak self] errorCode, _ in
                 self?.logError("sendImageMessage", code: errorCode)
                 completion(nil, errorCode)
-            },
-            cancel: nil
+            }
         )
     }
 
@@ -581,29 +581,30 @@ final class RongCloudManager {
         }
     }
 
-    /// 发送高清语音消息（RC:HQVCMsg）
+    /// 发送高清语音消息（语音已上传 OSS，`voiceUrl` 写入 extra 并设置 `remoteUrl`）
     func sendHQVoiceMessage(
         conversationType: RCConversationType,
         targetId: String,
         localPath: String,
         duration: Int,
+        voiceUrl: String,
         extra: String? = nil,
         senderUserInfo: RCUserInfo? = nil,
         completion: @escaping (RCMessage?, RCErrorCode) -> Void
     ) {
         let msg = RCHQVoiceMessage(path: localPath, duration: duration)
+        msg.remoteUrl = voiceUrl
         msg.extra = extra
         if let senderInfo = senderUserInfo {
             msg.senderUserInfo = senderInfo
         }
-        client.sendMediaMessage(
+        client.sendMessage(
             conversationType,
             targetId: targetId,
             content: msg,
             pushContent: nil,
             pushData: nil,
             attached: nil,
-            progress: nil,
             success: { [weak self] messageId in
                 guard let self = self else { return }
                 print("[RongCloud] sendHQVoiceMessage ✓ messageId=\(messageId) → messageSentPublisher.send(\(targetId))")
@@ -615,8 +616,7 @@ final class RongCloudManager {
             error: { [weak self] errorCode, _ in
                 self?.logError("sendHQVoiceMessage", code: errorCode)
                 completion(nil, errorCode)
-            },
-            cancel: nil
+            }
         )
     }
 

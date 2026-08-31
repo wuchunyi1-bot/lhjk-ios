@@ -16,7 +16,7 @@
 - 真实检查更新 / App Store 评分跳转（原型 toast）
 - 客服电话拨号（PRD：只读不可点）
 - 协议详情（不在本页）
-- 不改设置主页入口（已有「关于富德健康」→ `/me/settings/about`）
+- 不改设置主页入口（已有「关于富德联好健康」→ `/me/settings/about`）
 
 ## Decisions
 
@@ -24,13 +24,13 @@
 2. **版本号**：`Bundle.main` 的 `CFBundleShortVersionString`，展示为 `v{version}`；点击仅 toast「当前已经是最新版本」，不做比对。
 3. **评分**：点击 toast「暂无法打开应用市场」，不调 StoreKit / 外链。
 4. **联系我们**：右侧 `400-888-6520`，无箭头、无 tap。
-5. **页脚**：`Copyright © 2026 富德健康` + `粤ICP备xxxxx号`（与 Vue 一致占位；正式备案号待法务替换）。
+5. **页脚**：`Copyright © 2026 富德联好健康` + `粤ICP备2023016723号-1`。
 6. **视觉**：顶区浅橙到 `fdBg` 渐变；Logo 68×68、圆角 18、`fdPrimary`→浅橙渐变、「富」白字；卡用 `fdSurface` + 圆角/轻阴影，行高 ≥52。
 7. **实现范围**：仅重写 `AboutSettingsViewController`；路由已注册。
 
 ## Risks / Trade-offs
 
-- [备案号占位] → 与 Vue/PRD 一致；上线前替换正式 ICP
+- [备案号] → `粤ICP备2023016723号-1`
 - [评分未接商店] → 产品确认后接 `itms-apps` / `SKStoreReviewController`
 
 ## Open Questions

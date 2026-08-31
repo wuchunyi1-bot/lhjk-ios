@@ -124,7 +124,7 @@ final class PrivacyPromptView: UIView {
 
     private let unavailableLabel: UILabel = {
         let label = UILabel()
-        label.text = "未同意隐私政策，暂无法使用富德健康"
+        label.text = "未同意隐私政策，暂无法使用富德联好健康"
         label.font = .fdLoginInput
         label.textColor = .fdSubtext
         label.textAlignment = .center

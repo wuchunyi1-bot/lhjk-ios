@@ -25,6 +25,11 @@ enum MessageRoutes {
             )
         }
 
+        r.register(path: "/conversations/:id/members") { params in
+            let id = params["id"] as? String ?? ""
+            return GroupMembersViewController(groupId: id)
+        }
+
         // 通知中心
         r.register(path: "/notifications") { _ in NotificationsViewController() }
     }

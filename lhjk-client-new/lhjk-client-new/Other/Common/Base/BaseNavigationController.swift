@@ -57,4 +57,25 @@ extension UIImage {
     static var fdNavCart: UIImage? {
         UIImage(named: "nav_cart")?.withRenderingMode(.alwaysTemplate)
     }
+
+    /// 聊天详情右上角查看群成员（Figma 4497:4551）
+    static var fdNavGroupMembers: UIImage? {
+        UIImage(named: "chat_nav_group_members")?.withRenderingMode(.alwaysOriginal)
+    }
+
+    /// 服务首页顶栏购物车（彩色切图 `serice_cart`）
+    static var fdServiceHubCart: UIImage? {
+        fdServiceHubCart(pointSize: 32)
+    }
+
+    /// 按展示尺寸缩放 `serice_cart`（切图留白较多，需略大于线框导航图标）
+    static func fdServiceHubCart(pointSize: CGFloat) -> UIImage? {
+        guard let image = UIImage(named: "serice_cart") else { return nil }
+        let size = CGSize(width: pointSize, height: pointSize)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = UIScreen.main.scale
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            image.draw(in: CGRect(origin: .zero, size: size))
+        }
+    }
 }

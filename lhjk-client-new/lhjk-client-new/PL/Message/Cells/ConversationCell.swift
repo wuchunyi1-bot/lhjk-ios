@@ -54,17 +54,17 @@ final class ConversationCell: UITableViewCell {
         return l
     }()
 
-    private let badgeLabel: UILabel = {
-        let l = UILabel()
-        l.font = .fdFont(ofSize: 12, weight: .medium)
-        l.textColor = .white
-        l.backgroundColor = .fdDanger
-        l.textAlignment = .center
-        l.layer.cornerRadius = 9
-        l.clipsToBounds = true
-        l.isHidden = true
-        return l
+    /// 未读徽标：红底容器 + 居中数字（避免 UILabel 固定高度时字形视觉偏上）
+    private let badgeView: UIView = {
+        let v = UIView()
+        v.backgroundColor = .fdDanger
+        v.layer.cornerRadius = 9
+        v.clipsToBounds = true
+        v.isHidden = true
+        return v
     }()
+
+    private let badgeLabel = UnreadBadgeCountLabel()
 
     private let nameLabel: UILabel = {
         let l = UILabel()
@@ -126,8 +126,9 @@ final class ConversationCell: UITableViewCell {
             make.leading.trailing.equalToSuperview().inset(12)
         }
 
-        [avatarView, collageView, badgeLabel, nameLabel, roleTag, previewLabel, timeLabel, separatorLine]
+        [avatarView, collageView, badgeView, nameLabel, roleTag, previewLabel, timeLabel, separatorLine]
             .forEach(cardContainer.addSubview)
+        badgeView.addSubview(badgeLabel)
         avatarView.addSubview(avatarPlaceholder)
 
         // 2×2 collage
@@ -154,11 +155,14 @@ final class ConversationCell: UITableViewCell {
         collageView.snp.makeConstraints { $0.edges.equalTo(avatarView) }
         avatarPlaceholder.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        badgeLabel.snp.makeConstraints { make in
+        badgeView.snp.makeConstraints { make in
             make.top.equalTo(avatarView).offset(-2)
             make.trailing.equalTo(avatarView).offset(2)
             make.height.equalTo(18)
             make.width.greaterThanOrEqualTo(18)
+        }
+        badgeLabel.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
         }
 
         timeLabel.snp.makeConstraints { make in
@@ -208,10 +212,10 @@ final class ConversationCell: UITableViewCell {
         timeLabel.text = conv.lastTime
 
         if let badge = conv.unreadBadge {
-            badgeLabel.isHidden = false
-            badgeLabel.text = " \(badge) "
+            badgeView.isHidden = false
+            badgeLabel.text = badge
         } else {
-            badgeLabel.isHidden = true
+            badgeView.isHidden = true
         }
 
         separatorLine.isHidden = isLast || isSingle
@@ -287,5 +291,49 @@ final class ConversationCell: UITableViewCell {
         }
         guard let name else { return nil }
         return UIImage(named: name)
+    }
+}
+
+/// 未读数字徽标：在固定高度内按字形边界垂直居中绘制
+final class UnreadBadgeCountLabel: UILabel {
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        font = .fdFont(ofSize: 11, weight: .medium)
+        textColor = .white
+        textAlignment = .center
+        isUserInteractionEnabled = false
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override var intrinsicContentSize: CGSize {
+        let size = super.intrinsicContentSize
+        // 左右各 5pt，保证单数字仍为正圆（≥18）
+        return CGSize(width: max(18, ceil(size.width) + 10), height: 18)
+    }
+
+    override func drawText(in rect: CGRect) {
+        guard let text, let font else {
+            super.drawText(in: rect)
+            return
+        }
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: textColor ?? .white,
+            .paragraphStyle: paragraph,
+        ]
+        let size = (text as NSString).boundingRect(
+            with: CGSize(width: rect.width, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: attrs,
+            context: nil
+        ).size
+        // 光学居中：自定义字体数字常略偏上，整体下移 0.5pt
+        let y = rect.midY - size.height / 2 + 0.5
+        let drawRect = CGRect(x: rect.minX, y: y, width: rect.width, height: size.height)
+        (text as NSString).draw(in: drawRect, withAttributes: attrs)
     }
 }

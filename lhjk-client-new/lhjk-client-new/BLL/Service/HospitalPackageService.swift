@@ -106,6 +106,26 @@ final class HospitalPackageService {
         )
     }
 
+    /// `GET /v1/hospitalPackage/getEnabledHospitalPackageListByCategory`
+    /// 查询医院全部启用套包并按业务类别分组（选择套餐页一次性加载）
+    func fetchEnabledHospitalPackageListByCategory(
+        hospitalId: String? = nil
+    ) async throws -> [HospitalPackageCategoryVO] {
+        let params: [String: Any] = ["hospitalId": Self.resolvedHospitalId(hospitalId)]
+
+        let response: APIResponse<[HospitalPackageCategoryVO]> = try await APIManager.shared.getAsync(
+            path: "/v1/hospitalPackage/getEnabledHospitalPackageListByCategory",
+            parameters: params,
+            responseType: APIResponse<[HospitalPackageCategoryVO]>.self
+        )
+
+        guard response.isSuccess else {
+            throw HospitalPackageServiceError.requestFailed(response.msg ?? "获取套包分类列表失败")
+        }
+
+        return response.data ?? []
+    }
+
     func fetchHospitalServicePackages(
         categoryServiceId: String,
         hospitalId: String? = nil,

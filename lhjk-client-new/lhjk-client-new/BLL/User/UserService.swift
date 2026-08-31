@@ -309,6 +309,52 @@ final class UserService: UserServiceProtocol {
         }
         print("[UserService] changeCurrentPassword ✓")
     }
+
+    // MARK: - 微信绑定管理
+
+    /// 查询当前用户微信绑定状态
+    /// `GET /v1/users/getWechatBindStatus`
+    func getWechatBindStatus() async throws -> WechatBindStatusVO {
+        print("[UserService] getWechatBindStatus")
+        let response: APIResponse<WechatBindStatusVO> = try await APIManager.shared
+            .getAsync(path: "/v1/users/getWechatBindStatus", parameters: nil, responseType: APIResponse<WechatBindStatusVO>.self)
+
+        guard response.isSuccess, let data = response.data else {
+            print("[UserService] getWechatBindStatus ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw UserServiceError.queryFailed(response.msg ?? "")
+        }
+        print("[UserService] getWechatBindStatus ✓ bound=\(data.bound ?? false)")
+        return data
+    }
+
+    /// 为当前用户绑定微信账号
+    /// `POST /v1/users/bindWechat`
+    func bindWechat(code: String) async throws {
+        print("[UserService] bindWechat → code=\(code)")
+        let params: [String: Any] = ["code": code]
+        let response: APIResponse<EmptyResponse> = try await APIManager.shared
+            .postQueryAsync(path: "/v1/users/bindWechat", parameters: params, responseType: APIResponse<EmptyResponse>.self)
+
+        guard response.isSuccess else {
+            print("[UserService] bindWechat ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw UserServiceError.wechatBindFailed(response.msg ?? "")
+        }
+        print("[UserService] bindWechat ✓")
+    }
+
+    /// 解除当前用户的微信账号绑定
+    /// `POST /v1/users/unbindWechat`
+    func unbindWechat() async throws {
+        print("[UserService] unbindWechat")
+        let response: APIResponse<EmptyResponse> = try await APIManager.shared
+            .postAsync(path: "/v1/users/unbindWechat", parameters: nil, responseType: APIResponse<EmptyResponse>.self)
+
+        guard response.isSuccess else {
+            print("[UserService] unbindWechat ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw UserServiceError.wechatUnbindFailed(response.msg ?? "")
+        }
+        print("[UserService] unbindWechat ✓")
+    }
 }
 
 // MARK: - Error
@@ -333,6 +379,8 @@ enum UserServiceError: Error, LocalizedError {
     case passwordChangeFailed(String)
     case mobileChangeFailed(String)
     case cancelFailed(String)
+    case wechatBindFailed(String)
+    case wechatUnbindFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -342,6 +390,8 @@ enum UserServiceError: Error, LocalizedError {
         case .passwordChangeFailed(let msg): return msg.isEmpty ? "密码修改失败" : msg
         case .mobileChangeFailed(let msg): return msg.isEmpty ? "手机号修改失败" : msg
         case .cancelFailed(let msg): return msg.isEmpty ? "注销失败，请稍后重试" : msg
+        case .wechatBindFailed(let msg): return msg.isEmpty ? "微信绑定失败" : msg
+        case .wechatUnbindFailed(let msg): return msg.isEmpty ? "微信解绑失败" : msg
         }
     }
 }

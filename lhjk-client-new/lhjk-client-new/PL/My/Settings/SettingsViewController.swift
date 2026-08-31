@@ -120,7 +120,7 @@ final class SettingsViewController: BaseViewController {
                     action: { [weak self] in self?.handleClearCache() }
                 ),
                 .init(
-                    title: "关于富德健康",
+                    title: "关于富德联好健康",
                     subtitle: "品牌、版本与客服信息",
                     action: { Router.shared.push("/me/settings/about") }
                 ),
@@ -182,7 +182,7 @@ final class SettingsViewController: BaseViewController {
     private func handleLogout() {
         let alert = UIAlertController(
             title: "确认退出登录",
-            message: "退出后需要重新登录才能使用富德健康。",
+            message: "退出后需要重新登录才能使用富德联好健康。",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "取消", style: .cancel))

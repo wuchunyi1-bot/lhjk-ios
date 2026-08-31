@@ -104,9 +104,6 @@ final class OrderConfirmViewController: BaseViewController {
             sections.append(scrollActionBar)
         }
         sections.forEach { contentStack.addArrangedSubview($0) }
-        if showsOrderListPayPresentation {
-            contentStack.setCustomSpacing(4, after: statusView)
-        }
 
         submitBar.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()

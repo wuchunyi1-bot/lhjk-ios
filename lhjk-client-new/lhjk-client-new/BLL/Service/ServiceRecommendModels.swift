@@ -135,6 +135,36 @@ struct PaginatedHospitalPackageData: Decodable {
     }
 }
 
+/// `GET /v1/hospitalPackage/getEnabledHospitalPackageListByCategory` 分组项
+struct HospitalPackageCategoryVO: Decodable {
+    let id: String
+    let serviceName: String?
+    let imgUrl: String?
+    let packageList: [HospitalPackagePageVO]?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, serviceName, imgUrl, packageList
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = Self.decodeFlexibleString(c, key: .id)
+        serviceName = try c.decodeIfPresent(String.self, forKey: .serviceName)
+        imgUrl = try c.decodeIfPresent(String.self, forKey: .imgUrl)
+        packageList = try c.decodeIfPresent([HospitalPackagePageVO].self, forKey: .packageList)
+    }
+
+    private static func decodeFlexibleString<K: CodingKey>(
+        _ container: KeyedDecodingContainer<K>,
+        key: K
+    ) -> String {
+        if let value = try? container.decode(String.self, forKey: key) { return value }
+        if let value = try? container.decode(Int64.self, forKey: key) { return String(value) }
+        if let value = try? container.decode(Int.self, forKey: key) { return String(value) }
+        return ""
+    }
+}
+
 // MARK: - 零售业务分类
 
 /// `GET /v1/hospitalPackage/getCategoryServiceListByType` 列表项
@@ -179,6 +209,50 @@ enum CategoryServiceListMapper {
                 imageUrl: imageUrl?.isEmpty == false ? imageUrl : nil
             )
         }
+    }
+}
+
+enum HospitalPackageCategoryListMapper {
+
+    struct LoadedData {
+        let categories: [ServiceListCategory]
+        let packageSections: [ServiceListPackageSection]
+    }
+
+    static func map(_ items: [HospitalPackageCategoryVO]) -> LoadedData {
+        var categories: [ServiceListCategory] = []
+        var packageSections: [ServiceListPackageSection] = []
+        var globalIndex = 0
+
+        for vo in items {
+            let id = vo.id.trimmingCharacters(in: .whitespacesAndNewlines)
+            let title = vo.serviceName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard !id.isEmpty, !title.isEmpty else { continue }
+
+            let records = vo.packageList ?? []
+            guard !records.isEmpty else { continue }
+
+            let imageUrl = vo.imgUrl?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let category = ServiceListCategory(
+                id: id,
+                title: title,
+                imageUrl: imageUrl?.isEmpty == false ? imageUrl : nil
+            )
+            categories.append(category)
+
+            var sectionRows: [ServiceListPackageRow] = []
+            for (index, record) in records.enumerated() {
+                let item = HospitalPackageMapper.toPackageItem(record, index: globalIndex + index)
+                sectionRows.append(ServiceListPackageRow(item: item, categoryServiceId: id))
+            }
+            globalIndex += records.count
+            packageSections.append(ServiceListPackageSection(category: category, rows: sectionRows))
+        }
+
+        return LoadedData(
+            categories: categories,
+            packageSections: packageSections
+        )
     }
 }
 

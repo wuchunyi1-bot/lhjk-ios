@@ -50,6 +50,9 @@
 | F2 | `richText` | `[团队知识]` |
 | F3 | 其它 | `[文件]` |
 
+- 文件大小：`fileSize` 为纯数字字节时展示为 `B` / `KB` / `MB`（如 `266886` → `260.6KB`）；已带单位则原样展示
+- 点击气泡：非 `mp3` 文件 → `WebViewController` 打开 `fileUrl`（http(s) / file:// / 本地路径）；`mp3` → 走语音播放
+
 ### 1.3 SysNotifyCell
 
 #### AD:SysNotify — 统一卡

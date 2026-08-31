@@ -31,6 +31,8 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     // MARK: - UI State
 
     private var inputBottomConstraint: Constraint?
+    private var tableBottomConstraint: Constraint?
+    private var isInputBarEmbedded = false
     private var isVoiceCancelled = false
     private let audioRecorder = AudioRecorder()
     private let quoteVoicePlayback = VoicePlaybackController()
@@ -66,6 +68,17 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         return imageView
     }()
     private var quotePreviewBar: QuotePreviewBar?
+
+    /// `getGroup.status != 1` 时底部提示（Figma 4497:5085）
+    private let expiredHintLabel: UILabel = {
+        let label = UILabel()
+        label.text = "服务已过期，仅可查看历史消息"
+        label.font = .fdFont(ofSize: 12, weight: .regular)
+        label.textColor = ChatBubbleStyle.secondaryText
+        label.textAlignment = .center
+        label.isHidden = true
+        return label
+    }()
 
     // MARK: - UI
 
@@ -134,8 +147,15 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         view.backgroundColor = .fdBg
         title = viewModel.conversation?.name ?? "通知"
 
-        [tableView, chatInputBar].forEach(view.addSubview)
+        view.addSubview(tableView)
         tableView.refreshControl = refreshControl
+
+        view.addSubview(expiredHintLabel)
+        expiredHintLabel.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-16)
+        }
 
         view.addSubview(recordingOverlay)
         recordingOverlay.addSubview(recordingBgView)
@@ -147,25 +167,15 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             make.leading.trailing.bottom.equalToSuperview()
             make.height.greaterThanOrEqualTo(300)
         }
-        recordingLineView.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.width.equalTo(183)
-            make.height.equalTo(6)
-            make.bottom.equalTo(chatInputBar.snp.top).offset(-36)
-        }
-        recordingHintLabel.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.bottom.equalTo(recordingLineView.snp.top).offset(-28)
-        }
 
-        tableView.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(chatInputBar.snp.top)
-        }
+        setupGroupMembersBarButton()
 
-        chatInputBar.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview()
-            inputBottomConstraint = make.bottom.equalToSuperview().constraint
+        if viewModel.isMessagingReadOnly {
+            applyTableOnlyLayout(showExpiredHint: true)
+        } else if shouldDeferInputBarUntilGroupMetadataLoaded {
+            applyTableOnlyLayout(showExpiredHint: false)
+        } else {
+            embedInputBarLayout()
         }
 
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
@@ -174,11 +184,111 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         loadMessages()
     }
 
+    private func embedInputBarLayout() {
+        guard !isInputBarEmbedded else { return }
+        expiredHintLabel.isHidden = true
+        view.addSubview(chatInputBar)
+        isInputBarEmbedded = true
+
+        recordingLineView.snp.remakeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.width.equalTo(183)
+            make.height.equalTo(6)
+            make.bottom.equalTo(chatInputBar.snp.top).offset(-36)
+        }
+        recordingHintLabel.snp.remakeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.bottom.equalTo(recordingLineView.snp.top).offset(-28)
+        }
+
+        tableView.snp.remakeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            tableBottomConstraint = make.bottom.equalTo(chatInputBar.snp.top).constraint
+        }
+
+        chatInputBar.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview()
+            inputBottomConstraint = make.bottom.equalToSuperview().constraint
+        }
+    }
+
+    private func applyTableOnlyLayout(showExpiredHint: Bool) {
+        if isInputBarEmbedded {
+            chatInputBar.dismissPanel()
+            chatInputBar.resignTextInput()
+            chatInputBar.removeFromSuperview()
+            isInputBarEmbedded = false
+            inputBottomConstraint = nil
+        }
+        quotePreviewBar?.removeFromSuperview()
+        quotePreviewBar = nil
+        expiredHintLabel.isHidden = !showExpiredHint
+
+        tableView.snp.remakeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            if showExpiredHint {
+                tableBottomConstraint = make.bottom.equalTo(expiredHintLabel.snp.top).offset(-12).constraint
+            } else {
+                tableBottomConstraint = make.bottom.equalTo(view.safeAreaLayoutGuide).constraint
+            }
+        }
+
+        recordingLineView.snp.remakeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.width.equalTo(183)
+            make.height.equalTo(6)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-120)
+        }
+        recordingHintLabel.snp.remakeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.bottom.equalTo(recordingLineView.snp.top).offset(-28)
+        }
+    }
+
+    private func applyMessagingReadOnlyUIIfNeeded() {
+        if viewModel.isMessagingReadOnly {
+            applyTableOnlyLayout(showExpiredHint: true)
+        } else if shouldDeferInputBarUntilGroupMetadataLoaded {
+            applyTableOnlyLayout(showExpiredHint: false)
+        } else if !isInputBarEmbedded {
+            embedInputBarLayout()
+        } else {
+            expiredHintLabel.isHidden = true
+        }
+    }
+
+    private func setupGroupMembersBarButton() {
+        guard viewModel.conversationType == .ConversationType_GROUP else { return }
+        let button = UIButton(type: .system)
+        button.setImage(.fdNavGroupMembers, for: .normal)
+        button.addTarget(self, action: #selector(openGroupMembers), for: .touchUpInside)
+        button.snp.makeConstraints { $0.size.equalTo(24) }
+        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: button)
+    }
+
+    @objc private func openGroupMembers() {
+        Router.shared.push("/conversations/:id/members", params: ["id": viewModel.conversationId])
+    }
+
+    private var shouldDeferInputBarUntilGroupMetadataLoaded: Bool {
+        viewModel.conversationType == .ConversationType_GROUP
+            && viewModel.conversation?.groupStatus == nil
+    }
+
     deinit { NotificationCenter.default.removeObserver(self) }
 
     // MARK: - ViewModel Binding
 
     override func bindViewModel() {
+        viewModel.$conversation
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] conv in
+                guard let self else { return }
+                self.title = conv?.name ?? "通知"
+                self.applyMessagingReadOnlyUIIfNeeded()
+            }
+            .store(in: &cancellables)
+
         // 消息列表变更 → 刷新 TableView + 滚动至底
         viewModel.$messages
             .receive(on: DispatchQueue.main)
@@ -230,8 +340,10 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
 
     private func loadMessages() {
         Task {
+            await viewModel.refreshConversationMetadata()
             await viewModel.loadMessages()
             await MainActor.run {
+                self.applyMessagingReadOnlyUIIfNeeded()
                 self.scrollToBottom(animated: false)
             }
         }
@@ -291,6 +403,9 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             let cell = tableView.dequeueReusableCell(withIdentifier: FileBubbleCell.reuseID, for: indexPath) as! FileBubbleCell
             cell.delegate = self
             cell.configure(msg, tone: tone, convRole: convRole)
+            cell.onTapFile = { [weak self] message in
+                self?.openFileMessage(message)
+            }
             return cell
         case .video:
             let cell = tableView.dequeueReusableCell(withIdentifier: VideoBubbleCell.reuseID, for: indexPath) as! VideoBubbleCell
@@ -317,6 +432,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     // MARK: - Keyboard
 
     @objc private func keyboardWillShow(_ n: Notification) {
+        guard isInputBarEmbedded else { return }
         guard chatInputBar.activePanel == .none else { return }
         guard let kb = n.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
         inputBottomConstraint?.update(offset: -kb.height)
@@ -325,6 +441,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     }
 
     @objc private func keyboardWillHide(_ n: Notification) {
+        guard isInputBarEmbedded else { return }
         inputBottomConstraint?.update(offset: 0)
         UIView.animate(withDuration: 0.25) { self.view.layoutIfNeeded() }
     }
@@ -405,6 +522,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     // MARK: - Quote Preview
 
     private func showQuotePreview(for reply: ReplyMessage) {
+        guard isInputBarEmbedded else { return }
         quotePreviewBar?.removeFromSuperview()
         let bar = QuotePreviewBar()
         bar.configure(with: reply)
@@ -436,6 +554,50 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         case .playVideo: showToast("视频播放")
         case .none: break
         }
+    }
+
+    // MARK: - File Preview
+
+    private func openFileMessage(_ message: ChatMessage) {
+        guard let file = message.fileContent else {
+            showToast("无法打开文件")
+            return
+        }
+
+        let suffix = (file.fileSuffix ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if suffix == "mp3" {
+            guard let urlPath = file.fileUrl?.trimmingCharacters(in: .whitespacesAndNewlines), !urlPath.isEmpty else {
+                showToast("无法打开音频")
+                return
+            }
+            playVoice(urlPath: urlPath)
+            return
+        }
+
+        guard let urlString = resolveFileWebURL(file) else {
+            showToast("无法打开文件")
+            return
+        }
+
+        let title = (file.fileName ?? "文件").trimmingCharacters(in: .whitespacesAndNewlines)
+        let webVC = WebViewController(urlString: urlString, title: title.isEmpty ? "文件" : title)
+        navigationController?.pushViewController(webVC, animated: true)
+    }
+
+    private func resolveFileWebURL(_ file: FileMessage) -> String? {
+        guard let raw = file.fileUrl?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
+            return nil
+        }
+
+        if raw.hasPrefix("http://") || raw.hasPrefix("https://") || raw.hasPrefix("file://") {
+            return raw
+        }
+
+        if raw.hasPrefix("/") {
+            return URL(fileURLWithPath: raw).absoluteString
+        }
+
+        return URL(string: raw)?.absoluteString ?? raw
     }
 
     // MARK: - Voice Playback
@@ -808,11 +970,12 @@ final class ChatInputBar: UIView {
         /// 左侧按钮压入输入框约 50pt，占位/文字从 56pt 起（对齐 Figma 35346）
         static let textLeadingInset: CGFloat = leftButtonLeading + leftButtonSize.width - horizontalInset + 6
         static let iconSize: CGFloat = 24
-        static let panelItemSize: CGFloat = 44
-        static let panelItemCorner: CGFloat = 14
+        static let panelItemWidth: CGFloat = 44
+        static let panelItemIconHeight: CGFloat = 44
         static let panelItemLeading: CGFloat = 20
         static let panelItemSpacing: CGFloat = 42
-        static let panelItemTop: CGFloat = 13
+        static let panelItemTop: CGFloat = 4
+        static let panelItemLabelGap: CGFloat = 6
     }
 
     private let backgroundView: UIView = {
@@ -884,15 +1047,17 @@ final class ChatInputBar: UIView {
 
     private let panelContainer = UIView()
     private var panelAreaHeightConstraint: Constraint?
+    private var emojiCollectionTopConstraint: Constraint?
+    private var emojiCollectionHeightConstraint: Constraint?
 
     private lazy var photoItem = makePanelItem(
-        iconName: "chat_input_img",
+        icon: panelAssetIcon("chat_input_img"),
         title: "图片",
         action: #selector(photoTapped)
     )
 
     private lazy var fileItem = makePanelItem(
-        iconName: "chat_input_file",
+        icon: panelAssetIcon("chat_input_file"),
         title: "文件",
         action: #selector(fileTapped)
     )
@@ -929,6 +1094,7 @@ final class ChatInputBar: UIView {
 
     override func safeAreaInsetsDidChange() {
         super.safeAreaInsetsDidChange()
+        updateInputPresentation()
         updateHeight(animated: false)
     }
 
@@ -1067,19 +1233,19 @@ final class ChatInputBar: UIView {
         photoItem.view.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(Layout.panelItemLeading)
             make.top.equalToSuperview().offset(Layout.panelItemTop)
-            make.width.equalTo(Layout.panelItemSize)
+            make.width.equalTo(Layout.panelItemWidth)
         }
 
         fileItem.view.snp.makeConstraints { make in
             make.leading.equalTo(photoItem.view.snp.trailing).offset(Layout.panelItemSpacing)
             make.top.equalTo(photoItem.view)
-            make.width.equalTo(Layout.panelItemSize)
+            make.width.equalTo(Layout.panelItemWidth)
         }
 
         emojiCollection.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview().inset(12)
-            make.top.equalToSuperview().offset(8)
-            make.bottom.equalToSuperview().inset(8)
+            emojiCollectionTopConstraint = make.top.equalToSuperview().offset(0).constraint
+            emojiCollectionHeightConstraint = make.height.equalTo(0).constraint
         }
 
         snp.makeConstraints { make in
@@ -1090,11 +1256,12 @@ final class ChatInputBar: UIView {
         updateInputPresentation()
     }
 
-    private func panelContentHeight(for panel: Panel) -> CGFloat {
+    private func panelAreaHeight(for panel: Panel) -> CGFloat {
+        let safeBottom = safeAreaInsets.bottom
         switch panel {
-        case .none: return 0
-        case .more: return Layout.morePanelContentHeight
-        case .emoji: return Layout.emojiPanelContentHeight
+        case .none: return safeBottom
+        case .more: return Layout.morePanelContentHeight + safeBottom
+        case .emoji: return Layout.emojiPanelContentHeight + safeBottom
         }
     }
 
@@ -1143,13 +1310,12 @@ final class ChatInputBar: UIView {
         return content + safeAreaInsets.bottom
     }
 
-    private func makePanelItem(iconName: String, title: String, action: Selector) -> (view: UIView, button: UIButton) {
+    private func panelAssetIcon(_ name: String) -> UIImage? {
+        UIImage(named: name)?.withRenderingMode(.alwaysOriginal)
+    }
+
+    private func makePanelItem(icon: UIImage?, title: String, action: Selector) -> (view: UIView, button: UIButton) {
         let container = UIView()
-        let tile = UIView()
-        tile.backgroundColor = .white
-        tile.layer.cornerRadius = Layout.panelItemCorner
-        tile.layer.borderWidth = 1
-        tile.layer.borderColor = UIColor(hexString: "#FFE0D3").cgColor
 
         let button = UIButton(type: .custom)
         button.addTarget(self, action: action, for: .touchUpInside)
@@ -1157,7 +1323,7 @@ final class ChatInputBar: UIView {
         let iconView = UIImageView()
         iconView.contentMode = .scaleAspectFit
         iconView.isUserInteractionEnabled = false
-        iconView.image = UIImage(named: iconName)?.withRenderingMode(.alwaysOriginal)
+        iconView.image = icon
 
         let label = UILabel()
         label.text = title
@@ -1165,23 +1331,20 @@ final class ChatInputBar: UIView {
         label.textColor = .fdText
         label.textAlignment = .center
 
-        container.addSubview(tile)
-        tile.addSubview(iconView)
-        tile.addSubview(button)
+        container.addSubview(iconView)
         container.addSubview(label)
+        container.addSubview(button)
 
-        tile.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
-            make.size.equalTo(Layout.panelItemSize)
-        }
         iconView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
+            make.top.centerX.equalToSuperview()
+            make.width.equalTo(Layout.panelItemWidth)
+            make.height.equalTo(Layout.panelItemIconHeight)
         }
-        button.snp.makeConstraints { $0.edges.equalToSuperview() }
         label.snp.makeConstraints { make in
-            make.top.equalTo(tile.snp.bottom).offset(4)
+            make.top.equalTo(iconView.snp.bottom).offset(Layout.panelItemLabelGap)
             make.leading.trailing.bottom.equalToSuperview()
         }
+        button.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         return (container, button)
     }
@@ -1206,15 +1369,20 @@ final class ChatInputBar: UIView {
         applyAssetButton(rightButton, asset: "chat_input_plus")
         applyAssetIcon(fieldEmojiButton, asset: "chat_input_emoji", size: Layout.iconSize)
 
-        let panelHeight = panelContentHeight(for: activePanel)
-        panelContainer.isHidden = panelHeight == 0
+        let panelHeight = panelAreaHeight(for: activePanel)
+        panelContainer.isHidden = activePanel == .none && safeAreaInsets.bottom <= 0
         panelAreaHeightConstraint?.update(offset: panelHeight)
         photoItem.view.isHidden = activePanel != .more
         fileItem.view.isHidden = activePanel != .more
         emojiCollection.isHidden = activePanel != .emoji
         if activePanel == .emoji {
+            emojiCollectionTopConstraint?.update(offset: 8)
+            emojiCollectionHeightConstraint?.update(offset: Layout.emojiPanelContentHeight - 16)
             emojiCollection.reloadData()
             emojiCollection.layoutIfNeeded()
+        } else {
+            emojiCollectionTopConstraint?.update(offset: 0)
+            emojiCollectionHeightConstraint?.update(offset: 0)
         }
     }
 

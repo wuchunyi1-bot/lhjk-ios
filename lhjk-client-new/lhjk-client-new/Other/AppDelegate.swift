@@ -80,12 +80,15 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         // AppDelegate 不再负责 window 管理，由 SceneDelegate 负责
     }
 
+    /// 冷启动不主动弹系统授权框；仅在系统已授权时注册 APNs（引导见登录后 App 内弹窗 PRD §5.7）
     private func configurePushNotification(_ application: UIApplication) {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
-            if granted {
-                DispatchQueue.main.async {
-                    application.registerForRemoteNotifications()
-                }
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            let authorized = settings.authorizationStatus == .authorized
+                || settings.authorizationStatus == .provisional
+                || settings.authorizationStatus == .ephemeral
+            guard authorized else { return }
+            DispatchQueue.main.async {
+                application.registerForRemoteNotifications()
             }
         }
     }

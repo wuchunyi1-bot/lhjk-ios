@@ -10,7 +10,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     // MARK: - Field Keys
 
     private enum FieldKey: String {
-        case name, gender, birthday, phone, email, whetherPregnancy
+        case name, gender, birthday, phone, email
         case occupation, education, idType, idNumber
         case nationality, ethnic, nativePlace, residence, address
     }
@@ -39,7 +39,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     // MARK: - Options
 
     private static let genderOptions = ["男", "女"]
-    private static let pregnancyOptions = ["是", "否"]
     /// 字典未拉取完成时的占位（成功同步后由 `DictionaryCacheService` 覆盖）
     private static let fallbackOccupationOptions = ["在职人员", "学生", "自由职业", "退休", "无业"]
     private static let fallbackEducationOptions = ["小学", "初中", "高中/中专", "大专", "本科", "硕士及以上"]
@@ -57,20 +56,13 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         let nationalityOptions = resolvedOptions(dict.optionNames(parent: .nationality), fallback: Self.fallbackNationalityOptions)
         let ethnicOptions = resolvedOptions(dict.optionNames(parent: .ethnicity), fallback: Self.fallbackEthnicOptions)
 
-        var basicFields: [FieldDef] = [
+        let basicFields: [FieldDef] = [
             FieldDef(key: .name, label: "姓名", kind: .text(keyboard: .default, maxLength: 20), placeholder: "请输入姓名", required: true),
             FieldDef(key: .gender, label: "性别", kind: .select(options: Self.genderOptions), placeholder: "请选择"),
-        ]
-        if isFemaleForProfileUI {
-            basicFields.append(
-                FieldDef(key: .whetherPregnancy, label: "是否孕妇", kind: .select(options: Self.pregnancyOptions), placeholder: "请选择")
-            )
-        }
-        basicFields.append(contentsOf: [
             FieldDef(key: .birthday, label: "出生日期", kind: .date, placeholder: "请选择日期"),
             FieldDef(key: .phone, label: "手机号", kind: .readonly, placeholder: "未设置"),
             FieldDef(key: .email, label: "邮箱", kind: .text(keyboard: .emailAddress, maxLength: 100), placeholder: "请输入邮箱"),
-        ])
+        ]
 
         return [
             SectionDef(title: "个人基础信息", fields: basicFields),
@@ -119,14 +111,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     private var nativePlaceRegion = RegionSelection()
     private var residenceRegion = RegionSelection()
 
-    private var isFemaleForProfileUI: Bool {
-        switch values[.gender] {
-        case "女": return true
-        case "男": return false
-        default: return UserManager.shared.isFemaleUser
-        }
-    }
-
     // MARK: - UI
 
     private let scrollView = UIScrollView()
@@ -147,8 +131,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
                                                name: .userDidUpdate, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(onDictionaryUpdated),
                                                name: DictionaryCacheService.didUpdateNotification, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(onArchiveUpdated),
-                                               name: .defaultArchiveDidUpdate, object: nil)
     }
 
     deinit {
@@ -159,20 +141,10 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         rebuildProfileForm()
     }
 
-    @objc private func onArchiveUpdated() {
-        applyArchivePregnancyValue()
-        refreshAllValueLabels()
-    }
-
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
-        Task {
-            if UserManager.shared.defaultArchive == nil {
-                _ = await UserManager.shared.fetchDefaultArchive()
-            }
-            await MainActor.run { loadUserProfile() }
-        }
+        loadUserProfile()
     }
 
     override func viewDidLayoutSubviews() {
@@ -405,12 +377,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         rebuildProfileForm()
     }
 
-    private func applyArchivePregnancyValue() {
-        values[.whetherPregnancy] = UserManager.whetherPregnancyDisplay(
-            UserManager.shared.defaultArchive?.whetherPregnancy
-        )
-    }
-
     @objc private func onUserUpdated() {
         loadUserProfile()
     }
@@ -432,7 +398,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
         values[.name] = user.chineseName ?? user.surname ?? ""
         values[.gender] = UserManager.sexDisplayLabel(user.sex)
-        applyArchivePregnancyValue()
         values[.birthday] = user.birthday ?? ""
         values[.phone] = maskPhone(user.mobile)
         values[.email] = user.email ?? ""
@@ -592,11 +557,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             }
         case .gender:
             payload.sex = value == "男" ? "1" : (value == "女" ? "2" : nil)
-            saveGenderField(field, value: value, payload: payload)
-            return
-        case .whetherPregnancy:
-            savePregnancyField(field, value: value)
-            return
         case .birthday:
             payload.birthday = value
             payload.age = Self.age(from: value)
@@ -628,63 +588,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             } catch {
                 await MainActor.run { showToast("保存失败: \(error.localizedDescription)") }
             }
-        }
-    }
-
-    private func saveGenderField(_ field: FieldDef, value: String, payload: SUsersOnboardingPayload) {
-        Task {
-            do {
-                _ = try await UserService.shared.updateCurrentProfile(payload)
-                _ = await UserManager.shared.refreshUserInfo()
-                if value == "男" {
-                    await clearPregnancyForMaleIfNeeded()
-                }
-                await MainActor.run {
-                    rebuildProfileForm()
-                    showToast("\(field.label)已保存")
-                }
-            } catch {
-                await MainActor.run { showToast("保存失败: \(error.localizedDescription)") }
-            }
-        }
-    }
-
-    private func savePregnancyField(_ field: FieldDef, value: String) {
-        guard let pregnancy = UserManager.whetherPregnancyInt(from: value) else {
-            showToast("请选择是否孕妇")
-            return
-        }
-        guard let archive = UserManager.shared.defaultArchive else {
-            showToast("档案未加载，请稍后重试")
-            return
-        }
-
-        Task {
-            do {
-                try await UserService.shared.saveOrUpdateArchiveByMobile(
-                    archive: archive,
-                    whetherPregnancy: pregnancy
-                )
-                _ = await UserManager.shared.refreshDefaultArchive()
-                await MainActor.run { showToast("\(field.label)已保存") }
-            } catch {
-                await MainActor.run { showToast("保存失败: \(error.localizedDescription)") }
-            }
-        }
-    }
-
-    private func clearPregnancyForMaleIfNeeded() async {
-        guard let archive = UserManager.shared.defaultArchive else { return }
-        guard archive.whetherPregnancy == 1 else {
-            await MainActor.run { values[.whetherPregnancy] = "" }
-            return
-        }
-        do {
-            try await UserService.shared.saveOrUpdateArchiveByMobile(archive: archive, whetherPregnancy: 0)
-            _ = await UserManager.shared.refreshDefaultArchive()
-            await MainActor.run { values[.whetherPregnancy] = "" }
-        } catch {
-            print("[Profile] clear pregnancy failed: \(error.localizedDescription)")
         }
     }
 

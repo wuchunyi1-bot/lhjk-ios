@@ -1,11 +1,10 @@
 import UIKit
 import SnapKit
 
-/// 推送通知权限预引导弹窗
-/// 参考 funde-client PRD 3.7: 登录成功后先展示预引导
+/// 「开启消息通知」App 内引导弹窗 — 注册登录 PRD §5.7 / NOTIFY-F001–F004
 ///
-/// - 仅在系统通知未授权时展示
-/// - 「去开启」跳转系统 App 设置；「暂不开启」跳过，均进入首页
+/// - 展示与否由 `NotificationPromptService` 频控与系统授权决定
+/// - 「去开启」先 `requestAuthorization`，未授权时再跳转系统设置；「暂不开启」关闭弹窗；均不阻断后续流程
 final class NotificationGuideView: UIView {
 
     // MARK: - Callbacks
@@ -31,21 +30,21 @@ final class NotificationGuideView: UIView {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = "开启通知，及时获取健康提醒和保单服务动态。"
+        label.text = "开启消息通知"
         label.font = .fdMyH3
         label.textColor = .fdText
         label.textAlignment = .center
-        label.numberOfLines = 0
+        label.numberOfLines = 1
         return label
     }()
 
     private let descriptionLabel: UILabel = {
         let label = UILabel()
-        label.text = "我们会提醒您查看健康服务进度、重要通知和账号安全提醒。"
+        label.text = "建议开启通知权限，第一时间接收健康服务提醒、服务进度与专属权益动态，同时保障您的账号安全。"
         label.font = .fdLoginMeta
         label.textColor = .fdSubtext
         label.textAlignment = .center
-        label.numberOfLines = 0
+        label.numberOfLines = 2
         return label
     }()
 

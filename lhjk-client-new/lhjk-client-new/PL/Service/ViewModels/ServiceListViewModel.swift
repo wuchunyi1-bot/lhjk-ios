@@ -6,11 +6,10 @@ import Combine
 final class ServiceListViewModel: ObservableObject {
 
     @Published private(set) var categories: [ServiceListCategory] = []
-    @Published private(set) var packages: [HealthPackageItem] = []
+    @Published private(set) var packageSections: [ServiceListPackageSection] = []
     @Published private(set) var activeCategoryId: String?
     @Published private(set) var institution = ServiceListInstitutionDisplay.default
-    @Published private(set) var isLoadingCategories = false
-    @Published private(set) var isLoadingPackages = false
+    @Published private(set) var isLoading = false
 
     var activeCategory: ServiceListCategory? {
         guard let activeCategoryId else { return categories.first }
@@ -27,11 +26,8 @@ final class ServiceListViewModel: ObservableObject {
     private let catalogService: ServiceCatalogService
     private let selectionStore: InstitutionSelectionStore
     private var loadTask: Task<Void, Never>?
-    private var packagesTask: Task<Void, Never>?
     private var loadGeneration = 0
     private var institutionObserver: NSObjectProtocol?
-
-    private let packagePageSize = 50
 
     init(
         routeCode: String,
@@ -59,7 +55,6 @@ final class ServiceListViewModel: ObservableObject {
 
     deinit {
         loadTask?.cancel()
-        packagesTask?.cancel()
         if let institutionObserver {
             NotificationCenter.default.removeObserver(institutionObserver)
         }
@@ -69,22 +64,30 @@ final class ServiceListViewModel: ObservableObject {
         loadTask?.cancel()
         loadGeneration += 1
         let generation = loadGeneration
-        isLoadingCategories = true
+        isLoading = true
         refreshInstitutionDisplay()
         loadTask = Task { [weak self] in
             await self?.performLoad(generation: generation)
         }
     }
 
+    /// 左栏点击：仅切换高亮，由 VC 滚动右栏
     func selectCategory(id: String) {
-        guard activeCategoryId != id,
-              let category = categories.first(where: { $0.id == id }) else { return }
+        guard categories.contains(where: { $0.id == id }) else { return }
         activeCategoryId = id
-        packagesTask?.cancel()
-        let generation = loadGeneration
-        packagesTask = Task { [weak self] in
-            await self?.reloadPackages(for: category, generation: generation)
-        }
+    }
+
+    /// 右栏滚动联动：更新左栏高亮
+    func syncActiveCategory(fromRightIndexPath indexPath: IndexPath) {
+        guard packageSections.indices.contains(indexPath.section) else { return }
+        let categoryId = packageSections[indexPath.section].category.id
+        guard activeCategoryId != categoryId else { return }
+        activeCategoryId = categoryId
+    }
+
+    func indexPath(forCategoryId id: String) -> IndexPath? {
+        guard let section = packageSections.firstIndex(where: { $0.category.id == id }) else { return nil }
+        return IndexPath(row: 0, section: section)
     }
 
     // MARK: - Private
@@ -116,52 +119,26 @@ final class ServiceListViewModel: ObservableObject {
 
     private func performLoad(generation: Int) async {
         defer {
-            if generation == loadGeneration { isLoadingCategories = false }
+            if generation == loadGeneration { isLoading = false }
         }
 
         let hospitalId = resolvedHospitalId
         do {
-            let vos = try await hospitalPackageService.fetchHospitalServiceCategoryList(
+            let groups = try await hospitalPackageService.fetchEnabledHospitalPackageListByCategory(
                 hospitalId: hospitalId
             )
             guard generation == loadGeneration else { return }
 
-            categories = CategoryServiceListMapper.toServiceListCategories(vos)
+            let loaded = HospitalPackageCategoryListMapper.map(groups)
+            categories = loaded.categories
+            packageSections = loaded.packageSections
             activeCategoryId = resolveInitialCategoryId(in: categories)
-            guard let category = activeCategory else {
-                packages = []
-                return
-            }
-            await reloadPackages(for: category, generation: generation)
         } catch {
-            print("[ServiceListVM] load categories failed: \(error.localizedDescription)")
+            print("[ServiceListVM] load failed: \(error.localizedDescription)")
             guard generation == loadGeneration else { return }
             categories = []
-            packages = []
+            packageSections = []
             activeCategoryId = nil
-        }
-    }
-
-    private func reloadPackages(for category: ServiceListCategory, generation: Int) async {
-        isLoadingPackages = true
-        defer {
-            if generation == loadGeneration { isLoadingPackages = false }
-        }
-
-        let hospitalId = resolvedHospitalId
-        do {
-            let items = try await hospitalPackageService.fetchHospitalServicePackageItems(
-                categoryServiceId: category.id,
-                hospitalId: hospitalId,
-                pageNum: 1,
-                pageSize: packagePageSize
-            )
-            guard generation == loadGeneration else { return }
-            packages = items
-        } catch {
-            print("[ServiceListVM] load packages failed: \(error.localizedDescription)")
-            guard generation == loadGeneration else { return }
-            packages = []
         }
     }
 

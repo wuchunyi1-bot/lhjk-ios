@@ -15,7 +15,7 @@
   - 隐私与协议 → 隐私设置 → `/me/settings/privacy`
   - 隐私与协议 → 协议与说明 → `/me/settings/agreement-center`
   - 通用与支持 → 清理缓存（本页 action）
-  - 通用与支持 → 关于富德健康 → `/me/settings/about`
+  - 通用与支持 → 关于富德联好健康 → `/me/settings/about`
 - **AND** 底部独立「退出登录」按钮（危险色）
 
 #### Scenario: 禁止项

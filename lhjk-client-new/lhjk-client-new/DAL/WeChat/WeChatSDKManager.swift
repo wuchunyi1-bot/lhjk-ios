@@ -224,6 +224,17 @@ final class WeChatSDKManager: NSObject {
         #endif
     }
 
+    /// 微信授权登录 / 绑定（Swift Concurrency 封装）
+    func sendAuth(
+        _ request: WeChatAuthRequest = WeChatAuthRequest()
+    ) async throws -> WeChatAuthResult {
+        try await withCheckedThrowingContinuation { continuation in
+            sendAuth(request) { result in
+                continuation.resume(with: result)
+            }
+        }
+    }
+
     // MARK: - Pay
 
     func pay(

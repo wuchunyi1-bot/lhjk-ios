@@ -88,6 +88,21 @@ enum H5Config {
         authenticatedPageURL(path: "health/record")
     }
 
+    /// 健康报告列表 H5：`#/health/report?token&platform=ios`
+    static var healthReportPageURL: URL {
+        authenticatedPageURL(path: "health/report")
+    }
+
+    /// 健康报告详情 H5：`#/health/report/detail?token&platform=ios&id=`（`id` 为报告 id）
+    static func healthReportDetailPageURL(id: String) -> URL {
+        var extra: [String: String] = [:]
+        let trimmed = id.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            extra["id"] = trimmed
+        }
+        return authenticatedPageURL(path: "health/report/detail", extraQuery: extra)
+    }
+
     /// 体检报告单列表 H5：`#/medical-reports?token&platform=ios`
     static var medicalReportsPageURL: URL {
         authenticatedPageURL(path: "medical-reports")
@@ -147,6 +162,21 @@ enum H5Config {
     /// 健康陪伴列表 H5：`#/companion?token&platform=ios`（首页「更多 ›」）
     static var companionPageURL: URL {
         authenticatedPageURL(path: "companion")
+    }
+
+    /// 成长任务 / 健康积分 H5：`#/todoTask`
+    static var todoTaskPageURL: URL {
+        authenticatedPageURL(path: "todoTask")
+    }
+
+    /// 会员等级 / 富德币 H5：`#/myVip`
+    static var myVipPageURL: URL {
+        authenticatedPageURL(path: "myVip")
+    }
+
+    /// 会员兑换商城 H5：`#/exchangeMall`
+    static var exchangeMallPageURL: URL {
+        authenticatedPageURL(path: "exchangeMall")
     }
 
     /// 构建任意 H5 鉴权 URL：`{base}?_t={ts}#/{path}?token&platform=ios&...`

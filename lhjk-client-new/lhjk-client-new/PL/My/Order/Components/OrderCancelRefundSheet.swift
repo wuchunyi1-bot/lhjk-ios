@@ -28,6 +28,8 @@ final class OrderCancelRefundSheet: UIViewController {
     private let placeholderLabel = UILabel()
     private let counterLabel = UILabel()
     private let activityIndicator = UIActivityIndicatorView(style: .medium)
+    private let keyboardSupport = OrderBottomSheetKeyboardSupport()
+    private var panelBottomConstraint: Constraint?
 
     init(preview: OrderCancelPackagePreview, sheetTitle: String = "取消订单") {
         self.preview = preview
@@ -67,17 +69,19 @@ final class OrderCancelRefundSheet: UIViewController {
 
     private func buildUI() {
         dimView.backgroundColor = UIColor.black.withAlphaComponent(0.35)
-        dimView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(cancel)))
         view.addSubview(dimView)
         dimView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        keyboardSupport.dimTapDismissesKeyboardOnly(dimView: dimView)
 
         panel.backgroundColor = .fdSurface
         panel.layer.cornerRadius = 16
         panel.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         view.addSubview(panel)
         panel.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
+            $0.leading.trailing.equalToSuperview()
+            panelBottomConstraint = $0.bottom.equalToSuperview().constraint
         }
+        keyboardSupport.attach(hostView: view, panelBottomConstraint: panelBottomConstraint!)
 
         cancelBtn.setTitle("取消", for: .normal)
         cancelBtn.setTitleColor(.fdSubtext, for: .normal)
@@ -277,6 +281,8 @@ final class OrderSettlementSheet: UIViewController {
     private let rethinkButton = UIButton(type: .system)
     private let confirmButton = UIButton(type: .system)
     private let activityIndicator = UIActivityIndicatorView(style: .medium)
+    private let keyboardSupport = OrderBottomSheetKeyboardSupport()
+    private var panelBottomConstraint: Constraint?
 
     init(preview: OrderCancelPackagePreview) {
         self.preview = preview
@@ -316,17 +322,19 @@ final class OrderSettlementSheet: UIViewController {
 
     private func buildUI() {
         dimView.backgroundColor = UIColor.black.withAlphaComponent(0.35)
-        dimView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(rethink)))
         view.addSubview(dimView)
         dimView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        keyboardSupport.dimTapDismissesKeyboardOnly(dimView: dimView)
 
         panel.backgroundColor = .fdSurface
         panel.layer.cornerRadius = 16
         panel.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         view.addSubview(panel)
         panel.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
+            $0.leading.trailing.equalToSuperview()
+            panelBottomConstraint = $0.bottom.equalToSuperview().constraint
         }
+        keyboardSupport.attach(hostView: view, panelBottomConstraint: panelBottomConstraint!)
 
         titleLabel.text = "确认结算订单？"
         titleLabel.font = .fdFont(ofSize: 22, weight: .bold)

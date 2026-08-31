@@ -65,6 +65,18 @@ final class FundeNativeBridge: NSObject {
         switch action {
         case "navigatePackageDetail":
             handleNavigatePackageDetail(body: body, params: params)
+        case "gotoBuy":
+            openServicePackageList()
+        case "navigateH5", "openH5", "openH5Page", "openPage":
+            if let path = resolveH5Path(body: body, params: params) {
+                openAuthenticatedH5Page(path: path)
+            }
+        case "todoTask":
+            openAuthenticatedH5Page(path: "todoTask", title: "健康积分")
+        case "myVip":
+            openAuthenticatedH5Page(path: "myVip", title: "会员等级")
+        case "exchangeMall":
+            openAuthenticatedH5Page(path: "exchangeMall", title: "会员兑换")
         case "routeChanged":
             handleRouteChanged(params: params)
         case "localizeDateTimeChrome":
@@ -110,6 +122,53 @@ final class FundeNativeBridge: NSObject {
             routeParams["hospitalId"] = hid
         }
         Router.shared.push("/services/pkg", params: routeParams, from: hostViewController)
+    }
+
+    /// 成长任务「去购买」→ 原生选择套餐页
+    private func openServicePackageList() {
+        Router.shared.push("/services/list", params: ["code": ""], from: hostViewController)
+    }
+
+    private func resolveH5Path(body: [String: Any], params: [String: Any]) -> String? {
+        let raw = Self.stringValue(body["path"])
+            ?? Self.stringValue(params["path"])
+            ?? Self.stringValue(body["url"])
+            ?? Self.stringValue(params["url"])
+        return Self.normalizeH5Path(raw)
+    }
+
+    private func openAuthenticatedH5Page(path: String, title: String? = nil) {
+        let normalized = Self.normalizeH5Path(path)
+        guard !normalized.isEmpty else { return }
+        let url = H5Config.authenticatedPageURL(path: normalized)
+        let enablesWeightBle = FundePageURL.shouldEnableWeightBle(forH5Path: normalized)
+        let webVC = WebViewController(
+            urlString: url.absoluteString,
+            title: title,
+            enablesWeightBle: enablesWeightBle
+        )
+        guard let source = hostViewController else { return }
+        if let nav = source.navigationController {
+            nav.pushViewController(webVC, animated: true)
+        } else {
+            source.present(webVC, animated: true)
+        }
+    }
+
+    private static func normalizeH5Path(_ raw: String?) -> String {
+        var path = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if path.hasPrefix("#/") {
+            path = String(path.dropFirst(2))
+        } else if path.hasPrefix("#") {
+            path = String(path.dropFirst())
+        }
+        if path.hasPrefix("/") {
+            path = String(path.dropFirst())
+        }
+        if let queryIndex = path.firstIndex(of: "?") {
+            path = String(path[..<queryIndex])
+        }
+        return path.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func handleBleGetStatus(params: [String: Any], callbackId: String?) {

@@ -73,13 +73,11 @@ final class HealthViewModel: ObservableObject {
     private func applyHubCache(_ hub: HealthPageHubCache) {
         quickEntries = MonitorCardDisplayMapper.quickEntries(from: hub.cms.quickEntryList)
 
-        if !hub.monitorCards.isEmpty {
-            metrics = MonitorCardDisplayMapper.fromMonitorCards(hub.monitorCards)
-            loadError = nil
-        } else {
-            metrics = MonitorCardDisplayMapper.fromCmsMeta(hub.cms.monitorCardMeta ?? [])
-            loadError = nil
-        }
+        metrics = MonitorCardDisplayMapper.hubMetrics(
+            monitorCards: hub.monitorCards,
+            cmsMeta: hub.cms.monitorCardMeta ?? []
+        )
+        loadError = nil
     }
 
     func route(for metric: HealthMetricDisplayItem) -> String {

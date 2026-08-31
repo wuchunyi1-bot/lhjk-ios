@@ -23,7 +23,7 @@ final class ActivateViewController: BaseViewController {
 
     override func setupUI() {
         title = "激活兑换"
-        view.backgroundColor = .fdBg
+        view.backgroundColor = UIColor(hexString: "#FDF6F3")
         hidesBottomBarWhenPushed = true
 
         scrollView.alwaysBounceVertical = true
@@ -65,12 +65,12 @@ final class ActivateViewController: BaseViewController {
         let titleLabel = UILabel()
         titleLabel.text = "权益卡服务"
         titleLabel.font = .fdFont(ofSize: 22, weight: .medium)
-        titleLabel.textColor = .fdText
+        titleLabel.textColor = UIColor(hexString: "#1F2942")
 
         let subtitleLabel = UILabel()
         subtitleLabel.text = "先绑定企业发放的权益卡，再兑换健康服务套餐"
         subtitleLabel.font = .fdFont(ofSize: 14, weight: .regular)
-        subtitleLabel.textColor = .fdTabInactive
+        subtitleLabel.textColor = UIColor(hexString: "#8591AB")
         subtitleLabel.numberOfLines = 0
 
         let stack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
@@ -84,8 +84,9 @@ final class ActivateViewController: BaseViewController {
     private func buildStepsSection() -> UIView {
         let container = UIView()
 
-        let timelineLine = UIImageView(image: UIImage(named: "activate_step_line"))
-        timelineLine.contentMode = .scaleToFill
+        // 竖线自绘（浅橙色 1pt）
+        let timelineLine = UIView()
+        timelineLine.backgroundColor = UIColor(hexString: "#FFD9C7")
 
         let step1Header = makeStepHeader(title: "步骤一")
         let bindCard = makeActionCard(
@@ -99,8 +100,9 @@ final class ActivateViewController: BaseViewController {
 
         let step2Header = makeStepHeader(title: "步骤二")
         redeemSubtitleLabel.font = .fdFont(ofSize: 12, weight: .regular)
-        redeemSubtitleLabel.textColor = .fdTabInactive
-        redeemSubtitleLabel.numberOfLines = 0
+        redeemSubtitleLabel.textColor = UIColor(hexString: "#8591AB")
+        redeemSubtitleLabel.numberOfLines = 1
+        redeemSubtitleLabel.lineBreakMode = .byTruncatingTail
 
         let redeemCard = makeActionCard(
             iconName: "activate_redeem_icon",
@@ -143,8 +145,8 @@ final class ActivateViewController: BaseViewController {
         timelineLine.snp.makeConstraints {
             $0.width.equalTo(1)
             $0.centerX.equalTo(step1Header.snp.leading).offset(8)
-            $0.top.equalTo(step1Header.snp.centerY)
-            $0.bottom.equalTo(step2Header.snp.centerY)
+            $0.top.equalTo(step1Header.snp.bottom)
+            $0.bottom.equalTo(step2Header.snp.top)
         }
 
         return container
@@ -177,69 +179,90 @@ final class ActivateViewController: BaseViewController {
         action: Selector
     ) -> UIView {
         let card = UIView()
-        card.backgroundColor = .fdSurface
+        card.backgroundColor = .white
         card.layer.cornerRadius = 16
         card.clipsToBounds = true
         card.isUserInteractionEnabled = true
 
+        // 1. 图标 44x44
         let iconView = UIImageView(image: UIImage(named: iconName))
         iconView.contentMode = .scaleAspectFit
-        iconView.snp.makeConstraints { $0.size.equalTo(44) }
+        iconView.clipsToBounds = true
+        iconView.layer.cornerRadius = 22
+        iconView.backgroundColor = UIColor(hexString: "#FFF2E6")
+        card.addSubview(iconView)
+        iconView.snp.makeConstraints {
+            $0.leading.top.equalToSuperview().offset(12)
+            $0.size.equalTo(44)
+        }
 
+        // 2. 标题与副标题
         let titleLabel = UILabel()
         titleLabel.text = title
         titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
-        titleLabel.textColor = .fdText
+        titleLabel.textColor = UIColor(hexString: "#1F2942")
 
         let subLabel = subtitleView ?? UILabel()
         if let subtitle {
             subLabel.text = subtitle
             subLabel.font = .fdFont(ofSize: 12, weight: .regular)
-            subLabel.textColor = .fdTabInactive
-            subLabel.numberOfLines = 0
+            subLabel.textColor = UIColor(hexString: "#8591AB")
+            subLabel.numberOfLines = 1
+            subLabel.lineBreakMode = .byTruncatingTail
         }
 
         let textStack = UIStackView(arrangedSubviews: [titleLabel, subLabel])
         textStack.axis = .vertical
         textStack.spacing = 2
         textStack.alignment = .leading
+        textStack.isUserInteractionEnabled = false
+        card.addSubview(textStack)
+        textStack.snp.makeConstraints { make in
+            make.leading.equalTo(iconView.snp.trailing).offset(11)
+            make.trailing.equalToSuperview().offset(-12)
+            make.centerY.equalTo(iconView)
+        }
 
-        let topRow = UIStackView(arrangedSubviews: [iconView, textStack])
-        topRow.axis = .horizontal
-        topRow.alignment = .center
-        topRow.spacing = 11
+        // 3. 卡片内部自绘分割线 (top 72pt, 0.5pt)
+        let divider = UIView()
+        divider.backgroundColor = UIColor(hexString: "#F6ECE4")
+        divider.isUserInteractionEnabled = false
+        card.addSubview(divider)
+        divider.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(72)
+            make.leading.trailing.equalToSuperview().inset(12)
+            make.height.equalTo(0.5)
+        }
+
+        // 4. 底部按钮与提示文案
+        let ctaButton = UILabel()
+        ctaButton.text = cta
+        ctaButton.font = .fdFont(ofSize: 12, weight: .medium)
+        ctaButton.textColor = .white
+        ctaButton.textAlignment = .center
+        ctaButton.backgroundColor = .fdPrimary
+        ctaButton.layer.cornerRadius = 14
+        ctaButton.clipsToBounds = true
+        ctaButton.isUserInteractionEnabled = false
+        card.addSubview(ctaButton)
+        ctaButton.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-12)
+            make.bottom.equalToSuperview().offset(-11)
+            make.width.equalTo(70)
+            make.height.equalTo(28)
+        }
 
         let footerHintLabel = UILabel()
         footerHintLabel.text = footerHint
         footerHintLabel.font = .fdFont(ofSize: 12, weight: .regular)
-        footerHintLabel.textColor = .fdTabInactive
-        footerHintLabel.numberOfLines = 2
-
-        let ctaLabel = UILabel()
-        ctaLabel.text = cta
-        ctaLabel.font = .fdFont(ofSize: 12, weight: .medium)
-        ctaLabel.textColor = .white
-        ctaLabel.textAlignment = .center
-        ctaLabel.backgroundColor = .fdPrimary
-        ctaLabel.layer.cornerRadius = 14
-        ctaLabel.clipsToBounds = true
-        ctaLabel.snp.makeConstraints {
-            $0.width.equalTo(70)
-            $0.height.equalTo(28)
+        footerHintLabel.textColor = UIColor(hexString: "#8591AB")
+        footerHintLabel.isUserInteractionEnabled = false
+        card.addSubview(footerHintLabel)
+        footerHintLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(12)
+            make.trailing.lessThanOrEqualTo(ctaButton.snp.leading).offset(-8)
+            make.centerY.equalTo(ctaButton)
         }
-
-        let footerRow = UIStackView(arrangedSubviews: [footerHintLabel, ctaLabel])
-        footerRow.axis = .horizontal
-        footerRow.alignment = .center
-        footerRow.spacing = 8
-
-        let inner = UIStackView(arrangedSubviews: [topRow, footerRow])
-        inner.axis = .vertical
-        inner.spacing = 12
-        inner.isUserInteractionEnabled = false
-
-        card.addSubview(inner)
-        inner.snp.makeConstraints { $0.edges.equalToSuperview().inset(12) }
 
         card.addGestureRecognizer(UITapGestureRecognizer(target: self, action: action))
         return card
@@ -247,7 +270,7 @@ final class ActivateViewController: BaseViewController {
 
     private func refreshCountUI() {
         if availableCount > 0 {
-            redeemSubtitleLabel.text = "当前有 \(availableCount) 张权益卡可用"
+            redeemSubtitleLabel.text = "当前有\(availableCount)张权益卡可用"
         } else {
             redeemSubtitleLabel.text = "暂无可用权益卡，先去绑定"
         }

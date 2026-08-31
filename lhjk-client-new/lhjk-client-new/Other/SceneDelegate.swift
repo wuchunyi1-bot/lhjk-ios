@@ -12,6 +12,8 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
         window = UIWindow(windowScene: windowScene)
+        // 产品 UI 仅适配浅色；系统暗黑会导致 TabBar / 系统控件反色异常
+        window?.overrideUserInterfaceStyle = .light
 
         SessionExpiryCoordinator.shared.presentExpiredUI = { message, onRelogin in
             SessionExpiryPresenter.present(message: message, onRelogin: onRelogin)

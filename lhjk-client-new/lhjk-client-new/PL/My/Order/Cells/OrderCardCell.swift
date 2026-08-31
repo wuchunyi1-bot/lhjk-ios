@@ -240,7 +240,7 @@ final class OrderCardCell: UITableViewCell {
     func configure(order: MOrder) {
         // 机构名称
         let instName = order.hospitalName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        institutionLabel.text = instName.isEmpty ? "富德健康" : instName
+        institutionLabel.text = instName.isEmpty ? "富德联好健康" : instName
 
         // 状态
         statusLabel.text = order.statusLabel

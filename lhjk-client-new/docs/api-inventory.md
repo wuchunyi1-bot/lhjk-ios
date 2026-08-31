@@ -39,7 +39,10 @@ App端/
 │   │   ├── POST /v1/users/resetPasswordByMobile
 │   │   ├── POST /v1/users/changeMobile
 │   │   ├── POST /v1/users/cancelCurrentUser
-│   │   └── POST /v1/users/changeCurrentPassword
+│   │   ├── POST /v1/users/changeCurrentPassword
+│   │   ├── GET  /v1/users/getWechatBindStatus
+│   │   ├── POST /v1/users/bindWechat
+│   │   └── POST /v1/users/unbindWechat
 │   ├── 字典管理
 │   │   └── POST /v1/dictionary/getDictionaryByParentId2
 │   └── 阿里云OSS
@@ -68,6 +71,7 @@ App端/
 ├── IM/
 │   ├── 群组会话
 │   │   ├── GET /v1/session/getGroup
+│   │   ├── GET /v1/session/getGroupMembers
 │   │   └── GET /v1/session/getUserParticipateAllTeam
 │   └── IM账户管理
 │       └── POST /v1/account/addRongImAccount
@@ -104,6 +108,7 @@ App端/
 | # | Method | Path | Apifox 层级 | 调用位置 | Apifox（只读） |
 |---|--------|------|-------------|----------|----------------|
 | 3 | GET | `/v1/mobileVerification/sendVerificationCode` | `App端/系统/系统短信管理` | `LoginService` | [发送验证码](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330856e0.md) |
+| 3a | GET | `/v1/mobileVerification/checkedSmsCode` | `App端/系统/系统短信管理` | `LoginService` | 文档暂无 / 以代码 path 为准（Apifox `checkedSmsCode`） |
 | 4 | POST | `/v1/users/updateCurrentProfile` | `App端/系统/用户管理` | `UserService` | [修改资料](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/477932114e0.md) |
 | 5 | GET | `/v1/users/getCurrentUserBaseInfo` | `App端/系统/用户管理` | `UserService` / `UserManager` | [当前用户](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/478379956e0.md) |
 | 5a | GET | `/v1/users/getUserCenterOverview` | `App端/系统/用户管理` | `UserService` / `MyViewModel` | [个人中心概览](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503199941e0.md) |
@@ -111,6 +116,9 @@ App端/
 | 7 | POST | `/v1/users/changeMobile` | `App端/系统/用户管理` | `UserService` | [改手机号](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330847e0.md) |
 | 8 | POST | `/v1/users/cancelCurrentUser` | `App端/系统/用户管理` | `UserService` | [注销](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/483911256e0.md) |
 | 9 | POST | `/v1/users/changeCurrentPassword` | `App端/系统/用户管理` | `UserService` | [改当前密码](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/476633098e0.md) |
+| 9a | GET | `/v1/users/getWechatBindStatus` | `App端/系统/用户管理` | `UserService` / `SecuritySettingsViewController` / `WechatAuthorizationViewController` | 查询当前用户微信绑定状态（Apifox OAS: `getWechatBindStatus`，响应 `bound: Bool`） |
+| 9b | POST | `/v1/users/bindWechat` | `App端/系统/用户管理` | `UserService` / `WechatAuthorizationViewController` | 为当前用户绑定微信账号（Apifox OAS: `bindWechat`，Query `code`） |
+| 9c | POST | `/v1/users/unbindWechat` | `App端/系统/用户管理` | `UserService` / `WechatAuthorizationViewController` | 解除当前用户的微信账号绑定（Apifox OAS: `unbindWechat`） |
 | 10 | POST | `/v1/dictionary/getDictionaryByParentId2` | `App端/系统/字典管理` | `DictionaryService` | [字典](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330853e0.md) |
 | 11 | GET | `/v1/cos/getCosSign` | `App端/系统/阿里云OSS` | `OSSManager` | [OSS 签名](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330939e0.md) |
 
@@ -140,6 +148,7 @@ App端/
 | 23 | GET | `/v1/hospitalPackage/getEnabledHospitalPackagePage` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | [启用套包分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/484150836e0.md) |
 | 24 | GET | `/v1/hospitalPackage/getEnabledRetailHospitalPackagePage` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | [零售套包分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487882770e0.md) |
 | 25 | GET | `/v1/hospitalPackage/getCategoryServiceListByType` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | [业务类别](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487882771e0.md) |
+| 25a | GET | `/v1/hospitalPackage/getEnabledHospitalPackageListByCategory` | `App端/商城/商城套餐相关接口` | `HospitalPackageService`（选择套餐一次性加载） | 文档暂无（Apifox 层级 `商城/商城套餐相关接口`） |
 | 26 | GET | `/v1/hospitalPackage/getHospitalPackageDetail` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | 文档暂无（**正确 path**；勿用已废弃的 `getPackageDetail`） |
 | 27 | GET | `/v1/order/getAppOrderList` | `App端/商城/商城订单相关接口` | `OrderService` | [订单列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330738e0.md) |
 | 28 | GET | `/v1/order/getAppOrderDetail` | `App端/商城/商城订单相关接口` | `OrderService` | [订单详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330739e0.md) |
@@ -173,35 +182,41 @@ App端/
 > 缓存：`ColumnContentCacheService` — 冷启动预拉已知 code 写入内存；界面优先读缓存，未命中再请求；无 TTL，登出清空。  
 > `#36` 响应 `ColumnContentBo.detail`（作者/浏览数/标签等）用于健康陪伴列表展示（Apifox ColumnContentDetailBo）。
 | 37 | GET | `/v1/session/getGroup` | `App端/IM/群组会话` | `IMService` | [我的群组](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/478720935e0.md) |
+
+> `#37` 响应 `GroupVO.status`：**仅 `1` 允许用户发送消息**；其它值进入聊天只读。详见 `openspec/specs/im/spec.md`。
+| 37a | GET | `/v1/session/getGroupMembers` | `App端/IM/群组会话` | `IMService` | 文档暂无 / 以代码 path 为准（Apifox OAS `getGroupMembers`） |
+
+> `#37a` Query `groupId`（必填）。聊天详情右上角「群成员」入口拉取 `GroupMembersVO.list`。
 | 38 | GET | `/v1/session/getUserParticipateAllTeam` | `App端/IM/群组会话` | `HomeService` | [参与团队](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495580451e0.md) |
 | 39 | POST | `/v1/account/addRongImAccount` | `App端/IM/IM账户管理` | `RongCloudManager` | [融云账号](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/478384048e0.md) |
 | 40 | GET | `/v1/scheme/getUserToDayMonitorTask` | `App端/居家健康/监测方案定义` | `HomeService` | [今日监测任务](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330787e0.md) |
+| 41 | GET | `/v1/schemeArchive/getRemainServiceTime` | `居家健康/居家用户信息` | `HomeService` | 文档暂无 / 以代码 path 为准（Apifox OAS `getRemainServiceTime`） |
 
 ### 2.6 App端 / 监测（健康 Tab）
 
 | # | Method | Path | Apifox 层级 | 调用位置 | Apifox（只读） |
 |---|--------|------|-------------|----------|----------------|
-| 41 | GET | `/v1/healthPage/getCmsConfig` | `App端/监测/我的健康页` | `HealthPageService` | [健康页 CMS](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657301e0.md) |
-| 42 | GET | `/v1/monitorHealth/getMonitorCardList` | `App端/监测/体征监测卡片` | `HealthPageService` | [监测卡片列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657300e0.md) |
-| 43 | GET | `/v1/userMonitorCardConfig/getUserMonitorCardConfig` | `App端/监测/用户监测卡片配置` | `HealthPageService` | [查询卡片配置](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657299e0.md) |
-| 44 | POST | `/v1/userMonitorCardConfig/saveUserMonitorCardConfig` | `App端/监测/用户监测卡片配置` | `HealthPageService` | [保存卡片配置](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657298e0.md) |
+| 42 | GET | `/v1/healthPage/getCmsConfig` | `App端/监测/我的健康页` | `HealthPageService` | [健康页 CMS](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657301e0.md) |
+| 43 | GET | `/v1/monitorHealth/getMonitorCardList` | `App端/监测/体征监测卡片` | `HealthPageService` | [监测卡片列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657300e0.md) |
+| 44 | GET | `/v1/userMonitorCardConfig/getUserMonitorCardConfig` | `App端/监测/用户监测卡片配置` | `HealthPageService` | [查询卡片配置](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657299e0.md) |
+| 45 | POST | `/v1/userMonitorCardConfig/saveUserMonitorCardConfig` | `App端/监测/用户监测卡片配置` | `HealthPageService` | [保存卡片配置](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657298e0.md) |
 
 ### 2.7 App端 / 监测 / 设备绑定（蓝牙流程 BLL 封装）
 
 | # | Method | Path | Apifox 层级 | 调用位置 | Apifox（只读） |
 |---|--------|------|-------------|----------|----------------|
-| 45 | GET | `/v1/equipmentUser/getEquipmentUserByParam` | `App端/监测/设备绑定` | `EquipmentBindService` | [绑定列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487304345e0.md) |
-| 46 | GET | `/v1/equipmentUser/getEquipmentByOne` | `App端/监测/设备绑定` | `EquipmentBindService` | [最近设备](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295331e0.md) |
-| 47 | POST | `/v1/equipment/getEquipmenByApp` | `App端/监测/设备` | `EquipmentBindService` | [App 设备型号](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487304342e0.md) |
-| 48 | GET | `/v1/equipment/getCompatibleBluetoothList` | `App端/监测/设备` | `EquipmentBindService` | [蓝牙白名单](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295335e0.md) |
-| 49 | GET | `/v1/equipmentUser/checkEquipmentVaild` | `App端/监测/设备绑定` | `EquipmentBindService` | [库存校验](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295332e0.md) |
-| 50 | GET | `/v1/equipmentUser/checkEquipmentBind` | `App端/监测/设备绑定` | `EquipmentBindService` | [绑定检查](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295333e0.md) |
-| 51 | POST | `/v1/equipmentUser/bindEquipment` | `App端/监测/设备绑定` | `EquipmentBindService` | [绑定设备](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295330e0.md) |
-| 52 | DELETE | `/v1/equipmentUser/deleteEquipmentUserById` | `App端/监测/设备绑定` | `EquipmentBindService` | [解绑](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295334e0.md) |
-| 53 | GET | `/v1/firmware/getFirmwareUrlByParam` | `App端/监测/设备固件` | `EquipmentBindService` | [固件查询](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295336e0.md) |
-| 54 | POST | `/v1/monitor/saveOrUpdateMonitorData` | `监护/监测记录` | `EquipmentBindService` | [监测上报](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487304328e0.md) |
-| 55 | POST | `/v1/monitor/getWeightHomePageData` | `监护/监测记录` | `EquipmentBindService` | 文档暂无 / 以代码 path 为准 |
-| 56 | DELETE | `/v1/monitor/delMonitorDataByMonitorId` | `监护/监测记录` | `EquipmentBindService`；体重报告「重新测量」 | 文档暂无 / 以代码 path 为准 |
+| 46 | GET | `/v1/equipmentUser/getEquipmentUserByParam` | `App端/监测/设备绑定` | `EquipmentBindService` | [绑定列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487304345e0.md) |
+| 47 | GET | `/v1/equipmentUser/getEquipmentByOne` | `App端/监测/设备绑定` | `EquipmentBindService` | [最近设备](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295331e0.md) |
+| 48 | POST | `/v1/equipment/getEquipmenByApp` | `App端/监测/设备` | `EquipmentBindService` | [App 设备型号](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487304342e0.md) |
+| 49 | GET | `/v1/equipment/getCompatibleBluetoothList` | `App端/监测/设备` | `EquipmentBindService` | [蓝牙白名单](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295335e0.md) |
+| 50 | GET | `/v1/equipmentUser/checkEquipmentVaild` | `App端/监测/设备绑定` | `EquipmentBindService` | [库存校验](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295332e0.md) |
+| 51 | GET | `/v1/equipmentUser/checkEquipmentBind` | `App端/监测/设备绑定` | `EquipmentBindService` | [绑定检查](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295333e0.md) |
+| 52 | POST | `/v1/equipmentUser/bindEquipment` | `App端/监测/设备绑定` | `EquipmentBindService` | [绑定设备](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295330e0.md) |
+| 53 | DELETE | `/v1/equipmentUser/deleteEquipmentUserById` | `App端/监测/设备绑定` | `EquipmentBindService` | [解绑](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295334e0.md) |
+| 54 | GET | `/v1/firmware/getFirmwareUrlByParam` | `App端/监测/设备固件` | `EquipmentBindService` | [固件查询](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503295336e0.md) |
+| 55 | POST | `/v1/monitor/saveOrUpdateMonitorData` | `监护/监测记录` | `EquipmentBindService` | [监测上报](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487304328e0.md) |
+| 56 | POST | `/v1/monitor/getWeightHomePageData` | `监护/监测记录` | `EquipmentBindService` | 文档暂无 / 以代码 path 为准 |
+| 57 | DELETE | `/v1/monitor/delMonitorDataByMonitorId` | `监护/监测记录` | `EquipmentBindService`；体重报告「重新测量」 | 文档暂无 / 以代码 path 为准 |
 
 > 后端蓝牙流程图中新 path（如 `bindEquipmentByApp`、`saveHealthData`）**Apifox 暂无**；以 `EquipmentBindService` 已封装 path 为准。规格：`openspec/changes/weight-h5-scale-ble-status/specs/equipment-bind-api/`。
 
@@ -215,7 +230,7 @@ App端/
 
 | 模块文件 | 接口数 | Paths |
 |----------|--------|-------|
-| `BLL/RegisterLogin/LoginService.swift` | 3 | oauth2/token、oauth2/logout、sendVerificationCode |
+| `BLL/RegisterLogin/LoginService.swift` | 4 | oauth2/token、oauth2/logout、sendVerificationCode、checkedSmsCode |
 | `DAL/Networking/OAuthAuthenticator.swift` | 1（复用） | oauth2/token（refresh） |
 | `BLL/User/UserService.swift` | 9 | users/* ×7、archive/* ×2 |
 | `BLL/My/AddressService.swift` | 3 | address/* |
@@ -223,15 +238,15 @@ App端/
 | `BLL/Service/ShoppingCartService.swift` | 3 | shoppingCart/* |
 | `BLL/Service/CouponService.swift` | 2 | couponTake/* |
 | `BLL/My/VoucherService.swift` | 11 | benefitsTake/getCustomerPage、getCustomerStatusCount、getGiftRecordPage、preCheckByKey、bindByKey、giftBenefit、getActivationOverview、getRedeemPageInfo、getRedeemPackagePage、getOrderBenefitsList、updateOrderBenefits |
-| `BLL/Service/HospitalPackageService.swift` | 4 | hospitalPackage/*（含 **getHospitalPackageDetail**） |
+| `BLL/Service/HospitalPackageService.swift` | 5 | hospitalPackage/*（含 **getHospitalPackageDetail**、**getEnabledHospitalPackageListByCategory**） |
 | `BLL/Service/HospitalService.swift` | 2 | hospital/* |
 | `BLL/Service/DoctorService.swift` | 1 | doctor/getDoctorPage |
 | `BLL/Service/ColumnContentService.swift` | 1 | columnContent/getByCode |
 | `BLL/Service/DictionaryService.swift` | 1 | dictionary/getDictionaryByParentId2 |
-| `BLL/Home/HomeService.swift` | 2 | scheme/getUserToDayMonitorTask、session/getUserParticipateAllTeam |
+| `BLL/Home/HomeService.swift` | 3 | scheme/getUserToDayMonitorTask、session/getUserParticipateAllTeam、schemeArchive/getRemainServiceTime |
 | `BLL/Health/HealthPageService.swift` | 4 | healthPage/getCmsConfig、monitorHealth/getMonitorCardList、userMonitorCardConfig/* ×2 |
 | `BLL/Health/EquipmentBindService.swift` | 12 | equipmentUser/* ×6、equipment/getEquipmenByApp、equipment/getCompatibleBluetoothList、firmware/getFirmwareUrlByParam、monitor/saveOrUpdateMonitorData、monitor/getWeightHomePageData、monitor/delMonitorDataByMonitorId |
-| `BLL/Message/IMService.swift` | 1 | session/getGroup |
+| `BLL/Message/IMService.swift` | 2 | session/getGroup、session/getGroupMembers |
 | `DAL/IM/RongCloudManager.swift` | 1 | account/addRongImAccount |
 | `DAL/OSS/OSSManager.swift` | 1 | cos/getCosSign |
 

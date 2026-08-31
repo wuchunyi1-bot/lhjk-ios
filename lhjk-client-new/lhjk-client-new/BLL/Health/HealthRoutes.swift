@@ -58,8 +58,14 @@ enum HealthRoutes {
         r.register(path: "/health/metrics/edit") { _ in MetricCardEditViewController() }
         r.register(path: "/health/metrics") { _ in MetricCardEditViewController() }
         r.register(path: "/health/assessment/six-dim") { _ in PlaceholderViewController(title: "六维评测") }
-        r.register(path: "/health/assessment/report") { _ in HealthReportViewController() }
         r.register(path: "/health/assessment/risk") { _ in PlaceholderViewController(title: "风险评估") }
+
+        // 健康报告 → H5 `#/health/report`；详情 `id` 必填
+        r.register(path: "/health/report") { _ in healthReportWebView() }
+        r.register(path: "/health/assessment/report") { _ in healthReportWebView() }
+        r.register(path: "/health/report/detail") { params in
+            healthReportDetailWebView(params: params)
+        }
 
         // OKOK 广播体脂秤原生测量（不连 GATT）
         r.register(path: "/health/scale/measure") { _ in ScaleBroadcastMeasureViewController() }
@@ -76,6 +82,25 @@ enum HealthRoutes {
         }
 
         registerAllMetricH5Routes(r)
+    }
+
+    // MARK: - 健康报告 H5
+
+    private static func healthReportWebView() -> UIViewController {
+        WebViewController(
+            urlString: H5Config.healthReportPageURL.absoluteString,
+            title: "健康报告"
+        )
+    }
+
+    private static func healthReportDetailWebView(params: [String: Any]) -> UIViewController {
+        let reportId = stringParam(params["id"])
+            ?? stringParam(params["reportId"])
+            ?? ""
+        return WebViewController(
+            urlString: H5Config.healthReportDetailPageURL(id: reportId).absoluteString,
+            title: "健康报告详情"
+        )
     }
 
     // MARK: - 体征监测 H5

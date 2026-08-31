@@ -21,7 +21,7 @@ final class BenefitTabViewController: BaseViewController {
         tv.showsVerticalScrollIndicator = false
         tv.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 24, right: 0)
         tv.rowHeight = UITableView.automaticDimension
-        tv.estimatedRowHeight = 140
+        tv.estimatedRowHeight = 160
         tv.dataSource = self
         tv.delegate = self
         tv.register(VoucherBindEntryCell.self, forCellReuseIdentifier: VoucherBindEntryCell.reuseID)
@@ -182,6 +182,21 @@ final class BenefitTabViewController: BaseViewController {
 extension BenefitTabViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         (showsBindRow ? 1 : 0) + entries.count
+    }
+
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        let width = tableView.bounds.width
+        if showsBindRow && indexPath.row == 0 {
+            return VoucherBindEntryCell.rowHeight(for: width)
+        }
+        let entryIndex = showsBindRow ? indexPath.row - 1 : indexPath.row
+        let entry = entries[entryIndex]
+        switch entry {
+        case .card(let card):
+            return BenefitCardCell.rowHeight(for: width, card: card)
+        case .transfer(let record):
+            return BenefitCardCell.rowHeight(for: width, transfer: record)
+        }
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {

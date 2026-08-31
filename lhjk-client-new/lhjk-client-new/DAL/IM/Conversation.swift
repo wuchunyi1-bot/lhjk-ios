@@ -78,7 +78,7 @@ struct Conversation: Identifiable, Codable {
     let name: String
     let title: String
     let avatar: String
-    let status: String
+    var status: String
     let serviceScope: String
     var lastMessage: String
     /// 最后一条消息的服务端时间（毫秒）。排序与右上角 `lastTime` 共用此字段，不用阅读/操作时间。
@@ -86,6 +86,13 @@ struct Conversation: Identifiable, Codable {
     var lastTime: String
     var unread: Int
     let important: Bool
+    /// 群组业务状态（`GET /v1/session/getGroup` 的 `status`）；非群聊或尚未拉取为 nil
+    var groupStatus: Int?
+
+    /// 仅 `groupStatus == 1` 可发送；已拉取且非 1 时只读。`nil` 表示尚未用群组接口判定。
+    var isMessagingReadOnly: Bool {
+        GroupSessionStatus.isMessagingReadOnly(groupStatus)
+    }
 
     var unreadBadge: String? {
         unread > 0 ? (unread > 99 ? "99+" : "\(unread)") : nil
@@ -279,7 +286,8 @@ extension Conversation {
             lastMessageAt: rc.sentTime,
             lastTime: formatRCTime(rc.sentTime),
             unread: Int(rc.unreadMessageCount),
-            important: meta.important
+            important: meta.important,
+            groupStatus: nil
         )
     }
 
@@ -317,12 +325,7 @@ extension Conversation {
             ? String((group.groupImg ?? name).prefix(1))
             : String(name.prefix(1))
 
-        let statusStr: String
-        if let n = group.numbers, n > 0 {
-            statusStr = "\(n) 人在线"
-        } else {
-            statusStr = "在线"
-        }
+        let statusStr = GroupSessionStatus.listStatusText(status: group.status, memberCount: group.numbers)
 
         return Conversation(
             id: convId,
@@ -337,7 +340,8 @@ extension Conversation {
             lastMessageAt: lastMessageAt,
             lastTime: lastTimeStr,
             unread: unread,
-            important: group.labelType == 1
+            important: group.labelType == 1,
+            groupStatus: group.status ?? 0
         )
     }
 

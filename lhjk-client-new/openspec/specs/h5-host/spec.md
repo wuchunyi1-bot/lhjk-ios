@@ -47,6 +47,8 @@ H5 hash 路径由 `H5Config` 拼接；饮食运动根路径为 `exercise-food`�
 | 添加饮食 | `#/exercise-food/add` | `meal` 必填 | `…/add-diet` |
 | 运动打卡 | `#/exercise-food/check-in` | `monitorId` 可选 | `…/add-motion` |
 | 健康档案 | `#/health/record` | — | `/health/record`、`/me/health-profile` |
+| 健康报告 | `#/health/report` | — | `/health/report`、`/health/assessment/report`、`/me/health-report` |
+| 健康报告详情 | `#/health/report/detail` | `id` 必填（报告 id） | `/health/report/detail`、`/me/health-report/detail` |
 | 健康评估 | `#/health-assessment` | — | `/me/health-assessment`、`/health-assessment` |
 | 健康测评 | `#/health-evaluations` | — | `/me/health-evaluations`、`/health-evaluations` |
 | 饮食方案 | `#/diet-plan` | `date` 可选（`yyyy-MM-dd`，默认当天） | `/me/diet-plan`、`/diet-plan` |

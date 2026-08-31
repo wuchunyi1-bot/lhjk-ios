@@ -197,22 +197,24 @@ final class OrderDetailAddressView: UIView {
 
         nameLabel.font = .fdFont(ofSize: 18, weight: .medium)
         nameLabel.textColor = OrderDetailFigma.title
-        nameLabel.numberOfLines = 1
+        nameLabel.numberOfLines = 0
 
         addressLabel.font = .fdFont(ofSize: 16, weight: .regular)
         addressLabel.textColor = OrderDetailFigma.subtitle
-        addressLabel.numberOfLines = 2
-        addressLabel.lineBreakMode = .byTruncatingTail
+        addressLabel.numberOfLines = 0
 
-        let nameRow = UIStackView(arrangedSubviews: [iconContainer, nameLabel])
+        let infoCol = UIStackView(arrangedSubviews: [nameLabel, addressLabel])
+        infoCol.axis = .vertical
+        infoCol.spacing = 6
+
+        let nameRow = UIStackView(arrangedSubviews: [iconContainer, infoCol])
         nameRow.axis = .horizontal
         nameRow.spacing = 8
-        nameRow.alignment = .center
+        nameRow.alignment = .top
 
-        let root = UIStackView(arrangedSubviews: [titleLabel, nameRow, addressLabel])
+        let root = UIStackView(arrangedSubviews: [titleLabel, nameRow])
         root.axis = .vertical
         root.spacing = 10
-        root.setCustomSpacing(6, after: nameRow)
         addSubview(root)
         root.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
     }
@@ -281,11 +283,13 @@ final class OrderDetailInstitutionView: UIView {
         hintChip.font = .fdFont(ofSize: 12, weight: .regular)
         hintChip.textColor = OrderDetailFigma.chipText
         hintChip.numberOfLines = 1
+        hintContainer.setContentHuggingPriority(.required, for: .horizontal)
+        hintContainer.setContentCompressionResistancePriority(.required, for: .horizontal)
         hintContainer.addSubview(hintChip)
         hintChip.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(12)
-            $0.trailing.lessThanOrEqualToSuperview().offset(-4)
-            $0.centerY.equalToSuperview()
+            $0.trailing.equalToSuperview().offset(-8)
+            $0.top.bottom.equalToSuperview().inset(4)
         }
 
         iconContainer.backgroundColor = OrderDetailFigma.pinBg
@@ -299,46 +303,51 @@ final class OrderDetailInstitutionView: UIView {
 
         nameLabel.font = .fdFont(ofSize: 18, weight: .medium)
         nameLabel.textColor = OrderDetailFigma.title
-        nameLabel.numberOfLines = 1
+        nameLabel.numberOfLines = 0
 
         addressLabel.font = .fdFont(ofSize: 16, weight: .regular)
         addressLabel.textColor = OrderDetailFigma.subtitle
-        addressLabel.numberOfLines = 2
-        addressLabel.lineBreakMode = .byTruncatingTail
+        addressLabel.numberOfLines = 0
 
         let nameRow = UIStackView(arrangedSubviews: [iconContainer, nameLabel])
         nameRow.axis = .horizontal
         nameRow.spacing = 8
-        nameRow.alignment = .center
+        nameRow.alignment = .top
+
+        let institutionCol = UIStackView(arrangedSubviews: [nameRow, addressLabel])
+        institutionCol.axis = .vertical
+        institutionCol.spacing = 6
+        institutionCol.setCustomSpacing(10, after: nameRow)
 
         callBar.onCall = { [weak self] in
             self?.onCall?()
         }
 
-        [titleLabel, hintContainer, nameRow, addressLabel, callBar].forEach(addSubview)
-
+        addSubview(titleLabel)
+        addSubview(hintContainer)
         titleLabel.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(16)
             $0.top.equalToSuperview().offset(16)
-            $0.height.equalTo(24)
         }
         hintContainer.snp.makeConstraints {
             $0.trailing.equalToSuperview()
-            $0.top.equalToSuperview().offset(16)
-            $0.size.equalTo(CGSize(width: 156, height: 23))
+            $0.centerY.equalTo(titleLabel)
+            $0.leading.greaterThanOrEqualTo(titleLabel.snp.trailing).offset(8)
         }
-        nameRow.snp.makeConstraints {
+
+        let contentStack = UIStackView(arrangedSubviews: [institutionCol])
+        contentStack.axis = .vertical
+        contentStack.spacing = 12
+        addSubview(contentStack)
+        addSubview(callBar)
+        contentStack.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(16)
-            $0.trailing.equalToSuperview().inset(16)
-            $0.top.equalToSuperview().offset(52)
+            $0.trailing.equalToSuperview()
+            $0.top.equalTo(titleLabel.snp.bottom).offset(12)
         }
-        addressLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(39)
-            $0.trailing.equalToSuperview().inset(16)
-            $0.top.equalTo(nameRow.snp.bottom).offset(6)
-        }
+
         callBar.snp.makeConstraints {
-            $0.top.equalTo(addressLabel.snp.bottom).offset(12)
+            $0.top.equalTo(contentStack.snp.bottom).offset(12)
             $0.leading.trailing.bottom.equalToSuperview()
             $0.height.equalTo(46)
         }
@@ -423,7 +432,7 @@ final class OrderDetailShipmentTaskCardView: UIView {
         layer.cornerRadius = 12
         clipsToBounds = true
 
-        iconView.image = UIImage(named: "order_confirm_package_icon")
+        iconView.image = UIImage(named: "order_confirm_transfer")
         iconView.contentMode = .scaleAspectFit
 
         nameLabel.font = .fdFont(ofSize: 16, weight: .medium)
@@ -1164,9 +1173,8 @@ final class OrderDetailActionBar: UIView {
             layer.shadowOffset = CGSize(width: 0, height: -2)
             layer.shadowRadius = 8
         case .scrollInline:
-            backgroundColor = .white
-            layer.cornerRadius = 16
-            clipsToBounds = true
+            backgroundColor = .clear
+            clipsToBounds = false
         }
 
         stack.axis = .horizontal
@@ -1207,22 +1215,45 @@ final class OrderDetailActionBar: UIView {
     }
 
     private func makeButton(action: OrderListCardAction, primary: Bool) -> UIButton {
-        // `.system` 会忽略 backgroundColor，次级按钮需 `.custom` 才能显示白底
         let button = UIButton(type: .custom)
-        button.setTitle(action.title, for: .normal)
-        button.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
-        button.layer.cornerRadius = 20
         button.clipsToBounds = true
-        if primary {
-            button.backgroundColor = OrderDetailFigma.primaryOrange
-            button.setTitleColor(.white, for: .normal)
-            button.layer.borderWidth = 0
+        button.layer.cornerRadius = 20
+
+        if #available(iOS 15.0, *) {
+            var config = UIButton.Configuration.plain()
+            config.cornerStyle = .capsule
+            config.title = action.title
+            config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+                var outgoing = incoming
+                outgoing.font = .fdFont(ofSize: 16, weight: .medium)
+                return outgoing
+            }
+            if primary {
+                config.baseForegroundColor = .white
+                config.background.backgroundColor = OrderDetailFigma.primaryOrange
+                config.background.strokeWidth = 0
+            } else {
+                config.baseForegroundColor = OrderDetailFigma.primaryOrange
+                config.background.backgroundColor = .clear
+                config.background.strokeColor = OrderDetailFigma.primaryOrange
+                config.background.strokeWidth = 0.5
+            }
+            button.configuration = config
         } else {
-            button.backgroundColor = .white
-            button.setTitleColor(OrderDetailFigma.primaryOrange, for: .normal)
-            button.layer.borderWidth = 0.5
-            button.layer.borderColor = OrderDetailFigma.primaryOrange.cgColor
+            button.setTitle(action.title, for: .normal)
+            button.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
+            if primary {
+                button.backgroundColor = OrderDetailFigma.primaryOrange
+                button.setTitleColor(.white, for: .normal)
+                button.layer.borderWidth = 0
+            } else {
+                button.backgroundColor = .clear
+                button.setTitleColor(OrderDetailFigma.primaryOrange, for: .normal)
+                button.layer.borderWidth = 0.5
+                button.layer.borderColor = OrderDetailFigma.primaryOrange.cgColor
+            }
         }
+
         button.addAction(UIAction { [weak self] _ in
             self?.onAction?(action)
         }, for: .touchUpInside)

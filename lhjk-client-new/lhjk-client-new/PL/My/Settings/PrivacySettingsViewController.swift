@@ -41,7 +41,7 @@ final class PrivacySettingsViewController: BaseViewController {
             v.layer.borderWidth = 1
             v.layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.18).cgColor
             let lbl = UILabel()
-            lbl.text = "富德健康将严格保护您的隐私。您可以在此管理相关权限："
+            lbl.text = "富德联好健康将严格保护您的隐私。您可以在此管理相关权限："
             lbl.font = .fdMyCaption
             lbl.textColor = .fdPrimary
             lbl.numberOfLines = 0

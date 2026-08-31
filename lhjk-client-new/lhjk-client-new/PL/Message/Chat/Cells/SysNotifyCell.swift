@@ -394,7 +394,7 @@ final class SysNotifyCell: UITableViewCell {
                 let table = makeTableView(headers: headers, cells: cells)
                 wrap.addSubview(table)
                 table.snp.makeConstraints { make in
-                    make.top.equalToSuperview().offset(8)
+                    make.top.equalToSuperview().offset(4)
                     make.leading.trailing.bottom.equalToSuperview()
                 }
                 rowsStack.addArrangedSubview(wrap)
@@ -552,8 +552,14 @@ final class SysNotifyCell: UITableViewCell {
                 wrap.layer.borderWidth = 0
             }
             wrap.addSubview(label)
+            let columnInset = ChatBubbleStyle.Card.tableColumnHorizontalInset
+            let verticalInset = isHeader
+                ? ChatBubbleStyle.Card.tableHeaderVerticalInset
+                : ChatBubbleStyle.Card.tableCellVerticalInset
             label.snp.makeConstraints { make in
-                make.edges.equalToSuperview().inset(UIEdgeInsets(top: isHeader ? 7 : 12, left: 12, bottom: isHeader ? 7 : 12, right: 12))
+                make.edges.equalToSuperview().inset(
+                    UIEdgeInsets(top: verticalInset, left: columnInset, bottom: verticalInset, right: columnInset)
+                )
             }
             if !isHeader {
                 let line = UIView()
@@ -836,7 +842,7 @@ final class SysNotifyCell: UITableViewCell {
             }
             rowsStack.snp.remakeConstraints { make in
                 make.top.equalTo(dividerView.snp.bottom).offset(ChatBubbleStyle.Card.dividerToRowsGap)
-                make.leading.trailing.equalToSuperview().inset(pad)
+                make.leading.trailing.equalToSuperview().inset(ChatBubbleStyle.Card.rowsContentInset)
             }
         } else {
             dividerView.snp.remakeConstraints { make in
@@ -869,7 +875,7 @@ final class SysNotifyCell: UITableViewCell {
             if showRows {
                 rowsStack.snp.remakeConstraints { make in
                     make.top.equalTo(dividerView.snp.bottom).offset(ChatBubbleStyle.Card.dividerToRowsGap)
-                    make.leading.trailing.equalToSuperview().inset(pad)
+                    make.leading.trailing.equalToSuperview().inset(ChatBubbleStyle.Card.rowsContentInset)
                     make.bottom.equalToSuperview().offset(-pad)
                 }
             } else if showDesc {

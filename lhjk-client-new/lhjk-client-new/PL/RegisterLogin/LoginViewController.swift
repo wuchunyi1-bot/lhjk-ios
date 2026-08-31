@@ -13,8 +13,7 @@ enum LoginMode {
 /// 参考 funde-client PRD 用户注册与登录_v1.0.md + LoginView.vue
 ///
 /// 完整流程:
-///   隐私弹窗 → 登录页 (验证码/密码/微信)
-///   → 通知权限预引导 → /home 或 /onboarding
+///   登录页 (验证码/密码/微信) → 通知权限预引导 → /home 或 /onboarding
 ///
 /// 分支流程: 忘记密码、登录过期、账号冻结/注销中
 final class LoginViewController: BaseViewController {
@@ -26,9 +25,40 @@ final class LoginViewController: BaseViewController {
 
     // MARK: - Constants
 
-    private let horizontalPadding: CGFloat = 24
+    /// iPhone 5 / SE1（min 边 ≤ 320pt）走紧凑布局，其它机型保持原样
+    private var usesCompactLoginLayout = false
+    private var heroHeightConstraint: Constraint?
+
+    private enum LoginLayoutMetrics {
+        static let compactScreenThreshold: CGFloat = 320
+
+        static func isCompactScreen(bounds: CGRect) -> Bool {
+            guard bounds.width > 0, bounds.height > 0 else { return false }
+            return min(bounds.width, bounds.height) <= compactScreenThreshold
+        }
+
+        static func horizontalPadding(compact: Bool) -> CGFloat { compact ? 20 : 24 }
+        static func heroHeight(compact: Bool) -> CGFloat { compact ? 172 : 243 }
+        static func brandTop(compact: Bool) -> CGFloat { compact ? 52 : 80 }
+        static func fieldsTopOffset(compact: Bool) -> CGFloat { compact ? 16 : 251 }
+        static func fieldStackSpacing(compact: Bool) -> CGFloat { compact ? 12 : 20 }
+        static func forgotStackSpacing(compact: Bool) -> CGFloat { compact ? 12 : 16 }
+        static func submitGapBelowFields(compact: Bool) -> CGFloat { compact ? 24 : 52 }
+        static func submitHeight(compact: Bool) -> CGFloat { compact ? 48 : 51 }
+        static func modeSwitchHeight(compact: Bool) -> CGFloat { compact ? 36 : 44 }
+        static func wechatButtonSize(compact: Bool) -> CGFloat { compact ? 44 : 52 }
+        static func footerGapBelowModeSwitch(compact: Bool) -> CGFloat { compact ? 6 : 8 }
+        static func agreementGapBelowFooter(compact: Bool) -> CGFloat { compact ? 10 : 12 }
+        static func contentBottomPadding(compact: Bool) -> CGFloat { compact ? 12 : 12 }
+    }
+
+    private var horizontalPadding: CGFloat {
+        LoginLayoutMetrics.horizontalPadding(compact: usesCompactLoginLayout)
+    }
     /// 双输入框区域底边到登录主按钮顶边的间距（密码模式内含「忘记密码」行）
-    private let loginSubmitGapBelowFields: CGFloat = 52
+    private var loginSubmitGapBelowFields: CGFloat {
+        LoginLayoutMetrics.submitGapBelowFields(compact: usesCompactLoginLayout)
+    }
     /// 登录主按钮底边到「使用账号密码登录」顶边的间距（定值，不随底部区域拉伸）
     private let loginModeSwitchGapBelowSubmit: CGFloat = 0
     private var didBuildLoginUI = false
@@ -292,6 +322,8 @@ final class LoginViewController: BaseViewController {
 
     // Overlays
     private var notificationGuideView: NotificationGuideView?
+    private var notificationWaitingForSettingsReturn = false
+    private var notificationForegroundObserver: NSObjectProtocol?
     private var phoneBindingView: PhoneBindingView?
 
     // MARK: - Lifecycle
@@ -303,6 +335,7 @@ final class LoginViewController: BaseViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(_:)),
                                                name: UIResponder.keyboardWillHideNotification, object: nil)
 
+        // 协议勾选在登录页完成，启动后不再弹出「隐私保护提示」
         viewModel.checkPrivacyConsent()
     }
 
@@ -347,9 +380,11 @@ final class LoginViewController: BaseViewController {
             .store(in: &cancellables)
 
         viewModel.$isResettingPassword
+            .combineLatest(viewModel.$isVerifyingForgotCode)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] resetting in
-                self?.updateSubmitButton(isLoggingIn: resetting || (self?.viewModel.isLoggingIn ?? false))
+            .sink { [weak self] resetting, verifying in
+                let loggingIn = (self?.viewModel.isLoggingIn ?? false) || resetting || verifying
+                self?.updateSubmitButton(isLoggingIn: loggingIn)
             }
             .store(in: &cancellables)
 
@@ -441,6 +476,7 @@ final class LoginViewController: BaseViewController {
         guard !didBuildLoginUI else { return }
         guard case .loginForm = viewModel.flowStep else { return }
         didBuildLoginUI = true
+        usesCompactLoginLayout = LoginLayoutMetrics.isCompactScreen(bounds: view.bounds)
 
         view.backgroundColor = .fdLoginBackground
 
@@ -450,66 +486,39 @@ final class LoginViewController: BaseViewController {
         heroContainer.addSubview(heroFadeView)
         heroContainer.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview()
-            make.height.equalTo(243)
+            heroHeightConstraint = make.height.equalTo(
+                LoginLayoutMetrics.heroHeight(compact: usesCompactLoginLayout)
+            ).constraint
         }
         heroImageView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
         heroFadeView.snp.makeConstraints { make in
             make.leading.trailing.bottom.equalToSuperview()
-            make.height.equalTo(89)
-        }
-
-        view.addSubview(agreementCheckbox)
-        agreementCheckbox.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12)
-        }
-        agreementCheckbox.onUserAgreementTap = { [weak self] in
-            self?.openURL("https://example.com/agreement", title: "用户协议")
-        }
-        agreementCheckbox.onPrivacyPolicyTap = { [weak self] in
-            self?.openURL("https://example.com/privacy", title: "隐私政策")
-        }
-        agreementCheckbox.onConsentTap = { [weak self] in
-            self?.openURL("https://example.com/consent", title: "健康管理服务知情同意书")
+            make.height.equalTo(usesCompactLoginLayout ? 64 : 89)
         }
 
         if submitGradientLayer.superlayer == nil {
             submitButton.layer.insertSublayer(submitGradientLayer, at: 0)
         }
-        view.addSubview(submitButton)
-        view.addSubview(modeSwitchButton)
-        modeSwitchButton.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            modeSwitchHeightConstraint = make.height.equalTo(44).constraint
-            make.top.equalTo(submitButton.snp.bottom).offset(loginModeSwitchGapBelowSubmit)
-        }
 
         loginFooterStack.addArrangedSubview(wechatStack)
         loginFooterStack.addArrangedSubview(sessionExpiredLabel)
-        loginFooterStack.setCustomSpacing(12, after: wechatStack)
-        wechatButton.snp.makeConstraints { $0.size.equalTo(52) }
+        loginFooterStack.setCustomSpacing(
+            usesCompactLoginLayout ? 8 : 12,
+            after: wechatStack
+        )
+        wechatButton.snp.makeConstraints {
+            $0.size.equalTo(LoginLayoutMetrics.wechatButtonSize(compact: usesCompactLoginLayout))
+        }
         wechatLabel.addGestureRecognizer(
             UITapGestureRecognizer(target: self, action: #selector(handleWechatLoginTap))
         )
 
-        view.addSubview(loginFooterStack)
-        loginFooterStack.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
-            make.bottom.equalTo(agreementCheckbox.snp.top).offset(-12)
-        }
-        sessionExpiredLabel.snp.makeConstraints { make in
-            make.width.equalTo(loginFooterStack.snp.width)
-        }
-
-        view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
-        scrollView.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
-        }
-        contentView.snp.makeConstraints { make in
-            make.edges.width.equalToSuperview()
+        if usesCompactLoginLayout {
+            setupCompactLoginChrome()
+        } else {
+            setupStandardLoginChrome()
         }
 
         let dismissTap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
@@ -518,9 +527,17 @@ final class LoginViewController: BaseViewController {
 
         configureLoginFieldKeyboards()
 
+        smsInnerStack.spacing = LoginLayoutMetrics.fieldStackSpacing(compact: usesCompactLoginLayout)
+        passwordInnerStack.spacing = LoginLayoutMetrics.fieldStackSpacing(compact: usesCompactLoginLayout)
+        forgotInnerStack.spacing = LoginLayoutMetrics.forgotStackSpacing(compact: usesCompactLoginLayout)
+        resetInnerStack.spacing = LoginLayoutMetrics.forgotStackSpacing(compact: usesCompactLoginLayout)
+
         contentView.addSubview(brandHeader)
+        brandHeader.applyCompactLayout(usesCompactLoginLayout)
         brandHeader.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(80)
+            make.top.equalToSuperview().offset(
+                LoginLayoutMetrics.brandTop(compact: usesCompactLoginLayout)
+            )
             make.leading.trailing.equalToSuperview().inset(horizontalPadding)
         }
 
@@ -570,30 +587,46 @@ final class LoginViewController: BaseViewController {
         resetFieldsContainer.addSubview(resetInnerStack)
         resetInnerStack.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        // 四个流程表单独立占位，避免用普通 UIView 作为 UIStackView arrangedSubview
-        // 时无法向 stack 传递 intrinsic height。
         contentView.addSubview(smsFieldsContainer)
-        smsFieldsContainer.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(251)
-            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
-        }
-
         contentView.addSubview(passwordFieldsContainer)
-        passwordFieldsContainer.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(251)
-            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
-        }
-
         contentView.addSubview(forgotFieldsContainer)
-        forgotFieldsContainer.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(251)
-            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
-        }
-
         contentView.addSubview(resetFieldsContainer)
-        resetFieldsContainer.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(251)
-            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+
+        let fieldsTopOffset = LoginLayoutMetrics.fieldsTopOffset(compact: usesCompactLoginLayout)
+        if usesCompactLoginLayout {
+            smsFieldsContainer.snp.makeConstraints { make in
+                make.top.equalTo(brandHeader.snp.bottom).offset(fieldsTopOffset)
+                make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+            }
+            passwordFieldsContainer.snp.makeConstraints { make in
+                make.top.equalTo(brandHeader.snp.bottom).offset(fieldsTopOffset)
+                make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+            }
+            forgotFieldsContainer.snp.makeConstraints { make in
+                make.top.equalTo(brandHeader.snp.bottom).offset(fieldsTopOffset)
+                make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+            }
+            resetFieldsContainer.snp.makeConstraints { make in
+                make.top.equalTo(brandHeader.snp.bottom).offset(fieldsTopOffset)
+                make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+            }
+        } else {
+            smsFieldsContainer.snp.makeConstraints { make in
+                make.top.equalToSuperview().offset(fieldsTopOffset)
+                make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+            }
+            passwordFieldsContainer.snp.makeConstraints { make in
+                make.top.equalToSuperview().offset(fieldsTopOffset)
+                make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+            }
+            forgotFieldsContainer.snp.makeConstraints { make in
+                make.top.equalToSuperview().offset(fieldsTopOffset)
+                make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+            }
+            resetFieldsContainer.snp.makeConstraints { make in
+                make.top.equalToSuperview().offset(fieldsTopOffset)
+                make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+            }
         }
 
         contentView.addSubview(forgotPasswordButton)
@@ -606,6 +639,101 @@ final class LoginViewController: BaseViewController {
 
         applySessionExpiredIfNeeded()
         updateFormStepUI(animated: false)
+    }
+
+    private func setupStandardLoginChrome() {
+        view.addSubview(agreementCheckbox)
+        agreementCheckbox.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12)
+        }
+        wireAgreementCheckboxActions()
+
+        view.addSubview(submitButton)
+        view.addSubview(modeSwitchButton)
+        modeSwitchButton.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            modeSwitchHeightConstraint = make.height.equalTo(
+                LoginLayoutMetrics.modeSwitchHeight(compact: false)
+            ).constraint
+            make.top.equalTo(submitButton.snp.bottom).offset(loginModeSwitchGapBelowSubmit)
+        }
+
+        view.addSubview(loginFooterStack)
+        loginFooterStack.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+            make.bottom.equalTo(agreementCheckbox.snp.top).offset(-12)
+        }
+        sessionExpiredLabel.snp.makeConstraints { make in
+            make.width.equalTo(loginFooterStack.snp.width)
+        }
+
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+        scrollView.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+        }
+        contentView.snp.makeConstraints { make in
+            make.edges.width.equalToSuperview()
+        }
+    }
+
+    private func setupCompactLoginChrome() {
+        scrollView.alwaysBounceVertical = true
+
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+        scrollView.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(view.safeAreaLayoutGuide)
+        }
+        contentView.snp.makeConstraints { make in
+            make.edges.width.equalToSuperview()
+        }
+
+        contentView.addSubview(submitButton)
+        contentView.addSubview(modeSwitchButton)
+        contentView.addSubview(loginFooterStack)
+        contentView.addSubview(agreementCheckbox)
+
+        wireAgreementCheckboxActions()
+
+        modeSwitchButton.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            modeSwitchHeightConstraint = make.height.equalTo(
+                LoginLayoutMetrics.modeSwitchHeight(compact: true)
+            ).constraint
+            make.top.equalTo(submitButton.snp.bottom).offset(loginModeSwitchGapBelowSubmit)
+        }
+
+        loginFooterStack.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+            make.top.equalTo(modeSwitchButton.snp.bottom).offset(
+                LoginLayoutMetrics.footerGapBelowModeSwitch(compact: true)
+            )
+        }
+        sessionExpiredLabel.snp.makeConstraints { make in
+            make.width.equalTo(loginFooterStack.snp.width)
+        }
+
+        agreementCheckbox.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(horizontalPadding)
+            make.top.equalTo(loginFooterStack.snp.bottom).offset(
+                LoginLayoutMetrics.agreementGapBelowFooter(compact: true)
+            )
+        }
+    }
+
+    private func wireAgreementCheckboxActions() {
+        agreementCheckbox.onUserAgreementTap = { [weak self] in
+            self?.openURL("https://example.com/agreement", title: "用户协议")
+        }
+        agreementCheckbox.onPrivacyPolicyTap = { [weak self] in
+            self?.openURL("https://example.com/privacy", title: "隐私政策")
+        }
+        agreementCheckbox.onConsentTap = { [weak self] in
+            self?.openURL("https://example.com/consent", title: "健康管理服务知情同意书")
+        }
     }
 
     override func viewDidLayoutSubviews() {
@@ -634,89 +762,195 @@ final class LoginViewController: BaseViewController {
         // 此时 submitButton 尚未加入 contentView，不能创建跨层级约束。
         guard didBuildLoginUI, submitButton.superview != nil else { return }
 
-        let step = viewModel.formStep
-        let isSMS = viewModel.loginMode == .sms
         let changes = {
-            let inLogin = step == .login
-            self.smsFieldsContainer.isHidden = !(inLogin && isSMS)
-            self.passwordFieldsContainer.isHidden = !(inLogin && !isSMS)
-            self.forgotFieldsContainer.isHidden = step != .forgot
-            self.resetFieldsContainer.isHidden = step != .resetPassword
-
-            self.forgotPasswordButton.isHidden = !(inLogin && !isSMS)
-            self.agreementCheckbox.isHidden = !inLogin
-            self.loginFooterStack.isHidden = !inLogin
-            self.modeSwitchButton.isHidden = !inLogin
-            self.modeSwitchHeightConstraint?.update(offset: inLogin ? 44 : 0)
-
-            self.scrollView.snp.remakeConstraints { make in
-                make.top.leading.trailing.equalToSuperview()
-                if inLogin {
-                    make.bottom.equalTo(self.submitButton.snp.top)
-                } else {
-                    make.bottom.equalTo(self.view.safeAreaLayoutGuide)
-                }
-            }
-
-            let fieldsBottom: ConstraintItem
-            switch step {
-            case .login:
-                fieldsBottom = isSMS
-                    ? self.smsFieldsContainer.snp.bottom
-                    : self.passwordFieldsContainer.snp.bottom
-            case .forgot:
-                fieldsBottom = self.forgotFieldsContainer.snp.bottom
-            case .resetPassword:
-                fieldsBottom = self.resetFieldsContainer.snp.bottom
-            }
-
-            self.contentView.snp.remakeConstraints { make in
-                make.top.leading.trailing.width.equalToSuperview()
-                if inLogin {
-                    if isSMS {
-                        make.bottom.equalTo(self.smsFieldsContainer.snp.bottom)
-                    } else {
-                        // 含「忘记密码」行，否则按钮在 contentView 外无法响应点击
-                        make.bottom.equalTo(self.forgotPasswordButton.snp.bottom)
-                    }
-                } else {
-                    make.bottom.equalTo(self.submitButton.snp.bottom).offset(20)
-                }
-            }
-
-            self.submitButton.snp.remakeConstraints { make in
-                switch step {
-                case .login:
-                    make.top.equalTo(fieldsBottom).offset(self.loginSubmitGapBelowFields)
-                case .forgot:
-                    make.top.equalTo(self.forgotFieldsContainer.snp.bottom).offset(20)
-                case .resetPassword:
-                    make.top.equalTo(self.resetFieldsContainer.snp.bottom).offset(20)
-                }
-                make.leading.trailing.equalToSuperview().inset(self.horizontalPadding)
-                make.height.equalTo(51)
-            }
-
-            switch step {
-            case .login:
-                self.submitButton.setTitle(isSMS ? "登录/注册" : "密码登录", for: .normal)
-                self.modeSwitchButton.setTitle(
-                    isSMS ? "使用账号密码登录" : "返回验证码登录",
-                    for: .normal
-                )
-                self.wechatStack.isHidden = false
-            case .forgot:
-                self.submitButton.setTitle("下一步", for: .normal)
-                self.wechatStack.isHidden = true
-            case .resetPassword:
-                self.submitButton.setTitle("确认重置", for: .normal)
-                self.wechatStack.isHidden = true
+            if self.usesCompactLoginLayout {
+                self.applyCompactFormStepLayout()
+            } else {
+                self.applyStandardFormStepLayout()
             }
         }
         if animated {
             UIView.animate(withDuration: 0.25, animations: changes)
         } else {
             changes()
+        }
+    }
+
+    private func applyStandardFormStepLayout() {
+        let step = viewModel.formStep
+        let isSMS = viewModel.loginMode == .sms
+        let inLogin = step == .login
+
+        smsFieldsContainer.isHidden = !(inLogin && isSMS)
+        passwordFieldsContainer.isHidden = !(inLogin && !isSMS)
+        forgotFieldsContainer.isHidden = step != .forgot
+        resetFieldsContainer.isHidden = step != .resetPassword
+
+        forgotPasswordButton.isHidden = !(inLogin && !isSMS)
+        agreementCheckbox.isHidden = !inLogin
+        loginFooterStack.isHidden = !inLogin
+        modeSwitchButton.isHidden = !inLogin
+        modeSwitchHeightConstraint?.update(offset: inLogin ? LoginLayoutMetrics.modeSwitchHeight(compact: false) : 0)
+
+        scrollView.snp.remakeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(self.submitButton.snp.top)
+        }
+
+        let fieldsBottom: ConstraintItem
+        switch step {
+        case .login:
+            fieldsBottom = isSMS
+                ? smsFieldsContainer.snp.bottom
+                : passwordFieldsContainer.snp.bottom
+        case .forgot:
+            fieldsBottom = forgotFieldsContainer.snp.bottom
+        case .resetPassword:
+            fieldsBottom = resetFieldsContainer.snp.bottom
+        }
+
+        contentView.snp.remakeConstraints { make in
+            make.top.leading.trailing.width.equalToSuperview()
+            if inLogin {
+                if isSMS {
+                    make.bottom.equalTo(self.smsFieldsContainer.snp.bottom)
+                } else {
+                    make.bottom.equalTo(self.forgotPasswordButton.snp.bottom)
+                }
+            } else {
+                make.bottom.equalTo(fieldsBottom).offset(20)
+            }
+        }
+
+        submitButton.snp.remakeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(self.horizontalPadding)
+            make.height.equalTo(LoginLayoutMetrics.submitHeight(compact: false))
+            switch step {
+            case .login:
+                make.top.equalTo(fieldsBottom).offset(self.loginSubmitGapBelowFields)
+            case .forgot, .resetPassword:
+                make.bottom.equalTo(self.view.safeAreaLayoutGuide).offset(-24)
+            }
+        }
+
+        applyFormStepChrome(step: step, isSMS: isSMS)
+    }
+
+    private func applyCompactFormStepLayout() {
+        let step = viewModel.formStep
+        let isSMS = viewModel.loginMode == .sms
+        let inLogin = step == .login
+
+        smsFieldsContainer.isHidden = !(inLogin && isSMS)
+        passwordFieldsContainer.isHidden = !(inLogin && !isSMS)
+        forgotFieldsContainer.isHidden = step != .forgot
+        resetFieldsContainer.isHidden = step != .resetPassword
+
+        forgotPasswordButton.isHidden = !(inLogin && !isSMS)
+        agreementCheckbox.isHidden = !inLogin
+        loginFooterStack.isHidden = !inLogin
+        modeSwitchButton.isHidden = !inLogin
+        modeSwitchHeightConstraint?.update(offset: inLogin
+            ? LoginLayoutMetrics.modeSwitchHeight(compact: true)
+            : 0)
+
+        scrollView.snp.remakeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(self.view.safeAreaLayoutGuide)
+        }
+
+        let fieldsBottom: ConstraintItem
+        switch step {
+        case .login:
+            fieldsBottom = isSMS
+                ? smsFieldsContainer.snp.bottom
+                : passwordFieldsContainer.snp.bottom
+        case .forgot:
+            fieldsBottom = forgotFieldsContainer.snp.bottom
+        case .resetPassword:
+            fieldsBottom = resetFieldsContainer.snp.bottom
+        }
+
+        let submitTopAnchor: ConstraintItem
+        if inLogin && !isSMS {
+            submitTopAnchor = forgotPasswordButton.snp.bottom
+        } else {
+            submitTopAnchor = fieldsBottom
+        }
+
+        submitButton.snp.remakeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(self.horizontalPadding)
+            make.height.equalTo(LoginLayoutMetrics.submitHeight(compact: true))
+            make.top.equalTo(submitTopAnchor).offset(self.loginSubmitGapBelowFields)
+        }
+
+        if inLogin {
+            modeSwitchButton.snp.remakeConstraints { make in
+                make.centerX.equalToSuperview()
+                make.height.equalTo(LoginLayoutMetrics.modeSwitchHeight(compact: true))
+                make.top.equalTo(self.submitButton.snp.bottom).offset(self.loginModeSwitchGapBelowSubmit)
+            }
+
+            loginFooterStack.snp.remakeConstraints { make in
+                make.leading.trailing.equalToSuperview().inset(self.horizontalPadding)
+                make.top.equalTo(self.modeSwitchButton.snp.bottom).offset(
+                    LoginLayoutMetrics.footerGapBelowModeSwitch(compact: true)
+                )
+            }
+
+            agreementCheckbox.snp.remakeConstraints { make in
+                make.leading.trailing.equalToSuperview().inset(self.horizontalPadding)
+                make.top.equalTo(self.loginFooterStack.snp.bottom).offset(
+                    LoginLayoutMetrics.agreementGapBelowFooter(compact: true)
+                )
+            }
+
+            contentView.snp.remakeConstraints { make in
+                make.top.leading.trailing.width.equalToSuperview()
+                make.bottom.equalTo(self.agreementCheckbox.snp.bottom).offset(
+                    LoginLayoutMetrics.contentBottomPadding(compact: true)
+                )
+            }
+        } else {
+            modeSwitchButton.snp.remakeConstraints { make in
+                make.centerX.equalToSuperview()
+                make.top.equalTo(self.submitButton.snp.bottom)
+                make.height.equalTo(0)
+            }
+            loginFooterStack.snp.remakeConstraints { make in
+                make.leading.trailing.equalToSuperview().inset(self.horizontalPadding)
+                make.top.equalTo(self.modeSwitchButton.snp.bottom)
+                make.height.equalTo(0)
+            }
+            agreementCheckbox.snp.remakeConstraints { make in
+                make.leading.trailing.equalToSuperview().inset(self.horizontalPadding)
+                make.top.equalTo(self.loginFooterStack.snp.bottom)
+                make.height.equalTo(0)
+            }
+            contentView.snp.remakeConstraints { make in
+                make.top.leading.trailing.width.equalToSuperview()
+                make.bottom.equalTo(self.submitButton.snp.bottom).offset(24)
+            }
+        }
+
+        applyFormStepChrome(step: step, isSMS: isSMS)
+    }
+
+    private func applyFormStepChrome(step: LoginFormStep, isSMS: Bool) {
+        switch step {
+        case .login:
+            submitButton.setTitle(isSMS ? "登录/注册" : "密码登录", for: .normal)
+            modeSwitchButton.setTitle(
+                isSMS ? "使用账号密码登录" : "返回验证码登录",
+                for: .normal
+            )
+            wechatStack.isHidden = false
+        case .forgot:
+            submitButton.setTitle("下一步", for: .normal)
+            wechatStack.isHidden = true
+        case .resetPassword:
+            submitButton.setTitle("确认重置", for: .normal)
+            wechatStack.isHidden = true
         }
     }
 
@@ -774,13 +1008,13 @@ final class LoginViewController: BaseViewController {
 
     @objc private func handleSubmit() {
         dismissKeyboard()
-        guard !viewModel.isLoggingIn, !viewModel.isResettingPassword else { return }
+        guard !viewModel.isLoggingIn, !viewModel.isResettingPassword, !viewModel.isVerifyingForgotCode else { return }
 
         switch viewModel.formStep {
         case .forgot:
             let phone = forgotPhoneField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
             let code = forgotCodeField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
-            _ = viewModel.submitForgotCode(phone: phone, code: code)
+            viewModel.submitForgotCode(phone: phone, code: code)
         case .resetPassword:
             let phone = forgotPhoneField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
             let code = forgotCodeField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
@@ -855,6 +1089,7 @@ final class LoginViewController: BaseViewController {
             let title: String
             switch viewModel.formStep {
             case .resetPassword: title = "提交中…"
+            case .forgot: title = "校验中…"
             default: title = "登录中…"
             }
             submitButton.setTitle(title, for: .disabled)
@@ -868,49 +1103,97 @@ final class LoginViewController: BaseViewController {
     private func showNotificationGuide() {
         guard notificationGuideView == nil else { return }
 
-        UNUserNotificationCenter.current().getNotificationSettings { [weak self] settings in
-            DispatchQueue.main.async {
-                guard let self else { return }
-                let authorized = settings.authorizationStatus == .authorized
-                    || settings.authorizationStatus == .provisional
-                    || settings.authorizationStatus == .ephemeral
-                // 已开启通知：不展示引导，直接进首页
-                if authorized {
-                    self.viewModel.reportNotificationPermission(status: .allowed)
-                    self.viewModel.completePostLoginFlow()
-                    return
+        Task {
+            let decision = await NotificationPromptService.shared.loginPromptDecision()
+            await MainActor.run {
+                switch decision {
+                case .skipAlreadyAuthorized:
+                    NotificationPromptService.shared.registerForRemoteNotificationsIfNeeded()
+                    viewModel.completePostLoginFlow()
+                case .skipCooldown:
+                    viewModel.completePostLoginFlow()
+                case .show:
+                    presentNotificationGuide()
                 }
-                self.presentNotificationGuide()
             }
         }
     }
 
     private func presentNotificationGuide() {
         guard notificationGuideView == nil else { return }
+
         let guide = NotificationGuideView()
         guide.onEnable = { [weak self] in
             guard let self else { return }
-            // 跳转系统 App 设置页开启推送（拒绝过系统弹窗后 requestAuthorization 不再弹出）
-            if let url = URL(string: UIApplication.openSettingsURLString) {
-                UIApplication.shared.open(url)
-            }
-            self.viewModel.reportNotificationPermission(status: .denied)
-            self.dismissNotificationGuide {
-                self.viewModel.completePostLoginFlow()
+            Task {
+                let authorized = await NotificationPromptService.shared.requestSystemAuthorization()
+                await MainActor.run {
+                    if authorized {
+                        self.finishNotificationGuide(action: .enable)
+                    } else {
+                        self.notificationWaitingForSettingsReturn = true
+                        NotificationPromptService.shared.openSystemSettings()
+                    }
+                }
             }
         }
         guide.onSkip = { [weak self] in
-            self?.viewModel.reportNotificationPermission(status: .denied)
-            self?.dismissNotificationGuide {
-                self?.viewModel.completePostLoginFlow()
-            }
+            self?.finishNotificationGuide(action: .skip)
         }
 
         view.addSubview(guide)
         guide.snp.makeConstraints { $0.edges.equalToSuperview() }
         guide.alpha = 0
         notificationGuideView = guide
+        installNotificationForegroundObserver()
         UIView.animate(withDuration: 0.25) { guide.alpha = 1 }
+    }
+
+    private func installNotificationForegroundObserver() {
+        guard notificationForegroundObserver == nil else { return }
+        notificationForegroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleNotificationGuideAppReturned()
+        }
+    }
+
+    private func removeNotificationForegroundObserver() {
+        if let observer = notificationForegroundObserver {
+            NotificationCenter.default.removeObserver(observer)
+            notificationForegroundObserver = nil
+        }
+    }
+
+    private func handleNotificationGuideAppReturned() {
+        guard notificationGuideView != nil else { return }
+        if notificationWaitingForSettingsReturn {
+            notificationWaitingForSettingsReturn = false
+            finishNotificationGuide(action: .enable)
+        }
+    }
+
+    private func finishNotificationGuide(action: NotificationPromptService.PromptAction) {
+        removeNotificationForegroundObserver()
+        notificationWaitingForSettingsReturn = false
+
+        Task {
+            let authorized = await NotificationPromptService.shared.isSystemNotificationAuthorized()
+            await MainActor.run {
+                viewModel.reportNotificationPromptClosed(
+                    action: action,
+                    systemAuthorized: authorized
+                )
+                if authorized {
+                    NotificationPromptService.shared.registerForRemoteNotificationsIfNeeded()
+                }
+                dismissNotificationGuide {
+                    self.viewModel.completePostLoginFlow()
+                }
+            }
+        }
     }
 
     private func dismissNotificationGuide(completion: (() -> Void)? = nil) {

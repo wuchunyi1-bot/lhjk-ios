@@ -3,7 +3,7 @@ import SnapKit
 import Kingfisher
 import AVFoundation
 
-/// 语音气泡 Cell — 波形图标 + 时长（Figma 3876:35332）
+/// 语音气泡 Cell — 波形图标 + 时长（Figma 4182:23081）
 final class VoiceBubbleCell: UITableViewCell {
     static let reuseID = "VoiceBubbleCell"
 
@@ -32,7 +32,7 @@ final class VoiceBubbleCell: UITableViewCell {
     private let bubbleView = UIView()
 
     private let iconView: UIImageView = {
-        let iv = UIImageView(image: UIImage(systemName: "waveform"))
+        let iv = UIImageView()
         iv.contentMode = .scaleAspectFit
         return iv
     }()
@@ -59,9 +59,9 @@ final class VoiceBubbleCell: UITableViewCell {
         backgroundColor = .fdBg
 
         ChatBubbleStyle.configureAvatar(avatarLabel, imageView: avatarImageView)
-        metaLabel.font = ChatBubbleStyle.metaFont
-        metaLabel.textColor = ChatBubbleStyle.metaColor
-        durationLabel.font = ChatBubbleStyle.textFont
+        metaLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        metaLabel.textColor = UIColor(hexString: "#8591AB")
+        durationLabel.font = .fdFont(ofSize: 14, weight: .regular)
 
         [avatarLabel, avatarImageView, metaLabel, bubbleBackground, bubbleView].forEach(contentView.addSubview)
         [iconView, durationLabel, unreadDot].forEach(bubbleView.addSubview)
@@ -80,6 +80,8 @@ final class VoiceBubbleCell: UITableViewCell {
         super.prepareForReuse()
         stopPlayback()
         currentAudioPath = nil
+        iconView.layer.removeAnimation(forKey: "voicePlayingPulse")
+        iconView.alpha = 1.0
     }
 
     func configure(_ msg: ChatMessage, tone: String, convRole: ConversationRole) {
@@ -100,20 +102,19 @@ final class VoiceBubbleCell: UITableViewCell {
             metaLabel.textAlignment = .left
             bubbleBackground.tail = .left
             bubbleBackground.fill = .staffGradient
-            iconView.tintColor = ChatBubbleStyle.primaryText
-            durationLabel.textColor = ChatBubbleStyle.primaryText
-            iconView.transform = .identity
+            iconView.image = UIImage(named: "chat_im_voice_left")
+            durationLabel.textColor = UIColor(hexString: "#1F2942")
         } else {
             metaLabel.text = msg.time
             metaLabel.textAlignment = .right
             bubbleBackground.tail = .right
             bubbleBackground.fill = .userSolid
-            iconView.tintColor = .white
+            iconView.image = UIImage(named: "chat_im_voice_right")
             durationLabel.textColor = .white
-            iconView.transform = CGAffineTransform(scaleX: -1, y: 1)
         }
+        iconView.transform = .identity
 
-        durationLabel.text = "\(seconds)\""
+        durationLabel.text = "\(seconds)″"
         layoutForStaff(isStaff, seconds: seconds)
     }
 
@@ -298,7 +299,18 @@ final class VoiceBubbleCell: UITableViewCell {
     }
 
     private func updatePlayIcon(_ playing: Bool) {
-        iconView.image = UIImage(systemName: playing ? "waveform.circle.fill" : "waveform")
+        if playing {
+            let animation = CABasicAnimation(keyPath: "opacity")
+            animation.fromValue = 1.0
+            animation.toValue = 0.3
+            animation.duration = 0.5
+            animation.autoreverses = true
+            animation.repeatCount = .infinity
+            iconView.layer.add(animation, forKey: "voicePlayingPulse")
+        } else {
+            iconView.layer.removeAnimation(forKey: "voicePlayingPulse")
+            iconView.alpha = 1.0
+        }
     }
 
     private func layoutForStaff(_ isStaff: Bool, seconds: Int) {
@@ -336,7 +348,7 @@ final class VoiceBubbleCell: UITableViewCell {
                 .offset(isStaff ? ChatBubbleStyle.nameToBubbleGap : 0)
             make.bottom.equalToSuperview().offset(-8).priority(999)
             make.width.equalTo(bubbleWidth)
-            make.height.equalTo(40)
+            make.height.equalTo(45)
             if isStaff {
                 make.leading.equalTo(metaLabel)
             } else {
@@ -346,13 +358,14 @@ final class VoiceBubbleCell: UITableViewCell {
 
         if isStaff {
             iconView.snp.remakeConstraints { make in
-                make.leading.equalToSuperview().offset(ChatBubbleStyle.bubbleInset)
+                make.leading.equalToSuperview().offset(12)
                 make.centerY.equalToSuperview()
-                make.size.equalTo(20)
+                make.size.equalTo(17)
             }
             durationLabel.snp.remakeConstraints { make in
-                make.trailing.equalToSuperview().offset(-ChatBubbleStyle.bubbleInset)
+                make.leading.equalTo(iconView.snp.trailing).offset(4)
                 make.centerY.equalToSuperview()
+                make.trailing.lessThanOrEqualToSuperview().offset(-12)
             }
             unreadDot.snp.remakeConstraints { make in
                 make.leading.equalTo(durationLabel.snp.trailing).offset(4)
@@ -361,19 +374,22 @@ final class VoiceBubbleCell: UITableViewCell {
             }
         } else {
             durationLabel.snp.remakeConstraints { make in
-                make.leading.equalToSuperview().offset(ChatBubbleStyle.bubbleInset)
+                make.leading.greaterThanOrEqualToSuperview().offset(12)
                 make.centerY.equalToSuperview()
             }
             iconView.snp.remakeConstraints { make in
-                make.trailing.equalToSuperview().offset(-ChatBubbleStyle.bubbleInset)
+                make.leading.equalTo(durationLabel.snp.trailing).offset(4)
+                make.trailing.equalToSuperview().offset(-12)
                 make.centerY.equalToSuperview()
-                make.size.equalTo(20)
+                make.size.equalTo(17)
             }
         }
     }
 
     private func voiceBubbleWidth(seconds: Int, maxWidth: CGFloat) -> CGFloat {
-        let minWidth: CGFloat = 72
-        return minWidth + CGFloat(min(seconds, 60)) * (maxWidth - minWidth) / 60.0
+        let minWidth: CGFloat = 64
+        let maxSec = 60
+        let s = max(0, min(seconds, maxSec))
+        return minWidth + CGFloat(s) * (maxWidth - minWidth) / CGFloat(maxSec)
     }
 }

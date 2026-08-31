@@ -27,7 +27,7 @@ Hub SHALL 展示「设置与支持」功能组（对齐 `me.functionGroups[0]`�
 #### Scenario: 三行入口
 
 - **WHEN** 渲染该分组
-- **THEN** 行顺序为：设置 → `/me/settings`；关于富德健康 → `/me/settings/about`；当前版本（只读，展示版本号，无跳转）
+- **THEN** 行顺序为：设置 → `/me/settings`；关于富德联好健康 → `/me/settings/about`；当前版本（只读，展示版本号，无跳转）
 
 ### Requirement: Hub 退出登录
 

@@ -13,7 +13,6 @@ final class MallProductGridCell: UITableViewCell {
     private static let cardBottomInset: CGFloat = 12
     private static let columnSpacing: CGFloat = 13
     private static let rowSpacing: CGFloat = 12
-    private static let itemBodyHeight: CGFloat = 83
 
     var onProductTap: ((HealthPackageItem) -> Void)?
     var onMoreTapped: (() -> Void)?
@@ -226,14 +225,11 @@ final class MallProductGridCell: UITableViewCell {
         return layout
     }
 
-    /// Figma 商品卡：图片 152 + 文案区 83；375pt 稿面下为 153×235。
     private static func itemSize(for outerWidth: CGFloat) -> CGSize {
         let collectionWidth = outerWidth
             - (outerHorizontalInset * 2)
             - (cardContentInset * 2)
-        let itemWidth = max(0, (collectionWidth - columnSpacing) / 2)
-        let imageHeight = itemWidth * (152.0 / 153.0)
-        return CGSize(width: itemWidth, height: imageHeight + itemBodyHeight)
+        return MallProductCell.gridItemSize(collectionWidth: collectionWidth)
     }
 
     @objc private func moreTapped() {

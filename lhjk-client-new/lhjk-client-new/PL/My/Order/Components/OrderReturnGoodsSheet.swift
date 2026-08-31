@@ -37,6 +37,8 @@ final class OrderReturnGoodsSheet: UIViewController {
     private let trackingField = UITextField()
     private let cancelButton = UIButton(type: .system)
     private let submitButton = UIButton(type: .system)
+    private let keyboardSupport = OrderBottomSheetKeyboardSupport()
+    private var panelBottomConstraint: Constraint?
 
     private var selectedMethod: Method?
     private var selectedCompany: String?
@@ -74,17 +76,19 @@ final class OrderReturnGoodsSheet: UIViewController {
 
     private func buildUI() {
         dimView.backgroundColor = UIColor.black.withAlphaComponent(0.35)
-        dimView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(dismissSheet)))
         view.addSubview(dimView)
         dimView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        keyboardSupport.dimTapDismissesKeyboardOnly(dimView: dimView)
 
         panel.backgroundColor = .fdSurface
         panel.layer.cornerRadius = 16
         panel.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         view.addSubview(panel)
         panel.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
+            $0.leading.trailing.equalToSuperview()
+            panelBottomConstraint = $0.bottom.equalToSuperview().constraint
         }
+        keyboardSupport.attach(hostView: view, panelBottomConstraint: panelBottomConstraint!)
 
         grabber.backgroundColor = .fdBorder
         grabber.layer.cornerRadius = 2

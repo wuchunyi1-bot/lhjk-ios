@@ -489,13 +489,41 @@ final class PasswordSetupViewController: BaseViewController {
     }
 
     private func handleVerifyCode() {
+        let phone = enteredPhone.trimmingCharacters(in: .whitespacesAndNewlines)
         let code = codeField.text?.trimmingCharacters(in: .whitespaces) ?? ""
         let cleanCode = code.replacingOccurrences(of: "\\D", with: "", options: .regularExpression)
+        guard validatePhone(phone) else {
+            showToast("请输入正确的手机号")
+            return
+        }
         guard cleanCode.count == 6 else {
             showToast("请输入6位验证码")
             return
         }
-        step = .resetPassword
+
+        actionBtn.isEnabled = false
+        actionBtn.alpha = 0.6
+
+        Task {
+            do {
+                try await LoginService.shared.checkSmsCode(
+                    mobile: phone,
+                    checkCode: cleanCode,
+                    type: .resetPassword
+                )
+                await MainActor.run {
+                    actionBtn.isEnabled = true
+                    actionBtn.alpha = 1.0
+                    step = .resetPassword
+                }
+            } catch {
+                await MainActor.run {
+                    actionBtn.isEnabled = true
+                    actionBtn.alpha = 1.0
+                    showToast(error.localizedDescription)
+                }
+            }
+        }
     }
 
     private func handleSubmitPassword() {

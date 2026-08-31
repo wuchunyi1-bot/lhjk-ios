@@ -2,29 +2,28 @@ import UIKit
 import SnapKit
 import Combine
 
-/// 富德优选商城 — 分类 Tab + 2 列 CollectionView
-/// 参考 funde-client: HealthMallView.vue
+/// 富德优选商城 — 对齐 Figma 4054:2991（分类 Tab + 双列商品网格，卡片比例随屏宽等比缩放）
 final class HealthMallViewController: BaseViewController {
 
     private let viewModel = HealthMallViewModel()
     private var cancellables = Set<AnyCancellable>()
 
     private let categoryTabBar = MallCategoryTabBar()
+    private var lastCollectionWidth: CGFloat = 0
 
     private lazy var collectionView: UICollectionView = {
-        let item = NSCollectionLayoutItem(
-            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.5), heightDimension: .estimated(280))
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .vertical
+        layout.minimumInteritemSpacing = MallProductCell.columnSpacing
+        layout.minimumLineSpacing = MallProductCell.rowSpacing
+        layout.sectionInset = UIEdgeInsets(
+            top: 10,
+            left: MallProductCell.sectionInset,
+            bottom: 24,
+            right: MallProductCell.sectionInset
         )
-        item.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 5, bottom: 0, trailing: 5)
-        let group = NSCollectionLayoutGroup.horizontal(
-            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(280)),
-            subitems: [item]
-        )
-        let section = NSCollectionLayoutSection(group: group)
-        section.interGroupSpacing = 10
-        section.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 11, bottom: 12, trailing: 11)
-        let cv = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewCompositionalLayout(section: section))
-        cv.backgroundColor = .fdBg
+        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        cv.backgroundColor = .clear
         cv.showsVerticalScrollIndicator = false
         cv.register(MallProductCell.self, forCellWithReuseIdentifier: MallProductCell.reuseID)
         cv.dataSource = self
@@ -35,8 +34,8 @@ final class HealthMallViewController: BaseViewController {
     private let emptyStateView: UILabel = {
         let label = UILabel()
         label.text = "该分类暂无商品，敬请期待"
-        label.font = .fdCaption
-        label.textColor = .fdMuted
+        label.font = .fdFont(ofSize: 14, weight: .regular)
+        label.textColor = UIColor(hexString: "#8591AB")
         label.textAlignment = .center
         label.isHidden = true
         return label
@@ -48,23 +47,43 @@ final class HealthMallViewController: BaseViewController {
         return spinner
     }()
 
-    private lazy var footerLabel: UILabel = {
-        let l = UILabel()
-        l.text = "正品保障 · 德好健康监制 · 7天无忧退换"
-        l.font = .fdMicro
-        l.textColor = .fdMuted
-        l.textAlignment = .center
-        return l
-    }()
-
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "富德优选"
         viewModel.load()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+        configureNavigationBarAppearance()
+    }
+
+    private func configureNavigationBarAppearance() {
+        guard let navigationController else { return }
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(hexString: "#FDF6F3")
+        appearance.shadowColor = .clear
+        appearance.titleTextAttributes = [
+            .foregroundColor: UIColor(hexString: "#1F2942"),
+            .font: UIFont.fdFont(ofSize: 18, weight: .medium)
+        ]
+        let backImage = UIImage.fdNavBack
+        appearance.setBackIndicatorImage(backImage, transitionMaskImage: backImage)
+        let backButtonAppearance = UIBarButtonItemAppearance()
+        backButtonAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.clear]
+        backButtonAppearance.highlighted.titleTextAttributes = [.foregroundColor: UIColor.clear]
+        appearance.backButtonAppearance = backButtonAppearance
+
+        navigationController.navigationBar.standardAppearance = appearance
+        navigationController.navigationBar.scrollEdgeAppearance = appearance
+        navigationController.navigationBar.compactAppearance = appearance
+        navigationController.navigationBar.tintColor = UIColor(hexString: "#1F2942")
+    }
+
     override func setupUI() {
-        view.backgroundColor = .fdBg
+        view.backgroundColor = UIColor(hexString: "#FDF6F3")
 
         categoryTabBar.onTabSelected = { [weak self] index in
             self?.viewModel.selectTab(at: index)
@@ -74,15 +93,15 @@ final class HealthMallViewController: BaseViewController {
         view.addSubview(collectionView)
         view.addSubview(emptyStateView)
         view.addSubview(loadingIndicator)
-        view.addSubview(footerLabel)
 
         categoryTabBar.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide)
             $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(48)
         }
         collectionView.snp.makeConstraints {
             $0.top.equalTo(categoryTabBar.snp.bottom)
-            $0.leading.trailing.equalToSuperview()
+            $0.leading.trailing.bottom.equalToSuperview()
         }
         emptyStateView.snp.makeConstraints {
             $0.center.equalTo(collectionView)
@@ -91,11 +110,22 @@ final class HealthMallViewController: BaseViewController {
         loadingIndicator.snp.makeConstraints {
             $0.center.equalTo(collectionView)
         }
-        footerLabel.snp.makeConstraints {
-            $0.top.equalTo(collectionView.snp.bottom).offset(12)
-            $0.centerX.equalToSuperview()
-            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
-        }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateCollectionGridLayoutIfNeeded()
+    }
+
+    private func updateCollectionGridLayoutIfNeeded() {
+        guard let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout else { return }
+        let width = collectionView.bounds.width
+        guard width > 0 else { return }
+        let collectionWidth = width - MallProductCell.sectionInset * 2
+        guard abs(collectionWidth - lastCollectionWidth) > 0.5 else { return }
+        lastCollectionWidth = collectionWidth
+        layout.itemSize = MallProductCell.gridItemSize(collectionWidth: collectionWidth)
+        layout.invalidateLayout()
     }
 
     override func bindViewModel() {

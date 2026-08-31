@@ -331,12 +331,13 @@ struct MonitorCardMetaVO: Decodable, Equatable {
     let cardType: Int?
     let cardName: String?
     let iconUrl: String?
+    let backgroundUrl: String?
     let sortId: Int?
     let cmsCreateTime: Int64?
     let pageUrl: String?
 
     private enum CodingKeys: String, CodingKey {
-        case cardType, cardName, iconUrl, sortId, cmsCreateTime, pageUrl
+        case cardType, cardName, iconUrl, backgroundUrl, sortId, cmsCreateTime, pageUrl
     }
 
     init(from decoder: Decoder) throws {
@@ -344,6 +345,7 @@ struct MonitorCardMetaVO: Decodable, Equatable {
         cardType = HealthFlexible.decodeInt(c, key: .cardType)
         cardName = try c.decodeIfPresent(String.self, forKey: .cardName)
         iconUrl = try c.decodeIfPresent(String.self, forKey: .iconUrl)
+        backgroundUrl = try c.decodeIfPresent(String.self, forKey: .backgroundUrl)
         sortId = HealthFlexible.decodeInt(c, key: .sortId)
         cmsCreateTime = HealthFlexible.decodeInt64(c, key: .cmsCreateTime)
         pageUrl = try c.decodeIfPresent(String.self, forKey: .pageUrl)
@@ -551,6 +553,16 @@ enum HealthJSONValue: Decodable, Equatable {
         if case .object(let dict) = self { return dict }
         return nil
     }
+
+    var doubleValue: Double? {
+        switch self {
+        case .double(let d): return d
+        case .int(let i): return Double(i)
+        case .string(let s):
+            return Double(s.trimmingCharacters(in: .whitespacesAndNewlines))
+        case .bool, .object, .array, .null: return nil
+        }
+    }
 }
 
 private struct HealthJSONKey: CodingKey {
@@ -561,6 +573,22 @@ private struct HealthJSONKey: CodingKey {
 }
 
 // MARK: - Display mapping
+
+/// 饮食运动卡三列热量（Figma 3543:3425）
+struct DietSportCardDisplay: Equatable {
+    let intakeText: String
+    let remainingText: String
+    let consumeText: String
+    /// 还可摄入 / 推荐总量钳位后：progress = 1 − clamp(remaining / recommended, 0…1)
+    let progress: CGFloat
+
+    static let empty = DietSportCardDisplay(
+        intakeText: "--",
+        remainingText: "--",
+        consumeText: "--",
+        progress: 0
+    )
+}
 
 /// 首页体征卡展示模型（优先 pageUrl，否则按 cardType 兜底）
 struct HealthMetricDisplayItem: Equatable {
@@ -579,6 +607,27 @@ struct HealthMetricDisplayItem: Equatable {
     let routeKey: String
     /// CMS / 列表下发的跳转；合法 `FundeH5:` / `FundeApp:` 时优先使用
     let pageUrl: String?
+    /// `cardType == 10` 时使用三列热量布局
+    let dietSport: DietSportCardDisplay?
+
+    func withBackgroundUrl(_ url: String) -> HealthMetricDisplayItem {
+        HealthMetricDisplayItem(
+            cardType: cardType,
+            metricKey: metricKey,
+            label: label,
+            value: value,
+            unit: unit,
+            status: status,
+            statusType: statusType,
+            iconSF: iconSF,
+            iconUrl: iconUrl,
+            backgroundUrl: url,
+            time: time,
+            routeKey: routeKey,
+            pageUrl: pageUrl,
+            dietSport: dietSport
+        )
+    }
 }
 
 /// 首页快捷入口展示模型
@@ -635,6 +684,25 @@ enum MonitorCardDisplayMapper {
         }
     }
 
+    /// Hub 体征区：列表有数据用监测列表，否则 CMS 空壳；背景图列表项缺失时回退 CMS `backgroundUrl`
+    static func hubMetrics(
+        monitorCards: [MonitorHealthCardVO],
+        cmsMeta: [MonitorCardMetaVO]
+    ) -> [HealthMetricDisplayItem] {
+        let metaBackgrounds = backgroundUrlLookup(from: cmsMeta)
+        let items: [HealthMetricDisplayItem]
+        if !monitorCards.isEmpty {
+            items = fromMonitorCards(monitorCards)
+        } else {
+            items = fromCmsMeta(cmsMeta)
+        }
+        guard !metaBackgrounds.isEmpty else { return items }
+        return items.map { item in
+            guard item.backgroundUrl == nil, let bg = metaBackgrounds[item.cardType] else { return item }
+            return item.withBackgroundUrl(bg)
+        }
+    }
+
     static func fromMonitorCards(_ cards: [MonitorHealthCardVO]) -> [HealthMetricDisplayItem] {
         cards.compactMap { card in
             guard let type = card.cardType else { return nil }
@@ -644,6 +712,7 @@ enum MonitorCardDisplayMapper {
             let rawStatus = (card.result ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let name = (card.cardName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let status = displayStatus(raw: rawStatus, value: mapped.value, cardType: type)
+            let dietSport = type == 10 ? extractDietSportDisplay(card.dietSportData ?? [:]) : nil
             return HealthMetricDisplayItem(
                 cardType: type,
                 metricKey: key,
@@ -657,7 +726,8 @@ enum MonitorCardDisplayMapper {
                 backgroundUrl: nonempty(card.backgroundUrl),
                 time: time,
                 routeKey: key,
-                pageUrl: nonempty(card.pageUrl)
+                pageUrl: nonempty(card.pageUrl),
+                dietSport: dietSport
             )
         }
     }
@@ -679,10 +749,11 @@ enum MonitorCardDisplayMapper {
                     statusType: "success",
                     iconSF: iconSF(for: key),
                     iconUrl: nonempty(item.iconUrl),
-                    backgroundUrl: nil,
+                    backgroundUrl: nonempty(item.backgroundUrl),
                     time: "",
                     routeKey: key,
-                    pageUrl: nonempty(item.pageUrl)
+                    pageUrl: nonempty(item.pageUrl),
+                    dietSport: type == 10 ? DietSportCardDisplay.empty : nil
                 )
             }
     }
@@ -709,11 +780,20 @@ enum MonitorCardDisplayMapper {
             HealthQuickEntryDisplayItem(name: "健康档案", iconUrl: nil, pageUrl: "/health/record", sortId: 1),
             HealthQuickEntryDisplayItem(name: "体征监测", iconUrl: nil, pageUrl: "/health/metrics", sortId: 2),
             HealthQuickEntryDisplayItem(name: "六维评测", iconUrl: nil, pageUrl: "/health/assessment/six-dim", sortId: 3),
-            HealthQuickEntryDisplayItem(name: "我的报告", iconUrl: nil, pageUrl: "/health/assessment/report", sortId: 4),
+            HealthQuickEntryDisplayItem(name: "我的报告", iconUrl: nil, pageUrl: "/health/report", sortId: 4),
         ]
     }
 
     // MARK: Private helpers
+
+    private static func backgroundUrlLookup(from meta: [MonitorCardMetaVO]) -> [Int: String] {
+        var map: [Int: String] = [:]
+        for item in meta {
+            guard let type = item.cardType, let url = nonempty(item.backgroundUrl) else { continue }
+            map[type] = url
+        }
+        return map
+    }
 
     private static func defaultLabel(for key: String) -> String {
         switch key {
@@ -840,26 +920,61 @@ enum MonitorCardDisplayMapper {
 
     /// 饮食运动：优先已摄入热量 `intake`，否则推荐/总量
     private static func extractDietSport(_ diet: [String: HealthJSONValue]) -> (value: String, unit: String)? {
+        let display = extractDietSportDisplay(diet)
+        if display.intakeText != "--" { return (display.intakeText, "kcal") }
+        if display.remainingText != "--" { return (display.remainingText, "kcal") }
+        return nil
+    }
+
+    /// 三列热量；还可摄入下限 0；圆环进度 = 1 − clamp(还可摄入 / 推荐摄入, 0…1)
+    private static func extractDietSportDisplay(_ diet: [String: HealthJSONValue]) -> DietSportCardDisplay {
+        guard !diet.isEmpty else { return .empty }
+
         let nested = diet["calculateCaloricVo"]?.objectValue ?? [:]
-        if let intake = string(in: diet, keys: ["intake"])
-            ?? string(in: nested, keys: ["intake", "finalIntake"]) {
-            return (intake, "kcal")
+        let sport = diet["sport"]?.objectValue ?? [:]
+
+        let intake = number(in: diet, keys: ["intake"])
+            ?? number(in: nested, keys: ["intake"])
+            ?? 0
+        let consume = number(in: sport, keys: ["consumeNum"])
+            ?? number(in: diet, keys: ["consumeNum"])
+            ?? number(in: nested, keys: ["consumeNum"])
+            ?? 0
+        /// 推荐摄入：`calculateCaloricVo.finalIntake`
+        let recommended = number(in: nested, keys: ["finalIntake"])
+            ?? number(in: diet, keys: ["totalCalories"])
+            ?? 0
+
+        let rawRemaining = number(in: diet, keys: ["remainingIntake"])
+            ?? (recommended - intake)
+        let remaining = max(0, rawRemaining)
+
+        // progress = 1 − clamp(remaining / recommended, 0…1)；推荐为 0 则环全灰
+        let progress: CGFloat
+        if recommended > 0 {
+            let ratio = min(1, max(0, remaining / recommended))
+            progress = CGFloat(1 - ratio)
+        } else {
+            progress = 0
         }
-        if let total = string(in: diet, keys: ["totalCalories"])
-            ?? string(in: nested, keys: ["finalIntake"]) {
-            return (total, "kcal")
-        }
-        if let remain = string(in: diet, keys: ["remainingIntake"]) {
-            return (remain, "kcal")
-        }
-        if let steps = string(in: diet, keys: ["steps", "step", "sportSteps"]) {
-            return (steps, "步")
-        }
-        if let v = string(in: diet, keys: ["value", "calorie", "calories"]) {
-            let unit = string(in: diet, keys: ["unit"]) ?? "kcal"
-            return (v, unit)
+
+        return DietSportCardDisplay(
+            intakeText: calorieText(intake),
+            remainingText: calorieText(remaining),
+            consumeText: calorieText(consume),
+            progress: progress
+        )
+    }
+
+    private static func number(in dict: [String: HealthJSONValue], keys: [String]) -> Double? {
+        for k in keys {
+            if let d = dict[k]?.doubleValue { return d }
         }
         return nil
+    }
+
+    private static func calorieText(_ value: Double) -> String {
+        String(Int(value.rounded(.towardZero)))
     }
 
     private static func string(in dict: [String: HealthJSONValue], keys: [String]) -> String? {

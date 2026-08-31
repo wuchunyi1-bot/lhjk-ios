@@ -3,32 +3,27 @@ import SnapKit
 
 final class PackageHeaderCell: UITableViewCell {
     static let reuseID = "PackageHeaderCell"
+    static let rowHeight: CGFloat = 34
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
-        backgroundColor = .clear
+        backgroundColor = .white
+        contentView.backgroundColor = .white
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
-    func configure(categoryTitle: String, description: String?) {
+    func configure(categoryTitle: String) {
         contentView.subviews.forEach { $0.removeFromSuperview() }
 
         let name = lbl(categoryTitle, size: 15, weight: .bold)
-        let descText = (description?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap { $0.isEmpty ? nil : $0 }
-            ?? "精选健康管理套餐"
-        let desc = lbl(descText, size: 11, color: .fdSubtext)
-        let info = UIStackView(arrangedSubviews: [name, desc])
-        info.axis = .vertical
-        info.spacing = 4
-        contentView.addSubview(info)
-        info.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 12, bottom: 14, right: 12)) }
-
-        let div = UIView()
-        div.backgroundColor = UIColor.fdPrimary.withAlphaComponent(0.27)
-        contentView.addSubview(div)
-        div.snp.makeConstraints { $0.leading.trailing.bottom.equalToSuperview(); $0.height.equalTo(1) }
+        contentView.addSubview(name)
+        name.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(12)
+            $0.top.equalToSuperview()
+            $0.bottom.equalToSuperview().inset(8)
+        }
     }
 
     func configure(_ m: SvcMatrix) {

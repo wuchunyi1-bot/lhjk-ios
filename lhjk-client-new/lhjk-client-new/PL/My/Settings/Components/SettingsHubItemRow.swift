@@ -164,11 +164,10 @@ final class SettingsHubItemRow: UIControl {
     }
 }
 
-/// 退出登录行 — 对齐 Figma 3826:32432
+/// 退出登录行 — 居中、无箭头；字号与上方列表行标题一致（18pt）
 final class SettingsLogoutRow: UIControl {
 
     private let titleLabel = UILabel()
-    private let arrowView = UIImageView()
 
     init(action: @escaping () -> Void) {
         super.init(frame: .zero)
@@ -186,24 +185,13 @@ final class SettingsLogoutRow: UIControl {
         titleLabel.text = "退出登录"
         titleLabel.font = .fdFont(ofSize: 18, weight: .regular)
         titleLabel.textColor = UIColor(hexString: "#1F2942")
+        titleLabel.textAlignment = .center
         titleLabel.isUserInteractionEnabled = false
 
-        arrowView.image = UIImage(named: "settings_chevron")
-        arrowView.contentMode = .scaleAspectFit
-        arrowView.isUserInteractionEnabled = false
-
         addSubview(titleLabel)
-        addSubview(arrowView)
-
         titleLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(12)
-            make.centerY.equalToSuperview()
-        }
-
-        arrowView.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-12)
-            make.centerY.equalToSuperview()
-            make.size.equalTo(12)
+            make.center.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(12)
         }
 
         snp.makeConstraints { make in

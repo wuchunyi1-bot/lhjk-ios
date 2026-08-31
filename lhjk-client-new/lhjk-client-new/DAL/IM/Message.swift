@@ -159,15 +159,54 @@ struct ReplyMessage: Codable {
 
     /// 将引用信息序列化为 content.extra JSON 字符串
     static func toExtraJSON(_ reply: ReplyMessage) -> String? {
-        let payload = ExtraPayload(replyMessage: reply)
-        guard let data = try? JSONEncoder().encode(payload) else { return nil }
-        return String(data: data, encoding: .utf8)
+        ExtraPayload.buildJSON(replyMessage: reply)
     }
 }
 
 /// extra JSON 的顶层结构
 struct ExtraPayload: Codable {
     let replyMessage: ReplyMessage?
+    let imageUrl: String?
+    let voiceUrl: String?
+
+    /// 组装 content.extra JSON（引用回复 + 媒体 OSS 地址等）
+    static func buildJSON(
+        replyMessage: ReplyMessage? = nil,
+        imageUrl: String? = nil,
+        voiceUrl: String? = nil
+    ) -> String? {
+        let resolvedImageUrl = trimmedURL(imageUrl)
+        let resolvedVoiceUrl = trimmedURL(voiceUrl)
+        guard replyMessage != nil || resolvedImageUrl != nil || resolvedVoiceUrl != nil else { return nil }
+        let payload = ExtraPayload(
+            replyMessage: replyMessage,
+            imageUrl: resolvedImageUrl,
+            voiceUrl: resolvedVoiceUrl
+        )
+        guard let data = try? JSONEncoder().encode(payload) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    /// 从 content.extra 解析图片 OSS 地址
+    static func imageUrl(from extra: String?) -> String? {
+        decode(extra)?.imageUrl.flatMap(trimmedURL)
+    }
+
+    /// 从 content.extra 解析语音 OSS 地址
+    static func voiceUrl(from extra: String?) -> String? {
+        decode(extra)?.voiceUrl.flatMap(trimmedURL)
+    }
+
+    private static func decode(_ extra: String?) -> ExtraPayload? {
+        guard let extra, !extra.isEmpty,
+              let data = extra.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode(ExtraPayload.self, from: data)
+    }
+
+    private static func trimmedURL(_ value: String?) -> String? {
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed?.isEmpty == false ? trimmed : nil
+    }
 }
 
 // MARK: - ChatMessage 模型

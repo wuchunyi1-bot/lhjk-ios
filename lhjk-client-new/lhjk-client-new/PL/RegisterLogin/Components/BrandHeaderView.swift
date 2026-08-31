@@ -10,7 +10,7 @@ final class BrandHeaderView: UIView {
         iv.contentMode = .scaleAspectFill
         iv.clipsToBounds = true
         iv.layer.cornerRadius = 16
-        iv.accessibilityLabel = "富德健康"
+        iv.accessibilityLabel = "富德联好健康"
         return iv
     }()
 
@@ -28,9 +28,20 @@ final class BrandHeaderView: UIView {
     private let brandTitleImageView: UIImageView = {
         let iv = UIImageView(image: UIImage(named: "login_brand_title"))
         iv.contentMode = .scaleAspectFit
-        iv.accessibilityLabel = "富德健康，全生命周期健康守护数智化平台"
+        iv.accessibilityLabel = "富德联好健康，全生命周期健康守护数智化平台"
         return iv
     }()
+
+    private var logoSizeConstraint: Constraint?
+    private var titleWidthConstraint: Constraint?
+    private var titleHeightConstraint: Constraint?
+
+    /// iPhone 5 / SE1 等窄屏：略缩小 Logo 与标题切图
+    func applyCompactLayout(_ compact: Bool) {
+        logoSizeConstraint?.update(offset: compact ? 60 : 72)
+        titleWidthConstraint?.update(offset: compact ? 175 : 195)
+        titleHeightConstraint?.update(offset: compact ? 50 : 56)
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -49,7 +60,7 @@ final class BrandHeaderView: UIView {
         // Figma 3209:361 — 72×72
         logoShadowHost.snp.makeConstraints { make in
             make.top.centerX.equalToSuperview()
-            make.size.equalTo(72)
+            logoSizeConstraint = make.size.equalTo(72).constraint
         }
         logoImageView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
@@ -59,8 +70,8 @@ final class BrandHeaderView: UIView {
         brandTitleImageView.snp.makeConstraints { make in
             make.top.equalTo(logoShadowHost.snp.bottom).offset(14)
             make.centerX.equalToSuperview()
-            make.width.equalTo(195)
-            make.height.equalTo(56)
+            titleWidthConstraint = make.width.equalTo(195).constraint
+            titleHeightConstraint = make.height.equalTo(56).constraint
             make.bottom.equalToSuperview()
         }
     }

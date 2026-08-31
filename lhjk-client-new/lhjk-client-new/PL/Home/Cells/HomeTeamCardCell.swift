@@ -60,7 +60,7 @@ final class HomeTeamCardCell: UITableViewCell {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.text = "我的富德健康管家团队"
+        l.text = "我的富德联好健康管家团队"
         l.font = .fdFont(ofSize: 18, weight: .medium)
         l.textColor = .fdText
         return l
@@ -121,8 +121,13 @@ final class HomeTeamCardCell: UITableViewCell {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    func configure(members: [Member]) {
-        moreButton.isHidden = true
+    func configure(members: [Member], serviceDaysLeft: Int? = nil) {
+        if let days = serviceDaysLeft, days > 0 {
+            moreButton.isHidden = false
+            moreButton.setTitle("服务剩余 \(days) 天 ›", for: .normal)
+        } else {
+            moreButton.isHidden = true
+        }
         membersStack.arrangedSubviews.forEach {
             membersStack.removeArrangedSubview($0)
             $0.removeFromSuperview()

@@ -21,9 +21,9 @@ final class CouponTabViewController: BaseViewController {
         tv.backgroundColor = .white
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
-        tv.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 24, right: 0)
-        tv.rowHeight = UITableView.automaticDimension
-        tv.estimatedRowHeight = 100
+        tv.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 24, right: 0)
+        tv.clipsToBounds = false
+        tv.estimatedRowHeight = CouponCardCell.collapsedRowHeight(for: UIScreen.main.bounds.width)
         tv.dataSource = self
         tv.delegate = self
         tv.register(CouponCardCell.self, forCellReuseIdentifier: CouponCardCell.reuseID)
@@ -168,17 +168,35 @@ extension CouponTabViewController: UITableViewDataSource, UITableViewDelegate {
         ) as! CouponCardCell
         cell.configure(coupon, expanded: expandedIds.contains(coupon.id))
         cell.onUse = {
-            Router.shared.push("/services")
+            Router.shared.push("/services/list", params: ["code": ""])
         }
         cell.onToggleRules = { [weak self] in
             guard let self else { return }
-            if self.expandedIds.contains(coupon.id) {
-                self.expandedIds.remove(coupon.id)
+            let id = coupon.id
+            if self.expandedIds.contains(id) {
+                self.expandedIds.remove(id)
             } else {
-                self.expandedIds.insert(coupon.id)
+                self.expandedIds.insert(id)
             }
-            self.tableView.reloadRows(at: [indexPath], with: .automatic)
+            let expanded = self.expandedIds.contains(id)
+            UIView.performWithoutAnimation {
+                if let cell = self.tableView.cellForRow(at: indexPath) as? CouponCardCell {
+                    cell.configure(coupon, expanded: expanded)
+                }
+                self.tableView.beginUpdates()
+                self.tableView.endUpdates()
+            }
         }
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        let coupon = coupons[indexPath.row]
+        let expanded = expandedIds.contains(coupon.id)
+        return CouponCardCell.rowHeight(
+            for: tableView.bounds.width,
+            item: coupon,
+            expanded: expanded
+        )
     }
 }

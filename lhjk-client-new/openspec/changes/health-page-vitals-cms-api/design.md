@@ -58,7 +58,25 @@
 | 血糖等 | `value` + `unit` |
 | 体重 | `weight` + `unit` |
 | 体温 | `temperature` / `temp` + `unit` |
-| 饮食运动 | `dietSportData.steps` 等 |
+| 饮食运动 | 见下节「饮食运动卡」；不使用 `steps` 单值 |
+
+无数据展示 `--`；状态用 `result` / `resultType`。
+
+### 4.1 饮食运动卡（cardType = 10）
+
+Hub 网格独立三列布局（标题 12 / 标签 8 / 数字 12 Medium / 圆环 52×3pt）。
+
+| 列 | 字段 | 规则 |
+|----|------|------|
+| 今日摄入 | `dietSportData.intake` | 整数截断 |
+| 还可摄入 | `dietSportData.remainingIntake` | 整数截断；`< 0` 展示 0 |
+| 今日消耗 | `sport.consumeNum` | 整数截断 |
+
+推荐摄入 = `calculateCaloricVo.finalIntake`（否则 `totalCalories`）。
+
+圆环：`progress = 1 − clamp(还可摄入 / 推荐摄入, 0, 1)`；推荐 ≤ 0 则 progress=0（全灰）。
+
+标题「饮食运动」在图标下方，不得被三列遮挡。
 
 无数据展示 `--`；状态用 `result` / `resultType`。
 

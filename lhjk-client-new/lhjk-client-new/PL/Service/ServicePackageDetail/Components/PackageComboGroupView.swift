@@ -339,6 +339,11 @@ private final class SelectableUnitView: UIControl {
     private var childRows: [ComboBenefitRowView] = []
     private let bottomDividerLine = UIView()
 
+    private enum Metrics {
+        /// 选中/未选中统一垂直 inset，避免切换时高度变化导致闪动
+        static let contentVerticalInset: CGFloat = 14
+    }
+
     init(
         mode: ServicePackageSelectMode,
         unit: SelectableUnit,
@@ -350,7 +355,7 @@ private final class SelectableUnitView: UIControl {
         super.init(frame: .zero)
         self.isSelected = isSelected
         setupUI()
-        applySelectionState(animated: false)
+        applySelectionState()
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -388,7 +393,7 @@ private final class SelectableUnitView: UIControl {
         mainStack.snp.makeConstraints {
             $0.leading.equalTo(controlImageView.snp.trailing).offset(10)
             $0.trailing.equalToSuperview().inset(10)
-            $0.top.bottom.equalToSuperview().inset(8)
+            $0.top.bottom.equalToSuperview().inset(Metrics.contentVerticalInset)
         }
 
         mainStack.addArrangedSubview(parentRowView)
@@ -415,51 +420,42 @@ private final class SelectableUnitView: UIControl {
         onTap?()
     }
 
-    func setSelectedState(_ selected: Bool, animated: Bool) {
+    func setSelectedState(_ selected: Bool, animated: Bool = false) {
         guard self.isSelected != selected else { return }
         self.isSelected = selected
-        applySelectionState(animated: animated)
+        applySelectionState()
     }
 
     func showBottomDivider(_ show: Bool) {
         bottomDividerLine.isHidden = !show
     }
 
-    private func applySelectionState(animated: Bool) {
+    private func applySelectionState() {
         let selected = self.isSelected
 
-        let updates = {
-            if selected {
-                self.bgBox.backgroundColor = UIColor(hexString: "#FFFCF8")
-                self.bgBox.layer.borderWidth = 0.5
-                self.bgBox.layer.borderColor = UIColor(hexString: "#FF9F40").cgColor
+        if selected {
+            bgBox.backgroundColor = UIColor(hexString: "#FFFCF8")
+            bgBox.layer.borderWidth = 0.5
+            bgBox.layer.borderColor = UIColor(hexString: "#FF9F40").cgColor
 
-                self.controlImageView.layer.borderWidth = 0
-                self.controlImageView.layer.borderColor = nil
-                self.controlImageView.image = self.mode == .radio
-                    ? UIImage(named: "package_detail_radio_checked")
-                    : UIImage(named: "package_detail_checkbox_checked")
-            } else {
-                self.bgBox.backgroundColor = .white
-                self.bgBox.layer.borderWidth = 0
+            controlImageView.layer.borderWidth = 0
+            controlImageView.layer.borderColor = nil
+            controlImageView.image = mode == .radio
+                ? UIImage(named: "package_detail_radio_checked")
+                : UIImage(named: "package_detail_checkbox_checked")
+        } else {
+            bgBox.backgroundColor = .white
+            bgBox.layer.borderWidth = 0
 
-                self.controlImageView.image = nil
-                self.controlImageView.layer.borderWidth = 0.7
-                self.controlImageView.layer.borderColor = UIColor(hexString: "#535D72").cgColor
-            }
-
-            let textColor = selected ? UIColor(hexString: "#A25300") : UIColor(hexString: "#535D72")
-            self.parentRowView.setTextColor(textColor)
-
-            for cr in self.childRows {
-                cr.setTextColor(textColor)
-            }
+            controlImageView.image = nil
+            controlImageView.layer.borderWidth = 0.7
+            controlImageView.layer.borderColor = UIColor(hexString: "#535D72").cgColor
         }
 
-        if animated {
-            UIView.animate(withDuration: 0.15, delay: 0, options: [.curveEaseInOut], animations: updates)
-        } else {
-            updates()
+        let textColor = selected ? UIColor(hexString: "#A25300") : UIColor(hexString: "#535D72")
+        parentRowView.setTextColor(textColor)
+        for cr in childRows {
+            cr.setTextColor(textColor)
         }
     }
 }

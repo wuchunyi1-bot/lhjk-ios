@@ -40,6 +40,11 @@ final class ChatViewModel: ObservableObject {
 
     private var lastTimestamp: Int64 = 0
 
+    /// `GET /v1/session/getGroup` 仅 `status == 1` 可发送，其它值只读
+    var isMessagingReadOnly: Bool {
+        conversation?.isMessagingReadOnly == true
+    }
+
     // MARK: - Init
 
     init(conversationId: String,
@@ -75,6 +80,18 @@ final class ChatViewModel: ObservableObject {
         case .service:      return ["查看预约", "改约时间", "联系服务台"]
         case .team:         return ["同步今日指标", "请团队看一下", "查看本周目标"]
         default:            return ["上传血压", "查看监测方案", "联系健管师"]
+        }
+    }
+
+    // MARK: - Conversation Metadata
+
+    /// 进入聊天页时刷新群组 `status`，与列表缓存对齐；深链进入且缓存缺失时补齐元数据
+    func refreshConversationMetadata() async {
+        guard conversationType == .ConversationType_GROUP else { return }
+        if let updated = await imService.refreshGroupMetadata(conversationId: conversationId) {
+            await MainActor.run {
+                conversation = updated
+            }
         }
     }
 
@@ -150,6 +167,7 @@ final class ChatViewModel: ObservableObject {
 
     /// 发送文本消息（含乐观更新）
     func sendText(_ text: String) {
+        guard ensureCanSend() else { return }
         let localMsg = makeLocalMessage(type: MessageType.text, text: RongEmoji.symbolToEmoji(text), imagePath: nil, thumbWidth: nil, thumbHeight: nil)
 
         let reply = quotedMessage.flatMap { ReplyMessage.from($0) }
@@ -173,6 +191,7 @@ final class ChatViewModel: ObservableObject {
 
     /// 发送图片消息（含乐观更新）
     func sendImage(_ image: UIImage) {
+        guard ensureCanSend() else { return }
         guard let localPath = saveImageToTemp(image) else { return }
         let localMsg = makeLocalMessage(
             type: MessageType.image, text: nil,
@@ -188,20 +207,41 @@ final class ChatViewModel: ObservableObject {
         scrollToBottomPublisher.send(false)
 
         Task {
-            let sentMsg = await imService.sendImage(
-                image,
-                conversationId: conversationId,
-                conversationType: conversationType,
-                replyMessage: reply
-            )
-            await MainActor.run {
-                self.replaceLocalMessage(localId: localMsg.id, with: sentMsg)
+            do {
+                guard let data = image.jpegData(compressionQuality: 0.8) else {
+                    await MainActor.run {
+                        self.toastPublisher.send("图片发送失败")
+                    }
+                    return
+                }
+                let remoteURL = try await OSSManager.shared.upload(
+                    data: data,
+                    folderName: "im",
+                    ext: "jpg",
+                    mimeType: Self.mimeType(for: "jpg")
+                )
+                let sentMsg = await imService.sendImage(
+                    image,
+                    imageUrl: remoteURL,
+                    conversationId: conversationId,
+                    conversationType: conversationType,
+                    replyMessage: reply
+                )
+                await MainActor.run {
+                    self.replaceLocalMessage(localId: localMsg.id, with: sentMsg)
+                }
+            } catch {
+                print("[Chat] sendImage ✗ \(error.localizedDescription)")
+                await MainActor.run {
+                    self.toastPublisher.send("图片发送失败")
+                }
             }
         }
     }
 
     /// 发送语音消息（含乐观更新）
     func sendVoice(localPath: String, duration: Int) {
+        guard ensureCanSend() else { return }
         let localMsg = makeLocalMessage(
             type: .voice,
             text: nil,
@@ -217,25 +257,43 @@ final class ChatViewModel: ObservableObject {
         scrollToBottomPublisher.send(true)
 
         Task {
-            let sentMsg = await imService.sendVoice(
-                localPath: localPath,
-                duration: duration,
-                conversationId: conversationId,
-                conversationType: conversationType,
-                replyMessage: reply
-            )
-            await MainActor.run {
-                self.replaceLocalMessage(localId: localMsg.id, with: sentMsg)
+            do {
+                let fileURL = URL(fileURLWithPath: localPath)
+                let ext = fileURL.pathExtension.isEmpty ? "wav" : fileURL.pathExtension.lowercased()
+                let data = try Data(contentsOf: fileURL)
+                let remoteURL = try await OSSManager.shared.upload(
+                    data: data,
+                    folderName: "im",
+                    ext: ext,
+                    mimeType: Self.mimeType(for: ext)
+                )
+                let sentMsg = await imService.sendVoice(
+                    localPath: localPath,
+                    duration: duration,
+                    voiceUrl: remoteURL,
+                    conversationId: conversationId,
+                    conversationType: conversationType,
+                    replyMessage: reply
+                )
+                await MainActor.run {
+                    self.replaceLocalMessage(localId: localMsg.id, with: sentMsg)
+                }
+            } catch {
+                print("[Chat] sendVoice ✗ \(error.localizedDescription)")
+                await MainActor.run {
+                    self.toastPublisher.send("语音发送失败")
+                }
             }
         }
     }
 
     /// 发送文件消息：先上传 OSS，再发融云 AD:FileMsg
     func sendFile(localURL: URL) {
+        guard ensureCanSend() else { return }
         let fileName = localURL.lastPathComponent
         let ext = localURL.pathExtension.isEmpty ? "bin" : localURL.pathExtension.lowercased()
         let fileSize = (try? FileManager.default.attributesOfItem(atPath: localURL.path)[.size] as? Int) ?? 0
-        let sizeText = Self.formatFileSize(fileSize)
+        let sizeText = ChatBubbleStyle.formatFileSize(bytes: fileSize)
 
         let content = FileMessage()
         content.fileName = fileName
@@ -305,6 +363,7 @@ final class ChatViewModel: ObservableObject {
 
     /// 开始引用消息
     func startQuote(_ message: ChatMessage) {
+        guard ensureCanSend() else { return }
         quotedMessage = message
         showQuotePreviewPublisher.send(ReplyMessage.from(message))
     }
@@ -338,9 +397,19 @@ final class ChatViewModel: ObservableObject {
     func availableActions(for message: ChatMessage) -> [MessageActionMenu.Action] {
         var actions: [MessageActionMenu.Action] = []
         if message.canCopy { actions.append(.copy) }
-        if message.canRecall { actions.append(.recall) }
-        if message.canQuote { actions.append(.quote) }
+        if !isMessagingReadOnly {
+            if message.canRecall { actions.append(.recall) }
+            if message.canQuote { actions.append(.quote) }
+        }
         return actions
+    }
+
+    private func ensureCanSend() -> Bool {
+        guard !isMessagingReadOnly else {
+            toastPublisher.send("服务已过期，仅可查看历史消息")
+            return false
+        }
+        return true
     }
 
     // MARK: - Mark as Read
@@ -413,13 +482,6 @@ final class ChatViewModel: ObservableObject {
         return path
     }
 
-    private static func formatFileSize(_ bytes: Int) -> String {
-        let value = Double(bytes)
-        if value < 1024 { return "\(bytes)B" }
-        if value < 1024 * 1024 { return String(format: "%.1fKB", value / 1024) }
-        return String(format: "%.1fMB", value / (1024 * 1024))
-    }
-
     private static func mimeType(for ext: String) -> String {
         switch ext.lowercased() {
         case "pdf": return "application/pdf"
@@ -433,6 +495,7 @@ final class ChatViewModel: ObservableObject {
         case "zip": return "application/zip"
         case "png": return "image/png"
         case "jpg", "jpeg": return "image/jpeg"
+        case "wav": return "audio/wav"
         default: return "application/octet-stream"
         }
     }

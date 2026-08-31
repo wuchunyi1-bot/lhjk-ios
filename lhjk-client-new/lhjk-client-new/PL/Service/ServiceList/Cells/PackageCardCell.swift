@@ -2,52 +2,79 @@ import UIKit
 import SnapKit
 import Kingfisher
 
-/// 套餐列表卡片 — 对齐 Figma 3760:10430 / 3760:10476（249×107 / 左侧83×83产品图 / 暖粉底+描边）
+/// 套餐列表卡片 — Figma 3760:10476（249×107 基准 + `mall_item_bg` 等比缩放）
 final class PackageCardCell: UITableViewCell {
     static let reuseID = "PackageCardCell"
-    static let cardHeight: CGFloat = 107
+
+    private enum Design {
+        static let cardWidth: CGFloat = 249
+        static let cardHeight: CGFloat = 107
+        static let rowSpacing: CGFloat = 14
+        static let cardLeading: CGFloat = 10
+        static let cardTrailing: CGFloat = 16
+
+        static let coverSize: CGFloat = 83
+        static let coverInset: CGFloat = 11.5
+        static let coverCornerRadius: CGFloat = 10
+        static let cardCornerRadius: CGFloat = 12
+
+        static let textLeadingFromCover: CGFloat = 10
+        static let nameTop: CGFloat = 11.5
+        static let nameToSubtitle: CGFloat = 6
+        static let priceBottom: CGFloat = 11
+
+        static let nameFontSize: CGFloat = 14
+        static let subtitleFontSize: CGFloat = 12
+        static let badgeFontSize: CGFloat = 10
+        static let priceSymbolFontSize: CGFloat = 12
+        static let priceValueFontSize: CGFloat = 14
+        static let priceSuffixFontSize: CGFloat = 10
+    }
+
+    static var cardHorizontalInsets: CGFloat { Design.cardLeading + Design.cardTrailing }
+    static var cardHeight: CGFloat { Design.cardHeight }
+
+    static func scaledCardHeight(forCardWidth width: CGFloat) -> CGFloat {
+        guard width > 0 else { return Design.cardHeight }
+        return width * Design.cardHeight / Design.cardWidth
+    }
+
+    static func rowHeight(forCardWidth width: CGFloat) -> CGFloat {
+        scaledCardHeight(forCardWidth: width) + Design.rowSpacing
+    }
 
     private var packageId: String?
     private var hospitalId: String?
     private var categoryServiceId: String?
+    private var lastPriceText: String?
+    private var lastBadge: String?
+    private var lastLayoutScale: CGFloat = 0
+    private var lastAppliedShowsBadge = false
 
     private let cardView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(hexString: "#FFF9F8")
-        view.layer.cornerRadius = 12
-        view.layer.borderWidth = 0.5
-        view.layer.borderColor = UIColor(hexString: "#FFEAE5").cgColor
         view.clipsToBounds = true
         return view
+    }()
+
+    private let bgImageView: UIImageView = {
+        let iv = UIImageView(image: UIImage(named: "mall_item_bg"))
+        iv.contentMode = .scaleAspectFill
+        iv.clipsToBounds = true
+        return iv
     }()
 
     private let coverImageView: UIImageView = {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFill
-        iv.layer.cornerRadius = 10
         iv.clipsToBounds = true
         iv.backgroundColor = .white
         iv.image = UIImage(named: "pkg_card_placeholder")
         return iv
     }()
 
-    private let nameLabel: UILabel = {
-        let label = UILabel()
-        label.font = .fdFont(ofSize: 16, weight: .medium)
-        label.textColor = UIColor(hexString: "#1F2430")
-        label.numberOfLines = 1
-        label.lineBreakMode = .byTruncatingTail
-        return label
-    }()
-
-    private let subtitleLabel: UILabel = {
-        let label = UILabel()
-        label.font = .fdFont(ofSize: 14, weight: .regular)
-        label.textColor = UIColor(hexString: "#6D7381")
-        label.numberOfLines = 1
-        label.lineBreakMode = .byTruncatingTail
-        return label
-    }()
+    private let nameLabel = UILabel()
+    private let subtitleLabel = UILabel()
 
     private let badgeView: UIView = {
         let view = UIView()
@@ -57,38 +84,16 @@ final class PackageCardCell: UITableViewCell {
         return view
     }()
 
-    private let badgeLabel: UILabel = {
-        let label = UILabel()
-        label.font = .fdFont(ofSize: 12, weight: .bold)
-        label.textColor = .white
-        label.textAlignment = .center
-        return label
-    }()
-
-    private let footerGradientView: UIView = {
-        let view = UIView()
-        view.isUserInteractionEnabled = false
-        return view
-    }()
-
-    private let footerGradientLayer: CAGradientLayer = {
-        let layer = CAGradientLayer()
-        layer.colors = [
-            UIColor(hexString: "#FFF1EE").cgColor,
-            UIColor(hexString: "#FFF1EE").withAlphaComponent(0).cgColor
-        ]
-        layer.startPoint = CGPoint(x: 0, y: 0.5)
-        layer.endPoint = CGPoint(x: 1, y: 0.5)
-        return layer
-    }()
-
+    private let badgeLabel = UILabel()
     private let priceLabel = UILabel()
+
+    private var cardHeightConstraint: Constraint?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
-        backgroundColor = .clear
-        contentView.backgroundColor = .fdSurface
+        backgroundColor = .white
+        contentView.backgroundColor = .white
         contentView.clipsToBounds = true
         setupUI()
     }
@@ -97,13 +102,23 @@ final class PackageCardCell: UITableViewCell {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        footerGradientLayer.frame = footerGradientView.bounds
+        applyProportionalLayoutIfNeeded()
     }
 
     private func setupUI() {
+        nameLabel.textColor = UIColor(hexString: "#1F2430")
+        nameLabel.numberOfLines = 1
+        nameLabel.lineBreakMode = .byTruncatingTail
+
+        subtitleLabel.textColor = UIColor(hexString: "#6D7381")
+        subtitleLabel.numberOfLines = 1
+        subtitleLabel.lineBreakMode = .byTruncatingTail
+
+        badgeLabel.textColor = .white
+        badgeLabel.textAlignment = .center
+
         contentView.addSubview(cardView)
-        cardView.addSubview(footerGradientView)
-        footerGradientView.layer.addSublayer(footerGradientLayer)
+        cardView.addSubview(bgImageView)
         cardView.addSubview(coverImageView)
         cardView.addSubview(nameLabel)
         cardView.addSubview(subtitleLabel)
@@ -111,52 +126,111 @@ final class PackageCardCell: UITableViewCell {
         badgeView.addSubview(badgeLabel)
         cardView.addSubview(priceLabel)
 
-        cardView.snp.makeConstraints {
-            $0.top.equalToSuperview()
-            $0.leading.equalToSuperview().offset(10)
-            $0.trailing.equalToSuperview().offset(-16)
-            $0.bottom.equalToSuperview().offset(-14)
-            $0.height.equalTo(Self.cardHeight)
+        bgImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        cardView.snp.makeConstraints { make in
+            make.top.equalToSuperview()
+            make.leading.equalToSuperview().offset(Design.cardLeading)
+            make.trailing.equalToSuperview().offset(-Design.cardTrailing)
+            cardHeightConstraint = make.height.equalTo(Design.cardHeight).constraint
         }
 
-        coverImageView.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(11.5)
-            $0.leading.equalToSuperview().offset(11.5)
-            $0.size.equalTo(83)
+        coverImageView.snp.makeConstraints { make in
+            make.top.leading.equalToSuperview().offset(Design.coverInset)
+            make.size.equalTo(Design.coverSize)
         }
 
-        badgeView.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(11.5)
-            $0.trailing.equalToSuperview().offset(-8)
-            $0.height.equalTo(15)
-            $0.width.greaterThanOrEqualTo(26)
+        subtitleLabel.snp.makeConstraints { make in
+            make.top.equalTo(nameLabel.snp.bottom).offset(Design.nameToSubtitle)
+            make.leading.equalTo(nameLabel)
+            make.trailing.equalToSuperview().offset(-8)
         }
 
-        badgeLabel.snp.makeConstraints {
-            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 3, bottom: 0, right: 3))
+        priceLabel.snp.makeConstraints { make in
+            make.leading.equalTo(nameLabel)
+            make.bottom.equalToSuperview().offset(-Design.priceBottom)
+            make.trailing.lessThanOrEqualToSuperview().offset(-8)
+        }
+    }
+
+    private func applyProportionalLayoutIfNeeded() {
+        let cardWidth = contentView.bounds.width - Self.cardHorizontalInsets
+        guard cardWidth > 0 else { return }
+        let scale = cardWidth / Design.cardWidth
+        let scaleChanged = abs(scale - lastLayoutScale) > 0.01
+        if scaleChanged {
+            lastLayoutScale = scale
+            cardHeightConstraint?.update(offset: Design.cardHeight * scale)
+            cardView.layer.cornerRadius = Design.cardCornerRadius * scale
+            bgImageView.layer.cornerRadius = Design.cardCornerRadius * scale
+            coverImageView.layer.cornerRadius = Design.coverCornerRadius * scale
+
+            nameLabel.font = .fdFont(ofSize: Design.nameFontSize * scale, weight: .medium)
+            subtitleLabel.font = .fdFont(ofSize: Design.subtitleFontSize * scale, weight: .regular)
+            badgeLabel.font = .fdFont(ofSize: Design.badgeFontSize * scale, weight: .bold)
+
+            if let price = lastPriceText {
+                priceLabel.attributedText = Self.priceAttributed(from: price, scale: scale)
+            }
         }
 
-        nameLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(11.5)
-            $0.leading.equalTo(coverImageView.snp.trailing).offset(10)
-            $0.trailing.lessThanOrEqualTo(badgeView.snp.leading).offset(-4)
+        let showsBadge = !badgeView.isHidden
+        if scaleChanged || showsBadge != lastAppliedShowsBadge {
+            lastAppliedShowsBadge = showsBadge
+            applyContentConstraints(scale: scale, showsBadge: showsBadge)
+        }
+    }
+
+    private func applyContentConstraints(scale: CGFloat, showsBadge: Bool) {
+
+        coverImageView.snp.remakeConstraints { make in
+            make.top.leading.equalToSuperview().offset(Design.coverInset * scale)
+            make.size.equalTo(Design.coverSize * scale)
         }
 
-        subtitleLabel.snp.makeConstraints {
-            $0.top.equalTo(nameLabel.snp.bottom).offset(6)
-            $0.leading.equalTo(nameLabel)
-            $0.trailing.equalToSuperview().offset(-8)
+        badgeView.snp.remakeConstraints { make in
+            if showsBadge {
+                make.top.equalToSuperview().offset(Design.coverInset * scale)
+                make.trailing.equalToSuperview().offset(-8 * scale)
+                make.height.equalTo(15 * scale)
+                make.width.greaterThanOrEqualTo(26 * scale)
+            } else {
+                make.top.trailing.equalToSuperview()
+                make.width.height.equalTo(0)
+            }
         }
 
-        footerGradientView.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(43)
+        badgeLabel.isHidden = !showsBadge
+        if showsBadge {
+            badgeLabel.snp.remakeConstraints {
+                $0.edges.equalToSuperview().inset(
+                    UIEdgeInsets(top: 0, left: 3 * scale, bottom: 0, right: 3 * scale)
+                )
+            }
+        } else {
+            badgeLabel.snp.remakeConstraints { $0.edges.equalToSuperview() }
         }
 
-        priceLabel.snp.makeConstraints {
-            $0.leading.equalTo(nameLabel)
-            $0.bottom.equalToSuperview().offset(-11)
-            $0.trailing.lessThanOrEqualToSuperview().offset(-8)
+        nameLabel.snp.remakeConstraints { make in
+            make.top.equalToSuperview().offset(Design.nameTop * scale)
+            make.leading.equalTo(coverImageView.snp.trailing).offset(Design.textLeadingFromCover * scale)
+            if showsBadge {
+                make.trailing.lessThanOrEqualTo(badgeView.snp.leading).offset(-4 * scale)
+            } else {
+                make.trailing.lessThanOrEqualToSuperview().offset(-8 * scale)
+            }
+        }
+
+        subtitleLabel.snp.remakeConstraints { make in
+            make.top.equalTo(nameLabel.snp.bottom).offset(Design.nameToSubtitle * scale)
+            make.leading.equalTo(nameLabel)
+            make.trailing.equalToSuperview().offset(-8 * scale)
+        }
+
+        priceLabel.snp.remakeConstraints { make in
+            make.leading.equalTo(nameLabel)
+            make.bottom.equalToSuperview().offset(-Design.priceBottom * scale)
+            make.trailing.lessThanOrEqualToSuperview().offset(-8 * scale)
         }
     }
 
@@ -165,7 +239,12 @@ final class PackageCardCell: UITableViewCell {
         packageId = nil
         hospitalId = nil
         categoryServiceId = nil
+        lastPriceText = nil
+        lastBadge = nil
+        lastLayoutScale = 0
+        lastAppliedShowsBadge = false
         badgeView.isHidden = true
+        badgeLabel.isHidden = true
         coverImageView.kf.cancelDownloadTask()
         coverImageView.image = UIImage(named: "pkg_card_placeholder")
     }
@@ -176,7 +255,8 @@ final class PackageCardCell: UITableViewCell {
         self.categoryServiceId = categoryServiceId
         nameLabel.text = item.name
         subtitleLabel.text = item.subtitle.isEmpty ? "健康管理服务套餐" : item.subtitle
-        priceLabel.attributedText = Self.priceAttributed(from: item.price)
+        lastPriceText = item.price
+        priceLabel.attributedText = Self.priceAttributed(from: item.price, scale: lastLayoutScale > 0 ? lastLayoutScale : 1)
         applyBadge(item.badge)
 
         if let rawUrl = item.imageUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -189,6 +269,8 @@ final class PackageCardCell: UITableViewCell {
         } else {
             coverImageView.image = UIImage(named: "pkg_card_placeholder")
         }
+
+        setNeedsLayout()
     }
 
     func configure(_ p: SvcPkg, accent: UIColor) {
@@ -197,23 +279,24 @@ final class PackageCardCell: UITableViewCell {
         categoryServiceId = nil
         nameLabel.text = p.name
         subtitleLabel.text = p.subtitle
-        priceLabel.attributedText = Self.priceAttributed(from: p.price)
+        lastPriceText = p.price
+        priceLabel.attributedText = Self.priceAttributed(from: p.price, scale: lastLayoutScale > 0 ? lastLayoutScale : 1)
         applyBadge(p.tag.isEmpty ? nil : p.tag)
         coverImageView.image = UIImage(named: "pkg_card_placeholder")
+        setNeedsLayout()
     }
 
     private func applyBadge(_ raw: String?) {
         guard let badge = raw?.trimmingCharacters(in: .whitespacesAndNewlines),
               !badge.isEmpty, badge != "无" else {
+            lastBadge = nil
             badgeView.isHidden = true
-            nameLabel.snp.remakeConstraints {
-                $0.top.equalToSuperview().offset(11.5)
-                $0.leading.equalTo(coverImageView.snp.trailing).offset(10)
-                $0.trailing.lessThanOrEqualToSuperview().offset(-8)
-            }
+            badgeLabel.isHidden = true
             return
         }
+        lastBadge = badge
         badgeView.isHidden = false
+        badgeLabel.isHidden = false
         badgeLabel.text = badge
 
         switch badge {
@@ -224,15 +307,9 @@ final class PackageCardCell: UITableViewCell {
         default:
             badgeView.backgroundColor = UIColor(hexString: "#FF7A50")
         }
-
-        nameLabel.snp.remakeConstraints {
-            $0.top.equalToSuperview().offset(11.5)
-            $0.leading.equalTo(coverImageView.snp.trailing).offset(10)
-            $0.trailing.lessThanOrEqualTo(badgeView.snp.leading).offset(-4)
-        }
     }
 
-    private static func priceAttributed(from raw: String) -> NSAttributedString {
+    private static func priceAttributed(from raw: String, scale: CGFloat) -> NSAttributedString {
         let digits = raw.filter { $0.isNumber || $0 == "," || $0 == "." }
         let number = digits.isEmpty ? raw : digits
         let priceColor = UIColor(hexString: "#F93838")
@@ -240,21 +317,21 @@ final class PackageCardCell: UITableViewCell {
         result.append(NSAttributedString(
             string: "¥",
             attributes: [
-                .font: UIFont.fdFont(ofSize: 14, weight: .medium),
+                .font: UIFont.fdFont(ofSize: Design.priceSymbolFontSize * scale, weight: .medium),
                 .foregroundColor: priceColor,
             ]
         ))
         result.append(NSAttributedString(
             string: "\(number)",
             attributes: [
-                .font: UIFont.fdFont(ofSize: 16, weight: .medium),
+                .font: UIFont.fdFont(ofSize: Design.priceValueFontSize * scale, weight: .medium),
                 .foregroundColor: priceColor,
             ]
         ))
         result.append(NSAttributedString(
             string: " 元起",
             attributes: [
-                .font: UIFont.fdFont(ofSize: 12, weight: .regular),
+                .font: UIFont.fdFont(ofSize: Design.priceSuffixFontSize * scale, weight: .regular),
                 .foregroundColor: priceColor,
             ]
         ))

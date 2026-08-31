@@ -83,7 +83,11 @@ extension ChatMessage {
         } else if let imageContent = rcMessage.content as? RCImageMessage {
             content = "[图片]"
             type = .image
-            imagePath = imageContent.imageUrl ?? imageContent.remoteUrl ?? imageContent.localPath
+            let extraImageUrl = ExtraPayload.imageUrl(from: imageContent.extra)
+            imagePath = imageContent.remoteUrl
+                ?? extraImageUrl
+                ?? imageContent.imageUrl
+                ?? imageContent.localPath
             thumbWidth = imageContent.thumWidth > 0 ? imageContent.thumWidth : nil
             thumbHeight = imageContent.thumHeight > 0 ? imageContent.thumHeight : nil
             Self.logNonTextMessageBody(rcMessage)
@@ -91,7 +95,10 @@ extension ChatMessage {
             // 高清语音 RC:HQVCMsg
             content = "[语音]"
             type = .voice
-            imagePath = voiceContent.localPath ?? voiceContent.remoteUrl
+            let extraVoiceUrl = ExtraPayload.voiceUrl(from: voiceContent.extra)
+            imagePath = voiceContent.remoteUrl
+                ?? extraVoiceUrl
+                ?? voiceContent.localPath
             thumbWidth = nil
             thumbHeight = Int(voiceContent.duration)
             Self.logNonTextMessageBody(rcMessage)
@@ -207,7 +214,8 @@ extension ChatMessage {
         let msgId = rcMessage.messageId
         let uid = rcMessage.messageUId ?? "nil"
         let body = rawContentJSON(from: rcMessage.content)
-        print("[Chat][non-text] objectName=\(objectName) msgId=\(msgId) uid=\(uid) body=\(body)")
+        let extra = rcMessage.extra
+        print("[Chat][non-text] objectName=\(objectName) msgId=\(msgId) uid=\(uid) body=\(body) extra =\(String(describing: extra))")
     }
 }
 

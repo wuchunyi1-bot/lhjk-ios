@@ -77,7 +77,7 @@ final class ChangePhoneViewController: BaseViewController {
 
         // MARK: 说明文字
         let descLabel = UILabel()
-        descLabel.text = "更换后将使用新手机号登录富德健康，并用于接收服务与安全提醒。"
+        descLabel.text = "更换后将使用新手机号登录富德联好健康，并用于接收服务与安全提醒。"
         descLabel.font = .fdMyBody
         descLabel.textColor = .fdSubtext
         descLabel.numberOfLines = 0
@@ -309,9 +309,9 @@ final class ChangePhoneViewController: BaseViewController {
         let charIndex = layoutManager.characterIndex(for: point, in: textContainer, fractionOfDistanceBetweenInsertionPoints: nil)
 
         let protocols: [(String, String, String)] = [
-            ("《用户协议》", "用户协议", "（用户协议占位文本）\n\n欢迎使用富德健康服务！\n\n一、服务条款\n1.1 本协议是您与富德健康之间关于使用富德健康服务所订立的协议。\n\n（实际内容以正式版本为准）"),
-            ("《隐私政策》", "隐私政策", "（隐私政策占位文本）\n\n富德健康高度重视您的个人信息保护。\n\n一、信息收集\n1.1 我们收集您的手机号码用于账号注册与登录。\n\n（实际内容以正式版本为准）"),
-            ("《健康管理服务知情同意书》", "健康管理服务知情同意书", "（健康管理服务知情同意书占位文本）\n\n尊敬的客户：\n\n欢迎您使用富德健康管理服务。\n\n（实际内容以正式版本为准）"),
+            ("《用户协议》", "用户协议", "（用户协议占位文本）\n\n欢迎使用富德联好健康服务！\n\n一、服务条款\n1.1 本协议是您与富德联好健康之间关于使用富德联好健康服务所订立的协议。\n\n（实际内容以正式版本为准）"),
+            ("《隐私政策》", "隐私政策", "（隐私政策占位文本）\n\n富德联好健康高度重视您的个人信息保护。\n\n一、信息收集\n1.1 我们收集您的手机号码用于账号注册与登录。\n\n（实际内容以正式版本为准）"),
+            ("《健康管理服务知情同意书》", "健康管理服务知情同意书", "（健康管理服务知情同意书占位文本）\n\n尊敬的客户：\n\n欢迎您使用富德联好健康管理服务。\n\n（实际内容以正式版本为准）"),
         ]
 
         for (keyword, title, content) in protocols {

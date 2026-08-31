@@ -1,7 +1,7 @@
 ## Context
 
 - API：`GET /v1/session/getUserParticipateAllTeam?userId=`（Apifox 495580451）
-- 模块归属：**Home**（首页 Section「我的富德健康管家团队」）
+- 模块归属：**Home**（首页 Section「我的富德联好健康管家团队」）
 - UI：已有 `HomeTeamCardCell` / `HomeViewModel.teamMembers`（当前为 mock）
 - 响应 `data` 类型为 `MyDoctorTeamVO[][]`（团队列表，每项为该团队成员数组）
 
@@ -39,10 +39,10 @@
 
 **Non-Goals:**
 
-- 不接「服务剩余 N 天」（非本接口字段）
-- 不实现团队详情页 / 改版式
+- 不接团队详情页 / 改版式
 - 不实现真实在线状态（接口无此字段）
 - 不做跨进程磁盘缓存（与今日任务类似，可会话内简单刷新）
+- 服务剩余天数由 `getRemainServiceTime` 单独接口提供，与团队成员接口并行拉取
 
 ## Decisions
 
@@ -83,7 +83,7 @@
 
 8. **加载时机**：首页 `viewWillAppear` 与今日任务一并触发 `loadDoctorTeam()`；`.userDidUpdate` 时若 userId 变化再拉。
 
-9. **空态**：`teamMembers` 为空时 snapshot **不 append** team section（或 section 无 items），避免空白标题区；有数据才显示「我的富德健康管家团队」。
+9. **空态**：`teamMembers` 为空时 snapshot **不 append** team section（或 section 无 items），避免空白标题区；有数据才显示「我的富德联好健康管家团队」。
 
 10. **解码**：`userId`/`groupId` 等用 flexible String/Int64（对齐 `UserTodayMonitorTask`）。
 
@@ -96,4 +96,20 @@
 ## Open Questions
 
 - `identity` 正式枚举值（待后端/联调确认）
-- 「服务剩余天数」接口来源（会员订单？）另开 change
+
+### 服务剩余时间 API
+
+| 项 | 值 |
+|----|-----|
+| Method | GET |
+| Path | `/v1/schemeArchive/getRemainServiceTime` |
+| Query | 无（Bearer 鉴权识别当前用户） |
+| `data` | `RemainServiceTimeVO` |
+
+| 字段 | 含义 |
+|------|------|
+| `remainDays` | 剩余天数 |
+| `endTime` | 服务结束时间 |
+
+- 与 `getUserParticipateAllTeam` 并行请求；`remainDays > 0` 时展示「服务剩余 N 天 ›」，点击跳转 `/orders` + `tab=in_progress`
+- 剩余时间请求失败时静默，仅隐藏右侧文案，不影响团队列表展示

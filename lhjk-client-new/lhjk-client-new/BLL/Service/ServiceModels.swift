@@ -52,7 +52,7 @@ struct ServiceInstitution {
 // MARK: - 推荐健康包
 
 /// 推荐服务健康包，对应 `health-package-source` + `services.json` packages
-struct HealthPackageItem {
+struct HealthPackageItem: Equatable {
     let id: String
     /// 列表接口返回的医院 id，跳转详情 / 加购 / 下单使用
     let hospitalId: String?

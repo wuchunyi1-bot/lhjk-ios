@@ -17,7 +17,7 @@
 - **THEN** 依次为：
   - 修改手机号 → 右侧脱敏手机号 → `/me/settings/security/change-phone`
   - 登录密码 → 「已设置」或「去设置」→ `/me/settings/security/password`
-  - 微信授权 → 昵称或「未绑定」→ `/me/settings/security/wechat`
+  - 微信授权 → 调用 `GET /v1/users/getWechatBindStatus`，展示「已绑定」或「未绑定」→ `/me/settings/security/wechat`
 - **AND** 本页点击仅跳转，不直接绑定/解绑微信或改密码
 
 #### Scenario: 账号管理

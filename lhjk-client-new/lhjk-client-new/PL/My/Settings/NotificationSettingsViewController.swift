@@ -1,8 +1,7 @@
 import UIKit
 import SnapKit
-import UserNotifications
 
-/// 消息通知设置 — 对齐 PRD-208 / NotificationSettingsView.vue
+/// 消息通知设置 — 对齐 PRD-208 / 设置 PRD §5.8.6
 final class NotificationSettingsViewController: BaseViewController {
 
     private enum PrefKey: String, CaseIterable {
@@ -14,12 +13,18 @@ final class NotificationSettingsViewController: BaseViewController {
     private let scrollView = UIScrollView()
     private let contentView = UIView()
     private var systemStatusLabel: UILabel?
-    private var systemAuthorized = false
+    private var foregroundObserver: NSObjectProtocol?
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
         refreshSystemStatus()
+        installForegroundObserverIfNeeded()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        removeForegroundObserver()
     }
 
     override func setupUI() {
@@ -191,24 +196,43 @@ final class NotificationSettingsViewController: BaseViewController {
     // MARK: - System notification
 
     private func refreshSystemStatus() {
-        UNUserNotificationCenter.current().getNotificationSettings { [weak self] settings in
-            let authorized = settings.authorizationStatus == .authorized
-                || settings.authorizationStatus == .provisional
-                || settings.authorizationStatus == .ephemeral
-            DispatchQueue.main.async {
-                self?.systemAuthorized = authorized
-                self?.systemStatusLabel?.text = authorized ? "已开启" : "未开启"
+        Task {
+            let authorized = await NotificationPromptService.shared.refreshSystemNotificationStatus()
+            await MainActor.run {
+                systemStatusLabel?.text = authorized ? "已开启" : "未开启"
             }
         }
     }
 
+    private func installForegroundObserverIfNeeded() {
+        guard foregroundObserver == nil else { return }
+        foregroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.refreshSystemStatus()
+        }
+    }
+
+    private func removeForegroundObserver() {
+        if let observer = foregroundObserver {
+            NotificationCenter.default.removeObserver(observer)
+            foregroundObserver = nil
+        }
+    }
+
     private func handleSystemTap() {
-        if systemAuthorized {
-            showToast("手机系统通知已开启")
-        } else {
-            showToast("请在系统设置中开启“富德健康”的通知权限")
-            if let url = URL(string: UIApplication.openSettingsURLString) {
-                UIApplication.shared.open(url)
+        Task {
+            var status = await NotificationPromptService.shared.authorizationStatus()
+            if status == .notDetermined {
+                let authorized = await NotificationPromptService.shared.requestSystemAuthorization()
+                await MainActor.run { refreshSystemStatus() }
+                if authorized { return }
+                status = await NotificationPromptService.shared.authorizationStatus()
+            }
+            await MainActor.run {
+                NotificationPromptService.shared.openSystemSettings()
             }
         }
     }
@@ -241,9 +265,5 @@ final class NotificationSettingsViewController: BaseViewController {
         if let data = try? JSONSerialization.data(withJSONObject: dict) {
             UserDefaults.standard.set(data, forKey: prefsStorageKey)
         }
-    }
-
-    private func showToast(_ message: String) {
-        showToastAlert(message, duration: 1.5)
     }
 }

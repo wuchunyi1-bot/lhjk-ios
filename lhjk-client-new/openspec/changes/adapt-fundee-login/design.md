@@ -1,6 +1,6 @@
 ## Context
 
-funde-client（富德健康）是一个 Vue.js 移动端原型项目，已完成完整的设计系统（tokens.css + mobile.css）和注册登录 PRD（`用户注册与登录_v1.0.md`）。当前 iOS 项目（lhjk-client）仅有最简 `LoginViewController.swift` 骨架，缺少隐私授权、本机号识别、拼图验证、忘记密码、通知权限引导、登录态管理等完整登录体验。本设计文档分析如何将 funde-client 的注册登录完整链路适配到 iOS UIKit + SnapKit 项目。
+funde-client（富德联好健康）是一个 Vue.js 移动端原型项目，已完成完整的设计系统（tokens.css + mobile.css）和注册登录 PRD（`用户注册与登录_v1.0.md`）。当前 iOS 项目（lhjk-client）仅有最简 `LoginViewController.swift` 骨架，缺少隐私授权、本机号识别、拼图验证、忘记密码、通知权限引导、登录态管理等完整登录体验。本设计文档分析如何将 funde-client 的注册登录完整链路适配到 iOS UIKit + SnapKit 项目。
 
 ## Reference Source Analysis
 
@@ -40,7 +40,7 @@ funde-client（富德健康）是一个 Vue.js 移动端原型项目，已完成
 │  │  ┌──────┐                            ││
 │  │  │ 富德 │  72×72 渐变圆角方块          ││
 │  │  └──────┘                            ││
-│  │  富德健康     (22px bold)              ││
+│  │  富德联好健康     (22px bold)              ││
 │  │  全生命周期... (13px muted)            ││
 │  └──────────────────────────────────────┘│
 │  ┌──────────────────────────────────────┐│

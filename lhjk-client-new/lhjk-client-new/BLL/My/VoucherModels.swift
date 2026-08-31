@@ -35,6 +35,17 @@ enum BenefitCardStatus: String, CaseIterable {
         }
     }
 
+    /// 列表卡背景切图（Figma 3835:32594）
+    var cardBackgroundImageName: String {
+        switch self {
+        case .available: return "benefit_bind_toUse"
+        case .pendingReceive, .pendingBind: return "benefit_bind_toGet"
+        case .redeemed: return "benefit_bind_used"
+        case .expired: return "benefit_bind_timeout"
+        case .transferred: return "benefit_bind_sended"
+        }
+    }
+
     var sealTint: UIColor {
         switch self {
         case .available: return .fdWarning
@@ -72,6 +83,13 @@ enum BenefitTransferStatus: String {
         switch self {
         case .waiting: return "benefit_stamp_claiming"
         case .transferred: return "benefit_stamp_transferred"
+        }
+    }
+
+    var cardBackgroundImageName: String {
+        switch self {
+        case .waiting: return "benefit_bind_toGet"
+        case .transferred: return "benefit_bind_sended"
         }
     }
 

@@ -191,7 +191,10 @@ final class HomeViewController: BaseViewController {
             return cell
         case .teamList:
             let cell = tv.dequeueReusableCell(withIdentifier: HomeTeamCardCell.reuseID, for: indexPath) as! HomeTeamCardCell
-            cell.configure(members: viewModel.teamMembers)
+            cell.configure(members: viewModel.teamMembers, serviceDaysLeft: viewModel.teamServiceDaysLeft)
+            cell.onMoreTapped = {
+                Router.shared.push("/orders", params: ["tab": "in_progress"])
+            }
             cell.onMessageTapped = { member in
                 guard let groupId = member.groupId, !groupId.isEmpty else { return }
                 // 会话 id = groupId，直接进聊天详情（见 home-doctor-team / im spec）

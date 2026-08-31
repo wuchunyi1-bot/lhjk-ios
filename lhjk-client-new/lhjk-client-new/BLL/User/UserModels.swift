@@ -555,3 +555,11 @@ struct ChangeCurrentPasswordDTO: Encodable {
     let oldPwd: String
     let newPwd: String
 }
+
+// MARK: - 微信绑定状态
+
+/// 微信账号绑定状态
+/// `GET /v1/users/getWechatBindStatus` 响应 `data`
+struct WechatBindStatusVO: Codable, Equatable {
+    let bound: Bool?
+}

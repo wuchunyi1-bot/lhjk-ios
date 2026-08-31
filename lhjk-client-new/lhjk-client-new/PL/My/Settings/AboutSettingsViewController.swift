@@ -1,7 +1,7 @@
 import UIKit
 import SnapKit
 
-/// 关于富德健康 — 对齐 PRD-213 / AboutSettingsView.vue / me-settings-about.page.yaml
+/// 关于富德联好健康 — 对齐 PRD-213 / AboutSettingsView.vue / me-settings-about.page.yaml
 ///
 /// 品牌 Hero + 信息卡（版本 / 评分 / 联系我们）+ 页脚版权与备案；不展示协议入口。
 final class AboutSettingsViewController: BaseViewController {
@@ -21,7 +21,7 @@ final class AboutSettingsViewController: BaseViewController {
     }
 
     override func setupUI() {
-        title = "关于富德健康"
+        title = "关于富德联好健康"
         view.backgroundColor = .fdBg
 
         bgGradient.colors = [
@@ -76,10 +76,10 @@ final class AboutSettingsViewController: BaseViewController {
         logo.contentMode = .scaleAspectFill
         logo.clipsToBounds = true
         logo.layer.cornerRadius = 18
-        logo.accessibilityLabel = "富德健康"
+        logo.accessibilityLabel = "富德联好健康"
 
         let nameLabel = UILabel()
-        nameLabel.text = "富德健康"
+        nameLabel.text = "富德联好健康"
         nameLabel.font = .fdFont(ofSize: 22, weight: .heavy)
         nameLabel.textColor = .fdText
         nameLabel.textAlignment = .center
@@ -223,13 +223,13 @@ final class AboutSettingsViewController: BaseViewController {
         let wrap = UIView()
 
         let copyright = UILabel()
-        copyright.text = "Copyright © 2026 富德健康"
+        copyright.text = "Copyright © 2026 富德联好健康"
         copyright.font = .fdMyMicro
         copyright.textColor = .fdMuted
         copyright.textAlignment = .center
 
         let icp = UILabel()
-        icp.text = "粤ICP备xxxxx号"
+        icp.text = "粤ICP备2023016723号-1"
         icp.font = .fdMyMicro
         icp.textColor = .fdMuted
         icp.textAlignment = .center

@@ -14,7 +14,10 @@ enum MyRoutes {
         r.register(path: "/me/settings")   { _ in SettingsViewController() }
         r.register(path: "/me/profile")    { _ in ProfileViewController() }
         r.register(path: "/me/policy")     { _ in PolicyViewController() }
-        r.register(path: "/me/health-report")    { _ in HealthReportViewController() }
+        r.register(path: "/me/health-report") { _ in healthReportWebView() }
+        r.register(path: "/me/health-report/detail") { params in
+            healthReportDetailWebView(params: params)
+        }
         r.register(path: "/me/appointments")     { _ in AppointmentsViewController() }
         r.register(path: "/me/devices")          { _ in DevicesViewController() }
 
@@ -44,12 +47,29 @@ enum MyRoutes {
             healthEvaluationsWebView()
         }
 
+        // 会员 / 积分 / 兑换 → H5（对齐 Vue `#/todoTask` / `#/myVip` / `#/exchangeMall`）
+        r.register(path: "/me/member-level") { _ in
+            memberH5WebView(path: "myVip", title: "会员等级")
+        }
+        r.register(path: "/me/redemptions") { _ in
+            memberH5WebView(path: "exchangeMall", title: "会员兑换")
+        }
+        r.register(path: "/me/points") { _ in
+            memberH5WebView(path: "todoTask", title: "健康积分")
+        }
+        r.register(path: "/todoTask") { _ in
+            memberH5WebView(path: "todoTask", title: "健康积分")
+        }
+        r.register(path: "/myVip") { _ in
+            memberH5WebView(path: "myVip", title: "会员等级")
+        }
+        r.register(path: "/exchangeMall") { _ in
+            memberH5WebView(path: "exchangeMall", title: "会员兑换")
+        }
+
         // 占位页面（后续迭代实现）
         r.register(path: "/me/membership")  { _ in MembershipViewController() }
-        r.register(path: "/me/member-level") { _ in MembershipViewController() }
-        r.register(path: "/me/redemptions") { _ in PlaceholderViewController(title: "会员兑换") }
         r.register(path: "/me/membership/open") { _ in PlaceholderViewController(title: "开通会员") }
-        r.register(path: "/me/points")      { _ in PointsViewController() }
         r.register(path: "/me/family")      { _ in FamilyViewController() }
 
         // 体检报告单 → H5 `#/medical-reports`（宿主接入文档）
@@ -231,5 +251,40 @@ enum MyRoutes {
             urlString: H5Config.dietPlanPageURL(date: date).absoluteString,
             title: "饮食方案"
         )
+    }
+
+    private static func memberH5WebView(path: String, title: String) -> UIViewController {
+        WebViewController(
+            urlString: H5Config.authenticatedPageURL(path: path).absoluteString,
+            title: title
+        )
+    }
+
+    private static func healthReportWebView() -> UIViewController {
+        WebViewController(
+            urlString: H5Config.healthReportPageURL.absoluteString,
+            title: "健康报告"
+        )
+    }
+
+    private static func healthReportDetailWebView(params: [String: Any]) -> UIViewController {
+        let reportId = stringParam(params["id"])
+            ?? stringParam(params["reportId"])
+            ?? ""
+        return WebViewController(
+            urlString: H5Config.healthReportDetailPageURL(id: reportId).absoluteString,
+            title: "健康报告详情"
+        )
+    }
+
+    private static func stringParam(_ value: Any?) -> String? {
+        if let string = value as? String {
+            let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        if let number = value as? NSNumber {
+            return number.stringValue
+        }
+        return nil
     }
 }

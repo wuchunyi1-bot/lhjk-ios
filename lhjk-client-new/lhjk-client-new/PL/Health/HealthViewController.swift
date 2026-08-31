@@ -39,6 +39,7 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
 
     private let viewModel = HealthViewModel()
     private var cancellables = Set<AnyCancellable>()
+    private var lastVitalMetricsLayoutWidth: CGFloat = 0
 
     private let brandHeader = TabHubBrandHeaderView()
 
@@ -73,6 +74,16 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateTableBottomInsetIfNeeded()
+        reloadVitalMetricsSectionIfWidthChanged()
+    }
+
+    private func reloadVitalMetricsSectionIfWidthChanged() {
+        let width = tableView.bounds.width
+        guard width > 0, abs(width - lastVitalMetricsLayoutWidth) > 0.5 else { return }
+        lastVitalMetricsLayoutWidth = width
+        guard !viewModel.metrics.isEmpty else { return }
+        guard let section = activeSections.firstIndex(of: .vitalMetrics) else { return }
+        tableView.reloadSections(IndexSet(integer: section), with: .none)
     }
 
     private func updateTableBottomInsetIfNeeded() {
@@ -189,7 +200,8 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         guard indexPath.section < activeSections.count else { return UITableView.automaticDimension }
         switch activeSections[indexPath.section] {
         case .vitalMetrics:
-            return HealthVitalMetricsCell.height(for: viewModel.metrics.count)
+            let width = tableView.bounds.width > 0 ? tableView.bounds.width : view.bounds.width
+            return HealthVitalMetricsCell.height(for: viewModel.metrics.count, containerWidth: width)
         default:
             return UITableView.automaticDimension
         }

@@ -132,6 +132,62 @@ final class HomeService {
         print("[HomeService] getUserParticipateAllTeam ✓ teams=\(teams.count) members=\(memberCount)")
         return teams
     }
+
+    /// `GET /v1/schemeArchive/getRemainServiceTime`
+    /// - Returns: 居家服务剩余天数与服务结束时间（无 Query，鉴权用户即当前登录用户）
+    func getRemainServiceTime() async throws -> RemainServiceTimeVO {
+        print("[HomeService] getRemainServiceTime")
+
+        let response: APIResponse<RemainServiceTimeVO> = try await APIManager.shared.getAsync(
+            path: "/v1/schemeArchive/getRemainServiceTime",
+            parameters: nil,
+            responseType: APIResponse<RemainServiceTimeVO>.self
+        )
+
+        guard response.isSuccess else {
+            print("[HomeService] getRemainServiceTime ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw HomeServiceError.requestFailed(response.msg ?? "获取服务剩余时间失败")
+        }
+
+        let vo = response.data ?? RemainServiceTimeVO(remainDays: nil, endTime: nil)
+        print("[HomeService] getRemainServiceTime ✓ remainDays=\(vo.remainDays ?? -1)")
+        return vo
+    }
+}
+
+// MARK: - RemainServiceTimeVO
+
+/// `GET /v1/schemeArchive/getRemainServiceTime` 响应 `data`
+struct RemainServiceTimeVO: Decodable, Equatable {
+    /// 剩余天数
+    let remainDays: Int?
+    /// 服务结束时间
+    let endTime: String?
+
+    init(remainDays: Int?, endTime: String?) {
+        self.remainDays = remainDays
+        self.endTime = endTime
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case remainDays, endTime
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        remainDays = Self.decodeFlexibleInt(c, key: .remainDays)
+        endTime = try c.decodeIfPresent(String.self, forKey: .endTime)
+    }
+
+    private static func decodeFlexibleInt<K: CodingKey>(
+        _ container: KeyedDecodingContainer<K>,
+        key: K
+    ) -> Int? {
+        if let i = try? container.decodeIfPresent(Int.self, forKey: key) { return i }
+        if let i = try? container.decodeIfPresent(Int64.self, forKey: key) { return Int(i) }
+        if let s = try? container.decodeIfPresent(String.self, forKey: key), let i = Int(s) { return i }
+        return nil
+    }
 }
 
 // MARK: - MyDoctorTeamVO

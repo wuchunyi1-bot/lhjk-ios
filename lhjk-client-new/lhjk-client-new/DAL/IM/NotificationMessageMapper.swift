@@ -57,6 +57,13 @@ enum NotificationMessageMapper {
         Router.shared.push(parsed.path, params: parsed.params, from: viewController)
     }
 
+    /// 将 `businessData` 中的 `orderId` / `id` 拼入 `FundeApp:` 或 `/path` 路由，供 IM 卡片跳转与通知中心共用
+    static func enrichedPageUrl(_ route: String, businessData: [String: Any]?) -> String {
+        let trimmed = route.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let businessData else { return trimmed }
+        return withBusinessId(trimmed, source: businessData) ?? trimmed
+    }
+
     // MARK: - Parse
 
     private static func payload(

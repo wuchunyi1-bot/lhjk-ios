@@ -17,6 +17,8 @@ final class OrderRemarkEditorSheet: UIViewController {
     private let textView = UITextView()
     private let placeholderLabel = UILabel()
     private let counterLabel = UILabel()
+    private let keyboardSupport = OrderBottomSheetKeyboardSupport()
+    private var panelBottomConstraint: Constraint?
 
     init(current: String) {
         self.draft = current
@@ -32,17 +34,19 @@ final class OrderRemarkEditorSheet: UIViewController {
         view.backgroundColor = .clear
 
         dimView.backgroundColor = UIColor.black.withAlphaComponent(0.35)
-        dimView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(cancel)))
         view.addSubview(dimView)
         dimView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        keyboardSupport.dimTapDismissesKeyboardOnly(dimView: dimView)
 
         panel.backgroundColor = .fdSurface
         panel.layer.cornerRadius = 16
         panel.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         view.addSubview(panel)
         panel.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
+            $0.leading.trailing.equalToSuperview()
+            panelBottomConstraint = $0.bottom.equalToSuperview().constraint
         }
+        keyboardSupport.attach(hostView: view, panelBottomConstraint: panelBottomConstraint!)
 
         cancelBtn.setTitle("取消", for: .normal)
         cancelBtn.setTitleColor(.fdSubtext, for: .normal)

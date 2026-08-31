@@ -143,7 +143,7 @@ final class HomeHeroCell: UITableViewCell {
         brandIcon.backgroundColor = .white
         brandIcon.layer.cornerRadius = 8
         let brandLbl = UILabel()
-        brandLbl.text = "富德健康"
+        brandLbl.text = "富德联好健康"
         brandLbl.font = .fdBodyBold
         brandLbl.textColor = .white
         brandPill.addSubview(brandIcon)

@@ -27,10 +27,11 @@ final class LoginViewModel: ObservableObject {
     @Published var loginMode: LoginMode = .sms
     @Published var formStep: LoginFormStep = .login
     @Published var isLoggingIn = false
-    @Published var needsPrivacyConsent = true
+    @Published var needsPrivacyConsent = false
     @Published var phoneNumber = ""
-    @Published var flowStep: LoginFlowStep = .privacyCheck
+    @Published var flowStep: LoginFlowStep = .loginForm
     @Published var isResettingPassword = false
+    @Published var isVerifyingForgotCode = false
 
     // MARK: - One-shot Publishers
 
@@ -91,35 +92,11 @@ final class LoginViewModel: ObservableObject {
 
     // MARK: - Privacy
 
+    /// 启动后不再弹出「隐私保护提示」；协议在登录页勾选。
     func checkPrivacyConsent() {
-        let localVersion = UserDefaults.standard.integer(forKey: "agreed_privacy_version")
-
-        Task {
-            do {
-                let info = try await loginService.getPrivacyVersion()
-                await MainActor.run {
-                    if info.latestPrivacyVersion > localVersion {
-                        flowStep = .privacyPrompt(info)
-                    } else {
-                        needsPrivacyConsent = false
-                        flowStep = .loginForm
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    if localVersion == 0 {
-                        flowStep = .privacyPrompt(PrivacyVersionInfo(
-                            latestPrivacyVersion: 1,
-                            userAgreementURL: "",
-                            privacyPolicyURL: ""
-                        ))
-                    } else {
-                        needsPrivacyConsent = false
-                        flowStep = .loginForm
-                    }
-                }
-            }
-        }
+        needsPrivacyConsent = false
+        if case .loginForm = flowStep { return }
+        flowStep = .loginForm
     }
 
     func agreePrivacy(version: Int) {
@@ -374,28 +351,59 @@ final class LoginViewModel: ObservableObject {
 
     // MARK: - Notification Permission
 
-    func reportNotificationPermission(status: NotificationPermissionStatus) {
+    func reportNotificationPromptClosed(
+        action: NotificationPromptService.PromptAction,
+        systemAuthorized: Bool
+    ) {
+        NotificationPromptService.shared.recordPromptClosed(
+            action: action,
+            systemAuthorized: systemAuthorized
+        )
+        let status: NotificationPermissionStatus = systemAuthorized ? .allowed : .denied
         Task {
-            try? await loginService.reportNotificationPermission(status: status)
+            try? await loginService.reportNotificationPermission(
+                status: status,
+                promptAction: action,
+                systemAuthorized: systemAuthorized
+            )
         }
     }
 
     // MARK: - Forgot Password
 
-    func submitForgotCode(phone: String, code: String) -> Bool {
+    func submitForgotCode(phone: String, code: String) {
         guard validatePhone(phone) == nil else {
             toastPublisher.send("请输入正确的手机号")
-            return false
+            return
         }
         guard !code.isEmpty else {
-            toastPublisher.send("请输入验证码"); return false
+            toastPublisher.send("请输入验证码"); return
         }
         guard code.count == 6 else {
-            toastPublisher.send("请输入 6 位验证码"); return false
+            toastPublisher.send("请输入 6 位验证码"); return
         }
-        phoneNumber = phone
-        proceedToResetPassword()
-        return true
+
+        print("[LoginViewModel] submitForgotCode → checking sms code")
+        isVerifyingForgotCode = true
+        Task {
+            do {
+                try await loginService.checkSmsCode(
+                    mobile: phone,
+                    checkCode: code,
+                    type: .resetPassword
+                )
+                await MainActor.run {
+                    isVerifyingForgotCode = false
+                    phoneNumber = phone
+                    proceedToResetPassword()
+                }
+            } catch {
+                await MainActor.run {
+                    isVerifyingForgotCode = false
+                    toastPublisher.send(error.localizedDescription)
+                }
+            }
+        }
     }
 
     func submitNewPassword(phone: String, code: String, newPassword: String, confirmPassword: String) {

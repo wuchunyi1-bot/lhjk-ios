@@ -296,6 +296,55 @@ final class IMService {
         }
     }
 
+    /// 刷新指定群组的 `GET /v1/session/getGroup` 元数据（含 `status`），供聊天页判断是否只读
+    /// - Returns: 更新后的 `Conversation`；接口失败或未找到该群时返回缓存中的会话或 nil
+    func refreshGroupMetadata(conversationId: String) async -> Conversation? {
+        let cached = withState { conversations.first(where: { $0.id == conversationId }) }
+
+        do {
+            let response: GroupListResponse = try await APIManager.shared
+                .getAsync(path: "/v1/session/getGroup", parameters: nil, responseType: GroupListResponse.self)
+            guard response.isSuccess, let data = response.data else {
+                return cached
+            }
+            guard let group = data.first(where: { $0.groupId == conversationId }) else {
+                return cached
+            }
+
+            let rcList: [RCConversation] = await withCheckedContinuation { continuation in
+                RongCloudManager.shared.getConversations(by: [conversationId]) { list in
+                    continuation.resume(returning: list)
+                }
+            }
+            let rc = rcList.first
+            let merged = Conversation.fromGroupVO(group, rc: rc)
+
+            return withState { () -> Conversation in
+                if let idx = conversations.firstIndex(where: { $0.id == conversationId }) {
+                    conversations[idx] = merged
+                    return conversations[idx]
+                }
+                return merged
+            }
+        } catch {
+            print("[IMService] refreshGroupMetadata ✗ convId=\(conversationId) \(error.localizedDescription)")
+            return cached
+        }
+    }
+
+    /// `GET /v1/session/getGroupMembers`
+    func fetchGroupMembers(groupId: String) async throws -> GroupMembersVO {
+        let response: GroupMembersResponse = try await APIManager.shared.getAsync(
+            path: "/v1/session/getGroupMembers",
+            parameters: ["groupId": groupId],
+            responseType: GroupMembersResponse.self
+        )
+        guard response.isSuccess, let data = response.data else {
+            throw APIError.businessError(code: 0, message: response.msg ?? "获取群成员失败")
+        }
+        return data
+    }
+
     /// B方案：按 conversationId 从融云查单条 RCConversation，局部更新本地会话
     /// - Returns: 更新后的 Conversation；本地未找到该 id 返回 nil
     func updateConversation(id: String) async -> Conversation? {
@@ -592,17 +641,18 @@ final class IMService {
         }
     }
 
-    /// 发送图片消息（通过融云 SDK）
-    func sendImage(_ image: UIImage, conversationId: String,
+    /// 发送图片消息（图片已上传 OSS，`imageUrl` 写入 extra）
+    func sendImage(_ image: UIImage, imageUrl: String, conversationId: String,
                    conversationType: RCConversationType = .ConversationType_GROUP,
                    replyMessage: ReplyMessage? = nil) async -> ChatMessage? {
         let senderInfo = makeSenderUserInfo()
-        let extra = replyMessage.flatMap { ReplyMessage.toExtraJSON($0) }
+        let extra = ExtraPayload.buildJSON(replyMessage: replyMessage, imageUrl: imageUrl)
         let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
             RongCloudManager.shared.sendImageMessage(
                 conversationType: conversationType,
                 targetId: conversationId,
                 image: image,
+                imageUrl: imageUrl,
                 extra: extra,
                 senderUserInfo: senderInfo
             ) { message, errorCode in
@@ -716,18 +766,19 @@ final class IMService {
         }
     }
 
-    /// 发送语音消息（RC:HQVCMsg）
-    func sendVoice(localPath: String, duration: Int, conversationId: String,
+    /// 发送语音消息（语音已上传 OSS，`voiceUrl` 写入 extra）
+    func sendVoice(localPath: String, duration: Int, voiceUrl: String, conversationId: String,
                    conversationType: RCConversationType = .ConversationType_GROUP,
                    replyMessage: ReplyMessage? = nil) async -> ChatMessage? {
         let senderInfo = makeSenderUserInfo()
-        let extra = replyMessage.flatMap { ReplyMessage.toExtraJSON($0) }
+        let extra = ExtraPayload.buildJSON(replyMessage: replyMessage, voiceUrl: voiceUrl)
         let result: (RCMessage?, RCErrorCode) = await withCheckedContinuation { continuation in
             RongCloudManager.shared.sendHQVoiceMessage(
                 conversationType: conversationType,
                 targetId: conversationId,
                 localPath: localPath,
                 duration: duration,
+                voiceUrl: voiceUrl,
                 extra: extra,
                 senderUserInfo: senderInfo
             ) { message, errorCode in

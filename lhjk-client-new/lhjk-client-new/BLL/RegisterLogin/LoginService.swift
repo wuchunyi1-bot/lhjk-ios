@@ -90,6 +90,37 @@ final class LoginService: LoginServiceProtocol {
         return response.data ?? SMSResponse(smsRequestId: nil, expireSeconds: nil, resendAfter: nil)
     }
 
+    /// `GET /v1/mobileVerification/checkedSmsCode`
+    func checkSmsCode(mobile: String, checkCode: String, type: SMSVerificationType) async throws {
+        let trimmedMobile = mobile.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedCode = checkCode.trimmingCharacters(in: .whitespacesAndNewlines)
+        print(
+            "[LoginService] checkSmsCode → mobile=\(trimmedMobile) "
+                + "type=\(type.backendValue) code=\(trimmedCode.prefix(2))****"
+        )
+
+        let params: [String: Any] = [
+            "mobile": trimmedMobile,
+            "checkCode": trimmedCode,
+            "type": type.backendValue,
+            "clientId": clientId
+        ]
+
+        let response: APIResponse<EmptyResponse> = try await APIManager.shared
+            .publicGetAsync(
+                path: "/v1/mobileVerification/checkedSmsCode",
+                parameters: params,
+                responseType: APIResponse<EmptyResponse>.self
+            )
+
+        guard response.isSuccess else {
+            print("[LoginService] checkSmsCode ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw LoginError(from: response.code, msg: response.msg ?? "")
+        }
+
+        print("[LoginService] checkSmsCode ✓")
+    }
+
     // MARK: - Login (Real API)
 
     func loginByPhone(_ phone: String, code: String) async throws -> LoginResult {
@@ -222,7 +253,17 @@ final class LoginService: LoginServiceProtocol {
         return SessionStatus(isValid: true, accountStatus: .normal, reason: nil)
     }
 
-    func reportNotificationPermission(status: NotificationPermissionStatus) async throws {
+    func reportNotificationPermission(
+        status: NotificationPermissionStatus,
+        promptAction: NotificationPromptService.PromptAction?,
+        systemAuthorized: Bool
+    ) async throws {
+        let action = promptAction?.rawValue ?? "unknown"
+        let authorized = systemAuthorized ? "1" : "0"
+        print(
+            "[LoginService] reportNotificationPermission status=\(status.rawValue) "
+                + "action=\(action) systemAuthorized=\(authorized)"
+        )
         try await Task.sleep(nanoseconds: 100_000_000)
     }
 

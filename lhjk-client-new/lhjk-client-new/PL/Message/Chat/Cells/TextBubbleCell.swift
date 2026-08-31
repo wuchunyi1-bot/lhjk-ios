@@ -149,14 +149,8 @@ final class TextBubbleCell: UITableViewCell {
         configureReply(msg.reply)
         msgLabel.preferredMaxLayoutWidth = ChatBubbleStyle.textPreferredMaxWidth()
         let text = RongEmoji.symbolToEmoji(msg.text ?? "")
-        msgLabel.attributedText = NSAttributedString(
-            string: text,
-            attributes: [
-                .font: ChatBubbleStyle.textFont,
-                .foregroundColor: msgLabel.textColor ?? ChatBubbleStyle.primaryText,
-                .paragraphStyle: ChatBubbleStyle.textParagraphStyle,
-            ]
-        )
+        let textColor = msgLabel.textColor ?? ChatBubbleStyle.primaryText
+        msgLabel.attributedText = ChatBubbleStyle.attributedBubbleText(text, color: textColor)
         layoutForStaff(isStaff, hasReply: msg.reply != nil)
     }
 
@@ -199,13 +193,6 @@ final class TextBubbleCell: UITableViewCell {
     }
 
     private func layoutForStaff(_ isStaff: Bool, hasReply: Bool) {
-        let inset = UIEdgeInsets(
-            top: ChatBubbleStyle.bubbleInset,
-            left: isStaff ? ChatBubbleStyle.bubbleInsetStaff : ChatBubbleStyle.bubbleInset,
-            bottom: ChatBubbleStyle.bubbleInset,
-            right: ChatBubbleStyle.bubbleInset
-        )
-
         avatarLabel.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(6).priority(999)
             make.size.equalTo(ChatBubbleStyle.avatarSize)
@@ -245,7 +232,12 @@ final class TextBubbleCell: UITableViewCell {
         }
 
         msgLabel.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(inset)
+            make.top.equalToSuperview().offset(ChatBubbleStyle.bubbleTextInsetTop)
+            make.bottom.equalToSuperview().offset(-ChatBubbleStyle.bubbleTextInsetBottom)
+            make.leading.equalToSuperview().offset(
+                isStaff ? ChatBubbleStyle.bubbleInsetStaff : ChatBubbleStyle.bubbleInset
+            )
+            make.trailing.equalToSuperview().offset(-ChatBubbleStyle.bubbleInset)
         }
 
         if hasReply {
