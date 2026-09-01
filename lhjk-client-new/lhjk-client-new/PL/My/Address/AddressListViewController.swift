@@ -2,7 +2,7 @@ import UIKit
 import SnapKit
 import Combine
 
-/// 收货地址列表页
+/// 我的地址列表 — 对齐 Figma 4522:6020
 final class AddressListViewController: BaseViewController {
 
     // MARK: - ViewModel
@@ -10,9 +10,10 @@ final class AddressListViewController: BaseViewController {
     private let viewModel = AddressListViewModel()
     private var cancellables = Set<AnyCancellable>()
 
-    /// 选择模式：从确认订单页进入，点击行即选中返回
     private let selectMode: Bool
     private let onSelect: ((MAddress) -> Void)?
+
+    private var showsTipBanner = true
 
     init(selectMode: Bool = false, onSelect: ((MAddress) -> Void)? = nil) {
         self.selectMode = selectMode
@@ -32,8 +33,23 @@ final class AddressListViewController: BaseViewController {
         tv.register(AddressCell.self, forCellReuseIdentifier: AddressCell.reuseIdentifier)
         tv.dataSource = self
         tv.delegate = self
-        tv.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 16, right: 0)
+        tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
         return tv
+    }()
+
+    private let tipBanner = AddressListTipBannerView()
+
+    private let bottomBar = UIView()
+
+    private lazy var addButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.setTitle("添加收货地址", for: .normal)
+        btn.titleLabel?.font = AddressStyle.buttonFont
+        btn.setTitleColor(.white, for: .normal)
+        btn.backgroundColor = .fdPrimary
+        btn.layer.cornerRadius = AddressStyle.primaryButtonRadius
+        btn.addTarget(self, action: #selector(addAddress), for: .touchUpInside)
+        return btn
     }()
 
     private lazy var emptyView: UIView = {
@@ -58,18 +74,6 @@ final class AddressListViewController: BaseViewController {
             make.top.equalTo(icon.snp.bottom).offset(12)
             make.centerX.equalToSuperview()
         }
-
-        let addBtn = UIButton(type: .system)
-        addBtn.setTitle("新增地址", for: .normal)
-        addBtn.titleLabel?.font = .fdBodySemibold
-        addBtn.setTitleColor(.fdPrimary, for: .normal)
-        addBtn.addTarget(self, action: #selector(addAddress), for: .touchUpInside)
-        v.addSubview(addBtn)
-        addBtn.snp.makeConstraints { make in
-            make.top.equalTo(label.snp.bottom).offset(16)
-            make.centerX.equalToSuperview()
-        }
-
         return v
     }()
 
@@ -89,29 +93,75 @@ final class AddressListViewController: BaseViewController {
     }
 
     override func setupUI() {
-        title = selectMode ? "选择收货地址" : "收货地址"
+        title = selectMode ? "选择收货地址" : "我的地址"
         view.backgroundColor = .fdBg
+        navigationItem.rightBarButtonItem = nil
 
-        let addBarButton = UIBarButtonItem(
-            image: UIImage(systemName: "plus"),
-            style: .plain,
-            target: self,
-            action: #selector(addAddress)
-        )
-        addBarButton.tintColor = .fdPrimary
-        navigationItem.rightBarButtonItem = addBarButton
+        view.addSubview(bottomBar)
+        bottomBar.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(24)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
+        }
+
+        bottomBar.addSubview(addButton)
+        addButton.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.height.equalTo(AddressStyle.primaryButtonHeight)
+        }
 
         view.addSubview(tableView)
-        tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        tableView.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(bottomBar.snp.top).offset(-16)
+        }
 
         view.addSubview(emptyView)
-        emptyView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        emptyView.snp.makeConstraints { $0.edges.equalTo(tableView) }
         emptyView.isHidden = true
 
         view.addSubview(loadingIndicator)
-        loadingIndicator.snp.makeConstraints { $0.center.equalToSuperview() }
+        loadingIndicator.snp.makeConstraints { $0.center.equalTo(tableView) }
+
+        tipBanner.onClose = { [weak self] in
+            self?.showsTipBanner = false
+            self?.updateTableHeader()
+        }
+        updateTableHeader()
 
         bindViewModel()
+    }
+
+    private func updateTableHeader() {
+        guard !selectMode, showsTipBanner else {
+            tableView.tableHeaderView = nil
+            return
+        }
+
+        let container = UIView()
+        container.addSubview(tipBanner)
+        tipBanner.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.trailing.equalToSuperview().inset(AddressStyle.horizontalInset)
+            make.bottom.equalToSuperview().offset(-12)
+        }
+
+        let width = view.bounds.width > 0 ? view.bounds.width : UIScreen.main.bounds.width
+        container.frame = CGRect(x: 0, y: 0, width: width, height: 58)
+        container.layoutIfNeeded()
+        let height = tipBanner.systemLayoutSizeFitting(
+            CGSize(width: width - AddressStyle.horizontalInset * 2, height: UIView.layoutFittingCompressedSize.height),
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel
+        ).height + 24
+        container.frame.size.height = height
+        tableView.tableHeaderView = container
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        if tableView.tableHeaderView != nil {
+            updateTableHeader()
+        }
     }
 
     // MARK: - Binding
@@ -149,9 +199,7 @@ final class AddressListViewController: BaseViewController {
     // MARK: - Data
 
     private func loadAddresses() {
-        Task {
-            await viewModel.loadAddresses()
-        }
+        Task { await viewModel.loadAddresses() }
     }
 
     // MARK: - Actions
@@ -162,15 +210,14 @@ final class AddressListViewController: BaseViewController {
 
     private func editAddress(_ address: MAddress) {
         guard address.id != nil else { return }
-        Router.shared.push("/me/address/edit", params: [
-            "address": address
-        ])
+        Router.shared.push("/me/address/edit", params: ["address": address])
     }
 
-    private func deleteAddress(_ address: MAddress, at indexPath: IndexPath) {
+    private func deleteAddress(_ address: MAddress) {
         guard let id = address.id else { return }
         let alert = UIAlertController(
-            title: "确认删除", message: "删除后不可恢复，确定要删除该收货地址吗？",
+            title: "确认删除",
+            message: "删除后不可恢复，确定要删除该收货地址吗？",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "取消", style: .cancel))
@@ -184,17 +231,13 @@ final class AddressListViewController: BaseViewController {
         Task {
             do {
                 try await viewModel.deleteAddress(id: id)
-                await MainActor.run { self.showToast("已删除") }
+                await MainActor.run { self.showToastAlert("已删除", duration: 1.5) }
             } catch {
-                await MainActor.run { self.showToast("删除失败: \(error.localizedDescription)") }
+                await MainActor.run {
+                    self.showToastAlert("删除失败: \(error.localizedDescription)", duration: 1.5)
+                }
             }
         }
-    }
-
-    // MARK: - Toast
-
-    private func showToast(_ message: String) {
-        showToastAlert(message, duration: 1.5)
     }
 }
 
@@ -206,13 +249,16 @@ extension AddressListViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: AddressCell.reuseIdentifier, for: indexPath) as? AddressCell else {
+        guard let cell = tableView.dequeueReusableCell(
+            withIdentifier: AddressCell.reuseIdentifier,
+            for: indexPath
+        ) as? AddressCell else {
             return UITableViewCell()
         }
         let address = viewModel.addresses[indexPath.row]
         cell.configure(address: address)
         cell.onEdit = { [weak self] in self?.editAddress(address) }
-        cell.onDelete = { [weak self] in self?.deleteAddress(address, at: indexPath) }
+        cell.onDelete = { [weak self] in self?.deleteAddress(address) }
         return cell
     }
 }
@@ -225,7 +271,7 @@ extension AddressListViewController: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-        120
+        140
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

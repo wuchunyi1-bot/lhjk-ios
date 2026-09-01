@@ -1,14 +1,7 @@
 import UIKit
 import SnapKit
 
-/// 收货地址卡片 Cell
-///
-/// 布局：
-/// ┌─────────────────────────────────────┐
-/// │ 收货人：张三          138****1234  │
-/// │ 广东省深圳市南山区科技园路 1 号     │
-/// │ [默认]                    编辑 删除 │
-/// └─────────────────────────────────────┘
+/// 收货地址卡片 — 对齐 Figma 4522:6430
 final class AddressCell: UITableViewCell {
 
     static let reuseIdentifier = "AddressCell"
@@ -18,42 +11,49 @@ final class AddressCell: UITableViewCell {
     private let cardView: UIView = {
         let v = UIView()
         v.backgroundColor = .fdSurface
-        v.layer.cornerRadius = 14
-        v.layer.shadowColor = UIColor.black.cgColor
-        v.layer.shadowOffset = CGSize(width: 0, height: 1)
-        v.layer.shadowRadius = 6
-        v.layer.shadowOpacity = 0.03
+        v.layer.cornerRadius = AddressStyle.cardRadius
+        v.clipsToBounds = true
         return v
+    }()
+
+    private let regionLabel: UILabel = {
+        let l = UILabel()
+        l.font = AddressStyle.captionFont
+        l.textColor = .fdTabInactive
+        l.numberOfLines = 1
+        return l
+    }()
+
+    private let detailLabel: UILabel = {
+        let l = UILabel()
+        l.font = AddressStyle.fieldMediumFont
+        l.textColor = .fdText
+        l.numberOfLines = 2
+        return l
     }()
 
     private let nameLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdBodySemibold
+        l.font = AddressStyle.captionFont
         l.textColor = .fdText
         return l
     }()
 
     private let phoneLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdBody
-        l.textColor = .fdSubtext
+        l.font = AddressStyle.captionFont
+        l.textColor = .fdTabInactive
         return l
     }()
 
-    private let addressLabel: UILabel = {
-        let l = UILabel()
-        l.font = .fdCaption
-        l.textColor = .fdSubtext
-        l.numberOfLines = 2
-        return l
-    }()
+    private let divider = AddressFormDivider.make()
 
     private let defaultTag: UILabel = {
         let l = UILabel()
         l.text = "默认"
-        l.font = .fdMicro
-        l.textColor = .fdPrimary
-        l.backgroundColor = .fdPrimarySoft
+        l.font = AddressStyle.defaultBadgeFont
+        l.textColor = .white
+        l.backgroundColor = .fdPrimary
         l.layer.cornerRadius = 4
         l.clipsToBounds = true
         l.textAlignment = .center
@@ -64,16 +64,16 @@ final class AddressCell: UITableViewCell {
     private let editButton: UIButton = {
         let b = UIButton(type: .system)
         b.setTitle("编辑", for: .normal)
-        b.titleLabel?.font = .fdCaption
-        b.setTitleColor(.fdSubtext, for: .normal)
+        b.titleLabel?.font = AddressStyle.captionFont
+        b.setTitleColor(.fdTabInactive, for: .normal)
         return b
     }()
 
     private let deleteButton: UIButton = {
         let b = UIButton(type: .system)
         b.setTitle("删除", for: .normal)
-        b.titleLabel?.font = .fdCaption
-        b.setTitleColor(.fdDanger, for: .normal)
+        b.titleLabel?.font = AddressStyle.captionFont
+        b.setTitleColor(.fdTabInactive, for: .normal)
         return b
     }()
 
@@ -99,45 +99,60 @@ final class AddressCell: UITableViewCell {
         contentView.backgroundColor = .fdBg
 
         contentView.addSubview(cardView)
-
-        [nameLabel, phoneLabel, addressLabel, defaultTag, editButton, deleteButton].forEach(cardView.addSubview)
+        [
+            regionLabel, detailLabel, nameLabel, phoneLabel,
+            divider, defaultTag, deleteButton, editButton
+        ].forEach(cardView.addSubview)
 
         cardView.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(6)
             make.bottom.equalToSuperview().offset(-6)
-            make.leading.trailing.equalToSuperview().inset(16).priority(750)
+            make.leading.trailing.equalToSuperview().inset(AddressStyle.horizontalInset)
+            make.height.greaterThanOrEqualTo(128)
+        }
+
+        regionLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.trailing.equalToSuperview().inset(AddressStyle.cardHorizontalInset)
+        }
+
+        detailLabel.snp.makeConstraints { make in
+            make.top.equalTo(regionLabel.snp.bottom).offset(4)
+            make.leading.trailing.equalToSuperview().inset(AddressStyle.cardHorizontalInset)
         }
 
         nameLabel.snp.makeConstraints { make in
-            make.top.leading.equalToSuperview().inset(16)
+            make.top.equalTo(detailLabel.snp.bottom).offset(8)
+            make.leading.equalToSuperview().offset(AddressStyle.cardHorizontalInset)
         }
 
         phoneLabel.snp.makeConstraints { make in
             make.centerY.equalTo(nameLabel)
-            make.leading.equalTo(nameLabel.snp.trailing).offset(12)
+            make.leading.equalTo(nameLabel.snp.trailing).offset(4)
+            make.trailing.lessThanOrEqualToSuperview().offset(-AddressStyle.cardHorizontalInset)
         }
 
-        addressLabel.snp.makeConstraints { make in
-            make.top.equalTo(nameLabel.snp.bottom).offset(8)
-            make.leading.trailing.equalToSuperview().inset(16)
+        divider.snp.makeConstraints { make in
+            make.top.equalTo(nameLabel.snp.bottom).offset(12)
+            make.leading.trailing.equalToSuperview().inset(AddressStyle.cardHorizontalInset)
         }
 
         defaultTag.snp.makeConstraints { make in
-            make.top.equalTo(addressLabel.snp.bottom).offset(10)
-            make.leading.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-14)
-            make.width.equalTo(40)
-            make.height.equalTo(20)
-        }
-
-        deleteButton.snp.makeConstraints { make in
-            make.centerY.equalTo(defaultTag)
-            make.trailing.equalToSuperview().offset(-16)
+            make.top.equalTo(divider.snp.bottom).offset(12)
+            make.leading.equalToSuperview().offset(10)
+            make.bottom.equalToSuperview().offset(-12)
+            make.width.equalTo(31)
+            make.height.equalTo(15)
         }
 
         editButton.snp.makeConstraints { make in
             make.centerY.equalTo(defaultTag)
-            make.trailing.equalTo(deleteButton.snp.leading).offset(-16)
+            make.trailing.equalToSuperview().offset(-AddressStyle.cardHorizontalInset)
+        }
+
+        deleteButton.snp.makeConstraints { make in
+            make.centerY.equalTo(defaultTag)
+            make.trailing.equalTo(editButton.snp.leading).offset(-16)
         }
 
         editButton.addTarget(self, action: #selector(handleEdit), for: .touchUpInside)
@@ -147,9 +162,10 @@ final class AddressCell: UITableViewCell {
     // MARK: - Configure
 
     func configure(address: MAddress) {
+        regionLabel.text = address.regionSummary.isEmpty ? "—" : address.regionSummary
+        detailLabel.text = address.address?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "—"
         nameLabel.text = address.name ?? "未设置"
         phoneLabel.text = maskPhone(address.mobile)
-        addressLabel.text = address.fullAddress
         defaultTag.isHidden = !address.isDefaultAddress
     }
 
@@ -166,7 +182,13 @@ final class AddressCell: UITableViewCell {
     // MARK: - Helpers
 
     private func maskPhone(_ phone: String?) -> String {
-        guard let phone = phone, phone.count == 11 else { return phone ?? "" }
+        guard let phone, phone.count == 11 else { return phone ?? "" }
         return "\(phone.prefix(3))****\(phone.suffix(4))"
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? {
+        isEmpty ? nil : self
     }
 }

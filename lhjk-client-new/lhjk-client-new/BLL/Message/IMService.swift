@@ -332,17 +332,24 @@ final class IMService {
         }
     }
 
-    /// `GET /v1/session/getGroupMembers`
-    func fetchGroupMembers(groupId: String) async throws -> GroupMembersVO {
+    /// `GET /v1/session/getGroupMembers` — 现网 `data` 为成员数组
+    /// - Parameters:
+    ///   - groupId: 必填，融云/第三方群 Id
+    ///   - targetUserId: 可选；全量列表不传
+    func fetchGroupMembers(groupId: String, targetUserId: Int64? = nil) async throws -> [ImSessionDetails] {
+        var parameters: [String: Any] = ["groupId": groupId]
+        if let targetUserId {
+            parameters["targetUserId"] = targetUserId
+        }
         let response: GroupMembersResponse = try await APIManager.shared.getAsync(
             path: "/v1/session/getGroupMembers",
-            parameters: ["groupId": groupId],
+            parameters: parameters,
             responseType: GroupMembersResponse.self
         )
-        guard response.isSuccess, let data = response.data else {
+        guard response.isSuccess else {
             throw APIError.businessError(code: 0, message: response.msg ?? "获取群成员失败")
         }
-        return data
+        return response.data ?? []
     }
 
     /// B方案：按 conversationId 从融云查单条 RCConversation，局部更新本地会话

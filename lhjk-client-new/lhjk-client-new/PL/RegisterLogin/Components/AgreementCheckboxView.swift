@@ -24,6 +24,8 @@ final class AgreementCheckboxView: UIView {
         return label
     }()
 
+    private let textFont: UIFont
+
     var isChecked: Bool {
         get { checkboxButton.isSelected }
         set { checkboxButton.isSelected = newValue }
@@ -33,7 +35,14 @@ final class AgreementCheckboxView: UIView {
     var onPrivacyPolicyTap: (() -> Void)?
     var onConsentTap: (() -> Void)?
 
+    init(textFont: UIFont = .fdLoginMeta) {
+        self.textFont = textFont
+        super.init(frame: .zero)
+        setupUI()
+    }
+
     override init(frame: CGRect) {
+        self.textFont = .fdLoginMeta
         super.init(frame: frame)
         setupUI()
     }
@@ -70,10 +79,12 @@ final class AgreementCheckboxView: UIView {
         let attributed = NSMutableAttributedString(string: fullText)
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = .left
-        paragraph.minimumLineHeight = 20
-        paragraph.maximumLineHeight = 20
+        agreementLabel.font = textFont
+        let lineHeight = ceil(textFont.lineHeight) + 4
+        paragraph.minimumLineHeight = lineHeight
+        paragraph.maximumLineHeight = lineHeight
         attributed.setAttributes([
-            .font: UIFont.fdLoginMeta,
+            .font: textFont,
             .foregroundColor: UIColor.fdMuted,
             .paragraphStyle: paragraph,
         ], range: NSRange(location: 0, length: fullText.count))

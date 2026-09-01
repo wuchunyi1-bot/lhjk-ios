@@ -19,12 +19,20 @@ final class GroupMembersViewModel: ObservableObject {
     }
 
     func loadMembers() async {
+        let trimmed = groupId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            await MainActor.run {
+                members = []
+                isEmpty = true
+                isLoading = false
+            }
+            return
+        }
         await MainActor.run {
             isLoading = true
         }
         do {
-            let data = try await imService.fetchGroupMembers(groupId: groupId)
-            let list = data.list ?? []
+            let list = try await imService.fetchGroupMembers(groupId: trimmed)
             await MainActor.run {
                 members = list
                 isEmpty = list.isEmpty

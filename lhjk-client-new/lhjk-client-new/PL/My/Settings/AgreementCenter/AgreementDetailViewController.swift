@@ -167,7 +167,7 @@ final class AgreementDetailViewController: BaseViewController {
             ]
         ),
         "third-party-sharing": Doc(
-            title: "第三方信息共享清单",
+            title: "第三方信息收集清单",
             intro: "本清单说明可能涉及的第三方服务、共享信息与使用目的。",
             updatedAt: "2026-06-25",
             blocks: [

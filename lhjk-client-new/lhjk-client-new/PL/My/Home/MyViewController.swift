@@ -31,6 +31,7 @@ final class MyViewController: BaseViewController {
     private let avatarCharLabel = UILabel()
     private let nameButton = UIButton(type: .custom)
     private let nameLabel = UILabel()
+    private let healthArchiveContainer = UIView()
     private let healthArchiveImageView = UIImageView()
     private let healthArchiveTapButton = UIButton(type: .custom)
     private let settingsButton = UIButton(type: .custom)
@@ -147,14 +148,20 @@ final class MyViewController: BaseViewController {
         }
         headerInfoStack.addArrangedSubview(nameButton)
 
-        // Health Archive Tag — Figma 3773:13147：100×33
+        // Health Archive Tag — Figma 3773:13147：100×33；相对昵称视觉中心下移 3pt
+        healthArchiveContainer.addSubview(healthArchiveImageView)
         healthArchiveImageView.image = UIImage(named: "me_health_archive_tag")
         healthArchiveImageView.contentMode = .scaleAspectFit
         healthArchiveImageView.snp.makeConstraints { make in
+            make.leading.trailing.bottom.equalToSuperview()
+            make.top.equalToSuperview().offset(3)
             make.width.equalTo(100)
             make.height.equalTo(33)
         }
-        headerInfoStack.addArrangedSubview(healthArchiveImageView)
+        healthArchiveContainer.snp.makeConstraints { make in
+            make.height.equalTo(36)
+        }
+        headerInfoStack.addArrangedSubview(healthArchiveContainer)
 
         healthArchiveTapButton.backgroundColor = .clear
         healthArchiveTapButton.addTarget(self, action: #selector(pushHealthProfile), for: .touchUpInside)

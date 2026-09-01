@@ -36,8 +36,8 @@ final class SettingsSectionCard: UIView {
         iconView.contentMode = .scaleAspectFit
 
         titleLabel.text = sectionTitle
-        titleLabel.font = .fdFont(ofSize: 20, weight: .medium)
-        titleLabel.textColor = UIColor(hexString: "#1F2942")
+        titleLabel.font = SettingsStyle.sectionTitleFont
+        titleLabel.textColor = SettingsStyle.titleColor
 
         headerDivider.backgroundColor = UIColor(hexString: "#F0F2F5")
 
@@ -112,13 +112,13 @@ final class SettingsHubItemRow: UIControl {
 
     private func setupUI(title: String, desc: String, showDivider: Bool) {
         titleLabel.text = title
-        titleLabel.font = .fdFont(ofSize: 18, weight: .regular)
-        titleLabel.textColor = UIColor(hexString: "#1F2942")
+        titleLabel.font = SettingsStyle.rowTitleFont
+        titleLabel.textColor = SettingsStyle.titleColor
         titleLabel.isUserInteractionEnabled = false
 
         descLabel.text = desc
-        descLabel.font = .fdFont(ofSize: 16, weight: .regular)
-        descLabel.textColor = UIColor(hexString: "#8591AB")
+        descLabel.font = SettingsStyle.rowSubtitleFont
+        descLabel.textColor = SettingsStyle.subtitleColor
         descLabel.numberOfLines = 2
         descLabel.isUserInteractionEnabled = false
 
@@ -183,8 +183,8 @@ final class SettingsLogoutRow: UIControl {
         clipsToBounds = true
 
         titleLabel.text = "退出登录"
-        titleLabel.font = .fdFont(ofSize: 18, weight: .regular)
-        titleLabel.textColor = UIColor(hexString: "#1F2942")
+        titleLabel.font = SettingsStyle.rowTitleFont
+        titleLabel.textColor = SettingsStyle.titleColor
         titleLabel.textAlignment = .center
         titleLabel.isUserInteractionEnabled = false
 

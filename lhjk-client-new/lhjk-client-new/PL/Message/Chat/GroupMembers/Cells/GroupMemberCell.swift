@@ -85,7 +85,7 @@ final class GroupMemberCell: UITableViewCell {
         roleLabel.isHidden = role.isEmpty
 
         ChatBubbleStyle.applyAvatar(
-            portraitUrl: member.userImg,
+            portraitUrl: member.portraitURL,
             label: UILabel(),
             imageView: avatarView
         )

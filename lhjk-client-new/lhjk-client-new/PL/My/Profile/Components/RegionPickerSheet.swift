@@ -1,13 +1,11 @@
 import UIKit
 import SnapKit
 
-/// 省市区滚轮选择 — 数据来自 Bundle `map.json`
+/// 省市区滚轮选择 — 对齐 Figma 4522:6771；数据来自 Bundle `map.json`
 final class RegionPickerSheet: UIViewController, UIPickerViewDelegate, UIPickerViewDataSource {
 
     enum Mode {
-        /// 省 + 市（籍贯）
         case provinceCity
-        /// 省 + 市 + 区（现居地区）
         case provinceCityArea
     }
 
@@ -15,6 +13,7 @@ final class RegionPickerSheet: UIViewController, UIPickerViewDelegate, UIPickerV
 
     private let mode: Mode
     private let fieldTitle: String
+    private let sheetTitle: String
     private let regionService = ChinaRegionService.shared
 
     private var provinceIndex = 0
@@ -23,14 +22,23 @@ final class RegionPickerSheet: UIViewController, UIPickerViewDelegate, UIPickerV
 
     private let dimView = UIView()
     private let panel = UIView()
-    private let cancelBtn = UIButton(type: .system)
-    private let titleLbl = UILabel()
-    private let saveBtn = UIButton(type: .system)
+    private let titleLabel = UILabel()
+    private let closeButton = UIButton(type: .custom)
+    private let headerDivider = AddressFormDivider.make()
+    private let pickerContainer = UIView()
+    private let selectionHighlight = UIView()
+    private let saveButton = UIButton(type: .system)
     private let picker = UIPickerView()
 
-    init(title: String, mode: Mode, current: RegionSelection) {
+    init(
+        title: String,
+        mode: Mode,
+        current: RegionSelection,
+        sheetTitle: String? = nil
+    ) {
         self.fieldTitle = title
         self.mode = mode
+        self.sheetTitle = sheetTitle ?? "选择\(title)"
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .overFullScreen
         modalTransitionStyle = .crossDissolve
@@ -43,69 +51,117 @@ final class RegionPickerSheet: UIViewController, UIPickerViewDelegate, UIPickerV
         super.viewDidLoad()
         view.backgroundColor = .clear
         regionService.loadIfNeeded()
+        setupUI()
+        syncPickerSelection(animated: false)
+    }
 
-        dimView.backgroundColor = UIColor.black.withAlphaComponent(0.35)
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        stripSystemPickerChrome()
+    }
+
+    private func setupUI() {
+        dimView.backgroundColor = UIColor.black.withAlphaComponent(AddressStyle.modalDimAlpha)
         dimView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(cancel)))
         view.addSubview(dimView)
         dimView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         panel.backgroundColor = .fdSurface
-        panel.layer.cornerRadius = 16
+        panel.layer.cornerRadius = AddressStyle.cardRadius
         panel.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        panel.clipsToBounds = true
         view.addSubview(panel)
+        panel.snp.makeConstraints { make in
+            make.leading.trailing.bottom.equalToSuperview()
+            make.height.equalTo(320)
+        }
 
-        cancelBtn.setTitle("取消", for: .normal)
-        cancelBtn.setTitleColor(.fdSubtext, for: .normal)
-        cancelBtn.titleLabel?.font = .fdMyBody
-        cancelBtn.addTarget(self, action: #selector(cancel), for: .touchUpInside)
+        titleLabel.text = sheetTitle
+        titleLabel.font = AddressStyle.sheetTitleFont
+        titleLabel.textColor = .fdText
+        titleLabel.textAlignment = .center
 
-        titleLbl.text = "选择\(fieldTitle)"
-        titleLbl.font = .fdMyBodySemibold
-        titleLbl.textColor = .fdText
-        titleLbl.textAlignment = .center
+        closeButton.setImage(AddressIcons.closeBig(), for: .normal)
+        closeButton.addTarget(self, action: #selector(cancel), for: .touchUpInside)
 
-        saveBtn.setTitle("确定", for: .normal)
-        saveBtn.setTitleColor(UIColor(hexString: "#3D6FB8"), for: .normal)
-        saveBtn.titleLabel?.font = .fdMyBodySemibold
-        saveBtn.addTarget(self, action: #selector(save), for: .touchUpInside)
-
-        let header = UIStackView(arrangedSubviews: [cancelBtn, titleLbl, saveBtn])
-        header.axis = .horizontal
-        header.distribution = .equalCentering
-        header.alignment = .center
-        panel.addSubview(header)
-
-        let divider = UIView()
-        divider.backgroundColor = .fdBorder
-        panel.addSubview(divider)
+        saveButton.setTitle("保存", for: .normal)
+        saveButton.titleLabel?.font = AddressStyle.buttonFont
+        saveButton.setTitleColor(.white, for: .normal)
+        saveButton.backgroundColor = .fdPrimary
+        saveButton.layer.cornerRadius = AddressStyle.pickerSaveButtonHeight / 2
+        saveButton.addTarget(self, action: #selector(save), for: .touchUpInside)
 
         picker.delegate = self
         picker.dataSource = self
-        panel.addSubview(picker)
 
-        header.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(12)
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(36)
-        }
-        cancelBtn.snp.makeConstraints { $0.width.greaterThanOrEqualTo(44) }
-        saveBtn.snp.makeConstraints { $0.width.greaterThanOrEqualTo(44) }
-        divider.snp.makeConstraints {
-            $0.top.equalTo(header.snp.bottom).offset(12)
-            $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(1)
-        }
-        picker.snp.makeConstraints {
-            $0.top.equalTo(divider.snp.bottom).offset(4)
-            $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(216)
-            $0.bottom.equalTo(panel.safeAreaLayoutGuide).offset(-8)
-        }
-        panel.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
+        selectionHighlight.backgroundColor = .fdBg
+        selectionHighlight.layer.cornerRadius = 20
+        selectionHighlight.isUserInteractionEnabled = false
+
+        panel.addSubview(titleLabel)
+        panel.addSubview(closeButton)
+        panel.addSubview(headerDivider)
+        panel.addSubview(pickerContainer)
+        panel.addSubview(saveButton)
+
+        pickerContainer.addSubview(selectionHighlight)
+        pickerContainer.addSubview(picker)
+
+        titleLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(20)
+            make.centerX.equalToSuperview()
         }
 
-        syncPickerSelection(animated: false)
+        closeButton.snp.makeConstraints { make in
+            make.centerY.equalTo(titleLabel)
+            make.trailing.equalToSuperview().offset(-16)
+            make.size.equalTo(32)
+        }
+
+        headerDivider.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(16)
+            make.leading.trailing.equalToSuperview().inset(AddressStyle.horizontalInset)
+        }
+
+        pickerContainer.snp.makeConstraints { make in
+            make.top.equalTo(headerDivider.snp.bottom).offset(8)
+            make.leading.trailing.equalToSuperview().inset(AddressStyle.horizontalInset)
+            make.bottom.equalTo(saveButton.snp.top).offset(-16)
+        }
+
+        selectionHighlight.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview()
+            make.centerY.equalToSuperview()
+            make.height.equalTo(40)
+        }
+
+        picker.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        saveButton.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(AddressStyle.horizontalInset)
+            make.bottom.equalTo(panel.safeAreaLayoutGuide).offset(-8)
+            make.height.equalTo(AddressStyle.pickerSaveButtonHeight)
+        }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        stripSystemPickerChrome()
+    }
+
+    /// 隐藏 UIPickerView 系统选区条/遮罩，只保留自定义 `selectionHighlight`
+    private func stripSystemPickerChrome() {
+        guard picker.bounds.height > 0 else { return }
+        let wheelMinHeight = picker.bounds.height * 0.85
+        picker.backgroundColor = .clear
+        for subview in picker.subviews {
+            let height = subview.bounds.height
+            if height > 0 && height < wheelMinHeight {
+                subview.isHidden = true
+            } else {
+                subview.backgroundColor = .clear
+            }
+        }
     }
 
     // MARK: - UIPickerView
@@ -121,6 +177,26 @@ final class RegionPickerSheet: UIViewController, UIPickerViewDelegate, UIPickerV
         case 2: return regionService.districtNames(provinceIndex: provinceIndex, cityIndex: cityIndex).count
         default: return 0
         }
+    }
+
+    func pickerView(_ pickerView: UIPickerView, rowHeightForComponent component: Int) -> CGFloat {
+        40
+    }
+
+    func pickerView(
+        _ pickerView: UIPickerView,
+        viewForRow row: Int,
+        forComponent component: Int,
+        reusing view: UIView?
+    ) -> UIView {
+        let label = (view as? UILabel) ?? UILabel()
+        label.textAlignment = .center
+        label.text = self.pickerView(pickerView, titleForRow: row, forComponent: component)
+
+        let selected = row == pickerView.selectedRow(inComponent: component)
+        label.font = selected ? AddressStyle.pickerSelectedFont : AddressStyle.pickerNormalFont
+        label.textColor = selected ? .fdPrimary : AddressStyle.tertiaryText
+        return label
     }
 
     func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
@@ -164,6 +240,7 @@ final class RegionPickerSheet: UIViewController, UIPickerViewDelegate, UIPickerV
         default:
             break
         }
+        reloadPickerAppearance()
     }
 
     // MARK: - Actions
@@ -210,5 +287,21 @@ final class RegionPickerSheet: UIViewController, UIPickerViewDelegate, UIPickerV
             picker.reloadComponent(2)
             picker.selectRow(districtIndex, inComponent: 2, animated: animated)
         }
+        reloadPickerAppearance()
+    }
+
+    private func reloadPickerAppearance() {
+        let components = numberOfComponents(in: picker)
+        for component in 0..<components {
+            let rows = pickerView(picker, numberOfRowsInComponent: component)
+            for row in 0..<rows {
+                if let label = picker.view(forRow: row, forComponent: component) as? UILabel {
+                    let selected = row == picker.selectedRow(inComponent: component)
+                    label.font = selected ? AddressStyle.pickerSelectedFont : AddressStyle.pickerNormalFont
+                    label.textColor = selected ? .fdPrimary : AddressStyle.tertiaryText
+                }
+            }
+        }
+        stripSystemPickerChrome()
     }
 }

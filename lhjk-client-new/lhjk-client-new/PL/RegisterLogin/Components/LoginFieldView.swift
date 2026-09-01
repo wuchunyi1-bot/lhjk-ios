@@ -51,6 +51,10 @@ final class LoginFieldView: UIView {
     private var trailingAccessory: UIView?
     private var isSecureVisible = false
 
+    private let showsIdleBorder: Bool
+    private let showsTitle: Bool
+    private let idleBorderColor = UIColor(red: 113 / 255, green: 120 / 255, blue: 133 / 255, alpha: 0.3)
+
     /// 内嵌于输入壳右侧的配件（如「获取验证码」文字按钮）。
     var trailingAccessoryView: UIView? {
         get { trailingAccessory }
@@ -62,17 +66,29 @@ final class LoginFieldView: UIView {
         placeholder: String,
         sfSymbol: String,
         iconAssetName: String? = nil,
-        rightButton: RightButton = .none
+        rightButton: RightButton = .none,
+        titleFont: UIFont = .fdLoginInput,
+        titleColor: UIColor = .fdLoginLabel,
+        placeholderFont: UIFont = .fdLoginInput,
+        placeholderColor: UIColor? = nil,
+        showsIdleBorder: Bool = false,
+        showsTitle: Bool = true
     ) {
+        self.showsIdleBorder = showsIdleBorder
+        self.showsTitle = showsTitle
         super.init(frame: .zero)
         rightButtonConfig = rightButton
 
+        titleLabel.isHidden = !showsTitle
+        titleLabel.font = titleFont
+        titleLabel.textColor = titleColor
         titleLabel.text = title
+        textField.font = placeholderFont
         textField.attributedPlaceholder = NSAttributedString(
             string: placeholder,
             attributes: [
-                .font: UIFont.fdLoginInput,
-                .foregroundColor: UIColor.fdLoginLabel.withAlphaComponent(0.5),
+                .font: placeholderFont,
+                .foregroundColor: placeholderColor ?? UIColor.fdLoginLabel.withAlphaComponent(0.5),
             ]
         )
 
@@ -84,6 +100,10 @@ final class LoginFieldView: UIView {
         }
 
         setupUI()
+        if showsIdleBorder {
+            shellView.layer.borderWidth = 0.5
+            shellView.layer.borderColor = idleBorderColor.cgColor
+        }
         configureRightButton()
         textField.delegate = self
     }
@@ -103,7 +123,11 @@ final class LoginFieldView: UIView {
         }
 
         shellView.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(9)
+            if showsTitle {
+                make.top.equalTo(titleLabel.snp.bottom).offset(9)
+            } else {
+                make.top.equalToSuperview()
+            }
             make.leading.trailing.equalToSuperview()
             make.height.equalTo(48)
             make.bottom.equalToSuperview()
@@ -131,7 +155,6 @@ final class LoginFieldView: UIView {
             textField.isSecureTextEntry = true
             textField.textContentType = .password
             let btn = makeRightButton(sfSymbol: "eye.slash", action: #selector(toggleSecure))
-            btn.contentEdgeInsets = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
             shellView.addSubview(btn)
             btn.snp.makeConstraints { make in
                 make.trailing.equalToSuperview().offset(-4)
@@ -245,8 +268,15 @@ final class LoginFieldView: UIView {
 
     private func setFocused(_ focused: Bool) {
         UIView.animate(withDuration: 0.15) {
-            self.shellView.layer.borderWidth = focused ? 1 : 0
-            self.shellView.layer.borderColor = UIColor.fdPrimary.cgColor
+            if self.showsIdleBorder {
+                self.shellView.layer.borderWidth = 0.5
+                self.shellView.layer.borderColor = (focused
+                    ? UIColor.fdPrimary
+                    : self.idleBorderColor).cgColor
+            } else {
+                self.shellView.layer.borderWidth = focused ? 1 : 0
+                self.shellView.layer.borderColor = UIColor.fdPrimary.cgColor
+            }
         }
     }
 }

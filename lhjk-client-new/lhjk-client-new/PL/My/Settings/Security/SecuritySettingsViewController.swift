@@ -1,7 +1,7 @@
 import UIKit
 import SnapKit
 
-/// 安全中心 — 对齐 PRD-202 / SecuritySettingsView.vue
+/// 安全中心 — 对齐 Figma 4449:12093
 final class SecuritySettingsViewController: BaseViewController {
 
     private let passwordSetKey = "fd_login_password_set"
@@ -9,10 +9,11 @@ final class SecuritySettingsViewController: BaseViewController {
 
     private let scrollView = UIScrollView()
     private let contentView = UIView()
+    private let stackView = UIStackView()
 
-    private var phoneValueLabel: UILabel?
-    private var passwordValueLabel: UILabel?
-    private var wechatValueLabel: UILabel?
+    private var phoneRow: SecuritySettingsRow?
+    private var passwordRow: SecuritySettingsRow?
+    private var wechatRow: SecuritySettingsRow?
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -28,239 +29,100 @@ final class SecuritySettingsViewController: BaseViewController {
         scrollView.showsVerticalScrollIndicator = false
         view.addSubview(scrollView)
         scrollView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
         scrollView.addSubview(contentView)
-        contentView.snp.makeConstraints { $0.edges.width.equalToSuperview() }
-
-        let statusSection = buildStatusSection()
-        contentView.addSubview(statusSection)
-        statusSection.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(12)
-            $0.leading.trailing.equalToSuperview()
+        contentView.snp.makeConstraints { make in
+            make.edges.width.equalToSuperview()
         }
 
-        let phoneLbl = makeValueLabel("—")
-        phoneValueLabel = phoneLbl
-        let pwdLbl = makeValueLabel("去设置")
-        passwordValueLabel = pwdLbl
-        let wechatLbl = makeValueLabel("未绑定")
-        wechatValueLabel = wechatLbl
-
-        let securitySection = buildListSection(
-            title: "安全设置",
-            rows: [
-                .init(label: "修改手机号", valueView: phoneLbl, valueWarn: false) {
-                    Router.shared.push("/me/settings/security/change-phone")
-                },
-                .init(label: "登录密码", valueView: pwdLbl, valueWarn: false) {
-                    Router.shared.push("/me/settings/security/password")
-                },
-                .init(label: "微信授权", valueView: wechatLbl, valueWarn: false) {
-                    Router.shared.push("/me/settings/security/wechat")
-                },
-            ]
-        )
-        contentView.addSubview(securitySection)
-        securitySection.snp.makeConstraints {
-            $0.top.equalTo(statusSection.snp.bottom).offset(14)
-            $0.leading.trailing.equalToSuperview()
+        stackView.axis = .vertical
+        stackView.spacing = 12
+        contentView.addSubview(stackView)
+        stackView.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview().offset(-24)
         }
 
-        let cancelValue = makeValueLabel("谨慎操作")
-        cancelValue.textColor = UIColor(hexString: "#D47A58")
-        let accountSection = buildListSection(
-            title: "账号管理",
-            rows: [
-                .init(label: "注销账号", valueView: cancelValue, valueWarn: true) {
-                    Router.shared.push("/me/settings/security/cancel-account")
-                },
-            ]
-        )
-        contentView.addSubview(accountSection)
-        accountSection.snp.makeConstraints {
-            $0.top.equalTo(securitySection.snp.bottom).offset(14)
-            $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalToSuperview().offset(-24)
-        }
+        stackView.addArrangedSubview(makeStatusCard())
+        stackView.addArrangedSubview(makeSecurityCard())
+        stackView.addArrangedSubview(makeAccountCard())
 
         refreshValues()
     }
 
-    // MARK: - Status tip card
+    // MARK: - Cards
 
-    private func buildStatusSection() -> UIView {
-        let wrap = UIView()
-
-        let titleLbl = UILabel()
-        titleLbl.text = "账号状态"
-        titleLbl.font = .fdMyCaptionSemibold
-        titleLbl.textColor = .fdSubtext
-        wrap.addSubview(titleLbl)
-        titleLbl.snp.makeConstraints {
-            $0.top.equalToSuperview()
-            $0.leading.trailing.equalToSuperview().inset(16)
-        }
-
-        let card = UIView()
-        card.backgroundColor = UIColor(hexString: "#FFF4EC")
-        card.layer.cornerRadius = 12
-        card.layer.borderWidth = 1
-        card.layer.borderColor = UIColor.fdPrimaryEdge.cgColor
-        wrap.addSubview(card)
-        card.snp.makeConstraints {
-            $0.top.equalTo(titleLbl.snp.bottom).offset(8)
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.bottom.equalToSuperview()
-        }
-
-        let iconBg = UIView()
-        iconBg.backgroundColor = .fdPrimarySoft
-        iconBg.layer.cornerRadius = 10
-        let icon = UIImageView(image: UIImage(systemName: "lock.shield.fill"))
-        icon.tintColor = .fdPrimary
-        icon.contentMode = .scaleAspectFit
-        iconBg.addSubview(icon)
-        icon.snp.makeConstraints {
-            $0.center.equalToSuperview()
-            $0.size.equalTo(18)
-        }
-
-        let tipTitle = UILabel()
-        tipTitle.text = "账号安全状态良好"
-        tipTitle.font = .fdMyBodySemibold
-        tipTitle.textColor = .fdText
-
-        let tipDesc = UILabel()
-        tipDesc.text = "已绑定手机号，建议定期更新登录密码，保护账号与健康数据安全。"
-        tipDesc.font = .fdFont(ofSize: 13, weight: .regular)
-        tipDesc.textColor = .fdSubtext
-        tipDesc.numberOfLines = 0
-
-        let textStack = UIStackView(arrangedSubviews: [tipTitle, tipDesc])
-        textStack.axis = .vertical
-        textStack.spacing = 3
-
-        card.addSubview(iconBg)
-        card.addSubview(textStack)
-        iconBg.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(16)
-            $0.top.equalToSuperview().offset(14)
-            $0.size.equalTo(34)
-        }
-        textStack.snp.makeConstraints {
-            $0.leading.equalTo(iconBg.snp.trailing).offset(12)
-            $0.trailing.equalToSuperview().offset(-16)
-            $0.top.equalToSuperview().offset(14)
-            $0.bottom.equalToSuperview().offset(-14)
-        }
-
-        return wrap
+    private func makeStatusCard() -> UIView {
+        let card = SecuritySectionCard(sectionTitle: "账号状态", iconImageName: "security_section_status")
+        card.setBodyViews([SecurityAccountStatusTipView()])
+        return card
     }
 
-    // MARK: - List section
+    private func makeSecurityCard() -> UIView {
+        let phone = SecuritySettingsRow(
+            title: "修改手机号",
+            value: "—",
+            showDivider: true
+        ) { [weak self] in
+            self?.openChangePhone()
+        }
+        phoneRow = phone
 
-    private struct RowDef {
-        let label: String
-        let valueView: UIView
-        let valueWarn: Bool
-        let action: () -> Void
+        let password = SecuritySettingsRow(
+            title: "登录密码",
+            value: "去设置",
+            showDivider: true
+        ) { [weak self] in
+            self?.openPassword()
+        }
+        passwordRow = password
+
+        let wechat = SecuritySettingsRow(
+            title: "微信授权",
+            value: "未绑定",
+            showDivider: false
+        ) { [weak self] in
+            self?.openWechat()
+        }
+        wechatRow = wechat
+
+        let card = SecuritySectionCard(sectionTitle: "安全设置", iconImageName: "security_section_settings")
+        card.setBodyViews([phone, password, wechat])
+        return card
     }
 
-    private func buildListSection(title: String, rows: [RowDef]) -> UIView {
-        let wrap = UIView()
-
-        let titleLbl = UILabel()
-        titleLbl.text = title
-        titleLbl.font = .fdMyCaptionSemibold
-        titleLbl.textColor = .fdSubtext
-        wrap.addSubview(titleLbl)
-        titleLbl.snp.makeConstraints {
-            $0.top.equalToSuperview()
-            $0.leading.trailing.equalToSuperview().inset(16)
+    private func makeAccountCard() -> UIView {
+        let cancel = SecuritySettingsRow(
+            title: "注销账号",
+            value: "谨慎操作",
+            valueWarn: true,
+            showDivider: false
+        ) { [weak self] in
+            self?.openCancelAccount()
         }
 
-        let card = UIView()
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 12
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 6
-        card.layer.shadowOpacity = 0.03
-        wrap.addSubview(card)
-        card.snp.makeConstraints {
-            $0.top.equalTo(titleLbl.snp.bottom).offset(8)
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.bottom.equalToSuperview()
-        }
-
-        let stack = UIStackView()
-        stack.axis = .vertical
-        card.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-        for (idx, row) in rows.enumerated() {
-            stack.addArrangedSubview(makeRow(row, showDivider: idx < rows.count - 1))
-        }
-        return wrap
+        let card = SecuritySectionCard(sectionTitle: "账号管理", iconImageName: "security_section_account")
+        card.setBodyViews([cancel])
+        return card
     }
 
-    private func makeRow(_ row: RowDef, showDivider: Bool) -> UIView {
-        let control = UIControl()
-        control.addAction(UIAction { _ in row.action() }, for: .touchUpInside)
+    // MARK: - Navigation
 
-        let label = UILabel()
-        label.text = row.label
-        label.font = .fdMyBodySemibold
-        label.textColor = .fdText
-        label.isUserInteractionEnabled = false
-
-        let arrow = UIImageView(image: UIImage(systemName: "chevron.right"))
-        arrow.tintColor = .fdMuted
-        arrow.contentMode = .scaleAspectFit
-        arrow.isUserInteractionEnabled = false
-
-        row.valueView.isUserInteractionEnabled = false
-
-        control.addSubview(label)
-        control.addSubview(row.valueView)
-        control.addSubview(arrow)
-
-        arrow.snp.makeConstraints {
-            $0.trailing.equalToSuperview().offset(-16)
-            $0.centerY.equalToSuperview()
-            $0.size.equalTo(14)
-        }
-        row.valueView.snp.makeConstraints {
-            $0.trailing.equalTo(arrow.snp.leading).offset(-4)
-            $0.centerY.equalToSuperview()
-        }
-        label.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(16)
-            $0.centerY.equalToSuperview()
-            $0.trailing.lessThanOrEqualTo(row.valueView.snp.leading).offset(-8)
-        }
-
-        if showDivider {
-            let divider = UIView()
-            divider.backgroundColor = .fdBorder
-            control.addSubview(divider)
-            divider.snp.makeConstraints {
-                $0.leading.equalTo(label)
-                $0.trailing.bottom.equalToSuperview()
-                $0.height.equalTo(1)
-            }
-        }
-
-        control.snp.makeConstraints { $0.height.equalTo(52) }
-        return control
+    private func openChangePhone() {
+        Router.shared.push("/me/settings/security/change-phone")
     }
 
-    private func makeValueLabel(_ text: String) -> UILabel {
-        let l = UILabel()
-        l.text = text
-        l.font = .fdMyCaption
-        l.textColor = .fdSubtext
-        l.setContentCompressionResistancePriority(.required, for: .horizontal)
-        return l
+    private func openPassword() {
+        Router.shared.push("/me/settings/security/password")
+    }
+
+    private func openWechat() {
+        Router.shared.push("/me/settings/security/wechat")
+    }
+
+    private func openCancelAccount() {
+        Router.shared.push("/me/settings/security/cancel-account")
     }
 
     // MARK: - Data
@@ -268,18 +130,18 @@ final class SecuritySettingsViewController: BaseViewController {
     private func refreshValues() {
         let mobile = UserManager.shared.currentUser?.mobile
             ?? UserDefaults.standard.string(forKey: "current_user_mobile")
-        phoneValueLabel?.text = maskPhone(mobile)
+        phoneRow?.valueText = maskPhone(mobile)
 
         let passwordSet = UserDefaults.standard.bool(forKey: passwordSetKey)
             || !(UserManager.shared.currentUser?.pwd ?? "").isEmpty
-        passwordValueLabel?.text = passwordSet ? "已设置" : "去设置"
+        passwordRow?.valueText = passwordSet ? "已设置" : "去设置"
 
         if let nick = UserDefaults.standard.string(forKey: wechatNicknameKey), !nick.isEmpty {
-            wechatValueLabel?.text = nick
+            wechatRow?.valueText = nick
         } else if let openId = UserManager.shared.currentUser?.openIdWechat, !openId.isEmpty {
-            wechatValueLabel?.text = "已绑定"
+            wechatRow?.valueText = "已绑定"
         } else {
-            wechatValueLabel?.text = "未绑定"
+            wechatRow?.valueText = "未绑定"
         }
     }
 
@@ -291,7 +153,7 @@ final class SecuritySettingsViewController: BaseViewController {
                 let status = try await UserService.shared.getWechatBindStatus()
                 let isBound = status.bound ?? false
                 await MainActor.run {
-                    self.wechatValueLabel?.text = isBound ? "已绑定" : "未绑定"
+                    self.wechatRow?.valueText = isBound ? "已绑定" : "未绑定"
                 }
             } catch {
                 print("[SecuritySettings] loadWechatBindStatus ✗ \(error.localizedDescription)")

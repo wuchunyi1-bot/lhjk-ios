@@ -186,7 +186,7 @@ App端/
 > `#37` 响应 `GroupVO.status`：**仅 `1` 允许用户发送消息**；其它值进入聊天只读。详见 `openspec/specs/im/spec.md`。
 | 37a | GET | `/v1/session/getGroupMembers` | `App端/IM/群组会话` | `IMService` | 文档暂无 / 以代码 path 为准（Apifox OAS `getGroupMembers`） |
 
-> `#37a` Query `groupId`（必填）。聊天详情右上角「群成员」入口拉取 `GroupMembersVO.list`。
+> `#37a` Query：`groupId`（string，**必填**）；`targetUserId`（int64，可选；全量列表不传）。Header `payload` 不传。**现网 `data` 为成员数组**（`userId` / `userName` / `imageUrl` / `roleName`），不是 OAS 的 `GroupMembersVO` 对象。详见 `openspec/specs/im/spec.md`。
 | 38 | GET | `/v1/session/getUserParticipateAllTeam` | `App端/IM/群组会话` | `HomeService` | [参与团队](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495580451e0.md) |
 | 39 | POST | `/v1/account/addRongImAccount` | `App端/IM/IM账户管理` | `RongCloudManager` | [融云账号](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/478384048e0.md) |
 | 40 | GET | `/v1/scheme/getUserToDayMonitorTask` | `App端/居家健康/监测方案定义` | `HomeService` | [今日监测任务](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330787e0.md) |

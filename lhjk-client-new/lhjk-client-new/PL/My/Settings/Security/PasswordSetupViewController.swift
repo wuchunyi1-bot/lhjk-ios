@@ -1,23 +1,19 @@
 import UIKit
 import SnapKit
 
-/// 登录密码设置页
-/// PRD: 02_用户_我的设置_v1.0 §5.4
-/// 原型: funde-client prototype/src/views/me/settings/SecuritySettingsView.vue
-///
-/// 两种模式:
-///   `.loggedIn(phone:)` — 登录态，手机号只读，Step 2(验证码) → Step 3(密码)
-///   `.standalone` — 未登录态，Step 1(手机号) → Step 2(验证码) → Step 3(密码)
-///
-/// 统一使用 `UserService.resetPasswordByMobile` 提交
+/// 登录密码设置页 — 验证码步对齐 Figma 4457:12721
 final class PasswordSetupViewController: BaseViewController {
+
+    private enum Font {
+        static let field = UIFont.fdFont(ofSize: 15, weight: .regular)
+        static let action = UIFont.fdFont(ofSize: 17, weight: .medium)
+        static let verifyCode = UIFont.fdFont(ofSize: 15, weight: .regular)
+    }
 
     // MARK: - Mode
 
     enum Mode {
-        /// 登录态：手机号预填、只读，跳过 Step 1
         case loggedIn(phone: String)
-        /// 未登录态：用户手动输入手机号
         case standalone
 
         var isLoggedIn: Bool {
@@ -41,39 +37,66 @@ final class PasswordSetupViewController: BaseViewController {
     // MARK: - State
 
     private var enteredPhone = ""
-    private var countdown = 0
-    private var timer: Timer?
     private var showPassword = false
     private var showConfirmPassword = false
-    /// 验证码是否已至少发送过一次（登录态进入后不自动发送）
     private var hasSentCode = false
+    private var bottomBarBottomConstraint: Constraint?
 
-    // MARK: - UI Elements
+    // MARK: - Layout
+
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
+    private let bottomBar = UIView()
+
+    private let legacyContainer = UIView()
+    private let codeStepContainer = UIView()
+    private let codeStepStack = UIStackView()
+
+    private let passwordCodeCard = PasswordCodeFormCardView()
 
     private var stepTitleLabel: UILabel!
     private var stepDescLabel: UILabel!
 
-    // Step 1 (仅 standalone)
+    // Step 1
     private var phoneField: UITextField!
+    private let phoneContainer = UIView()
 
-    // Step 2
-    private var codeField: UITextField!
-    private var codeResendBtn: UIButton!
-    private var codeDescLabel: UILabel!
+    // Step 2 (Figma)
+    private lazy var codeLoginField = LoginFieldView(
+        title: "",
+        placeholder: "请输入验证码",
+        sfSymbol: "shield",
+        iconAssetName: "login_code_icon",
+        placeholderFont: Font.field,
+        placeholderColor: UIColor(hexString: "#A4A4A6"),
+        showsIdleBorder: true,
+        showsTitle: false
+    )
+
+    private lazy var codeButton: VerifyCodeButton = {
+        let btn = VerifyCodeButton(style: .inline)
+        btn.titleLabel?.font = Font.verifyCode
+        btn.onRequestCode = { [weak self] in
+            self?.resendCodeTapped()
+        }
+        return btn
+    }()
 
     // Step 3
     private var newPasswordField: UITextField!
     private var confirmPasswordField: UITextField!
     private var togglePasswordBtn: UIButton!
     private var toggleConfirmPasswordBtn: UIButton!
-
-    // Common
-    private var actionBtn: UIButton!
-
-    // Containers
-    private let phoneContainer = UIView()
-    private let codeContainer = UIView()
     private let passwordContainer = UIView()
+
+    private let actionBtn: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.titleLabel?.font = Font.action
+        btn.setTitleColor(.white, for: .normal)
+        btn.backgroundColor = .fdPrimary
+        btn.layer.cornerRadius = 25.5
+        return btn
+    }()
 
     // MARK: - Lifecycle
 
@@ -90,40 +113,90 @@ final class PasswordSetupViewController: BaseViewController {
         dismissTap.cancelsTouchesInView = false
         view.addGestureRecognizer(dismissTap)
 
-        // 登录态：跳过 Step 1，直接发验证码
         if case .loggedIn(let phone) = mode {
             enteredPhone = phone
             step = .code
         }
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillShow(_:)),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide(_:)),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        if step == .phone {
+        switch step {
+        case .phone:
             phoneField.becomeFirstResponder()
-        } else if step == .code {
-            codeField.becomeFirstResponder()
+        case .code:
+            codeLoginField.textField.becomeFirstResponder()
+        case .resetPassword:
+            newPasswordField.becomeFirstResponder()
         }
     }
 
     override func setupUI() {
-        title = ""
         view.backgroundColor = .fdBg
 
-        let scrollView = UIScrollView()
+        view.addSubview(bottomBar)
+        bottomBar.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(16)
+            bottomBarBottomConstraint = make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24).constraint
+        }
+
+        actionBtn.addTarget(self, action: #selector(actionBtnTapped), for: .touchUpInside)
+        bottomBar.addSubview(actionBtn)
+        actionBtn.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.height.equalTo(51)
+        }
+
         scrollView.showsVerticalScrollIndicator = false
+        scrollView.keyboardDismissMode = .interactive
         view.addSubview(scrollView)
-        scrollView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        scrollView.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(bottomBar.snp.top)
+        }
 
-        let contentView = UIView()
         scrollView.addSubview(contentView)
-        contentView.snp.makeConstraints { $0.edges.width.equalToSuperview() }
+        contentView.snp.makeConstraints { make in
+            make.edges.width.equalToSuperview()
+        }
 
-        // Step title
+        let rootStack = UIStackView(arrangedSubviews: [codeStepContainer, legacyContainer])
+        rootStack.axis = .vertical
+        contentView.addSubview(rootStack)
+        rootStack.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.bottom.equalToSuperview().offset(-12)
+        }
+
+        setupLegacySteps()
+        setupCodeStep()
+        updateStepUI()
+    }
+
+    // MARK: - Legacy steps (phone / password)
+
+    private func setupLegacySteps() {
         stepTitleLabel = UILabel()
         stepTitleLabel.font = .fdMyH2
         stepTitleLabel.textColor = .fdText
-        contentView.addSubview(stepTitleLabel)
+        legacyContainer.addSubview(stepTitleLabel)
         stepTitleLabel.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(28)
             make.leading.trailing.equalToSuperview().inset(24)
@@ -133,43 +206,18 @@ final class PasswordSetupViewController: BaseViewController {
         stepDescLabel.font = .fdMyBody
         stepDescLabel.textColor = .fdSubtext
         stepDescLabel.numberOfLines = 0
-        contentView.addSubview(stepDescLabel)
+        legacyContainer.addSubview(stepDescLabel)
         stepDescLabel.snp.makeConstraints { make in
             make.top.equalTo(stepTitleLabel.snp.bottom).offset(8)
             make.leading.trailing.equalToSuperview().inset(24)
         }
 
-        // MARK: - Step 1: Phone (仅 standalone)
-        setupPhoneStep(contentView)
-
-        // MARK: - Step 2: Code
-        setupCodeStep(contentView)
-
-        // MARK: - Step 3: Password
-        setupPasswordStep(contentView)
-
-        // MARK: - Action Button
-        actionBtn = UIButton(type: .system)
-        actionBtn.titleLabel?.font = .fdMyBodyBold
-        actionBtn.setTitleColor(.white, for: .normal)
-        actionBtn.backgroundColor = .fdPrimary
-        actionBtn.layer.cornerRadius = 27
-        actionBtn.addTarget(self, action: #selector(actionBtnTapped), for: .touchUpInside)
-        contentView.addSubview(actionBtn)
-        actionBtn.snp.makeConstraints { make in
-            make.top.equalTo(passwordContainer.snp.bottom).offset(24)
-            make.leading.trailing.equalToSuperview().inset(24)
-            make.height.equalTo(54)
-            make.bottom.equalToSuperview().offset(-32)
-        }
-
-        updateStepUI()
+        setupPhoneStep()
+        setupPasswordStep()
     }
 
-    // MARK: - Step 1 Setup (仅 standalone)
-
-    private func setupPhoneStep(_ parent: UIView) {
-        parent.addSubview(phoneContainer)
+    private func setupPhoneStep() {
+        legacyContainer.addSubview(phoneContainer)
 
         let fieldLabel = UILabel()
         fieldLabel.text = "手机号"
@@ -191,74 +239,12 @@ final class PasswordSetupViewController: BaseViewController {
         phoneContainer.snp.makeConstraints { make in
             make.top.equalTo(stepDescLabel.snp.bottom).offset(24)
             make.leading.trailing.equalToSuperview().inset(24)
+            make.bottom.equalToSuperview().offset(-12)
         }
     }
 
-    // MARK: - Step 2 Setup
-
-    private func setupCodeStep(_ parent: UIView) {
-        parent.addSubview(codeContainer)
-
-        codeDescLabel = UILabel()
-        codeDescLabel.font = .fdFont(ofSize: 15)
-        codeDescLabel.textColor = .fdSubtext
-        codeContainer.addSubview(codeDescLabel)
-        codeDescLabel.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
-        }
-
-        let fieldLabel = UILabel()
-        fieldLabel.text = "验证码"
-        fieldLabel.font = .fdFont(ofSize: 15, weight: .semibold)
-        fieldLabel.textColor = .fdSubtext
-        codeContainer.addSubview(fieldLabel)
-        fieldLabel.snp.makeConstraints { make in
-            make.top.equalTo(codeDescLabel.snp.bottom).offset(16)
-            make.leading.trailing.equalToSuperview()
-        }
-
-        let codeRow = UIView()
-        codeContainer.addSubview(codeRow)
-        codeRow.snp.makeConstraints { make in
-            make.top.equalTo(fieldLabel.snp.bottom).offset(8)
-            make.leading.trailing.bottom.equalToSuperview()
-            make.height.equalTo(52)
-        }
-
-        codeField = makeTextField(placeholder: "请输入验证码", keyboardType: .numberPad)
-        codeRow.addSubview(codeField)
-
-        codeResendBtn = UIButton(type: .system)
-        codeResendBtn.setTitle("重新获取", for: .normal)
-        codeResendBtn.titleLabel?.font = .fdFont(ofSize: 15, weight: .bold)
-        codeResendBtn.setTitleColor(.fdPrimary, for: .normal)
-        codeResendBtn.setTitleColor(.fdMuted, for: .disabled)
-        codeResendBtn.layer.cornerRadius = 8
-        codeResendBtn.layer.borderWidth = 1
-        codeResendBtn.layer.borderColor = UIColor.fdBorder.cgColor
-        codeResendBtn.backgroundColor = .fdSurface
-        codeResendBtn.addTarget(self, action: #selector(resendCodeTapped), for: .touchUpInside)
-        codeRow.addSubview(codeResendBtn)
-
-        codeField.snp.makeConstraints { make in
-            make.leading.top.bottom.equalToSuperview()
-        }
-        codeResendBtn.snp.makeConstraints { make in
-            make.leading.equalTo(codeField.snp.trailing).offset(10)
-            make.trailing.top.bottom.equalToSuperview()
-            make.width.equalTo(110)
-        }
-
-        codeContainer.snp.makeConstraints { make in
-            make.top.equalTo(stepDescLabel.snp.bottom).offset(24)
-            make.leading.trailing.equalToSuperview().inset(24)
-        }
-    }
-
-    // MARK: - Step 3 Setup
-
-    private func setupPasswordStep(_ parent: UIView) {
-        parent.addSubview(passwordContainer)
+    private func setupPasswordStep() {
+        legacyContainer.addSubview(passwordContainer)
 
         let newPwdLabel = UILabel()
         newPwdLabel.text = "新密码"
@@ -269,11 +255,7 @@ final class PasswordSetupViewController: BaseViewController {
             make.top.leading.trailing.equalToSuperview()
         }
 
-        let newPwdShell = UIView()
-        newPwdShell.layer.cornerRadius = 8
-        newPwdShell.layer.borderWidth = 1
-        newPwdShell.layer.borderColor = UIColor.fdBorder.cgColor
-        newPwdShell.backgroundColor = .fdSurface
+        let newPwdShell = makePasswordShell()
         passwordContainer.addSubview(newPwdShell)
         newPwdShell.snp.makeConstraints { make in
             make.top.equalTo(newPwdLabel.snp.bottom).offset(8)
@@ -325,11 +307,7 @@ final class PasswordSetupViewController: BaseViewController {
             make.leading.trailing.equalToSuperview()
         }
 
-        let confirmPwdShell = UIView()
-        confirmPwdShell.layer.cornerRadius = 8
-        confirmPwdShell.layer.borderWidth = 1
-        confirmPwdShell.layer.borderColor = UIColor.fdBorder.cgColor
-        confirmPwdShell.backgroundColor = .fdSurface
+        let confirmPwdShell = makePasswordShell()
         passwordContainer.addSubview(confirmPwdShell)
         confirmPwdShell.snp.makeConstraints { make in
             make.top.equalTo(confirmPwdLabel.snp.bottom).offset(8)
@@ -374,14 +352,39 @@ final class PasswordSetupViewController: BaseViewController {
         passwordContainer.snp.makeConstraints { make in
             make.top.equalTo(stepDescLabel.snp.bottom).offset(24)
             make.leading.trailing.equalToSuperview().inset(24)
+            make.bottom.equalToSuperview().offset(-12)
         }
     }
 
-    // MARK: - Step UI Update
+    // MARK: - Code step (Figma)
+
+    private func setupCodeStep() {
+        codeStepStack.axis = .vertical
+        codeStepStack.spacing = 12
+        codeStepContainer.addSubview(codeStepStack)
+        codeStepStack.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview()
+        }
+
+        codeStepStack.addArrangedSubview(SecurityHintBannerView.passwordVerification())
+
+        passwordCodeCard.setBodyView(codeLoginField)
+        codeStepStack.addArrangedSubview(passwordCodeCard)
+
+        codeLoginField.textField.keyboardType = .numberPad
+        codeLoginField.trailingAccessoryView = codeButton
+        codeLoginField.attachDoneToolbarIfNeeded()
+    }
+
+    // MARK: - Step UI
 
     private func updateStepUI() {
+        codeStepContainer.isHidden = step != .code
+        legacyContainer.isHidden = step == .code
+
         phoneContainer.isHidden = step != .phone
-        codeContainer.isHidden = step != .code
         passwordContainer.isHidden = step != .resetPassword
 
         switch step {
@@ -390,30 +393,15 @@ final class PasswordSetupViewController: BaseViewController {
             stepTitleLabel.text = "手机验证"
             stepDescLabel.text = "通过短信验证码确认身份后，可设置新的登录密码。"
             actionBtn.setTitle("获取验证码", for: .normal)
-            actionBtn.isHidden = false
         case .code:
             title = "填写验证码"
-            stepTitleLabel.text = "填写验证码"
-            if hasSentCode {
-                codeDescLabel.text = "验证码已发送至 \(maskPhone(enteredPhone))"
-            } else {
-                codeDescLabel.text = "验证码将发送至 \(maskPhone(enteredPhone))，请点击右侧按钮获取"
-            }
-            if !hasSentCode && countdown == 0 {
-                UIView.performWithoutAnimation {
-                    codeResendBtn.setTitle("发送验证码", for: .normal)
-                    codeResendBtn.layoutIfNeeded()
-                }
-                codeResendBtn.isEnabled = true
-            }
+            passwordCodeCard.updateDesc(phone: enteredPhone, hasSentCode: hasSentCode)
             actionBtn.setTitle("下一步", for: .normal)
-            actionBtn.isHidden = false
         case .resetPassword:
             title = "设置新密码"
             stepTitleLabel.text = "设置新密码"
             stepDescLabel.text = "建议 6-20 位，可用数字和字母组合。请避免使用生日、手机号后 6 位等容易被猜到的密码。"
             actionBtn.setTitle("完成设置", for: .normal)
-            actionBtn.isHidden = false
         }
     }
 
@@ -425,7 +413,6 @@ final class PasswordSetupViewController: BaseViewController {
             navigationController?.popViewController(animated: true)
         case .code:
             if mode.isLoggedIn {
-                // 登录态没有 Step 1，直接返回
                 navigationController?.popViewController(animated: true)
             } else {
                 step = .phone
@@ -448,30 +435,20 @@ final class PasswordSetupViewController: BaseViewController {
         }
     }
 
-    // MARK: - Send Code
-
     private func sendCode(for phone: String) {
         hasSentCode = true
-        startCountdown()
-        codeDescLabel.text = "验证码已发送至 \(maskPhone(phone))"
+        passwordCodeCard.updateDesc(phone: phone, hasSentCode: true)
+        codeButton.startCountdown()
         Task {
             do {
                 _ = try await LoginService.shared.sendVerificationCode(to: phone, type: .resetPassword)
-                await MainActor.run {
-                    showToast("验证码已发送")
-                }
+                await MainActor.run { showToast("验证码已发送") }
             } catch {
                 await MainActor.run {
                     showToast("发送失败，请稍后重试")
-                    stopCountdown()
+                    codeButton.stopCountdown()
                     hasSentCode = false
-                    if step == .code {
-                        codeDescLabel.text = "验证码将发送至 \(maskPhone(phone))，请点击右侧按钮获取"
-                        UIView.performWithoutAnimation {
-                            codeResendBtn.setTitle("发送验证码", for: .normal)
-                            codeResendBtn.layoutIfNeeded()
-                        }
-                    }
+                    passwordCodeCard.updateDesc(phone: phone, hasSentCode: false)
                 }
             }
         }
@@ -488,9 +465,17 @@ final class PasswordSetupViewController: BaseViewController {
         sendCode(for: phone)
     }
 
+    @objc private func resendCodeTapped() {
+        guard validatePhone(enteredPhone) else {
+            showToast("请输入正确的手机号")
+            return
+        }
+        sendCode(for: enteredPhone)
+    }
+
     private func handleVerifyCode() {
         let phone = enteredPhone.trimmingCharacters(in: .whitespacesAndNewlines)
-        let code = codeField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let code = codeLoginField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
         let cleanCode = code.replacingOccurrences(of: "\\D", with: "", options: .regularExpression)
         guard validatePhone(phone) else {
             showToast("请输入正确的手机号")
@@ -529,7 +514,7 @@ final class PasswordSetupViewController: BaseViewController {
     private func handleSubmitPassword() {
         let newPwd = newPasswordField.text ?? ""
         let confirmPwd = confirmPasswordField.text ?? ""
-        let code = codeField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let code = codeLoginField.textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
 
         guard !newPwd.isEmpty else {
             showToast("请设置新密码")
@@ -578,24 +563,16 @@ final class PasswordSetupViewController: BaseViewController {
         }
     }
 
-    @objc private func resendCodeTapped() {
-        guard !enteredPhone.isEmpty else { return }
-        stopCountdown()
-        sendCode(for: enteredPhone)
-    }
-
     @objc private func togglePasswordVisibility() {
         showPassword.toggle()
         newPasswordField.isSecureTextEntry = !showPassword
-        let imageName = showPassword ? "eye" : "eye.slash"
-        togglePasswordBtn.setImage(UIImage(systemName: imageName), for: .normal)
+        togglePasswordBtn.setImage(UIImage(systemName: showPassword ? "eye" : "eye.slash"), for: .normal)
     }
 
     @objc private func toggleConfirmPasswordVisibility() {
         showConfirmPassword.toggle()
         confirmPasswordField.isSecureTextEntry = !showConfirmPassword
-        let imageName = showConfirmPassword ? "eye" : "eye.slash"
-        toggleConfirmPasswordBtn.setImage(UIImage(systemName: imageName), for: .normal)
+        toggleConfirmPasswordBtn.setImage(UIImage(systemName: showConfirmPassword ? "eye" : "eye.slash"), for: .normal)
     }
 
     // MARK: - Helpers
@@ -624,57 +601,42 @@ final class PasswordSetupViewController: BaseViewController {
         return tf
     }
 
+    private func makePasswordShell() -> UIView {
+        let shell = UIView()
+        shell.layer.cornerRadius = 8
+        shell.layer.borderWidth = 1
+        shell.layer.borderColor = UIColor.fdBorder.cgColor
+        shell.backgroundColor = .fdSurface
+        return shell
+    }
+
     @objc private func dismissKeyboard() {
         view.endEditing(true)
     }
 
     private func validatePhone(_ phone: String) -> Bool {
-        let pattern = "^1[3-9]\\d{9}$"
-        return phone.range(of: pattern, options: .regularExpression) != nil
-    }
-
-    private func maskPhone(_ phone: String) -> String {
-        let digits = phone.replacingOccurrences(of: "\\D", with: "", options: .regularExpression)
-        guard digits.count == 11 else { return phone }
-        return "\(digits.prefix(3))****\(digits.suffix(4))"
-    }
-
-    private func startCountdown() {
-        countdown = 60
-        codeResendBtn.isEnabled = false
-        updateCountdownUI()
-        let t = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            countdown -= 1
-            if countdown <= 0 {
-                self.stopCountdown()
-            } else {
-                self.updateCountdownUI()
-            }
-        }
-        RunLoop.main.add(t, forMode: .common)
-        timer = t
-    }
-
-    private func stopCountdown() {
-        timer?.invalidate()
-        timer = nil
-        countdown = 0
-        codeResendBtn.isEnabled = true
-        UIView.performWithoutAnimation {
-            codeResendBtn.setTitle(hasSentCode ? "重新获取" : "发送验证码", for: .normal)
-            codeResendBtn.layoutIfNeeded()
-        }
-    }
-
-    private func updateCountdownUI() {
-        UIView.performWithoutAnimation {
-            codeResendBtn.setTitle("\(countdown)秒后重发", for: .normal)
-            codeResendBtn.layoutIfNeeded()
-        }
+        phone.range(of: "^1[3-9]\\d{9}$", options: .regularExpression) != nil
     }
 
     private func showToast(_ message: String) {
         showToastAlert(message, duration: 1.5)
+    }
+
+    // MARK: - Keyboard
+
+    @objc private func keyboardWillShow(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let kbFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+        let kbInView = view.convert(kbFrame, from: nil)
+        let overlap = max(0, view.bounds.maxY - kbInView.minY - view.safeAreaInsets.bottom)
+        bottomBarBottomConstraint?.update(offset: -(24 + overlap))
+        scrollView.contentInset.bottom = overlap
+        scrollView.verticalScrollIndicatorInsets.bottom = overlap
+    }
+
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        bottomBarBottomConstraint?.update(offset: -24)
+        scrollView.contentInset.bottom = 0
+        scrollView.verticalScrollIndicatorInsets.bottom = 0
     }
 }

@@ -345,6 +345,11 @@
 		A5CF597930077AA40067A4DE /* ServiceListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597830077AA40067A4DE /* ServiceListViewModel.swift */; };
 		A5CF597A30077AA40067A4DE /* HealthMallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597730077AA40067A4DE /* HealthMallViewModel.swift */; };
 		A5CF597C30077C6A0067A4DE /* RetailCategoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CF597B30077C6A0067A4DE /* RetailCategoryService.swift */; };
+		A5D28F303046803D00D5D437 /* SecuritySettingsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D28F2E3046803D00D5D437 /* SecuritySettingsComponents.swift */; };
+		A5D28F32304685EF00D5D437 /* ChangePhoneComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D28F31304685EF00D5D437 /* ChangePhoneComponents.swift */; };
+		A5D28F343046A14A00D5D437 /* CancelAccountComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D28F333046A14A00D5D437 /* CancelAccountComponents.swift */; };
+		A5D28F373046A8EB00D5D437 /* AddressComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D28F353046A8EB00D5D437 /* AddressComponents.swift */; };
+		A5D28F393046C5F400D5D437 /* SettingsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D28F383046C5F400D5D437 /* SettingsComponents.swift */; };
 		A5E0891E3045511D00D610FF /* GroupMembersVO.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E0891D3045511D00D610FF /* GroupMembersVO.swift */; };
 		A5E08928304551E300D610FF /* GroupMembersViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E08924304551E300D610FF /* GroupMembersViewModel.swift */; };
 		A5E08929304551E300D610FF /* GroupMembersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E08926304551E300D610FF /* GroupMembersViewController.swift */; };
@@ -717,6 +722,11 @@
 		A5CF597730077AA40067A4DE /* HealthMallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthMallViewModel.swift; sourceTree = "<group>"; };
 		A5CF597830077AA40067A4DE /* ServiceListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceListViewModel.swift; sourceTree = "<group>"; };
 		A5CF597B30077C6A0067A4DE /* RetailCategoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RetailCategoryService.swift; path = BLL/Service/RetailCategoryService.swift; sourceTree = "<group>"; };
+		A5D28F2E3046803D00D5D437 /* SecuritySettingsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecuritySettingsComponents.swift; sourceTree = "<group>"; };
+		A5D28F31304685EF00D5D437 /* ChangePhoneComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePhoneComponents.swift; sourceTree = "<group>"; };
+		A5D28F333046A14A00D5D437 /* CancelAccountComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancelAccountComponents.swift; sourceTree = "<group>"; };
+		A5D28F353046A8EB00D5D437 /* AddressComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressComponents.swift; sourceTree = "<group>"; };
+		A5D28F383046C5F400D5D437 /* SettingsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsComponents.swift; sourceTree = "<group>"; };
 		A5E0891D3045511D00D610FF /* GroupMembersVO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GroupMembersVO.swift; path = DAL/IM/GroupMembersVO.swift; sourceTree = "<group>"; };
 		A5E08922304551E300D610FF /* GroupMemberCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupMemberCell.swift; sourceTree = "<group>"; };
 		A5E08924304551E300D610FF /* GroupMembersViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupMembersViewModel.swift; sourceTree = "<group>"; };
@@ -1704,6 +1714,7 @@
 		A5A6F4E02FFF7B3D0065C921 /* Security */ = {
 			isa = PBXGroup;
 			children = (
+				A5D28F2F3046803D00D5D437 /* Components */,
 				A5C71B023018917A006EA79C /* WechatAuthorizationViewController.swift */,
 				A5A6F4DB2FFF7B3D0065C921 /* ViewModels */,
 				A5A6F4DC2FFF7B3D0065C921 /* CancelAccountViewController.swift */,
@@ -1770,6 +1781,7 @@
 		A5A6F5132FFF7BFE0065C921 /* Address */ = {
 			isa = PBXGroup;
 			children = (
+				A5D28F363046A8EB00D5D437 /* Components */,
 				A5A6F50E2FFF7BFE0065C921 /* Cells */,
 				A5A6F5102FFF7BFE0065C921 /* ViewModels */,
 				A5A6F5112FFF7BFE0065C921 /* AddressEditViewController.swift */,
@@ -2145,6 +2157,7 @@
 		A5C71AFE30188F8E006EA79C /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A5D28F383046C5F400D5D437 /* SettingsComponents.swift */,
 				A5C71AFD30188F8E006EA79C /* SettingsHubItemRow.swift */,
 			);
 			path = Components;
@@ -2220,6 +2233,24 @@
 				A5CB0BCC302193B20076FAFB /* HealthViewModel.swift */,
 			);
 			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A5D28F2F3046803D00D5D437 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A5D28F333046A14A00D5D437 /* CancelAccountComponents.swift */,
+				A5D28F31304685EF00D5D437 /* ChangePhoneComponents.swift */,
+				A5D28F2E3046803D00D5D437 /* SecuritySettingsComponents.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A5D28F363046A8EB00D5D437 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A5D28F353046A8EB00D5D437 /* AddressComponents.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 		A5E08923304551E300D610FF /* Cells */ = {
@@ -2818,6 +2849,7 @@
 				A590FCF42FEA91170056EF52 /* PolicyViewController.swift in Sources */,
 				A590FCF52FEA91170056EF52 /* HealthMallViewController.swift in Sources */,
 				A5F6AF2B3029E03C00D1BF74 /* ColumnContentCacheService.swift in Sources */,
+				A5D28F393046C5F400D5D437 /* SettingsComponents.swift in Sources */,
 				A590FCF62FEA91170056EF52 /* HomeHeroCell.swift in Sources */,
 				A590FCF72FEA91170056EF52 /* ServiceListViewController.swift in Sources */,
 				A590FCF82FEA91170056EF52 /* HomeQuickActionsCell.swift in Sources */,
@@ -2867,6 +2899,7 @@
 				A5E08928304551E300D610FF /* GroupMembersViewModel.swift in Sources */,
 				A5E08929304551E300D610FF /* GroupMembersViewController.swift in Sources */,
 				A5E0892A304551E300D610FF /* GroupMemberCell.swift in Sources */,
+				A5D28F343046A14A00D5D437 /* CancelAccountComponents.swift in Sources */,
 				A56120C93010A31C00505C32 /* OrderTabCell.swift in Sources */,
 				A56120CA3010A31C00505C32 /* OrderDetailComponents.swift in Sources */,
 				A56DDEB330174B8E000E03A0 /* DoctorModels.swift in Sources */,
@@ -2880,6 +2913,7 @@
 				A5C71B083018BAFC006EA79C /* HomeBannerCarouselCell.swift in Sources */,
 				A5C71B093018BAFC006EA79C /* HomeBrandHeaderCell.swift in Sources */,
 				8E749A7845EBA8C07946E821 /* Router.swift in Sources */,
+				A5D28F303046803D00D5D437 /* SecuritySettingsComponents.swift in Sources */,
 				05433145BBE114CF0C1DC08A /* DatabaseManager.swift in Sources */,
 				31C52A8BD36FA64D4C32B098 /* UserDefaultsManager.swift in Sources */,
 				A5C71B033018917A006EA79C /* WechatAuthorizationViewController.swift in Sources */,
@@ -2899,6 +2933,7 @@
 				A5BDA3983035490400E306EB /* WeightScaleBleStatusCoordinator.swift in Sources */,
 				A5917D0C2FDFC8EF00878961 /* DGCharts+Theme.swift in Sources */,
 				678D746E713E617DA4218CF8 /* BaseViewController.swift in Sources */,
+				A5D28F373046A8EB00D5D437 /* AddressComponents.swift in Sources */,
 				E9F251651FF71AEBC2DF03F3 /* BLLProtocol.swift in Sources */,
 				023299BEDDBAE0D022B08E7B /* DALProtocol.swift in Sources */,
 				A57D2F242FDC0661002E43BA /* RegisterLoginRoutes.swift in Sources */,
@@ -2948,6 +2983,7 @@
 				A53EFC133008E2D700ED9E5A /* MallProductGridCell.swift in Sources */,
 				A5BD9DEA3019A316008C44FC /* OKOKV3PacketParser.swift in Sources */,
 				A5BD9DEB3019A316008C44FC /* OKOKBroadcastScaleHandler.swift in Sources */,
+				A5D28F32304685EF00D5D437 /* ChangePhoneComponents.swift in Sources */,
 				A5CB0BCA3021935F0076FAFB /* MetricCardEditViewModel.swift in Sources */,
 				A5CB0BCB3021935F0076FAFB /* MetricCardEditViewController.swift in Sources */,
 				A5BD9DEC3019A316008C44FC /* BLEDeviceHandler.swift in Sources */,

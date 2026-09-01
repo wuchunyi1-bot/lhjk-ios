@@ -2,10 +2,7 @@ import UIKit
 import SnapKit
 import Combine
 
-/// 收货地址编辑页（新增 / 修改）
-///
-/// 对齐 funde-client AddressEditView + PRD 04：收货人、手机号、所在地区+定位、详细地址、默认地址（仅用户手动开关）。
-/// 保存接口不变：`POST /v1/address/saveOrUpdateAddress`。
+/// 添加 / 编辑收货地址 — 对齐 Figma 4522:6521 / 4522:6675
 final class AddressEditViewController: BaseViewController {
 
     // MARK: - ViewModel
@@ -23,37 +20,43 @@ final class AddressEditViewController: BaseViewController {
     }()
 
     private let contentView = UIView()
+    private let stackView = UIStackView()
+    private let bottomBar = UIView()
 
     private lazy var nameField = makeTextField(placeholder: "请输入收货人姓名")
     private lazy var mobileField = makeTextField(placeholder: "请输入收货人手机号码", keyboardType: .numberPad)
 
     private let regionValueLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdBody
-        l.textColor = .fdMuted
-        l.textAlignment = .right
-        l.numberOfLines = 2
-        l.text = "请选择省、市、区"
+        l.font = AddressStyle.fieldFont
+        l.textColor = AddressStyle.placeholderColor
+        l.numberOfLines = 1
+        l.text = "请选择省市区"
         return l
     }()
 
+    private let regionChevron: UIImageView = {
+        let iv = UIImageView(image: AddressIcons.open())
+        iv.contentMode = .scaleAspectFit
+        return iv
+    }()
+
     private lazy var locateButton: UIButton = {
-        var cfg = UIButton.Configuration.filled()
+        var cfg = UIButton.Configuration.plain()
+        cfg.image = AddressIcons.locate()
         cfg.title = "定位"
-        cfg.image = UIImage(systemName: "location")
         cfg.imagePadding = 2
+        cfg.imagePlacement = .leading
         cfg.baseForegroundColor = .fdPrimary
-        cfg.baseBackgroundColor = UIColor.fdPrimary.withAlphaComponent(0.12)
-        cfg.cornerStyle = .capsule
-        cfg.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10)
+        cfg.contentInsets = .zero
         cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
-            outgoing.font = .fdCaptionSemibold
+            outgoing.font = AddressStyle.fieldFont
             return outgoing
         }
-        let b = UIButton(configuration: cfg)
-        b.addTarget(self, action: #selector(locateTapped), for: .touchUpInside)
-        return b
+        let btn = UIButton(configuration: cfg)
+        btn.addTarget(self, action: #selector(locateTapped), for: .touchUpInside)
+        return btn
     }()
 
     private lazy var locateSpinner: UIActivityIndicatorView = {
@@ -65,10 +68,11 @@ final class AddressEditViewController: BaseViewController {
 
     private lazy var addressTextView: UITextView = {
         let tv = UITextView()
-        tv.font = .fdBody
+        tv.font = AddressStyle.fieldFont
         tv.textColor = .fdText
         tv.backgroundColor = .clear
-        tv.textContainerInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
+        tv.textContainerInset = .zero
+        tv.textContainer.lineFragmentPadding = 0
         tv.isScrollEnabled = false
         tv.delegate = self
         return tv
@@ -77,8 +81,8 @@ final class AddressEditViewController: BaseViewController {
     private let addressPlaceholderLabel: UILabel = {
         let l = UILabel()
         l.text = "小区楼栋、门牌号、村等"
-        l.font = .fdBody
-        l.textColor = .fdMuted
+        l.font = AddressStyle.fieldFont
+        l.textColor = AddressStyle.placeholderColor
         return l
     }()
 
@@ -92,19 +96,14 @@ final class AddressEditViewController: BaseViewController {
     }()
 
     private lazy var saveButton: UIButton = {
-        var cfg = UIButton.Configuration.filled()
-        cfg.title = "保存地址"
-        cfg.baseForegroundColor = .white
-        cfg.baseBackgroundColor = .fdPrimary
-        cfg.cornerStyle = .large
-        cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-            var outgoing = incoming
-            outgoing.font = .fdBodySemibold
-            return outgoing
-        }
-        let b = UIButton(configuration: cfg)
-        b.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
-        return b
+        let btn = UIButton(type: .system)
+        btn.setTitle("保存地址", for: .normal)
+        btn.titleLabel?.font = AddressStyle.buttonFont
+        btn.setTitleColor(.white, for: .normal)
+        btn.backgroundColor = .fdPrimary
+        btn.layer.cornerRadius = AddressStyle.primaryButtonRadius
+        btn.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
+        return btn
     }()
 
     // MARK: - Init
@@ -127,15 +126,40 @@ final class AddressEditViewController: BaseViewController {
         title = viewModel.navigationTitle
         view.backgroundColor = .fdBg
 
-        view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
-        scrollView.snp.makeConstraints { $0.edges.equalTo(view.safeAreaLayoutGuide) }
-        contentView.snp.makeConstraints { $0.edges.width.equalToSuperview() }
-
-        let last = buildContent()
-        contentView.snp.makeConstraints { make in
-            make.bottom.equalTo(last).offset(32)
+        view.addSubview(bottomBar)
+        bottomBar.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(24)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
         }
+
+        bottomBar.addSubview(saveButton)
+        saveButton.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.height.equalTo(AddressStyle.primaryButtonHeight)
+        }
+
+        view.addSubview(scrollView)
+        scrollView.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(bottomBar.snp.top).offset(-16)
+        }
+
+        scrollView.addSubview(contentView)
+        contentView.snp.makeConstraints { make in
+            make.edges.width.equalToSuperview()
+        }
+
+        stackView.axis = .vertical
+        stackView.spacing = 12
+        contentView.addSubview(stackView)
+        stackView.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.trailing.equalToSuperview().inset(AddressStyle.horizontalInset)
+            make.bottom.equalToSuperview().offset(-12)
+        }
+
+        stackView.addArrangedSubview(makeFormCard())
+        stackView.addArrangedSubview(makeDefaultCard())
 
         applyInitialForm()
         setupKeyboardDismiss()
@@ -159,6 +183,7 @@ final class AddressEditViewController: BaseViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] locating in
                 self?.locateButton.isEnabled = !locating
+                self?.locateButton.alpha = locating ? 0.5 : 1
                 if locating {
                     self?.locateSpinner.startAnimating()
                 } else {
@@ -171,7 +196,8 @@ final class AddressEditViewController: BaseViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] saving in
                 self?.saveButton.isEnabled = !saving
-                self?.saveButton.configuration?.showsActivityIndicator = saving
+                self?.saveButton.alpha = saving ? 0.6 : 1
+                self?.saveButton.setTitle(saving ? "保存中..." : "保存地址", for: .normal)
             }
             .store(in: &cancellables)
 
@@ -196,7 +222,7 @@ final class AddressEditViewController: BaseViewController {
         viewModel.toastMessage
             .receive(on: DispatchQueue.main)
             .sink { [weak self] message in
-                self?.showToast(message)
+                self?.showToastAlert(message, duration: 1.5)
             }
             .store(in: &cancellables)
 
@@ -210,161 +236,137 @@ final class AddressEditViewController: BaseViewController {
 
     // MARK: - Build UI
 
-    private func buildContent() -> ConstraintItem {
-        var last = contentView.snp.top
-
-        let infoTitle = sectionTitle("收货信息")
-        contentView.addSubview(infoTitle)
-        infoTitle.snp.makeConstraints { make in
-            make.top.equalTo(last).offset(12)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-        last = infoTitle.snp.bottom
-
+    private func makeFormCard() -> UIView {
         let card = UIView()
         card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 14
-        contentView.addSubview(card)
-        card.snp.makeConstraints { make in
-            make.top.equalTo(last).offset(8)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
+        card.layer.cornerRadius = AddressStyle.cardRadius
+        card.clipsToBounds = true
 
-        let nameRow = makeLabeledRow(title: "收货人", content: nameField)
-        let mobileRow = makeLabeledRow(title: "手机号", content: mobileField)
-        let regionRow = makeRegionRow()
-        let detailRow = makeDetailRow()
-        let codeRow = makeLabeledRow(title: "邮政编码", content: codeField, showDivider: false)
+        let rows: [UIView] = [
+            makeLabeledRow(title: "收货人", content: nameField),
+            makeLabeledRow(title: "手机号", content: mobileField),
+            makeRegionRow(),
+            makeDetailRow(),
+            makeLabeledRow(title: "邮政编码", content: codeField, showDivider: false),
+        ]
 
-        let stack = UIStackView(arrangedSubviews: [nameRow, mobileRow, regionRow, detailRow, codeRow])
-        stack.axis = .vertical
-        card.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-        last = card.snp.bottom
-
-        let defaultTitle = sectionTitle("默认设置")
-        contentView.addSubview(defaultTitle)
-        defaultTitle.snp.makeConstraints { make in
-            make.top.equalTo(last).offset(16)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-        last = defaultTitle.snp.bottom
-
-        let defaultCard = UIView()
-        defaultCard.backgroundColor = .fdSurface
-        defaultCard.layer.cornerRadius = 14
-        contentView.addSubview(defaultCard)
-        defaultCard.snp.makeConstraints { make in
-            make.top.equalTo(last).offset(8)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.height.equalTo(52)
-        }
-
-        let defaultLabel = UILabel()
-        defaultLabel.text = "设为默认地址"
-        defaultLabel.font = .fdBody
-        defaultLabel.textColor = .fdText
-        defaultCard.addSubview(defaultLabel)
-        defaultCard.addSubview(defaultSwitch)
-        defaultLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().inset(16)
-            make.centerY.equalToSuperview()
-        }
-        defaultSwitch.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().inset(16)
-            make.centerY.equalToSuperview()
-        }
-        last = defaultCard.snp.bottom
-
-        contentView.addSubview(saveButton)
-        saveButton.snp.makeConstraints { make in
-            make.top.equalTo(last).offset(24)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.height.equalTo(48)
-        }
-        return saveButton.snp.bottom
+        let innerStack = UIStackView(arrangedSubviews: rows)
+        innerStack.axis = .vertical
+        card.addSubview(innerStack)
+        innerStack.snp.makeConstraints { $0.edges.equalToSuperview() }
+        return card
     }
 
-    private func sectionTitle(_ text: String) -> UILabel {
-        let l = UILabel()
-        l.text = text
-        l.font = .fdCaptionSemibold
-        l.textColor = .fdSubtext
-        return l
+    private func makeDefaultCard() -> UIView {
+        let card = UIView()
+        card.backgroundColor = .fdSurface
+        card.layer.cornerRadius = AddressStyle.cardRadius
+
+        let label = UILabel()
+        label.text = "设置为默认地址"
+        label.font = AddressStyle.fieldMediumFont
+        label.textColor = .fdText
+
+        card.addSubview(label)
+        card.addSubview(defaultSwitch)
+
+        label.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(AddressStyle.cardHorizontalInset)
+            make.centerY.equalToSuperview()
+        }
+
+        defaultSwitch.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-AddressStyle.cardHorizontalInset)
+            make.centerY.equalToSuperview()
+        }
+
+        card.snp.makeConstraints { $0.height.equalTo(53) }
+        return card
     }
 
     private func makeLabeledRow(title: String, content: UIView, showDivider: Bool = true) -> UIView {
         let row = UIView()
-        row.snp.makeConstraints { $0.height.equalTo(52) }
+        row.snp.makeConstraints { $0.height.equalTo(AddressStyle.rowHeight) }
 
         let titleLabel = UILabel()
         titleLabel.text = title
-        titleLabel.font = .fdBody
+        titleLabel.font = AddressStyle.fieldFont
         titleLabel.textColor = .fdText
         titleLabel.setContentHuggingPriority(.required, for: .horizontal)
 
         row.addSubview(titleLabel)
         row.addSubview(content)
+
         titleLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().inset(16)
+            make.leading.equalToSuperview().offset(AddressStyle.cardHorizontalInset)
             make.centerY.equalToSuperview()
-            make.width.equalTo(72)
+            make.width.equalTo(AddressStyle.labelWidth)
         }
+
         content.snp.makeConstraints { make in
-            make.leading.equalTo(titleLabel.snp.trailing).offset(8)
-            make.trailing.equalToSuperview().inset(16)
+            make.leading.equalToSuperview().offset(86)
+            make.trailing.equalToSuperview().offset(-AddressStyle.cardHorizontalInset)
             make.centerY.equalToSuperview()
         }
 
         if showDivider {
-            addDivider(to: row, leading: titleLabel)
+            let divider = AddressFormDivider.make()
+            row.addSubview(divider)
+            divider.snp.makeConstraints { make in
+                make.leading.trailing.equalToSuperview().inset(AddressStyle.cardHorizontalInset)
+                make.bottom.equalToSuperview()
+            }
         }
         return row
     }
 
     private func makeRegionRow() -> UIView {
         let row = UIView()
-        row.snp.makeConstraints { $0.height.greaterThanOrEqualTo(52) }
+        row.snp.makeConstraints { $0.height.equalTo(AddressStyle.rowHeight) }
 
         let titleLabel = UILabel()
         titleLabel.text = "所在地区"
-        titleLabel.font = .fdBody
+        titleLabel.font = AddressStyle.fieldFont
         titleLabel.textColor = .fdText
 
-        let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
-        chevron.tintColor = .fdMuted
-        chevron.contentMode = .scaleAspectFit
-        chevron.setContentHuggingPriority(.required, for: .horizontal)
+        let valueStack = UIStackView(arrangedSubviews: [regionValueLabel, regionChevron])
+        valueStack.axis = .horizontal
+        valueStack.spacing = 4
+        valueStack.alignment = .center
 
         row.addSubview(titleLabel)
-        row.addSubview(regionValueLabel)
+        row.addSubview(valueStack)
         row.addSubview(locateButton)
         row.addSubview(locateSpinner)
-        row.addSubview(chevron)
 
         titleLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().inset(16)
+            make.leading.equalToSuperview().offset(AddressStyle.cardHorizontalInset)
             make.centerY.equalToSuperview()
-            make.width.equalTo(72)
+            make.width.equalTo(AddressStyle.labelWidth)
         }
+
         locateButton.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().inset(16)
+            make.trailing.equalToSuperview().offset(-AddressStyle.cardHorizontalInset)
             make.centerY.equalToSuperview()
-            make.height.equalTo(32)
         }
+
         locateSpinner.snp.makeConstraints { make in
             make.center.equalTo(locateButton)
         }
-        chevron.snp.makeConstraints { make in
-            make.trailing.equalTo(locateButton.snp.leading).offset(-8)
+
+        regionChevron.snp.makeConstraints { $0.size.equalTo(12) }
+
+        valueStack.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(86)
+            make.trailing.lessThanOrEqualTo(locateButton.snp.leading).offset(-8)
             make.centerY.equalToSuperview()
-            make.size.equalTo(12)
         }
-        regionValueLabel.snp.makeConstraints { make in
-            make.leading.equalTo(titleLabel.snp.trailing).offset(8)
-            make.trailing.equalTo(chevron.snp.leading).offset(-6)
-            make.top.bottom.equalToSuperview().inset(12)
+
+        let divider = AddressFormDivider.make()
+        row.addSubview(divider)
+        divider.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(AddressStyle.cardHorizontalInset)
+            make.bottom.equalToSuperview()
         }
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(regionRowTapped))
@@ -372,8 +374,6 @@ final class AddressEditViewController: BaseViewController {
         tap.delegate = self
         row.addGestureRecognizer(tap)
         row.isUserInteractionEnabled = true
-
-        addDivider(to: row, leading: titleLabel)
         return row
     }
 
@@ -382,7 +382,7 @@ final class AddressEditViewController: BaseViewController {
 
         let titleLabel = UILabel()
         titleLabel.text = "详细地址"
-        titleLabel.font = .fdBody
+        titleLabel.font = AddressStyle.fieldFont
         titleLabel.textColor = .fdText
 
         row.addSubview(titleLabel)
@@ -390,46 +390,46 @@ final class AddressEditViewController: BaseViewController {
         row.addSubview(addressPlaceholderLabel)
 
         titleLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().inset(16)
-            make.top.equalToSuperview().inset(14)
-            make.width.equalTo(72)
+            make.leading.equalToSuperview().offset(AddressStyle.cardHorizontalInset)
+            make.top.equalToSuperview().offset(16)
+            make.width.equalTo(AddressStyle.labelWidth)
         }
+
         addressTextView.snp.makeConstraints { make in
-            make.leading.equalTo(titleLabel.snp.trailing).offset(4)
-            make.trailing.equalToSuperview().inset(12)
-            make.top.equalToSuperview().inset(4)
-            make.bottom.equalToSuperview().inset(4)
-            make.height.greaterThanOrEqualTo(72)
+            make.leading.equalToSuperview().offset(86)
+            make.trailing.equalToSuperview().offset(-AddressStyle.cardHorizontalInset)
+            make.top.equalToSuperview().offset(12)
+            make.bottom.equalToSuperview().offset(-12)
+            make.height.greaterThanOrEqualTo(44)
         }
+
         addressPlaceholderLabel.snp.makeConstraints { make in
-            make.leading.equalTo(addressTextView).offset(5)
-            make.top.equalTo(addressTextView).offset(8)
+            make.leading.equalTo(addressTextView)
+            make.top.equalTo(addressTextView)
         }
 
-        addDivider(to: row, leading: titleLabel)
-        return row
-    }
-
-    private func addDivider(to row: UIView, leading: UIView) {
-        let divider = UIView()
-        divider.backgroundColor = .fdBorder
+        let divider = AddressFormDivider.make()
         row.addSubview(divider)
         divider.snp.makeConstraints { make in
-            make.leading.equalTo(leading)
-            make.trailing.bottom.equalToSuperview()
-            make.height.equalTo(1.0 / UIScreen.main.scale)
+            make.leading.trailing.equalToSuperview().inset(AddressStyle.cardHorizontalInset)
+            make.bottom.equalToSuperview()
         }
+        return row
     }
 
     private func makeTextField(placeholder: String, keyboardType: UIKeyboardType = .default) -> UITextField {
         let tf = UITextField()
         tf.placeholder = placeholder
-        tf.font = .fdBody
+        tf.font = AddressStyle.fieldFont
         tf.textColor = .fdText
-        tf.textAlignment = .right
+        tf.textAlignment = .left
         tf.keyboardType = keyboardType
         tf.returnKeyType = .next
         tf.clearButtonMode = .whileEditing
+        tf.attributedPlaceholder = NSAttributedString(
+            string: placeholder,
+            attributes: [.foregroundColor: AddressStyle.placeholderColor]
+        )
         tf.addTarget(self, action: #selector(textFieldChanged(_:)), for: .editingChanged)
         return tf
     }
@@ -447,11 +447,13 @@ final class AddressEditViewController: BaseViewController {
     private func refreshRegionLabel() {
         let text = viewModel.regionDisplayText
         if text.isEmpty {
-            regionValueLabel.text = "请选择省、市、区"
-            regionValueLabel.textColor = .fdMuted
+            regionValueLabel.text = "请选择省市区"
+            regionValueLabel.textColor = AddressStyle.placeholderColor
+            regionChevron.isHidden = false
         } else {
             regionValueLabel.text = text
             regionValueLabel.textColor = .fdText
+            regionChevron.isHidden = false
         }
     }
 
@@ -501,7 +503,12 @@ final class AddressEditViewController: BaseViewController {
             city: viewModel.city,
             district: viewModel.area
         )
-        let sheet = RegionPickerSheet(title: "所在地区", mode: .provinceCityArea, current: current)
+        let sheet = RegionPickerSheet(
+            title: "所在地区",
+            mode: .provinceCityArea,
+            current: current,
+            sheetTitle: "选择所在区域"
+        )
         sheet.onSave = { [weak self] selection in
             self?.viewModel.province = selection.province
             self?.viewModel.city = selection.city
@@ -522,12 +529,6 @@ final class AddressEditViewController: BaseViewController {
     @objc private func keyboardWillHide() {
         scrollView.contentInset = .zero
         scrollView.scrollIndicatorInsets = .zero
-    }
-
-    // MARK: - Toast
-
-    private func showToast(_ message: String) {
-        showToastAlert(message, duration: 1.5)
     }
 }
 

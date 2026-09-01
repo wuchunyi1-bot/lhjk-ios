@@ -1,8 +1,29 @@
 import UIKit
 import SnapKit
 
-/// 微信授权 — 对齐 PRD-205 / WechatAuthorizationView.vue
+/// 微信授权 — 对齐 Figma「微信授权」与 PRD-205
 final class WechatAuthorizationViewController: BaseViewController {
+
+    private enum Layout {
+        static let cardCornerRadius: CGFloat = 16
+        static let cardInset: CGFloat = 16
+        static let cardSpacing: CGFloat = 12
+        static let cardMinHeight: CGFloat = 64
+        static let cardPadding: CGFloat = 12
+        static let iconContainerSize: CGFloat = 38
+        static let iconSize: CGFloat = 30
+        static let iconTextGap: CGFloat = 11
+        static let textStackSpacing: CGFloat = 4
+        static let actionButtonSize = CGSize(width: 70, height: 28)
+        static let actionButtonCornerRadius: CGFloat = 14
+        static let actionButtonBorderWidth: CGFloat = 0.5
+    }
+
+    private enum Typography {
+        static let cardTitle = SettingsStyle.rowTitleFont
+        static let cardSubtitle = SettingsStyle.rowSubtitleFont
+        static let actionButton = UIFont.fdFont(ofSize: 16, weight: .medium)
+    }
 
     private var isBound: Bool = false
     private var isLoading: Bool = false
@@ -31,100 +52,118 @@ final class WechatAuthorizationViewController: BaseViewController {
         scroll.addSubview(content)
         content.snp.makeConstraints { $0.edges.width.equalToSuperview() }
 
-        // Status card
-        let statusCard = UIView()
-        statusCard.backgroundColor = .fdSurface
-        statusCard.layer.cornerRadius = 12
-        statusCard.layer.shadowColor = UIColor.black.cgColor
-        statusCard.layer.shadowOffset = CGSize(width: 0, height: 1)
-        statusCard.layer.shadowRadius = 6
-        statusCard.layer.shadowOpacity = 0.03
+        let statusCard = makeStatusCard()
         content.addSubview(statusCard)
         statusCard.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(24)
-            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.top.equalToSuperview().offset(12)
+            $0.leading.trailing.equalToSuperview().inset(Layout.cardInset)
+            $0.height.greaterThanOrEqualTo(Layout.cardMinHeight)
         }
 
+        let actionCard = makeActionCard()
+        content.addSubview(actionCard)
+        actionCard.snp.makeConstraints {
+            $0.top.equalTo(statusCard.snp.bottom).offset(Layout.cardSpacing)
+            $0.leading.trailing.equalToSuperview().inset(Layout.cardInset)
+            $0.height.greaterThanOrEqualTo(Layout.cardMinHeight)
+            $0.bottom.equalToSuperview().offset(-24)
+        }
+
+        refresh()
+    }
+
+    private func makeStatusCard() -> UIView {
+        let card = UIView()
+        card.backgroundColor = .fdSurface
+        card.layer.cornerRadius = Layout.cardCornerRadius
+        card.clipsToBounds = true
+
         let iconBg = UIView()
-        iconBg.backgroundColor = .fdPrimarySoft
-        iconBg.layer.cornerRadius = 14
-        let icon = UIImageView(image: UIImage(systemName: "message.fill"))
-        icon.tintColor = .fdPrimary
+        iconBg.backgroundColor = .fdBg
+        iconBg.layer.cornerRadius = Layout.iconContainerSize / 2
+
+        let icon = UIImageView(image: UIImage(named: "login_wechat"))
         icon.contentMode = .scaleAspectFit
         iconBg.addSubview(icon)
         icon.snp.makeConstraints {
             $0.center.equalToSuperview()
-            $0.size.equalTo(22)
+            $0.size.equalTo(Layout.iconSize)
         }
 
-        statusTitleLabel.font = .fdMyBodySemibold
-        statusTitleLabel.textColor = .fdText
-        statusDescLabel.font = .fdMyCaption
-        statusDescLabel.textColor = .fdSubtext
+        statusTitleLabel.font = Typography.cardTitle
+        statusTitleLabel.textColor = SettingsStyle.titleColor
+        statusDescLabel.font = Typography.cardSubtitle
+        statusDescLabel.textColor = SettingsStyle.subtitleColor
         statusDescLabel.numberOfLines = 0
 
         let textStack = UIStackView(arrangedSubviews: [statusTitleLabel, statusDescLabel])
         textStack.axis = .vertical
-        textStack.spacing = 4
+        textStack.spacing = Layout.textStackSpacing
+        textStack.alignment = .leading
 
-        statusCard.addSubview(iconBg)
-        statusCard.addSubview(textStack)
+        card.addSubview(iconBg)
+        card.addSubview(textStack)
+
         iconBg.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(16)
+            $0.leading.equalToSuperview().offset(Layout.cardPadding)
             $0.centerY.equalToSuperview()
-            $0.size.equalTo(48)
-            $0.top.greaterThanOrEqualToSuperview().offset(18)
-            $0.bottom.lessThanOrEqualToSuperview().offset(-18)
+            $0.size.equalTo(Layout.iconContainerSize)
+            $0.top.greaterThanOrEqualToSuperview().offset(Layout.cardPadding)
+            $0.bottom.lessThanOrEqualToSuperview().offset(-Layout.cardPadding)
         }
         textStack.snp.makeConstraints {
-            $0.leading.equalTo(iconBg.snp.trailing).offset(12)
-            $0.trailing.equalToSuperview().offset(-16)
-            $0.top.equalToSuperview().offset(18)
-            $0.bottom.equalToSuperview().offset(-18)
+            $0.leading.equalTo(iconBg.snp.trailing).offset(Layout.iconTextGap)
+            $0.trailing.equalToSuperview().offset(-Layout.cardPadding)
+            $0.centerY.equalToSuperview()
+            $0.top.greaterThanOrEqualToSuperview().offset(Layout.cardPadding)
+            $0.bottom.lessThanOrEqualToSuperview().offset(-Layout.cardPadding)
         }
 
-        // Action card
-        let actionCard = UIView()
-        actionCard.backgroundColor = .fdSurface
-        actionCard.layer.cornerRadius = 12
-        content.addSubview(actionCard)
-        actionCard.snp.makeConstraints {
-            $0.top.equalTo(statusCard.snp.bottom).offset(14)
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.bottom.equalToSuperview().offset(-24)
-        }
+        return card
+    }
 
-        let actionTitle = UILabel()
-        actionTitle.text = "微信快捷登录"
-        actionTitle.font = .fdMyBodySemibold
-        actionTitle.textColor = .fdText
+    private func makeActionCard() -> UIView {
+        let card = UIView()
+        card.backgroundColor = .fdSurface
+        card.layer.cornerRadius = Layout.cardCornerRadius
+        card.clipsToBounds = true
 
-        actionDescLabel.font = .fdMyBody
-        actionDescLabel.textColor = .fdSubtext
+        let actionTitleLabel = UILabel()
+        actionTitleLabel.text = "微信快捷登录"
+        actionTitleLabel.font = Typography.cardTitle
+        actionTitleLabel.textColor = SettingsStyle.titleColor
+
+        actionDescLabel.font = Typography.cardSubtitle
+        actionDescLabel.textColor = SettingsStyle.subtitleColor
         actionDescLabel.numberOfLines = 0
 
-        actionButton.titleLabel?.font = .fdMyBodySemibold
-        actionButton.layer.cornerRadius = 22
+        let textStack = UIStackView(arrangedSubviews: [actionTitleLabel, actionDescLabel])
+        textStack.axis = .vertical
+        textStack.spacing = Layout.textStackSpacing
+        textStack.alignment = .leading
+
+        actionButton.titleLabel?.font = Typography.actionButton
+        actionButton.layer.cornerRadius = Layout.actionButtonCornerRadius
+        actionButton.clipsToBounds = true
         actionButton.addTarget(self, action: #selector(handleAction), for: .touchUpInside)
 
-        actionCard.addSubview(actionTitle)
-        actionCard.addSubview(actionDescLabel)
-        actionCard.addSubview(actionButton)
-        actionTitle.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview().inset(16)
-        }
-        actionDescLabel.snp.makeConstraints {
-            $0.top.equalTo(actionTitle.snp.bottom).offset(8)
-            $0.leading.trailing.equalToSuperview().inset(16)
-        }
+        card.addSubview(textStack)
+        card.addSubview(actionButton)
+
         actionButton.snp.makeConstraints {
-            $0.top.equalTo(actionDescLabel.snp.bottom).offset(16)
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(44)
-            $0.bottom.equalToSuperview().offset(-16)
+            $0.trailing.equalToSuperview().offset(-Layout.cardPadding)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(Layout.actionButtonSize)
+        }
+        textStack.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(Layout.cardPadding)
+            $0.centerY.equalToSuperview()
+            $0.trailing.lessThanOrEqualTo(actionButton.snp.leading).offset(-8)
+            $0.top.greaterThanOrEqualToSuperview().offset(Layout.cardPadding)
+            $0.bottom.lessThanOrEqualToSuperview().offset(-Layout.cardPadding)
         }
 
-        refresh()
+        return card
     }
 
     /// 查询微信绑定状态：`GET /v1/users/getWechatBindStatus`
@@ -146,22 +185,23 @@ final class WechatAuthorizationViewController: BaseViewController {
 
     private func refresh() {
         statusTitleLabel.text = isBound ? "微信已绑定" : "尚未绑定微信"
-        statusDescLabel.text = "绑定后可使用微信快捷登录富德联好健康。"
+        statusDescLabel.text = "绑定后可使用微信快捷登录富德健康"
         actionDescLabel.text = isBound
-            ? "如不再使用当前微信快捷登录，可解除绑定。"
-            : "绑定微信后，下次可直接使用微信登录，无需重复输入手机号。"
+            ? "如不再使用当前微信快捷登录，可解除绑定"
+            : "绑定微信后，下次可直接使用微信登录，无需重复输入手机号"
 
         if isBound {
-            actionButton.setTitle("解绑微信", for: .normal)
+            actionButton.setTitle("解绑", for: .normal)
             actionButton.setTitleColor(.fdPrimary, for: .normal)
             actionButton.backgroundColor = .fdSurface
-            actionButton.layer.borderWidth = 1
+            actionButton.layer.borderWidth = Layout.actionButtonBorderWidth
             actionButton.layer.borderColor = UIColor.fdPrimary.cgColor
         } else {
-            actionButton.setTitle("绑定微信", for: .normal)
+            actionButton.setTitle("绑定", for: .normal)
             actionButton.setTitleColor(.white, for: .normal)
             actionButton.backgroundColor = .fdPrimary
             actionButton.layer.borderWidth = 0
+            actionButton.layer.borderColor = nil
         }
     }
 
@@ -220,7 +260,7 @@ final class WechatAuthorizationViewController: BaseViewController {
     private func showUnbindConfirmAlert() {
         let alert = UIAlertController(
             title: "确认解绑微信？",
-            message: "解绑后，将不能使用当前微信快捷登录富德联好健康。",
+            message: "解绑后，将不能使用当前微信快捷登录富德健康。",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "暂不解绑", style: .cancel))

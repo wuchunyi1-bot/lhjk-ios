@@ -49,6 +49,50 @@
 
 群聊且本地 `groupStatus == nil`（深链、仅融云 fallback）：进入聊天页先不展示输入栏，等 `refreshGroupMetadata()` 用 `getGroup` 补齐后再按上表决定。
 
+### GET `/v1/session/getGroupMembers`（获取群成员）
+
+Apifox：`IM/群组会话` · `operationId: getGroupMembers`。分享站文档暂无。Query 以 OAS 为准；**响应 `data` 以现网为准**（数组，不是 OAS 的 `GroupMembersVO` 对象）。鉴权：Bearer `access_token`。
+
+**Query**
+
+| 参数 | in | 类型 | 必填 | 说明 |
+|------|----|------|------|------|
+| `groupId` | query | string | **是** | 第三方/融云群 Id，与会话 `Conversation.id` / `GroupVO.groupId` 相同 |
+| `targetUserId` | query | int64 | 否 | 指定成员用户 Id；**拉全量列表时不得传**（传了则按单人过滤） |
+
+**Header**
+
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| `payload` | 否 | Apifox 环境占位 `{{payload}}`。与 `getGroup` 相同，**iOS 不传**（Bearer 由 `APIManager` 拦截器注入） |
+
+**响应（以现网为准）** 标准包装 `{ code, data, msg, total, success, failed }`。
+
+> OAS 将 `data` 标为 `GroupMembersVO` 对象（内含 `list`）。**现网实际 `data` 为成员数组**，iOS MUST 按 `APIResponse<[ImSessionDetails]>` 解码。不得按 OAS 对象解码。
+
+现网成员元素常见字段：
+
+| Field | Type | 说明 |
+|-------|------|------|
+| `userId` | String | 用户 Id（雪花字符串） |
+| `userName` | String | 显示名 |
+| `imageUrl` | String | 头像 URL（现网字段名） |
+| `roleName` | String | 角色文案，如「营养师」「医院管理员」「我」「机器人」 |
+
+OAS `ImSessionDetails` 其它字段（`identity` / `userImg` 等）若下发则解码，缺失为 nil。头像优先 `imageUrl`，否则 `userImg`。
+
+#### ImSessionDetails（现网 `data[]`）
+
+| Field | Type | 说明 |
+|-------|------|------|
+| `userId` | String? | 用户 id（现网为字符串） |
+| `userName` | String? | 用户名字 |
+| `imageUrl` | String? | 现网头像 URL |
+| `roleName` | String? | 角色名称（列表优先展示） |
+| `userImg` | String? | OAS 头像字段，现网通常不下发 |
+| `identity` | Int? | OAS：`1` 健康管理师负责人 / `2` 医生 / `3` 用户 / `4` 队员 |
+| `id` / `sessionId` / `groupId` / `mute` / `createTime` / `createId` / `modifyTime` / `modifyId` / `repeatMark` / `departmentName` / `doctorType` / `healthId` | 可选 | OAS 扩展字段，现网可缺省 |
+
 ### Message / ChatMessage (消息)
 
 | Field | Type | 说明 |
@@ -604,21 +648,61 @@ App 冷启动
 - **WHEN** `groupStatus == 1`
 - **THEN** 保持现有输入栏布局与发送能力，不展示过期提示
 
-#### Scenario: 群聊详情查看群成员
+#### Scenario: 群聊详情查看群成员入口
 - **WHEN** 会话类型为群聊（`ConversationType_GROUP`）
 - **THEN** 导航栏右侧展示 24×24 群成员图标（`chat_nav_group_members`），对齐 Figma `4497:4357`
-- **AND** 点击后 push 群成员列表（路由 `/conversations/:id/members`）
-- **AND** 列表数据来自 `GET /v1/session/getGroupMembers?groupId=`，展示 `ImSessionDetails` 的头像、姓名、角色；无数据展示空态「暂无群成员」
+- **AND** 点击后 push 群成员列表（路由 `/conversations/:id/members`，`id` = `groupId`）
 - **AND** 单聊 MUST NOT 展示该入口
 
 **实现位置**：
 - `DAL/IM/GroupVO.swift` — `status`、`GroupSessionStatus`、`isMessagingReadOnly`
-- `DAL/IM/GroupMembersVO.swift` — `getGroupMembers` 响应模型
 - `DAL/IM/Conversation.swift` — `groupStatus`、`isMessagingReadOnly`、`fromGroupVO` 列表文案
-- `BLL/Message/IMService.swift` — `refreshGroupMetadata(conversationId:)`、`fetchGroupMembers(groupId:)`
+- `BLL/Message/IMService.swift` — `refreshGroupMetadata(conversationId:)`
 - `PL/Message/Chat/ViewModels/ChatViewModel.swift` — `isMessagingReadOnly`、`refreshConversationMetadata()`、发送守卫
 - `PL/Message/Chat/ChatViewController.swift` — 条件性嵌入/移除 `ChatInputBar`、过期提示、群成员入口
+
+### Requirement: 获取群成员
+
+系统 SHALL 通过 `GET /v1/session/getGroupMembers` 拉取指定群的成员列表，驱动聊天详情「群成员」页。契约见上文 Data Model。**禁止** mock 成员数据。
+
+#### Scenario: 请求参数（全量列表）
+
+- **WHEN** 用户进入群成员页且 `groupId` 非空
+- **THEN** 发起 GET `/v1/session/getGroupMembers`
+- **AND** Query 仅带必填 `groupId`（string，值为会话 id）
+- **AND** **不得**传 `targetUserId`（避免后端按单人过滤）
+- **AND** **不得**传 Header `payload`
+- **AND** 使用已登录 Bearer 鉴权（`APIManager` 拦截器）
+
+#### Scenario: groupId 为空
+
+- **WHEN** `groupId` 为空或缺失
+- **THEN** 不发起请求
+- **AND** 展示空态「暂无群成员」
+
+#### Scenario: 可选按人查询
+
+- **WHEN** 调用方明确传入 `targetUserId`
+- **THEN** Query 同时带 `groupId` 与 `targetUserId`（int64）
+- **AND** 当前群成员列表页 **不**走此路径
+
+#### Scenario: 成功解析并展示
+
+- **WHEN** 响应 `isSuccess` 且 `data` 为非空成员数组
+- **THEN** 按数组顺序渲染行：头像取 `imageUrl`（空则 `userImg`，失败回落 `chat_im_avatar`）、`userName` 姓名、`roleName`（空则按 `identity` 映射：1 健康管理师负责人 / 2 医生 / 3 用户 / 4 队员）
+- **AND** 不得用本地假成员顶替
+
+#### Scenario: 失败与空数据
+
+- **WHEN** 请求失败，或 `data` 为 null / 空数组
+- **THEN** 列表为空，展示「暂无群成员」
+- **AND** 失败时 Toast `msg` 或通用错误文案
+
+**实现位置**：
+- `DAL/IM/GroupMembersVO.swift` — `ImSessionDetails`（`data[]`）
+- `BLL/Message/IMService.swift` — `fetchGroupMembers(groupId:targetUserId:)` → `[ImSessionDetails]`
 - `PL/Message/Chat/GroupMembers/` — 群成员列表页
+- `BLL/Message/MessageRoutes.swift` — `/conversations/:id/members`
 
 ---
 
