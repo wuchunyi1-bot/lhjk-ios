@@ -1,7 +1,7 @@
 ## Context
 
-- API：`GET /v1/scheme/getUserToDayMonitorTask?userId=`（Apifox 472330787）
-- Apifox 响应 `data` 未展开；以旧客户端 `tasks` 字段为准
+- API：`GET /v1/scheme/getUserToDayMonitorTask?userId=`（Apifox `UserMonitorTaskObject` / 472330787）
+- 响应：`ResultListUserMonitorTaskObject`，`data` 为 `UserMonitorTaskObject[]`
 - UI：已实现的 `HomeTaskCardCell` / `DailyTasksViewController`（`home-daily-health-tasks`）
 - 模块归属：**Home**
 
@@ -10,7 +10,8 @@
 **Goals:**
 
 - 登录用户拉取今日监测任务列表并驱动首页摘要 + 详情页
-- `type` → 图标 / 短标题 / `actionRoute` 映射
+- 完整解码 Apifox `UserMonitorTaskObject` 字段（含积分、进度、监测说明等）
+- `type` → 图标 / 短标题 / `actionRoute`：**以字典 `monitorType` 为准**（`value` 编号 + `name` 文案）；Apifox 文档中的 type 枚举仅作接口字段说明，不作客户端映射依据
 - `isComplete == 1` → 已完成
 - **会话内缓存**：避免首页 / 详情每次 `viewWillAppear` 都打接口
 
@@ -19,37 +20,56 @@
 - 不改首页任务区视觉布局
 - 不实现 `updateUserMonitorTask` 完成回传（体征录入页后续处理）
 - 不接 `getUserToDaySportTask`（运动任务另接口）
-- 不做跨进程永久磁盘缓存（登出清空即可；不必 UserDefaults 持久化列表）
+- 不解码 `details`（Apifox schema 未展开子字段）
 
 ## Decisions
 
 1. **userId**：优先 `loginUserInfo.id`，否则 `currentUser.id`；缺失则空列表不请求。
 2. **data**：`APIResponse<[UserTodayMonitorTask]>` 数组。
-3. **字段映射（旧端 tasks）**：
+3. **字段映射（Apifox `UserMonitorTaskObject`）**：
 
-| API | UI `DailyHealthTask` |
-|-----|----------------------|
-| `id` / `taskId` | `id` |
-| `taskName` | `title` / `shortTitle` |
-| `isComplete` (0/1) | `done` |
-| `monitorTime` | `planTime` + detailRows「计划时间」 |
-| `monitorValue` | 已完成时 detailRows「监测值」 |
-| `type` | iconKey / category / actionRoute |
-| `skipUrl` | 若为 App 内 path（以 `/` 开头）优先作 `actionRoute` |
+| API 字段 | 类型 | UI `DailyHealthTask` / 展示 |
+|----------|------|------------------------------|
+| `get_id` / `id` | string | `id`（优先 `id`，否则 `get_id`） |
+| `taskId` | int64 | 备用 `id` |
+| `taskName` | string | `title` / `shortTitle` |
+| `isComplete` | int32 (0/1) | `done` |
+| `monitorTime` | string | `planTime` + detailRows「计划时间」 |
+| `monitorValue` | string | 已完成时 detailRows「监测值」 |
+| `type` | int32 | 字典 `monitorType.value`；`name` → category / shortTitle；路由见下表 |
+| `mealType` | int32 | detailRows「餐次」+ 首页 `extraTags` |
+| `userId` | int64 | 解码保留，展示不用 |
+| `schemeId` | int64 | 解码保留 |
+| `doctorId` / `sessionId` / `hospitalId` | int64 | 解码保留 |
+| `createTime` | string | 已完成时 `completedAt` |
+| `timeStamp` | int64 | 解码保留 |
+| `skipUrl` | string | 若为 App 内 path（以 `/` 开头）优先作 `actionRoute` |
+| `completeTaskNumber` / `taskNumber` | int32 | `taskNumber > 1` 时 detailRows「今日进度」+ 首页 tag |
+| `remindSwitch` | int32 | 解码保留 |
+| `monitorSpecification` | string | 详情「监测说明」（优先于本地默认文案） |
+| `quantity` | int32 | 解码保留（单次积分） |
+| `pointsEarned` / `pointsTotal` | int32 | `pointsTotal > 0` 时 detailRows「今日积分」+ 首页 tag |
 
-4. **type 映射**：
+4. **type 映射（字典 `monitorType`，非 Apifox 文档枚举）**：
 
-| type | 含义 | iconKey | actionRoute |
-|------|------|---------|-------------|
-| 1 | 血糖 | glucose | `/health/metrics/blood-sugar/add` → `#/blood-sugar/add` |
-| 2 | 血压 | pressure | `/health/metrics/blood-pressure/add` → `#/blood-pressure/add` |
-| 3 | 体重 | weight | `/health/metrics/weight/add` → `#/weight/add` |
-| 4 | 心率/胎心兼容 | heart-rate | `/health/metrics/heart-rate/add` → `#/heart-rate/add` |
-| 其它 | 通用 | checklist | `/health/metrics` |
+客户端以 `getDictionaryByParentId2` 拉取的 **监测类型** 字典为准：`value` 为任务 `type` 整型值，`name` 为展示文案。
 
-`skipUrl` 若为指标首页（`/health/metrics/{key}`）须改写为同指标 `/add`；已是 `/add` 或 `/manual` 则保留。
+| value | 字典含义（当前） | iconKey | actionRoute | 可跳转 |
+|-------|------------------|---------|-------------|--------|
+| 1 | 睡眠 | sleep | — | 否（需求未评审） |
+| 2 | 血压 | pressure | `/health/metrics/blood-pressure/add` | 是 |
+| 3 | 运动 | exercise | `/health/metrics/exercise/home` | 是 |
+| 4 | 体重 | weight | `/health/metrics/weight/add` | 是 |
+| 5 | 血糖 | glucose | `/health/metrics/blood-sugar/add` | 是 |
+| 6 | 体温 | temperature | `/health/metrics/temperature/add` | 是 |
+| 7 | 血氧 | oxygen | `/health/metrics/spo2/add` | 是 |
+| 其它 | 以字典为准 | checklist | — | 否 |
 
-5. **空态 / 失败**：清空任务列表，UI 展示「今日暂无健康任务」；不回落 mock。
+跳转前置条件：字典中存在该 `value` **且** 上表配置了非空 `actionRoute`。`category` / `shortTitle` 优先字典 `name`；`skipUrl` 以 `/` 开头时优先，但不可跳转 type 仍不跳转。
+
+5. **mealType**（Apifox）：1 空腹 / 2 早餐前 / 3 午餐前 / 4 午餐后 / 5 晚餐前 / 6 晚餐后1小时 / 7 晚餐后2小时 / 8 睡前；优先字典 `glucosePeriod`，否则 `mealType`，再回落硬编码表。
+
+6. **空态 / 失败**：清空任务列表，UI 展示「今日暂无健康任务」；不回落 mock。
 
 6. **为何现在每次都打接口（现状问题）**
 
@@ -119,5 +139,5 @@ Bridge 未就绪前：先保证「冷启动 + 跨日」；完成态先留通知�
 
 ## Open Questions
 
-- type=4 在富德侧是否仍为胎心：暂映射心率 H5；若产品确认另改。
+- 睡眠（字典 value `1`）评审通过后：在 `monitorTaskRoutes` 补路由并放开跳转。
 - 「完成」信号目前是否已有统一出口（原生 / H5）：实现时需确认挂点；文档先预留通知。

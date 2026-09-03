@@ -628,6 +628,17 @@ struct HealthMetricDisplayItem: Equatable {
             dietSport: dietSport
         )
     }
+
+    /// 是否有监测数据（无数据时 Hub 卡片展示「去记录」）
+    var hasMonitorData: Bool {
+        if let dietSport {
+            let intake = dietSport.intakeText.trimmingCharacters(in: .whitespacesAndNewlines)
+            let consume = dietSport.consumeText.trimmingCharacters(in: .whitespacesAndNewlines)
+            return intake != "--" || consume != "--"
+        }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty && trimmed != "--"
+    }
 }
 
 /// 首页快捷入口展示模型
@@ -662,6 +673,25 @@ enum MonitorCardDisplayMapper {
         case 12: return "/supplement"
         case 13: return "/spo2"
         default: return "/health/metrics/\(metricKey(for: cardType))"
+        }
+    }
+
+    /// 无数据时「去记录」跳转：优先录入页，不支持录入则回退指标首页
+    static func recordRoute(for item: HealthMetricDisplayItem) -> String {
+        switch item.cardType {
+        case 11: return "/medication"
+        case 12: return "/supplement"
+        case 13: return "/spo2"
+        case 10: return "/health/metrics/exercise/add-diet"
+        default:
+            let key = item.metricKey
+            let addable: Set<String> = [
+                "blood-pressure", "blood-sugar", "weight", "heart-rate", "temperature", "spo2",
+            ]
+            if addable.contains(key) {
+                return "/health/metrics/\(key)/add"
+            }
+            return route(for: item.cardType)
         }
     }
 

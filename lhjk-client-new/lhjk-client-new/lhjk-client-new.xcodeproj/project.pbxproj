@@ -83,6 +83,8 @@
 		A580F4083004D8650014B443 /* PackageDetailCarouselSlideCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A580F3F53004D8650014B443 /* PackageDetailCarouselSlideCell.swift */; };
 		A580F4093004D8650014B443 /* PackageDetailTabBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A580F3FE3004D8650014B443 /* PackageDetailTabBarView.swift */; };
 		A580F40A3004D8650014B443 /* PackageDetailInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A580F3FC3004D8650014B443 /* PackageDetailInfoView.swift */; };
+		A5843022304827BE00151DFD /* DailyTaskCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A584301F304827BE00151DFD /* DailyTaskCardView.swift */; };
+		A5843023304827BE00151DFD /* DailyTasksHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5843020304827BE00151DFD /* DailyTasksHeroView.swift */; };
 		A590FB1A2FEA2F6E0056EF52 /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB172FEA2F6E0056EF52 /* UserService.swift */; };
 		A590FB1B2FEA2F6E0056EF52 /* UserServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB182FEA2F6E0056EF52 /* UserServiceProtocol.swift */; };
 		A590FB1C2FEA2F6E0056EF52 /* UserModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A590FB152FEA2F6E0056EF52 /* UserModels.swift */; };
@@ -277,6 +279,10 @@
 		A5B1FB33300A022F0039B16C /* ShoppingCartModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB31300A022F0039B16C /* ShoppingCartModels.swift */; };
 		A5B1FB34300A022F0039B16C /* ShoppingCartService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB32300A022F0039B16C /* ShoppingCartService.swift */; };
 		A5B48010302DA29400319851 /* NotificationMessageMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B4800F302DA29400319851 /* NotificationMessageMapper.swift */; };
+		A5B5615B304916A600B8259D /* MedicalReportModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B56159304916A600B8259D /* MedicalReportModels.swift */; };
+		A5B5615C304916A600B8259D /* MedicalReportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B5615A304916A600B8259D /* MedicalReportService.swift */; };
+		A5B5615F30491A3200B8259D /* QuestionnaireModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B5615D30491A3200B8259D /* QuestionnaireModels.swift */; };
+		A5B5616030491A3200B8259D /* QuestionnaireService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B5615E30491A3200B8259D /* QuestionnaireService.swift */; };
 		A5B77A5E302B24F70054B2C4 /* FundePageURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B77A5D302B24F70054B2C4 /* FundePageURL.swift */; };
 		A5BD9DE430199326008C44FC /* TabHubBrandHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DE230199326008C44FC /* TabHubBrandHeaderView.swift */; };
 		A5BD9DEA3019A316008C44FC /* OKOKV3PacketParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DE73019A316008C44FC /* OKOKV3PacketParser.swift */; };
@@ -459,6 +465,8 @@
 		A580F3FD3004D8650014B443 /* PackageDetailOrderBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageDetailOrderBarView.swift; sourceTree = "<group>"; };
 		A580F3FE3004D8650014B443 /* PackageDetailTabBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageDetailTabBarView.swift; sourceTree = "<group>"; };
 		A580F3FF3004D8650014B443 /* PackageDetailTierPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageDetailTierPickerView.swift; sourceTree = "<group>"; };
+		A584301F304827BE00151DFD /* DailyTaskCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyTaskCardView.swift; sourceTree = "<group>"; };
+		A5843020304827BE00151DFD /* DailyTasksHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyTasksHeroView.swift; sourceTree = "<group>"; };
 		A590FB152FEA2F6E0056EF52 /* UserModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserModels.swift; sourceTree = "<group>"; };
 		A590FB162FEA2F6E0056EF52 /* UserRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRoutes.swift; sourceTree = "<group>"; };
 		A590FB172FEA2F6E0056EF52 /* UserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserService.swift; sourceTree = "<group>"; };
@@ -654,6 +662,10 @@
 		A5B1FB31300A022F0039B16C /* ShoppingCartModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShoppingCartModels.swift; path = BLL/Service/ShoppingCartModels.swift; sourceTree = "<group>"; };
 		A5B1FB32300A022F0039B16C /* ShoppingCartService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShoppingCartService.swift; path = BLL/Service/ShoppingCartService.swift; sourceTree = "<group>"; };
 		A5B4800F302DA29400319851 /* NotificationMessageMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NotificationMessageMapper.swift; path = DAL/IM/NotificationMessageMapper.swift; sourceTree = "<group>"; };
+		A5B56159304916A600B8259D /* MedicalReportModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MedicalReportModels.swift; path = BLL/Health/MedicalReportModels.swift; sourceTree = "<group>"; };
+		A5B5615A304916A600B8259D /* MedicalReportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MedicalReportService.swift; path = BLL/Health/MedicalReportService.swift; sourceTree = "<group>"; };
+		A5B5615D30491A3200B8259D /* QuestionnaireModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = QuestionnaireModels.swift; path = BLL/Service/QuestionnaireModels.swift; sourceTree = "<group>"; };
+		A5B5615E30491A3200B8259D /* QuestionnaireService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = QuestionnaireService.swift; path = BLL/Service/QuestionnaireService.swift; sourceTree = "<group>"; };
 		A5B77A5D302B24F70054B2C4 /* FundePageURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FundePageURL.swift; path = Other/Common/FundePageURL.swift; sourceTree = "<group>"; };
 		A5BD9DE230199326008C44FC /* TabHubBrandHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabHubBrandHeaderView.swift; sourceTree = "<group>"; };
 		A5BD9DE53019A316008C44FC /* BLEDeviceHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BLEDeviceHandler.swift; path = DAL/Bluetooth/BLEDeviceHandler.swift; sourceTree = "<group>"; };
@@ -1058,6 +1070,15 @@
 				A580F3FD3004D8650014B443 /* PackageDetailOrderBarView.swift */,
 				A580F3FE3004D8650014B443 /* PackageDetailTabBarView.swift */,
 				A580F3FF3004D8650014B443 /* PackageDetailTierPickerView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A5843021304827BE00151DFD /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A584301F304827BE00151DFD /* DailyTaskCardView.swift */,
+				A5843020304827BE00151DFD /* DailyTasksHeroView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -2057,6 +2078,7 @@
 		A5BD9DFE3019FF6D008C44FC /* DailyTasks */ = {
 			isa = PBXGroup;
 			children = (
+				A5843021304827BE00151DFD /* Components */,
 				A5BD9DFB3019FF6D008C44FC /* ViewModels */,
 				A5BD9DFC3019FF6D008C44FC /* DailyHealthTask.swift */,
 				A5BD9DFD3019FF6D008C44FC /* DailyTasksViewController.swift */,
@@ -2303,6 +2325,8 @@
 		B64D5D28AFB9110FDD54A8D6 /* Health */ = {
 			isa = PBXGroup;
 			children = (
+				A5B56159304916A600B8259D /* MedicalReportModels.swift */,
+				A5B5615A304916A600B8259D /* MedicalReportService.swift */,
 				A5BDA39930357D3C00E306EB /* EquipmentBindModels.swift */,
 				A5BDA39A30357D3C00E306EB /* EquipmentBindService.swift */,
 				A5CB0BC4302193440076FAFB /* HealthPageService.swift */,
@@ -2333,6 +2357,8 @@
 		C4193BC7FCD37A9D67D93F74 /* Service */ = {
 			isa = PBXGroup;
 			children = (
+				A5B5615D30491A3200B8259D /* QuestionnaireModels.swift */,
+				A5B5615E30491A3200B8259D /* QuestionnaireService.swift */,
 				A5C7B73E303E9196008D89A5 /* DictionaryCacheService.swift */,
 				A5F6AF2A3029E03C00D1BF74 /* ColumnContentCacheService.swift */,
 				A56DDEB130174B8E000E03A0 /* DoctorModels.swift */,
@@ -2756,6 +2782,8 @@
 				A590FCCF2FEA91170056EF52 /* AgreementCheckboxView.swift in Sources */,
 				A599A51D304039FA00D943EA /* CartItemCell.swift in Sources */,
 				A5C71AF930185CF6006EA79C /* VoucherListQuery.swift in Sources */,
+				A5843022304827BE00151DFD /* DailyTaskCardView.swift in Sources */,
+				A5843023304827BE00151DFD /* DailyTasksHeroView.swift in Sources */,
 				A590FCD02FEA91170056EF52 /* PeripheralCell.swift in Sources */,
 				A590FCD22FEA91170056EF52 /* PrivacySettingsViewController.swift in Sources */,
 				A590FCD32FEA91170056EF52 /* ForgotPasswordViewController.swift in Sources */,
@@ -2901,6 +2929,8 @@
 				A5E0892A304551E300D610FF /* GroupMemberCell.swift in Sources */,
 				A5D28F343046A14A00D5D437 /* CancelAccountComponents.swift in Sources */,
 				A56120C93010A31C00505C32 /* OrderTabCell.swift in Sources */,
+				A5B5615F30491A3200B8259D /* QuestionnaireModels.swift in Sources */,
+				A5B5616030491A3200B8259D /* QuestionnaireService.swift in Sources */,
 				A56120CA3010A31C00505C32 /* OrderDetailComponents.swift in Sources */,
 				A56DDEB330174B8E000E03A0 /* DoctorModels.swift in Sources */,
 				A56DDEB430174B8E000E03A0 /* DoctorService.swift in Sources */,
@@ -2985,6 +3015,8 @@
 				A5BD9DEB3019A316008C44FC /* OKOKBroadcastScaleHandler.swift in Sources */,
 				A5D28F32304685EF00D5D437 /* ChangePhoneComponents.swift in Sources */,
 				A5CB0BCA3021935F0076FAFB /* MetricCardEditViewModel.swift in Sources */,
+				A5B5615B304916A600B8259D /* MedicalReportModels.swift in Sources */,
+				A5B5615C304916A600B8259D /* MedicalReportService.swift in Sources */,
 				A5CB0BCB3021935F0076FAFB /* MetricCardEditViewController.swift in Sources */,
 				A5BD9DEC3019A316008C44FC /* BLEDeviceHandler.swift in Sources */,
 				A5A6F5092FFF7BBD0065C921 /* VideoBubbleCell.swift in Sources */,

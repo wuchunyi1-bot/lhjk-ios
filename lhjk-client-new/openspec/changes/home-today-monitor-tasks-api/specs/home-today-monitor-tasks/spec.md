@@ -32,13 +32,26 @@
 
 - **WHEN** 用户点击未完成任务「去完成」
 - **THEN** 打开对应体征 **H5 录入（add）** 页，而非指标展示首页
-- **AND** 默认按 `type` 映射：
-  - `1` → `/health/metrics/blood-sugar/add`（`#/blood-sugar/add`）
-  - `2` → `/health/metrics/blood-pressure/add`（`#/blood-pressure/add`）
-  - `3` → `/health/metrics/weight/add`（`#/weight/add`）
-  - `4` → `/health/metrics/heart-rate/add`（`#/heart-rate/add`）
-  - 其它 → `/health/metrics`
-- **AND** 若 `skipUrl` 以 `/` 开头：优先使用；若其为指标首页路径（`/health/metrics/{key}` 无子路径），SHALL 改写为同指标的 `/add` 路径后再跳转
+- **AND** 默认按字典 `monitorType.value` 映射（**非** Apifox 文档枚举）：
+  - `2` → `/health/metrics/blood-pressure/add`
+  - `3` → `/health/metrics/exercise/home`
+  - `4` → `/health/metrics/weight/add`
+  - `5` → `/health/metrics/blood-sugar/add`
+  - `6` → `/health/metrics/temperature/add`
+  - `7` → `/health/metrics/spo2/add`
+  - `1`（睡眠）及其它未配置路由的 value → 不跳转
+- **AND** 若 `skipUrl` 以 `/` 开头且 type 可跳转：优先使用；若其为指标首页路径（`/health/metrics/{key}` 无子路径），SHALL 改写为同指标的 `/add` 路径后再跳转
+
+#### Scenario: 扩展字段展示
+
+- **WHEN** 任务含 `mealType`
+- **THEN** 详情页 detailRows 展示「餐次」；首页任务行 `extraTags` 含餐次文案
+- **WHEN** `taskNumber > 1`
+- **THEN** 展示「今日进度」`completeTaskNumber/taskNumber`
+- **WHEN** `pointsTotal > 0`
+- **THEN** 展示「今日积分」`pointsEarned/pointsTotal`
+- **WHEN** `monitorSpecification` 非空
+- **THEN** 详情「监测说明」优先使用该字段，否则使用本地 type 默认文案
 
 #### Scenario: 失败与空数据
 

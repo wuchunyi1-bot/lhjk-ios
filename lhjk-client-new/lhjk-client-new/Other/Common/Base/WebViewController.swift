@@ -672,9 +672,7 @@ private extension WebViewController {
             return "\(url.scheme ?? "unknown")://\(url.host ?? "unknown")"
         }
 
-        // 保留 `_t` 便于确认缓存穿透参数；脱敏 token 等敏感 query。
-        let cacheBust = components.queryItems?.first(where: { $0.name == "_t" })
-        components.queryItems = cacheBust.map { [$0] }
+        components.queryItems = nil
 
         if let fragment = components.fragment {
             let pathOnly = fragment

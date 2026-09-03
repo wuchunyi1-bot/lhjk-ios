@@ -14,6 +14,7 @@ final class MetricCardCell: UICollectionViewCell {
     private let valueLabel = UILabel()
     private let unitLabel = UILabel()
     private let timeLabel = UILabel()
+    private let recordButton = UIButton(type: .system)
 
     private let dietIntakeCaption = UILabel()
     private let dietIntakeValue = UILabel()
@@ -26,6 +27,7 @@ final class MetricCardCell: UICollectionViewCell {
 
     private var appliedLayoutScale: CGFloat = 1
     private var isDietLayout = false
+    private var showsRecordButton = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -47,6 +49,14 @@ final class MetricCardCell: UICollectionViewCell {
         valueLabel.numberOfLines = 2
         unitLabel.textColor = UIColor(hexString: "#717885")
         timeLabel.textColor = UIColor(hexString: "#717885")
+
+        recordButton.setTitle("去记录", for: .normal)
+        recordButton.setTitleColor(.fdPrimary, for: .normal)
+        recordButton.backgroundColor = UIColor(hexString: "#FFF0E0")
+        recordButton.layer.cornerRadius = 9
+        recordButton.contentEdgeInsets = UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)
+        recordButton.isUserInteractionEnabled = false
+        recordButton.isHidden = true
 
         dietIntakeCaption.text = "今日摄入"
         dietIntakeCaption.textColor = UIColor(hexString: "#717885")
@@ -92,7 +102,7 @@ final class MetricCardCell: UICollectionViewCell {
         hideDietRow()
 
         [
-            watermark, iconView, badgeLabel, titleLabel, valueLabel, unitLabel, timeLabel, dietRow,
+            watermark, iconView, badgeLabel, titleLabel, valueLabel, unitLabel, timeLabel, recordButton, dietRow,
         ].forEach(contentView.addSubview)
 
         watermark.snp.makeConstraints {
@@ -155,7 +165,9 @@ final class MetricCardCell: UICollectionViewCell {
         }
 
         let trimmedStatus = status.trimmingCharacters(in: .whitespacesAndNewlines)
-        badgeLabel.isHidden = trimmedStatus.isEmpty
+        showsRecordButton = Self.shouldShowRecordButton(value: value, dietSport: dietSport)
+        recordButton.isHidden = !showsRecordButton
+        badgeLabel.isHidden = trimmedStatus.isEmpty || showsRecordButton
         badgeLabel.text = trimmedStatus
         switch statusType {
         case "warning":
@@ -171,12 +183,13 @@ final class MetricCardCell: UICollectionViewCell {
 
         isDietLayout = dietSport != nil
         titleLabel.text = label
+
         valueLabel.text = value
         unitLabel.text = unit
         timeLabel.text = time
         timeLabel.isHidden = time.isEmpty
 
-        if let dietSport {
+        if let dietSport, !showsRecordButton {
             titleLabel.isHidden = false
             valueLabel.isHidden = true
             unitLabel.isHidden = true
@@ -187,6 +200,11 @@ final class MetricCardCell: UICollectionViewCell {
             dietIntakeValue.text = dietSport.intakeText
             dietConsumeValue.text = dietSport.consumeText
             dietRingView.configure(remainingText: dietSport.remainingText, progress: dietSport.progress)
+        } else if showsRecordButton {
+            titleLabel.isHidden = false
+            valueLabel.isHidden = false
+            unitLabel.isHidden = true
+            hideDietRow()
         } else {
             titleLabel.isHidden = false
             valueLabel.isHidden = false
@@ -218,6 +236,14 @@ final class MetricCardCell: UICollectionViewCell {
         valueLabel.font = .fdFont(ofSize: Design.valueFontSize * scale, weight: .medium)
         unitLabel.font = .fdFont(ofSize: Design.unitFontSize * scale, weight: .regular)
         timeLabel.font = .fdFont(ofSize: Design.timeFontSize * scale, weight: .regular)
+        recordButton.titleLabel?.font = .fdFont(ofSize: Design.badgeFontSize * scale, weight: .regular)
+        recordButton.layer.cornerRadius = Design.badgeCornerRadius * scale
+        recordButton.contentEdgeInsets = UIEdgeInsets(
+            top: Design.badgePadding.top * scale,
+            left: Design.badgePadding.left * scale,
+            bottom: Design.badgePadding.bottom * scale,
+            right: Design.badgePadding.right * scale
+        )
 
         dietIntakeCaption.font = .fdFont(ofSize: Design.dietCaptionFontSize * scale, weight: .regular)
         dietConsumeCaption.font = .fdFont(ofSize: Design.dietCaptionFontSize * scale, weight: .regular)
@@ -241,6 +267,10 @@ final class MetricCardCell: UICollectionViewCell {
             $0.top.trailing.equalToSuperview().inset(inset)
             $0.height.equalTo(Design.badgeHeight * scale)
         }
+        recordButton.snp.remakeConstraints {
+            $0.top.trailing.equalToSuperview().inset(inset)
+            $0.height.equalTo(Design.badgeHeight * scale)
+        }
         timeLabel.snp.remakeConstraints {
             $0.leading.equalToSuperview().inset(inset)
             $0.bottom.equalToSuperview().inset(timeBottomInset)
@@ -250,7 +280,7 @@ final class MetricCardCell: UICollectionViewCell {
             }
         }
 
-        if isDietLayout {
+        if isDietLayout && !showsRecordButton {
             titleLabel.snp.remakeConstraints {
                 $0.leading.equalToSuperview().inset(inset)
                 $0.top.equalTo(iconView.snp.bottom).offset(iconTitleGap)
@@ -302,6 +332,16 @@ final class MetricCardCell: UICollectionViewCell {
         dietRightStack.isHidden = true
         dietRingView.isHidden = true
         dietRow.isHidden = true
+    }
+
+    private static func shouldShowRecordButton(value: String, dietSport: DietSportCardDisplay?) -> Bool {
+        if let dietSport {
+            let intake = dietSport.intakeText.trimmingCharacters(in: .whitespacesAndNewlines)
+            let consume = dietSport.consumeText.trimmingCharacters(in: .whitespacesAndNewlines)
+            return intake == "--" && consume == "--"
+        }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty || trimmed == "--"
     }
 
     /// 背景图：服务端 `backgroundUrl` → 本地 `metric_*` → 仅底色
@@ -362,6 +402,8 @@ final class MetricCardCell: UICollectionViewCell {
         iconView.image = nil
         badgeLabel.text = nil
         badgeLabel.isHidden = true
+        showsRecordButton = false
+        recordButton.isHidden = true
         isDietLayout = false
         dietIntakeValue.text = nil
         dietConsumeValue.text = nil

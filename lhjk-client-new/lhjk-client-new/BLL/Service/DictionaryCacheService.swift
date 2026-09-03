@@ -114,16 +114,62 @@ final class DictionaryCacheService {
     // MARK: - 健康监测任务（仅路由跳转使用字典，其它模块不变）
 
     func isNavigableMonitorTaskType(_ type: Int?) -> Bool {
-        guard let type, let route = monitorTaskActionRoute(type) else { return false }
-        return !route.isEmpty
+        !resolveMonitorTaskActionRoute(type: type, logContext: nil).isEmpty
     }
 
+    /// 仅字典 `monitorType` + 本地路由表匹配；不打 log 时 `logContext=nil`
     func monitorTaskActionRoute(_ type: Int?) -> String? {
-        guard let type else { return nil }
-        guard enabledChildren(for: .monitorType).contains(where: {
-            Int(normalizedValue($0.value)) == type
-        }) else { return nil }
-        return Self.monitorTaskRoutes[type]
+        let route = resolveMonitorTaskActionRoute(type: type, logContext: nil)
+        return route.isEmpty ? nil : route
+    }
+
+    /// 解析监测任务跳转路由：服务端 `monitorType` 字典优先；字典未命中或未同步时用本地路由表兜底
+    @discardableResult
+    func resolveMonitorTaskActionRoute(type: Int?, logContext: String?) -> String {
+        let tag = "[DictionaryCache][monitorTaskRoute]"
+        let ctx = logContext.map { " \($0)" } ?? ""
+        guard let type else {
+            if logContext != nil { print("\(tag)\(ctx) type=nil → empty") }
+            return ""
+        }
+
+        let children = enabledChildren(for: .monitorType)
+        let dictSummary = children.compactMap { child -> String? in
+            let value = normalizedValue(child.value)
+            guard !value.isEmpty else { return nil }
+            let name = child.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return name.isEmpty ? value : "\(value):\(name)"
+        }
+        let localRoute = Self.monitorTaskRoutes[type]
+        let inServerDict = children.contains(where: { Int(normalizedValue($0.value)) == type })
+
+        if logContext != nil {
+            print(
+                "\(tag)\(ctx) lookup type=\(type) dictLoaded=\(!children.isEmpty) " +
+                "inServerDict=\(inServerDict) localRoute=\(localRoute ?? "nil") " +
+                "dictChildren=[\(dictSummary.joined(separator: ", "))]"
+            )
+        }
+
+        // ① 服务端字典已加载且包含该 type → 用本地路由表（字典管 type/name，路由表管 path）
+        if inServerDict, let route = localRoute, !route.isEmpty {
+            if logContext != nil { print("\(tag)\(ctx) type=\(type) server dict ✓ → \(route)") }
+            return route
+        }
+
+        // ② 字典未同步 / 字典无该 type → 本地路由表兜底
+        if let route = localRoute, !route.isEmpty {
+            if logContext != nil {
+                let reason = children.isEmpty ? "dict not loaded" : "type not in server dict"
+                print("\(tag)\(ctx) type=\(type) local fallback (\(reason)) → \(route)")
+            }
+            return route
+        }
+
+        if logContext != nil {
+            print("\(tag)\(ctx) type=\(type) no route in server dict nor local table → empty")
+        }
+        return ""
     }
 
     func monitorTaskDisplayName(_ type: Int?) -> String? {
@@ -132,7 +178,9 @@ final class DictionaryCacheService {
 
   // MARK: - Private
 
+  /// 本地 `monitorType.value` → App 路由（字典无条目或未同步时的兜底；字典有 type 时同样走此表）
     private static let monitorTaskRoutes: [Int: String] = [
+        1: "/health/metrics/sleep",
         2: "/health/metrics/blood-pressure/add",
         3: "/health/metrics/exercise/home",
         4: "/health/metrics/weight/add",

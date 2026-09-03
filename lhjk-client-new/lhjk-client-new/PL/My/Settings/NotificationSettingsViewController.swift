@@ -146,7 +146,7 @@ final class NotificationSettingsViewController: BaseViewController {
         descLabel.numberOfLines = 0
         descLabel.isUserInteractionEnabled = false
 
-        let chevron = UIImageView(image: UIImage(named: "settings_chevron"))
+        let chevron = UIImageView(image: UIImage(named: "order_confirm_arrow_right"))
         chevron.contentMode = .scaleAspectFit
         chevron.isUserInteractionEnabled = false
 

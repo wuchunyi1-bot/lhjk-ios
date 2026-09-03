@@ -206,12 +206,11 @@ final class HomeViewController: BaseViewController {
             cell.configure(
                 previewTasks: viewModel.taskPreview,
                 doneCount: viewModel.taskDoneCount,
-                totalCount: viewModel.taskTotalCount
+                totalCount: viewModel.taskTotalCount,
+                earnedPoints: viewModel.taskEarnedPoints
             )
             cell.onTaskAction = { task in
-                let route = task.actionRoute.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !route.isEmpty else { return }
-                Router.shared.push(route)
+                task.pushMonitorTaskRoute(source: "HomeTaskCard")
             }
             cell.onViewAll = {
                 Router.shared.push("/home/tasks")

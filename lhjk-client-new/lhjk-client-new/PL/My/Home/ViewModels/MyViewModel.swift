@@ -45,14 +45,20 @@ final class MyViewModel: ObservableObject {
 
     private let userManager: UserManager
     private let userService: UserService
+    private let medicalReportService: MedicalReportService
+    private let questionnaireService: QuestionnaireService
     private var cancellables = Set<AnyCancellable>()
 
     init(
         userManager: UserManager = AppContainer.shared.userManager,
-        userService: UserService = AppContainer.shared.userService
+        userService: UserService = AppContainer.shared.userService,
+        medicalReportService: MedicalReportService = AppContainer.shared.medicalReportService,
+        questionnaireService: QuestionnaireService = AppContainer.shared.questionnaireService
     ) {
         self.userManager = userManager
         self.userService = userService
+        self.medicalReportService = medicalReportService
+        self.questionnaireService = questionnaireService
         self.memberAssets = Self.defaultMemberAssets
         self.fulfillmentStats = Self.defaultFulfillmentStats
         self.healthManagement = Self.defaultHealthManagement
@@ -73,17 +79,60 @@ final class MyViewModel: ObservableObject {
         avatarURL = user.imageUrl
     }
 
-    /// 刷新首页概览（`GET /v1/users/getUserCenterOverview`）
+    /// 刷新 Hub 概览（个人中心 + 健康管理统计）
     func refreshOverview() {
         Task { [weak self] in
             guard let self else { return }
-            do {
-                let overview = try await userService.getUserCenterOverview()
-                await MainActor.run {
+
+            async let overviewResult: UserCenterOverviewVO? = {
+                do {
+                    return try await self.userService.getUserCenterOverview()
+                } catch {
+                    print("[MyViewModel] getUserCenterOverview ✗ \(error.localizedDescription)")
+                    return nil
+                }
+            }()
+
+            async let medicalReportStatsResult: MedicalReportStatisticsVO? = {
+                do {
+                    return try await self.medicalReportService.getMedicalReportStatistics(
+                        userId: self.userManager.currentUser?.id
+                    )
+                } catch {
+                    print("[MyViewModel] getMedicalReportStatistics ✗ \(error.localizedDescription)")
+                    return nil
+                }
+            }()
+
+            async let schoolExamCountResult: [ExamUserListCountVO]? = {
+                do {
+                    return try await self.questionnaireService.getSchoolExamUserListCount()
+                } catch {
+                    print("[MyViewModel] getSchoolExamUserListCount ✗ \(error.localizedDescription)")
+                    return nil
+                }
+            }()
+
+            let overview = await overviewResult
+            let medicalReportStats = await medicalReportStatsResult
+            let schoolExamCounts = await schoolExamCountResult
+
+            await MainActor.run {
+                if let overview {
                     self.applyOverview(overview)
                 }
-            } catch {
-                print("[MyViewModel] getUserCenterOverview ✗ \(error.localizedDescription)")
+                if let medicalReportStats {
+                    self.updateHealthManagementDetail(
+                        label: "体检报告单",
+                        detail: medicalReportStats.hubDetailText
+                    )
+                }
+                if let schoolExamCounts {
+                    self.updateHealthManagementDetail(
+                        label: "健康测评",
+                        detail: schoolExamCounts.hubHealthEvaluationDetail
+                    )
+                }
             }
         }
     }
@@ -123,6 +172,22 @@ final class MyViewModel: ObservableObject {
             return copy
         }
     }
+
+    private func updateHealthManagementDetail(label: String, detail: String?) {
+        healthManagement = FuncGroup(
+            title: healthManagement.title,
+            rows: healthManagement.rows.map { row in
+                guard row.label == label else { return row }
+                return FuncRow(
+                    icon: row.icon,
+                    color: row.color,
+                    label: row.label,
+                    detail: detail,
+                    route: row.route
+                )
+            }
+        )
+    }
 }
 
 // MARK: - Defaults (Figma 3594:8470 / me.json)
@@ -151,12 +216,12 @@ extension MyViewModel {
     /// 对齐 Figma 3594:8653 与 me.json `healthManagementActions`
     static var defaultHealthManagement: FuncGroup {
         FuncGroup(title: "健康管理", rows: [
-            FuncRow(icon: "me_health_report_icon", color: UIColor(hexString: "#1F2942"), label: "健康报告", detail: "周报/月报", route: "/me/health-report"),
-            FuncRow(icon: "me_medical_report_icon", color: UIColor(hexString: "#1F2942"), label: "体检报告单", detail: "3份已上传", route: "/me/medical-reports"),
-            FuncRow(icon: "me_monitoring_plan_icon", color: UIColor(hexString: "#1F2942"), label: "监测方案", detail: "当前方案生效中", route: "/me/monitoring-plan"),
-            FuncRow(icon: "me_diet_plan_icon", color: UIColor(hexString: "#1F2942"), label: "饮食方案", detail: "可按档案生成", route: "/me/diet-plan"),
-            FuncRow(icon: "me_health_assessment_icon", color: UIColor(hexString: "#1F2942"), label: "健康评估", detail: "含健康方案", route: "/me/health-assessment"),
-            FuncRow(icon: "me_health_evaluation_icon", color: UIColor(hexString: "#1F2942"), label: "健康测评", detail: "2项待完成", route: "/me/health-evaluations"),
+            FuncRow(icon: "me_health_report_icon", color: UIColor(hexString: "#1F2942"), label: "健康报告", detail: nil, route: "/me/health-report"),
+            FuncRow(icon: "me_medical_report_icon", color: UIColor(hexString: "#1F2942"), label: "体检报告单", detail: nil, route: "/me/medical-reports"),
+            FuncRow(icon: "me_monitoring_plan_icon", color: UIColor(hexString: "#1F2942"), label: "监测方案", detail: nil, route: "/me/monitoring-plan"),
+            FuncRow(icon: "me_diet_plan_icon", color: UIColor(hexString: "#1F2942"), label: "饮食方案", detail: nil, route: "/me/diet-plan"),
+            FuncRow(icon: "me_health_assessment_icon", color: UIColor(hexString: "#1F2942"), label: "健康评估", detail: nil, route: "/me/health-assessment"),
+            FuncRow(icon: "me_health_evaluation_icon", color: UIColor(hexString: "#1F2942"), label: "健康测评", detail: nil, route: "/me/health-evaluations"),
         ])
     }
 }

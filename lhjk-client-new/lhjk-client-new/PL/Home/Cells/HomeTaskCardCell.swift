@@ -1,10 +1,13 @@
 import SnapKit
 import UIKit
 
-/// 今日健康任务卡 — 对齐 Figma 3444:6583
+/// 今日健康任务卡 — 对齐 Figma 3782:15108
 final class HomeTaskCardCell: UITableViewCell {
 
     static let reuseID = "HomeTaskCardCell"
+
+    /// 设计稿 @3x 957×228 → pt 宽高比
+    private static let progressBannerFallbackRatio: CGFloat = 228.0 / 957.0
 
     var onTaskAction: ((DailyHealthTask) -> Void)?
     var onViewAll: (() -> Void)?
@@ -54,8 +57,8 @@ final class HomeTaskCardCell: UITableViewCell {
     private let bannerImageView: UIImageView = {
         let iv = UIImageView()
         iv.image = UIImage(named: "home_task_progress_banner")
-        iv.contentMode = .scaleAspectFill
-        iv.clipsToBounds = true
+        iv.contentMode = .scaleAspectFit
+        iv.clipsToBounds = false
         return iv
     }()
 
@@ -67,18 +70,17 @@ final class HomeTaskCardCell: UITableViewCell {
         return v
     }()
 
-    private let progressFillView: StripedGradientProgressFillView = {
-        let v = StripedGradientProgressFillView()
-        return v
-    }()
+    private let progressFillView = StripedGradientProgressFillView()
 
     private let progressCountLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 16, weight: .medium)
+        l.font = .fdFont(ofSize: 14, weight: .medium)
         l.textColor = UIColor(hexString: "#FF7A50")
         l.textAlignment = .right
         return l
     }()
+
+    private var bannerHeightConstraint: Constraint?
 
     // MARK: - Task Stack
 
@@ -103,6 +105,11 @@ final class HomeTaskCardCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        updateBannerImageHeightIfNeeded()
+    }
+
     private func setupHierarchy() {
         contentView.addSubview(cardView)
 
@@ -117,6 +124,8 @@ final class HomeTaskCardCell: UITableViewCell {
 
         cardView.addSubview(contentStack)
 
+        bannerView.sendSubviewToBack(bannerImageView)
+
         moreButton.addTarget(self, action: #selector(viewAll), for: .touchUpInside)
     }
 
@@ -128,7 +137,7 @@ final class HomeTaskCardCell: UITableViewCell {
         }
 
         titleLabel.snp.makeConstraints {
-            $0.top.leading.equalToSuperview().inset(15)
+            $0.top.leading.equalToSuperview().inset(16)
         }
 
         moreButton.snp.makeConstraints {
@@ -136,26 +145,26 @@ final class HomeTaskCardCell: UITableViewCell {
             $0.trailing.equalToSuperview().inset(12)
         }
 
-        bannerView.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(12)
-            $0.leading.trailing.equalToSuperview().inset(12)
-            $0.height.equalTo(76)
+        bannerView.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(16)
+            make.leading.trailing.equalToSuperview().inset(12)
+            bannerHeightConstraint = make.height.equalTo(66).constraint
         }
 
-        bannerImageView.snp.makeConstraints {
-            $0.edges.equalToSuperview()
+        bannerImageView.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.height.equalTo(66)
         }
 
-        progressCountLabel.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(12)
-            $0.bottom.equalToSuperview().offset(-12)
+        progressCountLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(13)
+            make.trailing.equalToSuperview().inset(6)
         }
 
-        progressTrackView.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(12)
-            $0.centerY.equalTo(progressCountLabel)
-            $0.height.equalTo(8)
-            $0.trailing.equalTo(progressCountLabel.snp.leading).offset(-12)
+        progressTrackView.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(12)
+            make.bottom.equalToSuperview().offset(-12)
+            make.height.equalTo(8)
         }
 
         progressFillView.snp.makeConstraints {
@@ -170,19 +179,41 @@ final class HomeTaskCardCell: UITableViewCell {
         }
     }
 
+    private func updateBannerImageHeightIfNeeded() {
+        let bannerWidth = bannerView.bounds.width
+        guard bannerWidth > 1 else { return }
+
+        let imageSize = bannerImageView.image?.size
+        let imageHeight = BannerImageAspectLayout.height(
+            width: bannerWidth,
+            imageSize: imageSize,
+            fallbackRatio: Self.progressBannerFallbackRatio
+        )
+        let bannerHeight = max(66, imageHeight)
+        bannerHeightConstraint?.update(offset: bannerHeight)
+        bannerImageView.snp.updateConstraints { $0.height.equalTo(imageHeight) }
+    }
+
     func configure(
         previewTasks: [DailyHealthTask],
         doneCount: Int,
-        totalCount: Int
+        totalCount: Int,
+        earnedPoints: Int
     ) {
         contentStack.arrangedSubviews.forEach {
             contentStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
 
-        progressCountLabel.text = "\(doneCount)/\(max(totalCount, 0))"
+        progressCountLabel.text = Self.progressSummaryText(
+            doneCount: doneCount,
+            totalCount: totalCount,
+            earnedPoints: earnedPoints
+        )
 
-        let ratio: CGFloat = totalCount > 0 ? min(1.0, max(0.0, CGFloat(doneCount) / CGFloat(totalCount))) : 0.0
+        let ratio: CGFloat = totalCount > 0
+            ? min(1.0, max(0.0, CGFloat(doneCount) / CGFloat(totalCount)))
+            : 0.0
 
         if ratio <= 0 {
             progressFillView.isHidden = true
@@ -198,6 +229,8 @@ final class HomeTaskCardCell: UITableViewCell {
             }
             progressFillView.setNeedsDisplay()
         }
+
+        setNeedsLayout()
 
         if totalCount == 0 {
             let wrap = UIView()
@@ -219,6 +252,16 @@ final class HomeTaskCardCell: UITableViewCell {
         }
     }
 
+    private static func progressSummaryText(
+        doneCount: Int,
+        totalCount: Int,
+        earnedPoints: Int
+    ) -> String {
+        let progress = "\(doneCount)/\(max(totalCount, 0))"
+        guard earnedPoints > 0 else { return progress }
+        return "\(progress)｜+\(earnedPoints)分"
+    }
+
     private func buildTaskRow(_ task: DailyHealthTask) -> UIView {
         let row = UIView()
         row.backgroundColor = UIColor(hexString: "#FFF9F7")
@@ -230,37 +273,47 @@ final class HomeTaskCardCell: UITableViewCell {
         iconImageView.contentMode = .scaleAspectFit
         iconImageView.clipsToBounds = true
 
+        let titleRow = UIStackView()
+        titleRow.axis = .horizontal
+        titleRow.spacing = 6
+        titleRow.alignment = .center
+
         let title = UILabel()
         title.font = .fdFont(ofSize: 16, weight: .medium)
         title.textColor = .fdText
         title.text = task.shortTitle.isEmpty ? task.title : task.shortTitle
+        title.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let tagsStack = UIStackView()
-        tagsStack.axis = .horizontal
-        tagsStack.spacing = 6
-        tagsStack.alignment = .center
-
-        if !task.planTime.isEmpty {
-            tagsStack.addArrangedSubview(makeTimeTag(time: task.planTime))
+        titleRow.addArrangedSubview(title)
+        if let badge = makePointsBadge(points: task.rewardPoints) {
+            titleRow.addArrangedSubview(badge)
         }
 
-        let categoryText = task.category.isEmpty ? "监测任务" : task.category
-        tagsStack.addArrangedSubview(makeCategoryTag(text: categoryText))
+        let subtitle = UILabel()
+        subtitle.font = .fdFont(ofSize: 12, weight: .regular)
+        subtitle.textColor = UIColor(hexString: "#8591AB")
+        subtitle.numberOfLines = 2
+        let subtitleText = task.homeSubtitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        subtitle.text = subtitleText.isEmpty ? task.desc : subtitleText
 
         let action = UIButton(type: .system)
-        action.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
+        action.titleLabel?.font = .fdFont(ofSize: 12, weight: .medium)
         action.layer.cornerRadius = 14
         action.clipsToBounds = true
 
         if task.done {
             action.setTitle("已完成", for: .normal)
-            action.setTitleColor(UIColor(hexString: "#969799"), for: .normal)
-            action.backgroundColor = UIColor(hexString: "#F5F6F7")
+            action.setTitleColor(UIColor(hexString: "#FF7950"), for: .normal)
+            action.backgroundColor = .clear
+            action.layer.borderWidth = 0.5
+            action.layer.borderColor = UIColor(hexString: "#FF7950").cgColor
             action.isEnabled = false
         } else {
             action.setTitle("去完成", for: .normal)
             action.setTitleColor(.white, for: .normal)
             action.backgroundColor = UIColor(hexString: "#FF7950")
+            action.layer.borderWidth = 0
+            action.layer.borderColor = nil
             action.isEnabled = true
             action.addAction(UIAction { [weak self] _ in
                 self?.onTaskAction?(task)
@@ -268,12 +321,12 @@ final class HomeTaskCardCell: UITableViewCell {
         }
 
         row.addSubview(iconImageView)
-        row.addSubview(title)
-        row.addSubview(tagsStack)
+        row.addSubview(titleRow)
+        row.addSubview(subtitle)
         row.addSubview(action)
 
         row.snp.makeConstraints {
-            $0.height.equalTo(68)
+            $0.height.greaterThanOrEqualTo(68)
         }
 
         iconImageView.snp.makeConstraints {
@@ -289,77 +342,54 @@ final class HomeTaskCardCell: UITableViewCell {
             $0.height.equalTo(28)
         }
 
-        title.snp.makeConstraints {
-            $0.leading.equalTo(iconImageView.snp.trailing).offset(12)
-            $0.top.equalToSuperview().offset(14)
-            $0.trailing.lessThanOrEqualTo(action.snp.leading).offset(-8)
+        titleRow.snp.makeConstraints { make in
+            make.leading.equalTo(iconImageView.snp.trailing).offset(12)
+            make.top.equalToSuperview().offset(14)
+            make.trailing.lessThanOrEqualTo(action.snp.leading).offset(-8)
         }
 
-        tagsStack.snp.makeConstraints {
-            $0.leading.equalTo(title)
-            $0.top.equalTo(title.snp.bottom).offset(6)
-            $0.trailing.lessThanOrEqualTo(action.snp.leading).offset(-8)
+        subtitle.snp.makeConstraints { make in
+            make.leading.equalTo(titleRow)
+            make.top.equalTo(titleRow.snp.bottom).offset(4)
+            make.trailing.lessThanOrEqualTo(action.snp.leading).offset(-8)
+            make.bottom.lessThanOrEqualToSuperview().offset(-14)
         }
 
         return row
     }
 
-    private func makeTimeTag(time: String) -> UIView {
-        let tag = UIView()
-        tag.layer.cornerRadius = 4
-        tag.layer.borderWidth = 0.5
-        tag.layer.borderColor = UIColor(hexString: "#8591AB").withAlphaComponent(0.5).cgColor
+    private func makePointsBadge(points: Int?) -> UIView? {
+        guard let points, points > 0 else { return nil }
 
-        let icon = UIImageView(
-            image: UIImage(
-                systemName: "clock",
-                withConfiguration: UIImage.SymbolConfiguration(pointSize: 9, weight: .regular)
-            )
-        )
-        icon.tintColor = UIColor(hexString: "#8591AB")
-        icon.contentMode = .scaleAspectFit
+        let wrap = UIView()
+        wrap.setContentHuggingPriority(.required, for: .horizontal)
+        wrap.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let bg = UIImageView(image: UIImage(named: "home_task_goal"))
+        bg.contentMode = .scaleToFill
 
         let label = UILabel()
-        label.text = time
-        label.font = .fdFont(ofSize: 12, weight: .regular)
-        label.textColor = UIColor(hexString: "#8591AB")
+        label.text = "+\(points)"
+        label.font = .fdFont(ofSize: 12, weight: .semibold)
+        label.textColor = UIColor(hexString: "#FFAC00")
+        label.textAlignment = .left
 
-        tag.addSubview(icon)
-        tag.addSubview(label)
+        wrap.addSubview(bg)
+        wrap.addSubview(label)
 
-        icon.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(4)
+        wrap.snp.makeConstraints {
+            $0.height.equalTo(18)
+            $0.width.equalTo(44)
+        }
+        bg.snp.makeConstraints { $0.edges.equalToSuperview() }
+        // 背景图左侧为金币图标，数字略靠右（对齐 Figma 3782:15179 x≈21.5/44）
+        label.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(21)
+            $0.trailing.equalToSuperview().inset(3)
             $0.centerY.equalToSuperview()
-            $0.size.equalTo(10)
         }
 
-        label.snp.makeConstraints {
-            $0.leading.equalTo(icon.snp.trailing).offset(2)
-            $0.trailing.equalToSuperview().inset(4)
-            $0.top.bottom.equalToSuperview().inset(2)
-        }
-
-        return tag
-    }
-
-    private func makeCategoryTag(text: String) -> UIView {
-        let tag = UIView()
-        tag.layer.cornerRadius = 4
-        tag.layer.borderWidth = 0.5
-        tag.layer.borderColor = UIColor(hexString: "#FF7950").withAlphaComponent(0.5).cgColor
-
-        let label = UILabel()
-        label.text = text
-        label.font = .fdFont(ofSize: 12, weight: .regular)
-        label.textColor = UIColor(hexString: "#FF7950")
-
-        tag.addSubview(label)
-        label.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(6)
-            $0.top.bottom.equalToSuperview().inset(2)
-        }
-
-        return tag
+        return wrap
     }
 
     @objc private func viewAll() {
@@ -401,7 +431,6 @@ final class StripedGradientProgressFillView: UIView {
         ctx.addPath(clipPath.cgPath)
         ctx.clip()
 
-        // 1. 绘制水平线性渐变 (#FFA450 -> #FF7A50)
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let startColor = UIColor(hexString: "#FFA450").cgColor
         let endColor = UIColor(hexString: "#FF7A50").cgColor
@@ -418,7 +447,6 @@ final class StripedGradientProgressFillView: UIView {
             )
         }
 
-        // 2. 绘制半透明斜向螺旋纹/条纹 (#FFC7B5, 40% 不透明度)
         let stripeColor = UIColor(hexString: "#FFC7B5").withAlphaComponent(0.4)
         ctx.setFillColor(stripeColor.cgColor)
 

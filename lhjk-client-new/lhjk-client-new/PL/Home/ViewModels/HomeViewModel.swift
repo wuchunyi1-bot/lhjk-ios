@@ -290,6 +290,11 @@ final class HomeViewModel: ObservableObject {
     var taskDoneCount: Int { tasks.filter(\.done).count }
     var taskTotalCount: Int { tasks.count }
 
+    /// 今日已完成任务累计积分（按单次 `quantity` 汇总）
+    var taskEarnedPoints: Int {
+        tasks.filter(\.done).compactMap(\.rewardPoints).reduce(0, +)
+    }
+
     private static func mapTeamMember(_ vo: MyDoctorTeamVO) -> HomeTeamCardCell.Member? {
         let name = (vo.userName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return nil }

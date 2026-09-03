@@ -179,31 +179,15 @@ enum H5Config {
         authenticatedPageURL(path: "exchangeMall")
     }
 
-    /// 构建任意 H5 鉴权 URL：`{base}?_t={ts}#/{path}?token&platform=ios&...`
+    /// 构建任意 H5 鉴权 URL：`{base}#/{path}?token&platform=ios&...`
     /// 含套餐中间页 `package/bridge`（点击后经 `FundeBridge` 打开原生套餐详情）。
     static func authenticatedPageURL(path: String, extraQuery: [String: String] = [:]) -> URL {
         buildAuthenticatedURL(h5Path: path, extraQuery: extraQuery)
     }
 
-    /// 为联好健康 H5 域名补全 `?_t=` 时间戳（hash 前），避免遗漏入口未走 `buildAuthenticatedURL`。
+    /// 规范化 H5 URL 字符串（预留入口；当前不做额外 query 拼接）。
     static func normalizedH5URLString(_ raw: String) -> String {
-        guard let url = URL(string: raw),
-              let host = url.host?.lowercased(),
-              host.contains("lianhaojiankang.com") else {
-            return raw
-        }
-        guard !raw.contains("_t=") else { return raw }
-
-        let timestamp = cacheBustTimestamp()
-        if let hashRange = raw.range(of: "#") {
-            let prefix = String(raw[..<hashRange.lowerBound])
-            let suffix = String(raw[hashRange.lowerBound...])
-            let separator = prefix.contains("?") ? "&" : "?"
-            return "\(prefix)\(separator)_t=\(timestamp)\(suffix)"
-        }
-
-        let separator = raw.contains("?") ? "&" : "?"
-        return "\(raw)\(separator)_t=\(timestamp)"
+        raw
     }
 
     /// 资讯详情 H5：`#/content/detail?id={内容ID}&platform=ios`（本页接口无需登录，token 可选）
@@ -290,9 +274,7 @@ enum H5Config {
         }
 
         let normalizedPath = h5Path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        // Hash 路由必须以 `origin/?_t=...#/` 打开，避免 WebKit 缓存旧 index.html。
-        let timestamp = cacheBustTimestamp()
-        let origin = h5OriginBaseURLString(timestamp: timestamp)
+        let origin = h5OriginBaseURLString()
         let queryString = queryItems
             .map { key, value in
                 let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? key
@@ -307,7 +289,7 @@ enum H5Config {
         } else {
             urlString = "\(origin)#/\(normalizedPath)?\(queryString)"
         }
-        print("[H5Config] open _t=\(timestamp) path=#/\(normalizedPath) query=\(queryString)")
+        print("[H5Config] open path=#/\(normalizedPath) query=\(queryString)")
         return URL(string: urlString) ?? environment.baseURL
     }
 
@@ -325,15 +307,9 @@ enum H5Config {
         return formatter.string(from: Date())
     }
 
-    private static func h5OriginBaseURLString(timestamp: String? = nil) -> String {
+    private static func h5OriginBaseURLString() -> String {
         let raw = environment.baseURL.absoluteString
-        let base = raw.hasSuffix("/") ? String(raw.dropLast()) : raw
-        let ts = timestamp ?? cacheBustTimestamp()
-        return "\(base)/?_t=\(ts)"
-    }
-
-    private static func cacheBustTimestamp() -> String {
-        String(Int64(Date().timeIntervalSince1970 * 1000))
+        return raw.hasSuffix("/") ? String(raw.dropLast()) : raw
     }
 
     private static func accessToken() -> String? {

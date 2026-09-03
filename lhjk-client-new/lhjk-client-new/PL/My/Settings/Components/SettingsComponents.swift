@@ -34,7 +34,7 @@ enum SettingsStyle {
 
 enum SettingsIcons {
     static func chevron() -> UIImage? {
-        UIImage(named: "settings_chevron")
+        UIImage(named: "order_confirm_arrow_right")
     }
 
     static func note(size: CGFloat = 14) -> UIImage? {

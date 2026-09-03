@@ -9,7 +9,6 @@ final class HealthArchiveCardCell: UITableViewCell {
 
     private let card = UIView()
     private let titleLbl = UILabel()
-    private let missBadge = UILabel()
     private let missLabel = UILabel()
     private let progressTrackBg = UIView()
     private let barBg = UIView()
@@ -50,17 +49,11 @@ final class HealthArchiveCardCell: UITableViewCell {
         titleLbl.textColor = .fdText
         titleLbl.text = "健康档案完整度"
 
-        missBadge.text = "缺"
-        missBadge.font = .fdFont(ofSize: 12, weight: .medium)
-        missBadge.textColor = .white
-        missBadge.backgroundColor = UIColor(hexString: "#DF0340")
-        missBadge.textAlignment = .center
-        missBadge.layer.cornerRadius = 4
-        missBadge.clipsToBounds = true
-
         missLabel.font = .fdFont(ofSize: 14, weight: .regular)
         missLabel.textColor = UIColor(hexString: "#DF0340")
-        missLabel.text = "心电图/家族病史"
+        missLabel.numberOfLines = 1
+        missLabel.lineBreakMode = .byClipping
+        missLabel.text = "一份完整的健康档案，是做好自我健康管理的基础。"
 
         progressTrackBg.backgroundColor = UIColor(hexString: "#FDF6F3")
         progressTrackBg.layer.cornerRadius = 12
@@ -99,9 +92,12 @@ final class HealthArchiveCardCell: UITableViewCell {
             $0.centerY.equalToSuperview()
         }
 
-        footerLbl.numberOfLines = 1
+        footerLbl.font = .fdFont(ofSize: 12, weight: .regular)
+        footerLbl.textColor = .fdSubtext
+        footerLbl.numberOfLines = 2
+        footerLbl.text = "补齐基础健康信息，获得个性化健康建议"
 
-        completeBtn.setTitle("去补全", for: .normal)
+        completeBtn.setTitle("立即完善", for: .normal)
         completeBtn.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
         completeBtn.setTitleColor(.white, for: .normal)
         completeBtn.backgroundColor = .fdPrimary
@@ -114,9 +110,10 @@ final class HealthArchiveCardCell: UITableViewCell {
         illustView.alpha = 1.0
         illustView.isUserInteractionEnabled = false
 
-        // 插画沉底，进度条 / 文案压在上面（对齐 Figma 层级）
+        // 插画沉底，文案可压在插画之上
         card.addSubview(illustView)
-        [titleLbl, missBadge, missLabel, progressTrackBg, footerLbl, completeBtn].forEach(card.addSubview)
+        [titleLbl, missLabel, progressTrackBg, footerLbl, completeBtn].forEach(card.addSubview)
+        card.bringSubviewToFront(missLabel)
 
         illustView.snp.makeConstraints {
             $0.trailing.equalToSuperview().offset(-16)
@@ -127,20 +124,15 @@ final class HealthArchiveCardCell: UITableViewCell {
             $0.top.leading.equalToSuperview().inset(12)
             $0.trailing.lessThanOrEqualTo(illustView.snp.leading).offset(-4)
         }
-        missBadge.snp.makeConstraints {
+        missLabel.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(14)
             $0.top.equalTo(titleLbl.snp.bottom).offset(10)
-            $0.size.equalTo(14)
-        }
-        missLabel.snp.makeConstraints {
-            $0.leading.equalTo(missBadge.snp.trailing).offset(4)
-            $0.centerY.equalTo(missBadge)
-            $0.trailing.lessThanOrEqualTo(illustView.snp.leading).offset(-4)
+            $0.trailing.equalToSuperview().inset(12)
         }
         progressTrackBg.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(12)
             $0.trailing.equalToSuperview().inset(12)
-            $0.top.equalTo(missBadge.snp.bottom).offset(14)
+            $0.top.equalTo(missLabel.snp.bottom).offset(14)
             $0.height.equalTo(38)
         }
         footerLbl.snp.makeConstraints {
@@ -160,19 +152,6 @@ final class HealthArchiveCardCell: UITableViewCell {
     func configure(archiveProgress: Int) {
         currentProgress = archiveProgress
         pctLabel.text = "\(archiveProgress)"
-        let attr = NSMutableAttributedString(
-            string: "补全后 ",
-            attributes: [.font: UIFont.fdFont(ofSize: 14, weight: .regular), .foregroundColor: UIColor.fdSubtext]
-        )
-        attr.append(NSAttributedString(
-            string: "+20",
-            attributes: [.font: UIFont.fdFont(ofSize: 16, weight: .medium), .foregroundColor: UIColor.fdPrimary]
-        ))
-        attr.append(NSAttributedString(
-            string: " 健康分·解锁家族风险图谱",
-            attributes: [.font: UIFont.fdFont(ofSize: 14, weight: .regular), .foregroundColor: UIColor.fdSubtext]
-        ))
-        footerLbl.attributedText = attr
         setNeedsLayout()
     }
 

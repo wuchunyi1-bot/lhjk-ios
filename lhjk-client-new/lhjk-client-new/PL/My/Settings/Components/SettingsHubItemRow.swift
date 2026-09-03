@@ -122,7 +122,7 @@ final class SettingsHubItemRow: UIControl {
         descLabel.numberOfLines = 2
         descLabel.isUserInteractionEnabled = false
 
-        arrowView.image = UIImage(named: "settings_chevron")
+        arrowView.image = UIImage(named: "order_confirm_arrow_right")
         arrowView.contentMode = .scaleAspectFit
         arrowView.isUserInteractionEnabled = false
 

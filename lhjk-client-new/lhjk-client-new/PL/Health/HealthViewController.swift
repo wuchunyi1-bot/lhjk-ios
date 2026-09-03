@@ -185,10 +185,14 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
             cell.configure(metrics: viewModel.metrics)
             cell.onMetricTap = { [weak self] item in
                 guard let self else { return }
-                if FundePageURL.canOpen(item.pageUrl) {
-                    FundePageURL.open(item.pageUrl, title: item.label, from: self)
+                if item.hasMonitorData {
+                    if FundePageURL.canOpen(item.pageUrl) {
+                        FundePageURL.open(item.pageUrl, title: item.label, from: self)
+                    } else {
+                        Router.shared.push(self.viewModel.route(for: item))
+                    }
                 } else {
-                    Router.shared.push(self.viewModel.route(for: item))
+                    Router.shared.push(MonitorCardDisplayMapper.recordRoute(for: item))
                 }
             }
             cell.onEditTap = { Router.shared.push("/health/metrics/edit") }

@@ -177,6 +177,7 @@ App端/
 | # | Method | Path | Apifox 层级 | 调用位置 | Apifox（只读） |
 |---|--------|------|-------------|----------|----------------|
 | 36 | GET | `/v1/columnContent/getByCode` | `App端/内容/展示位内容设置管理` | `ColumnContentService` | [栏位内容](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/484052032e0.md) |
+| 36a | GET | `/v1/questionnaire/getSchoolExamUserListCount` | `App端/内容/测评问卷` | `QuestionnaireService` / `MyViewModel` | [测评记录数](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/500500978e0.md) |
 
 > `#36` Query `code`：服务 Hub Banner = `mall_advertisement`；首页 Banner = `home_banner_code`；首页金刚区 = `home_quickLink_code`；首页推荐健康套餐 = `home_healthService_code`；首页健康陪伴 = `home_news_code`。  
 > 缓存：`ColumnContentCacheService` — 冷启动预拉已知 code 写入内存；界面优先读缓存，未命中再请求；无 TTL，登出清空。  
@@ -200,6 +201,7 @@ App端/
 | 43 | GET | `/v1/monitorHealth/getMonitorCardList` | `App端/监测/体征监测卡片` | `HealthPageService` | [监测卡片列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657300e0.md) |
 | 44 | GET | `/v1/userMonitorCardConfig/getUserMonitorCardConfig` | `App端/监测/用户监测卡片配置` | `HealthPageService` | [查询卡片配置](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657299e0.md) |
 | 45 | POST | `/v1/userMonitorCardConfig/saveUserMonitorCardConfig` | `App端/监测/用户监测卡片配置` | `HealthPageService` | [保存卡片配置](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657298e0.md) |
+| 45a | GET | `/v1/medicalReport/getMedicalReportStatistics` | `App端/监测/体检报告管理` | `MedicalReportService` / `MyViewModel` | [体检报告统计](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657297e0.md) |
 
 ### 2.7 App端 / 监测 / 设备绑定（蓝牙流程 BLL 封装）
 

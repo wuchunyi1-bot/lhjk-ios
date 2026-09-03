@@ -182,7 +182,7 @@ final class SecuritySettingsRow: UIControl {
         valueLabel.isUserInteractionEnabled = false
         valueLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        chevronView.image = UIImage(named: "settings_chevron")
+        chevronView.image = UIImage(named: "order_confirm_arrow_right")
         chevronView.contentMode = .scaleAspectFit
         chevronView.isUserInteractionEnabled = false
 
