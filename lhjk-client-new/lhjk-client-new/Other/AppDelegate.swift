@@ -105,7 +105,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         // 微信 Open SDK（登录 / 分享 / 支付统一入口；AppID 见 WeChatConfig）
         WeChatSDKManager.shared.register()
 
-        // TODO: 支付宝 SDK 注册
+        AlipaySDKManager.shared.register()
     }
 
     // MARK: - URL / Universal Link（微信回调兜底；Scene 生命周期优先走 SceneDelegate）
@@ -116,6 +116,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         options: [UIApplication.OpenURLOptionsKey: Any] = [:]
     ) -> Bool {
         if WeChatSDKManager.shared.handleOpenURL(url) {
+            return true
+        }
+        if AlipaySDKManager.shared.handleOpenURL(url) {
             return true
         }
         return false

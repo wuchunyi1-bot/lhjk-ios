@@ -28,6 +28,16 @@
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>ap2021006196675244</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>alipay</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+		</dict>
+		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
@@ -42,6 +52,10 @@
 	<string>1</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
+		<string>safepay</string>
+		<string>alipayauth</string>
+		<string>alipays</string>
+		<string>alipay</string>
 		<string>weixin</string>
 		<string>weixinURLParamsAPI</string>
 		<string>weixinULAPI</string>

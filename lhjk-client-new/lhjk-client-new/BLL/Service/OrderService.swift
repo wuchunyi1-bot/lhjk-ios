@@ -337,7 +337,7 @@ final class OrderService {
             throw OrderServiceError.queryFailed(response.msg ?? "发起支付失败")
         }
         let data = response.data ?? OrderPayResultVO.empty
-        print("[OrderService] orderPay ✓ hasWechat=\(data.wechatPayRequest != nil) hasAlipay=\(data.orderString != nil)")
+        print("[OrderService] orderPay ✓ hasWechat=\(data.wechatPayRequest != nil) hasAlipay=\(data.alipayOrderString != nil)")
         return data
     }
 }

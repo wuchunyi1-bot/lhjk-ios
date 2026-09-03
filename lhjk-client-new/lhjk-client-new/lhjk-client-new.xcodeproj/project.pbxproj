@@ -283,6 +283,9 @@
 		A5B5615C304916A600B8259D /* MedicalReportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B5615A304916A600B8259D /* MedicalReportService.swift */; };
 		A5B5615F30491A3200B8259D /* QuestionnaireModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B5615D30491A3200B8259D /* QuestionnaireModels.swift */; };
 		A5B5616030491A3200B8259D /* QuestionnaireService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B5615E30491A3200B8259D /* QuestionnaireService.swift */; };
+		A5B56165304951B800B8259D /* AlipayConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B56161304951B800B8259D /* AlipayConfig.swift */; };
+		A5B56166304951B800B8259D /* AlipaySDKManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B56163304951B800B8259D /* AlipaySDKManager.swift */; };
+		A5B56167304951B800B8259D /* AlipayModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B56162304951B800B8259D /* AlipayModels.swift */; };
 		A5B77A5E302B24F70054B2C4 /* FundePageURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B77A5D302B24F70054B2C4 /* FundePageURL.swift */; };
 		A5BD9DE430199326008C44FC /* TabHubBrandHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DE230199326008C44FC /* TabHubBrandHeaderView.swift */; };
 		A5BD9DEA3019A316008C44FC /* OKOKV3PacketParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DE73019A316008C44FC /* OKOKV3PacketParser.swift */; };
@@ -666,6 +669,9 @@
 		A5B5615A304916A600B8259D /* MedicalReportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MedicalReportService.swift; path = BLL/Health/MedicalReportService.swift; sourceTree = "<group>"; };
 		A5B5615D30491A3200B8259D /* QuestionnaireModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = QuestionnaireModels.swift; path = BLL/Service/QuestionnaireModels.swift; sourceTree = "<group>"; };
 		A5B5615E30491A3200B8259D /* QuestionnaireService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = QuestionnaireService.swift; path = BLL/Service/QuestionnaireService.swift; sourceTree = "<group>"; };
+		A5B56161304951B800B8259D /* AlipayConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlipayConfig.swift; sourceTree = "<group>"; };
+		A5B56162304951B800B8259D /* AlipayModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlipayModels.swift; sourceTree = "<group>"; };
+		A5B56163304951B800B8259D /* AlipaySDKManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlipaySDKManager.swift; sourceTree = "<group>"; };
 		A5B77A5D302B24F70054B2C4 /* FundePageURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FundePageURL.swift; path = Other/Common/FundePageURL.swift; sourceTree = "<group>"; };
 		A5BD9DE230199326008C44FC /* TabHubBrandHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabHubBrandHeaderView.swift; sourceTree = "<group>"; };
 		A5BD9DE53019A316008C44FC /* BLEDeviceHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BLEDeviceHandler.swift; path = DAL/Bluetooth/BLEDeviceHandler.swift; sourceTree = "<group>"; };
@@ -849,6 +855,7 @@
 		80323DB75D4CB2E15619DDBB /* DAL */ = {
 			isa = PBXGroup;
 			children = (
+				A5B56164304951B800B8259D /* Alipay */,
 				A5C7564A3025AF23004FA15B /* QRCode */,
 				A5C7564530259CED004FA15B /* WeChat */,
 				A5BD9DF13019D0C6008C44FC /* H5Bridge */,
@@ -2012,6 +2019,17 @@
 			path = InstitutionSelect;
 			sourceTree = "<group>";
 		};
+		A5B56164304951B800B8259D /* Alipay */ = {
+			isa = PBXGroup;
+			children = (
+				A5B56161304951B800B8259D /* AlipayConfig.swift */,
+				A5B56162304951B800B8259D /* AlipayModels.swift */,
+				A5B56163304951B800B8259D /* AlipaySDKManager.swift */,
+			);
+			name = Alipay;
+			path = DAL/Alipay;
+			sourceTree = "<group>";
+		};
 		A5BD9DE330199326008C44FC /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -2585,10 +2603,12 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-lhjk-client-new/Pods-lhjk-client-new-resources.sh",
+				"${PODS_ROOT}/AlipaySDK-iOS/AlipaySDK.bundle",
 				"${PODS_ROOT}/RongCloudIM/RongCloudIM/RCConfig.plist",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/AlipaySDK.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RCConfig.plist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2760,6 +2780,9 @@
 				A590FCBE2FEA91170056EF52 /* AccessibilitySettingsViewController.swift in Sources */,
 				A590FCBF2FEA91170056EF52 /* MeFuncRowCell.swift in Sources */,
 				A5C7564B3025AF23004FA15B /* QRCodeScanner.swift in Sources */,
+				A5B56165304951B800B8259D /* AlipayConfig.swift in Sources */,
+				A5B56166304951B800B8259D /* AlipaySDKManager.swift in Sources */,
+				A5B56167304951B800B8259D /* AlipayModels.swift in Sources */,
 				A590FCC02FEA91170056EF52 /* OnboardingViewController.swift in Sources */,
 				A590FCC22FEA91170056EF52 /* ConversationCell.swift in Sources */,
 				A56DDEB030173A08000E03A0 /* AgreementConsentSheet.swift in Sources */,

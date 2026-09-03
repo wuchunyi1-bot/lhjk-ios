@@ -685,7 +685,7 @@ enum OrderPayType: String {
     case alipay = "2"
 }
 
-/// `orderPay` 返回 `data`（Apifox schema 为空，按微信 APP 调起字段做宽松解码）
+/// `orderPay` 返回 `data`（Apifox schema 为空；微信走预下单字段，支付宝走 `aliBody`）
 struct OrderPayResultVO: Decodable, Equatable {
     let partnerId: String?
     let prepayId: String?
@@ -694,7 +694,7 @@ struct OrderPayResultVO: Decodable, Equatable {
     let packageValue: String?
     let sign: String?
     let appId: String?
-    /// 支付宝 orderString（若后端返回）
+    /// 支付宝 `orderStr`，后端字段为 `aliBody`
     let orderString: String?
 
     static let empty = OrderPayResultVO(
@@ -746,6 +746,9 @@ struct OrderPayResultVO: Decodable, Equatable {
         )
     }
 
+    /// 支付宝 SDK `payOrder` 所需的签名串（`aliBody`）
+    var alipayOrderString: String? { Self.nonEmpty(orderString) }
+
     init(from decoder: Decoder) throws {
         if let single = try? decoder.singleValueContainer(),
            let raw = try? single.decode(String.self),
@@ -764,8 +767,21 @@ struct OrderPayResultVO: Decodable, Equatable {
                     continue
                 }
                 let child = OrderPayPayload(from: nested)
-                if child.prepayId != nil || child.orderString != nil {
+                if child.prepayId != nil {
                     payload = child
+                    break
+                }
+            }
+        }
+
+        if payload.orderString == nil {
+            for nestKey in ["aliPay", "alipay", "ali", "aliPayInfo"] {
+                guard let nested = try? c.nestedContainer(keyedBy: DynamicKey.self, forKey: DynamicKey(nestKey)) else {
+                    continue
+                }
+                let child = OrderPayPayload(from: nested)
+                if let aliBody = child.orderString {
+                    payload.orderString = aliBody
                     break
                 }
             }
@@ -817,7 +833,15 @@ struct OrderPayResultVO: Decodable, Equatable {
             packageValue = Self.pick(c, ["package", "packageValue", "package_value"])
             sign = Self.pick(c, ["sign", "paySign", "pay_sign"])
             appId = Self.pick(c, ["appId", "appid", "app_id"])
-            orderString = Self.pick(c, ["orderString", "orderInfo", "body", "alipayOrderString"])
+            orderString = Self.pick(c, [
+                "aliBody",
+                "ali_body",
+                "alibody",
+                "orderString",
+                "orderInfo",
+                "alipayOrderString",
+                "body",
+            ])
         }
 
         init(from decoder: Decoder) throws {

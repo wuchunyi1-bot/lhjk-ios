@@ -1,7 +1,7 @@
 import UIKit
 import SnapKit
 
-/// 健康档案完整度 — 对齐 Figma 3021:1352
+/// 健康档案完整度 — 对齐 Figma 3543:3528
 final class HealthArchiveCardCell: UITableViewCell {
 
     static let reuseIdentifier = "HealthArchiveCardCell"
@@ -50,7 +50,7 @@ final class HealthArchiveCardCell: UITableViewCell {
         titleLbl.text = "健康档案完整度"
 
         missLabel.font = .fdFont(ofSize: 14, weight: .regular)
-        missLabel.textColor = UIColor(hexString: "#DF0340")
+        missLabel.textColor = .fdTabInactive
         missLabel.numberOfLines = 1
         missLabel.lineBreakMode = .byClipping
         missLabel.text = "一份完整的健康档案，是做好自我健康管理的基础。"
@@ -93,7 +93,7 @@ final class HealthArchiveCardCell: UITableViewCell {
         }
 
         footerLbl.font = .fdFont(ofSize: 12, weight: .regular)
-        footerLbl.textColor = .fdSubtext
+        footerLbl.textColor = UIColor(hexString: "#717885")
         footerLbl.numberOfLines = 2
         footerLbl.text = "补齐基础健康信息，获得个性化健康建议"
 
@@ -107,26 +107,27 @@ final class HealthArchiveCardCell: UITableViewCell {
 
         illustView.image = UIImage(named: "health_archive_illust")
         illustView.contentMode = .scaleAspectFit
-        illustView.alpha = 1.0
+        illustView.clipsToBounds = false
         illustView.isUserInteractionEnabled = false
 
-        // 插画沉底，文案可压在插画之上
+        // 插画沉底作为背景水印，文案在其上层展示
         card.addSubview(illustView)
         [titleLbl, missLabel, progressTrackBg, footerLbl, completeBtn].forEach(card.addSubview)
         card.bringSubviewToFront(missLabel)
 
         illustView.snp.makeConstraints {
-            $0.trailing.equalToSuperview().offset(-16)
+            // Figma 3543:3535 (Group 1739333335) — 宽高 140×98，top: 4，右边距 8 (343 - 195 - 140 = 8)
+            $0.trailing.equalToSuperview().inset(8)
             $0.top.equalToSuperview().offset(4)
-            $0.size.equalTo(98)
+            $0.width.equalTo(140)
+            $0.height.equalTo(98)
         }
         titleLbl.snp.makeConstraints {
             $0.top.leading.equalToSuperview().inset(12)
-            $0.trailing.lessThanOrEqualTo(illustView.snp.leading).offset(-4)
         }
         missLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(14)
-            $0.top.equalTo(titleLbl.snp.bottom).offset(10)
+            $0.leading.equalToSuperview().offset(12)
+            $0.top.equalTo(titleLbl.snp.bottom).offset(4)
             $0.trailing.equalToSuperview().inset(12)
         }
         progressTrackBg.snp.makeConstraints {

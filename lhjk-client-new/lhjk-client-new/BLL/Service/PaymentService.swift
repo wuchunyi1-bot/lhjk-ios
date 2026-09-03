@@ -92,7 +92,9 @@ final class PaymentService {
         switch channel {
         case .wechatPay:
             if let prepay = payData.wechatPayRequest {
-                return try await WechatPayChannel.shared.payAsync(order: order, prepay: prepay)
+                return try requireSuccess(
+                    try await WechatPayChannel.shared.payAsync(order: order, prepay: prepay)
+                )
             }
             // 0 元单或后端未返回调起参数：接口成功即视为下单完成（不以客户端伪造支付成功）
             if fen <= 0 {
@@ -109,10 +111,10 @@ final class PaymentService {
             }
             throw PaymentError.paymentFailed(reason: "微信预支付参数不完整，请稍后重试或联系客服")
         case .alipay:
-            // 支付宝 SDK 尚未接入；接口已调用，避免静默成功
-            if let orderString = payData.orderString?.trimmingCharacters(in: .whitespacesAndNewlines),
-               !orderString.isEmpty {
-                throw PaymentError.paymentFailed(reason: "支付宝支付暂未接入客户端，请改用微信支付")
+            if let orderString = payData.alipayOrderString {
+                return try requireSuccess(
+                    try await AlipayChannel.shared.payAsync(order: order, orderString: orderString)
+                )
             }
             if fen <= 0 {
                 return .success(
@@ -126,7 +128,7 @@ final class PaymentService {
                     )
                 )
             }
-            throw PaymentError.paymentFailed(reason: "支付宝支付暂未接入，请改用微信支付")
+            throw PaymentError.paymentFailed(reason: "支付宝支付参数不完整，请稍后重试或联系客服")
         }
     }
 
@@ -146,5 +148,18 @@ final class PaymentService {
     private func registerDefaultChannels() {
         channels[PaymentChannel.wechatPay.rawValue] = WechatPayChannel.shared
         channels[PaymentChannel.alipay.rawValue] = AlipayChannel.shared
+    }
+
+    private func requireSuccess(_ result: PaymentResult) throws -> PaymentResult {
+        switch result {
+        case .success:
+            return result
+        case .pending:
+            throw PaymentError.paymentFailed(reason: "支付处理中，请稍后在订单中查看结果")
+        case .cancelled:
+            throw PaymentError.userCancelled
+        case .failed(_, let error):
+            throw error
+        }
     }
 }
