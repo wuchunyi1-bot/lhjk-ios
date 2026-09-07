@@ -241,17 +241,13 @@ final class OrderConfirmViewController: BaseViewController {
             }
             .store(in: &cancellables)
 
-        viewModel.$navigateToOrders
-            .filter { $0 }
+        viewModel.$payResult
+            .compactMap { $0 }
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] payload in
                 guard let self else { return }
-                self.viewModel.consumeNavigationFlags()
-                if self.entry == .cartCheckout {
-                    OrderNavigationCoordinator.navigateToMyOrdersAll(from: self)
-                } else {
-                    self.replaceWithOrders()
-                }
+                self.viewModel.consumePayResult()
+                self.pushPayResult(payload)
             }
             .store(in: &cancellables)
 
@@ -464,16 +460,8 @@ final class OrderConfirmViewController: BaseViewController {
         )
     }
 
-    private func replaceWithOrders() {
-        guard let nav = navigationController else {
-            Router.shared.push("/orders", params: ["tab": "all"], from: self)
-            return
-        }
-        var stack = nav.viewControllers.filter { !($0 is OrderConfirmViewController) }
-        let orders = OrderListViewController(initialTab: "all")
-        orders.hidesBottomBarWhenPushed = true
-        stack.append(orders)
-        nav.setViewControllers(stack, animated: true)
+    private func pushPayResult(_ payload: OrderPayResultPayload) {
+        OrderNavigationCoordinator.presentPayResultOnMyOrders(from: self, payload: payload)
     }
 
     private func showToast(_ message: String, completion: (() -> Void)? = nil) {

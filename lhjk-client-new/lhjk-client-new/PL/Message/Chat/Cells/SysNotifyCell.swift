@@ -403,8 +403,13 @@ final class SysNotifyCell: UITableViewCell {
     }
 
     private func shouldRenderStatusPill(label: String, colorHex: String?) -> Bool {
+        if isMeasurementResultRow(label) { return false }
         if let colorHex, !colorHex.isEmpty { return true }
-        return label.contains("测量结果") || label.contains("结果")
+        return false
+    }
+
+    private func isMeasurementResultRow(_ label: String) -> Bool {
+        label.contains("测量结果") || label.contains("结果")
     }
 
     private func makeMonitorTextRow(
@@ -438,7 +443,7 @@ final class SysNotifyCell: UITableViewCell {
         } else {
             let right = UILabel()
             right.font = ChatBubbleStyle.Card.rowValueFont
-            right.textColor = ChatBubbleStyle.primaryText
+            right.textColor = resolvedColor(colorHex) ?? ChatBubbleStyle.primaryText
             right.text = value
             right.numberOfLines = 0
             right.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)

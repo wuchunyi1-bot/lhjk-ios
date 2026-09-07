@@ -71,7 +71,7 @@ H5 hash 路径由 `H5Config` 拼接；饮食运动根路径为 `exercise-food`�
 
 | Handler | 方向 | 用途 |
 |---------|------|------|
-| **`FundeBridge`** | H5 → Native | 套餐中间页等宿主导航（本文档） |
+| **`FundeBridge`** | H5 → Native | 套餐跳转、饮食方案保存食谱到相册 |
 | `FundeNative` | 双向 | 体重 BLE：`ble.getStatus` / `ble.openManager` + emit 事件 |
 
 `FundeBridge` 消息体为扁平 JSON（字段在顶层，**不是** `{ action, params }` 嵌套）：
@@ -85,6 +85,20 @@ H5 hash 路径由 `H5Config` 拼接；饮食运动根路径为 `exercise-food`�
 ```
 
 H5 调用：`window.webkit.messageHandlers.FundeBridge.postMessage(payload)`。
+
+保存食谱（饮食方案页「保存食谱到手机」）同一通道，字段仍在顶层：
+
+```json
+{
+  "action": "saveImageToAlbum",
+  "dateTime": "2026-09-04",
+  "schemeId": "123",
+  "fileName": "食谱清单.png",
+  "bizType": "dietPoster"
+}
+```
+
+`fileName` 缺省「食谱清单.png」，`bizType` 缺省 `dietPoster`。宿主用登录态 `GET /v1/diningScheme/downloadDietPoster` 按二进制取图并写入相册。
 
 ---
 
@@ -133,6 +147,27 @@ App 经 `WebViewController` 打开需登录的 H5 时 SHALL 拼接 `platform=ios
 
 - **WHEN** `FundeBridge` 收到未实现的 `action`
 - **THEN** 忽略（不崩溃）
+
+### Requirement: FundeBridge 保存食谱到相册
+
+饮食方案 H5「保存食谱到手机」SHALL 经 `FundeBridge` `action=saveImageToAlbum` 由宿主下载海报并写入相册。
+
+#### Scenario: 保存成功
+
+- **WHEN** H5 postMessage `action=saveImageToAlbum`
+- **THEN** 读取 `dateTime`、`schemeId`、`fileName`（缺省「食谱清单.png」）、`bizType`（缺省 `dietPoster`）
+- **AND** `GET /v1/diningScheme/downloadDietPoster` 仅传非空 query，响应按二进制解码为图片并写入相册
+- **AND** 提示「已保存到相册」
+
+#### Scenario: 下载失败
+
+- **WHEN** 响应为业务错误 JSON 或无法解码为图片
+- **THEN** 不写入相册，提示失败原因
+
+#### Scenario: 相册权限拒绝
+
+- **WHEN** 添加相册权限被拒绝或受限
+- **THEN** 不写入相册，引导用户在系统设置中开启
 
 ### Requirement: 体重 BLE 仍走 FundeNative
 

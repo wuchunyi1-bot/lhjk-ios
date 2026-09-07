@@ -72,6 +72,7 @@ final class AppContainer {
     private(set) lazy var cacheCleanupService: CacheCleanupService = .shared
     private(set) lazy var healthPageService: HealthPageService = .shared
     private(set) lazy var medicalReportService: MedicalReportService = .shared
+    private(set) lazy var diningSchemeService: DiningSchemeService = .shared
     private(set) lazy var healthPageCacheService: HealthPageCacheService = .shared
     private(set) lazy var equipmentBindService: EquipmentBindService = .shared
     // MARK: - 存储

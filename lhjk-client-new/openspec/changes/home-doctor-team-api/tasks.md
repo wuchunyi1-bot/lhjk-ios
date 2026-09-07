@@ -14,5 +14,5 @@
 
 - [x] 3.1 `HomeService.getRemainServiceTime()` + `RemainServiceTimeVO`
 - [x] 3.2 `HomeViewModel.teamServiceDaysLeft`；与团队接口并行拉取
-- [x] 3.3 `HomeTeamCardCell` 标题右侧「服务剩余 N 天 ›」；`remainDays <= 0` 隐藏
+- [x] 3.3 `HomeTeamCardCell` 标题右侧「服务剩余 N 天」（无箭头、不可点）；`remainDays <= 0` 隐藏
 - [x] 3.4 点击跳转 `/orders` + `tab=in_progress`

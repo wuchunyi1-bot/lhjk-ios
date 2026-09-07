@@ -172,11 +172,12 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
             cell.configure(entries: viewModel.quickEntries)
             cell.onEntryTap = { [weak self] pageUrl in
                 guard let self else { return }
+                if FundePageURL.canOpen(pageUrl) {
+                    FundePageURL.open(pageUrl, title: self.viewModel.quickEntries.first { $0.pageUrl == pageUrl }?.name, from: self)
+                    return
+                }
                 if pageUrl.hasPrefix("/") {
                     Router.shared.push(pageUrl)
-                } else {
-                    let title = self.viewModel.quickEntries.first { $0.pageUrl == pageUrl }?.name
-                    FundePageURL.open(pageUrl, title: title, from: self)
                 }
             }
             return cell
@@ -185,12 +186,12 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
             cell.configure(metrics: viewModel.metrics)
             cell.onMetricTap = { [weak self] item in
                 guard let self else { return }
+                if FundePageURL.canOpen(item.pageUrl) {
+                    FundePageURL.open(item.pageUrl, title: item.label, from: self)
+                    return
+                }
                 if item.hasMonitorData {
-                    if FundePageURL.canOpen(item.pageUrl) {
-                        FundePageURL.open(item.pageUrl, title: item.label, from: self)
-                    } else {
-                        Router.shared.push(self.viewModel.route(for: item))
-                    }
+                    Router.shared.push(self.viewModel.route(for: item))
                 } else {
                     Router.shared.push(MonitorCardDisplayMapper.recordRoute(for: item))
                 }

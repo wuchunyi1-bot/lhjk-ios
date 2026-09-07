@@ -118,21 +118,94 @@ enum OrderNavigationCoordinator {
 
     /// 落到：我的 Tab → 我的订单 → 全部
     static func navigateToMyOrdersAll(from source: UIViewController) {
+        relocateToMyOrders(from: source, extra: nil, animated: false)
+    }
+
+    /// 支付成功/失败：结果页放到「我的 → 订单列表」之上，并清空来源 Tab 下单栈
+    static func presentPayResultOnMyOrders(from source: UIViewController, payload: OrderPayResultPayload) {
+        let resultVC = OrderPayResultViewController(payload: payload)
+        relocateToMyOrders(from: source, extra: resultVC, animated: false)
+    }
+
+    /// 支付结果页完成 / 返回：落到「我的」订单列表全部 Tab，不回到确认订单或选择套餐
+    static func leavePayResultToOrderList(from source: UIViewController) {
+        relocateToMyOrders(from: source, extra: nil, animated: true)
+    }
+
+    /// 支付结果页「查看订单」：落到「我的 → 订单列表 → 订单详情」
+    static func leavePayResultToOrderDetail(from source: UIViewController, orderId: Int64) {
+        guard orderId > 0 else {
+            leavePayResultToOrderList(from: source)
+            return
+        }
+        relocateToMyOrders(
+            from: source,
+            extra: OrderDetailViewController(orderId: orderId),
+            animated: true
+        )
+    }
+
+    /// 服务/来源 Tab 清到根；我的 Tab 变为 `[我的, 订单列表全部, extra?]`
+    private static func relocateToMyOrders(
+        from source: UIViewController,
+        extra: UIViewController?,
+        animated: Bool
+    ) {
+        extra?.hidesBottomBarWhenPushed = true
+
         guard let tabBar = source.tabBarController else {
-            Router.shared.push("/orders", params: ["tab": "all"], from: source)
+            fallbackRelocateWithoutTabBar(from: source, extra: extra, animated: animated)
             return
         }
 
-        if let serviceNav = tabBar.viewControllers?[RootTabBarController.Tab.service] as? UINavigationController {
-            serviceNav.popToRootViewController(animated: false)
+        let myNav = tabBar.viewControllers?[RootTabBarController.Tab.my] as? UINavigationController
+        let serviceNav = tabBar.viewControllers?[RootTabBarController.Tab.service] as? UINavigationController
+        let sourceNav = source.navigationController
+
+        guard let myNav, let myRoot = myNav.viewControllers.first else {
+            tabBar.selectedIndex = RootTabBarController.Tab.my
+            return
         }
 
-        if let myNav = tabBar.viewControllers?[RootTabBarController.Tab.my] as? UINavigationController {
-            myNav.popToRootViewController(animated: false)
-            tabBar.selectedIndex = RootTabBarController.Tab.my
-            myNav.pushViewController(OrderListViewController(initialTab: "all"), animated: false)
-        } else {
-            tabBar.selectedIndex = RootTabBarController.Tab.my
+        let orders = OrderListViewController(initialTab: "all")
+        orders.hidesBottomBarWhenPushed = true
+        var stack: [UIViewController] = [myRoot, orders]
+        if let extra {
+            stack.append(extra)
         }
+        // 先搭好「我的」栈再切 Tab，避免先 pop 来源栈时闪服务首页
+        myNav.setViewControllers(stack, animated: animated)
+        tabBar.selectedIndex = RootTabBarController.Tab.my
+
+        serviceNav?.popToRootViewController(animated: false)
+        if let sourceNav, sourceNav !== myNav, sourceNav !== serviceNav {
+            sourceNav.popToRootViewController(animated: false)
+        }
+    }
+
+    private static func fallbackRelocateWithoutTabBar(
+        from source: UIViewController,
+        extra: UIViewController?,
+        animated: Bool
+    ) {
+        guard let nav = source.navigationController else {
+            Router.shared.push("/orders", params: ["tab": "all"], from: source)
+            return
+        }
+        var stack = nav.viewControllers.filter {
+            !($0 is OrderConfirmViewController) && !($0 is OrderPayResultViewController)
+        }
+        let orders = OrderListViewController(initialTab: "all")
+        orders.hidesBottomBarWhenPushed = true
+        if let index = stack.lastIndex(where: { $0 is OrderListViewController }) {
+            stack = Array(stack.prefix(through: index))
+            stack[index] = orders
+        } else {
+            stack.append(orders)
+        }
+        if let extra {
+            stack.append(extra)
+        }
+        nav.setViewControllers(stack, animated: animated)
     }
 }

@@ -690,6 +690,7 @@ App 冷启动
 
 - **WHEN** 响应 `isSuccess` 且 `data` 为非空成员数组
 - **THEN** 按数组顺序渲染行：头像取 `imageUrl`（空则 `userImg`，失败回落 `chat_im_avatar`）、`userName` 姓名、`roleName`（空则按 `identity` 映射：1 健康管理师负责人 / 2 医生 / 3 用户 / 4 队员）
+- **AND** 导航标题展示「群成员(N)」，N 为本次返回的成员数量
 - **AND** 不得用本地假成员顶替
 
 #### Scenario: 失败与空数据

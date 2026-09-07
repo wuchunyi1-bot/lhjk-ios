@@ -27,4 +27,4 @@
 - `PL/Home/Cells/HomeTeamCardCell.swift`
 - `PL/Home/HomeViewController.swift`
 - Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495580451e0.md
-- 服务剩余天数：`GET /v1/schemeArchive/getRemainServiceTime`（`RemainServiceTimeVO.remainDays`）驱动标题右侧「服务剩余 N 天 ›」
+- 服务剩余天数：`GET /v1/schemeArchive/getRemainServiceTime`（`RemainServiceTimeVO.remainDays`）驱动标题右侧「服务剩余 N 天」

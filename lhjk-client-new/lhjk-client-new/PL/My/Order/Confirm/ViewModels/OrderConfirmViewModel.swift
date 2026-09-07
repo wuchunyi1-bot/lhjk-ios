@@ -58,7 +58,7 @@ final class OrderConfirmViewModel: ObservableObject {
     @Published private(set) var selectedCouponName = ""
     @Published private(set) var hospitalDetail: OHospital?
     @Published var navigateBack = false
-    @Published var navigateToOrders = false
+    @Published var payResult: OrderPayResultPayload?
     @Published private(set) var orderDetail: AppOrderDetailBO?
     @Published private(set) var availableCouponCount = 0
     @Published private(set) var availableBenefitCount = 0
@@ -290,6 +290,9 @@ final class OrderConfirmViewModel: ObservableObject {
             ?? "健康服务套餐"
         let amount = payableAmount
         let remarkText = remark.trimmingCharacters(in: .whitespacesAndNewlines)
+        let amountVersion = latestSettlement?.payAmountVersion ?? orderDetail?.payAmountVersion
+        let expectedPayable = latestSettlement?.payExpectedPayableAmount
+            ?? orderDetail?.payExpectedPayableAmount
 
         do {
             _ = try await paymentService.payMallOrder(
@@ -297,13 +300,14 @@ final class OrderConfirmViewModel: ObservableObject {
                 productName: productName,
                 amountYuan: amount,
                 channel: channel,
+                amountVersion: amountVersion,
+                expectedPayableAmount: expectedPayable,
                 description: remarkText.isEmpty ? nil : remarkText
             )
             await MainActor.run {
                 isSubmitting = false
-                toastMessage = "支付成功"
                 NotificationCenter.default.post(name: .orderListNeedsRefresh, object: nil)
-                navigateToOrders = true
+                payResult = makePayResult(outcome: .success, failureMessage: nil)
             }
         } catch let error as PaymentError {
             await MainActor.run {
@@ -311,24 +315,42 @@ final class OrderConfirmViewModel: ObservableObject {
                 switch error {
                 case .userCancelled:
                     toastMessage = "已取消支付"
-                case .channelNotAvailable:
-                    toastMessage = channel == .wechatPay
-                        ? "请先安装微信后再支付"
-                        : "当前支付方式暂不可用"
-                case .paymentFailed(let reason):
-                    toastMessage = reason.isEmpty ? "支付失败，请稍后重试" : reason
                 default:
+                    payResult = makePayResult(
+                        outcome: .failure,
+                        failureMessage: paymentFailureMessage(for: error, channel: channel)
+                    )
+                }
+            }
+        } catch let error as OrderServiceError {
+            if case .payRejected = error {
+                await MainActor.run {
+                    isSubmitting = false
                     toastMessage = error.localizedDescription.isEmpty
-                        ? "支付失败，请稍后重试"
+                        ? "发起支付失败，请稍后重试"
                         : error.localizedDescription
                 }
+                await refreshSettlement()
+                return
+            }
+            await MainActor.run {
+                isSubmitting = false
+                payResult = makePayResult(
+                    outcome: .failure,
+                    failureMessage: error.localizedDescription.isEmpty
+                        ? "发起支付失败，请稍后重试"
+                        : error.localizedDescription
+                )
             }
         } catch {
             await MainActor.run {
                 isSubmitting = false
-                toastMessage = error.localizedDescription.isEmpty
-                    ? "发起支付失败，请稍后重试"
-                    : error.localizedDescription
+                payResult = makePayResult(
+                    outcome: .failure,
+                    failureMessage: error.localizedDescription.isEmpty
+                        ? "发起支付失败，请稍后重试"
+                        : error.localizedDescription
+                )
             }
         }
     }
@@ -339,7 +361,39 @@ final class OrderConfirmViewModel: ObservableObject {
 
     func consumeNavigationFlags() {
         navigateBack = false
-        navigateToOrders = false
+    }
+
+    func consumePayResult() {
+        payResult = nil
+    }
+
+    private func makePayResult(
+        outcome: OrderPayResultPayload.Outcome,
+        failureMessage: String?
+    ) -> OrderPayResultPayload {
+        OrderPayResultPayload(
+            outcome: outcome,
+            orderId: orderId,
+            amountYuan: payableAmount,
+            payMethodTitle: payMethod.title,
+            failureMessage: failureMessage,
+            entry: entry
+        )
+    }
+
+    private func paymentFailureMessage(for error: PaymentError, channel: PaymentChannel) -> String {
+        switch error {
+        case .channelNotAvailable:
+            return channel == .wechatPay
+                ? "请先安装微信后再支付"
+                : "当前支付方式暂不可用"
+        case .paymentFailed(let reason):
+            let trimmed = reason.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? "支付失败，请稍后重试" : trimmed
+        default:
+            let description = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+            return description.isEmpty ? "支付失败，请稍后重试" : description
+        }
     }
 
     // MARK: - 优惠券

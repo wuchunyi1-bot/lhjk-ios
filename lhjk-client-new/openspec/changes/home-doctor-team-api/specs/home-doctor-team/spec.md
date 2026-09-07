@@ -67,7 +67,7 @@
 #### Scenario: 展示剩余天数
 
 - **WHEN** 响应成功且 `data.remainDays > 0`
-- **THEN** 团队卡片标题右侧展示「服务剩余 N 天 ›」（N = `remainDays`）
+- **THEN** 团队卡片标题右侧展示「服务剩余 N 天」（N = `remainDays`），**无**箭头、**不可**点击
 - **WHEN** `remainDays` 为 null、`0` 或负数
 - **THEN** 隐藏标题右侧文案
 
@@ -79,8 +79,8 @@
 
 #### Scenario: 点击剩余天数
 
-- **WHEN** 用户点击「服务剩余 N 天 ›」
-- **THEN** 跳转 `/orders`，`tab=in_progress`（使用中订单 Tab）
+- **WHEN** 用户点击「服务剩余 N 天」
+- **THEN** **不**响应点击，**不**跳转订单列表
 
 #### Scenario: 删除 mock
 

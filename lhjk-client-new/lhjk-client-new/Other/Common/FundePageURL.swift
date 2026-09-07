@@ -4,8 +4,8 @@ import UIKit
 
 /// `getByCode` / `getCmsConfig` 等返回的 `pageUrl` 统一前缀解析。
 ///
-/// - `FundeH5:` → 后缀为 H5 路由，经 `H5Config` 鉴权后打开 `WebViewController`
-/// - `FundeApp:` → 后缀为本地路由，经 `Router.push`
+/// - `FundeH5:` → 后缀为 H5 路由，经 `H5Config` 鉴权后打开 `WebViewController`（不要求本地 metric 路由已注册）
+/// - `FundeApp:` → 后缀为本地路由，经 `Router.push`；未注册则跳过
 ///
 /// OpenSpec: `openspec/changes/funde-page-url-scheme/`
 enum FundePageURL {
@@ -47,13 +47,15 @@ enum FundePageURL {
         return .none
     }
 
-    /// 按解析结果打开 H5 或本地路由；无法解析则 no-op
+    /// 按解析结果打开。`FundeH5:` 一律打开 H5 地址；`FundeApp:` 仅已注册本地路由才 push。
+    /// - Returns: 已打开则为 `true`；无法解析或 `FundeApp` 未注册则为 `false`（调用方可走业务兜底）
+    @discardableResult
     @MainActor
     static func open(
         _ pageUrl: String?,
         title: String? = nil,
         from viewController: UIViewController? = nil
-    ) {
+    ) -> Bool {
         switch parse(pageUrl) {
         case .h5(let path, let query):
             let url = H5Config.authenticatedPageURL(path: path, extraQuery: query)
@@ -63,24 +65,26 @@ enum FundePageURL {
                 title: title,
                 enablesWeightBle: enablesWeightBle
             )
-            guard let source = viewController else { return }
+            guard let source = viewController else { return true }
             if let nav = source.navigationController {
                 nav.pushViewController(webVC, animated: true)
             } else {
                 source.present(webVC, animated: true)
             }
+            return true
         case .app(let path, let params):
             guard Router.shared.contains(path) else {
                 print("[FundePageURL] skip unregistered app route path=\(path)")
-                return
+                return false
             }
             Router.shared.push(path, params: params, from: viewController)
+            return true
         case .none:
-            break
+            return false
         }
     }
 
-    /// 是否已按前缀规则解析成功
+    /// 已按前缀解析为 `FundeH5:` 或 `FundeApp:`（不检查 Router 是否已注册）
     static func canOpen(_ pageUrl: String?) -> Bool {
         parse(pageUrl) != .none
     }

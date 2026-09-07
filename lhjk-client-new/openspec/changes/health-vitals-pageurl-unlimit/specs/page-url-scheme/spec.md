@@ -4,7 +4,7 @@
 
 `getCmsConfig` 中 `quickEntryList[].pageUrl` 以及体征监测卡（`monitorCardMeta` / `getMonitorCardList`）的 `pageUrl` SHALL 在合法时经 `FundePageURL` 打开。
 
-合法指可解析为 `FundeH5:` 或 `FundeApp:`。体征卡无合法 `pageUrl` 时 SHALL 按 `cardType` → `/health/metrics/{key}` 兜底。
+合法指可解析为 `FundeH5:` 或 `FundeApp:`。`FundeH5:` 打开对应 H5 地址（不要求本地 metric 路由）。`FundeApp:` 仅 `Router` 已注册时 push。体征卡无合法 `pageUrl` 时 SHALL 按 `cardType` → `/health/metrics/{key}` 兜底。
 
 #### Scenario: 快捷入口
 

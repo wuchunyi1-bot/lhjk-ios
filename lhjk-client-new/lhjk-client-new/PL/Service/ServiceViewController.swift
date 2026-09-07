@@ -136,7 +136,8 @@ extension ServiceViewController: UITableViewDataSource, UITableViewDelegate {
         case .bannerCarousel:
             let cell = tableView.dequeueReusableCell(withIdentifier: ServiceBannerCarouselCell.reuseID, for: indexPath) as! ServiceBannerCarouselCell
             cell.configure(snapshot.banners)
-            cell.onBannerTap = { banner in
+            cell.onBannerTap = { [weak self] banner in
+                if FundePageURL.open(banner.pageUrl, from: self) { return }
                 guard let path = banner.routePath else { return }
                 if let id = banner.routeParamId {
                     Router.shared.push(path, params: ["id": id])

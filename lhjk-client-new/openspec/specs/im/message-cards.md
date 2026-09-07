@@ -43,7 +43,7 @@
 
 - **仅底部按钮可点**，整卡不可点。
 - `urlKey` 非空才出按钮；文案 = `skipTxt`，空则「去查看」。
-- 点击走 `FundePageURL.open(urlKey)`（`FundeApp:` / `FundeH5:`）。
+- 点击走 `NotificationMessageMapper.openRoute`：`FundeH5:` → `FundePageURL.open`（不要求本地路由已注册）；`FundeApp:` / `/path` 走别名后再 `Router.push`（仅已注册）。
 
 ### 示例（type=1 套餐）
 

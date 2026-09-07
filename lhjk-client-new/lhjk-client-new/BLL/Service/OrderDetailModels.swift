@@ -48,6 +48,14 @@ struct AppOrderDetailBO: Decodable {
     let parentId: Int64?
     /// 是否可去退货（与列表字段对齐；详情可能暂未下发）
     let canReturnGoods: Bool?
+    /// 结算版本，支付时原样带回；缺省可读 `settlementVersion`
+    let amountVersion: Int?
+    /// 期望应付金额，支付时原样带回
+    let expectedPayableAmount: Double?
+    /// 换券/换卡/改运费后递增（与 `amountVersion` 同契约时作缺省）
+    let settlementVersion: Int?
+    /// 订单应付（套包+运费-券-权益）
+    let settlementAmount: Double?
 
     private enum CodingKeys: String, CodingKey {
         case id, parentId, orderName, status, payable, price, paymentType, paymentNo, createTime
@@ -59,6 +67,7 @@ struct AppOrderDetailBO: Decodable {
         case refundId, refundReasons, refuseReasons, refundApplyTime, applyRefund, refundApplyChannel
         case packageId, hospitalId, categoryServiceId, renewed
         case canReturnGoods
+        case amountVersion, expectedPayableAmount, settlementVersion, settlementAmount
     }
 
     init(from decoder: Decoder) throws {
@@ -103,6 +112,10 @@ struct AppOrderDetailBO: Decodable {
         renewed = Self.decodeFlexibleInt(c, key: .renewed)
         parentId = Self.decodeFlexibleInt64(c, key: .parentId)
         canReturnGoods = Self.decodeFlexibleBool(c, key: .canReturnGoods)
+        amountVersion = Self.decodeFlexibleInt(c, key: .amountVersion)
+        expectedPayableAmount = Self.decodeFlexibleDouble(c, key: .expectedPayableAmount)
+        settlementVersion = Self.decodeFlexibleInt(c, key: .settlementVersion)
+        settlementAmount = Self.decodeFlexibleDouble(c, key: .settlementAmount)
     }
 
     var resolvedPackageId: String? {
@@ -208,6 +221,16 @@ struct AppOrderDetailBO: Decodable {
 
     var paidAmount: Double {
         max(0, price ?? payable ?? 0)
+    }
+
+    /// 支付提交用结算版本
+    var payAmountVersion: Int? { amountVersion ?? settlementVersion }
+
+    /// 支付提交用期望应付
+    var payExpectedPayableAmount: Double? {
+        if let v = expectedPayableAmount { return max(0, v) }
+        if let v = settlementAmount { return max(0, v) }
+        return nil
     }
 
     var expressFee: Double { max(0, expressAmount ?? 0) }

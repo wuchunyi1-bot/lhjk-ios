@@ -27,7 +27,18 @@ final class MetricCardCell: UICollectionViewCell {
 
     private var appliedLayoutScale: CGFloat = 1
     private var isDietLayout = false
+    private var isLipidLayout = false
     private var showsRecordButton = false
+
+    private let lipidTCCaption = UILabel()
+    private let lipidTCValue = UILabel()
+    private let lipidTGCaption = UILabel()
+    private let lipidTGValue = UILabel()
+    private let lipidHDLCaption = UILabel()
+    private let lipidHDLValue = UILabel()
+    private let lipidLDLCaption = UILabel()
+    private let lipidLDLValue = UILabel()
+    private let lipidGrid = UIStackView()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -101,8 +112,11 @@ final class MetricCardCell: UICollectionViewCell {
         dietRightStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
         hideDietRow()
 
+        configureLipidLabels()
+        hideLipidGrid()
+
         [
-            watermark, iconView, badgeLabel, titleLabel, valueLabel, unitLabel, timeLabel, recordButton, dietRow,
+            watermark, iconView, badgeLabel, titleLabel, valueLabel, unitLabel, timeLabel, recordButton, dietRow, lipidGrid,
         ].forEach(contentView.addSubview)
 
         watermark.snp.makeConstraints {
@@ -135,6 +149,7 @@ final class MetricCardCell: UICollectionViewCell {
         "exercise": UIColor(hexString: "#FFFAF5"),
         "spo2": UIColor(hexString: "#F7FCF9"),
         "digestive": UIColor(hexString: "#FFFAF5"),
+        "blood-lipid": UIColor(hexString: "#FFF8FA"),
     ]
 
     func configure(
@@ -149,7 +164,8 @@ final class MetricCardCell: UICollectionViewCell {
         unit: String,
         trend: String,
         time: String,
-        dietSport: DietSportCardDisplay? = nil
+        dietSport: DietSportCardDisplay? = nil,
+        bloodLipid: BloodLipidCardDisplay? = nil
     ) {
         let bg = Self.cardBgs[metricKey] ?? UIColor(hexString: "#FDFCFC")
         contentView.backgroundColor = bg
@@ -165,7 +181,7 @@ final class MetricCardCell: UICollectionViewCell {
         }
 
         let trimmedStatus = status.trimmingCharacters(in: .whitespacesAndNewlines)
-        showsRecordButton = Self.shouldShowRecordButton(value: value, dietSport: dietSport)
+        showsRecordButton = Self.shouldShowRecordButton(value: value, dietSport: dietSport, bloodLipid: bloodLipid)
         recordButton.isHidden = !showsRecordButton
         badgeLabel.isHidden = trimmedStatus.isEmpty || showsRecordButton
         badgeLabel.text = trimmedStatus
@@ -182,17 +198,24 @@ final class MetricCardCell: UICollectionViewCell {
         }
 
         isDietLayout = dietSport != nil
+        isLipidLayout = bloodLipid != nil
         titleLabel.text = label
+        titleLabel.textColor = UIColor(hexString: "#717885")
 
         valueLabel.text = value
         unitLabel.text = unit
         timeLabel.text = time
         timeLabel.isHidden = time.isEmpty
+        // Figma 3543:3456 血脂时间 #1F2430；其它体征卡时间 #717885
+        timeLabel.textColor = isLipidLayout
+            ? UIColor(hexString: "#1F2430")
+            : UIColor(hexString: "#717885")
 
         if let dietSport, !showsRecordButton {
             titleLabel.isHidden = false
             valueLabel.isHidden = true
             unitLabel.isHidden = true
+            hideLipidGrid()
             dietLeftStack.isHidden = false
             dietRightStack.isHidden = false
             dietRingView.isHidden = false
@@ -200,16 +223,28 @@ final class MetricCardCell: UICollectionViewCell {
             dietIntakeValue.text = dietSport.intakeText
             dietConsumeValue.text = dietSport.consumeText
             dietRingView.configure(remainingText: dietSport.remainingText, progress: dietSport.progress)
+        } else if let bloodLipid, !showsRecordButton {
+            titleLabel.isHidden = false
+            valueLabel.isHidden = true
+            unitLabel.isHidden = true
+            hideDietRow()
+            lipidGrid.isHidden = false
+            lipidTCValue.text = bloodLipid.tc
+            lipidTGValue.text = bloodLipid.tg
+            lipidHDLValue.text = bloodLipid.hdl
+            lipidLDLValue.text = bloodLipid.ldl
         } else if showsRecordButton {
             titleLabel.isHidden = false
             valueLabel.isHidden = false
             unitLabel.isHidden = true
             hideDietRow()
+            hideLipidGrid()
         } else {
             titleLabel.isHidden = false
             valueLabel.isHidden = false
             unitLabel.isHidden = unit.isEmpty || value == "--"
             hideDietRow()
+            hideLipidGrid()
         }
 
         if bounds.width > 0 {
@@ -250,6 +285,18 @@ final class MetricCardCell: UICollectionViewCell {
         dietIntakeValue.font = .fdFont(ofSize: Design.dietValueFontSize * scale, weight: .medium)
         dietConsumeValue.font = .fdFont(ofSize: Design.dietValueFontSize * scale, weight: .medium)
         dietRingView.applyScale(scale)
+
+        let lipidCaptionFont = UIFont.fdFont(ofSize: Design.lipidCaptionFontSize * scale, weight: .regular)
+        let lipidValueFont = UIFont.fdFont(ofSize: Design.lipidValueFontSize * scale, weight: .medium)
+        [lipidTCCaption, lipidTGCaption, lipidHDLCaption, lipidLDLCaption].forEach { $0.font = lipidCaptionFont }
+        [lipidTCValue, lipidTGValue, lipidHDLValue, lipidLDLValue].forEach { $0.font = lipidValueFont }
+        lipidGrid.spacing = Design.lipidRowSpacing * scale
+        lipidGrid.arrangedSubviews.compactMap { $0 as? UIStackView }.forEach { row in
+            row.spacing = Design.lipidColumnSpacing * scale
+            row.arrangedSubviews.compactMap { $0 as? UIStackView }.forEach { item in
+                item.spacing = Design.lipidItemSpacing * scale
+            }
+        }
 
         let inset = Design.edgeInset * scale
         let iconTitleGap = Design.iconTitleGap * scale
@@ -300,6 +347,27 @@ final class MetricCardCell: UICollectionViewCell {
                 $0.top.equalTo(titleLabel.snp.bottom).offset(Design.dietRowTopGap * scale)
                 $0.bottom.lessThanOrEqualTo(timeLabel.snp.top).offset(-4).priority(.low)
             }
+            hideLipidGrid()
+            lipidGrid.snp.remakeConstraints {
+                $0.top.leading.equalToSuperview()
+            }
+        } else if isLipidLayout && !showsRecordButton {
+            titleLabel.snp.remakeConstraints {
+                $0.leading.equalToSuperview().inset(inset)
+                $0.top.equalTo(iconView.snp.bottom).offset(iconTitleGap)
+                $0.trailing.lessThanOrEqualToSuperview().inset(inset)
+            }
+            valueLabel.snp.remakeConstraints { $0.leading.top.equalToSuperview() }
+            unitLabel.snp.remakeConstraints { $0.leading.top.equalToSuperview() }
+            hideDietRow()
+            dietRow.snp.remakeConstraints {
+                $0.top.leading.equalToSuperview()
+            }
+            lipidGrid.snp.remakeConstraints {
+                $0.leading.trailing.equalToSuperview().inset(inset)
+                $0.top.equalTo(titleLabel.snp.bottom).offset(Design.lipidGridTopGap * scale)
+                $0.bottom.lessThanOrEqualTo(timeLabel.snp.top).offset(-4).priority(.low)
+            }
         } else {
             titleLabel.snp.remakeConstraints {
                 $0.leading.equalToSuperview().inset(inset)
@@ -321,7 +389,11 @@ final class MetricCardCell: UICollectionViewCell {
                 $0.trailing.lessThanOrEqualToSuperview().inset(Design.unitTrailingInset * scale)
             }
             hideDietRow()
+            hideLipidGrid()
             dietRow.snp.remakeConstraints {
+                $0.top.leading.equalToSuperview()
+            }
+            lipidGrid.snp.remakeConstraints {
                 $0.top.leading.equalToSuperview()
             }
         }
@@ -334,11 +406,71 @@ final class MetricCardCell: UICollectionViewCell {
         dietRow.isHidden = true
     }
 
-    private static func shouldShowRecordButton(value: String, dietSport: DietSportCardDisplay?) -> Bool {
+    private func hideLipidGrid() {
+        lipidGrid.isHidden = true
+    }
+
+    private func configureLipidLabels() {
+        func styleCaption(_ label: UILabel, text: String) {
+            label.text = text
+            label.textColor = UIColor(hexString: "#1F2430")
+            label.setContentHuggingPriority(.required, for: .horizontal)
+            label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        }
+        func styleValue(_ label: UILabel) {
+            label.textColor = UIColor(hexString: "#1F2430")
+            label.adjustsFontSizeToFitWidth = true
+            label.minimumScaleFactor = 0.7
+            label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        }
+        styleCaption(lipidTCCaption, text: "TC")
+        styleCaption(lipidTGCaption, text: "TG")
+        styleCaption(lipidHDLCaption, text: "HDL")
+        styleCaption(lipidLDLCaption, text: "LDL")
+        [lipidTCValue, lipidTGValue, lipidHDLValue, lipidLDLValue].forEach(styleValue)
+
+        func itemStack(caption: UILabel, value: UILabel) -> UIStackView {
+            let stack = UIStackView(arrangedSubviews: [caption, value])
+            stack.axis = .horizontal
+            stack.alignment = .lastBaseline
+            stack.spacing = 4
+            return stack
+        }
+        func rowStack(_ left: UIView, _ right: UIView) -> UIStackView {
+            let row = UIStackView(arrangedSubviews: [left, right])
+            row.axis = .horizontal
+            row.alignment = .fill
+            row.distribution = .fillEqually
+            row.spacing = 8
+            return row
+        }
+
+        lipidGrid.axis = .vertical
+        lipidGrid.alignment = .fill
+        lipidGrid.distribution = .fillEqually
+        lipidGrid.spacing = Design.lipidRowSpacing
+        lipidGrid.addArrangedSubview(rowStack(
+            itemStack(caption: lipidTCCaption, value: lipidTCValue),
+            itemStack(caption: lipidTGCaption, value: lipidTGValue)
+        ))
+        lipidGrid.addArrangedSubview(rowStack(
+            itemStack(caption: lipidHDLCaption, value: lipidHDLValue),
+            itemStack(caption: lipidLDLCaption, value: lipidLDLValue)
+        ))
+    }
+
+    private static func shouldShowRecordButton(
+        value: String,
+        dietSport: DietSportCardDisplay?,
+        bloodLipid: BloodLipidCardDisplay?
+    ) -> Bool {
         if let dietSport {
             let intake = dietSport.intakeText.trimmingCharacters(in: .whitespacesAndNewlines)
             let consume = dietSport.consumeText.trimmingCharacters(in: .whitespacesAndNewlines)
             return intake == "--" && consume == "--"
+        }
+        if let bloodLipid {
+            return !bloodLipid.hasData
         }
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty || trimmed == "--"
@@ -405,11 +537,19 @@ final class MetricCardCell: UICollectionViewCell {
         showsRecordButton = false
         recordButton.isHidden = true
         isDietLayout = false
+        isLipidLayout = false
         dietIntakeValue.text = nil
         dietConsumeValue.text = nil
         dietRingView.configure(remainingText: "--", progress: 0)
         hideDietRow()
+        lipidTCValue.text = nil
+        lipidTGValue.text = nil
+        lipidHDLValue.text = nil
+        lipidLDLValue.text = nil
+        hideLipidGrid()
         titleLabel.isHidden = false
+        titleLabel.textColor = UIColor(hexString: "#717885")
+        timeLabel.textColor = UIColor(hexString: "#717885")
         valueLabel.isHidden = false
     }
 }
@@ -441,6 +581,12 @@ private enum Design {
     static let dietRingSize: CGFloat = 52
     static let dietRingLineWidth: CGFloat = 3
     static let dietRowTopGap: CGFloat = 8
+    static let lipidCaptionFontSize: CGFloat = 12
+    static let lipidValueFontSize: CGFloat = 12
+    static let lipidRowSpacing: CGFloat = 8
+    static let lipidColumnSpacing: CGFloat = 8
+    static let lipidItemSpacing: CGFloat = 4
+    static let lipidGridTopGap: CGFloat = 8
 }
 
 // MARK: - Metric Badge Label (Padding)

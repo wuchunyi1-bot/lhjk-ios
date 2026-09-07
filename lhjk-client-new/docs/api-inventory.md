@@ -16,7 +16,7 @@
 | 不计入本表 | 路由 `/auth/agreement/*`；融云 SDK；OSS 预签名 PUT；媒体 URLSession 下载；`PaymentService`（无 path） |
 | 不写入本表 | App **未调用** 的 Apifox 接口（如 `GET /v1/coupon/getCouponList`）；历史误写 path（如 `getPackageDetail`，已不存在） |
 
-**唯一后端 path 合计：45**（`POST /auth/oauth2/token` 计 1 条）。
+**唯一后端 path 合计：46**（`POST /auth/oauth2/token` 计 1 条）。
 
 ---
 
@@ -62,7 +62,7 @@ App端/
 │   ├── 商城套餐相关接口
 │   ├── 商城订单相关接口
 │   ├── 订单支付服务
-│   │   └── GET  /v1/orderPay/orderPay
+│   │   └── POST /v1/orderPay/orderPay
 │   ├── 商城退款订单相关接口
 │   └── 优惠券领用 / 员工权益卡管理
 ├── 内容/
@@ -76,8 +76,10 @@ App端/
 │   └── IM账户管理
 │       └── POST /v1/account/addRongImAccount
 ├── 居家健康/
-│   └── 监测方案定义
-│       └── GET /v1/scheme/getUserToDayMonitorTask
+│   ├── 监测方案定义
+│   │   └── GET /v1/scheme/getUserToDayMonitorTask
+│   └── 饮食方案
+│       └── GET /v1/diningScheme/downloadDietPoster
 └── 监测/
     ├── 我的健康页
     │   └── GET  /v1/healthPage/getCmsConfig
@@ -157,7 +159,7 @@ App端/
 | 31 | POST | `/v1/order/updateOrderDelivery` | `App端/商城/商城订单相关接口` | `OrderService` | [改配送](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/490169536e0.md) |
 | 32 | POST | `/v1/order/updateOrderDescription` | `App端/商城/商城订单相关接口` | `OrderService` | [改备注](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/490169535e0.md) |
 | 33 | POST | `/v1/orderClearing/submitReturnGoods` | `App端/商城/商城退款订单相关接口` | `OrderService` | [提交退货](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/493050735e0.md) |
-| 33a | GET | `/v1/orderPay/orderPay` | `App端/商城/订单支付服务` | `OrderService` / `PaymentService.payMallOrder`；确认订单立即支付 | [支付统一接口](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330716e0.md) |
+| 33a | POST | `/v1/orderPay/orderPay` | `App端/商城/订单支付服务` | `OrderService` / `PaymentService.payMallOrder`；确认订单立即支付；**JSON body** 带回 `amountVersion`、`expectedPayableAmount` | [支付统一接口](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330716e0.md) |
 | 34 | GET | `/v1/couponTake/getCouponTakeList` | `App端/商城/优惠券领用` | `CouponService` | [领用列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330752e0.md) |
 | 35 | POST | `/v1/couponTake/bindCouponTake` | `App端/商城/优惠券领用` | `CouponService` | [绑定优惠券](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330751e0.md) |
 | 35a | GET | `/v1/benefitsTake/getCustomerPage` | `App端/商城/员工权益卡管理` | `VoucherService`（卡包列表） | [用户卡包分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/498029202e0.md) |
@@ -192,6 +194,7 @@ App端/
 | 39 | POST | `/v1/account/addRongImAccount` | `App端/IM/IM账户管理` | `RongCloudManager` | [融云账号](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/478384048e0.md) |
 | 40 | GET | `/v1/scheme/getUserToDayMonitorTask` | `App端/居家健康/监测方案定义` | `HomeService` | [今日监测任务](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330787e0.md) |
 | 41 | GET | `/v1/schemeArchive/getRemainServiceTime` | `居家健康/居家用户信息` | `HomeService` | 文档暂无 / 以代码 path 为准（Apifox OAS `getRemainServiceTime`） |
+| 41a | GET | `/v1/diningScheme/downloadDietPoster` | `App端/居家健康` | `DiningSchemeService` | 文档暂无 / 以代码 path 为准（二进制海报；query：`dateTime`、`schemeId`、`bizType`） |
 
 ### 2.6 App端 / 监测（健康 Tab）
 
@@ -246,6 +249,7 @@ App端/
 | `BLL/Service/ColumnContentService.swift` | 1 | columnContent/getByCode |
 | `BLL/Service/DictionaryService.swift` | 1 | dictionary/getDictionaryByParentId2 |
 | `BLL/Home/HomeService.swift` | 3 | scheme/getUserToDayMonitorTask、session/getUserParticipateAllTeam、schemeArchive/getRemainServiceTime |
+| `BLL/My/DiningSchemeService.swift` | 1 | diningScheme/downloadDietPoster |
 | `BLL/Health/HealthPageService.swift` | 4 | healthPage/getCmsConfig、monitorHealth/getMonitorCardList、userMonitorCardConfig/* ×2 |
 | `BLL/Health/EquipmentBindService.swift` | 12 | equipmentUser/* ×6、equipment/getEquipmenByApp、equipment/getCompatibleBluetoothList、firmware/getFirmwareUrlByParam、monitor/saveOrUpdateMonitorData、monitor/getWeightHomePageData、monitor/delMonitorDataByMonitorId |
 | `BLL/Message/IMService.swift` | 2 | session/getGroup、session/getGroupMembers |
@@ -272,7 +276,7 @@ App端/
 
 ```bash
 rg -o --glob '*.swift' '/(v1|auth)/[A-Za-z0-9_./-]+' lhjk-client-new | sort -u
-rg -l --glob '*.swift' 'getAsync|postAsync|deleteAsync|putAsync|postFormURLEncodedAsync|publicPostFormURLEncodedAsync' lhjk-client-new
+rg -l --glob '*.swift' 'getAsync|getDataAsync|postAsync|deleteAsync|putAsync|postFormURLEncodedAsync|publicPostFormURLEncodedAsync' lhjk-client-new
 ```
 
 新增接口时：只读 Apifox → 改本仓库 → 更新本清单。

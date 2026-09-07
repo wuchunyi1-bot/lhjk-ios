@@ -24,6 +24,7 @@ enum H5Config {
         ("exercise", "饮食运动"),
         ("spo2", "血氧"),
         ("digestive", "消化道"),
+        ("blood-lipid", "血脂"),
     ]
 
     private static let metricRootPathOverrides: [String: String] = [

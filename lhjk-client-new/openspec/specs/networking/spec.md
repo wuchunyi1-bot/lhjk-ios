@@ -27,6 +27,12 @@
 - **WHEN** BLL 层需要下载文件
 - **THEN** 网络客户端支持流式下载，提供下载进度回调，支持断点续传
 
+#### Scenario: 已认证二进制 GET（海报等）
+- **WHEN** BLL 调用 `getDataAsync` 且 HTTP 成功、body 为图片二进制
+- **THEN** 返回原始 `Data`，不按 `APIResponse` JSON 解码
+- **WHEN** body 为含非成功 `code` 的 JSON（如 `A0230`）
+- **THEN** 抛出 API 错误并走会话失效检测
+
 ---
 
 ### Requirement: Unauthenticated Requests

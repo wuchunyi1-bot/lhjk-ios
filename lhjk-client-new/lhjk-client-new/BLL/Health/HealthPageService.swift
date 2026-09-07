@@ -590,6 +590,30 @@ struct DietSportCardDisplay: Equatable {
     )
 }
 
+/// 血脂卡 2×2：TC / TG / HDL / LDL
+struct BloodLipidCardDisplay: Equatable {
+    let tc: String
+    let tg: String
+    let hdl: String
+    let ldl: String
+    let abnormalCount: Int
+
+    var hasData: Bool {
+        [tc, tg, hdl, ldl].contains { value in
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !trimmed.isEmpty && trimmed != "--"
+        }
+    }
+
+    static let empty = BloodLipidCardDisplay(
+        tc: "--",
+        tg: "--",
+        hdl: "--",
+        ldl: "--",
+        abnormalCount: 0
+    )
+}
+
 /// 首页体征卡展示模型（优先 pageUrl，否则按 cardType 兜底）
 struct HealthMetricDisplayItem: Equatable {
     let cardType: Int
@@ -609,6 +633,8 @@ struct HealthMetricDisplayItem: Equatable {
     let pageUrl: String?
     /// `cardType == 10` 时使用三列热量布局
     let dietSport: DietSportCardDisplay?
+    /// `cardType == 14` 时使用血脂四项布局
+    let bloodLipid: BloodLipidCardDisplay?
 
     func withBackgroundUrl(_ url: String) -> HealthMetricDisplayItem {
         HealthMetricDisplayItem(
@@ -625,7 +651,8 @@ struct HealthMetricDisplayItem: Equatable {
             time: time,
             routeKey: routeKey,
             pageUrl: pageUrl,
-            dietSport: dietSport
+            dietSport: dietSport,
+            bloodLipid: bloodLipid
         )
     }
 
@@ -635,6 +662,9 @@ struct HealthMetricDisplayItem: Equatable {
             let intake = dietSport.intakeText.trimmingCharacters(in: .whitespacesAndNewlines)
             let consume = dietSport.consumeText.trimmingCharacters(in: .whitespacesAndNewlines)
             return intake != "--" || consume != "--"
+        }
+        if let bloodLipid {
+            return bloodLipid.hasData
         }
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return !trimmed.isEmpty && trimmed != "--"
@@ -651,7 +681,7 @@ struct HealthQuickEntryDisplayItem: Equatable {
 
 enum MonitorCardDisplayMapper {
 
-    /// cardType：2血压 / 3血糖 / 4体温 / 5体重 / 10饮食运动 / 11用药 / 12营养补剂 / 13血氧
+    /// cardType：2血压 / 3血糖 / 4体温 / 5体重 / 10饮食运动 / 11用药 / 12营养补剂 / 13血氧 / 14血脂
     static func metricKey(for cardType: Int?) -> String {
         switch cardType {
         case 2: return "blood-pressure"
@@ -662,6 +692,7 @@ enum MonitorCardDisplayMapper {
         case 11: return "medication"
         case 12: return "supplement"
         case 13: return "spo2"
+        case 14: return "blood-lipid"
         default: return "blood-pressure"
         }
     }
@@ -710,6 +741,7 @@ enum MonitorCardDisplayMapper {
         case "digestive": return "cross.case.fill"
         case "medication": return "pills.fill"
         case "supplement": return "leaf.fill"
+        case "blood-lipid": return "drop.fill"
         default: return "heart.text.square.fill"
         }
     }
@@ -741,8 +773,17 @@ enum MonitorCardDisplayMapper {
             let time = formatTime(card.monitorTime, scene: card.monitorTimeType)
             let rawStatus = (card.result ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let name = (card.cardName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            let status = displayStatus(raw: rawStatus, value: mapped.value, cardType: type)
             let dietSport = type == 10 ? extractDietSportDisplay(card.dietSportData ?? [:]) : nil
+            let bloodLipid = type == 14 ? extractBloodLipidDisplay(card.monitorData ?? [:]) : nil
+            let hasValue = bloodLipid.map(\.hasData) ?? (mapped.value != "--")
+            let status = lipidStatus(raw: rawStatus, bloodLipid: bloodLipid)
+                ?? displayStatus(raw: rawStatus, value: mapped.value, cardType: type)
+            let resolvedStatusType: String
+            if let bloodLipid, bloodLipid.hasData, bloodLipid.abnormalCount > 0 {
+                resolvedStatusType = "warning"
+            } else {
+                resolvedStatusType = statusType(for: card.resultType, result: status, hasValue: hasValue)
+            }
             return HealthMetricDisplayItem(
                 cardType: type,
                 metricKey: key,
@@ -750,14 +791,15 @@ enum MonitorCardDisplayMapper {
                 value: mapped.value,
                 unit: mapped.unit,
                 status: status,
-                statusType: statusType(for: card.resultType, result: status, hasValue: mapped.value != "--"),
+                statusType: resolvedStatusType,
                 iconSF: iconSF(for: key),
                 iconUrl: nonempty(card.iconUrl),
                 backgroundUrl: nonempty(card.backgroundUrl),
                 time: time,
                 routeKey: key,
                 pageUrl: nonempty(card.pageUrl),
-                dietSport: dietSport
+                dietSport: dietSport,
+                bloodLipid: bloodLipid
             )
         }
     }
@@ -783,7 +825,8 @@ enum MonitorCardDisplayMapper {
                     time: "",
                     routeKey: key,
                     pageUrl: nonempty(item.pageUrl),
-                    dietSport: type == 10 ? DietSportCardDisplay.empty : nil
+                    dietSport: type == 10 ? DietSportCardDisplay.empty : nil,
+                    bloodLipid: type == 14 ? BloodLipidCardDisplay.empty : nil
                 )
             }
     }
@@ -829,6 +872,7 @@ enum MonitorCardDisplayMapper {
         switch key {
         case "medication": return "用药"
         case "supplement": return "营养补剂"
+        case "blood-lipid": return "血脂"
         default: return H5Config.metricTitle(for: key)
         }
     }
@@ -846,6 +890,17 @@ enum MonitorCardDisplayMapper {
         return "正常"
     }
 
+    /// 血脂：`abnormalCount > 0` 展示「N项异常」，否则用 `result` / 「正常」
+    private static func lipidStatus(raw: String, bloodLipid: BloodLipidCardDisplay?) -> String? {
+        guard let bloodLipid else { return nil }
+        guard bloodLipid.hasData else { return "" }
+        if bloodLipid.abnormalCount > 0 {
+            return "\(bloodLipid.abnormalCount)项异常"
+        }
+        if !raw.isEmpty { return raw }
+        return "正常"
+    }
+
     private static func statusType(for resultType: Int?, result: String, hasValue: Bool) -> String {
         guard hasValue else { return "success" }
         switch resultType {
@@ -859,26 +914,24 @@ enum MonitorCardDisplayMapper {
         return "success"
     }
 
+    /// Hub 体征卡时间只展示到日期，不带时分。
     private static func formatTime(_ ms: Int64?, scene: String?) -> String {
         let sceneText = (scene ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard let ms, ms > 0 else { return sceneText }
         let date = Date(timeIntervalSince1970: TimeInterval(ms) / 1000)
         let cal = Calendar.current
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "zh_CN")
+        let dateText: String
         if cal.isDateInToday(date) {
-            f.dateFormat = "HH:mm"
-            let t = "今天 \(f.string(from: date))"
-            return sceneText.isEmpty ? t : "\(t) · \(sceneText)"
+            dateText = "今天"
+        } else if cal.isDateInYesterday(date) {
+            dateText = "昨天"
+        } else {
+            let f = DateFormatter()
+            f.locale = Locale(identifier: "zh_CN")
+            f.dateFormat = "MM/dd"
+            dateText = f.string(from: date)
         }
-        if cal.isDateInYesterday(date) {
-            f.dateFormat = "HH:mm"
-            let t = "昨天 \(f.string(from: date))"
-            return sceneText.isEmpty ? t : "\(t) · \(sceneText)"
-        }
-        f.dateFormat = "MM/dd HH:mm"
-        let t = f.string(from: date)
-        return sceneText.isEmpty ? t : "\(t) · \(sceneText)"
+        return sceneText.isEmpty ? dateText : "\(dateText) · \(sceneText)"
     }
 
     private static func extractValueUnit(from card: MonitorHealthCardVO) -> (value: String, unit: String) {
@@ -895,6 +948,12 @@ enum MonitorCardDisplayMapper {
             if let oxygen = string(in: data, keys: ["oxygen", "spo2", "value"]) {
                 let unit = string(in: data, keys: ["unit"]) ?? "%"
                 return (oxygen, unit)
+            }
+        case 14:
+            let lipid = extractBloodLipidDisplay(data)
+            if lipid.hasData {
+                let unit = string(in: data, keys: ["unit"]) ?? "mmol/L"
+                return (lipid.tc, unit)
             }
         case 10:
             if let mapped = extractDietSport(diet) {
@@ -946,6 +1005,19 @@ enum MonitorCardDisplayMapper {
         }
 
         return ("--", "")
+    }
+
+    /// 血脂四项；缺省展示 `--`。`abnormalCount` 用于徽标「N项异常」
+    private static func extractBloodLipidDisplay(_ data: [String: HealthJSONValue]) -> BloodLipidCardDisplay {
+        guard !data.isEmpty else { return .empty }
+        let count = max(0, Int(number(in: data, keys: ["abnormalCount"]) ?? 0))
+        return BloodLipidCardDisplay(
+            tc: string(in: data, keys: ["totalCholesterol"]) ?? "--",
+            tg: string(in: data, keys: ["triglycerides"]) ?? "--",
+            hdl: string(in: data, keys: ["highDensityLipoprotein"]) ?? "--",
+            ldl: string(in: data, keys: ["lowDensityLipoprotein"]) ?? "--",
+            abnormalCount: count
+        )
     }
 
     /// 饮食运动：优先已摄入热量 `intake`，否则推荐/总量

@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import WebKit
 import Combine
 
@@ -65,6 +66,8 @@ final class FundeNativeBridge: NSObject {
         switch action {
         case "navigatePackageDetail":
             handleNavigatePackageDetail(body: body, params: params)
+        case "saveImageToAlbum":
+            handleSaveImageToAlbum(body: body, params: params, callbackId: callbackId)
         case "gotoBuy":
             openServicePackageList()
         case "navigateH5", "openH5", "openH5Page", "openPage":
@@ -111,6 +114,65 @@ final class FundeNativeBridge: NSObject {
             ?? Self.stringValue(params["hospitalId"])
             ?? ""
         openPackageDetail(packageId: packageId, hospitalId: hospitalId)
+    }
+
+    /// 饮食方案「保存食谱到手机」
+    private func handleSaveImageToAlbum(body: [String: Any], params: [String: Any], callbackId: String?) {
+        let dateTime = Self.stringValue(body["dateTime"])
+            ?? Self.stringValue(params["dateTime"])
+            ?? ""
+        let schemeId = Self.stringValue(body["schemeId"])
+            ?? Self.stringValue(params["schemeId"])
+            ?? ""
+        let fileName = Self.stringValue(body["fileName"])
+            ?? Self.stringValue(params["fileName"])
+            ?? "食谱清单.png"
+        let bizType = Self.stringValue(body["bizType"])
+            ?? Self.stringValue(params["bizType"])
+            ?? "dietPoster"
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await AppContainer.shared.diningSchemeService.saveDietPosterToAlbum(
+                    dateTime: dateTime,
+                    schemeId: schemeId,
+                    bizType: bizType
+                )
+                await MainActor.run {
+                    self.hostViewController?.showToastAlert("已保存到相册", duration: 1.5)
+                    self.respond(callbackId, result: ["fileName": fileName])
+                }
+            } catch let error as DiningSchemeService.DiningSchemeServiceError {
+                await MainActor.run {
+                    self.presentSavePosterFailure(error)
+                    self.reject(callbackId, message: error.localizedDescription)
+                }
+            } catch {
+                await MainActor.run {
+                    self.hostViewController?.showToastAlert(error.localizedDescription, duration: 1.5)
+                    self.reject(callbackId, message: error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    private func presentSavePosterFailure(_ error: DiningSchemeService.DiningSchemeServiceError) {
+        guard let host = hostViewController else { return }
+        if case .photoDenied = error {
+            let cancel = UIAlertAction(title: "取消", style: .cancel)
+            let settings = UIAlertAction(title: "去设置", style: .default) { _ in
+                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                UIApplication.shared.open(url)
+            }
+            host.showAlert(
+                title: "无法保存到相册",
+                message: error.localizedDescription,
+                actions: [cancel, settings]
+            )
+            return
+        }
+        host.showToastAlert(error.localizedDescription, duration: 1.5)
     }
 
     private func openPackageDetail(packageId: String, hospitalId: String) {

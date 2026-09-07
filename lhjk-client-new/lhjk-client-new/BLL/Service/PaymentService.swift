@@ -64,23 +64,28 @@ final class PaymentService {
         return paymentChannel.pay(order: order)
     }
 
-    /// 商城待支付订单：先调 `GET /v1/orderPay/orderPay`，再调起渠道 SDK
+    /// 商城待支付订单：先调 `POST /v1/orderPay/orderPay`，再调起渠道 SDK
     func payMallOrder(
         orderId: Int64,
         productName: String,
         amountYuan: Double,
         channel: PaymentChannel,
+        amountVersion: Int? = nil,
+        expectedPayableAmount: Double? = nil,
         description: String? = nil,
         orderService: OrderService = .shared
     ) async throws -> PaymentResult {
         let payType: OrderPayType = channel == .wechatPay ? .wechat : .alipay
+        let contractedPayable = expectedPayableAmount ?? amountYuan
         let payData = try await orderService.orderPay(
             orderId: orderId,
             payType: payType,
+            amountVersion: amountVersion,
+            expectedPayableAmount: contractedPayable,
             description: description
         )
 
-        let fen = max(0, Int((amountYuan * 100).rounded()))
+        let fen = max(0, Int((contractedPayable * 100).rounded()))
         let order = PaymentOrder(
             id: String(orderId),
             productId: String(orderId),

@@ -10,7 +10,7 @@ import Foundation
 /// - `GET /v1/order/getOrderSettlement` — 确认订单结算信息
 /// - `POST /v1/order/insertOrEdit` — 新增或编辑订单（取消 / 退款申请）
 /// - `POST /v1/orderClearing/submitReturnGoods` — 提交退货信息
-/// - `GET /v1/orderPay/orderPay` — 支付统一接口
+/// - `POST /v1/orderPay/orderPay` — 支付统一接口
 final class OrderService {
 
     // MARK: - Singleton
@@ -299,46 +299,63 @@ final class OrderService {
 
     // MARK: - 支付
 
-    /// `GET /v1/orderPay/orderPay`
+    /// `POST /v1/orderPay/orderPay`（JSON body，禁止 query）
     /// - Parameters:
     ///   - orderId: 订单 ID
     ///   - payType: `OrderPayType`（1 微信 / 2 支付宝）
+    ///   - amountVersion: 结算版本，与结算/详情契约一致，原样带回
+    ///   - expectedPayableAmount: 期望应付金额，原样带回
     ///   - description: 可选描述（可用订单备注）
     ///   - code: 可选授权码（小程序等场景）
     @discardableResult
     func orderPay(
         orderId: Int64,
         payType: OrderPayType,
+        amountVersion: Int? = nil,
+        expectedPayableAmount: Double? = nil,
         description: String? = nil,
         code: String? = nil
     ) async throws -> OrderPayResultVO {
-        var params: [String: Any] = [
+        var body: [String: Any] = [
             "orderId": String(orderId),
             "payType": payType.rawValue,
         ]
+        if let amountVersion {
+            body["amountVersion"] = amountVersion
+        }
+        if let expectedPayableAmount {
+            body["expectedPayableAmount"] = Self.jsonMoneyNumber(expectedPayableAmount)
+        }
         let desc = description?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !desc.isEmpty {
-            params["description"] = String(desc.prefix(300))
+            body["description"] = String(desc.prefix(300))
         }
         let authCode = code?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !authCode.isEmpty {
-            params["code"] = authCode
+            body["code"] = authCode
         }
 
-        print("[OrderService] orderPay → orderId=\(orderId) payType=\(payType.rawValue)")
+        print("[OrderService] orderPay → orderId=\(orderId) payType=\(payType.rawValue) amountVersion=\(amountVersion?.description ?? "nil") expectedPayable=\(expectedPayableAmount?.description ?? "nil")")
 
-        let response: APIResponse<OrderPayResultVO> = try await APIManager.shared.getAsync(
+        let response: APIResponse<OrderPayResultVO> = try await APIManager.shared.postAsync(
             path: "/v1/orderPay/orderPay",
-            parameters: params,
+            parameters: body,
             responseType: APIResponse<OrderPayResultVO>.self
         )
         guard response.isSuccess else {
             print("[OrderService] orderPay ✗ code=\(response.code) msg=\(response.msg ?? "")")
-            throw OrderServiceError.queryFailed(response.msg ?? "发起支付失败")
+            throw OrderServiceError.payRejected(response.msg ?? "发起支付失败")
         }
         let data = response.data ?? OrderPayResultVO.empty
         print("[OrderService] orderPay ✓ hasWechat=\(data.wechatPayRequest != nil) hasAlipay=\(data.alipayOrderString != nil)")
         return data
+    }
+
+    /// 金额写入 JSON number：先按分四舍五入，再用 Decimal，避免 `0.1` 编成 `0.10000000000000001`
+    private static func jsonMoneyNumber(_ amount: Double) -> NSDecimalNumber {
+        let cents = (amount * 100).rounded()
+        let decimal = Decimal(Int(cents)) / Decimal(100)
+        return NSDecimalNumber(decimal: decimal)
     }
 }
 
@@ -346,10 +363,13 @@ final class OrderService {
 
 enum OrderServiceError: Error, LocalizedError {
     case queryFailed(String)
+    /// 支付统一接口业务失败（含金额/版本变化）
+    case payRejected(String)
 
     var errorDescription: String? {
         switch self {
         case .queryFailed(let msg): return msg.isEmpty ? "查询订单失败" : msg
+        case .payRejected(let msg): return msg.isEmpty ? "发起支付失败" : msg
         }
     }
 }

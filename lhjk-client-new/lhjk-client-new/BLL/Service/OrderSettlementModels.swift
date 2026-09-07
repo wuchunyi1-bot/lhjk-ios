@@ -25,12 +25,17 @@ struct OrderSettlementBO: Decodable {
     let fundeChannelFlag: Bool?
     /// 1 支持快递发货；0 医院自提
     let orderExpress: Int?
+    /// 结算版本，支付时原样带回 `orderPay.amountVersion`
+    let amountVersion: Int?
+    /// 期望应付金额，支付时原样带回 `orderPay.expectedPayableAmount`
+    let expectedPayableAmount: Double?
 
     private enum CodingKeys: String, CodingKey {
         case packageName, img, totalPrice, details, address, appOrderDetailBO
         case categoryServiceId, couponTakeId, amount, discountRatio
         case commodityPrice, expressAmount, description
         case wechat, alipay, fundeChannelFlag, orderExpress
+        case amountVersion, expectedPayableAmount
     }
 
     init(from decoder: Decoder) throws {
@@ -52,6 +57,8 @@ struct OrderSettlementBO: Decodable {
         alipay = try c.decodeIfPresent(Bool.self, forKey: .alipay)
         fundeChannelFlag = try c.decodeIfPresent(Bool.self, forKey: .fundeChannelFlag)
         orderExpress = HospitalPackageInt.decodeIfPresent(c, key: .orderExpress)
+        amountVersion = HospitalPackageInt.decodeIfPresent(c, key: .amountVersion)
+        expectedPayableAmount = Self.decodeFlexibleDouble(c, key: .expectedPayableAmount)
     }
 
     /// 是否支持快递发货
@@ -76,11 +83,20 @@ struct OrderSettlementBO: Decodable {
     }
 
     /// 应付金额（元）
-    /// 优先 `totalPrice`；缺省时退到 `appOrderDetailBO.payable`；再退到 套餐金额 + 运费
+    /// 优先支付契约 `expectedPayableAmount`；缺省 `totalPrice`；再退到 `appOrderDetailBO.payable`
     var payableAmountYuan: Double {
+        if let v = expectedPayableAmount { return max(0, v) }
         if let v = totalPrice { return max(0, v) }
         if let v = appOrderDetailBO?.payable { return max(0, v) }
         return max(0, packageAmountYuan + expressAmountYuan)
+    }
+
+    /// 支付提交用结算版本（原样带回）
+    var payAmountVersion: Int? { amountVersion }
+
+    /// 支付提交用期望应付（原样带回；缺省用展示应付）
+    var payExpectedPayableAmount: Double? {
+        expectedPayableAmount ?? (totalPrice.map { max(0, $0) })
     }
 
     /// 优惠券抵扣金额（元）— 统一取结算根级 `amount`

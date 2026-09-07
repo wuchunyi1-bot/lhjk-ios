@@ -27,23 +27,6 @@ final class ConversationCell: UITableViewCell {
         return iv
     }()
 
-    /// 群聊 2×2 拼接头像
-    private let collageView: UIView = {
-        let v = UIView()
-        v.clipsToBounds = true
-        v.layer.cornerRadius = 24
-        v.backgroundColor = UIColor(hexString: "#CCDBFF")
-        v.isHidden = true
-        return v
-    }()
-
-    private let collageImages: [UIImageView] = (0..<4).map { _ in
-        let iv = UIImageView()
-        iv.contentMode = .scaleAspectFill
-        iv.clipsToBounds = true
-        return iv
-    }
-
     private let avatarPlaceholder: UILabel = {
         let l = UILabel()
         l.font = .fdFont(ofSize: 18, weight: .semibold)
@@ -126,33 +109,16 @@ final class ConversationCell: UITableViewCell {
             make.leading.trailing.equalToSuperview().inset(12)
         }
 
-        [avatarView, collageView, badgeView, nameLabel, roleTag, previewLabel, timeLabel, separatorLine]
+        [avatarView, badgeView, nameLabel, roleTag, previewLabel, timeLabel, separatorLine]
             .forEach(cardContainer.addSubview)
         badgeView.addSubview(badgeLabel)
         avatarView.addSubview(avatarPlaceholder)
-
-        // 2×2 collage
-        let grid = UIStackView()
-        grid.axis = .vertical
-        grid.spacing = 0.5
-        grid.distribution = .fillEqually
-        let top = UIStackView(arrangedSubviews: [collageImages[0], collageImages[1]])
-        let bottom = UIStackView(arrangedSubviews: [collageImages[2], collageImages[3]])
-        [top, bottom].forEach {
-            $0.axis = .horizontal
-            $0.spacing = 0.5
-            $0.distribution = .fillEqually
-            grid.addArrangedSubview($0)
-        }
-        collageView.addSubview(grid)
-        grid.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         avatarView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(12)
             make.centerY.equalToSuperview()
             make.size.equalTo(48)
         }
-        collageView.snp.makeConstraints { $0.edges.equalTo(avatarView) }
         avatarPlaceholder.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         badgeView.snp.makeConstraints { make in
@@ -241,20 +207,6 @@ final class ConversationCell: UITableViewCell {
     // MARK: - Avatar
 
     private func applyAvatar(for conv: Conversation) {
-        if conv.role == .team {
-            avatarView.isHidden = true
-            collageView.isHidden = false
-            avatarPlaceholder.isHidden = true
-            let names = ["msg_av_grp_1", "msg_av_grp_2", "msg_av_grp_3", "msg_av_grp_4"]
-            for (i, iv) in collageImages.enumerated() {
-                iv.image = UIImage(named: names[i])
-            }
-            return
-        }
-
-        collageView.isHidden = true
-        avatarView.isHidden = false
-
         if let img = Self.fallbackAvatar(for: conv) {
             avatarView.image = img
             avatarView.backgroundColor = conv.role == .service
@@ -276,21 +228,13 @@ final class ConversationCell: UITableViewCell {
             .replacingOccurrences(of: "·", with: "｜")
     }
 
-    /// 按 role 回退到 Figma 导出头像 / 图标
+    /// 仅保留仍在使用的本地图标；人物/群拼接头像走字母占位
     private static func fallbackAvatar(for conv: Conversation) -> UIImage? {
-        let name: String?
         switch conv.role {
-        case .ai: name = "msg_avatar_ai"
-        case .team: name = nil
-        case .manager: name = "msg_avatar_wang"
-        case .doctor: name = "msg_avatar_zhang"
-        case .nutrition: name = "msg_avatar_chen"
-        case .service: name = "msg_avatar_family"
-        case .caseManager: name = "msg_avatar_liu"
-        case .psychology: name = "msg_avatar_lin"
+        case .ai: return UIImage(named: "msg_avatar_ai")
+        case .service: return UIImage(named: "msg_avatar_family")
+        default: return nil
         }
-        guard let name else { return nil }
-        return UIImage(named: name)
     }
 }
 

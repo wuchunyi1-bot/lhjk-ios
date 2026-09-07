@@ -218,7 +218,8 @@ extension HealthVitalMetricsCell: UICollectionViewDataSource, UICollectionViewDe
             unit: m.unit,
             trend: "",
             time: m.time,
-            dietSport: m.dietSport
+            dietSport: m.dietSport,
+            bloodLipid: m.bloodLipid
         )
         return cell
     }

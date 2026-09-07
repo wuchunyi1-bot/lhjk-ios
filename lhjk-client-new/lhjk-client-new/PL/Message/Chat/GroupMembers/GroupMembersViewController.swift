@@ -73,18 +73,22 @@ final class GroupMembersViewController: BaseViewController {
                     self.loadingIndicator.startAnimating()
                     self.tableView.isHidden = true
                     self.emptyLabel.isHidden = true
+                    self.title = "群成员"
                 } else {
                     self.loadingIndicator.stopAnimating()
                     self.tableView.isHidden = self.viewModel.isEmpty
                     self.emptyLabel.isHidden = !self.viewModel.isEmpty
+                    self.updateTitle(count: self.viewModel.members.count)
                 }
             }
             .store(in: &cancellables)
 
         viewModel.$members
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.tableView.reloadData()
+            .sink { [weak self] members in
+                guard let self else { return }
+                self.tableView.reloadData()
+                self.updateTitle(count: members.count)
             }
             .store(in: &cancellables)
 
@@ -94,6 +98,10 @@ final class GroupMembersViewController: BaseViewController {
                 self?.showToastAlert(msg)
             }
             .store(in: &cancellables)
+    }
+
+    private func updateTitle(count: Int) {
+        title = viewModel.isLoading ? "群成员" : "群成员(\(count))"
     }
 }
 

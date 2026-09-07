@@ -14,10 +14,10 @@
 - **WHEN** 用户点击快捷入口
 - **THEN** 使用 `quickEntryList[].pageUrl`（`FundeH5:` / `FundeApp:`）经 `FundePageURL` 打开
 
-- **WHEN** 用户点击体征卡片且该项 `pageUrl` 可被 `FundePageURL` 解析（`FundeH5:` / `FundeApp:`）
+- **WHEN** 用户点击体征卡片且该项 `pageUrl` 为 `FundeH5:` 或已注册的 `FundeApp:`
 - **THEN** 系统 MUST 经 `FundePageURL.open` 打开，MUST NOT 再用 `cardType` 覆盖该跳转
 
-- **WHEN** 用户点击体征卡片且 `pageUrl` 为空、无前缀或无法解析
+- **WHEN** 用户点击体征卡片且 `pageUrl` 为空或无法解析
 - **THEN** 按 `cardType` 映射为 `/health/metrics/{key}` 并打开对应 H5
 
 ### Requirement: 编辑卡片配置

@@ -677,7 +677,7 @@ extension Notification.Name {
     static let orderListNeedsRefresh = Notification.Name("lhjk.order.listNeedsRefresh")
 }
 
-// MARK: - 订单支付 `GET /v1/orderPay/orderPay`
+// MARK: - 订单支付 `POST /v1/orderPay/orderPay`
 
 /// 支付渠道类型（对齐订单 `paymentType`：1 微信 / 2 支付宝）
 enum OrderPayType: String {

@@ -499,6 +499,30 @@ extension APIError {
             self = .unknown(afError)
         }
     }
+
+    /// 二进制接口偶发 HTTP 200 + `{ code, msg }` 业务失败
+    static func businessErrorIfJSONFailure(_ data: Data) -> APIError? {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        let code: String
+        if let s = json["code"] as? String {
+            code = s
+        } else if let i = json["code"] as? Int {
+            code = String(i)
+        } else {
+            return nil
+        }
+        if SessionInvalidation.isSessionInvalid(code: code, message: json["msg"] as? String) {
+            return .unauthorized
+        }
+        let success = json["success"] as? Bool
+        if success == true || code == "0" || code == "200" {
+            return .businessError(code: -1, message: (json["msg"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? "食谱图片下载失败")
+        }
+        let message = json["msg"] as? String
+        return .businessError(code: Int(code) ?? -1, message: message)
+    }
 }
 
 /// 空响应体（用于不需要解析返回值的请求）

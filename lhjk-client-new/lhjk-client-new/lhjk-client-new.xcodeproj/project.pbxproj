@@ -346,6 +346,11 @@
 		A5C7B743303E9D22008D89A5 /* RegionPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C7B742303E9D22008D89A5 /* RegionPickerSheet.swift */; };
 		A5C7B745303E9D3D008D89A5 /* map.json in Resources */ = {isa = PBXBuildFile; fileRef = A5C7B744303E9D3D008D89A5 /* map.json */; };
 		A5C7B747303EEF2D008D89A5 /* NotificationPromptService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C7B746303EEF2D008D89A5 /* NotificationPromptService.swift */; };
+		A5C8BB8B304A9BD000D6398E /* OrderPayResultHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C8BB85304A9BD000D6398E /* OrderPayResultHeroView.swift */; };
+		A5C8BB8C304A9BD000D6398E /* OrderPayResultViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C8BB89304A9BD000D6398E /* OrderPayResultViewController.swift */; };
+		A5C8BB8D304A9BD000D6398E /* OrderPayResultViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C8BB87304A9BD000D6398E /* OrderPayResultViewModel.swift */; };
+		A5C8BB8F304AA1FE00D6398E /* OrderPayResultInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C8BB8E304AA1FE00D6398E /* OrderPayResultInfoView.swift */; };
+		A5C8BB91304AB8D500D6398E /* DiningSchemeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C8BB90304AB8D500D6398E /* DiningSchemeService.swift */; };
 		A5CB0BC5302193440076FAFB /* HealthPageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CB0BC4302193440076FAFB /* HealthPageService.swift */; };
 		A5CB0BCA3021935F0076FAFB /* MetricCardEditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CB0BC63021935F0076FAFB /* MetricCardEditViewModel.swift */; };
 		A5CB0BCB3021935F0076FAFB /* MetricCardEditViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CB0BC83021935F0076FAFB /* MetricCardEditViewController.swift */; };
@@ -732,6 +737,11 @@
 		A5C7B742303E9D22008D89A5 /* RegionPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionPickerSheet.swift; sourceTree = "<group>"; };
 		A5C7B744303E9D3D008D89A5 /* map.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = map.json; path = Other/Resources/map.json; sourceTree = "<group>"; };
 		A5C7B746303EEF2D008D89A5 /* NotificationPromptService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPromptService.swift; sourceTree = "<group>"; };
+		A5C8BB85304A9BD000D6398E /* OrderPayResultHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderPayResultHeroView.swift; sourceTree = "<group>"; };
+		A5C8BB87304A9BD000D6398E /* OrderPayResultViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderPayResultViewModel.swift; sourceTree = "<group>"; };
+		A5C8BB89304A9BD000D6398E /* OrderPayResultViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderPayResultViewController.swift; sourceTree = "<group>"; };
+		A5C8BB8E304AA1FE00D6398E /* OrderPayResultInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderPayResultInfoView.swift; sourceTree = "<group>"; };
+		A5C8BB90304AB8D500D6398E /* DiningSchemeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiningSchemeService.swift; sourceTree = "<group>"; };
 		A5CB0BC4302193440076FAFB /* HealthPageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HealthPageService.swift; path = BLL/Health/HealthPageService.swift; sourceTree = "<group>"; };
 		A5CB0BC63021935F0076FAFB /* MetricCardEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCardEditViewModel.swift; sourceTree = "<group>"; };
 		A5CB0BC83021935F0076FAFB /* MetricCardEditViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCardEditViewController.swift; sourceTree = "<group>"; };
@@ -1029,6 +1039,7 @@
 		A57D2F1D2FDC0647002E43BA /* My */ = {
 			isa = PBXGroup;
 			children = (
+				A5C8BB90304AB8D500D6398E /* DiningSchemeService.swift */,
 				A5C7B740303E9D08008D89A5 /* ChinaRegionService.swift */,
 				A5C13258303D9F3B0047F06D /* CacheCleanupService.swift */,
 				A5F6AF283029724D00D1BF74 /* BenefitGiftShareBuilder.swift */,
@@ -1339,6 +1350,7 @@
 		A590FC7A2FEA91170056EF52 /* Order */ = {
 			isa = PBXGroup;
 			children = (
+				A5C8BB8A304A9BD000D6398E /* PayResult */,
 				A514288A3011AEFB00770A5E /* OrderNavigationCoordinator.swift */,
 				A56120D43010B13500505C32 /* Components */,
 				A56120B33010A31C00505C32 /* Cells */,
@@ -2250,6 +2262,33 @@
 			path = ScaleResult;
 			sourceTree = "<group>";
 		};
+		A5C8BB86304A9BD000D6398E /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A5C8BB8E304AA1FE00D6398E /* OrderPayResultInfoView.swift */,
+				A5C8BB85304A9BD000D6398E /* OrderPayResultHeroView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A5C8BB88304A9BD000D6398E /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A5C8BB87304A9BD000D6398E /* OrderPayResultViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A5C8BB8A304A9BD000D6398E /* PayResult */ = {
+			isa = PBXGroup;
+			children = (
+				A5C8BB86304A9BD000D6398E /* Components */,
+				A5C8BB88304A9BD000D6398E /* ViewModels */,
+				A5C8BB89304A9BD000D6398E /* OrderPayResultViewController.swift */,
+			);
+			path = PayResult;
+			sourceTree = "<group>";
+		};
 		A5CB0BC73021935F0076FAFB /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
@@ -2958,6 +2997,7 @@
 				A56DDEB330174B8E000E03A0 /* DoctorModels.swift in Sources */,
 				A56DDEB430174B8E000E03A0 /* DoctorService.swift in Sources */,
 				A56120CB3010A31C00505C32 /* OrderRemarkEditorSheet.swift in Sources */,
+				A5C8BB91304AB8D500D6398E /* DiningSchemeService.swift in Sources */,
 				A56120CC3010A31C00505C32 /* OrderTabViewController.swift in Sources */,
 				A56120CD3010A31C00505C32 /* OrderConfirmComponents.swift in Sources */,
 				A56120CE3010A31C00505C32 /* OrderListViewController.swift in Sources */,
@@ -2966,6 +3006,9 @@
 				A5C71B083018BAFC006EA79C /* HomeBannerCarouselCell.swift in Sources */,
 				A5C71B093018BAFC006EA79C /* HomeBrandHeaderCell.swift in Sources */,
 				8E749A7845EBA8C07946E821 /* Router.swift in Sources */,
+				A5C8BB8B304A9BD000D6398E /* OrderPayResultHeroView.swift in Sources */,
+				A5C8BB8C304A9BD000D6398E /* OrderPayResultViewController.swift in Sources */,
+				A5C8BB8D304A9BD000D6398E /* OrderPayResultViewModel.swift in Sources */,
 				A5D28F303046803D00D5D437 /* SecuritySettingsComponents.swift in Sources */,
 				05433145BBE114CF0C1DC08A /* DatabaseManager.swift in Sources */,
 				31C52A8BD36FA64D4C32B098 /* UserDefaultsManager.swift in Sources */,
@@ -3005,6 +3048,7 @@
 				A576A2202FE8E22E004F6070 /* ECGSimulator.swift in Sources */,
 				A576A2212FE8E22E004F6070 /* ECGChartView.swift in Sources */,
 				A5C2BBD4303C1C4F00E1FC31 /* WebViewSystemChromeLocalizer.swift in Sources */,
+				A5C8BB8F304AA1FE00D6398E /* OrderPayResultInfoView.swift in Sources */,
 				A5A6F4ED2FFF7B930065C921 /* NotificationCell.swift in Sources */,
 				A576A2222FE8E22E004F6070 /* ECGDataBuffer.swift in Sources */,
 				A5917CE22FDFA7C000878961 /* HomeRoutes.swift in Sources */,

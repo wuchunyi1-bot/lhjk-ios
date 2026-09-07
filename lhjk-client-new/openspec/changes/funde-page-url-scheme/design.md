@@ -21,7 +21,7 @@
 
 - 不改 Apifox
 - 不发明第三种前缀；无前缀则 no-op
-- 体征卡：有合法 pageUrl 走 `FundePageURL`，否则 `cardType` 兜底；快捷入口 / getByCode 使用 pageUrl
+- 体征卡：`FundeH5:` / 已注册 `FundeApp:` 走 `FundePageURL`；否则 `cardType` 兜底；快捷入口 / getByCode 使用 pageUrl
 
 ## Decisions
 
@@ -50,9 +50,13 @@ enum FundePageURL {
 
 ### 4. 调用方
 
+凡 CMS / IM 下发的 `pageUrl` / `urlKey` 均走同一套规则（`FundeH5:` 一律开 H5，`FundeApp:` 仅已注册本地路由）：
+
 - Home：Banner / 金刚区 / 推荐套餐 → `FundePageURL.open`；**健康陪伴除外**（走 `#/content/detail?id=`）
-- Health **快捷入口**（`getCmsConfig.quickEntryList`）：`FundePageURL.open(pageUrl)`
+- Service：运营 Banner 优先 `FundePageURL.open`；无前缀或 `FundeApp` 未注册时再按 `contentType` 本地 `routePath`
+- Health **快捷入口**（`getCmsConfig.quickEntryList`）：`FundePageURL.open(pageUrl)`；无前缀且以 `/` 开头则 `Router.push`
 - Health **体征卡**：合法 `pageUrl` 走 `FundePageURL.open`；否则 `cardType` → `/health/metrics/{key}`
+- IM 会话卡片 / 通知中心：`FundeH5:` → `FundePageURL.open`；`FundeApp:` / `/path` 走通知中心别名后再 `Router.push`
 
 ## Risks
 

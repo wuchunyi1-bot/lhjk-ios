@@ -73,10 +73,10 @@ CMS 空壳路径（仅 `monitorCardMeta`）无 `backgroundUrl`，MUST 走本地�
 - **WHEN** 用户点击快捷入口
 - **THEN** 使用 `quickEntryList[].pageUrl`（`FundeH5:` / `FundeApp:`）经 `FundePageURL` 打开
 
-- **WHEN** 用户点击体征卡片且该项 `pageUrl` 可被 `FundePageURL` 解析
-- **THEN** 经 `FundePageURL.open` 打开
+- **WHEN** 用户点击体征卡片且该项 `pageUrl` 为 `FundeH5:` 或已注册的 `FundeApp:`
+- **THEN** 经 `FundePageURL.open` 打开（`FundeH5:` 即使本地无对应 metric 也打开该 H5）
 
-- **WHEN** 用户点击体征卡片且无合法 `pageUrl`
+- **WHEN** 用户点击体征卡片且 `pageUrl` 为空或无法解析
 - **THEN** 按 `cardType` 映射为 `/health/metrics/{key}` 并打开对应 H5
 
 ### Requirement: 编辑卡片配置
@@ -106,7 +106,7 @@ CMS 空壳路径（仅 `monitorCardMeta`）无 `backgroundUrl`，MUST 走本地�
 
 ### Requirement: cardType 映射
 
-系统 SHALL 按天使枚举识别卡片类型：`2` 血压、`3` 血糖、`4` 体温、`5` 体重、`10` 饮食运动。
+系统 SHALL 按天使枚举识别卡片类型：`2` 血压、`3` 血糖、`4` 体温、`5` 体重、`10` 饮食运动、`14` 血脂。
 
 #### Scenario: 未知 cardType
 
@@ -159,6 +159,38 @@ progress = 1 - ratio
 
 - **WHEN** finalIntake 与 totalCalories 均缺失或为 0
 - **THEN** 圆环全灰（progress=0）；三列数字仍按整数规则展示
+
+### Requirement: 血脂卡（cardType = 14）
+
+系统 SHALL 在 Hub 体征网格以独立 2×2 布局渲染血脂卡：图标 + 标题「血脂」+ 状态徽标 + TC / TG / HDL / LDL + 时间；不得用单值+单位布局替代。卡片不展示 `mmol/L` 单位。时间只展示到日期（今天 / 昨天 / `MM/dd`），不带时分。
+
+字段映射：
+
+| 展示 | 数据来源 |
+|------|----------|
+| TC | `monitorData.totalCholesterol` |
+| TG | `monitorData.triglycerides` |
+| HDL | `monitorData.highDensityLipoprotein` |
+| LDL | `monitorData.lowDensityLipoprotein` |
+
+无对应字段时该项展示 `--`。四项均无数据时展示「去记录」。
+
+徽标：
+
+- `abnormalCount > 0` → 「N项异常」（warning）
+- 否则有数据时展示 `result`，缺省「正常」（success）
+
+图标优先 `iconUrl`；背景优先 `backgroundUrl`。点击合法 `pageUrl`（如 `FundeH5:/blood-lipid`）经 `FundePageURL.open` 打开。
+
+#### Scenario: 四项齐全且无异常
+
+- **WHEN** `totalCholesterol=4.8`、`triglycerides=1.3`、`highDensityLipoprotein=1.4`、`lowDensityLipoprotein=2.5`，`abnormalCount=0`，`result=正常`
+- **THEN** 卡片展示四项数值，徽标为绿色「正常」
+
+#### Scenario: 多项异常
+
+- **WHEN** `abnormalCount=2`
+- **THEN** 徽标展示「2项异常」（warning）
 
 ### Requirement: 柔性字段解码
 

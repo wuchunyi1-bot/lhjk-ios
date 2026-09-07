@@ -7,13 +7,13 @@
 #### Scenario: 微信支付
 
 - **WHEN** 用户选择微信支付并点击支付
-- **THEN** 调用 `GET /v1/orderPay/orderPay?orderId=&payType=1`
+- **THEN** 调用 `POST /v1/orderPay/orderPay`（JSON body：`orderId`、`payType=1`、`amountVersion`、`expectedPayableAmount`）
 - **AND** 用返回预支付参数调起微信 Open SDK
 - **AND** 用户取消支付时停留当前页并提示；成功后刷新订单列表并进入订单列表
 
 #### Scenario: 支付宝
 
 - **WHEN** 用户选择支付宝并点击支付
-- **THEN** 调用 `GET /v1/orderPay/orderPay?orderId=&payType=2`
+- **THEN** 调用 `POST /v1/orderPay/orderPay`（JSON body：`orderId`、`payType=2`、`amountVersion`、`expectedPayableAmount`）
 - **AND** 用返回 `data.aliBody`（支付宝 `orderStr`）调起支付宝 SDK
 - **AND** 用户取消支付时停留当前页并提示；成功后刷新订单列表并进入订单列表

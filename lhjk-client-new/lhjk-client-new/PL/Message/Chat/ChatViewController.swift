@@ -511,9 +511,9 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
               let action = IMCardResolver.tapAction(for: card) else { return }
         switch action {
         case .openPageUrl(let pageUrl):
-            FundePageURL.open(pageUrl, from: self)
+            NotificationMessageMapper.openRoute(pageUrl, from: self)
         case .openRoute(let path):
-            Router.shared.push(path)
+            NotificationMessageMapper.openRoute(path, from: self)
         case .unavailable(let tip):
             showToast(tip)
         }

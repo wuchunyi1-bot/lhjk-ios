@@ -34,6 +34,7 @@
 
 - **WHEN** 接口成功返回 `ShoppingCartPackageDetailMobileBO`
 - **THEN** 用于展示：`packageName`、`details`、`commodityPrice`/`totalPrice`、`expressAmount`、`orderExpress`、`wechat`/`alipay`、`description`、`amount`（优惠券抵扣）、`couponTakeId` 等
+- **AND** 解码 `amountVersion`、`expectedPayableAmount`，支付时原样带回 `orderPay`；页面应付优先 `expectedPayableAmount`
 - **AND** 结算根级 `address` 字段**已废弃**（恒为空），**禁止**用于快递地址展示；快递地址**仅**读 `appOrderDetailBO.receiver`/`phone`/`address`
 - **AND** `orderExpress`：`1` = 支持快递；其它 = 仅医院自提
 - **AND** 自提用的 `hospitalId` 优先取 `appOrderDetailBO.hospitalId`（缺省再回退本地已选机构）

@@ -41,6 +41,51 @@ extension APIManager {
         return try await request(url: url, method: .get, parameters: parameters, encoding: URLEncoding.default, session: session)
     }
 
+    /// 已认证 GET，按二进制返回 body（海报等非 JSON）
+    func getDataAsync(path: String, parameters: [String: Any]? = nil) async throws -> Data {
+        let url = makeURL(for: path)
+        DebugLogger.logAPIRequest(method: "GET", url: url.absoluteString, parameters: parameters)
+        return try await withCheckedThrowingContinuation { cont in
+            session.request(url, method: .get, parameters: parameters, encoding: URLEncoding.default)
+                .validate()
+                .responseData { [weak self] response in
+                    self?.evaluateSessionValidity(
+                        rawData: response.data,
+                        statusCode: response.response?.statusCode,
+                        authenticated: true
+                    )
+                    switch response.result {
+                    case .success(let data):
+                        if let apiError = APIError.businessErrorIfJSONFailure(data) {
+                            DebugLogger.logAPIResponse(
+                                url: url.absoluteString,
+                                statusCode: response.response?.statusCode,
+                                rawData: data,
+                                error: apiError
+                            )
+                            cont.resume(throwing: apiError)
+                            return
+                        }
+                        DebugLogger.logAPIResponse(
+                            url: url.absoluteString,
+                            statusCode: response.response?.statusCode,
+                            rawData: data
+                        )
+                        cont.resume(returning: data)
+                    case .failure(let error):
+                        let apiError = APIError(from: error, data: response.data)
+                        DebugLogger.logAPIResponse(
+                            url: url.absoluteString,
+                            statusCode: response.response?.statusCode,
+                            rawData: response.data,
+                            error: apiError
+                        )
+                        cont.resume(throwing: apiError)
+                    }
+                }
+        }
+    }
+
     func postAsync<T: Decodable>(
         path: String, parameters: [String: Any]? = nil, responseType: T.Type
     ) async throws -> T {

@@ -111,5 +111,5 @@
 | `remainDays` | 剩余天数 |
 | `endTime` | 服务结束时间 |
 
-- 与 `getUserParticipateAllTeam` 并行请求；`remainDays > 0` 时展示「服务剩余 N 天 ›」，点击跳转 `/orders` + `tab=in_progress`
+- 与 `getUserParticipateAllTeam` 并行请求；`remainDays > 0` 时展示「服务剩余 N 天」（无箭头、不可点）
 - 剩余时间请求失败时静默，仅隐藏右侧文案，不影响团队列表展示

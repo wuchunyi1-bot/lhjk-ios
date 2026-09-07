@@ -37,13 +37,13 @@ enum NotificationMessageMapper {
         )
     }
 
-    /// 按解析结果打开本地或 H5 路由；未注册则不跳转
+    /// `FundeH5:` 一律打开 H5；`FundeApp:` / `/path` 走本地别名后再 push（仅已注册）。
     @MainActor
     static func openRoute(_ raw: String?, from viewController: UIViewController?) {
         let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard !trimmed.isEmpty else { return }
 
-        if trimmed.hasPrefix(FundePageURL.h5Prefix) {
+        if case .h5 = FundePageURL.parse(trimmed) {
             FundePageURL.open(trimmed, from: viewController)
             return
         }

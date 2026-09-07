@@ -47,6 +47,7 @@
 | 4 | 体温 | `temperature` |
 | 5 | 体重 | `weight` |
 | 10 | 饮食运动 | `exercise` |
+| 14 | 血脂 | `blood-lipid` |
 
 `monitorCardMeta` / 监测列表可含 `pageUrl`；合法时走 `FundePageURL`，否则跳转由 `cardType` 映射。`quickEntryList` 的 `pageUrl`（`FundeH5:` / `FundeApp:`）同样经 `FundePageURL`。
 
@@ -59,6 +60,7 @@
 | 体重 | `weight` + `unit` |
 | 体温 | `temperature` / `temp` + `unit` |
 | 饮食运动 | 见下节「饮食运动卡」；不使用 `steps` 单值 |
+| 血脂 | 见下节「血脂卡」；不使用单值 |
 
 无数据展示 `--`；状态用 `result` / `resultType`。
 
@@ -79,6 +81,21 @@ Hub 网格独立三列布局（标题 12 / 标签 8 / 数字 12 Medium / 圆环 
 标题「饮食运动」在图标下方，不得被三列遮挡。
 
 无数据展示 `--`；状态用 `result` / `resultType`。
+
+### 4.2 血脂卡（cardType = 14）
+
+Hub 网格独立 2×2 布局（Figma 3543:3452）：标题 12 Regular `#717885`；TC/TG/HDL/LDL 标签与数值均为 12 `#1F2430`（标签 Regular、数值 Medium）；时间 12 Regular `#1F2430`。不展示单位。
+
+| 格 | 字段 |
+|----|------|
+| TC | `monitorData.totalCholesterol` |
+| TG | `monitorData.triglycerides` |
+| HDL | `monitorData.highDensityLipoprotein` |
+| LDL | `monitorData.lowDensityLipoprotein` |
+
+徽标：`abnormalCount > 0` →「N项异常」；否则 `result`（缺省「正常」）。时间只到日期。
+
+无四项数据展示「去记录」。跳转优先 `pageUrl`（`FundeH5:/blood-lipid`）。
 
 ### 5. 柔性解码
 

@@ -49,7 +49,6 @@ final class HomeTeamCardCell: UITableViewCell {
     }
 
     var onMessageTapped: ((Member) -> Void)?
-    var onMoreTapped: (() -> Void)?
 
     private let cardView: UIView = {
         let v = UIView()
@@ -66,11 +65,13 @@ final class HomeTeamCardCell: UITableViewCell {
         return l
     }()
 
-    private let moreButton: UIButton = {
-        let b = UIButton(type: .system)
-        b.titleLabel?.font = .fdFont(ofSize: 14, weight: .regular)
-        b.setTitleColor(.fdSubtext, for: .normal)
-        return b
+    private let remainLabel: UILabel = {
+        let l = UILabel()
+        l.font = .fdFont(ofSize: 14, weight: .regular)
+        l.textColor = .fdSubtext
+        l.setContentHuggingPriority(.required, for: .horizontal)
+        l.setContentCompressionResistancePriority(.required, for: .horizontal)
+        return l
     }()
 
     private let membersStack: UIStackView = {
@@ -94,7 +95,7 @@ final class HomeTeamCardCell: UITableViewCell {
 
         contentView.addSubview(cardView)
         cardView.addSubview(titleLabel)
-        cardView.addSubview(moreButton)
+        cardView.addSubview(remainLabel)
         cardView.addSubview(membersStack)
 
         cardView.snp.makeConstraints {
@@ -104,29 +105,28 @@ final class HomeTeamCardCell: UITableViewCell {
         }
         titleLabel.snp.makeConstraints {
             $0.top.leading.equalToSuperview().inset(15)
-            $0.trailing.lessThanOrEqualTo(moreButton.snp.leading).offset(-8)
+            $0.trailing.lessThanOrEqualTo(remainLabel.snp.leading).offset(-8)
         }
-        moreButton.snp.makeConstraints {
+        remainLabel.snp.makeConstraints {
             $0.centerY.equalTo(titleLabel)
-            $0.trailing.equalToSuperview().inset(8)
+            $0.trailing.equalToSuperview().inset(15)
         }
         membersStack.snp.makeConstraints {
             $0.top.equalTo(titleLabel.snp.bottom).offset(14)
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalToSuperview().inset(8)
         }
-
-        moreButton.addTarget(self, action: #selector(moreTap), for: .touchUpInside)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     func configure(members: [Member], serviceDaysLeft: Int? = nil) {
         if let days = serviceDaysLeft, days > 0 {
-            moreButton.isHidden = false
-            moreButton.setTitle("服务剩余 \(days) 天 ›", for: .normal)
+            remainLabel.isHidden = false
+            remainLabel.text = "服务剩余 \(days) 天"
         } else {
-            moreButton.isHidden = true
+            remainLabel.isHidden = true
+            remainLabel.text = nil
         }
         membersStack.arrangedSubviews.forEach {
             membersStack.removeArrangedSubview($0)
@@ -327,12 +327,9 @@ final class HomeTeamCardCell: UITableViewCell {
             .filter { !$0.isEmpty }
     }
 
-    @objc private func moreTap() { onMoreTapped?() }
-
     override func prepareForReuse() {
         super.prepareForReuse()
         onMessageTapped = nil
-        onMoreTapped = nil
         membersStack.arrangedSubviews.forEach {
             membersStack.removeArrangedSubview($0)
             $0.removeFromSuperview()

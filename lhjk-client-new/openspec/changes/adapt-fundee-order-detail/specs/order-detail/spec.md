@@ -25,7 +25,9 @@
 | `id` | Int64 | 订单 ID |
 | `orderName` | String | 套餐名称 |
 | `status` | Int | 1–9，同列表 |
-| `payable` | Double | 应付 |
+| `payable` | Double | 套包金额（不含优惠券、权益卡和运费） |
+| `amountVersion` | Int | 结算版本，支付时原样带回 |
+| `expectedPayableAmount` | Double | 期望应付，支付时原样带回 |
 | `price` | Double | 实付 |
 | `packageDescription` | String | 卖点 |
 | `packageImageUrl` | String | 封面 |

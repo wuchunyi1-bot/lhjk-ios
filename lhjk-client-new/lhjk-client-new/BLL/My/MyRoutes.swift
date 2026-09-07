@@ -220,6 +220,9 @@ enum MyRoutes {
             let entry = OrderConfirmEntry(routeValue: params["entry"] as? String)
             return OrderConfirmViewController(orderId: orderId, serialNumber: serial, entry: entry)
         }
+        r.register(path: "/orders/pay-result") { params in
+            OrderPayResultViewController(viewModel: OrderPayResultViewModel(params: params))
+        }
     }
 
     // MARK: - H5 宿主
