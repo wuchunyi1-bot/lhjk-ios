@@ -36,6 +36,9 @@ final class WeightScaleBleStatusCoordinator {
         bleStatusBar.onPrimaryAction = { [weak self] in
             self?.handleStatusBarTap()
         }
+        bleStatusBar.onRetryAction = { [weak self] in
+            self?.handleRetryTap()
+        }
 
         scaleService.statusPublisher
             .receive(on: DispatchQueue.main)
@@ -114,26 +117,39 @@ final class WeightScaleBleStatusCoordinator {
         lastNavigatedMonitorId = trimmed
 
         let hasImpedance = Self.impedanceValue(from: payload) > 0
-        let route = hasImpedance
-            ? "/health/metrics/weight/scale/result"
-            : "/health/metrics/weight/detail"
 
         Task { @MainActor [weak self] in
             guard let self, let host = self.hostViewController else { return }
-            if !hasImpedance {
-                do {
-                    _ = try await self.equipmentBindService.fetchWeightHomePageData(monitorId: trimmed)
-                    print("[Weight-BLE] getWeightHomePageData ok monitorId=\(trimmed)")
-                } catch {
-                    print("[Weight-BLE] getWeightHomePageData failed — \(error.localizedDescription)")
+            do {
+                let data = try await self.equipmentBindService.fetchWeightHomePageData(monitorId: trimmed)
+                guard self.hostViewController === host else { return }
+                if hasImpedance {
+                    guard let data else {
+                        self.lastNavigatedMonitorId = nil
+                        host.showToastAlert("暂无测量数据")
+                        return
+                    }
+                    let vc = WeightScaleResultViewController(monitorId: trimmed, preloaded: data)
+                    if let nav = host.navigationController {
+                        nav.pushViewController(vc, animated: true)
+                    } else {
+                        Router.shared.push(
+                            "/health/metrics/weight/scale/result",
+                            params: ["monitorId": trimmed],
+                            from: host
+                        )
+                    }
+                } else {
+                    Router.shared.push(
+                        "/health/metrics/weight/detail",
+                        params: ["monitorId": trimmed],
+                        from: host
+                    )
                 }
+            } catch {
+                self.lastNavigatedMonitorId = nil
+                host.showToastAlert(error.localizedDescription)
             }
-            print("[Weight-BLE] open result hasImpedance=\(hasImpedance) route=\(route) monitorId=\(trimmed)")
-            Router.shared.push(
-                route,
-                params: ["monitorId": trimmed],
-                from: host
-            )
         }
     }
 
@@ -170,7 +186,7 @@ final class WeightScaleBleStatusCoordinator {
                 bleStatusBar.configure(
                     style: .unbound,
                     message: "您尚未绑定体脂秤",
-                    actionTitle: " 去绑定 "
+                    actionTitle: "去绑定"
                 )
             } else if status.connected {
                 bleStatusBar.configure(
@@ -182,7 +198,7 @@ final class WeightScaleBleStatusCoordinator {
                 let name = status.deviceName.isEmpty ? "体脂秤" : status.deviceName
                 bleStatusBar.configure(
                     style: .disconnected,
-                    message: "\(name) · 未连接",
+                    message: "\(name)·未连接",
                     actionTitle: "点击重试"
                 )
             }
@@ -198,20 +214,14 @@ final class WeightScaleBleStatusCoordinator {
     private func handleStatusBarTap() {
         guard isVisible else { return }
         guard let host = hostViewController else { return }
-        let status = scaleService.currentStatus(metric: "weight")
+        guard AppContainer.shared.bluetoothManager.state == .poweredOn else { return }
+        Router.shared.push("/health/scale/devices", from: host)
+    }
+
+    private func handleRetryTap() {
+        guard isVisible else { return }
         let bluetooth = AppContainer.shared.bluetoothManager
-
         guard bluetooth.state == .poweredOn else { return }
-
-        if !status.bound {
-            Router.shared.push("/health/scale/devices", from: host)
-            return
-        }
-
-        if status.connected {
-            Router.shared.push("/health/scale/devices", from: host)
-            return
-        }
 
         appearTask?.cancel()
         appearTask = Task { @MainActor [weak self] in

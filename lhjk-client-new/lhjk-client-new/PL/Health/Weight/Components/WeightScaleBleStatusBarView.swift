@@ -1,7 +1,7 @@
 import SnapKit
 import UIKit
 
-/// 体重 H5 顶部体脂秤蓝牙状态横条 — 对齐 funde-client weight.md §6.6
+/// 体重 H5 顶部体脂秤蓝牙状态横条 — 对齐 Figma 4449:11585 / 5126:7385 / 5136:12244
 final class WeightScaleBleStatusBarView: UIControl {
 
     enum Style {
@@ -14,13 +14,18 @@ final class WeightScaleBleStatusBarView: UIControl {
     static let preferredHeight: CGFloat = 52
 
     var onPrimaryAction: (() -> Void)?
+    var onRetryAction: (() -> Void)?
 
-    private let gradientLayer = CAGradientLayer()
     private let iconView = UIImageView()
     private let messageLabel = UILabel()
-    private let actionLabel = UILabel()
-    private let spinner = UIActivityIndicatorView(style: .medium)
+    private let separatorLabel = UILabel()
+    private let retryButton = UIButton(type: .custom)
+    private let messageStack = UIStackView()
+    private let bindActionView = UIView()
+    private let bindActionLabel = UILabel()
     private let chevronView = UIImageView()
+    private let accessoryStack = UIStackView()
+    private var iconSizeConstraint: Constraint?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -33,70 +38,52 @@ final class WeightScaleBleStatusBarView: UIControl {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        gradientLayer.frame = bounds
-        gradientLayer.cornerRadius = layer.cornerRadius
-    }
-
     func configure(style: Style, message: String, actionTitle: String?) {
+        stopConnectingSpin()
+        messageLabel.attributedText = nil
+        messageLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        messageLabel.textColor = UIColor(hexString: "#1F2942")
         messageLabel.text = message
-        actionLabel.text = actionTitle
-        actionLabel.isHidden = actionTitle == nil
 
         switch style {
         case .unbound:
-            applyGradient(start: .fdInfo, end: UIColor(hexString: "#7BA8D9"))
-            iconView.image = UIImage(systemName: "scalemass.fill")
-            iconView.tintColor = .white
-            iconView.isHidden = false
-            spinner.stopAnimating()
-            spinner.isHidden = true
+            applyIcon(named: "weight_ble_unbound_scale", size: 28)
+            bindActionLabel.text = actionTitle ?? "去绑定"
+            bindActionView.isHidden = false
+            separatorLabel.isHidden = true
+            retryButton.isHidden = true
             chevronView.isHidden = true
-            messageLabel.textColor = .white
-            actionLabel.textColor = .white
-            actionLabel.backgroundColor = UIColor.white.withAlphaComponent(0.22)
-            actionLabel.layer.cornerRadius = 12
-            actionLabel.clipsToBounds = true
+            accessoryStack.isHidden = false
             isUserInteractionEnabled = true
 
         case .listening:
-            applyGradient(start: .fdPrimary, end: .fdLoginButtonEnd)
-            iconView.isHidden = true
-            spinner.color = .white
-            spinner.isHidden = false
-            spinner.startAnimating()
-            chevronView.image = UIImage(systemName: "chevron.right")
-            chevronView.tintColor = UIColor.white.withAlphaComponent(0.9)
+            applyIcon(named: "weight_ble_connecting", size: 24)
+            startConnectingSpin()
+            bindActionView.isHidden = true
+            separatorLabel.isHidden = true
+            retryButton.isHidden = true
             chevronView.isHidden = false
-            messageLabel.textColor = .white
-            actionLabel.isHidden = true
+            accessoryStack.isHidden = false
             isUserInteractionEnabled = true
 
         case .disconnected:
-            applyGradient(start: .fdSurface2, end: .fdBg2)
-            iconView.image = UIImage(systemName: "scalemass")
-            iconView.tintColor = .fdSubtext
-            iconView.isHidden = false
-            spinner.stopAnimating()
-            spinner.isHidden = true
-            chevronView.isHidden = true
-            messageLabel.textColor = .fdText
-            actionLabel.textColor = .fdPrimary
-            actionLabel.backgroundColor = .clear
-            actionLabel.isHidden = actionTitle == nil
+            applyIcon(named: "weight_ble_disconnected", size: 24)
+            retryButton.setTitle(actionTitle ?? "点击重试", for: .normal)
+            bindActionView.isHidden = true
+            separatorLabel.isHidden = false
+            retryButton.isHidden = false
+            chevronView.isHidden = false
+            accessoryStack.isHidden = false
             isUserInteractionEnabled = true
 
         case .bluetoothUnavailable:
-            applyGradient(start: .fdWarningSoft, end: .fdSurface2)
-            iconView.image = UIImage(systemName: "bluetooth.slash")
-            iconView.tintColor = .fdWarning
-            iconView.isHidden = false
-            spinner.stopAnimating()
-            spinner.isHidden = true
+            iconView.isHidden = true
+            iconSizeConstraint?.update(offset: 0)
+            accessoryStack.isHidden = true
+            bindActionView.isHidden = true
+            separatorLabel.isHidden = true
+            retryButton.isHidden = true
             chevronView.isHidden = true
-            messageLabel.textColor = .fdText2
-            actionLabel.isHidden = true
             isUserInteractionEnabled = false
         }
     }
@@ -104,74 +91,126 @@ final class WeightScaleBleStatusBarView: UIControl {
     // MARK: - Private
 
     private func setupUI() {
+        backgroundColor = .white
         layer.cornerRadius = 12
         clipsToBounds = true
-        layer.insertSublayer(gradientLayer, at: 0)
 
         iconView.contentMode = .scaleAspectFit
-        iconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
 
-        messageLabel.font = .fdBody
-        messageLabel.numberOfLines = 2
+        messageLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        messageLabel.textColor = UIColor(hexString: "#1F2942")
+        messageLabel.numberOfLines = 1
+        messageLabel.lineBreakMode = .byTruncatingTail
+        messageLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        actionLabel.font = .fdCaptionSemibold
-        actionLabel.textAlignment = .center
+        separatorLabel.text = "｜"
+        separatorLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        separatorLabel.textColor = UIColor(hexString: "#A6ACB8")
+        separatorLabel.isHidden = true
+        separatorLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
+        retryButton.setTitle("点击重试", for: .normal)
+        retryButton.setTitleColor(.fdPrimary, for: .normal)
+        retryButton.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
+        retryButton.isHidden = true
+        retryButton.contentEdgeInsets = UIEdgeInsets(top: 8, left: 2, bottom: 8, right: 4)
+        retryButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        retryButton.addTarget(self, action: #selector(handleRetryTap), for: .touchUpInside)
+
+        messageStack.axis = .horizontal
+        messageStack.alignment = .center
+        messageStack.spacing = 0
+        messageStack.addArrangedSubview(messageLabel)
+        messageStack.addArrangedSubview(separatorLabel)
+        messageStack.addArrangedSubview(retryButton)
+
+        bindActionView.layer.cornerRadius = 14
+        bindActionView.layer.borderWidth = 0.5
+        bindActionView.layer.borderColor = UIColor.fdPrimary.cgColor
+        bindActionView.backgroundColor = .clear
+
+        bindActionLabel.font = .fdFont(ofSize: 12, weight: .medium)
+        bindActionLabel.textColor = .fdPrimary
+        bindActionLabel.textAlignment = .center
+        bindActionLabel.text = "去绑定"
+
+        chevronView.image = UIImage(named: "weight_ble_chevron")
         chevronView.contentMode = .scaleAspectFit
 
-        let textStack = UIStackView(arrangedSubviews: [messageLabel, actionLabel])
-        textStack.axis = .vertical
-        textStack.spacing = 4
-        textStack.alignment = .leading
+        accessoryStack.axis = .horizontal
+        accessoryStack.alignment = .center
+        accessoryStack.spacing = 0
+        accessoryStack.addArrangedSubview(bindActionView)
+        accessoryStack.addArrangedSubview(chevronView)
 
         addSubview(iconView)
-        addSubview(spinner)
-        addSubview(textStack)
-        addSubview(chevronView)
+        addSubview(messageStack)
+        addSubview(accessoryStack)
+        bindActionView.addSubview(bindActionLabel)
 
-        // 子视图默认会吃掉点击，导致 UIControl 的 touchUpInside 不触发
-        [iconView, spinner, textStack, messageLabel, actionLabel, chevronView].forEach {
-            $0.isUserInteractionEnabled = false
-        }
+        [
+            iconView, messageLabel, separatorLabel, messageStack,
+            accessoryStack, bindActionView, bindActionLabel, chevronView,
+        ].forEach { $0.isUserInteractionEnabled = false }
+        retryButton.isUserInteractionEnabled = true
 
         iconView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(14)
+            make.leading.equalToSuperview().offset(12)
             make.centerY.equalToSuperview()
-            make.width.height.equalTo(22)
+            iconSizeConstraint = make.size.equalTo(24).constraint
         }
 
-        spinner.snp.makeConstraints { make in
-            make.center.equalTo(iconView)
+        bindActionView.snp.makeConstraints { make in
+            make.width.equalTo(70)
+            make.height.equalTo(28)
         }
-
-        textStack.snp.makeConstraints { make in
-            make.leading.equalTo(iconView.snp.trailing).offset(10)
-            make.centerY.equalToSuperview()
-            make.trailing.lessThanOrEqualTo(chevronView.snp.leading).offset(-8)
-        }
-
-        actionLabel.snp.makeConstraints { make in
-            make.height.equalTo(24)
-            make.width.greaterThanOrEqualTo(56)
-        }
-        actionLabel.layoutMargins = UIEdgeInsets(top: 2, left: 10, bottom: 2, right: 10)
+        bindActionLabel.snp.makeConstraints { $0.center.equalToSuperview() }
 
         chevronView.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().inset(14)
+            make.size.equalTo(12)
+        }
+
+        accessoryStack.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-12)
             make.centerY.equalToSuperview()
-            make.width.height.equalTo(14)
+        }
+
+        messageStack.snp.makeConstraints { make in
+            make.leading.equalTo(iconView.snp.trailing).offset(8)
+            make.centerY.equalToSuperview()
+            make.trailing.lessThanOrEqualTo(accessoryStack.snp.leading).offset(-8)
         }
     }
 
-    private func applyGradient(start: UIColor, end: UIColor) {
-        gradientLayer.colors = [start.cgColor, end.cgColor]
-        gradientLayer.startPoint = CGPoint(x: 0, y: 0.5)
-        gradientLayer.endPoint = CGPoint(x: 1, y: 0.5)
+    private func applyIcon(named name: String, size: CGFloat) {
+        iconView.isHidden = false
+        iconView.image = UIImage(named: name)
+        iconSizeConstraint?.update(offset: size)
+    }
+
+    private func startConnectingSpin() {
+        iconView.layer.removeAnimation(forKey: "weightBleSpin")
+        let spin = CABasicAnimation(keyPath: "transform.rotation.z")
+        spin.fromValue = 0
+        spin.toValue = CGFloat.pi * 2
+        spin.duration = 1.0
+        spin.repeatCount = .infinity
+        spin.timingFunction = CAMediaTimingFunction(name: .linear)
+        iconView.layer.add(spin, forKey: "weightBleSpin")
+    }
+
+    private func stopConnectingSpin() {
+        iconView.layer.removeAnimation(forKey: "weightBleSpin")
+        iconView.transform = .identity
     }
 
     @objc private func handleTap() {
         guard isUserInteractionEnabled else { return }
         onPrimaryAction?()
+    }
+
+    @objc private func handleRetryTap() {
+        onRetryAction?()
     }
 
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {

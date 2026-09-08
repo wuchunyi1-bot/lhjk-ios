@@ -49,20 +49,30 @@
 #### Scenario: 未绑定
 
 - **WHEN** `bound == false`
-- **THEN** 展示「您尚未绑定体脂秤」与「去绑定」
+- **THEN** 展示白卡横条：体脂秤图标、「您尚未绑定体脂秤」、描边按钮「去绑定」（对齐 Figma `4449:11585`）
 - **AND** 点击跳转 `/health/scale/devices`
 
 #### Scenario: 已绑定且会话监听中
 
 - **WHEN** `bound == true` 且 `connected == true`（会话活跃）
-- **THEN** 展示转圈动画与「正在连接，请轻踩唤醒设备」
+- **THEN** 展示白卡横条：旋转搜索图标、「正在连接，请轻踩唤醒设备」、右侧箭头（对齐 Figma `5126:7385`）
 - **AND** 点击跳转 `/health/scale/devices`
 
 #### Scenario: 已绑定但未监听
 
 - **WHEN** `bound == true` 且 `connected == false`
-- **THEN** 展示设备名称与未连接提示
-- **AND** 点击调用 `startSession()` 重试
+- **THEN** 展示白卡横条：「{设备名}·未连接｜点击重试」（「点击重试」跟在状态文案后，灰色分隔符 `｜`，橙色 14 Medium）、右侧箭头（对齐 Figma `5136:12244`）
+- **AND** 点击整卡（不含「点击重试」）跳转 `/health/scale/devices`（已连接 / 我的设备）
+- **AND** 仅点击「点击重试」调用 `resumeScanAfterUserRetry()` 重新扫描
+
+#### Scenario: 已绑定开扫 30 秒未发现设备
+
+- **WHEN** 体重 H5 已绑定并 `startSession(context: .weightH5Host)`
+- **AND** 30 秒内未收到 MAC 匹配的 OKOK 广播（实时或锁定）
+- **THEN** `stopSession()`，横条切到已绑定未监听（「点击重试」）
+- **AND** MUST NOT 设置测量后自动启扫暂停标记（离开再进入仍可自动开扫）
+- **WHEN** 30 秒内已收到 MAC 匹配的实时广播
+- **THEN** 取消本次超时，保持扫描直到锁定、离开页面或用户停止会话
 
 #### Scenario: 锁定测量完成
 
@@ -75,7 +85,8 @@
 - **AND** `/health/metrics/weight/detail`、`/health/metrics/weight/scale/result` 等只读子页 MUST NOT 启扫或展示体脂秤横条
 - **AND** 横条刷新 `lastSyncAt`，展示已绑定未监听（可点「点击重试」再测）
 - **AND** 经 Bridge emit `ble.synced`（含 `weightKg`、`impedance`；保存成功时含 `monitorId`）
-- **AND** `impedance > 0` 时跳转原生 `/health/metrics/weight/scale/result`（`WeightScaleResultViewController`，体重报告）
+- **AND** `impedance > 0` 时先请求 `POST /v1/monitor/getWeightHomePageData`（`monitorId`），成功后再打开原生 `/health/metrics/weight/scale/result`（`WeightScaleResultViewController`，体重报告，对齐 Figma `5175:12518`）
+- **AND** `getWeightHomePageData` 失败时 Toast 错误信息，MUST NOT 打开体重报告页
 - **AND** `impedance == 0`（未测到电阻）时跳转 `/health/metrics/weight/detail`（H5 `#/weight/detail`，仅体重详情）
 
 #### Scenario: MAC 与绑定设备不一致
@@ -109,8 +120,15 @@
 #### Scenario: 按钮展示
 
 - **WHEN** 报告数据加载成功
-- **THEN** 主按钮为「保存」（品牌主色填充），次按钮为「重新测量」（描边）
+- **THEN** 主按钮为「保存」（品牌主色胶囊，327×51 / 随屏宽左右各再缩 8pt）
+- **AND** 次操作「重新测量」为灰色纯文字，无描边底
 - **AND** 删除进行中两按钮均不可点
+
+#### Scenario: 报告页结构
+
+- **WHEN** `getWeightHomePageData` 成功并进入原生体重报告页
+- **THEN** 对齐 Figma `5175:12518`：顶部半圆弧概要卡（体重、当前(KG)、测量时间、身体年龄 / BMI / 体脂率）、「我的指标」白卡双列体成分、底部保存 / 重新测量
+- **AND** 指标名称、数值、单位、`monitorResults` 状态标签取接口 `bodyCompositionResults`
 
 ### Requirement: FundeNative 体重 BLE 只读查询
 

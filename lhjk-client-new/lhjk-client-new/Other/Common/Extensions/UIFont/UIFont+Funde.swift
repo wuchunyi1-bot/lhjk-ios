@@ -14,9 +14,7 @@ extension UIFont {
         return .systemFont(ofSize: size, weight: weight)
     }
 
-    /// 等宽数字字体 — SF Mono
-    /// CSS: "SF Mono", "DIN Alternate", "PingFang SC", monospace
-    /// 用于健康指标数值、统计数字展示，确保数字等宽对齐
+    /// 等宽数字字体 — SF Mono。仅表格/列表竖向对齐时使用，指标读数请用 `fdFont` / `fdNum*`。
     static func fdMonoFont(ofSize size: CGFloat, weight: UIFont.Weight = .regular) -> UIFont {
         let base = UIFont.monospacedDigitSystemFont(ofSize: size, weight: weight)
         let desc = base.fontDescriptor.withDesign(.monospaced) ?? base.fontDescriptor
@@ -189,23 +187,23 @@ extension UIFont {
         .fdFont(ofSize: senior ? 16 : 13, weight: .bold)
     }
 
-    // MARK: - Type Scale: Numbers (Mono)
+    // MARK: - Type Scale: Numbers（与正文同族 PingFang SC，不用 SF Mono）
 
-    /// 超大数字 — 标准 58pt / 老年 66pt，`.bold`，等宽
+    /// 超大数字 — 标准 58pt / 老年 66pt，`.bold`
     /// CSS: --fd-num-xl — 健康评分
     static var fdNumXL: UIFont {
-        .fdMonoFont(ofSize: senior ? 66 : 58, weight: .bold)
+        .fdFont(ofSize: senior ? 66 : 58, weight: .bold)
     }
 
-    /// 大数字 — 标准 38pt / 老年 46pt，`.bold`，等宽
+    /// 大数字 — 标准 38pt / 老年 46pt，`.bold`
     /// CSS: --fd-num-l — 关键指标读数
     static var fdNumL: UIFont {
-        .fdMonoFont(ofSize: senior ? 46 : 38, weight: .bold)
+        .fdFont(ofSize: senior ? 46 : 38, weight: .bold)
     }
 
-    /// 中数字 — 标准 24pt / 老年 28pt，`.bold`，等宽
+    /// 中数字 — 标准 24pt / 老年 28pt，`.bold`
     /// CSS: --fd-num-m — 统计数值、趋势值
     static var fdNumM: UIFont {
-        .fdMonoFont(ofSize: senior ? 28 : 24, weight: .bold)
+        .fdFont(ofSize: senior ? 28 : 24, weight: .bold)
     }
 }

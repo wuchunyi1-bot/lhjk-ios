@@ -10,13 +10,15 @@ final class GroupMembersViewController: BaseViewController {
 
     private lazy var tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
-        tv.backgroundColor = .white
+        tv.backgroundColor = .clear
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
         tv.register(GroupMemberCell.self, forCellReuseIdentifier: GroupMemberCell.reuseID)
         tv.dataSource = self
         tv.delegate = self
-        tv.rowHeight = 64
+        tv.rowHeight = 84
+        tv.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 12, right: 0)
+        tv.contentInsetAdjustmentBehavior = .never
         return tv
     }()
 
@@ -55,7 +57,7 @@ final class GroupMembersViewController: BaseViewController {
         view.backgroundColor = .fdBg
 
         view.addSubview(tableView)
-        tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        tableView.snp.makeConstraints { $0.edges.equalTo(view.safeAreaLayoutGuide) }
 
         view.addSubview(emptyLabel)
         emptyLabel.snp.makeConstraints { $0.center.equalToSuperview() }
@@ -117,8 +119,8 @@ extension GroupMembersViewController: UITableViewDataSource, UITableViewDelegate
         ) as? GroupMemberCell else {
             return UITableViewCell()
         }
-        let isLast = indexPath.row == viewModel.members.count - 1
-        cell.configure(viewModel.members[indexPath.row], isLast: isLast)
+        let member = viewModel.members[indexPath.row]
+        cell.configure(member, isSelf: viewModel.isSelf(member))
         return cell
     }
 }

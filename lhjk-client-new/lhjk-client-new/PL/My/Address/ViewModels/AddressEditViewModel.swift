@@ -151,6 +151,22 @@ final class AddressEditViewModel: ObservableObject {
         if address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return "请输入详细地址"
         }
+        if Self.containsSpecialCharacters(address) {
+            return "详细地址不能包含特殊字符"
+        }
         return nil
+    }
+
+    /// 详址仅允许中英文、数字及常见地址标点；表情等符号视为特殊字符。
+    private static let allowedAddressCharacters: CharacterSet = {
+        var set = CharacterSet.letters
+        set.formUnion(.decimalDigits)
+        set.formUnion(.whitespacesAndNewlines)
+        set.insert(charactersIn: "#-_()（）【】[]、，。,.·/\\:：~～")
+        return set
+    }()
+
+    private static func containsSpecialCharacters(_ text: String) -> Bool {
+        text.unicodeScalars.contains { !allowedAddressCharacters.contains($0) }
     }
 }

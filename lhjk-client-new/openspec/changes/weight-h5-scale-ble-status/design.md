@@ -44,9 +44,10 @@ WebViewController (enablesWeightBle=true)
 | 条件 | 展示 | 点击 |
 |------|------|------|
 | 蓝牙不可用 | 提示开启蓝牙/权限 | 无跳转 |
-| `!bound` | 您尚未绑定体脂秤 · 去绑定（蓝底） | `/health/scale/devices` |
-| `bound && connected` | 转圈 + 正在连接，请轻踩唤醒设备（橙底） | `/health/scale/devices` |
-| `bound && !connected` | 设备名 + 未连接，点此重试 | `startSession()` |
+| `!bound` | 白卡：秤图标 +「您尚未绑定体脂秤」+ 描边「去绑定」（Figma `4449:11585`） | `/health/scale/devices` |
+| `bound && connected` | 白卡：转圈 +「正在连接，请轻踩唤醒设备」+ 右箭头（Figma `5126:7385`） | `/health/scale/devices` |
+| `bound && !connected` | 白卡：「{设备名}·未连接｜点击重试」+ 右箭头（Figma `5136:12244`） | 整卡 → `/health/scale/devices`；仅「点击重试」→ `resumeScanAfterUserRetry()` |
+| 体重 H5 开扫 30s 无匹配广播 | `stopSession()`，横条切未连接；点「点击重试」重新 30s | `resumeScanAfterUserRetry()` |
 
 ## Bridge 约定（不变字段）
 
@@ -88,8 +89,8 @@ EquipmentBindService
 
 | 绑定列表 | UI |
 |----------|-----|
-| 空 | 标题「选择设备」；只展示可绑定型号（`status != 0`）；无添加按钮 |
-| 非空 | 标题「我的设备」；当前设备 +「添加设备」；展开后「更多设备」（型号减去已绑类型）+「收起设备列表」 |
+| 空 | 标题「选择设备」；只展示可绑定型号；无添加按钮 |
+| 非空 | 标题「选择设备」；已绑卡片 + 底部「添加设备」；点击 push `/health/scale/devices/add` |
 
 点击型号卡：`bluetoothName=OKOK` → `/health/scale/bind`；其它 Toast「暂不支持该设备」。选择页不扫描。解绑走 `deleteEquipmentUserById`。
 
@@ -110,7 +111,7 @@ pop 体重 H5 主页（不上报；锁定后才 saveWeightBluetoothMonitor）
 
 ## 原生体重报告页（有阻抗）
 
-锁定且 `impedance > 0` 后进入 `WeightScaleResultViewController`。记录已由 `saveOrUpdateMonitorData` 入库。
+锁定且 `impedance > 0` 后，先 `getWeightHomePageData` 成功再进入 `WeightScaleResultViewController`（Figma `5175:12518`）。记录已由 `saveOrUpdateMonitorData` 入库。
 
 | 按钮 | 行为 |
 |------|------|

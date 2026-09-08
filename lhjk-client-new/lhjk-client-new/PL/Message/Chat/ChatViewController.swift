@@ -69,15 +69,11 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     }()
     private var quotePreviewBar: QuotePreviewBar?
 
-    /// `getGroup.status != 1` 时底部提示（Figma 4497:5085）
-    private let expiredHintLabel: UILabel = {
-        let label = UILabel()
-        label.text = "服务已过期，仅可查看历史消息"
-        label.font = .fdFont(ofSize: 12, weight: .regular)
-        label.textColor = ChatBubbleStyle.secondaryText
-        label.textAlignment = .center
-        label.isHidden = true
-        return label
+    /// `getGroup.status != 1` 时底部横幅（Figma 4565:9670）
+    private let expiredBanner: ChatExpiredBannerView = {
+        let banner = ChatExpiredBannerView()
+        banner.isHidden = true
+        return banner
     }()
 
     // MARK: - UI
@@ -150,12 +146,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         view.addSubview(tableView)
         tableView.refreshControl = refreshControl
 
-        view.addSubview(expiredHintLabel)
-        expiredHintLabel.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-16)
-        }
+        expiredBanner.onTap = { RootTabBarController.selectServiceTab() }
 
         view.addSubview(recordingOverlay)
         recordingOverlay.addSubview(recordingBgView)
@@ -186,7 +177,8 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
 
     private func embedInputBarLayout() {
         guard !isInputBarEmbedded else { return }
-        expiredHintLabel.isHidden = true
+        expiredBanner.removeFromSuperview()
+        expiredBanner.isHidden = true
         view.addSubview(chatInputBar)
         isInputBarEmbedded = true
 
@@ -222,12 +214,29 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         }
         quotePreviewBar?.removeFromSuperview()
         quotePreviewBar = nil
-        expiredHintLabel.isHidden = !showExpiredHint
+
+        if showExpiredHint {
+            if expiredBanner.superview == nil {
+                if recordingOverlay.superview === view {
+                    view.insertSubview(expiredBanner, belowSubview: recordingOverlay)
+                } else {
+                    view.addSubview(expiredBanner)
+                }
+            }
+            expiredBanner.isHidden = false
+            expiredBanner.snp.remakeConstraints { make in
+                make.leading.trailing.bottom.equalToSuperview()
+                make.top.equalTo(view.safeAreaLayoutGuide.snp.bottom).offset(-ChatExpiredBannerView.contentHeight)
+            }
+        } else {
+            expiredBanner.removeFromSuperview()
+            expiredBanner.isHidden = true
+        }
 
         tableView.snp.remakeConstraints { make in
             make.top.leading.trailing.equalToSuperview()
             if showExpiredHint {
-                tableBottomConstraint = make.bottom.equalTo(expiredHintLabel.snp.top).offset(-12).constraint
+                tableBottomConstraint = make.bottom.equalTo(expiredBanner.snp.top).constraint
             } else {
                 tableBottomConstraint = make.bottom.equalTo(view.safeAreaLayoutGuide).constraint
             }
@@ -253,7 +262,8 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         } else if !isInputBarEmbedded {
             embedInputBarLayout()
         } else {
-            expiredHintLabel.isHidden = true
+            expiredBanner.removeFromSuperview()
+            expiredBanner.isHidden = true
         }
     }
 

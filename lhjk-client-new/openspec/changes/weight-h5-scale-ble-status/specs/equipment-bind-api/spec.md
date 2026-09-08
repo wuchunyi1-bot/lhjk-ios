@@ -114,6 +114,14 @@
 - **AND** `monitorData.data` 含 `weight`、`bodyFatScaleMonitor` 及体脂字段
 - **AND** 成功返回非空 `monitorId`
 
+#### Scenario: 拉取体重报告
+
+- **WHEN** 蓝牙上报成功且需展示体成分报告
+- **THEN** `fetchWeightHomePageData(monitorId:)` 调用 `POST /v1/monitor/getWeightHomePageData`
+- **AND** Body 含 `businessId=4`、本次 `monitorId`
+- **AND** 解析 `data.bodyCompositionResults`（名称、数值、单位、`monitorResults`）
+- **AND** 请求失败时抛错，由调用方 Toast，不打开报告页
+
 #### Scenario: 上报不改绑定
 
 - **WHEN** 仅调用 `saveMonitorData`

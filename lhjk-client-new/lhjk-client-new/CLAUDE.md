@@ -117,7 +117,7 @@ Custom message types dispatch by `objectName` in `ChatMessage.fromRongCloud()`. 
 - `fdBody`, `fdBodySemibold`, `fdBodyBold` (body text)
 - `fdCaption`, `fdCaptionSemibold` (labels)
 - `fdMicro`, `fdMicroSemibold`, `fdMicroBold` (badges/meta)
-- `fdNumXL`, `fdNumL`, `fdNumM` (monospaced numbers)
+- `fdNumXL`, `fdNumL`, `fdNumM`（PingFang SC 数字，与正文同族；不要用 SF Mono）
 
 All font tokens auto-scale when senior mode (`UIFont.isSeniorMode`) is enabled.
 

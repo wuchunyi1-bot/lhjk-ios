@@ -144,10 +144,10 @@
 
 | Token | 字体栈 | 用途 |
 |-------|--------|------|
-| `fdFont` | `"PingFang SC", -apple-system, "Helvetica Neue", "Segoe UI", "Microsoft YaHei", sans-serif` | 全局主字体 — 所有中文/英文正文 |
-| `fdMono` | `"SF Mono", "DIN Alternate", "PingFang SC", monospace` | 等宽数字字体 — 健康指标数值、统计数字、badge 数字 |
+| `fdFont` | `"PingFang SC", -apple-system, "Helvetica Neue", "Segoe UI", "Microsoft YaHei", sans-serif` | 全局主字体 — 中文/英文正文 **以及指标读数、统计数字** |
+| `fdMono` | `"SF Mono", "DIN Alternate", "PingFang SC", monospace` | 仅表格/列表中需要数字竖向对齐时使用，**不是**指标读数默认字体 |
 
-> **规则**: 普通文字使用 `fdFont` 族，数字展示（指标值、评分、统计数据）使用 `fdMono` 族。iOS 上 `fdFont` 等价于系统字体（PingFang SC 为 iOS 中文默认），`fdMono` 使用 `SF Mono` + `.monospacedDigit` 确保数字等宽对齐。
+> **规则**: 普通文字与数字展示（指标值、评分、体重/血压等读数）一律使用 `fdFont` 族（PingFang SC）。`fdNumXL` / `fdNumL` / `fdNumM` 基于 `fdFont`，**禁止**用 SF Mono / `fdMono` 作为默认数字字体。`fdMono` 仅在列表数值列需要等宽对齐时使用。
 
 ---
 
@@ -171,7 +171,7 @@
 | `fdCaption` | 13pt | 16pt | `.regular` | 说明文字、标签、辅助信息 |
 | `fdMicro` | 11pt | 14pt | `.regular` | 最小级别 — badge、角标、元信息 |
 
-**数字系（使用 `fdMono` 字体）:**
+**数字系（使用 `fdFont` / PingFang SC，与正文同族）:**
 
 | Token | 标准值 | 老年模式 | 字重 | 语义 |
 |-------|--------|---------|------|------|
@@ -197,11 +197,13 @@
 
 #### Scenario: 数字展示
 - **WHEN** 展示健康评分等核心大数字
-- **THEN** 使用 `UIFont.fdNumXL`（56pt bold mono）
-- **WHEN** 展示关键指标数值（如血压、血糖读数）
-- **THEN** 使用 `UIFont.fdNumL`（36pt bold mono）或 `UIFont.fdNumM`（22pt bold mono）
-- **WHEN** 指标数值需等宽对齐（如列表中的数值列）
-- **THEN** 使用 `UIFont.fdMono` 字体族的对应尺寸，确保 `.monospacedDigit` 生效
+- **THEN** 使用 `UIFont.fdNumXL`（56pt bold，`fdFont` / PingFang SC）
+- **WHEN** 展示关键指标数值（如血压、血糖、体重读数）
+- **THEN** 使用 `UIFont.fdNumL`（36pt bold）或 `UIFont.fdNumM`（22pt bold），或同尺寸的 `fdFont(ofSize:weight:)`
+- **WHEN** 指标数值为页面主读数
+- **THEN** MUST 使用 `fdFont` 族，MUST NOT 使用 `fdMono` / SF Mono
+- **WHEN** 列表中数值需要纵向对齐比较（如多列表格）
+- **THEN** 才允许使用 `UIFont.fdMono` 字体族
 
 #### Scenario: 按钮文字
 - **WHEN** 设置按钮标题
@@ -251,15 +253,16 @@
 
 #### Scenario: 禁止使用非系统字体
 - **WHEN** 设置字体
-- **THEN** iOS 端 `fdFont`（PingFang SC）即为系统中文默认字体，`fdMono` 使用 SF Mono 系统等宽字体。无需引入自定义字体文件，使用 `UIFont.fd*` Token 即可自动匹配正确字体族
+- **THEN** iOS 端 `fdFont`（PingFang SC）即为系统中文默认字体，正文与指标读数均走该族。无需引入自定义字体文件，使用 `UIFont.fd*` Token 即可自动匹配正确字体族
 
 #### Scenario: 颜色与字体搭配
 - **WHEN** 设置文字样式
 - **THEN** 文字颜色必须使用颜色 Token（`fdText` / `fdText2` / `fdSubtext` / `fdMuted`），与字号 Token 共同构成视觉层级
 
-#### Scenario: 数字等宽对齐
-- **WHEN** 列表中数值需要纵向对齐比较（如指标列表中的读数）
-- **THEN** 使用 `UIFont.fdMono` 族字体，确保数字等宽（`.monospacedDigit`）
+#### Scenario: 数字默认不用等宽编码体
+- **WHEN** 展示体重、体脂、血压等健康指标读数
+- **THEN** 使用 `fdFont` / `fdNum*`（PingFang SC）
+- **AND** MUST NOT 使用 `fdMono` / SF Mono（等宽编码体仅保留给表格列对齐）
 
 ---
 

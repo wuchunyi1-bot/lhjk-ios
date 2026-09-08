@@ -2,20 +2,19 @@ import Combine
 import SnapKit
 import UIKit
 
-/// 设备选择 / 我的设备 — 对齐 funde-client BodyScaleSelectDeviceView + MyScaleDeviceView
+/// 设备选择 / 已绑定列表 — 对齐 Figma 5140:12352 / 5175:12472
 final class ScaleDeviceSelectViewController: BaseViewController {
 
     private let viewModel: ScaleDeviceSelectViewModel
     private var cancellables = Set<AnyCancellable>()
 
-    private enum Section: Int {
-        case bound = 0
-        case more = 1
-    }
-
     init(viewModel: ScaleDeviceSelectViewModel = ScaleDeviceSelectViewModel()) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
+    }
+
+    convenience init(entry: ScaleDeviceSelectViewModel.Entry) {
+        self.init(viewModel: ScaleDeviceSelectViewModel(entry: entry))
     }
 
     @available(*, unavailable)
@@ -33,30 +32,23 @@ final class ScaleDeviceSelectViewController: BaseViewController {
         tv.register(ScaleDeviceCardCell.self, forCellReuseIdentifier: ScaleDeviceCardCell.reuseID)
         tv.dataSource = self
         tv.delegate = self
-        tv.estimatedRowHeight = 88
+        tv.estimatedRowHeight = ScaleDeviceCardCell.cardHeight + 12
         tv.rowHeight = UITableView.automaticDimension
         tv.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 16, right: 0)
         return tv
     }()
 
     private lazy var addButton: UIButton = {
-        let b = UIButton(type: .system)
-        b.titleLabel?.font = .fdBodySemibold
-        b.layer.cornerRadius = 18
+        let b = UIButton(type: .custom)
+        b.setTitle("添加设备", for: .normal)
+        b.setTitleColor(.white, for: .normal)
+        b.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
+        b.backgroundColor = .fdPrimary
+        b.layer.cornerRadius = 25.5
+        b.clipsToBounds = true
         b.addTarget(self, action: #selector(handleAddTap), for: .touchUpInside)
+        b.isHidden = true
         return b
-    }()
-
-    private lazy var addButtonContainer: UIView = {
-        let v = UIView()
-        v.addSubview(addButton)
-        addButton.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(6)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.height.equalTo(50)
-            make.bottom.equalToSuperview().offset(-8)
-        }
-        return v
     }()
 
     private lazy var emptyLabel: UILabel = {
@@ -87,23 +79,31 @@ final class ScaleDeviceSelectViewController: BaseViewController {
         view.backgroundColor = .fdBg
 
         view.addSubview(tableView)
+        view.addSubview(addButton)
         view.addSubview(emptyLabel)
         view.addSubview(loadingIndicator)
 
+        addButton.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.width.equalTo(327)
+            make.height.equalTo(51)
+            make.bottom.equalTo(view.safeAreaLayoutGuide)
+        }
+
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
         emptyLabel.snp.makeConstraints { $0.center.equalToSuperview() }
         loadingIndicator.snp.makeConstraints { $0.center.equalToSuperview() }
     }
 
     override func bindViewModel() {
-        Publishers.CombineLatest4(
+        Publishers.CombineLatest3(
             viewModel.$mode,
             viewModel.$boundDevices,
-            viewModel.$moreDevices,
-            viewModel.$isExpanded
+            viewModel.$moreDevices
         )
         .receive(on: DispatchQueue.main)
-        .sink { [weak self] _, _, _, _ in
+        .sink { [weak self] _, _, _ in
             self?.reloadContent()
         }
         .store(in: &cancellables)
@@ -116,6 +116,7 @@ final class ScaleDeviceSelectViewController: BaseViewController {
                     self.loadingIndicator.startAnimating()
                     self.tableView.isHidden = true
                     self.emptyLabel.isHidden = true
+                    self.addButton.isHidden = true
                 } else {
                     self.loadingIndicator.stopAnimating()
                     self.reloadContent()
@@ -135,42 +136,19 @@ final class ScaleDeviceSelectViewController: BaseViewController {
 
     private func reloadContent() {
         title = viewModel.navigationTitle
-        refreshAddButton()
-        tableView.tableFooterView = viewModel.showsAddButton ? makeFooterView() : UIView(frame: .zero)
+        let showAdd = viewModel.showsAddButton && !viewModel.isLoading
+        addButton.isHidden = !showAdd
+        tableView.contentInset.bottom = showAdd ? 79 : 16
+        tableView.verticalScrollIndicatorInsets.bottom = showAdd ? 63 : 0
+
         let empty = viewModel.isEmpty && !viewModel.isLoading
         emptyLabel.isHidden = !empty
         tableView.isHidden = viewModel.isLoading || empty
         tableView.reloadData()
     }
 
-    private func refreshAddButton() {
-        addButton.setTitle(viewModel.addButtonTitle, for: .normal)
-        let expanded = viewModel.isAddButtonExpanded
-        let plus = UIImage(systemName: expanded ? "chevron.up" : "plus")
-        addButton.setImage(plus, for: .normal)
-        addButton.tintColor = expanded ? .fdPrimary : .white
-        addButton.setTitleColor(expanded ? .fdPrimary : .white, for: .normal)
-        addButton.backgroundColor = expanded ? .clear : .fdPrimary
-        addButton.layer.borderWidth = expanded ? 1 : 0
-        addButton.layer.borderColor = UIColor.fdPrimary.cgColor
-        addButton.imageEdgeInsets = UIEdgeInsets(top: 0, left: -4, bottom: 0, right: 4)
-    }
-
-    private func makeFooterView() -> UIView {
-        addButtonContainer.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: 64)
-        addButtonContainer.setNeedsLayout()
-        addButtonContainer.layoutIfNeeded()
-        let height = addButtonContainer.systemLayoutSizeFitting(
-            CGSize(width: view.bounds.width, height: 0),
-            withHorizontalFittingPriority: .required,
-            verticalFittingPriority: .fittingSizeLevel
-        ).height
-        addButtonContainer.frame.size = CGSize(width: view.bounds.width, height: max(height, 64))
-        return addButtonContainer
-    }
-
     @objc private func handleAddTap() {
-        viewModel.toggleAddDevices()
+        Router.shared.push("/health/scale/devices/add", from: self)
     }
 
     private func confirmUnbind(_ item: ScaleDeviceCardItem) {
@@ -202,12 +180,8 @@ final class ScaleDeviceSelectViewController: BaseViewController {
             guard indexPath.row < viewModel.moreDevices.count else { return nil }
             return viewModel.moreDevices[indexPath.row]
         case .mine:
-            if indexPath.section == Section.bound.rawValue {
-                guard indexPath.row < viewModel.boundDevices.count else { return nil }
-                return viewModel.boundDevices[indexPath.row]
-            }
-            guard indexPath.row < viewModel.moreDevices.count else { return nil }
-            return viewModel.moreDevices[indexPath.row]
+            guard indexPath.row < viewModel.boundDevices.count else { return nil }
+            return viewModel.boundDevices[indexPath.row]
         }
     }
 
@@ -224,24 +198,12 @@ final class ScaleDeviceSelectViewController: BaseViewController {
 
 extension ScaleDeviceSelectViewController: UITableViewDataSource, UITableViewDelegate {
 
-    func numberOfSections(in tableView: UITableView) -> Int {
-        switch viewModel.mode {
-        case .select:
-            return 1
-        case .mine:
-            return viewModel.showsMoreSection ? 2 : 1
-        }
-    }
-
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch viewModel.mode {
         case .select:
             return viewModel.moreDevices.count
         case .mine:
-            if section == Section.bound.rawValue {
-                return viewModel.boundDevices.count
-            }
-            return viewModel.moreDevices.count
+            return viewModel.boundDevices.count
         }
     }
 
@@ -262,34 +224,5 @@ extension ScaleDeviceSelectViewController: UITableViewDataSource, UITableViewDel
         tableView.deselectRow(at: indexPath, animated: true)
         guard let item = item(at: indexPath), item.isSelectable else { return }
         handleCatalogTap(item)
-    }
-
-    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        guard viewModel.mode == .mine else { return nil }
-        let title = section == Section.bound.rawValue ? "当前设备" : "更多设备"
-        return makeSectionHeader(title)
-    }
-
-    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        viewModel.mode == .mine ? 36 : CGFloat.leastNormalMagnitude
-    }
-
-    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        CGFloat.leastNormalMagnitude
-    }
-
-    private func makeSectionHeader(_ title: String) -> UIView {
-        let container = UIView()
-        let label = UILabel()
-        label.text = title
-        label.font = .fdCaptionSemibold
-        label.textColor = .fdSubtext
-        container.addSubview(label)
-        label.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(20)
-            make.trailing.equalToSuperview().offset(-16)
-            make.bottom.equalToSuperview().offset(-8)
-        }
-        return container
     }
 }

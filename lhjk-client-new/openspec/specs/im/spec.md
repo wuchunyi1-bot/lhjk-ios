@@ -640,7 +640,8 @@ App 冷启动
 **UI**：
 - **WHEN** `isMessagingReadOnly == true`
 - **THEN** MUST NOT 将 `ChatInputBar` 加入视图层级
-- **AND** 消息列表底部展示居中文案「服务已过期，仅可查看历史消息」（12pt Regular，`#8591AB` / `ChatBubbleStyle.secondaryText`），对齐 Figma `4497:4892`
+- **AND** 消息列表底部展示过期横幅（对齐 Figma `4565:9670` / 页面 `4497:4892`）：高 66pt、底贴 Home Indicator；背景用切图 `chat_expired_bg`（禁止代码绘制渐变/圆角）；左侧 40 警告图标 `chat_expired_warning`；文案「您的服务已过期，可前往商城重新购买健康管理服务！」（16 Regular `#C36E20`，最多两行）
+- **AND** 点击横幅切到服务 Tab 根页（`RootTabBarController.selectServiceTab()`），MUST NOT 把服务 Hub push 进消息导航栈
 - **AND** MUST NOT 展示引用预览条 `QuotePreviewBar`
 - **AND** 长按菜单仅保留「复制」；MUST NOT 展示「引用」「撤回」
 - **AND** 用户若通过其它路径触发发送（不应出现），`ChatViewModel` 拦截并 Toast「服务已过期，仅可查看历史消息」
@@ -659,7 +660,8 @@ App 冷启动
 - `DAL/IM/Conversation.swift` — `groupStatus`、`isMessagingReadOnly`、`fromGroupVO` 列表文案
 - `BLL/Message/IMService.swift` — `refreshGroupMetadata(conversationId:)`
 - `PL/Message/Chat/ViewModels/ChatViewModel.swift` — `isMessagingReadOnly`、`refreshConversationMetadata()`、发送守卫
-- `PL/Message/Chat/ChatViewController.swift` — 条件性嵌入/移除 `ChatInputBar`、过期提示、群成员入口
+- `PL/Message/Chat/Components/ChatExpiredBannerView.swift` — 过期横幅
+- `PL/Message/Chat/ChatViewController.swift` — 条件性嵌入/移除 `ChatInputBar`、过期横幅、群成员入口
 
 ### Requirement: 获取群成员
 
@@ -689,7 +691,9 @@ App 冷启动
 #### Scenario: 成功解析并展示
 
 - **WHEN** 响应 `isSuccess` 且 `data` 为非空成员数组
-- **THEN** 按数组顺序渲染行：头像取 `imageUrl`（空则 `userImg`，失败回落 `chat_im_avatar`）、`userName` 姓名、`roleName`（空则按 `identity` 映射：1 健康管理师负责人 / 2 医生 / 3 用户 / 4 队员）
+- **THEN** 按数组顺序渲染独立白卡（对齐 Figma `4565:9708`）：页底 `#FDF6F3`；卡高 72、圆角 12、左右 16、卡间距 12；头像 48 圆形（`imageUrl`，空则 `userImg`，失败回落 `chat_im_avatar`，底 `#FFE2D6`→`#FFEFE8`）；姓名 16 Medium `#1F2430`
+- **AND** 当前登录用户（`userId` 与 `UserManager.currentUser.id` 一致，或 `roleName` 为「我」）副文案为灰色「我」（12 Regular `#535D72`），不展示角色胶囊
+- **AND** 其它成员展示角色胶囊：文案 `roleName`（空则按 `identity` 映射：1 健康管理师负责人 / 2 医生 / 3 用户 / 4 队员）；奶油渐变底 `#FFECC9`→`#FFF7E3`、字 `#862804` 12 Medium、票券圆角
 - **AND** 导航标题展示「群成员(N)」，N 为本次返回的成员数量
 - **AND** 不得用本地假成员顶替
 

@@ -88,6 +88,9 @@ final class ScaleBleSessionService {
     private var isReportingMonitor = false
     /// 本次测量完成后暂停自动启扫，直到用户点横条「点击重试」或离开体重模块
     private var autoScanPausedUntilUserRetry = false
+    /// 体重 H5：开扫后未收到绑定设备广播则超时停扫
+    private var scanTimeoutTask: Task<Void, Never>?
+    private static let weightHostScanTimeoutNanoseconds: UInt64 = 30_000_000_000
 
     private let lastLockedStorageKey = "fd_okok_last_locked_scale"
     private let boundMacStorageKey = "fd_okok_bound_mac"
@@ -202,9 +205,11 @@ final class ScaleBleSessionService {
         print("[Scale-BLL] startSession context=\(context) macFilter=\(macHint) — begin broadcast scan")
         h.start(bluetooth: bluetooth)
         publishStatus()
+        scheduleWeightHostScanTimeoutIfNeeded()
     }
 
     func stopSession() {
+        cancelWeightHostScanTimeout()
         guard isActive else { return }
         print("[Scale-BLL] stopSession")
         isActive = false
@@ -289,6 +294,7 @@ final class ScaleBleSessionService {
             lastDiscovery = discovery
             let packet = discovery.packet
             print("[Scale-BLL] 体脂秤[实时] \(discovery.identityLogLine)")
+            cancelWeightHostScanTimeout()
             realtimePublisher.send(packet)
             publishStatus()
         case .locked(let discovery):
@@ -477,6 +483,25 @@ final class ScaleBleSessionService {
             formatter.dateFormat = "MM-dd HH:mm"
         }
         return formatter.string(from: date)
+    }
+
+    private func scheduleWeightHostScanTimeoutIfNeeded() {
+        cancelWeightHostScanTimeout()
+        guard sessionContext == .weightH5Host else { return }
+        scanTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: Self.weightHostScanTimeoutNanoseconds)
+            guard let self, !Task.isCancelled else { return }
+            await MainActor.run {
+                guard self.isActive, self.sessionContext == .weightH5Host else { return }
+                print("[Scale-BLL] weight H5 scan timeout 30s — stopSession")
+                self.stopSession()
+            }
+        }
+    }
+
+    private func cancelWeightHostScanTimeout() {
+        scanTimeoutTask?.cancel()
+        scanTimeoutTask = nil
     }
 
     private func emitError(code: String, message: String) {

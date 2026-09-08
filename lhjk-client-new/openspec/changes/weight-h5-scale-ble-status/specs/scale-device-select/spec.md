@@ -11,12 +11,13 @@
 
 系统 SHALL 提供 Health 原生「设备选择 / 我的设备」页，路由 `/health/scale/devices`。体重 H5 横条「去绑定」、已绑定点击、以及 `ble.openManager` MUST 进入该页（不再跳转 `/health/scale/measure` 或 `/me/devices`）。
 
-同一 VC 按绑定数据切换标题与布局：
+同一 VC 按绑定数据与入口切换布局（标题均为「选择设备」，对齐 Figma `5140:12352` / `5175:12472`）：
 
-| 条件 | 导航标题 | 对应原型 |
-|------|----------|----------|
-| `getEquipmentUserByParam` 无有效记录 | 选择设备 | `BodyScaleSelectDeviceView` |
-| 有有效记录 | 我的设备 | `MyScaleDeviceView` |
+| 条件 | 路由 | 布局 |
+|------|------|------|
+| `getEquipmentUserByParam` 无有效记录 | `/health/scale/devices` | 可绑定型号列表（右箭头） |
+| 有有效记录 | `/health/scale/devices` | 已绑卡片 + 底部「添加设备」 |
+| 点击「添加设备」 | `/health/scale/devices/add` | 尚未绑定的型号列表（右箭头） |
 
 #### Scenario: 未绑定点击去绑定
 
@@ -57,8 +58,7 @@ PL MUST 只调 `EquipmentBindService`，禁止直连 path。`type` 使用 `Equip
 当 `getEquipmentUserByParam` 的 `records` 为空（或无有效设备）时，页面 SHALL：
 
 - 标题为「选择设备」
-- **不**展示「当前设备」区块
-- **不**展示「添加设备 / 收起设备」按钮
+- **不**展示「添加设备」按钮
 - 仅展示 `getEquipmenByApp` 中的**可绑定**型号列表
 
 可绑定判定：`status` 为空或 `status != 0`（0 视为停用，不展示）。
@@ -89,8 +89,8 @@ OKOK 点击 → `/health/scale/bind`（设备绑定页），params 带 `equipmen
 #### Scenario: 未绑定展示型号列表
 
 - **WHEN** 绑定列表为空且型号接口返回至少一台可绑定设备
-- **THEN** 页面标题为「选择设备」
-- **AND** 仅渲染可绑定型号卡片（名称 + 设备编码 + 右箭头）
+- **THEN** 标题为「选择设备」
+- **AND** 仅渲染可绑定型号卡片（名称 + `设备编码｜{code}` + 右箭头）
 - **AND** 不出现「添加设备」按钮
 
 #### Scenario: 未绑定且无可绑定型号
@@ -98,59 +98,44 @@ OKOK 点击 → `/health/scale/bind`（设备绑定页），params 带 `equipmen
 - **WHEN** 绑定列表为空且过滤后型号列表为空
 - **THEN** 展示空态「暂无可绑定设备」
 
-### Requirement: 有绑定记录 — 当前设备 + 添加设备
+### Requirement: 有绑定记录 — 已绑列表 + 添加设备
 
 当绑定列表非空时，页面 SHALL：
 
-- 标题为「我的设备」
-- 展示「当前设备」区块：绑定列表每条一张卡
-- 默认**收起**更多设备；底部按钮文案「添加设备」（主色实心）
-- 点击「添加设备」展开「更多设备」列表，按钮变为描边「收起设备列表」
-- 再点按钮收起更多列表
+- 标题为「选择设备」（对齐 Figma `5140:12352`）
+- 展示已绑定设备卡片（白卡 65pt、圆角 12、40 图标、名称 14 Medium、`设备编码｜{code}` 12 Regular `#6D7381`、右侧橙色文字「解除绑定」）
+- 底部主色胶囊按钮「添加设备」（327×51）
+- 点击「添加设备」**push** `/health/scale/devices/add`（对齐 Figma `5175:12472`），MUST NOT 在本页展开型号列表
+- 添加页标题「选择设备」；展示可绑定且尚未绑定的型号卡片（同卡样式 + 右箭头）；无底部按钮
 
-当前设备卡片对齐我的设备原型：
-
-| UI | 数据来源 |
-|----|----------|
-| 图标 | `imgUrl`；无图用系统秤图标 |
-| 名称 | `name` → `commodityName` → `bluetoothName` → `model` →「体脂秤」 |
-| 设备编码 | `equipmentId` → `mac` → `model` |
-| 解除绑定 | 右侧描边按钮 |
-
-更多设备列表 = 可绑定型号中，排除已绑定的 `equipmentTypeId` / `equipmentId`（与型号 `id` 相同者）。卡片样式同选择设备（可点、带右箭头）。无剩余型号时，「添加设备」仍可点，展开后展示空列表或隐藏更多区块。
+更多设备列表 = 可绑定型号中，排除已绑定的 `equipmentTypeId` / `equipmentId`（与型号 `id` 相同者）。无剩余型号时添加页展示空态「暂无可绑定设备」。
 
 #### Scenario: 已绑定默认态
 
 - **WHEN** 绑定列表至少一条
-- **THEN** 标题为「我的设备」
-- **AND** 展示「当前设备」卡片与「添加设备」按钮
-- **AND** 默认不展示「更多设备」
+- **THEN** 标题为「选择设备」
+- **AND** 展示已绑卡片与底部「添加设备」
+- **AND** 不在本页展示型号列表
 
-#### Scenario: 展开添加设备
+#### Scenario: 点击添加设备
 
 - **WHEN** 用户点击「添加设备」
-- **THEN** 展示「更多设备」标题与可绑定且尚未绑定的型号列表
-- **AND** 按钮切换为「收起设备列表」
+- **THEN** push `/health/scale/devices/add`
+- **AND** 展示可绑定且尚未绑定的型号列表
 
-#### Scenario: 收起更多设备
+#### Scenario: 点击型号卡片（OKOK）
 
-- **WHEN** 更多列表已展开且用户点击「收起设备列表」
-- **THEN** 隐藏「更多设备」区块
-- **AND** 按钮恢复「添加设备」
-
-#### Scenario: 点击更多设备卡片（OKOK）
-
-- **WHEN** 用户点击更多设备中 `bluetoothName` 为 `OKOK` 的型号卡
+- **WHEN** 用户点击型号卡且 `bluetoothName` 为 `OKOK` 的型号卡
 - **THEN** 跳转 `/health/scale/bind`
 
-#### Scenario: 点击更多设备卡片（非 OKOK）
+#### Scenario: 点击型号卡片（非 OKOK）
 
-- **WHEN** 用户点击更多设备中非 OKOK 型号卡
+- **WHEN** 用户点击型号卡且 `bluetoothName` 不是 `OKOK`
 - **THEN** Toast「暂不支持该设备」
 
 ### Requirement: 解除绑定
 
-当前设备卡片的「解除绑定」SHALL 弹出二次确认（文案：「确定要解除设备绑定？」；取消 / 确认）。确认后调用 `unbindEquipment(equipmentUserId:)`（`DELETE /v1/equipmentUser/deleteEquipmentUserById`），成功后刷新本页两个接口；若刷新后绑定列表为空，切换为「选择设备」布局。
+已绑定设备卡片的「解除绑定」SHALL 弹出二次确认（文案：「确定要解除设备绑定？」；取消 / 确认）。确认后调用 `unbindEquipment(equipmentUserId:)`（`DELETE /v1/equipmentUser/deleteEquipmentUserById`），成功后刷新本页两个接口；若刷新后绑定列表为空，切换为型号列表布局。
 
 `equipmentUserId` 取绑定记录 `id`。无效 `id` 时 Toast「无法解绑该设备」，不发请求。
 

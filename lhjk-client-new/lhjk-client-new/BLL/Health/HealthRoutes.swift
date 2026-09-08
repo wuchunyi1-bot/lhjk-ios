@@ -70,6 +70,9 @@ enum HealthRoutes {
         // OKOK 广播体脂秤原生测量（不连 GATT）
         r.register(path: "/health/scale/measure") { _ in ScaleBroadcastMeasureViewController() }
         r.register(path: "/health/scale/devices") { _ in ScaleDeviceSelectViewController() }
+        r.register(path: "/health/scale/devices/add") { _ in
+            ScaleDeviceSelectViewController(entry: .catalog)
+        }
         r.register(path: "/health/scale/bind") { params in
             ScaleDeviceBindViewController(
                 equipmentTypeId: stringParam(params["equipmentType"]) ?? "",

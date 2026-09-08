@@ -4,33 +4,31 @@ import Foundation
 /// 设备选择 / 我的设备 — 绑定列表 + 可绑定型号
 final class ScaleDeviceSelectViewModel: ObservableObject {
 
+    enum Entry: Equatable {
+        /// `/health/scale/devices`：有绑定显示已绑列表，无绑定显示型号
+        case auto
+        /// `/health/scale/devices/add`：只显示可添加型号
+        case catalog
+    }
+
     enum Mode: Equatable {
         case select
         case mine
     }
 
+    let entry: Entry
+
     @Published private(set) var mode: Mode = .select
     @Published private(set) var boundDevices: [ScaleDeviceCardItem] = []
     @Published private(set) var moreDevices: [ScaleDeviceCardItem] = []
-    @Published private(set) var isExpanded = false
     @Published private(set) var isLoading = false
     @Published private(set) var isUnbinding = false
 
     let toastPublisher = PassthroughSubject<String, Never>()
 
-    var navigationTitle: String {
-        mode == .mine ? "我的设备" : "选择设备"
-    }
+    var navigationTitle: String { "选择设备" }
 
-    var showsAddButton: Bool { mode == .mine }
-
-    var addButtonTitle: String {
-        isExpanded ? "收起设备列表" : "添加设备"
-    }
-
-    var isAddButtonExpanded: Bool { isExpanded }
-
-    var showsMoreSection: Bool { mode == .mine && isExpanded }
+    var showsAddButton: Bool { entry == .auto && mode == .mine }
 
     var isEmpty: Bool {
         if isLoading { return false }
@@ -46,9 +44,11 @@ final class ScaleDeviceSelectViewModel: ObservableObject {
     private let userManager: UserManager
 
     init(
+        entry: Entry = .auto,
         equipmentBindService: EquipmentBindService = AppContainer.shared.equipmentBindService,
         userManager: UserManager = AppContainer.shared.userManager
     ) {
+        self.entry = entry
         self.equipmentBindService = equipmentBindService
         self.userManager = userManager
     }
@@ -57,11 +57,6 @@ final class ScaleDeviceSelectViewModel: ObservableObject {
         Task { @MainActor in
             await fetch()
         }
-    }
-
-    func toggleAddDevices() {
-        guard mode == .mine else { return }
-        isExpanded.toggle()
     }
 
     func unbind(_ item: ScaleDeviceCardItem) {
@@ -105,19 +100,27 @@ final class ScaleDeviceSelectViewModel: ObservableObject {
                 .filter(\.isBindable)
                 .map(ScaleDeviceCardItem.catalog(from:))
 
+            let boundTypeIds = Set(boundItems.compactMap(\.equipmentTypeId))
+            let availableCatalog = catalogItems.filter { item in
+                guard let typeId = item.equipmentTypeId else { return true }
+                return !boundTypeIds.contains(typeId)
+            }
+
+            if entry == .catalog {
+                mode = .select
+                boundDevices = []
+                moreDevices = availableCatalog
+                return
+            }
+
             if boundItems.isEmpty {
                 mode = .select
                 boundDevices = []
                 moreDevices = catalogItems
-                isExpanded = false
             } else {
                 mode = .mine
                 boundDevices = boundItems
-                let boundTypeIds = Set(boundItems.compactMap(\.equipmentTypeId))
-                moreDevices = catalogItems.filter { item in
-                    guard let typeId = item.equipmentTypeId else { return true }
-                    return !boundTypeIds.contains(typeId)
-                }
+                moreDevices = availableCatalog
             }
         } catch {
             toastPublisher.send(error.localizedDescription)

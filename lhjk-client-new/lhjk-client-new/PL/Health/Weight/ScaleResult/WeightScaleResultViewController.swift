@@ -2,7 +2,7 @@ import Combine
 import SnapKit
 import UIKit
 
-/// 体脂秤体重报告（有阻抗）— 对齐原型 BodyScaleResultView
+/// 体脂秤体重报告（有阻抗）— 对齐 Figma `5175:12518`
 final class WeightScaleResultViewController: BaseViewController {
 
     private let viewModel: WeightScaleResultViewModel
@@ -11,11 +11,14 @@ final class WeightScaleResultViewController: BaseViewController {
     private let scrollView = UIScrollView()
     private let contentStack = UIStackView()
     private let summaryView = WeightScaleResultSummaryView()
+    private let metricsCard = UIView()
+    private let sectionAccent = UIView()
     private let sectionTitleLabel = UILabel()
     private let metricsGrid = UIStackView()
     private let emptyLabel = UILabel()
     private let retryButton = UIButton(type: .system)
-    private let saveButton = UIButton(type: .system)
+    private let actionsStack = UIStackView()
+    private let saveButton = UIButton(type: .custom)
     private let remeasureButton = UIButton(type: .system)
     private let loadingView = UIActivityIndicatorView(style: .medium)
 
@@ -24,8 +27,8 @@ final class WeightScaleResultViewController: BaseViewController {
         super.init(nibName: nil, bundle: nil)
     }
 
-    convenience init(monitorId: String) {
-        self.init(viewModel: WeightScaleResultViewModel(monitorId: monitorId))
+    convenience init(monitorId: String, preloaded: WeightHomePageDataVO? = nil) {
+        self.init(viewModel: WeightScaleResultViewModel(monitorId: monitorId, preloaded: preloaded))
     }
 
     @available(*, unavailable)
@@ -44,17 +47,14 @@ final class WeightScaleResultViewController: BaseViewController {
 
         scrollView.alwaysBounceVertical = true
         scrollView.showsVerticalScrollIndicator = false
+        scrollView.backgroundColor = .fdBg
 
         contentStack.axis = .vertical
-        contentStack.spacing = 16
+        contentStack.spacing = 12
         contentStack.alignment = .fill
 
-        sectionTitleLabel.text = "我的指标"
-        sectionTitleLabel.font = .fdH3
-        sectionTitleLabel.textColor = .fdText
-
-        metricsGrid.axis = .vertical
-        metricsGrid.spacing = 10
+        setupMetricsCard()
+        setupActions()
 
         emptyLabel.font = .fdBody
         emptyLabel.textColor = .fdSubtext
@@ -68,24 +68,6 @@ final class WeightScaleResultViewController: BaseViewController {
         retryButton.isHidden = true
         retryButton.addTarget(self, action: #selector(handleRetry), for: .touchUpInside)
 
-        saveButton.setTitle("保存", for: .normal)
-        saveButton.titleLabel?.font = .fdBodySemibold
-        saveButton.setTitleColor(.white, for: .normal)
-        saveButton.backgroundColor = .fdPrimary
-        saveButton.layer.cornerRadius = 16
-        saveButton.clipsToBounds = true
-        saveButton.addTarget(self, action: #selector(handleSave), for: .touchUpInside)
-
-        remeasureButton.setTitle("重新测量", for: .normal)
-        remeasureButton.titleLabel?.font = .fdBodySemibold
-        remeasureButton.setTitleColor(.fdPrimary, for: .normal)
-        remeasureButton.backgroundColor = .white
-        remeasureButton.layer.cornerRadius = 16
-        remeasureButton.layer.borderWidth = 1
-        remeasureButton.layer.borderColor = UIColor.fdPrimary.cgColor
-        remeasureButton.clipsToBounds = true
-        remeasureButton.addTarget(self, action: #selector(handleRemeasure), for: .touchUpInside)
-
         loadingView.hidesWhenStopped = true
         loadingView.color = .fdPrimary
 
@@ -94,27 +76,20 @@ final class WeightScaleResultViewController: BaseViewController {
         scrollView.addSubview(contentStack)
 
         contentStack.addArrangedSubview(summaryView)
-        contentStack.addArrangedSubview(sectionTitleLabel)
-        contentStack.addArrangedSubview(metricsGrid)
+        contentStack.addArrangedSubview(metricsCard)
         contentStack.addArrangedSubview(emptyLabel)
         contentStack.addArrangedSubview(retryButton)
-        contentStack.addArrangedSubview(saveButton)
-        contentStack.addArrangedSubview(remeasureButton)
+        contentStack.addArrangedSubview(actionsStack)
+        contentStack.setCustomSpacing(28, after: metricsCard)
 
         scrollView.snp.makeConstraints { make in
             make.edges.equalTo(view.safeAreaLayoutGuide)
         }
         contentStack.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(16)
+            make.top.equalToSuperview().offset(8)
             make.leading.trailing.equalToSuperview().inset(16)
             make.bottom.equalToSuperview().offset(-24)
             make.width.equalTo(scrollView).offset(-32)
-        }
-        saveButton.snp.makeConstraints { make in
-            make.height.equalTo(52)
-        }
-        remeasureButton.snp.makeConstraints { make in
-            make.height.equalTo(48)
         }
         loadingView.snp.makeConstraints { make in
             make.center.equalToSuperview()
@@ -158,7 +133,7 @@ final class WeightScaleResultViewController: BaseViewController {
         viewModel.toastPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] message in
-                self?.showToast(message)
+                self?.showToastAlert(message, duration: 1.5)
             }
             .store(in: &cancellables)
 
@@ -170,13 +145,75 @@ final class WeightScaleResultViewController: BaseViewController {
             .store(in: &cancellables)
     }
 
+    private func setupMetricsCard() {
+        metricsCard.backgroundColor = .fdSurface
+        metricsCard.layer.cornerRadius = 16
+        metricsCard.clipsToBounds = true
+
+        sectionAccent.backgroundColor = .fdPrimary
+        sectionAccent.layer.cornerRadius = 1.5
+
+        sectionTitleLabel.text = "我的指标"
+        sectionTitleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        sectionTitleLabel.textColor = .fdText
+
+        metricsGrid.axis = .vertical
+        metricsGrid.spacing = 12
+
+        metricsCard.addSubview(sectionAccent)
+        metricsCard.addSubview(sectionTitleLabel)
+        metricsCard.addSubview(metricsGrid)
+
+        sectionAccent.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(12)
+            make.centerY.equalTo(sectionTitleLabel)
+            make.width.equalTo(3)
+            make.height.equalTo(14)
+        }
+        sectionTitleLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.equalTo(sectionAccent.snp.trailing).offset(6)
+            make.trailing.equalToSuperview().offset(-12)
+        }
+        metricsGrid.snp.makeConstraints { make in
+            make.top.equalTo(sectionTitleLabel.snp.bottom).offset(12)
+            make.leading.trailing.equalToSuperview().inset(12)
+            make.bottom.equalToSuperview().offset(-12)
+        }
+    }
+
+    private func setupActions() {
+        saveButton.setTitle("保存", for: .normal)
+        saveButton.setTitleColor(.white, for: .normal)
+        saveButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
+        saveButton.backgroundColor = .fdPrimary
+        saveButton.layer.cornerRadius = 25.5
+        saveButton.clipsToBounds = true
+        saveButton.addTarget(self, action: #selector(handleSave), for: .touchUpInside)
+
+        remeasureButton.setTitle("重新测量", for: .normal)
+        remeasureButton.titleLabel?.font = .fdFont(ofSize: 14, weight: .regular)
+        remeasureButton.setTitleColor(.fdSubtext, for: .normal)
+        remeasureButton.addTarget(self, action: #selector(handleRemeasure), for: .touchUpInside)
+
+        actionsStack.axis = .vertical
+        actionsStack.alignment = .fill
+        actionsStack.spacing = 24
+        actionsStack.isLayoutMarginsRelativeArrangement = true
+        actionsStack.layoutMargins = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
+        actionsStack.addArrangedSubview(saveButton)
+        actionsStack.addArrangedSubview(remeasureButton)
+
+        saveButton.snp.makeConstraints { make in
+            make.height.equalTo(51)
+        }
+    }
+
     private func render() {
         let hasRecord = viewModel.record != nil
         summaryView.isHidden = !hasRecord
-        sectionTitleLabel.isHidden = !hasRecord
-        metricsGrid.isHidden = !hasRecord
-        saveButton.isHidden = !hasRecord
-        remeasureButton.isHidden = !hasRecord
+        metricsCard.isHidden = !hasRecord
+        actionsStack.isHidden = !hasRecord
         guard hasRecord else { return }
 
         summaryView.configure(
@@ -193,7 +230,7 @@ final class WeightScaleResultViewController: BaseViewController {
         while index < items.count {
             let row = UIStackView()
             row.axis = .horizontal
-            row.spacing = 10
+            row.spacing = 12
             row.distribution = .fillEqually
             let left = WeightScaleResultMetricCardView()
             left.configure(items[index])
@@ -207,6 +244,9 @@ final class WeightScaleResultViewController: BaseViewController {
                 row.addArrangedSubview(spacer)
             }
             metricsGrid.addArrangedSubview(row)
+            row.snp.makeConstraints { make in
+                make.height.equalTo(WeightScaleResultMetricCardView.preferredHeight)
+            }
             index += 2
         }
     }
@@ -221,13 +261,5 @@ final class WeightScaleResultViewController: BaseViewController {
 
     @objc private func handleRemeasure() {
         viewModel.remeasureTapped()
-    }
-
-    private func showToast(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
-            alert.dismiss(animated: true)
-        }
     }
 }

@@ -79,13 +79,13 @@ final class ScaleDeviceBindViewController: BaseViewController {
         view.backgroundColor = .fdBg
 
         // 顶栏文字
-        statusLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        statusLabel.font = .fdFont(ofSize: 18, weight: .medium)
         statusLabel.textColor = .fdText
         statusLabel.textAlignment = .center
         statusLabel.numberOfLines = 0
         statusLabel.text = "蓝牙搜索中，请耐心等待"
 
-        hintLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        hintLabel.font = .fdFont(ofSize: 14, weight: .regular)
         hintLabel.textColor = UIColor(hexString: "#6D7381")
         hintLabel.textAlignment = .center
         hintLabel.numberOfLines = 0
@@ -99,7 +99,7 @@ final class ScaleDeviceBindViewController: BaseViewController {
 
         // 重新搜索按钮（默认隐藏，仅在 failed 展示）
         retryButton.setTitle("重新搜索", for: .normal)
-        retryButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
+        retryButton.titleLabel?.font = .fdFont(ofSize: 18, weight: .medium)
         retryButton.setTitleColor(.white, for: .normal)
         retryButton.backgroundColor = .fdPrimary
         retryButton.layer.cornerRadius = 24

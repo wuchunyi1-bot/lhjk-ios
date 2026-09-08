@@ -155,6 +155,26 @@ extension RootTabBarController {
         static let my = 4
     }
 
+    /// 切到服务 Tab 根页，不 push 新栈（聊天过期横幅「前往商城」等入口）
+    static func selectServiceTab() {
+        let switchTab = {
+            guard let tabBar = findInKeyWindow() else { return }
+            if tabBar.presentedViewController != nil {
+                tabBar.dismiss(animated: false)
+            }
+            if let nav = tabBar.viewControllers?[Tab.service] as? UINavigationController,
+               nav.viewControllers.count > 1 {
+                nav.popToRootViewController(animated: false)
+            }
+            tabBar.selectedIndex = Tab.service
+        }
+        if Thread.isMainThread {
+            switchTab()
+        } else {
+            DispatchQueue.main.async(execute: switchTab)
+        }
+    }
+
     /// `/messages`：切到消息 Tab 根页，不 push 新栈（避免 `hidesBottomBarWhenPushed` 藏掉底部栏）
     static func selectMessageTab() {
         let switchTab = {

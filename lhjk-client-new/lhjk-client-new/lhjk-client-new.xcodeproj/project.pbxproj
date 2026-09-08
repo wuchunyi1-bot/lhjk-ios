@@ -364,6 +364,7 @@
 		A5D28F343046A14A00D5D437 /* CancelAccountComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D28F333046A14A00D5D437 /* CancelAccountComponents.swift */; };
 		A5D28F373046A8EB00D5D437 /* AddressComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D28F353046A8EB00D5D437 /* AddressComponents.swift */; };
 		A5D28F393046C5F400D5D437 /* SettingsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D28F383046C5F400D5D437 /* SettingsComponents.swift */; };
+		A5D48496304E8FBA00F8D18D /* ChatExpiredBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D48495304E8FBA00F8D18D /* ChatExpiredBannerView.swift */; };
 		A5E0891E3045511D00D610FF /* GroupMembersVO.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E0891D3045511D00D610FF /* GroupMembersVO.swift */; };
 		A5E08928304551E300D610FF /* GroupMembersViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E08924304551E300D610FF /* GroupMembersViewModel.swift */; };
 		A5E08929304551E300D610FF /* GroupMembersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E08926304551E300D610FF /* GroupMembersViewController.swift */; };
@@ -755,6 +756,7 @@
 		A5D28F333046A14A00D5D437 /* CancelAccountComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancelAccountComponents.swift; sourceTree = "<group>"; };
 		A5D28F353046A8EB00D5D437 /* AddressComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressComponents.swift; sourceTree = "<group>"; };
 		A5D28F383046C5F400D5D437 /* SettingsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsComponents.swift; sourceTree = "<group>"; };
+		A5D48495304E8FBA00F8D18D /* ChatExpiredBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatExpiredBannerView.swift; sourceTree = "<group>"; };
 		A5E0891D3045511D00D610FF /* GroupMembersVO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GroupMembersVO.swift; path = DAL/IM/GroupMembersVO.swift; sourceTree = "<group>"; };
 		A5E08922304551E300D610FF /* GroupMemberCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupMemberCell.swift; sourceTree = "<group>"; };
 		A5E08924304551E300D610FF /* GroupMembersViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupMembersViewModel.swift; sourceTree = "<group>"; };
@@ -1786,6 +1788,7 @@
 		A5A6F4FC2FFF7BBD0065C921 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A5D48495304E8FBA00F8D18D /* ChatExpiredBannerView.swift */,
 				A52EB5DB30385ABE009C763D /* ChatBubbleStyle.swift */,
 				A5A6F4FA2FFF7BBD0065C921 /* MessageActionMenu.swift */,
 				A5A6F4FB2FFF7BBD0065C921 /* QuotePreviewBar.swift */,
@@ -2977,6 +2980,7 @@
 				A56DDEBD30174BAB000E03A0 /* ManagerSelectViewController.swift in Sources */,
 				A590FD032FEA91170056EF52 /* ProfileViewController.swift in Sources */,
 				D97D86F91B5A3A4D1C22DDC3 /* PaymentOrder.swift in Sources */,
+				A5D48496304E8FBA00F8D18D /* ChatExpiredBannerView.swift in Sources */,
 				2AB37F19E9E9BA0DCE4E2FF9 /* PaymentProtocol.swift in Sources */,
 				B0BC602D83CB797AB66DFE1F /* WechatPayChannel.swift in Sources */,
 				A56120C43010A31C00505C32 /* OrderCouponPickerSheet.swift in Sources */,

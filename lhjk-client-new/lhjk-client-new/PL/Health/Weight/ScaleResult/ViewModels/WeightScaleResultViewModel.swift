@@ -19,15 +19,18 @@ final class WeightScaleResultViewModel: ObservableObject {
 
     init(
         monitorId: String,
+        preloaded: WeightHomePageDataVO? = nil,
         equipmentBindService: EquipmentBindService = AppContainer.shared.equipmentBindService,
         scaleSession: ScaleBleSessionService = AppContainer.shared.scaleBleSessionService
     ) {
         self.monitorId = monitorId
         self.equipmentBindService = equipmentBindService
         self.scaleSession = scaleSession
+        self.record = preloaded
     }
 
     func load() {
+        if record != nil { return }
         guard !monitorId.isEmpty else {
             errorMessage = "缺少测量记录"
             return
