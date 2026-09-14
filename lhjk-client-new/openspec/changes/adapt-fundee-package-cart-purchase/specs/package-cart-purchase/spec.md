@@ -20,7 +20,8 @@
 
 - **WHEN** 用户点击「加入购物车」
 - **THEN** `flag = 2`（添加购物车）
-- **AND** 成功后 Toast「已加入购物车」，进入 `/services/cart`
+- **AND** 成功后 Toast「已加入购物车」，**不得**跳转购物车页
+- **AND** 刷新 `GET /v1/shoppingCart/getShoppingCartCount` 角标
 - **AND** **不得**再写入本地购物车；列表仅通过 `getShoppingCartList` 展示服务端数据
 - **WHEN** 用户点击「立即下单」
 - **THEN** `flag = 1`（立即购买）
@@ -45,7 +46,11 @@
 
 #### Scenario: 失败与防重
 
-- **WHEN** 接口失败（`success`/`code` 非成功）
+- **WHEN** 接口失败（`success`/`code` 非成功）且 `code` 不是 `M0087`
 - **THEN** Toast 展示服务端 `msg` 或通用失败文案；不跳转
+- **WHEN** 接口返回 `code = M0087`（已有未完成订单，禁止重复下单；加购与立即下单均适用）
+- **THEN** 弹出 Alert：标题「下单失败」，正文为服务端 `msg`（含商品名），按钮「暂不处理」（关闭）与「查看订单」
+- **AND** 点击「查看订单」进入 `/orders/detail`，订单 id 取响应 `data`（int64 / 数字字符串）
+- **AND** `data` 无法解析为有效订单 id 时 Toast「订单信息缺失」，不跳转
 - **WHEN** 请求进行中
 - **THEN** 底部「加入购物车」「立即下单」不可重复触发

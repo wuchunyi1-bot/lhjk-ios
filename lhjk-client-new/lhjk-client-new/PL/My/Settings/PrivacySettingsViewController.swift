@@ -20,6 +20,13 @@ final class PrivacySettingsViewController: BaseViewController {
     private var photoRow: SettingsPermissionRow?
     private var foregroundObserver: NSObjectProtocol?
 
+    /// 仅用于弹出系统定位授权框，须持有实例且设置 delegate
+    private lazy var locationAuthManager: CLLocationManager = {
+        let manager = CLLocationManager()
+        manager.delegate = self
+        return manager
+    }()
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
@@ -78,21 +85,21 @@ final class PrivacySettingsViewController: BaseViewController {
             title: "位置信息",
             status: "未开启",
             showDivider: true
-        ) { [weak self] in self?.openSystemSettings() }
+        ) { [weak self] in self?.handleLocationPermissionTap() }
         locationRow = location
 
         let camera = SettingsPermissionRow(
             title: "相机权限",
             status: "未开启",
             showDivider: true
-        ) { [weak self] in self?.openSystemSettings() }
+        ) { [weak self] in self?.handleCameraPermissionTap() }
         cameraRow = camera
 
         let photo = SettingsPermissionRow(
             title: "相册权限",
             status: "未开启",
             showDivider: false
-        ) { [weak self] in self?.openSystemSettings() }
+        ) { [weak self] in self?.handlePhotoPermissionTap() }
         photoRow = photo
 
         card.setBodyViews([location, camera, photo])
@@ -162,7 +169,7 @@ final class PrivacySettingsViewController: BaseViewController {
     }
 
     private func isLocationAuthorized() -> Bool {
-        switch CLLocationManager.authorizationStatus() {
+        switch locationAuthStatus {
         case .authorizedAlways, .authorizedWhenInUse:
             return true
         default:
@@ -170,13 +177,64 @@ final class PrivacySettingsViewController: BaseViewController {
         }
     }
 
+    private var locationAuthStatus: CLAuthorizationStatus {
+        locationAuthManager.authorizationStatus
+    }
+
     private func isCameraAuthorized() -> Bool {
         AVCaptureDevice.authorizationStatus(for: .video) == .authorized
     }
 
     private func isPhotoAuthorized() -> Bool {
-        let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-        return status == .authorized || status == .limited
+        let readWrite = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        if readWrite == .authorized || readWrite == .limited { return true }
+        let addOnly = PHPhotoLibrary.authorizationStatus(for: .addOnly)
+        return addOnly == .authorized
+    }
+
+    /// 尚未询问过系统权限时弹出授权框；已被拒绝则只能去系统设置
+    private func handleLocationPermissionTap() {
+        switch locationAuthStatus {
+        case .notDetermined:
+            locationAuthManager.requestWhenInUseAuthorization()
+        default:
+            openSystemSettings()
+        }
+    }
+
+    private func handleCameraPermissionTap() {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] _ in
+                DispatchQueue.main.async {
+                    self?.refreshPermissionStatus()
+                }
+            }
+        default:
+            openSystemSettings()
+        }
+    }
+
+    private func handlePhotoPermissionTap() {
+        let level = photoAccessLevel
+        switch PHPhotoLibrary.authorizationStatus(for: level) {
+        case .notDetermined:
+            PHPhotoLibrary.requestAuthorization(for: level) { [weak self] _ in
+                DispatchQueue.main.async {
+                    self?.refreshPermissionStatus()
+                }
+            }
+        default:
+            openSystemSettings()
+        }
+    }
+
+    /// 有读取说明则申请读写；否则仅申请写入，避免缺少 `NSPhotoLibraryUsageDescription` 时崩溃
+    private var photoAccessLevel: PHAccessLevel {
+        if Bundle.main.object(forInfoDictionaryKey: "NSPhotoLibraryUsageDescription") != nil {
+            return .readWrite
+        }
+        return .addOnly
     }
 
     private func openSystemSettings() {
@@ -217,5 +275,11 @@ final class PrivacySettingsViewController: BaseViewController {
 
     private func showToast(_ message: String) {
         showToastAlert(message, duration: 1.5)
+    }
+}
+
+extension PrivacySettingsViewController: CLLocationManagerDelegate {
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        refreshPermissionStatus()
     }
 }

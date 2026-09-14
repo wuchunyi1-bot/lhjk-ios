@@ -1,7 +1,7 @@
 ## Context
 
 参考 funde-client：
-- `prototype/src/views/auth/LoginView.vue` — 三协议、知情同意 sheet、`step: login|forgot|reset-password`
+- `prototype/src/views/auth/LoginView.vue` — 四协议、知情同意 sheet、`step: login|forgot|reset-password`
 - `prototype/src/views/auth/ProfileSetupView.vue` — 所属机构
 - `MobileApp.vue` — 前置隐私三协议
 
@@ -10,7 +10,7 @@
 ## Goals / Non-Goals
 
 **Goals:**
-- 三协议 + 知情同意弹窗对齐 PRD AUTH-06
+- 登录表单四协议 + 知情同意弹窗对齐 PRD AUTH-06 / LOGIN-F009；前置隐私弹窗仍为用户协议、隐私政策、知情同意书三项
 - 忘记密码页内步骤对齐 PRD AUTH-08 / funde LoginView
 - Onboarding 所属机构绑定真实 `hospitalId`（无假 id）
 
@@ -30,8 +30,8 @@
 |------|------------|
 | 机构列表接口参数不明 | 复用现有 `HospitalService` / 机构切换已用接口 |
 | 资料 API 无 hospitalId 字段 | 先写 loginUserInfo 满足门禁；API 字段以文档为准 |
-| 协议正式 URL 未定 | 沿用现有 Router WebView 占位路径，三协议均可点 |
+| 协议正式 URL 未定 | 登录勾选与知情同意弹窗走 `AgreementDetailViewController`（docType 含 `member-service`），与设置协议中心同源 |
 
 ## Open Questions
 
-- 知情同意书正式 URL / 版本号（产品确认前用占位路由）
+- 协议 CMS / 正式版本号未定时，详情继续用 Vue `agreementMap` 静态正文（含 `member-service`、`benefit-card`）

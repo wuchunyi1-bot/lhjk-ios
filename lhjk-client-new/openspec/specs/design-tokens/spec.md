@@ -266,6 +266,56 @@
 
 ---
 
+---
+
+### Requirement: 默认无数据空态插图
+
+全页 / 全列表「无数据」SHALL 使用 Assets 切图 **`noData_default`**（`FDEmptyStateView`），**不得**再用 SF Symbol 或纯文字充当默认空态主视觉。
+
+插图为透明底开箱礼盒；展示尺寸全页 **145pt**、嵌入卡片 **100pt**，下方为页面原有空态文案（`fdMuted` / `fdSubtext`）。
+
+#### Scenario: 使用默认图的页面
+
+- **WHEN** 下列列表当前无条目（加载结束后）
+- **THEN** 展示 `noData_default` + 该页原有文案：
+
+| 模块 | 页面 | 文案（示例） |
+|------|------|----------------|
+| 卡券 | 权益卡各状态 Tab | 暂无相关权益卡 / 暂无转赠记录 等 |
+| 卡券 | 优惠券各状态 Tab | 暂无相关优惠券 + 引导副文案 |
+| 卡券 | 兑换套餐分类空 | 当前分类暂无可兑换套餐 |
+| 订单 | 我的订单各状态 Tab | 暂无订单 / 暂无待支付订单 等 |
+| 订单 | 发货记录 / 自提记录 | 暂无发货记录 / 暂无自提记录 |
+| 地址 | 收货地址列表 | 暂无收货地址 + 副文案「添加后可用于商城下单、服务资料邮寄等场景。」；底部「添加收货地址」 |
+| 服务 | 选择套餐当前分类无套餐 | 暂无套餐 |
+| 服务 | 搜索套餐无结果 | 未找到相关套餐 |
+| 服务 | 富德优选商城分类空 | 该分类暂无商品，敬请期待 |
+| 服务 | 商品详情未知商品 | 商品不存在 |
+| 服务 | 选择服务机构无匹配 | 未找到匹配机构… |
+| 登录 | 选择业务经理无匹配 | 暂无业务经理 / 未找到匹配人员 |
+| 健康 | 今日健康任务详情无任务 | 暂无今日健康任务 |
+| 健康 | 体脂秤设备列表空 | 暂无可绑定设备 |
+| 消息 | 团队对话空 | 暂无团队对话 |
+| 消息 | 通知中心 Tab / 独立页 | 暂无通知 |
+| 消息 | 群成员 | 暂无群成员 |
+
+#### Scenario: 不套用默认图
+
+- **WHEN** 空态属于下列之一
+- **THEN** **不得**用 `noData_default` 替换现有视觉：
+  - 已有业务专属插图：购物车 `serice_cart`
+  - 卡片封面占位：订单卡片无套餐图时仍用 `order_package_placeholder`
+  - 行内/卡片内一行空文案：首页任务卡「今日暂无健康任务」、确认订单选券/选卡底部弹层「暂无可用」
+  - 图表无曲线：`DGCharts.noDataText`
+  - 尚未实现的路由占位页 `PlaceholderViewController`
+
+#### Scenario: 组件入口
+
+- **WHEN** PL 实现全页或全列表空态
+- **THEN** 使用 `Other/Common/Components/FDEmptyStateView`（`UIImage(named: "noData_default")`），按页传入 message / 可选 subtitle
+
+---
+
 ## Implementation Reference
 
 | 规范 | 实现文件 |
@@ -275,3 +325,4 @@
 | 字体 Token 定义 | `Other/Common/Extensions/UIFont/UIFont+Funde.swift` |
 | DGCharts 图表样式 | `Other/Common/Extensions/DGCharts/DGCharts+Theme.swift` |
 | 按钮预设样式 | `Other/Common/Extensions/UIButton/UIButton+Funde.swift` |
+| 默认无数据空态 | `Other/Common/Components/FDEmptyStateView.swift`（`noData_default`） |

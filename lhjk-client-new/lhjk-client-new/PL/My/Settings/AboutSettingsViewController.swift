@@ -140,7 +140,11 @@ final class AboutSettingsViewController: BaseViewController {
     // MARK: - Actions
 
     private func handleVersionTap() {
-        showToast("当前已经是最新版本")
+        Task { @MainActor in
+            if let message = await AppVersionCheckCoordinator.check(mode: .manual) {
+                showToast(message)
+            }
+        }
     }
 
     private func handleRatingTap() {

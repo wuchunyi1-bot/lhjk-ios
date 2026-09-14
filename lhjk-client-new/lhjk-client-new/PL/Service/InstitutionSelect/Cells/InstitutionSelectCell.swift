@@ -1,59 +1,59 @@
 import UIKit
 import SnapKit
 
-/// 机构列表 Cell — 对齐 funde `.institution-item`
+/// 机构列表 Cell — 对齐 Figma `5346:15928`
 final class InstitutionSelectCell: UITableViewCell {
     static let reuseID = "InstitutionSelectCell"
 
-    private let iconBox: UIView = {
-        let v = UIView()
-        v.backgroundColor = .fdPrimarySoft
-        v.layer.cornerRadius = 10
-        return v
+    private let card = UIView()
+    private let gradientLayer: CAGradientLayer = {
+        let layer = CAGradientLayer()
+        layer.colors = [
+            UIColor.fdBg.cgColor,
+            UIColor.fdBg.withAlphaComponent(0).cgColor,
+        ]
+        layer.startPoint = CGPoint(x: 0, y: 0.5)
+        layer.endPoint = CGPoint(x: 1, y: 0.5)
+        return layer
     }()
 
     private let iconView: UIImageView = {
-        let iv = UIImageView(image: UIImage(systemName: "cross.case.fill"))
-        iv.tintColor = .fdPrimary
+        let iv = UIImageView(image: UIImage(named: "onboarding_hospital_icon"))
         iv.contentMode = .scaleAspectFit
         return iv
     }()
 
     private let nameLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdBodyBold
+        label.font = .fdFont(ofSize: 16, weight: .medium)
         label.textColor = .fdText
-        label.numberOfLines = 2
+        label.numberOfLines = 1
         return label
+    }()
+
+    private let typeBadgeWrap: UIView = {
+        let v = UIView()
+        v.layer.cornerRadius = 4
+        v.layer.borderWidth = 0.5
+        v.layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.5).cgColor
+        return v
     }()
 
     private let typeBadge: UILabel = {
         let label = UILabel()
-        label.font = .fdMicroSemibold
+        label.font = .fdFont(ofSize: 14, weight: .regular)
         label.textColor = .fdPrimary
-        label.backgroundColor = .fdPrimarySoft
-        label.layer.cornerRadius = 4
-        label.clipsToBounds = true
         return label
     }()
 
     private let addressLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdCaption
-        label.textColor = .fdSubtext
-        label.numberOfLines = 2
+        label.font = .fdFont(ofSize: 16, weight: .regular)
+        label.textColor = .fdTabInactive
+        label.numberOfLines = 0
+        label.lineBreakMode = .byWordWrapping
         return label
     }()
-
-    private let checkView: UIImageView = {
-        let iv = UIImageView(image: UIImage(systemName: "checkmark.circle.fill"))
-        iv.tintColor = .fdPrimary
-        iv.contentMode = .scaleAspectFit
-        iv.isHidden = true
-        return iv
-    }()
-
-    private let card = UIView()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -65,62 +65,65 @@ final class InstitutionSelectCell: UITableViewCell {
 
     required init?(coder: NSCoder) { fatalError() }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        gradientLayer.frame = card.bounds
+        gradientLayer.cornerRadius = card.layer.cornerRadius
+    }
+
     func configure(item: HospitalSearchVO, isSelected: Bool) {
         nameLabel.text = item.name ?? "服务机构"
-        typeBadge.text = " \(HospitalTypeLabel.display(for: item.hospitalType)) "
+        typeBadge.text = HospitalTypeLabel.display(for: item.hospitalType)
         addressLabel.text = item.fullAddress?.nilIfEmpty ?? "地址待补充"
-        checkView.isHidden = !isSelected
-        card.layer.borderWidth = isSelected ? 1.5 : 1
-        card.layer.borderColor = (isSelected ? UIColor.fdPrimary : UIColor.fdBorder).cgColor
-        card.backgroundColor = isSelected ? UIColor.fdPrimarySoft.withAlphaComponent(0.35) : .fdSurface
+        card.layer.borderWidth = isSelected ? 0.5 : 0
+        card.layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.5).cgColor
     }
 
     private func setupUI() {
         card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 14
-        card.layer.borderWidth = 1
-        card.layer.borderColor = UIColor.fdBorder.cgColor
+        card.layer.cornerRadius = 16
+        card.clipsToBounds = true
+        card.layer.insertSublayer(gradientLayer, at: 0)
         contentView.addSubview(card)
 
-        iconBox.addSubview(iconView)
-        iconView.snp.makeConstraints { $0.center.equalToSuperview(); $0.size.equalTo(18) }
-
-        let titleRow = UIStackView(arrangedSubviews: [nameLabel, typeBadge])
-        titleRow.axis = .horizontal
-        titleRow.spacing = 8
-        titleRow.alignment = .center
-        typeBadge.setContentHuggingPriority(.required, for: .horizontal)
-        typeBadge.setContentCompressionResistancePriority(.required, for: .horizontal)
-
-        let textStack = UIStackView(arrangedSubviews: [titleRow, addressLabel])
-        textStack.axis = .vertical
-        textStack.spacing = 6
-
-        card.addSubview(iconBox)
-        card.addSubview(textStack)
-        card.addSubview(checkView)
+        typeBadgeWrap.addSubview(typeBadge)
+        card.addSubview(iconView)
+        card.addSubview(nameLabel)
+        card.addSubview(typeBadgeWrap)
+        card.addSubview(addressLabel)
 
         card.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(6)
-            $0.bottom.equalToSuperview().offset(-6)
+            $0.top.equalToSuperview()
+            $0.bottom.equalToSuperview().offset(-12)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
-        iconBox.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(14)
-            $0.top.equalToSuperview().inset(14)
-            $0.size.equalTo(36)
+        iconView.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(12)
+            $0.top.equalToSuperview().offset(14)
+            $0.size.equalTo(42)
+            $0.bottom.lessThanOrEqualToSuperview().offset(-14)
         }
-        textStack.snp.makeConstraints {
-            $0.leading.equalTo(iconBox.snp.trailing).offset(12)
-            $0.top.equalToSuperview().inset(14)
-            $0.bottom.equalToSuperview().inset(14)
-            $0.trailing.equalTo(checkView.snp.leading).offset(-8)
+        typeBadge.snp.makeConstraints {
+            $0.top.bottom.equalToSuperview().inset(2)
+            $0.leading.trailing.equalToSuperview().inset(4)
         }
-        checkView.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(14)
-            $0.centerY.equalToSuperview()
-            $0.size.equalTo(22)
+        typeBadgeWrap.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(12)
+            $0.top.equalToSuperview().offset(12)
         }
+        nameLabel.snp.makeConstraints {
+            $0.leading.equalTo(iconView.snp.trailing).offset(12)
+            $0.top.equalToSuperview().offset(13)
+            $0.trailing.lessThanOrEqualTo(typeBadgeWrap.snp.leading).offset(-8)
+        }
+        addressLabel.snp.makeConstraints {
+            $0.leading.equalTo(nameLabel)
+            $0.top.equalTo(nameLabel.snp.bottom).offset(4)
+            $0.trailing.equalToSuperview().inset(12)
+            $0.bottom.equalToSuperview().offset(-14)
+        }
+        typeBadgeWrap.setContentHuggingPriority(.required, for: .horizontal)
+        typeBadgeWrap.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
 }
 

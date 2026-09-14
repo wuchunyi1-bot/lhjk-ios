@@ -135,12 +135,7 @@ enum MyRoutes {
         // 安全中心三级页（对齐 Vue `/me/settings/security/*`）
         r.register(path: "/me/settings/security/change-phone") { _ in ChangePhoneViewController() }
         r.register(path: "/me/settings/security/password") { _ in
-            let vc = PasswordSetupViewController()
-            let phone = UserManager.shared.currentUser?.mobile
-                ?? UserDefaults.standard.string(forKey: "current_user_mobile")
-                ?? ""
-            vc.mode = .loggedIn(phone: phone)
-            return vc
+            ChangeLoginPasswordViewController()
         }
         r.register(path: "/me/settings/security/wechat") { _ in WechatAuthorizationViewController() }
         r.register(path: "/me/settings/security/cancel-account") { _ in CancelAccountViewController() }
@@ -151,6 +146,7 @@ enum MyRoutes {
         r.register(path: "/auth/agreement/consent") { _ in AgreementDetailViewController(docType: "consent") }
         r.register(path: "/auth/agreement/personal-info") { _ in AgreementDetailViewController(docType: "personal-info") }
         r.register(path: "/auth/agreement/third-party-sharing") { _ in AgreementDetailViewController(docType: "third-party-sharing") }
+        r.register(path: "/auth/agreement/member-service") { _ in AgreementDetailViewController(docType: "member-service") }
         r.register(path: "/auth/agreement/benefit-card") { _ in AgreementDetailViewController(docType: "benefit-card") }
 
         // 卡券（params: 可选 tab=coupon|benefit）

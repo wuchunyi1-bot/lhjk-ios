@@ -14,6 +14,7 @@ final class AgreementConsentSheet: UIViewController {
     var onLater: (() -> Void)?
     var onOpenUserAgreement: (() -> Void)?
     var onOpenPrivacyPolicy: (() -> Void)?
+    var onOpenMemberService: (() -> Void)?
     var onOpenConsent: (() -> Void)?
 
     private let dimView = UIView()
@@ -46,21 +47,22 @@ final class AgreementConsentSheet: UIViewController {
         }
 
         let title = UILabel()
-        title.text = "请先阅读并同意相关协议"
+        title.text = "登录前请先确认协议"
         title.font = .fdMyH3
         title.textColor = .fdText
         title.numberOfLines = 0
 
         let desc = UILabel()
-        desc.text = "请先阅读并同意用户协议、隐私政策与健康管理服务知情同意书"
+        desc.text = "为保障您的账户、隐私与健康服务权益，请先阅读并同意相关协议。"
         desc.font = .fdLoginMeta
         desc.textColor = .fdSubtext
         desc.numberOfLines = 0
 
         let links = UIStackView(arrangedSubviews: [
-            makeLinkButton(title: "查看用户协议", action: #selector(tapUser)),
-            makeLinkButton(title: "查看隐私政策", action: #selector(tapPrivacy)),
-            makeLinkButton(title: "查看知情同意书", action: #selector(tapConsent)),
+            makeLinkButton(title: "《用户协议》", action: #selector(tapUser)),
+            makeLinkButton(title: "《隐私政策》", action: #selector(tapPrivacy)),
+            makeLinkButton(title: "《会员服务协议》", action: #selector(tapMemberService)),
+            makeLinkButton(title: "《健康管理服务知情同意书》", action: #selector(tapConsent)),
         ])
         links.axis = .vertical
         links.spacing = 4
@@ -114,6 +116,7 @@ final class AgreementConsentSheet: UIViewController {
 
     @objc private func tapUser() { onOpenUserAgreement?() }
     @objc private func tapPrivacy() { onOpenPrivacyPolicy?() }
+    @objc private func tapMemberService() { onOpenMemberService?() }
     @objc private func tapConsent() { onOpenConsent?() }
 
     @objc private func tapLater() {

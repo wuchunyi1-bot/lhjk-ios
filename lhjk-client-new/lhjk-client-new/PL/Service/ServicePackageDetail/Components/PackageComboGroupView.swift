@@ -114,6 +114,7 @@ final class PackageComboGroupView: UIView {
 
         titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
         titleLabel.textColor = UIColor(hexString: "#A25300")
+        titleLabel.isHidden = true
 
         badgeContainer.backgroundColor = .white
         badgeContainer.layer.cornerRadius = 10
@@ -160,8 +161,6 @@ final class PackageComboGroupView: UIView {
         self.group = group
         self.currentRadioPick = radioPick
         self.currentCheckPicks = checkPicks
-
-        titleLabel.text = group.name
 
         let modeText: String
         switch group.selectMode {

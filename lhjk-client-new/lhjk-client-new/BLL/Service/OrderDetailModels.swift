@@ -24,7 +24,10 @@ struct AppOrderDetailBO: Decodable {
     let receiver: String?
     let phone: String?
     let expressAmount: Double?
+    /// 优惠券实际抵扣金额
     let couponAmount: Double?
+    /// 权益卡实际抵扣总额
+    let benefitsAmount: Double?
     let description: String?
     let logisticsNumber: String?
     let logisticsVendor: String?
@@ -60,7 +63,7 @@ struct AppOrderDetailBO: Decodable {
     private enum CodingKeys: String, CodingKey {
         case id, parentId, orderName, status, payable, price, paymentType, paymentNo, createTime
         case hospitalName, doctorName, packageDescription, packageType, packageImageUrl
-        case typeOrder, address, receiver, phone, expressAmount, couponAmount
+        case typeOrder, address, receiver, phone, expressAmount, couponAmount, benefitsAmount
         case description, logisticsNumber, logisticsVendor, logisticsChineseName
         case shipmentTime, beginTime, endTime, serviceTime
         case shoppingCartPackageDetailList
@@ -91,6 +94,7 @@ struct AppOrderDetailBO: Decodable {
         phone = try c.decodeIfPresent(String.self, forKey: .phone)
         expressAmount = Self.decodeFlexibleDouble(c, key: .expressAmount)
         couponAmount = Self.decodeFlexibleDouble(c, key: .couponAmount)
+        benefitsAmount = Self.decodeFlexibleDouble(c, key: .benefitsAmount)
         description = try c.decodeIfPresent(String.self, forKey: .description)
         logisticsNumber = try c.decodeIfPresent(String.self, forKey: .logisticsNumber)
         logisticsVendor = try c.decodeIfPresent(String.self, forKey: .logisticsVendor)
@@ -209,18 +213,17 @@ struct AppOrderDetailBO: Decodable {
     }
 
     var packageAmount: Double {
-        let express = max(0, expressAmount ?? 0)
-        let coupon = max(0, couponAmount ?? 0)
         let itemTotal = (shoppingCartPackageDetailList ?? []).reduce(0) { $0 + max(0, $1.price ?? 0) }
         if itemTotal > 0 { return itemTotal }
-        if let payable {
-            return max(0, payable - express + coupon)
-        }
-        return max(0, (price ?? 0) + coupon - express)
+        // `payable` = 套包金额（不含优惠券、权益卡和运费）
+        if let payable { return max(0, payable) }
+        return max(0, (price ?? 0) + couponDiscount + benefitDiscount - expressFee)
     }
 
     var paidAmount: Double {
-        max(0, price ?? payable ?? 0)
+        if let v = settlementAmount { return max(0, v) }
+        if let v = price { return max(0, v) }
+        return max(0, packageAmount + expressFee - couponDiscount - benefitDiscount)
     }
 
     /// 支付提交用结算版本
@@ -235,6 +238,7 @@ struct AppOrderDetailBO: Decodable {
 
     var expressFee: Double { max(0, expressAmount ?? 0) }
     var couponDiscount: Double { max(0, couponAmount ?? 0) }
+    var benefitDiscount: Double { max(0, benefitsAmount ?? 0) }
 
     var logisticsSummary: String? {
         let number = logisticsNumber?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -416,7 +420,7 @@ struct OrderDetailPackageLineBO: Decodable {
     let quantity: Int?
     let billingType: Int?
     let price: Double?
-    /// 发货状态：1 待发货；2 已发货
+    /// 发货状态：1 待履约；2 已履约（快递=待发货/已发货，自提=待自提/已自提）
     let shipmentStatus: Int?
     /// 预计发货/备货时间
     let presetDeliveryTime: String?
@@ -451,61 +455,37 @@ struct OrderDetailPackageLineBO: Decodable {
     var priceValue: Double { max(0, price ?? 0) }
 
     var shipmentStatusLabel: String {
-        switch shipmentStatus {
-        case 2: return "已发货"
-        case 1: return "待发货"
-        default: return "待发货"
-        }
+        shipmentStatusLabel(isPickup: false)
+    }
+
+    func shipmentStatusLabel(isPickup: Bool) -> String {
+        stampText(isPickup: isPickup)
     }
 
     var isShipped: Bool { shipmentStatus == 2 }
 
-    /// 物流行右上角印章文案（对齐 Figma 3546:4382）
-    func stampText(orderStatus: AppOrderStatus?, isPickup: Bool) -> String {
-        switch orderStatus {
-        case .overdue:
-            return "已逾期"
-        case .refund, .refundReview:
-            return "待收货"
-        case .pendingShip:
-            return isPickup ? "待自提" : "待发货"
-        case .pendingReceive:
-            return isPickup ? "待自提" : (isShipped ? "已发货" : "待收货")
-        default:
-            if isPickup && !isShipped { return "待自提" }
-            return shipmentStatusLabel
+    /// 物流行右上角印章文案：只看本行 `shipmentStatus` + 履约方式
+    func stampText(isPickup: Bool) -> String {
+        if isPickup {
+            return isShipped ? "已自提" : "待自提"
         }
+        return isShipped ? "已发货" : "待发货"
     }
 
-    /// 物流行右上角印章图片切图资源名称（对齐 Figma 3546:4382）
-    func stampAssetName(orderStatus: AppOrderStatus?, isPickup: Bool) -> String {
-        switch orderStatus {
-        case .overdue:
-            return "order_detail_stamp_overdue"
-        case .refund, .refundReview:
-            return "order_detail_stamp_pending_receive"
-        case .pendingShip:
-            return isPickup ? "order_detail_stamp_pending_pickup" : "order_detail_stamp_pending_ship"
-        case .pendingReceive:
-            return isPickup ? "order_detail_stamp_pending_pickup" : (isShipped ? "order_detail_stamp_shipped" : "order_detail_stamp_pending_receive")
-        case .inProgress, .completed:
-            return isPickup ? "order_detail_stamp_pending_pickup" : "order_detail_stamp_shipped"
-        default:
-            if isPickup && !isShipped { return "order_detail_stamp_pending_pickup" }
-            if isShipped { return "order_detail_stamp_shipped" }
-            return isPickup ? "order_detail_stamp_pending_pickup" : "order_detail_stamp_pending_ship"
+    /// 物流行右上角印章切图
+    func stampAssetName(isPickup: Bool) -> String {
+        if isPickup {
+            return isShipped ? "order_detail_stamp_pickuped" : "order_detail_stamp_pending_pickup"
         }
+        return isShipped ? "order_detail_stamp_shipped" : "order_detail_stamp_pending_ship"
     }
 
     func logisticsSecondaryText(
         isPickup: Bool,
-        orderLogisticsSummary: String?,
-        orderStatus: AppOrderStatus? = nil
+        orderLogisticsSummary: String?
     ) -> String? {
-        if isPickup, orderStatus == .pendingReceive {
-            return "请前往机构自提"
-        }
         if isShipped {
+            if isPickup { return nil }
             let summary = orderLogisticsSummary?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             return summary.isEmpty ? nil : summary
         }

@@ -15,7 +15,6 @@ final class ChangePhoneViewController: BaseViewController {
 
     private var currentPhone: String = ""
     private var isConsentChecked = false
-    private var bottomBarBottomConstraint: Constraint?
 
     // MARK: - UI
 
@@ -83,22 +82,6 @@ final class ChangePhoneViewController: BaseViewController {
         currentPhone = resolveCurrentPhone()
         super.viewDidLoad()
         configureKeyboardDismiss()
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(keyboardWillShow(_:)),
-            name: UIResponder.keyboardWillShowNotification,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(keyboardWillHide(_:)),
-            name: UIResponder.keyboardWillHideNotification,
-            object: nil
-        )
-    }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self)
     }
 
     override func setupUI() {
@@ -108,11 +91,10 @@ final class ChangePhoneViewController: BaseViewController {
         view.addSubview(bottomBar)
         bottomBar.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview().inset(16)
-            bottomBarBottomConstraint = make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24).constraint
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
         }
 
         scrollView.showsVerticalScrollIndicator = false
-        scrollView.keyboardDismissMode = .interactive
         view.addSubview(scrollView)
         scrollView.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview()
@@ -182,22 +164,20 @@ final class ChangePhoneViewController: BaseViewController {
 
     private func wireAgreementCallbacks() {
         agreementView.onUserAgreementTap = { [weak self] in
-            self?.showProtocolSheet(
-                title: "用户协议",
-                content: "（用户协议占位文本）\n\n欢迎使用富德健康服务！\n\n（实际内容以正式版本为准）"
-            )
+            guard let self else { return }
+            AgreementDetailViewController.present(from: self, docType: "user")
         }
         agreementView.onPrivacyPolicyTap = { [weak self] in
-            self?.showProtocolSheet(
-                title: "隐私政策",
-                content: "（隐私政策占位文本）\n\n富德健康高度重视您的个人信息保护。\n\n（实际内容以正式版本为准）"
-            )
+            guard let self else { return }
+            AgreementDetailViewController.present(from: self, docType: "privacy")
+        }
+        agreementView.onMemberServiceTap = { [weak self] in
+            guard let self else { return }
+            AgreementDetailViewController.present(from: self, docType: "member-service")
         }
         agreementView.onConsentTap = { [weak self] in
-            self?.showProtocolSheet(
-                title: "健康管理服务知情同意书",
-                content: "（健康管理服务知情同意书占位文本）\n\n尊敬的客户：\n\n欢迎您使用富德健康管理服务。\n\n（实际内容以正式版本为准）"
-            )
+            guard let self else { return }
+            AgreementDetailViewController.present(from: self, docType: "consent")
         }
     }
 
@@ -290,7 +270,7 @@ final class ChangePhoneViewController: BaseViewController {
     }
 
     private func triggerConsentError() {
-        showToast("请先阅读并同意用户协议、隐私政策与健康管理服务知情同意书")
+        showToast("请先阅读并同意用户协议、隐私政策、会员服务协议与健康管理服务知情同意书")
         consentErrorBorder.layer.borderColor = UIColor(hexString: "#D93025").withAlphaComponent(0.45).cgColor
         consentErrorBorder.backgroundColor = UIColor(hexString: "#D93025").withAlphaComponent(0.06)
 
@@ -309,12 +289,6 @@ final class ChangePhoneViewController: BaseViewController {
         consentErrorBorder.backgroundColor = .clear
     }
 
-    private func showProtocolSheet(title: String, content: String) {
-        let alert = UIAlertController(title: title, message: content, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "关闭", style: .default))
-        present(alert, animated: true)
-    }
-
     private func showToast(_ message: String) {
         showToastAlert(message, duration: 1.5)
     }
@@ -329,21 +303,5 @@ final class ChangePhoneViewController: BaseViewController {
 
     @objc private func dismissKeyboard() {
         view.endEditing(true)
-    }
-
-    @objc private func keyboardWillShow(_ notification: Notification) {
-        guard let userInfo = notification.userInfo,
-              let kbFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
-        let kbInView = view.convert(kbFrame, from: nil)
-        let overlap = max(0, view.bounds.maxY - kbInView.minY - view.safeAreaInsets.bottom)
-        bottomBarBottomConstraint?.update(offset: -(24 + overlap))
-        scrollView.contentInset.bottom = overlap
-        scrollView.verticalScrollIndicatorInsets.bottom = overlap
-    }
-
-    @objc private func keyboardWillHide(_ notification: Notification) {
-        bottomBarBottomConstraint?.update(offset: -24)
-        scrollView.contentInset.bottom = 0
-        scrollView.verticalScrollIndicatorInsets.bottom = 0
     }
 }

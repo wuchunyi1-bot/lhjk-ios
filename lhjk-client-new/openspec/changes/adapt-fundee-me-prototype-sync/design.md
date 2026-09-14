@@ -35,6 +35,6 @@
 
 ## 数据
 
-- 会员资产默认值对齐 `member-marketing.ts`（V1 / 892 / 200）；权益卡券数走 `VoucherService`
+- 会员资产：`GET /v1/users/getUserCenterOverview`。富德币取 `fundeCoin` 原值展示，禁止 mock / K/w 缩写；权益卡券数走接口计数
 - 履约四格数量暂为 `0`，待订单统计 API
 - 健康管理 detail 文案暂不展示 mock（未接 API 时留空）

@@ -35,7 +35,8 @@
 | `typeOrder` | Int | 0 自提 / 1 快递 |
 | `receiver` / `phone` / `address` | String | 收件或自提信息 |
 | `expressAmount` | Double | 运费 |
-| `couponAmount` | Double | 优惠券抵扣 |
+| `couponAmount` | Double | 优惠券实际抵扣金额 |
+| `benefitsAmount` | Double | 权益卡实际抵扣总额 |
 | `shoppingCartPackageDetailList` | Array | 商品明细 |
 | `createTime` | String | 下单时间 |
 | `paymentType` | Int | 1 微信 / 2 支付宝 / 3 现金 / 4 银行卡 |
@@ -72,6 +73,7 @@
 - **WHEN** 详情加载成功
 - **THEN** 展示套餐卡（含内嵌套餐内容）、费用明细、订单元信息
 - **AND** 套餐内容与费用明细样式与待支付确认页一致（见 `order-detail-ui` spec「套餐内容与费用明细样式」）
+- **AND** 费用明细「优惠券抵扣」取 `couponAmount`，「权益卡抵扣」取 `benefitsAmount`；无抵扣仍展示 `-¥0.00`，有抵扣为红色
 - **AND** 金额展示保留两位小数，禁止 `Int` 四舍五入
 
 ### Requirement: 其它状态

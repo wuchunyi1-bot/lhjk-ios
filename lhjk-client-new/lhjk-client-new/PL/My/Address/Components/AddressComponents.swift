@@ -48,7 +48,7 @@ final class AddressListTipBannerView: UIView {
         iconView.contentMode = .scaleAspectFit
 
         let label = UILabel()
-        label.text = "默认地址可用于商场下单，服务资料邮寄等场景"
+        label.text = "默认地址可用于商城下单、服务资料邮寄等场景。"
         label.font = AddressStyle.captionFont
         label.textColor = .fdPrimary
         label.numberOfLines = 2

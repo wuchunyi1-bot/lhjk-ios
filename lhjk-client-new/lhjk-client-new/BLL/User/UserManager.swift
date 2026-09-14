@@ -247,6 +247,7 @@ final class UserManager {
         UserDefaults.standard.removeObject(forKey: Self.archiveCompletionKey)
         UserDefaults.standard.removeObject(forKey: Self.legacyLoginUserInfoKey)
         HomeService.shared.invalidateTodayTasksCache()
+        ShoppingCartBadgeStore.shared.reset()
         print("[UserManager] cleared")
     }
 

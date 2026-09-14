@@ -770,7 +770,7 @@ enum MonitorCardDisplayMapper {
             guard let type = card.cardType else { return nil }
             let key = metricKey(for: type)
             let mapped = extractValueUnit(from: card)
-            let time = formatTime(card.monitorTime, scene: card.monitorTimeType)
+            let time = formatTime(card.monitorTime)
             let rawStatus = (card.result ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let name = (card.cardName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let dietSport = type == 10 ? extractDietSportDisplay(card.dietSportData ?? [:]) : nil
@@ -787,7 +787,7 @@ enum MonitorCardDisplayMapper {
             return HealthMetricDisplayItem(
                 cardType: type,
                 metricKey: key,
-                label: name.isEmpty ? defaultLabel(for: key) : name,
+                label: displayTitle(name: name, metricKey: key, scene: card.monitorTimeType),
                 value: mapped.value,
                 unit: mapped.unit,
                 status: status,
@@ -914,24 +914,25 @@ enum MonitorCardDisplayMapper {
         return "success"
     }
 
-    /// Hub 体征卡时间只展示到日期，不带时分。
-    private static func formatTime(_ ms: Int64?, scene: String?) -> String {
-        let sceneText = (scene ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let ms, ms > 0 else { return sceneText }
+    /// Hub 体征卡时间固定 `yyyy-MM-dd`，不带时分；场景文案不拼在时间后。
+    private static func formatTime(_ ms: Int64?) -> String {
+        guard let ms, ms > 0 else { return "" }
         let date = Date(timeIntervalSince1970: TimeInterval(ms) / 1000)
-        let cal = Calendar.current
-        let dateText: String
-        if cal.isDateInToday(date) {
-            dateText = "今天"
-        } else if cal.isDateInYesterday(date) {
-            dateText = "昨天"
-        } else {
-            let f = DateFormatter()
-            f.locale = Locale(identifier: "zh_CN")
-            f.dateFormat = "MM/dd"
-            dateText = f.string(from: date)
-        }
-        return sceneText.isEmpty ? dateText : "\(dateText) · \(sceneText)"
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone.current
+        f.calendar = Calendar(identifier: .gregorian)
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: date)
+    }
+
+    /// 场景文案（如空腹）跟在类型名后：`血糖 空腹`
+    private static func displayTitle(name: String, metricKey: String, scene: String?) -> String {
+        let base = name.isEmpty ? defaultLabel(for: metricKey) : name
+        let sceneText = (scene ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !sceneText.isEmpty else { return base }
+        if base.contains(sceneText) { return base }
+        return "\(base) \(sceneText)"
     }
 
     private static func extractValueUnit(from card: MonitorHealthCardVO) -> (value: String, unit: String) {

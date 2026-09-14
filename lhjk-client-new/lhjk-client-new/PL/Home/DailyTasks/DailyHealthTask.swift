@@ -13,6 +13,7 @@ struct DailyHealthTask: Equatable {
     let shortTitle: String
     let desc: String
     let done: Bool
+    /// 详情列表类型胶囊文案，统一为「监测任务」
     let category: String
     let planTime: String
     let actionRoute: String
@@ -21,7 +22,7 @@ struct DailyHealthTask: Equatable {
     let detailRows: [Row]
     let instructions: String?
     let completedAt: String?
-    /// 计划时段（详情页「计划时段」行，如「晨起」）
+    /// 计划时段（详情页「计划时段」行，直接取接口 `mealTypeName`）
     let planPeriod: String?
     /// 首页任务行额外标签（餐次、进度、积分等）
     let extraTags: [String]

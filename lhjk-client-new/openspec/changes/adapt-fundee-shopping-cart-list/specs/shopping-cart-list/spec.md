@@ -33,7 +33,7 @@
 
 - **WHEN** 用户在套餐详情成功调用 `saveShoppingCartOrPurchase` 且 `flag=2`
 - **THEN** **不得**再调用本地 `addPackage` / 写入本地购物车
-- **AND** 跳转 `/services/cart` 后通过列表接口拉取；仅服务端已存在的条目可展示
+- **AND** 进入购物车后通过列表接口拉取；仅服务端已存在的条目可展示
 
 #### Scenario: 清理
 
@@ -80,3 +80,26 @@
 
 - **WHEN** 删除请求进行中
 - **THEN** 同一行或全局不得重复触发删除
+
+### Requirement: 查询购物车数量角标
+
+系统 SHALL 通过 `GET /v1/shoppingCart/getShoppingCartCount`（operationId `getShoppingCartCount`）刷新服务 Tab 顶栏与套餐选择页导航栏购物车角标。`data` 为 int64 数量（`ResultLong`）。分享站 Markdown 暂无，以代码 path 与 OAS 为准。
+
+#### Scenario: 请求
+
+- **WHEN** 服务 Hub 或套餐选择页 `viewWillAppear`，或套餐详情加购成功（`flag=2`），或购物车删除成功
+- **THEN** 调用该接口；无业务 Query（认证由拦截器携带）
+- **AND** **不得**传入 mock / 本地假 `userId`
+
+#### Scenario: 展示
+
+- **WHEN** `data > 0`
+- **THEN** 角标展示数量；大于 99 显示 `99+`
+- **AND** 套餐选择页导航栏购物车角标须落在 `UIBarButtonItem` customView 的 bounds 内（iOS 26 Liquid Glass 会裁掉溢出子视图；不得再把 18pt 角标画在 24pt 图标框外）
+- **WHEN** `data` 为 0、缺失或用户已登出
+- **THEN** 隐藏角标（登出时立即清零）
+
+#### Scenario: 失败
+
+- **WHEN** 接口失败
+- **THEN** 保留上次数量；**不得**用假数据顶替

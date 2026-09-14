@@ -32,18 +32,21 @@
 
 - **WHEN** 用户点击未完成任务「去完成」
 - **THEN** 打开对应体征 **H5 录入（add）** 页，而非指标展示首页
-- **AND** 默认按字典 `monitorType.value` 映射（**非** Apifox 文档枚举）：
-  - `2` → `/health/metrics/blood-pressure/add`
-  - `3` → `/health/metrics/exercise/home`
-  - `4` → `/health/metrics/weight/add`
-  - `5` → `/health/metrics/blood-sugar/add`
-  - `6` → `/health/metrics/temperature/add`
-  - `7` → `/health/metrics/spo2/add`
-  - `1`（睡眠）及其它未配置路由的 value → 不跳转
+- **AND** 优先按字典 `monitorType.name` 解析路由（**value 编号会随运营配置变化，不得把 CMS cardType 11=用药 当成监测类型 11**）：
+  - 名称含「营养补 / 补充剂 / 补剂」→ `/supplement/add?taskId={taskId}`（优先接口 `taskId`，否则实例 `id`）
+  - 名称含「用药 / 药物」→ `/medication`
+  - 名称含「运动」→ `/exercise-food/check-in?taskId={taskId}`（优先接口 `taskId`，否则实例 `id`）
+  - 血压 / 血糖 / 体重 / 体温 / 血氧 / 心率 / 血脂 / 饮食 → 对应体征 H5
+  - 名称含「睡眠」→ 不跳转
+- **AND** 字典未同步时，再按常见 value 编号兜底：`2` 血压、`3` 运动、`4` 体重、`5` 血糖、`6` 体温、`7` 血氧
 - **AND** 若 `skipUrl` 以 `/` 开头且 type 可跳转：优先使用；若其为指标首页路径（`/health/metrics/{key}` 无子路径），SHALL 改写为同指标的 `/add` 路径后再跳转
 
 #### Scenario: 扩展字段展示
 
+- **WHEN** 任务含非空 `mealTypeName`
+- **THEN** 详情页展示「计划时段」，值为接口原文，不经字典映射
+- **WHEN** `mealTypeName` 为空或缺失
+- **THEN** 不展示「计划时段」行
 - **WHEN** 任务含 `mealType`
 - **THEN** 详情页 detailRows 展示「餐次」；首页任务行 `extraTags` 含餐次文案
 - **WHEN** `taskNumber > 1`

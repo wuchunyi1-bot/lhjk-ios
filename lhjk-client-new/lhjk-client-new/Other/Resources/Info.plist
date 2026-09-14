@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>用于选择头像、发送图片等</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>需要将食谱清单保存到您的相册</string>
 	<key>UIUserInterfaceStyle</key>

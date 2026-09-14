@@ -29,7 +29,9 @@ struct OrderDetailStatusPresentation {
             return "order_detail_status_completed"
         case .refund, .refundReview:
             return "order_detail_status_refund"
-        case .overdue, .cancelled, .none:
+        case .cancelled:
+            return "order_detail_status_cancel"
+        case .overdue, .none:
             return "order_detail_status_overdue"
         }
     }

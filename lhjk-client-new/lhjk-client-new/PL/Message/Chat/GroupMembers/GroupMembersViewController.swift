@@ -22,14 +22,10 @@ final class GroupMembersViewController: BaseViewController {
         return tv
     }()
 
-    private lazy var emptyLabel: UILabel = {
-        let l = UILabel()
-        l.text = "暂无群成员"
-        l.font = .fdCaption
-        l.textColor = .fdMuted
-        l.textAlignment = .center
-        l.isHidden = true
-        return l
+    private lazy var emptyView: FDEmptyStateView = {
+        let v = FDEmptyStateView(style: .page, message: "暂无群成员")
+        v.isHidden = true
+        return v
     }()
 
     private lazy var loadingIndicator: UIActivityIndicatorView = {
@@ -59,8 +55,8 @@ final class GroupMembersViewController: BaseViewController {
         view.addSubview(tableView)
         tableView.snp.makeConstraints { $0.edges.equalTo(view.safeAreaLayoutGuide) }
 
-        view.addSubview(emptyLabel)
-        emptyLabel.snp.makeConstraints { $0.center.equalToSuperview() }
+        view.addSubview(emptyView)
+        emptyView.snp.makeConstraints { $0.edges.equalTo(tableView) }
 
         view.addSubview(loadingIndicator)
         loadingIndicator.snp.makeConstraints { $0.center.equalToSuperview() }
@@ -74,12 +70,12 @@ final class GroupMembersViewController: BaseViewController {
                 if loading {
                     self.loadingIndicator.startAnimating()
                     self.tableView.isHidden = true
-                    self.emptyLabel.isHidden = true
+                    self.emptyView.isHidden = true
                     self.title = "群成员"
                 } else {
                     self.loadingIndicator.stopAnimating()
                     self.tableView.isHidden = self.viewModel.isEmpty
-                    self.emptyLabel.isHidden = !self.viewModel.isEmpty
+                    self.emptyView.isHidden = !self.viewModel.isEmpty
                     self.updateTitle(count: self.viewModel.members.count)
                 }
             }

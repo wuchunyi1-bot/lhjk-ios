@@ -291,7 +291,7 @@
 
 #### Scenario: 密码显隐切换
 - **WHEN** 用户点击密码输入框右侧的 eye toggle 按钮
-- **THEN** 密码明文/密文切换，icon 在 `eye` / `eye.slash` 之间切换，触控区域 ≥ 44×44pt，与输入文字间距 ≥ 8pt
+- **THEN** 密码明文/密文切换，icon 在 `login_password_eye_on` / `login_password_eye_off` 之间切换，触控区域 ≥ 44×44pt，与输入文字间距 ≥ 8pt
 
 #### Scenario: 忘记密码入口
 - **WHEN** 密码模式激活

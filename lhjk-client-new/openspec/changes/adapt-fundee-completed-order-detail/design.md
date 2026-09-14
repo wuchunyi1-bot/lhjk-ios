@@ -41,12 +41,14 @@
 | API 字段 | 展示 |
 |----------|------|
 | `commodityName` / `packageName` | 商品标题 |
-| `shipmentStatus` `1` | 状态徽章「待发货」（warning 色） |
-| `shipmentStatus` `2` | 状态徽章「已发货」（info 色） |
-| `presetDeliveryTime` | 待发货副文案：`商家备货中，预计发货时间 {time}` |
-| 订单级 `logisticsChineseName` + `logisticsNumber` | 已发货副文案 + 复制按钮 |
+| 快递 `shipmentStatus` `1` | 印章「待发货」`order_detail_stamp_pending_ship` |
+| 快递 `shipmentStatus` `2` | 印章「已发货」`order_detail_stamp_shipped` |
+| 自提 `shipmentStatus` `1` | 印章「待自提」`order_detail_stamp_pending_pickup` |
+| 自提 `shipmentStatus` `2` | 印章「已自提」`order_detail_stamp_pickuped` |
+| `presetDeliveryTime` | 待发货/待自提副文案 |
+| 订单级 `logisticsChineseName` + `logisticsNumber` | 快递已发货副文案 + 复制按钮 |
 
-自提副文案（`typeOrder == 0` 且待发货）：`预计 {presetDeliveryTime} 完成备货，可自提`
+自提待履约副文案（`typeOrder == 0` 且 `shipmentStatus != 2`）：`预计 {presetDeliveryTime} 完成备货，可自提`
 
 ## 收货地址 / 服务机构
 
@@ -70,7 +72,7 @@
 
 ## 技术决策
 
-- 物流仅统计 `shipmentStatus != nil` 的商品行；详情预览 1 条 + 发货记录入口
+- 物流仅统计 `shipmentStatus != nil` 的商品行；每行印章看 `shipmentStatus` + `typeOrder`（快递：待发货/已发货；自提：待自提/已自提）；详情预览 + 发货/自提记录入口
 - 发货记录子页路由 `/orders/shipment-records`
 - 联系机构：有 `phone` 时 `tel:`，否则 Toast
 - `OrderDetailFulfillmentView` 保留文件但详情页不再使用，避免影响其他引用

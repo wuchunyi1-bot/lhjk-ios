@@ -31,7 +31,7 @@ final class AddressEditViewController: BaseViewController {
         l.font = AddressStyle.fieldFont
         l.textColor = AddressStyle.placeholderColor
         l.numberOfLines = 1
-        l.text = "请选择省市区"
+        l.text = "请选择省、市、区、街道"
         return l
     }()
 
@@ -85,8 +85,6 @@ final class AddressEditViewController: BaseViewController {
         l.textColor = AddressStyle.placeholderColor
         return l
     }()
-
-    private lazy var codeField = makeTextField(placeholder: "邮政编码（选填）", keyboardType: .numberPad)
 
     private lazy var defaultSwitch: UISwitch = {
         let s = UISwitch()
@@ -158,7 +156,11 @@ final class AddressEditViewController: BaseViewController {
             make.bottom.equalToSuperview().offset(-12)
         }
 
+        stackView.addArrangedSubview(makeSectionTitle("收货信息"))
+        stackView.setCustomSpacing(8, after: stackView.arrangedSubviews.last!)
         stackView.addArrangedSubview(makeFormCard())
+        stackView.addArrangedSubview(makeSectionTitle("默认设置"))
+        stackView.setCustomSpacing(8, after: stackView.arrangedSubviews.last!)
         stackView.addArrangedSubview(makeDefaultCard())
 
         applyInitialForm()
@@ -229,12 +231,24 @@ final class AddressEditViewController: BaseViewController {
         viewModel.saveSucceeded
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.navigationController?.popViewController(animated: true)
+                guard let self, let nav = self.navigationController else { return }
+                nav.popViewController(animated: true)
+                DispatchQueue.main.async {
+                    nav.topViewController?.showToastAlert("地址已保存", duration: 1.2)
+                }
             }
             .store(in: &cancellables)
     }
 
     // MARK: - Build UI
+
+    private func makeSectionTitle(_ text: String) -> UILabel {
+        let label = UILabel()
+        label.text = text
+        label.font = .fdFont(ofSize: 13, weight: .semibold)
+        label.textColor = .fdSubtext
+        return label
+    }
 
     private func makeFormCard() -> UIView {
         let card = UIView()
@@ -247,7 +261,6 @@ final class AddressEditViewController: BaseViewController {
             makeLabeledRow(title: "手机号", content: mobileField),
             makeRegionRow(),
             makeDetailRow(),
-            makeLabeledRow(title: "邮政编码", content: codeField, showDivider: false),
         ]
 
         let innerStack = UIStackView(arrangedSubviews: rows)
@@ -263,7 +276,7 @@ final class AddressEditViewController: BaseViewController {
         card.layer.cornerRadius = AddressStyle.cardRadius
 
         let label = UILabel()
-        label.text = "设置为默认地址"
+        label.text = "设为默认地址"
         label.font = AddressStyle.fieldMediumFont
         label.textColor = .fdText
 
@@ -408,12 +421,6 @@ final class AddressEditViewController: BaseViewController {
             make.top.equalTo(addressTextView)
         }
 
-        let divider = AddressFormDivider.make()
-        row.addSubview(divider)
-        divider.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(AddressStyle.cardHorizontalInset)
-            make.bottom.equalToSuperview()
-        }
         return row
     }
 
@@ -439,7 +446,6 @@ final class AddressEditViewController: BaseViewController {
         mobileField.text = viewModel.mobile
         addressTextView.text = viewModel.address
         addressPlaceholderLabel.isHidden = !viewModel.address.isEmpty
-        codeField.text = viewModel.code
         defaultSwitch.isOn = viewModel.isDefault
         refreshRegionLabel()
     }
@@ -447,7 +453,7 @@ final class AddressEditViewController: BaseViewController {
     private func refreshRegionLabel() {
         let text = viewModel.regionDisplayText
         if text.isEmpty {
-            regionValueLabel.text = "请选择省市区"
+            regionValueLabel.text = "请选择省、市、区、街道"
             regionValueLabel.textColor = AddressStyle.placeholderColor
             regionChevron.isHidden = false
         } else {
@@ -470,7 +476,6 @@ final class AddressEditViewController: BaseViewController {
         switch field {
         case nameField: viewModel.name = text
         case mobileField: viewModel.mobile = text
-        case codeField: viewModel.code = text
         default: break
         }
     }
@@ -507,7 +512,7 @@ final class AddressEditViewController: BaseViewController {
             title: "所在地区",
             mode: .provinceCityArea,
             current: current,
-            sheetTitle: "选择所在区域"
+            sheetTitle: "选择省市区街道"
         )
         sheet.onSave = { [weak self] selection in
             self?.viewModel.province = selection.province

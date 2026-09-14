@@ -150,9 +150,27 @@ enum H5Config {
         authenticatedPageURL(path: "medication")
     }
 
-    /// 营养补剂 H5：`#/supplement?token&platform=ios`
+    /// 营养补剂列表 H5：`#/supplement?token&platform=ios`
     static var supplementPageURL: URL {
         authenticatedPageURL(path: "supplement")
+    }
+
+    /// 营养补剂录入 H5：`#/supplement/add?token&platform=ios&taskId=`
+    static func supplementAddPageURL(taskId: String? = nil) -> URL {
+        var extra: [String: String] = [:]
+        if let taskId = taskId?.trimmingCharacters(in: .whitespacesAndNewlines), !taskId.isEmpty {
+            extra["taskId"] = taskId
+        }
+        return authenticatedPageURL(path: "supplement/add", extraQuery: extra)
+    }
+
+    /// 运动打卡 H5：`#/exercise-food/check-in?token&platform=ios&taskId=`
+    static func exerciseFoodCheckInPageURL(taskId: String? = nil) -> URL {
+        var extra: [String: String] = [:]
+        if let taskId = taskId?.trimmingCharacters(in: .whitespacesAndNewlines), !taskId.isEmpty {
+            extra["taskId"] = taskId
+        }
+        return authenticatedPageURL(path: "exercise-food/check-in", extraQuery: extra)
     }
 
     /// 血氧 H5：`#/spo2?token&platform=ios`（与 `/health/metrics/spo2` 相同）

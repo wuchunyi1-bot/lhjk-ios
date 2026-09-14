@@ -4,6 +4,11 @@ import Combine
 /// 注销账户 ViewModel — 注销流程、API 调用、会话清理
 final class CancelAccountViewModel: ObservableObject {
 
+    struct UnfinishedOrderBlock {
+        let orderId: Int64?
+        let message: String
+    }
+
     // MARK: - Published State
 
     @Published var isSubmitting = false
@@ -12,6 +17,8 @@ final class CancelAccountViewModel: ObservableObject {
     // MARK: - One-shot
 
     let toastPublisher = PassthroughSubject<String, Never>()
+    /// `O0012`：有未完成订单，禁止注销
+    let unfinishedOrderPublisher = PassthroughSubject<UnfinishedOrderBlock, Never>()
 
     // MARK: - Dependencies
 
@@ -19,9 +26,6 @@ final class CancelAccountViewModel: ObservableObject {
     private let loginService: LoginService
     private let userManager: UserManager
     private let imService: IMService
-
-    /// 拦截注销的订单状态（V1.0 默认无订单服务，预留）
-    private let unfinishedOrderStatuses: Set<String> = ["pending_use", "in_progress", "pending_review"]
 
     // MARK: - Init
 
@@ -35,14 +39,29 @@ final class CancelAccountViewModel: ObservableObject {
         self.imService = imService
     }
 
-    // MARK: - Order Check
-
-    func hasUnfinishedOrders() -> Bool {
-        // V1.0: 当前无订单服务，默认无未完成订单
-        return false
-    }
-
     // MARK: - Cancel
+
+    private static func unfinishedOrderBlock(from error: Error) -> UnfinishedOrderBlock? {
+        if let serviceError = error as? UserServiceError {
+            switch serviceError {
+            case .unfinishedOrders(let orderId, let message):
+                return UnfinishedOrderBlock(orderId: orderId, message: message)
+            case .cancelFailed(let message)
+                where UserServiceError.isUnfinishedOrderMessage(message):
+                return UnfinishedOrderBlock(orderId: nil, message: message)
+            default:
+                break
+            }
+        }
+        if let unfinished = UserServiceError.unfinishedOrdersIfMatched(
+            code: nil,
+            message: error.localizedDescription,
+            orderId: nil
+        ), case let .unfinishedOrders(orderId, message) = unfinished {
+            return UnfinishedOrderBlock(orderId: orderId, message: message)
+        }
+        return nil
+    }
 
     func cancelAccount() {
         guard !isSubmitting else { return }
@@ -50,10 +69,8 @@ final class CancelAccountViewModel: ObservableObject {
 
         Task {
             do {
-                // 1. 调用注销 API
                 try await userService.cancelCurrentUser()
 
-                // 2. 清理本地状态
                 await AppContainer.shared.columnContentCacheService.clear()
                 await AppContainer.shared.serviceHubCacheService.clear()
                 await AppContainer.shared.healthPageCacheService.clear()
@@ -66,13 +83,14 @@ final class CancelAccountViewModel: ObservableObject {
                     isSubmitting = false
                     isSuccess = true
                 }
-
-                // 3. 调服务端登出（fire-and-forget）
-//                await loginService.logout()
             } catch {
                 await MainActor.run {
                     isSubmitting = false
-                    toastPublisher.send("注销失败: \(error.localizedDescription)")
+                    if let block = Self.unfinishedOrderBlock(from: error) {
+                        unfinishedOrderPublisher.send(block)
+                    } else {
+                        toastPublisher.send(error.localizedDescription)
+                    }
                 }
             }
         }

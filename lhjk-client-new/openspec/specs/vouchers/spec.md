@@ -4,6 +4,21 @@
 
 统一管理用户 **权益卡** 与 **优惠券**（原型 `me-vouchers`）。
 
+### 权益卡状态 Tab（对齐 funde 正式态）
+
+权益卡模块 **恰好 5 个** 状态 Tab，顺序与文案：
+
+**全部 → 待使用 → 已兑换 → 已过期 → 转赠记录**
+
+| 约束 | 说明 |
+|------|------|
+| 对齐原型正式态 | funde `MyVouchersView` 生产 Tab 即上述 5 个；「待使用」可带可用数量 |
+| **不得**展示 | 「模拟领取 / 模拟测试」（原型验收入口，非正式状态、非用户资产） |
+| **不得**展示 | 「待绑定」「待领取」独立 Tab（等待领取合并进「全部」与「转赠记录」） |
+| 默认 | 进入权益卡模块选中「全部」 |
+
+代码：`BenefitListViewController.tabs` / `BenefitStatusFilter`（仅上述 5 个）。后端卡状态 1/2（待绑定 / 待领取）仍可映射到卡片样式，但不单独成 Tab。
+
 ### 权益卡 C 端（已接真接口，无 Mock）
 
 | UI | API | 说明 |
@@ -13,21 +28,38 @@
 | 转赠记录 | `GET /v1/benefitsTake/getGiftRecordPage` | PENDING_RECEIVE / TRANSFERRED |
 | 角标 | `GET /v1/benefitsTake/getCustomerStatusCount` | value=3 待使用 |
 | 绑定 | `preCheckByKey` → `bindByKey` | |
-| 赠送 | `POST /v1/benefitsTake/giftBenefit` | 必传 `operationNo`；成功后拉起微信小程序卡片分享 |
+| 赠送 | `POST /v1/benefitsTake/giftBenefit` | 必传 `operationNo`；成功后拉起微信小程序卡片分享，同时返回权益卡列表并定位「转赠记录」 |
 
 代码：`VoucherService` + `BenefitGiftShareBuilder` + `PL/My/Vouchers/Benefit/*`。优惠券见 `CouponService`。  
 本期不做：员工转交/发放、App 内领取落地 `open*`/`receive*`（领取在小程序完成）。
 
+### 权益卡使用规则
+
+规则全文：`/auth/agreement/benefit-card`（设置「协议与说明」、绑定页勾选链接同源，正文对齐 Vue `agreementMap['benefit-card']`）。
+
+- **绑定页**（`/activate/bind` / `BenefitBindViewController`）：须勾选「我已阅读并同意《权益卡使用规则》」；未勾选点立即绑定不提交，抖动勾选区并 Toast「请先阅读并同意《权益卡使用规则》」。
+- **领取落地**：好友转赠 / 代理人发放的领取页本期在微信小程序完成（`WeChatConfig.benefitClaimPathTemplate`）。日后若做 App 内领取页，可领取态须展示同一勾选项（默认未勾选），未勾选拦截领取（抖动 + 同上 Toast）；赠送人本人查看、已领取、已退回、已失效不展示勾选。
+
 ### 转赠微信分享
 
-1. 未安装微信 → Toast，不调 `giftBenefit`
-2. `giftBenefit` 成功 → `WeChatSDKManager.shareMiniProgram`（会话，path 带 `operationNo`）
-3. 分享成功 / 取消 / 失败：均刷新卡包；取消不重复创建转赠批次
-4. path / 小程序原始 id / 兜底 URL：见 `WeChatConfig`
+赠送页点击「立即赠送」后的时序以 **`giftBenefit` 是否成功** 为准，**不以微信分享结果为准**。
+
+1. 未安装微信 → Toast「请先安装微信后再赠送好友」，不调 `giftBenefit`，留在赠送页
+2. `giftBenefit` 失败 → 留在赠送页，Toast 错误信息
+3. `giftBenefit` 成功且返回非空 `operationNo` → **同一时刻**完成：
+   - 拉起 `WeChatSDKManager.shareMiniProgram`（会话，path 带 `operationNo`）
+   - pop 关闭赠送页，回到我的卡券权益卡模块（上一页）
+   - 权益卡状态 Tab 选中「转赠记录」
+   - 刷新「转赠记录」列表，以及会因转赠变化的持卡列表（「全部」「待使用」）与待使用数量角标
+4. `giftBenefit` 成功但 `operationNo` 为空 → **不**拉起微信分享；仍 pop、定位「转赠记录」并刷新列表；Toast 提示可在转赠记录查看
+5. 微信分享成功 / 取消 / 失败：**不撤销**已创建的转赠批次；取消**不**重复调用 `giftBenefit`；**不**因分享结果再次 pop 或切 Tab（页面已在「转赠记录」）
+6. path / 小程序原始 id / 兜底 URL：见 `WeChatConfig`
+
+代码：`BenefitTransferViewController`（赠送页）→ `BenefitListViewController.selectTransferRecordsAfterGift()`（切 Tab + 刷新）→ `BenefitGiftShareBuilder` + `WeChatSDKManager.shareMiniProgram`。
 
 ### 确认订单权益卡
 
-确认订单页多选抵扣见变更 `openspec/changes/order-confirm-benefits-card/`：列表复用 `getCustomerPage?status=3`；抵扣客户端试算（不抵运费）；Apifox 尚无绑单 / 结算权益字段，支付核销后续接入。
+确认订单页多选抵扣见变更 `openspec/changes/order-confirm-benefits-card/`：列表复用 `getCustomerPage?status=3`；费用明细优惠券取 `couponAmount` / 结算 `amount`，权益卡取 `benefitsAmount`（未返回时本地试算，不抵运费）；支付核销后续接入。
 
 ### 激活兑换
 
@@ -124,7 +156,8 @@ Tab 使用 `UISegmentedControl` 实现，置于导航栏下方固定位置（sti
 
 ### 空状态
 
-- 当前 Tab 无卡券时显示：📭 图标 + "暂无相关卡券"文案
+- 当前 Tab 无卡券时展示默认空态插图 `noData_default`（`FDEmptyStateView`）+ 该 Tab 文案（如「暂无相关权益卡」）
+- 权威约定见 `openspec/specs/design-tokens/`「默认无数据空态插图」
 
 ## Mock Data
 
@@ -189,7 +222,58 @@ Tab 使用 `UISegmentedControl` 实现，置于导航栏下方固定位置（sti
 
 #### Scenario: 当前 Tab 无卡券
 - **WHEN** 当前选中 Tab 下无任何卡券
-- **THEN** 展示 📭 图标和"暂无相关卡券"文案
+- **THEN** 展示 `noData_default` 与该 Tab 空态文案（权益卡「暂无相关权益卡」等；优惠券可带引导副文案）
+
+---
+
+### Requirement: 权益卡状态 Tab
+
+权益卡模块 SHALL 仅展示 **恰好 5 个** 状态 Tab，顺序为：全部、待使用、已兑换、已过期、转赠记录。SHALL NOT 展示原型验收用的「模拟领取 / 模拟测试」，也 SHALL NOT 展示「待绑定」「待领取」独立 Tab。
+
+#### Scenario: 正式状态 Tab
+
+- **WHEN** 用户进入我的卡券并停留在权益卡模块
+- **THEN** 状态 Tab 恰好为：全部、待使用、已兑换、已过期、转赠记录
+- **AND** 默认选中「全部」
+- **AND** 「待使用」可展示可用数量
+
+#### Scenario: 禁止演示与多余 Tab
+
+- **WHEN** 渲染权益卡状态 Tab 栏
+- **THEN** 不出现「模拟领取」「模拟测试」「待绑定」「待领取」
+- **AND** 等待领取记录仅出现在「全部」（等待领取）与「转赠记录」列表中，不单独成 Tab
+
+---
+
+### Requirement: 立即赠送成功后的导航与刷新
+
+系统 SHALL 在 `POST /v1/benefitsTake/giftBenefit` 成功后立即拉起微信分享，并返回权益卡列表的「转赠记录」Tab；卡包刷新不依赖微信分享结果。
+
+#### Scenario: 立即赠送成功
+
+- **WHEN** 用户在赠送权益卡页点击「立即赠送」，且已安装微信，且 `giftBenefit` 成功并返回非空 `operationNo`
+- **THEN** 拉起微信小程序卡片分享（会话）
+- **AND** 关闭赠送页，返回我的卡券权益卡模块
+- **AND** 状态 Tab 选中「转赠记录」并刷新该列表
+- **AND** 刷新「全部」「待使用」列表及待使用数量，使已转赠卡不再出现在持卡 Tab
+
+#### Scenario: 分享取消或失败
+
+- **WHEN** 微信分享取消或发送失败
+- **THEN** 转赠批次保留，不重复调用 `giftBenefit`
+- **AND** 用户仍停留在「转赠记录」Tab（不因分享结果再次导航）
+
+#### Scenario: 未返回分享凭证
+
+- **WHEN** `giftBenefit` 成功但 `operationNo` 为空
+- **THEN** 不拉起微信分享
+- **AND** 仍关闭赠送页、定位「转赠记录」并刷新列表
+- **AND** Toast 提示可在转赠记录查看
+
+#### Scenario: 赠送接口失败
+
+- **WHEN** `giftBenefit` 失败
+- **THEN** 留在赠送页，Toast 错误，不切 Tab、不拉起分享
 
 ## File Structure
 

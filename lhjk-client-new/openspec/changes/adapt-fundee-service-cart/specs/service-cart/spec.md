@@ -67,7 +67,7 @@
 - **WHEN** 用户在套餐详情点击「加入购物车」且套餐为有效数字 id
 - **THEN** 仅调用 `saveShoppingCartOrPurchase`（flag=2）
 - **AND** **不得**写入本地 UserDefaults / mock 购物车
-- **AND** 成功后跳转 `/services/cart`，由 `getShoppingCartList` 拉取展示
+- **AND** 成功后 Toast「已加入购物车」，**不得**跳转 `/services/cart`
 
 ### Requirement: 列表数据源
 

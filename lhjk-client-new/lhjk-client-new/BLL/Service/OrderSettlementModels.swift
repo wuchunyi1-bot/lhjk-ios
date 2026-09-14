@@ -19,6 +19,8 @@ struct OrderSettlementBO: Decodable {
     let discountRatio: Double?
     let commodityPrice: Double?
     let expressAmount: Double?
+    /// 权益卡抵扣金额
+    let benefitsAmount: Double?
     let description: String?
     let wechat: Bool?
     let alipay: Bool?
@@ -33,7 +35,7 @@ struct OrderSettlementBO: Decodable {
     private enum CodingKeys: String, CodingKey {
         case packageName, img, totalPrice, details, address, appOrderDetailBO
         case categoryServiceId, couponTakeId, amount, discountRatio
-        case commodityPrice, expressAmount, description
+        case commodityPrice, expressAmount, description, benefitsAmount
         case wechat, alipay, fundeChannelFlag, orderExpress
         case amountVersion, expectedPayableAmount
     }
@@ -52,6 +54,7 @@ struct OrderSettlementBO: Decodable {
         discountRatio = Self.decodeFlexibleDouble(c, key: .discountRatio)
         commodityPrice = Self.decodeFlexibleDouble(c, key: .commodityPrice)
         expressAmount = Self.decodeFlexibleDouble(c, key: .expressAmount)
+        benefitsAmount = Self.decodeFlexibleDouble(c, key: .benefitsAmount)
         description = try c.decodeIfPresent(String.self, forKey: .description)
         wechat = try c.decodeIfPresent(Bool.self, forKey: .wechat)
         alipay = try c.decodeIfPresent(Bool.self, forKey: .alipay)
@@ -72,7 +75,7 @@ struct OrderSettlementBO: Decodable {
             return max(0, total - (expressAmount ?? 0))
         }
         if let payable = appOrderDetailBO?.payable {
-            return max(0, payable - (expressAmount ?? 0))
+            return max(0, payable)
         }
         return 0
     }
@@ -99,10 +102,18 @@ struct OrderSettlementBO: Decodable {
         expectedPayableAmount ?? (totalPrice.map { max(0, $0) })
     }
 
-    /// 优惠券抵扣金额（元）— 统一取结算根级 `amount`
+    /// 优惠券抵扣金额（元）— 根级 `amount`，缺省 `appOrderDetailBO.couponAmount`
     var couponDiscountYuan: Double {
-        guard let v = amount else { return 0 }
-        return max(0, v)
+        if let v = amount { return max(0, v) }
+        if let v = appOrderDetailBO?.couponAmount { return max(0, v) }
+        return 0
+    }
+
+    /// 权益卡抵扣金额（元）— 根级 `benefitsAmount`，缺省 `appOrderDetailBO.benefitsAmount`
+    var benefitDiscountYuan: Double {
+        if let v = benefitsAmount { return max(0, v) }
+        if let v = appOrderDetailBO?.benefitsAmount { return max(0, v) }
+        return 0
     }
 
     /// 当前订单取货方式：1 快递 / 0 上门自提
@@ -170,8 +181,10 @@ struct OrderSettlementAppOrderBO: Decodable {
     let price: Double?
     /// 取货方式 1 快递 0 自提
     let typeOrder: Int?
-    /// 优惠券抵扣金额
+    /// 优惠券实际抵扣金额
     let couponAmount: Double?
+    /// 权益卡实际抵扣总额
+    let benefitsAmount: Double?
     /// 已绑定优惠券领用列表
     let couponTakeList: [OrderSettlementCouponTakeBO]?
     /// 收件人 / 提货人
@@ -183,7 +196,7 @@ struct OrderSettlementAppOrderBO: Decodable {
 
     private enum CodingKeys: String, CodingKey {
         case id, packageId, hospitalId, hospitalName, packageDescription
-        case payable, price, typeOrder, couponAmount, couponTakeList, receiver, phone, address
+        case payable, price, typeOrder, couponAmount, benefitsAmount, couponTakeList, receiver, phone, address
     }
 
     init(from decoder: Decoder) throws {
@@ -197,6 +210,7 @@ struct OrderSettlementAppOrderBO: Decodable {
         price = Self.decodeFlexibleDouble(c, key: .price)
         typeOrder = HospitalPackageInt.decodeIfPresent(c, key: .typeOrder)
         couponAmount = Self.decodeFlexibleDouble(c, key: .couponAmount)
+        benefitsAmount = Self.decodeFlexibleDouble(c, key: .benefitsAmount)
         couponTakeList = try c.decodeIfPresent([OrderSettlementCouponTakeBO].self, forKey: .couponTakeList)
         receiver = try c.decodeIfPresent(String.self, forKey: .receiver)
         phone = try c.decodeIfPresent(String.self, forKey: .phone)

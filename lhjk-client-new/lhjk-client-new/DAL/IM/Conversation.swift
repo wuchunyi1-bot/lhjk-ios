@@ -89,7 +89,7 @@ struct Conversation: Identifiable, Codable {
     /// 群组业务状态（`GET /v1/session/getGroup` 的 `status`）；非群聊或尚未拉取为 nil
     var groupStatus: Int?
 
-    /// 仅 `groupStatus == 1` 可发送；已拉取且非 1 时只读。`nil` 表示尚未用群组接口判定。
+    /// 仅 `groupStatus` 为 `0`（已过期）或 `2`（已结束）只读。`nil` 表示尚未用群组接口判定。
     var isMessagingReadOnly: Bool {
         GroupSessionStatus.isMessagingReadOnly(groupStatus)
     }
@@ -341,7 +341,7 @@ extension Conversation {
             lastTime: lastTimeStr,
             unread: unread,
             important: group.labelType == 1,
-            groupStatus: group.status ?? 0
+            groupStatus: group.status
         )
     }
 

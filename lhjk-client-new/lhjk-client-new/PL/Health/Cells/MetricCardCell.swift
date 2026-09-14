@@ -206,10 +206,7 @@ final class MetricCardCell: UICollectionViewCell {
         unitLabel.text = unit
         timeLabel.text = time
         timeLabel.isHidden = time.isEmpty
-        // Figma 3543:3456 血脂时间 #1F2430；其它体征卡时间 #717885
-        timeLabel.textColor = isLipidLayout
-            ? UIColor(hexString: "#1F2430")
-            : UIColor(hexString: "#717885")
+        timeLabel.textColor = UIColor(hexString: "#717885")
 
         if let dietSport, !showsRecordButton {
             titleLabel.isHidden = false

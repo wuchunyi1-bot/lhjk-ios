@@ -4,7 +4,7 @@ import UIKit
 
 /// `getByCode` / `getCmsConfig` 等返回的 `pageUrl` 统一前缀解析。
 ///
-/// - `FundeH5:` → 后缀为 H5 路由，经 `H5Config` 鉴权后打开 `WebViewController`（不要求本地 metric 路由已注册）
+/// - `FundeH5:` → 解析后缀 path/query，直开 H5（拼 `token` + `platform=ios` + 原业务参数；不要求本地路由已注册）
 /// - `FundeApp:` → 后缀为本地路由，经 `Router.push`；未注册则跳过
 ///
 /// OpenSpec: `openspec/changes/funde-page-url-scheme/`
@@ -47,7 +47,8 @@ enum FundePageURL {
         return .none
     }
 
-    /// 按解析结果打开。`FundeH5:` 一律打开 H5 地址；`FundeApp:` 仅已注册本地路由才 push。
+    /// 按解析结果打开。`FundeH5:` 一律直开 H5（不要求本地路由已注册）：先拆 path / query，再拼 `token` + `platform=ios` 与原业务参数。
+    /// `FundeApp:` 仅已注册本地路由才 push。
     /// - Returns: 已打开则为 `true`；无法解析或 `FundeApp` 未注册则为 `false`（调用方可走业务兜底）
     @discardableResult
     @MainActor
@@ -58,7 +59,8 @@ enum FundePageURL {
     ) -> Bool {
         switch parse(pageUrl) {
         case .h5(let path, let query):
-            let url = H5Config.authenticatedPageURL(path: path, extraQuery: query)
+            let url = authenticatedH5URL(path: path, originalQuery: query)
+            print("[FundePageURL] FundeH5 path=\(path) query=\(query) url=\(url.absoluteString)")
             let enablesWeightBle = Self.shouldEnableWeightBle(forH5Path: path)
             let webVC = WebViewController(
                 urlString: url.absoluteString,
@@ -82,6 +84,14 @@ enum FundePageURL {
         case .none:
             return false
         }
+    }
+
+    /// 直开 H5：保留业务 query（如 `taskId`），由宿主写入 `token` / `platform=ios`（覆盖链接里自带的同名项）。
+    private static func authenticatedH5URL(path: String, originalQuery: [String: String]) -> URL {
+        var extra = originalQuery
+        extra.removeValue(forKey: "token")
+        extra.removeValue(forKey: "platform")
+        return H5Config.authenticatedPageURL(path: path, extraQuery: extra)
     }
 
     /// 已按前缀解析为 `FundeH5:` 或 `FundeApp:`（不检查 Router 是否已注册）

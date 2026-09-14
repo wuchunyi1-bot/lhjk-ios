@@ -52,29 +52,12 @@ final class AddressListViewController: BaseViewController {
         return btn
     }()
 
-    private lazy var emptyView: UIView = {
-        let v = UIView()
-        let icon = UIImageView(image: UIImage(systemName: "mappin.slash"))
-        icon.tintColor = .fdMuted
-        icon.contentMode = .scaleAspectFit
-        v.addSubview(icon)
-        icon.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.centerY.equalToSuperview().offset(-40)
-            make.size.equalTo(56)
-        }
-
-        let label = UILabel()
-        label.text = "暂无收货地址"
-        label.font = .fdCaption
-        label.textColor = .fdMuted
-        label.textAlignment = .center
-        v.addSubview(label)
-        label.snp.makeConstraints { make in
-            make.top.equalTo(icon.snp.bottom).offset(12)
-            make.centerX.equalToSuperview()
-        }
-        return v
+    private lazy var emptyView: FDEmptyStateView = {
+        FDEmptyStateView(
+            style: .page,
+            message: "暂无收货地址",
+            subtitle: "添加后可用于商城下单、服务资料邮寄等场景。"
+        )
     }()
 
     private lazy var loadingIndicator: UIActivityIndicatorView = {
@@ -217,7 +200,7 @@ final class AddressListViewController: BaseViewController {
         guard let id = address.id else { return }
         let alert = UIAlertController(
             title: "确认删除",
-            message: "删除后不可恢复，确定要删除该收货地址吗？",
+            message: "删除后不可恢复，确认删除该地址？",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "取消", style: .cancel))
@@ -231,7 +214,7 @@ final class AddressListViewController: BaseViewController {
         Task {
             do {
                 try await viewModel.deleteAddress(id: id)
-                await MainActor.run { self.showToastAlert("已删除", duration: 1.5) }
+                await MainActor.run { self.showToastAlert("地址已删除", duration: 1.5) }
             } catch {
                 await MainActor.run {
                     self.showToastAlert("删除失败: \(error.localizedDescription)", duration: 1.5)

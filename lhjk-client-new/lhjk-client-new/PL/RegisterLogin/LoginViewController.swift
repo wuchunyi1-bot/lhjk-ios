@@ -446,13 +446,13 @@ final class LoginViewController: BaseViewController {
         prompt.onRetry = { }
         prompt.onExitApp = { exit(0) }
         prompt.onUserAgreementTap = { [weak self] in
-            self?.openURL(version.userAgreementURL, title: "用户协议")
+            self?.openAgreement(docType: "user")
         }
         prompt.onPrivacyPolicyTap = { [weak self] in
-            self?.openURL(version.privacyPolicyURL, title: "隐私政策")
+            self?.openAgreement(docType: "privacy")
         }
         prompt.onConsentTap = { [weak self] in
-            self?.openURL("https://example.com/consent", title: "健康管理服务知情同意书")
+            self?.openAgreement(docType: "consent")
         }
 
         view.addSubview(prompt)
@@ -726,13 +726,16 @@ final class LoginViewController: BaseViewController {
 
     private func wireAgreementCheckboxActions() {
         agreementCheckbox.onUserAgreementTap = { [weak self] in
-            self?.openURL("https://example.com/agreement", title: "用户协议")
+            self?.openAgreement(docType: "user")
         }
         agreementCheckbox.onPrivacyPolicyTap = { [weak self] in
-            self?.openURL("https://example.com/privacy", title: "隐私政策")
+            self?.openAgreement(docType: "privacy")
+        }
+        agreementCheckbox.onMemberServiceTap = { [weak self] in
+            self?.openAgreement(docType: "member-service")
         }
         agreementCheckbox.onConsentTap = { [weak self] in
-            self?.openURL("https://example.com/consent", title: "健康管理服务知情同意书")
+            self?.openAgreement(docType: "consent")
         }
     }
 
@@ -1048,13 +1051,16 @@ final class LoginViewController: BaseViewController {
         pendingConsentAction = action
         let sheet = AgreementConsentSheet()
         sheet.onOpenUserAgreement = { [weak self] in
-            self?.openURL("https://example.com/agreement", title: "用户协议")
+            self?.openAgreement(docType: "user")
         }
         sheet.onOpenPrivacyPolicy = { [weak self] in
-            self?.openURL("https://example.com/privacy", title: "隐私政策")
+            self?.openAgreement(docType: "privacy")
+        }
+        sheet.onOpenMemberService = { [weak self] in
+            self?.openAgreement(docType: "member-service")
         }
         sheet.onOpenConsent = { [weak self] in
-            self?.openURL("https://example.com/consent", title: "健康管理服务知情同意书")
+            self?.openAgreement(docType: "consent")
         }
         sheet.onLater = { [weak self] in
             self?.pendingConsentAction = nil
@@ -1078,7 +1084,7 @@ final class LoginViewController: BaseViewController {
             }
         }
         present(sheet, animated: true)
-        showToast("请先阅读并同意用户协议、隐私政策与健康管理服务知情同意书")
+        showToast("请先阅读并同意用户协议、隐私政策、会员服务协议与健康管理服务知情同意书")
     }
 
     private func updateSubmitButton(isLoggingIn: Bool) {
@@ -1252,18 +1258,15 @@ final class LoginViewController: BaseViewController {
         }
 
         view.addSubview(binding)
+        view.bringSubviewToFront(binding)
         binding.snp.makeConstraints { $0.edges.equalToSuperview() }
-        binding.alpha = 0
         phoneBindingView = binding
-        UIView.animate(withDuration: 0.25) { binding.alpha = 1 }
+        binding.showAnimated()
     }
 
     private func dismissPhoneBinding() {
-        UIView.animate(withDuration: 0.25) {
-            self.phoneBindingView?.alpha = 0
-        } completion: { _ in
-            self.phoneBindingView?.removeFromSuperview()
-            self.phoneBindingView = nil
+        phoneBindingView?.dismissAnimated { [weak self] in
+            self?.phoneBindingView = nil
         }
     }
 
@@ -1376,15 +1379,11 @@ final class LoginViewController: BaseViewController {
         return nil
     }
 
-    // MARK: - URL Opening
+    // MARK: - 协议详情（与设置「协议与说明」同源）
 
-    private func openURL(_ urlString: String, title: String) {
-        guard !urlString.isEmpty, let url = URL(string: urlString) else {
-            showToast("\(title)暂不可用")
-            return
-        }
-        let webVC = WebViewController(urlString: url.absoluteString, title: title)
-        present(UINavigationController(rootViewController: webVC), animated: true)
+    private func openAgreement(docType: String) {
+        let host = presentedViewController ?? self
+        AgreementDetailViewController.present(from: host, docType: docType)
     }
 
     // MARK: - Utilities

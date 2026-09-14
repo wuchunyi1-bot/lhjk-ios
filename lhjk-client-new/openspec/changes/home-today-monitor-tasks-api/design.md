@@ -36,8 +36,9 @@
 | `isComplete` | int32 (0/1) | `done` |
 | `monitorTime` | string | `planTime` + detailRows「计划时间」 |
 | `monitorValue` | string | 已完成时 detailRows「监测值」 |
-| `type` | int32 | 字典 `monitorType.value`；`name` → category / shortTitle；路由见下表 |
+| `type` | int32 | 字典 `monitorType.value`；`name` → shortTitle / 跳转；详情列表类型胶囊固定「监测任务」 |
 | `mealType` | int32 | detailRows「餐次」+ 首页 `extraTags` |
+| `mealTypeName` | string | 详情页「计划时段」**直接展示**该字段；空则不展示该行 |
 | `userId` | int64 | 解码保留，展示不用 |
 | `schemeId` | int64 | 解码保留 |
 | `doctorId` / `sessionId` / `hospitalId` | int64 | 解码保留 |
@@ -54,20 +55,31 @@
 
 客户端以 `getDictionaryByParentId2` 拉取的 **监测类型** 字典为准：`value` 为任务 `type` 整型值，`name` 为展示文案。
 
-| value | 字典含义（当前） | iconKey | actionRoute | 可跳转 |
-|-------|------------------|---------|-------------|--------|
-| 1 | 睡眠 | sleep | — | 否（需求未评审） |
-| 2 | 血压 | pressure | `/health/metrics/blood-pressure/add` | 是 |
-| 3 | 运动 | exercise | `/health/metrics/exercise/home` | 是 |
-| 4 | 体重 | weight | `/health/metrics/weight/add` | 是 |
-| 5 | 血糖 | glucose | `/health/metrics/blood-sugar/add` | 是 |
-| 6 | 体温 | temperature | `/health/metrics/temperature/add` | 是 |
-| 7 | 血氧 | oxygen | `/health/metrics/spo2/add` | 是 |
-| 其它 | 以字典为准 | checklist | — | 否 |
+路由解析顺序：
 
-跳转前置条件：字典中存在该 `value` **且** 上表配置了非空 `actionRoute`。`category` / `shortTitle` 优先字典 `name`；`skipUrl` 以 `/` 开头时优先，但不可跳转 type 仍不跳转。
+1. 用任务 `type` 在字典 `monitorType` 中找 `value`，取 `name`
+2. **按 name 关键字** 映射 App 路由（编号会变：线上 `11` 是「营养补充剂」，不是 CMS 体征卡 `cardType=11` 用药）
+3. 字典未同步时，再按历史编号 `2…7` 兜底
 
-5. **mealType**（Apifox）：1 空腹 / 2 早餐前 / 3 午餐前 / 4 午餐后 / 5 晚餐前 / 6 晚餐后1小时 / 7 晚餐后2小时 / 8 睡前；优先字典 `glucosePeriod`，否则 `mealType`，再回落硬编码表。
+| 字典 name 含 | actionRoute |
+|--------------|-------------|
+| 营养补 / 补充剂 / 补剂 | `/supplement/add?taskId=` |
+| 用药 / 药物 | `/medication` |
+| 血压 | `/health/metrics/blood-pressure/add` |
+| 血糖 | `/health/metrics/blood-sugar/add` |
+| 体重 | `/health/metrics/weight/add` |
+| 体温 | `/health/metrics/temperature/add` |
+| 血氧 | `/health/metrics/spo2/add` |
+| 心率 | `/health/metrics/heart-rate/add` |
+| 血脂 | `/health/metrics/blood-lipid` |
+| 运动 | `/exercise-food/check-in?taskId=` |
+| 饮食 | `/health/metrics/exercise/home` |
+| 睡眠 | 不跳转 |
+
+`shortTitle` 优先字典 `name`。详情列表「任务类型」胶囊固定为「监测任务」，不按血糖 / 体重等区分。
+
+5. **mealType**（Apifox）：1 空腹 / 2 早餐前 / 3 午餐前 / 4 午餐后 / 5 晚餐前 / 6 晚餐后1小时 / 7 晚餐后2小时 / 8 睡前；优先字典 `glucosePeriod`，否则 `mealType`，再回落硬编码表。用于「餐次」标签，**不**再用于「计划时段」。
+   **mealTypeName**（Apifox 时段名称）：详情页「计划时段」直接展示接口返回文案，不经字典映射、不以 `monitorValue` 兜底。
 
 6. **空态 / 失败**：清空任务列表，UI 展示「今日暂无健康任务」；不回落 mock。
 

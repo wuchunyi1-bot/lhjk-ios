@@ -1,6 +1,6 @@
 ## 1. 模型
 
-- [x] 1.1 扩展 `SUsersOnboardingPayload`：email、career、education、idType、idNumber、nationality、ethnic、addressProvince、addressCity、addressArea、address 等
+- [x] 1.1 扩展 `SUsersOnboardingPayload`：email、career、education、idType、idNumber、nationality、ethnic、addressProvince、addressCity、addressArea、addressStreet 等
 - [x] 1.2 证件类型中文 ↔ Int 映射表
 
 ## 2. UI

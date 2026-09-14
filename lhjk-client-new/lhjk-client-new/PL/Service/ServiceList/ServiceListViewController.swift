@@ -57,9 +57,12 @@ final class ServiceListViewController: BaseViewController {
         return spinner
     }()
 
+    private let cartButton = ServiceCartBadgeButton(style: .nav)
+
     init(productCode: String) {
         self.viewModel = ServiceListViewModel(routeCode: productCode)
         super.init(nibName: nil, bundle: nil)
+        hidesBottomBarWhenPushed = true
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -73,24 +76,43 @@ final class ServiceListViewController: BaseViewController {
     }
 
     private func setupNavigationItems() {
-        // Figma 3021:2143 — 搜索 + 购物车，间距 16
-        let searchButton = UIButton(type: .system)
+        let iconSize = ServiceCartBadgeButton.Style.nav.iconSize
+        let boxSize = cartButton.intrinsicContentSize
+
+        let searchButton = UIButton(type: .custom)
         searchButton.setImage(.fdNavSearch, for: .normal)
         searchButton.tintColor = .fdText
+        searchButton.adjustsImageWhenHighlighted = false
+        searchButton.accessibilityLabel = "搜索"
         searchButton.addTarget(self, action: #selector(openSearch), for: .touchUpInside)
-        searchButton.snp.makeConstraints { $0.size.equalTo(24) }
 
-        let cartButton = UIButton(type: .system)
-        cartButton.setImage(.fdNavCart, for: .normal)
-        cartButton.tintColor = .fdText
+        // 与购物车同一盒子：24 图标贴左下，右上留给角标。两系统共用，避免一边 24 一边 33 对不齐
+        let searchBox = UIView()
+        searchBox.clipsToBounds = false
+        searchBox.addSubview(searchButton)
+        searchBox.snp.makeConstraints { $0.size.equalTo(boxSize) }
+        searchButton.snp.makeConstraints {
+            $0.leading.bottom.equalToSuperview()
+            $0.size.equalTo(iconSize)
+        }
+
         cartButton.addTarget(self, action: #selector(openCart), for: .touchUpInside)
-        cartButton.snp.makeConstraints { $0.size.equalTo(24) }
+        cartButton.setContentHuggingPriority(.required, for: .horizontal)
+        cartButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        cartButton.snp.makeConstraints { $0.size.equalTo(boxSize) }
 
-        let stack = UIStackView(arrangedSubviews: [searchButton, cartButton])
+        let stack = UIStackView(arrangedSubviews: [searchBox, cartButton])
         stack.axis = .horizontal
         stack.spacing = 16
         stack.alignment = .center
-        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: stack)
+        stack.clipsToBounds = false
+        stack.frame = CGRect(origin: .zero, size: CGSize(width: boxSize.width * 2 + 16, height: boxSize.height))
+
+        let item = UIBarButtonItem(customView: stack)
+        if #available(iOS 26.0, *) {
+            item.hidesSharedBackground = true
+        }
+        navigationItem.rightBarButtonItem = item
     }
 
     @objc private func openSearch() {
@@ -171,6 +193,7 @@ final class ServiceListViewController: BaseViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         institutionCard.configure(viewModel.institution)
+        AppContainer.shared.shoppingCartBadgeStore.refresh()
     }
 
     override func viewDidLayoutSubviews() {
@@ -198,6 +221,13 @@ final class ServiceListViewController: BaseViewController {
     }
 
     override func bindViewModel() {
+        AppContainer.shared.shoppingCartBadgeStore.$count
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] count in
+                self?.cartButton.apply(count: count)
+            }
+            .store(in: &cancellables)
+
         viewModel.$categories
             .receive(on: DispatchQueue.main)
             .sink { [weak self] categories in
@@ -331,16 +361,11 @@ extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate 
             cell.selectionStyle = .none
             cell.backgroundColor = .white
             cell.contentView.backgroundColor = .white
-            let label = UILabel()
-            label.text = "暂无套餐"
-            label.font = .fdBody
-            label.textColor = .fdSubtext
-            label.textAlignment = .center
-            cell.contentView.addSubview(label)
-            label.snp.makeConstraints {
-                $0.center.equalToSuperview()
-                $0.leading.trailing.equalToSuperview().inset(24)
-                $0.top.bottom.equalToSuperview().inset(48)
+            let empty = FDEmptyStateView(style: .compact, message: "暂无套餐")
+            cell.contentView.addSubview(empty)
+            empty.snp.makeConstraints {
+                $0.edges.equalToSuperview()
+                $0.height.equalTo(240)
             }
             return cell
         }

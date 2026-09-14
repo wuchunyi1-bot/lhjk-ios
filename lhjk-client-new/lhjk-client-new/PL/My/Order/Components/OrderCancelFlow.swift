@@ -180,7 +180,6 @@ enum OrderCancelFlow {
                     try await OrderService.shared.cancelPendingPaymentOrder(orderId: orderId, hospitalId: hid)
                     await MainActor.run {
                         notifyListRefresh()
-                        showToast("订单已取消", on: presenter)
                         onSuccess(.cancelled)
                     }
                 } catch {
@@ -217,7 +216,6 @@ enum OrderCancelFlow {
                         sheet.setSubmitting(false)
                         sheet.dismiss(animated: true) {
                             notifyListRefresh()
-                            showToast("已提交退款审核", on: presenter)
                             onSuccess(.refundSubmitted)
                         }
                     }

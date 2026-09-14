@@ -15,6 +15,7 @@ final class ServiceCartViewController: BaseViewController {
     init(viewModel: ServiceCartViewModel = ServiceCartViewModel()) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
+        hidesBottomBarWhenPushed = true
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -118,19 +119,40 @@ final class ServiceCartViewController: BaseViewController {
         tip.textColor = .fdText
         tip.textAlignment = .center
 
-        let sub = UILabel()
-        sub.text = "去服务页挑选心仪套餐吧"
-        sub.font = .fdFont(ofSize: 14, weight: .regular)
-        sub.textColor = .fdTabInactive
-        sub.textAlignment = .center
+        let action = UIButton(type: .custom)
+        action.setTitle("去看看服务", for: .normal)
+        action.setTitleColor(.white, for: .normal)
+        action.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
+        action.backgroundColor = .fdPrimary
+        action.layer.cornerRadius = 18
+        action.clipsToBounds = true
+        action.contentEdgeInsets = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
+        action.addTarget(self, action: #selector(emptyActionTapped), for: .touchUpInside)
 
-        let stack = UIStackView(arrangedSubviews: [icon, tip, sub])
+        let stack = UIStackView(arrangedSubviews: [icon, tip, action])
         stack.axis = .vertical
         stack.alignment = .center
         stack.spacing = 12
         icon.snp.makeConstraints { $0.size.equalTo(48) }
+        action.snp.makeConstraints { $0.height.equalTo(36) }
         card.addSubview(stack)
         stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(32) }
+    }
+
+    @objc private func emptyActionTapped() {
+        guard let nav = navigationController else {
+            Router.shared.push("/services/list", params: ["code": ""])
+            return
+        }
+        var stack = nav.viewControllers.filter { !($0 is ServiceCartViewController) }
+        if let idx = stack.lastIndex(where: { $0 is ServiceListViewController }) {
+            nav.setViewControllers(Array(stack.prefix(through: idx)), animated: true)
+            return
+        }
+        let list = ServiceListViewController(productCode: "")
+        list.hidesBottomBarWhenPushed = true
+        stack.append(list)
+        nav.setViewControllers(stack, animated: true)
     }
 
     private func checkout(line: CartLineDisplay) {

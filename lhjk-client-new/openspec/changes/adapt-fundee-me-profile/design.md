@@ -31,7 +31,7 @@ Vue 结构：
 1. **Vue 优先于旧 page-spec**。
 2. **性别**：UI 显示「男/女」，API 仍存 `"1"`/`"2"`。
 3. **证件类型**：UI 中文选项；提交时映射为 `idType` Int（1 身份证…），无法映射则只存展示文案到本地并尽量传 `idNumber`。
-4. **职业** 映射 `career`；**籍贯** → `province`/`householdProvince`；**现居地/省区/详细地址** → `addressProvince`/`addressCity`/`addressArea`/`address`。
+4. **职业** 映射 `career`；**籍贯** → `province`/`householdProvince`；**现居地/省区/详细地址** → `addressProvince`/`addressCity`/`addressArea`/`addressStreet`。
 5. **Payload 扩展** 而非另起 API，保持 `UserService.updateCurrentProfile`。
 
 ## Risks / Trade-offs

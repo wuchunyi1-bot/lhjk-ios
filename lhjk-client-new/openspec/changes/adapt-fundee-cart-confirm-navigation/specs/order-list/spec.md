@@ -9,3 +9,4 @@
 - **WHEN** 用户通过 `/orders` 进入订单列表且未指定 `tab` 参数
 - **THEN** 默认选中「全部」Tab（`initialTab: "all"`）
 - **AND** 跨 Tab 跳转 `navigateToMyOrdersAll` 时显式使用 `initialTab: "all"`
+- **AND** 购物车确认页返回 `navigateToMyOrdersPendingPayment` 时显式使用 `initialTab: "pending_payment"`

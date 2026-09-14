@@ -493,19 +493,17 @@ final class OrderDetailShipmentTaskCardView: UIView {
     func configure(
         line: OrderDetailPackageLineBO,
         isPickup: Bool,
-        logisticsSummary: String?,
-        orderStatus: AppOrderStatus? = nil
+        logisticsSummary: String?
     ) {
         nameLabel.text = line.displayName
 
-        let stampAsset = line.stampAssetName(orderStatus: orderStatus, isPickup: isPickup)
+        let stampAsset = line.stampAssetName(isPickup: isPickup)
         stampImageView.image = UIImage(named: stampAsset)
         stampImageView.isHidden = stampAsset.isEmpty
 
         let secondary = line.logisticsSecondaryText(
             isPickup: isPickup,
-            orderLogisticsSummary: logisticsSummary,
-            orderStatus: orderStatus
+            orderLogisticsSummary: logisticsSummary
         )
         subtitleLabel.text = secondary
         subtitleLabel.isHidden = (secondary ?? "").isEmpty
@@ -575,8 +573,7 @@ final class OrderDetailLogisticsView: UIView {
     func configure(
         lines: [OrderDetailPackageLineBO],
         isPickup: Bool,
-        logisticsSummary: String?,
-        orderStatus: AppOrderStatus? = nil
+        logisticsSummary: String?
     ) {
         titleLabel.text = isPickup ? "自提信息" : "物流信息"
         let totalCount = lines.count
@@ -591,8 +588,7 @@ final class OrderDetailLogisticsView: UIView {
             card.configure(
                 line: line,
                 isPickup: isPickup,
-                logisticsSummary: logisticsSummary,
-                orderStatus: orderStatus
+                logisticsSummary: logisticsSummary
             )
             card.onCopyTracking = { [weak self] trackingNo in
                 self?.onCopyTracking?(trackingNo)
@@ -841,7 +837,9 @@ final class OrderDetailFeeView: UIView {
         rowsStack.addArrangedSubview(
             row("优惠券抵扣", "-\(OrderConfirmMoney.yen(detail.couponDiscount))", highlight: detail.couponDiscount > 0)
         )
-        rowsStack.addArrangedSubview(row("权益卡抵扣", "-\(OrderConfirmMoney.yen(0))", highlight: false))
+        rowsStack.addArrangedSubview(
+            row("权益卡抵扣", "-\(OrderConfirmMoney.yen(detail.benefitDiscount))", highlight: detail.benefitDiscount > 0)
+        )
 
         let isPendingPayment = detail.orderStatus == .pendingPayment
         totalLeft.text = isPendingPayment ? "应付金额" : "实付金额"

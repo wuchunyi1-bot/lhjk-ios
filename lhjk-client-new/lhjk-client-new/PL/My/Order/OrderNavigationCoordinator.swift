@@ -118,18 +118,42 @@ enum OrderNavigationCoordinator {
 
     /// 落到：我的 Tab → 我的订单 → 全部
     static func navigateToMyOrdersAll(from source: UIViewController) {
-        relocateToMyOrders(from: source, extra: nil, animated: false)
+        relocateToMyOrders(from: source, extra: nil, animated: false, tab: "all")
+    }
+
+    /// 取消成功：关掉当前页上的 Alert 后落到「我的订单 · 全部」。
+    /// 必须重建列表（`initialTab=all`），不能 pop 回原来的待支付列表。
+    static func leaveCancelledOrderToAllList(from source: UIViewController) {
+        dismissPresentedThen(from: source) {
+            relocateToMyOrders(from: source, extra: nil, animated: false, tab: "all")
+        }
+    }
+
+    private static func dismissPresentedThen(from source: UIViewController, then: @escaping () -> Void) {
+        let finish = {
+            DispatchQueue.main.async(execute: then)
+        }
+        if source.presentedViewController != nil {
+            source.dismiss(animated: false, completion: finish)
+            return
+        }
+        finish()
+    }
+
+    /// 落到：我的 Tab → 我的订单 → 待支付（购物车确认页返回）
+    static func navigateToMyOrdersPendingPayment(from source: UIViewController) {
+        relocateToMyOrders(from: source, extra: nil, animated: false, tab: "pending_payment")
     }
 
     /// 支付成功/失败：结果页放到「我的 → 订单列表」之上，并清空来源 Tab 下单栈
     static func presentPayResultOnMyOrders(from source: UIViewController, payload: OrderPayResultPayload) {
         let resultVC = OrderPayResultViewController(payload: payload)
-        relocateToMyOrders(from: source, extra: resultVC, animated: false)
+        relocateToMyOrders(from: source, extra: resultVC, animated: false, tab: "all")
     }
 
     /// 支付结果页完成 / 返回：落到「我的」订单列表全部 Tab，不回到确认订单或选择套餐
     static func leavePayResultToOrderList(from source: UIViewController) {
-        relocateToMyOrders(from: source, extra: nil, animated: true)
+        relocateToMyOrders(from: source, extra: nil, animated: true, tab: "all")
     }
 
     /// 支付结果页「查看订单」：落到「我的 → 订单列表 → 订单详情」
@@ -141,20 +165,22 @@ enum OrderNavigationCoordinator {
         relocateToMyOrders(
             from: source,
             extra: OrderDetailViewController(orderId: orderId),
-            animated: true
+            animated: true,
+            tab: "all"
         )
     }
 
-    /// 服务/来源 Tab 清到根；我的 Tab 变为 `[我的, 订单列表全部, extra?]`
+    /// 服务/来源 Tab 清到根；我的 Tab 变为 `[我的, 订单列表(tab), extra?]`
     private static func relocateToMyOrders(
         from source: UIViewController,
         extra: UIViewController?,
-        animated: Bool
+        animated: Bool,
+        tab: String
     ) {
         extra?.hidesBottomBarWhenPushed = true
 
         guard let tabBar = source.tabBarController else {
-            fallbackRelocateWithoutTabBar(from: source, extra: extra, animated: animated)
+            fallbackRelocateWithoutTabBar(from: source, extra: extra, animated: animated, tab: tab)
             return
         }
 
@@ -167,7 +193,7 @@ enum OrderNavigationCoordinator {
             return
         }
 
-        let orders = OrderListViewController(initialTab: "all")
+        let orders = OrderListViewController(initialTab: tab)
         orders.hidesBottomBarWhenPushed = true
         var stack: [UIViewController] = [myRoot, orders]
         if let extra {
@@ -186,16 +212,17 @@ enum OrderNavigationCoordinator {
     private static func fallbackRelocateWithoutTabBar(
         from source: UIViewController,
         extra: UIViewController?,
-        animated: Bool
+        animated: Bool,
+        tab: String
     ) {
         guard let nav = source.navigationController else {
-            Router.shared.push("/orders", params: ["tab": "all"], from: source)
+            Router.shared.push("/orders", params: ["tab": tab], from: source)
             return
         }
         var stack = nav.viewControllers.filter {
             !($0 is OrderConfirmViewController) && !($0 is OrderPayResultViewController)
         }
-        let orders = OrderListViewController(initialTab: "all")
+        let orders = OrderListViewController(initialTab: tab)
         orders.hidesBottomBarWhenPushed = true
         if let index = stack.lastIndex(where: { $0 is OrderListViewController }) {
             stack = Array(stack.prefix(through: index))

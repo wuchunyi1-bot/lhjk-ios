@@ -51,16 +51,13 @@ final class MallProductDetailViewController: BaseViewController {
     // MARK: - Empty
 
     private func buildEmpty() {
-        let emptyLabel = UILabel()
-        emptyLabel.text = "商品不存在"
-        emptyLabel.font = .fdBody
-        emptyLabel.textColor = .fdSubtext
-        emptyLabel.textAlignment = .center
-        contentView.addSubview(emptyLabel)
-        emptyLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(120)
-            $0.centerX.equalToSuperview()
-            $0.bottom.equalToSuperview().offset(-40)
+        let empty = FDEmptyStateView(style: .page, message: "商品不存在")
+        contentView.addSubview(empty)
+        empty.snp.makeConstraints {
+            $0.top.equalToSuperview()
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(360)
+            $0.bottom.equalToSuperview()
         }
     }
 

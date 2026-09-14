@@ -38,33 +38,9 @@ final class CouponTabViewController: BaseViewController {
         return c
     }()
 
-    private lazy var emptyView: UIView = {
-        let v = UIView()
+    private lazy var emptyView: FDEmptyStateView = {
+        let v = FDEmptyStateView(style: .page, message: emptyTitle, subtitle: emptySubtitle)
         v.isHidden = true
-        let icon = UIImageView(image: UIImage(systemName: "ticket"))
-        icon.tintColor = .fdMuted
-        icon.contentMode = .scaleAspectFit
-        let title = UILabel()
-        title.text = emptyTitle
-        title.font = .fdMyBodyBold
-        title.textColor = .fdText
-        title.textAlignment = .center
-        let subtitle = UILabel()
-        subtitle.text = emptySubtitle
-        subtitle.font = .fdMyCaption
-        subtitle.textColor = .fdSubtext
-        subtitle.textAlignment = .center
-        subtitle.numberOfLines = 0
-        let stack = UIStackView(arrangedSubviews: [icon, title, subtitle])
-        stack.axis = .vertical
-        stack.spacing = 10
-        stack.alignment = .center
-        v.addSubview(stack)
-        icon.snp.makeConstraints { $0.size.equalTo(40) }
-        stack.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.leading.trailing.equalToSuperview().inset(40)
-        }
         return v
     }()
 

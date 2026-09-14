@@ -5,7 +5,7 @@
 ```
 RootTabBarController
 ├── [2] 服务 Nav → ServiceVC → CartVC → OrderConfirmVC
-└── [4] 我的 Nav → MyVC → OrderListVC(全部)
+└── [4] 我的 Nav → MyVC → OrderListVC(待支付)
 ```
 
 ## 入口打标
@@ -27,21 +27,21 @@ Router.shared.push("/orders/confirm", params: [
 | `cart` | `.cartCheckout` | 跨 Tab 返回 / 支付成功 |
 | 其它 / 缺省 | `.default` | 栈内 pop / replaceWithOrders |
 
-## navigateToMyOrdersAll 执行顺序
+## navigateToMyOrdersPendingPayment 执行顺序
 
-1. 取得 `tabBarController`（无则降级 `Router.push("/orders", tab: all)`）
-2. **服务 Tab（index=2）**：从导航栈移除 `OrderConfirmViewController`，保留 `[ServiceVC, CartVC, …]`
-3. **我的 Tab（index=4）**：`popToRootViewController` 后 `pushViewController(OrderListVC)`（走 `BaseNavigationController` 自动 `hidesBottomBarWhenPushed`）
+1. 取得 `tabBarController`（无则降级 `Router.push("/orders", tab: pending_payment)`）
+2. **服务 Tab（index=2）**：`popToRoot`，清掉购物车/确认页
+3. **我的 Tab（index=4）**：栈设为 `[MyVC, OrderListVC(pending_payment)]`
 4. `selectedIndex = 4`
 
 ## 确认页触发点（仅 cartCheckout）
 
 | 触发 | 处理 |
 |------|------|
-| 导航栏返回 | `navigateToMyOrdersAll` |
+| 导航栏返回 | `navigateToMyOrdersPendingPayment` |
 | 侧滑返回 | `interactivePopGestureRecognizer.isEnabled = false` |
-| `navigateBack`（加载失败等） | `navigateToMyOrdersAll` |
-| `navigateToOrders`（支付成功） | `navigateToMyOrdersAll` |
+| `navigateBack`（加载失败等） | `navigateToMyOrdersPendingPayment` |
+| 支付终态 | `presentPayResultOnMyOrders`（结果页下的订单列表仍为「全部」） |
 
 ## 不变行为
 

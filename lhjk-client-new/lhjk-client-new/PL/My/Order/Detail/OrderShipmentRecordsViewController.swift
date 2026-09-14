@@ -10,7 +10,7 @@ final class OrderShipmentRecordsViewController: BaseViewController {
     private let scrollView = UIScrollView()
     private let contentStack = UIStackView()
     private let loadingIndicator = UIActivityIndicatorView(style: .medium)
-    private let emptyLabel = UILabel()
+    private let emptyView = FDEmptyStateView(style: .page, message: "暂无发货记录")
 
     private var detail: AppOrderDetailBO?
 
@@ -46,16 +46,9 @@ final class OrderShipmentRecordsViewController: BaseViewController {
         view.addSubview(loadingIndicator)
         loadingIndicator.snp.makeConstraints { $0.center.equalToSuperview() }
 
-        emptyLabel.font = .fdFont(ofSize: 15, weight: .regular)
-        emptyLabel.textColor = .fdSubtext
-        emptyLabel.textAlignment = .center
-        emptyLabel.numberOfLines = 0
-        emptyLabel.isHidden = true
-        view.addSubview(emptyLabel)
-        emptyLabel.snp.makeConstraints {
-            $0.center.equalToSuperview()
-            $0.leading.trailing.equalToSuperview().inset(24)
-        }
+        emptyView.isHidden = true
+        view.addSubview(emptyView)
+        emptyView.snp.makeConstraints { $0.edges.equalToSuperview() }
     }
 
     override func bindViewModel() {
@@ -64,7 +57,7 @@ final class OrderShipmentRecordsViewController: BaseViewController {
 
     private func loadData() {
         loadingIndicator.startAnimating()
-        emptyLabel.isHidden = true
+        emptyView.isHidden = true
         scrollView.isHidden = true
 
         Task {
@@ -78,8 +71,8 @@ final class OrderShipmentRecordsViewController: BaseViewController {
             } catch {
                 await MainActor.run {
                     self.loadingIndicator.stopAnimating()
-                    self.emptyLabel.isHidden = false
-                    self.emptyLabel.text = "加载失败，请返回重试"
+                    self.emptyView.isHidden = false
+                    self.emptyView.configure(message: "加载失败，请返回重试")
                 }
             }
         }
@@ -92,30 +85,30 @@ final class OrderShipmentRecordsViewController: BaseViewController {
         }
 
         guard let detail else {
-            emptyLabel.isHidden = false
-            emptyLabel.text = isPickup ? "暂无自提记录" : "暂无发货记录"
+            emptyView.isHidden = false
+            emptyView.configure(message: isPickup ? "暂无自提记录" : "暂无发货记录")
             return
         }
 
         let lines = detail.logisticsLines
         guard !lines.isEmpty else {
-            emptyLabel.isHidden = false
-            emptyLabel.text = isPickup ? "暂无自提记录" : "暂无发货记录"
+            emptyView.isHidden = false
+            emptyView.configure(message: isPickup ? "暂无自提记录" : "暂无发货记录")
             scrollView.isHidden = true
             return
         }
 
         scrollView.isHidden = false
-        emptyLabel.isHidden = true
+        emptyView.isHidden = true
         let summary = detail.logisticsSummary
         for line in lines {
             let card = OrderDetailCardView()
             let taskView = OrderDetailShipmentTaskCardView()
+            taskView.backgroundColor = .white
             taskView.configure(
                 line: line,
                 isPickup: isPickup,
-                logisticsSummary: summary,
-                orderStatus: detail.orderStatus
+                logisticsSummary: summary
             )
             taskView.onCopyTracking = { [weak self] trackingNo in
                 UIPasteboard.general.string = trackingNo

@@ -169,7 +169,8 @@ final class OrderDetailViewController: BaseViewController {
     private func handleOrderAction(_ action: OrderListCardAction) {
         if action == .cancel, let detail = viewModel.detail {
             OrderCancelFlow.start(from: self, detail: detail) { [weak self] _ in
-                self?.viewModel.load()
+                guard let self else { return }
+                OrderNavigationCoordinator.leaveCancelledOrderToAllList(from: self)
             }
             return
         }
@@ -306,8 +307,7 @@ final class OrderDetailViewController: BaseViewController {
             expressLogisticsView.configure(
                 lines: detail.logisticsLines,
                 isPickup: false,
-                logisticsSummary: detail.logisticsSummary,
-                orderStatus: detail.orderStatus
+                logisticsSummary: detail.logisticsSummary
             )
         }
 
@@ -316,8 +316,7 @@ final class OrderDetailViewController: BaseViewController {
             pickupLogisticsView.configure(
                 lines: detail.logisticsLines,
                 isPickup: true,
-                logisticsSummary: detail.logisticsSummary,
-                orderStatus: detail.orderStatus
+                logisticsSummary: detail.logisticsSummary
             )
         }
 

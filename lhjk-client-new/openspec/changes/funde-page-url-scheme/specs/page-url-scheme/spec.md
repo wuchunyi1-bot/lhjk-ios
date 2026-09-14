@@ -4,7 +4,7 @@
 
 系统 SHALL 对 `getByCode` 的栏位 `pageUrl`，以及 `getCmsConfig` 的 **`quickEntryList[].pageUrl`**（及任何复用同一约定的字段）按以下规则解析（前缀大小写敏感）：
 
-- 以 `FundeH5:` 开头：去掉该前缀后的字符串为 **H5 路由**，经 `H5Config` 鉴权后打开，**不要求**本地 metric / Router 已注册该 path。
+- 以 `FundeH5:` 开头：去掉该前缀后的字符串为 **H5 路由**，经 `H5Config` 鉴权后打开，**不要求**本地 metric / Router 已注册该 path。直开时 MUST 先解析 path 与 query，再拼 `token`、`platform=ios` 与原业务参数（如 `taskId`）。
 - 以 `FundeApp:` 开头：去掉该前缀后的字符串为 **本地 App 路由**；仅当 Router 已注册时 `push`，未注册则跳过（与原先一致）。
 - 其他或不识别：视为无法解析（调用方可 no-op 或使用业务兜底）。
 
@@ -12,9 +12,9 @@
 
 #### Scenario: FundeH5
 
-- **WHEN** `pageUrl` 为 `FundeH5:/blood-pressure` 或本地尚未注册的 H5（如 `FundeH5:/blood-lipid`）
-- **THEN** 系统打开 H5：使用后缀作为 H5 path，经 `H5Config` 鉴权 URL 进入 `WebViewController`
-- **AND** MUST NOT 因本地没有对应 `/health/metrics/{key}` 而改走血压等 cardType 兜底
+- **WHEN** `pageUrl` 为 `FundeH5:/blood-pressure` 或本地尚未注册的 H5（如 `FundeH5:/blood-lipid`、`FundeH5:/supplement/add?taskId=123`）
+- **THEN** 系统直开 H5：解析后缀 path / query，经 `H5Config.authenticatedPageURL` 写入 `token` + `platform=ios` 及原业务 query
+- **AND** MUST NOT 因本地没有对应 Router 而跳过或改走原生路由
 
 #### Scenario: FundeApp
 
@@ -86,5 +86,5 @@
 #### Scenario: IM FundeH5
 
 - **WHEN** 用户点击 IM 卡片或通知且路由为 `FundeH5:`（如 `FundeH5:/blood-lipid`）
-- **THEN** 系统打开对应 H5 地址
-- **AND** MUST NOT 因本地 Router 无该 path 而跳过
+- **THEN** 系统直开对应 H5（解析 path/query 后拼 `token` + `platform=ios` + 原业务参数）
+- **AND** MUST NOT 因本地 Router 无该 path 而跳过，也 MUST NOT 改走原生路由

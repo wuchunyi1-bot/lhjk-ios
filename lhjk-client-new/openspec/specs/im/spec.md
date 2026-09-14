@@ -34,16 +34,17 @@
 | `unread` | Int | 未读消息数 |
 | `important` | Bool | 是否重要会话，决定左侧高亮竖条 |
 | `groupStatus` | Int? | 群组业务状态，来自 `GET /v1/session/getGroup` 的 `status`；非群聊或尚未拉取为 nil |
-| `isMessagingReadOnly` | Bool | 派生：已拿到 `groupStatus` 且 **不等于 1** 时用户不可发送，仅可查看历史 |
+| `isMessagingReadOnly` | Bool | 派生：已拿到 `groupStatus` 且值为 **0 或 2** 时用户不可发送，仅可查看历史 |
 
 `GroupVO.status` 约定（聊天发送权限）：
 
 | 值 | 含义 | 用户能否发送 |
 |----|------|----------------|
+| `0` | 已过期 | 不可以；列表文案「已过期」；底栏「您的服务已过期，可前往商城重新购买健康管理服务！」可点进商城 |
 | `1` | 进行中 | **可以**发送（展示输入栏、在线人数等） |
-| `2` | 已结束 | 不可以；列表文案「会话已结束」 |
-| 其它已返回值（含 `0`） | 非进行中 | 不可以；列表文案「暂不可聊天」 |
-| 字段缺失 | 按不可聊处理 | 映射为 `groupStatus = 0` |
+| `2` | 已结束 | 不可以；列表文案「会话已结束」；底栏文案与 `0` 相同，可点进商城 |
+| 其它已返回值 | 可聊 | **可以**发送；列表文案同进行中（在线人数） |
+| 字段缺失 | 尚未判定 | 不锁发送；`groupStatus` 保持 `nil` |
 
 单聊 / 系统通知会话没有 `getGroup` 记录，`groupStatus` 保持 `nil`，不受此规则锁定。
 
@@ -328,9 +329,9 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 
 #### Scenario: 空状态
 - **WHEN** 会话列表为空
-- **THEN** 展示插图 + "您的健管团队正在为您分配，将在 24 小时内主动联系您"
+- **THEN** 展示默认空态插图 `noData_default` + 现有文案（「暂无团队对话」；完整引导文案后续可对齐原型）
 - **WHEN** 通知列表为空
-- **THEN** 展示"暂无通知"
+- **THEN** 展示 `noData_default` + 「暂无通知」
 
 #### Scenario: 会话列表数据源（两步合并）
 - **WHEN** `ConversationListViewController` 加载会话列表
@@ -349,7 +350,7 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
   - 展示元数据优先 `GroupVO`：`principalName ?? groupName` → `name`，`serviceName` → `title` / `roleLabel`
   - `groupImg` 取首字 → `avatar`，`numbers` → `status`（"N 人在线"）
   - `labelType == 1` → `important = true`，`serviceId` → `role`
-  - `GroupVO.status` → `Conversation.groupStatus`（缺失时记为 `0`）；仅 `status == 1` 时 `Conversation.status` 展示在线人数，`status == 2` 展示「会话已结束」，其它非 1 展示「暂不可聊天」
+  - `GroupVO.status` → `Conversation.groupStatus`；`status == 0` 展示「已过期」，`status == 2` 展示「会话已结束」，其它值展示在线人数
   - rc 为 nil 时：`unread = 0`，`lastTime = ""`，`lastMessage` fallback 到 GroupVO.lastContent
 - **AND** 若 API 请求失败或融云未连接，fallback 到 mock 数据
 
@@ -628,17 +629,17 @@ App 冷启动
 - **THEN** 按 `emojiToSymbol` 将 `😍` 转为 `[色迷迷]`，与 Web / Android 互通
 - **AND** 映射表取自该 JS 的 `I` 字典（zh / en / tag），共 129 项
 
-#### Scenario: 群组仅 `getGroup.status == 1` 可发送
-`GET /v1/session/getGroup` 返回的 `GroupVO.status` **只有等于 1 时**用户可以发送消息。其它任何已返回值（含 `2` 已结束、`0`、未知数字）MUST NOT 发送；用户 MAY 进入聊天详情查看历史。
+#### Scenario: 群组仅 `getGroup.status` 为 0 / 2 不可发送
+`GET /v1/session/getGroup` 返回的 `GroupVO.status` **只有等于 0（已过期）或 2（已结束）时**用户不可发送。其它任何已返回值（含 `1` 进行中）MUST 允许发送；用户 MAY 进入聊天详情查看历史。
 
 **数据流**：
-1. 会话列表 `loadConversations()`：`GroupVO.status` → `Conversation.groupStatus`（字段缺失记 `0`）；列表副文案见 Data Model 表
+1. 会话列表 `loadConversations()`：`GroupVO.status` → `Conversation.groupStatus`；列表副文案见 Data Model 表
 2. 进入 `ChatViewController`：`ChatViewModel.refreshConversationMetadata()` 再次调用 `GET /v1/session/getGroup`，按 `groupId` 匹配并整表替换该条 `Conversation`（深链进入、缓存缺失时同样生效）
-3. 只读判定：`Conversation.isMessagingReadOnly` ≡ 已有 `groupStatus` 且 `groupStatus != 1`
-4. 群聊且本地 `groupStatus` 未知（`nil`）时，进入页先不嵌入输入栏；补齐元数据后再按是否 `== 1` 决定是否展示输入栏（避免非 1 状态先闪出输入框）
+3. 只读判定：`Conversation.isMessagingReadOnly` ≡ `groupStatus == 0 || groupStatus == 2`
+4. 群聊且本地 `groupStatus` 未知（`nil`）时，进入页先不嵌入输入栏；补齐元数据后再按是否只读决定是否展示输入栏
 
 **UI**：
-- **WHEN** `isMessagingReadOnly == true`
+- **WHEN** `groupStatus == 0`（已过期）或 `groupStatus == 2`（已结束）
 - **THEN** MUST NOT 将 `ChatInputBar` 加入视图层级
 - **AND** 消息列表底部展示过期横幅（对齐 Figma `4565:9670` / 页面 `4497:4892`）：高 66pt、底贴 Home Indicator；背景用切图 `chat_expired_bg`（禁止代码绘制渐变/圆角）；左侧 40 警告图标 `chat_expired_warning`；文案「您的服务已过期，可前往商城重新购买健康管理服务！」（16 Regular `#C36E20`，最多两行）
 - **AND** 点击横幅切到服务 Tab 根页（`RootTabBarController.selectServiceTab()`），MUST NOT 把服务 Hub push 进消息导航栈
@@ -646,8 +647,8 @@ App 冷启动
 - **AND** 长按菜单仅保留「复制」；MUST NOT 展示「引用」「撤回」
 - **AND** 用户若通过其它路径触发发送（不应出现），`ChatViewModel` 拦截并 Toast「服务已过期，仅可查看历史消息」
 
-- **WHEN** `groupStatus == 1`
-- **THEN** 保持现有输入栏布局与发送能力，不展示过期提示
+- **WHEN** `groupStatus` 不是 `0` 且不是 `2`（含 `1`）
+- **THEN** 保持现有输入栏布局与发送能力，不展示只读底栏
 
 #### Scenario: 群聊详情查看群成员入口
 - **WHEN** 会话类型为群聊（`ConversationType_GROUP`）
@@ -819,7 +820,7 @@ App 冷启动
 | **聊天 — 发送中** | user 消息追加到列表，气泡正常显示 |
 | **聊天 — 快捷回复** | 点击快捷回复 → 自动发送 → 追加消息 → 滚动至底 |
 | **聊天 — 键盘弹起** | 输入栏上移，消息区 contentInset 同步 |
-| **聊天 — 不可发送** | `getGroup.status != 1`：无底部输入栏，仅历史消息流，可复制不可发 |
+| **聊天 — 不可发送** | `getGroup.status` 为 `0` / `2`：无底部输入栏，底部均为过期文案并可进商城；仅可看历史 |
 | **通知中心 — 默认** | 4 张通知卡片，按时间倒序 |
 
 ## Acceptance Checklist
@@ -855,8 +856,8 @@ App 冷启动
 - [ ] 快捷回复横向滚动，按角色动态文案
 - [ ] 空文本时发送按钮禁用，有内容时激活
 - [ ] 键盘弹起输入栏跟随
-- [ ] `getGroup.status == 1` 的群：聊天页有输入栏，可发送
-- [ ] `getGroup.status != 1` 的群：聊天页无底部输入栏，仅可看历史；发送被拦截；长按仅复制
+- [ ] `getGroup.status` 非 `0` / `2` 的群：聊天页有输入栏，可发送
+- [ ] `getGroup.status == 0` 或 `2` 的群：无输入栏，底部过期文案可点进商城
 
 ### 通知中心
 - [ ] 通知卡片 / 行图标颜色按类型区分

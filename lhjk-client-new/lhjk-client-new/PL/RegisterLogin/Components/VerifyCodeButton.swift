@@ -4,7 +4,7 @@ import SnapKit
 /// 验证码倒计时按钮
 ///
 /// - `inline`：输入壳内橙色文字（登录页 Figma）
-/// - `pill`：独立胶囊按钮（忘记密码 / 绑定手机号等）
+/// - `pill`：独立胶囊按钮（忘记密码等）
 final class VerifyCodeButton: UIButton {
 
     enum Style {

@@ -44,6 +44,7 @@
 
 - **WHEN** 校验通过
 - **THEN** 更新本地展示 → 调用 `updateCurrentProfile`（映射字段）→ 成功 toast「{字段}已保存」并 `refreshUserInfo`
+- **AND** 详细地址读写 `addressStreet`（不再使用 `address`）
 
 ### Requirement: 居中头像区
 

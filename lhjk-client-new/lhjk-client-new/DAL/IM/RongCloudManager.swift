@@ -64,6 +64,8 @@ final class RongCloudManager {
 
     /// 当前存储的融云 token（内存缓存）
     private(set) var currentToken: String?
+    /// 系统 APNs deviceToken；SDK 尚未 init 时先暂存
+    private var pendingDeviceToken: Data?
 
     // MARK: - Token Storage Keys
 
@@ -97,6 +99,20 @@ final class RongCloudManager {
         #endif
 
         print("[RongCloud] SDK initialized with appKey: \(appKey.prefix(4))****")
+        applyPendingDeviceTokenIfNeeded()
+    }
+
+    /// 将系统 APNs deviceToken 交给融云，用于 IM 离线推送。
+    /// 须在 `initialize` 之后生效；若回调早于 init 则暂存，init 完成后再上报。
+    func setDeviceTokenData(_ deviceToken: Data) {
+        pendingDeviceToken = deviceToken
+        applyPendingDeviceTokenIfNeeded()
+    }
+
+    private func applyPendingDeviceTokenIfNeeded() {
+        guard isInitialized, let deviceToken = pendingDeviceToken else { return }
+        client.setDeviceTokenData(deviceToken)
+        print("[RongCloud] APNs deviceToken uploaded (\(deviceToken.count) bytes)")
     }
 
     /// 注册自定义消息类型（须在 SDK 初始化后、发送前调用）

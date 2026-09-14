@@ -14,14 +14,15 @@
 
 - **WHEN** 用户在 `entry=cart` 的确认订单页点击导航栏返回
 - **THEN** **不得** pop 回购物车
-- **AND** 切换到「我的」Tab，导航栈为 `MyViewController` → `OrderListViewController(initialTab: "all")`
+- **AND** 切换到「我的」Tab，导航栈为 `MyViewController` → `OrderListViewController(initialTab: "pending_payment")`
+- **AND** 订单列表默认选中「待支付」Tab
 - **AND** 订单列表页 **不得** 展示底部 Tab 栏（二级页面）
 - **AND** 服务 Tab 导航栈移除确认页，保留购物车页
 
 #### Scenario: 购物车来源确认页支付成功
 
 - **WHEN** 用户在 `entry=cart` 的确认订单页完成支付成功流程（`navigateToOrders`）
-- **THEN** 与返回相同，落到「我的 → 我的订单 → 全部」
+- **THEN** 进入支付结果页流程，结果页完成/返回落到「我的 → 我的订单 → 全部」
 - **AND** 服务 Tab 不再保留确认页
 
 #### Scenario: 购物车来源禁用侧滑返回

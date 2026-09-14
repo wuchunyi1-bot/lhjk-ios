@@ -296,7 +296,7 @@ final class OrderConfirmAddressView: UIView {
             addressBottomConstraint?.activate()
             heightConstraint?.deactivate()
         } else {
-            personLabel.text = "暂无默认地址"
+            personLabel.text = "请选择收货地址"
             mobileLabel.text = nil
             personLabel.isHidden = false
             mobileLabel.isHidden = true

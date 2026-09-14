@@ -9,11 +9,11 @@
 **Goals:**
 
 - 关于页 UI / 文案 / 交互对齐 PRD-213 与 Vue
-- 纯 PL 静态页，无网络
+- 当前版本点击对接 `GET /v1/version/getLatestVersionForApp`
 
 **Non-Goals:**
 
-- 真实检查更新 / App Store 评分跳转（原型 toast）
+- App Store 评分跳转（原型 toast）
 - 客服电话拨号（PRD：只读不可点）
 - 协议详情（不在本页）
 - 不改设置主页入口（已有「关于富德联好健康」→ `/me/settings/about`）
@@ -21,7 +21,7 @@
 ## Decisions
 
 1. **结构**：品牌 Hero → 单卡三行 → 页脚两行文本；去掉第二、三张卡与品牌下版本 Label。
-2. **版本号**：`Bundle.main` 的 `CFBundleShortVersionString`，展示为 `v{version}`；点击仅 toast「当前已经是最新版本」，不做比对。
+2. **版本号**：展示 `Bundle.main` 的 `CFBundleShortVersionString`（`v{version}`）；点击调用 `getLatestVersionForApp`，无更新 toast「当前已经是最新版本」，有更新弹窗并可打开 `addressUrl`。启动/回前台静默检查，强制更新不可跳过。
 3. **评分**：点击 toast「暂无法打开应用市场」，不调 StoreKit / 外链。
 4. **联系我们**：右侧 `400-888-6520`，无箭头、无 tap。
 5. **页脚**：`Copyright © 2026 富德联好健康` + `粤ICP备2023016723号-1`。

@@ -133,6 +133,8 @@ final class MeMembershipCardView: UIView {
             valueLbl.font = .fdFont(ofSize: 20, weight: .medium)
             valueLbl.textColor = UIColor(hexString: "#754200")
             valueLbl.textAlignment = .center
+            valueLbl.adjustsFontSizeToFitWidth = true
+            valueLbl.minimumScaleFactor = 0.6
             valueLbl.isUserInteractionEnabled = false
 
             let labelLbl = UILabel()
@@ -147,7 +149,7 @@ final class MeMembershipCardView: UIView {
 
             valueLbl.snp.makeConstraints {
                 $0.top.equalToSuperview().offset(25)
-                $0.centerX.equalToSuperview()
+                $0.leading.trailing.equalToSuperview().inset(4)
             }
             labelLbl.snp.makeConstraints {
                 $0.top.equalTo(valueLbl.snp.bottom).offset(4)

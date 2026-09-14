@@ -57,6 +57,30 @@ struct RouteContext {
         self.transition = transition
         self.completion = completion
     }
+
+    /// `push("/path?k=v")` 与 `openURL` 对齐：注册查找只用纯 path，query 并入参数。
+    fileprivate func normalizedForLookup() -> RouteContext {
+        let parsed = Router.splitPathAndQuery(path)
+        guard parsed.path != path || !parsed.query.isEmpty else {
+            return self
+        }
+        var query = queryParameters
+        for (key, value) in parsed.query where query[key] == nil {
+            query[key] = value
+        }
+        var extra = extraParameters
+        for (key, value) in parsed.query where extra[key] == nil {
+            extra[key] = value
+        }
+        return RouteContext(
+            path: parsed.path,
+            queryParameters: query,
+            extraParameters: extra,
+            from: fromViewController,
+            transition: transition,
+            completion: completion
+        )
+    }
 }
 
 // MARK: - Route Transition
@@ -158,8 +182,9 @@ final class Router {
     }
 
     /// 路径是否已注册（未注册时 `push` 不跳转、不降级首页）
+    /// 查找时忽略 `?query`，与 `push("/path?taskId=1")` 对齐。
     func contains(_ path: String) -> Bool {
-        routes[path] != nil
+        routes[Self.splitPathAndQuery(path).path] != nil
     }
 
     // MARK: - Middleware Registration
@@ -250,6 +275,7 @@ final class Router {
 
     /// 执行路由：中间件链 → 目标 Action
     private func execute(context: RouteContext) {
+        let context = context.normalizedForLookup()
         // 查找路由注册信息
         guard let entry = routes[context.path] else {
             print("[Router] ⚠️ No route registered for '\(context.path)', skip navigation")
@@ -261,6 +287,26 @@ final class Router {
 
         // 在中间件链末尾执行实际跳转
         chain(context)
+    }
+
+    /// 从 path 拆出纯路径与 query（`/supplement/add?taskId=2222`）
+    fileprivate static func splitPathAndQuery(_ raw: String) -> (path: String, query: [String: String]) {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let question = trimmed.firstIndex(of: "?") else {
+            return (trimmed, [:])
+        }
+        let path = String(trimmed[..<question])
+        let queryString = String(trimmed[trimmed.index(after: question)...])
+        var query: [String: String] = [:]
+        for pair in queryString.split(separator: "&") where !pair.isEmpty {
+            let parts = pair.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+            let keyRaw = String(parts[0])
+            guard !keyRaw.isEmpty else { continue }
+            let key = keyRaw.removingPercentEncoding ?? keyRaw
+            let valueRaw = parts.count == 2 ? String(parts[1]) : ""
+            query[key] = valueRaw.removingPercentEncoding ?? valueRaw
+        }
+        return (path, query)
     }
 
     /// 递归构建中间件链

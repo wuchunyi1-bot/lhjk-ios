@@ -52,6 +52,7 @@ final class HomeViewController: BaseViewController {
         super.viewDidAppear(animated)
         // 冷启动时 viewDidLoad 可能尚未挂上 window，补一次 apply
         applyHomeSnapshot(viewModel.snapshot)
+        AppVersionCheckCoordinator.checkOnHomeAppeared()
     }
 
     override func viewWillDisappear(_ animated: Bool) {

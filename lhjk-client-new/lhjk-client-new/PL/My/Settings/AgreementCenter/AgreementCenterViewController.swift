@@ -16,6 +16,7 @@ final class AgreementCenterViewController: BaseViewController {
         .init(label: "健康管理服务知情同意书", desc: "查看健康管理服务告知与授权内容", docType: "consent"),
         .init(label: "个人信息收集清单", desc: "查看我们收集的信息类型、使用目的与方式", docType: "personal-info"),
         .init(label: "第三方信息收集清单", desc: "查看第三方服务，共享信息与使用目的", docType: "third-party-sharing"),
+        .init(label: "会员服务协议", desc: "查看会员等级、虚拟币、积分与会员兑换规则", docType: "member-service"),
         .init(label: "权益卡使用规则", desc: "查看权益卡领取、抵扣、有效期与退款规则", docType: "benefit-card"),
     ]
 

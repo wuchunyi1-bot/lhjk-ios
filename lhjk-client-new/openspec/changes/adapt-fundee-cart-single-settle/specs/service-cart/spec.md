@@ -73,7 +73,10 @@
 
 - **WHEN** 列表为空且非加载中
 - **THEN** 展示「购物车还是空的」
-- **AND** 主按钮「去看看服务」跳转 `/services`
+- **AND** 主按钮「去看看服务」统一进入套餐选择页 `/services/list`（`ServiceListViewController`）
+- **AND** 若导航栈中已有套餐选择页，则 pop 到该页并移除购物车页；否则以套餐选择页替换当前购物车页
+- **AND** 套餐选择页 **不得** 展示底部 TabBar（仅各模块首页展示 TabBar）；`setViewControllers` 换栈时须设置 `hidesBottomBarWhenPushed = true`
+- **AND** **不得**仅 `pop` 返回上一页（如服务 Hub）
 - **AND** **不得**使用「购物车空空如也」+「去逛逛」→ `/mall` 旧文案
 
 ## 参考

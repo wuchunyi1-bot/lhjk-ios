@@ -169,26 +169,29 @@ final class CancelAccountViewController: BaseViewController {
                 self?.showToastAlert(msg, duration: 1.5)
             }
             .store(in: &cancellables)
+
+        viewModel.unfinishedOrderPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] block in
+                self?.showUnfinishedOrdersAlert(message: block.message)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Cancel Flow
 
     @objc private func handleCancelAccount() {
         guard !viewModel.isSubmitting else { return }
-
-        if viewModel.hasUnfinishedOrders() {
-            showUnfinishedOrdersAlert()
-        } else {
-            showCancelConfirmation()
-        }
+        showCancelConfirmation()
     }
 
-    private func showUnfinishedOrdersAlert() {
+    private func showUnfinishedOrdersAlert(message: String) {
         let alert = UIAlertController(
             title: "暂无法注销账户",
-            message: "您当前还有未完成的订单或服务，请处理完成后再申请注销。",
+            message: message,
             preferredStyle: .alert
         )
+        alert.view.tintColor = .fdPrimary
         alert.addAction(UIAlertAction(title: "我知道了", style: .cancel))
         alert.addAction(UIAlertAction(title: "查看订单", style: .default) { _ in
             Router.shared.push("/orders")

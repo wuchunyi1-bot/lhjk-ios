@@ -23,14 +23,14 @@
 - `city` ← `locality`（直辖市等与省同名时用省名兜底）
 - `area` ← `subLocality` / `district`
 - `detail` ← `thoroughfare` + `subThoroughfare`（或 `name`）
-- `postalCode` ← `postalCode`（可选写入 `code`）
+- `postalCode` ← `postalCode`（DAL 保留，**不再**写入地址表单或保存 payload）
 
 错误映射用户文案：「定位失败，请手动选择」（对齐 ADDR-EDIT-M007）。
 
 ### 2. 地址编辑 UI
 
 对齐 funde 分区：
-1. **收货信息**：收货人、手机号、所在地区（只读展示 `省 市 区` +「定位」胶囊按钮）、详细地址（多行）、邮政编码（选填，API 保留）
+1. **收货信息**：收货人、手机号、所在地区（只读展示 `省 市 区` +「定位」胶囊按钮）、详细地址（多行）；**不展示邮政编码**
 2. **默认设置**：设为默认；首个地址强制默认且开关禁用
 
 所在地区：

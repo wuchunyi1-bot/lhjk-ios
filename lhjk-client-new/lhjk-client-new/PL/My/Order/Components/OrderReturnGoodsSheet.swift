@@ -1,84 +1,66 @@
 import UIKit
 import SnapKit
 
-/// 去退货底部抽屉 — 对齐 funde `OrderReturnDialog.vue`
-/// 提交：`POST /v1/orderClearing/submitReturnGoods`
+/// 去退货客服指引底部弹窗 — 对齐 Figma 5607:21157 设计稿
+/// 引导用户联系客服办理实物商品退货
 final class OrderReturnGoodsSheet: UIViewController {
 
-    enum Method: Equatable {
-        case selfDelivery
-        case expressReturn
-    }
+    /// 默认客服电话
+    static let defaultPhoneNumber = "0755-61909838"
 
-    struct Submission: Equatable {
-        let method: Method
-        let logisticsCompany: String?
-        let trackingNo: String?
-    }
+    var onClose: (() -> Void)?
+    var onCall: (() -> Void)?
 
-    /// 校验通过后回调；调用方负责网络提交
-    var onSubmit: ((Submission) -> Void)?
-
-    private let returnAddressText: String
-    private var isSubmitting = false
+    private let phoneNumber: String
 
     private let dimView = UIView()
     private let panel = UIView()
-    private let grabber = UIView()
     private let titleLabel = UILabel()
-    private let subtitleLabel = UILabel()
-    private let selfDeliveryButton = UIButton(type: .system)
-    private let expressButton = UIButton(type: .system)
-    private let addressBox = UIView()
-    private let addressCaption = UILabel()
-    private let addressValue = UILabel()
-    private let logisticsStack = UIStackView()
-    private let logisticsCompanyButton = UIButton(type: .system)
-    private let trackingField = UITextField()
-    private let cancelButton = UIButton(type: .system)
-    private let submitButton = UIButton(type: .system)
-    private let keyboardSupport = OrderBottomSheetKeyboardSupport()
+    private let closeButton = UIButton(type: .custom)
+
+    private let noticeBar = UIView()
+    private let noticeIconView = UIImageView()
+    private let noticeLabel = UILabel()
+
+    private let contactCard = UIView()
+    private let phoneTitleLabel = UILabel()
+    private let phoneNumberLabel = UILabel()
+    private let csAvatarImageView = UIImageView()
+
+    private let callButton = UIButton(type: .system)
+
     private var panelBottomConstraint: Constraint?
 
-    private var selectedMethod: Method?
-    private var selectedCompany: String?
-    private var logisticsCompanies: [String] {
-        DictionaryCacheService.shared.optionNames(parent: .logistics)
-    }
-
-    init(returnAddress: String? = nil) {
-        let trimmed = returnAddress?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        self.returnAddressText = trimmed.isEmpty ? "退货地址待补充" : trimmed
+    init(phoneNumber: String = defaultPhoneNumber) {
+        let trimmed = phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.phoneNumber = trimmed.isEmpty ? Self.defaultPhoneNumber : trimmed
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .overFullScreen
         modalTransitionStyle = .crossDissolve
     }
 
-    required init?(coder: NSCoder) { fatalError() }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .clear
         buildUI()
-        applyMethodSelection(nil)
-        updateLogisticsCompanyTitle()
     }
 
-    func setSubmitting(_ submitting: Bool) {
-        isSubmitting = submitting
-        submitButton.isEnabled = !submitting
-        submitButton.alpha = submitting ? 0.6 : 1
-        cancelButton.isEnabled = !submitting
-        submitButton.setTitle(submitting ? "提交中…" : "提交", for: .normal)
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        animateIn()
     }
 
-    // MARK: - UI
+    // MARK: - UI Construction
 
     private func buildUI() {
-        dimView.backgroundColor = UIColor.black.withAlphaComponent(0.35)
+        dimView.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        dimView.alpha = 0
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleDismiss))
+        dimView.addGestureRecognizer(tap)
         view.addSubview(dimView)
         dimView.snp.makeConstraints { $0.edges.equalToSuperview() }
-        keyboardSupport.dimTapDismissesKeyboardOnly(dimView: dimView)
 
         panel.backgroundColor = .fdSurface
         panel.layer.cornerRadius = 16
@@ -86,401 +68,206 @@ final class OrderReturnGoodsSheet: UIViewController {
         view.addSubview(panel)
         panel.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
-            panelBottomConstraint = $0.bottom.equalToSuperview().constraint
-        }
-        keyboardSupport.attach(hostView: view, panelBottomConstraint: panelBottomConstraint!)
-
-        grabber.backgroundColor = .fdBorder
-        grabber.layer.cornerRadius = 2
-        panel.addSubview(grabber)
-        grabber.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(10)
-            $0.centerX.equalToSuperview()
-            $0.width.equalTo(36)
-            $0.height.equalTo(4)
+            panelBottomConstraint = $0.bottom.equalToSuperview().offset(360).constraint
         }
 
+        // Title
         titleLabel.text = "去退货"
-        titleLabel.font = .fdFont(ofSize: 18, weight: .semibold)
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
         titleLabel.textColor = .fdText
+        titleLabel.textAlignment = .center
         panel.addSubview(titleLabel)
         titleLabel.snp.makeConstraints {
-            $0.top.equalTo(grabber.snp.bottom).offset(16)
+            $0.top.equalToSuperview().offset(18)
+            $0.centerX.equalToSuperview()
+            $0.height.equalTo(25)
+        }
+
+        // Close Button
+        closeButton.setImage(UIImage(named: "order_return_close"), for: .normal)
+        closeButton.contentMode = .center
+        closeButton.addTarget(self, action: #selector(handleDismiss), for: .touchUpInside)
+        panel.addSubview(closeButton)
+        closeButton.snp.makeConstraints {
+            $0.trailing.equalToSuperview().offset(-8)
+            $0.centerY.equalTo(titleLabel)
+            $0.size.equalTo(44)
+        }
+
+        // Notice Bar
+        let noticeBgColor = UIColor(hexString: "#FFF9F6")
+        noticeBar.backgroundColor = noticeBgColor
+        noticeBar.layer.cornerRadius = 8
+        noticeBar.layer.masksToBounds = true
+        panel.addSubview(noticeBar)
+        noticeBar.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(33)
         }
 
-        subtitleLabel.text = "请选择退货方式并提交退货信息。"
-        subtitleLabel.font = .fdFont(ofSize: 13, weight: .regular)
-        subtitleLabel.textColor = .fdSubtext
-        subtitleLabel.numberOfLines = 0
-        panel.addSubview(subtitleLabel)
-        subtitleLabel.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(8)
+        noticeIconView.image = UIImage(named: "order_return_notice_speaker")
+        noticeIconView.contentMode = .scaleAspectFit
+        noticeBar.addSubview(noticeIconView)
+        noticeIconView.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(10)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(18)
+        }
+
+        noticeLabel.text = "实物商品需要寄回，请联系客服办理退货"
+        noticeLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        noticeLabel.textColor = .fdPrimary
+        noticeBar.addSubview(noticeLabel)
+        noticeLabel.snp.makeConstraints {
+            $0.leading.equalTo(noticeIconView.snp.trailing).offset(6)
+            $0.trailing.lessThanOrEqualToSuperview().offset(-10)
+            $0.centerY.equalToSuperview()
+        }
+
+        // Contact Card
+        contactCard.backgroundColor = noticeBgColor
+        contactCard.layer.cornerRadius = 12
+        contactCard.layer.masksToBounds = false
+        panel.addSubview(contactCard)
+        contactCard.snp.makeConstraints {
+            $0.top.equalTo(noticeBar.snp.bottom).offset(12)
             $0.leading.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(87)
         }
 
-        styleMethodButton(selfDeliveryButton, title: "自行送回")
-        styleMethodButton(expressButton, title: "快递寄回")
-        selfDeliveryButton.addTarget(self, action: #selector(selectSelfDelivery), for: .touchUpInside)
-        expressButton.addTarget(self, action: #selector(selectExpress), for: .touchUpInside)
-
-        let methodsRow = UIStackView(arrangedSubviews: [selfDeliveryButton, expressButton])
-        methodsRow.axis = .horizontal
-        methodsRow.spacing = 12
-        methodsRow.distribution = .fillEqually
-        panel.addSubview(methodsRow)
-        methodsRow.snp.makeConstraints {
-            $0.top.equalTo(subtitleLabel.snp.bottom).offset(16)
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(44)
+        phoneTitleLabel.text = "客服电话"
+        phoneTitleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        phoneTitleLabel.textColor = .fdText
+        contactCard.addSubview(phoneTitleLabel)
+        phoneTitleLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(18)
+            $0.leading.equalToSuperview().offset(20)
         }
 
-        addressBox.backgroundColor = .fdSurface2
-        addressBox.layer.cornerRadius = 8
-
-        addressCaption.text = "送回地址"
-        addressCaption.font = .fdFont(ofSize: 13, weight: .regular)
-        addressCaption.textColor = .fdSubtext
-        addressValue.text = returnAddressText
-        addressValue.font = .fdFont(ofSize: 15, weight: .semibold)
-        addressValue.textColor = .fdText
-        addressValue.numberOfLines = 0
-        let addressCol = UIStackView(arrangedSubviews: [addressCaption, addressValue])
-        addressCol.axis = .vertical
-        addressCol.spacing = 8
-        addressBox.addSubview(addressCol)
-        addressCol.snp.makeConstraints {
-            $0.edges.equalToSuperview().inset(12)
+        phoneNumberLabel.text = phoneNumber
+        phoneNumberLabel.font = .fdFont(ofSize: 18, weight: .medium)
+        phoneNumberLabel.textColor = .fdText
+        contactCard.addSubview(phoneNumberLabel)
+        phoneNumberLabel.snp.makeConstraints {
+            $0.top.equalTo(phoneTitleLabel.snp.bottom).offset(8)
+            $0.leading.equalToSuperview().offset(20)
         }
 
-        logisticsStack.axis = .vertical
-        logisticsStack.spacing = 16
-
-        logisticsCompanyButton.contentHorizontalAlignment = .left
-        logisticsCompanyButton.titleLabel?.font = .fdFont(ofSize: 15, weight: .regular)
-        logisticsCompanyButton.setTitleColor(.fdText, for: .normal)
-        logisticsCompanyButton.backgroundColor = .fdSurface
-        logisticsCompanyButton.layer.cornerRadius = 8
-        logisticsCompanyButton.layer.borderWidth = 1
-        logisticsCompanyButton.layer.borderColor = UIColor.fdBorder.cgColor
-        logisticsCompanyButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
-        logisticsCompanyButton.snp.makeConstraints { $0.height.equalTo(44) }
-        logisticsCompanyButton.addTarget(self, action: #selector(pickLogisticsCompany), for: .touchUpInside)
-
-        trackingField.font = .fdFont(ofSize: 15, weight: .regular)
-        trackingField.textColor = .fdText
-        trackingField.placeholder = "请输入物流单号"
-        trackingField.borderStyle = .none
-        trackingField.backgroundColor = .fdSurface
-        trackingField.layer.cornerRadius = 8
-        trackingField.layer.borderWidth = 1
-        trackingField.layer.borderColor = UIColor.fdBorder.cgColor
-        trackingField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 44))
-        trackingField.leftViewMode = .always
-        trackingField.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 44))
-        trackingField.rightViewMode = .always
-        trackingField.autocapitalizationType = .allCharacters
-        trackingField.returnKeyType = .done
-        trackingField.delegate = self
-        trackingField.snp.makeConstraints { $0.height.equalTo(44) }
-
-        let companyField = makeLabeledField(
-            title: "物流名称",
-            required: true,
-            control: logisticsCompanyButton
-        )
-        let trackingLabeled = makeLabeledField(title: "物流单号", required: true, control: trackingField)
-        logisticsStack.addArrangedSubview(companyField)
-        logisticsStack.addArrangedSubview(trackingLabeled)
-
-        let detailStack = UIStackView(arrangedSubviews: [addressBox, logisticsStack])
-        detailStack.axis = .vertical
-        detailStack.spacing = 16
-        panel.addSubview(detailStack)
-        detailStack.snp.makeConstraints {
-            $0.top.equalTo(methodsRow.snp.bottom).offset(16)
-            $0.leading.trailing.equalToSuperview().inset(16)
+        csAvatarImageView.image = UIImage(named: "order_return_cs_avatar")
+        csAvatarImageView.contentMode = .scaleAspectFit
+        contactCard.addSubview(csAvatarImageView)
+        csAvatarImageView.snp.makeConstraints {
+            $0.trailing.equalToSuperview().offset(-8)
+            $0.bottom.equalToSuperview()
+            $0.width.equalTo(122)
+            $0.height.equalTo(105)
         }
 
-        cancelButton.setTitle("取消", for: .normal)
-        cancelButton.setTitleColor(.fdText, for: .normal)
-        cancelButton.titleLabel?.font = .fdFont(ofSize: 15, weight: .semibold)
-        cancelButton.backgroundColor = .fdSurface
-        cancelButton.layer.cornerRadius = 22
-        cancelButton.layer.borderWidth = 1
-        cancelButton.layer.borderColor = UIColor.fdBorder.cgColor
-        cancelButton.addTarget(self, action: #selector(dismissSheet), for: .touchUpInside)
-
-        submitButton.setTitle("提交", for: .normal)
-        submitButton.setTitleColor(.white, for: .normal)
-        submitButton.titleLabel?.font = .fdFont(ofSize: 15, weight: .semibold)
-        submitButton.backgroundColor = .fdPrimary
-        submitButton.layer.cornerRadius = 22
-        submitButton.addTarget(self, action: #selector(submit), for: .touchUpInside)
-
-        let actions = UIStackView(arrangedSubviews: [cancelButton, submitButton])
-        actions.axis = .horizontal
-        actions.spacing = 12
-        actions.distribution = .fillEqually
-        panel.addSubview(actions)
-        actions.snp.makeConstraints {
-            $0.top.equalTo(detailStack.snp.bottom).offset(20)
+        // Call Button
+        callButton.setTitle("点击拨打客服电话", for: .normal)
+        callButton.setTitleColor(.white, for: .normal)
+        callButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
+        callButton.backgroundColor = .fdPrimary
+        callButton.layer.cornerRadius = 22
+        callButton.layer.masksToBounds = true
+        callButton.addTarget(self, action: #selector(handleCall), for: .touchUpInside)
+        panel.addSubview(callButton)
+        callButton.snp.makeConstraints {
+            $0.top.equalTo(contactCard.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.height.equalTo(44)
             $0.bottom.equalTo(panel.safeAreaLayoutGuide).offset(-12)
         }
     }
 
-    private func styleMethodButton(_ button: UIButton, title: String) {
-        button.setTitle(title, for: .normal)
-        button.titleLabel?.font = .fdFont(ofSize: 15, weight: .regular)
-        button.layer.cornerRadius = 8
-        button.layer.borderWidth = 1
-        button.backgroundColor = .fdSurface
-    }
+    // MARK: - Animations
 
-    private func makeLabeledField(title: String, required: Bool, control: UIView) -> UIView {
-        let titleLabel = UILabel()
-        let attr = NSMutableAttributedString(
-            string: title + " ",
-            attributes: [
-                .font: UIFont.fdFont(ofSize: 15, weight: .semibold),
-                .foregroundColor: UIColor.fdText,
-            ]
-        )
-        if required {
-            attr.append(NSAttributedString(
-                string: "*",
-                attributes: [
-                    .font: UIFont.fdFont(ofSize: 15, weight: .semibold),
-                    .foregroundColor: UIColor.fdDanger,
-                ]
-            ))
-        }
-        titleLabel.attributedText = attr
-        let col = UIStackView(arrangedSubviews: [titleLabel, control])
-        col.axis = .vertical
-        col.spacing = 8
-        return col
-    }
-
-    private func applyMethodSelection(_ method: Method?) {
-        selectedMethod = method
-        let selfSelected = method == .selfDelivery
-        let expressSelected = method == .expressReturn
-
-        paintMethodButton(selfDeliveryButton, selected: selfSelected)
-        paintMethodButton(expressButton, selected: expressSelected)
-
-        addressBox.isHidden = !selfSelected
-        logisticsStack.isHidden = !expressSelected
-    }
-
-    private func paintMethodButton(_ button: UIButton, selected: Bool) {
-        if selected {
-            button.layer.borderColor = UIColor.fdPrimary.cgColor
-            button.backgroundColor = .fdPrimarySoft
-            button.setTitleColor(.fdPrimary, for: .normal)
-        } else {
-            button.layer.borderColor = UIColor.fdBorder.cgColor
-            button.backgroundColor = .fdSurface
-            button.setTitleColor(.fdText, for: .normal)
+    private func animateIn() {
+        panelBottomConstraint?.update(offset: 0)
+        UIView.animate(withDuration: 0.28, delay: 0, options: [.curveEaseOut]) {
+            self.dimView.alpha = 1
+            self.view.layoutIfNeeded()
         }
     }
 
-    private func updateLogisticsCompanyTitle() {
-        if let selectedCompany {
-            logisticsCompanyButton.setTitle(selectedCompany, for: .normal)
-            logisticsCompanyButton.setTitleColor(.fdText, for: .normal)
-        } else {
-            logisticsCompanyButton.setTitle("请选择物流名称", for: .normal)
-            logisticsCompanyButton.setTitleColor(.fdMuted, for: .normal)
+    private func animateOut(completion: @escaping () -> Void) {
+        panelBottomConstraint?.update(offset: 360)
+        UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseIn]) {
+            self.dimView.alpha = 0
+            self.view.layoutIfNeeded()
+        } completion: { _ in
+            completion()
         }
     }
 
     // MARK: - Actions
 
-    @objc private func selectSelfDelivery() {
-        guard !isSubmitting else { return }
-        view.endEditing(true)
-        applyMethodSelection(.selfDelivery)
+    @objc private func handleDismiss() {
+        animateOut { [weak self] in
+            self?.dismiss(animated: false) {
+                self?.onClose?()
+            }
+        }
     }
 
-    @objc private func selectExpress() {
-        guard !isSubmitting else { return }
-        applyMethodSelection(.expressReturn)
+    @objc private func handleCall() {
+        onCall?()
+        callCustomerService()
     }
 
-    @objc private func pickLogisticsCompany() {
-        guard !isSubmitting else { return }
-        let companies = logisticsCompanies
-        guard !companies.isEmpty else {
-            presentToast("物流列表加载中，请稍后重试")
+    private func callCustomerService() {
+        let rawPhone = phoneNumber
+        let sanitized = rawPhone.filter { $0.isNumber }
+        guard !sanitized.isEmpty, let url = URL(string: "tel://\(sanitized)") else {
+            copyPhoneAndToast(rawPhone)
             return
         }
-        let sheet = UIAlertController(title: "选择物流名称", message: nil, preferredStyle: .actionSheet)
-        for name in companies {
-            sheet.addAction(UIAlertAction(title: name, style: .default) { [weak self] _ in
-                self?.selectedCompany = name
-                self?.updateLogisticsCompanyTitle()
-            })
-        }
-        sheet.addAction(UIAlertAction(title: "取消", style: .cancel))
-        if let pop = sheet.popoverPresentationController {
-            pop.sourceView = logisticsCompanyButton
-            pop.sourceRect = logisticsCompanyButton.bounds
-        }
-        present(sheet, animated: true)
-    }
 
-    @objc private func dismissSheet() {
-        guard !isSubmitting else { return }
-        view.endEditing(true)
-        dismiss(animated: true)
-    }
-
-    @objc private func submit() {
-        guard !isSubmitting else { return }
-        view.endEditing(true)
-        guard let method = selectedMethod else {
-            presentToast("请选择退货方式")
-            return
-        }
-        switch method {
-        case .selfDelivery:
-            onSubmit?(.init(method: .selfDelivery, logisticsCompany: nil, trackingNo: nil))
-        case .expressReturn:
-            guard let company = selectedCompany, !company.isEmpty else {
-                presentToast("请选择物流名称")
-                return
+        if UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url, options: [:]) { [weak self] success in
+                if !success {
+                    self?.copyPhoneAndToast(rawPhone)
+                }
             }
-            let tracking = trackingField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            guard !tracking.isEmpty else {
-                presentToast("请填写物流单号")
-                return
-            }
-            onSubmit?(.init(method: .expressReturn, logisticsCompany: company, trackingNo: tracking))
+        } else {
+            copyPhoneAndToast(rawPhone)
         }
     }
 
-    func presentToast(_ message: String) {
-        showToastAlert(message, duration: 1.2)
+    private func copyPhoneAndToast(_ phone: String) {
+        UIPasteboard.general.string = phone
+        showToastAlert("客服电话已复制：\(phone)", duration: 1.5)
     }
 }
 
-extension OrderReturnGoodsSheet: UITextFieldDelegate {
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        textField.resignFirstResponder()
-        return true
-    }
-}
-
-// MARK: - Flow
+// MARK: - Flow Coordinator
 
 enum OrderReturnGoodsFlow {
 
+    /// 订单列表点击「去退货」统一入口
     static func present(
         from presenter: UIViewController,
         order: MOrder,
         onSuccess: (() -> Void)? = nil
     ) {
-        guard let refundId = order.refundId, refundId > 0 else {
-            showToast(on: presenter, message: "退款单信息缺失，暂无法退货")
-            return
+        let sheet = OrderReturnGoodsSheet()
+        sheet.onCall = {
+            onSuccess?()
         }
-        let address = order.hospitalName.map { "\($0)" }
-        presentSheet(
-            from: presenter,
-            refundId: refundId,
-            returnAddress: address,
-            onSuccess: onSuccess
-        )
+        presenter.present(sheet, animated: false)
     }
 
+    /// 订单详情点击「去退货」统一入口
     static func present(
         from presenter: UIViewController,
         detail: AppOrderDetailBO,
         onSuccess: (() -> Void)? = nil
     ) {
-        guard let refundId = detail.refundId, refundId > 0 else {
-            showToast(on: presenter, message: "退款单信息缺失，暂无法退货")
-            return
+        let sheet = OrderReturnGoodsSheet()
+        sheet.onCall = {
+            onSuccess?()
         }
-        let address = [
-            detail.hospitalName,
-            detail.address,
-        ]
-            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .first { !$0.isEmpty }
-        presentSheet(
-            from: presenter,
-            refundId: refundId,
-            returnAddress: address,
-            onSuccess: onSuccess
-        )
-    }
-
-    private static func presentSheet(
-        from presenter: UIViewController,
-        refundId: Int64,
-        returnAddress: String?,
-        onSuccess: (() -> Void)?
-    ) {
-        let sheet = OrderReturnGoodsSheet(returnAddress: returnAddress)
-        sheet.onSubmit = { [weak presenter, weak sheet] submission in
-            guard let presenter, let sheet else { return }
-            submit(
-                from: presenter,
-                sheet: sheet,
-                refundId: refundId,
-                submission: submission,
-                onSuccess: onSuccess
-            )
-        }
-        presenter.present(sheet, animated: true)
-    }
-
-    private static func submit(
-        from presenter: UIViewController,
-        sheet: OrderReturnGoodsSheet,
-        refundId: Int64,
-        submission: OrderReturnGoodsSheet.Submission,
-        onSuccess: (() -> Void)?
-    ) {
-        let dto: ReturnGoodsSubmitDTO
-        switch submission.method {
-        case .selfDelivery:
-            dto = .selfDelivery(refundId: refundId)
-        case .expressReturn:
-            guard let company = submission.logisticsCompany, let tracking = submission.trackingNo else {
-                sheet.presentToast("请完善物流信息")
-                return
-            }
-            dto = .express(refundId: refundId, logisticsName: company, logisticsId: tracking)
-        }
-
-        sheet.setSubmitting(true)
-        Task {
-            do {
-                try await OrderService.shared.submitReturnGoods(dto)
-                await MainActor.run {
-                    sheet.setSubmitting(false)
-                    sheet.dismiss(animated: true) {
-                        NotificationCenter.default.post(name: .orderListNeedsRefresh, object: nil)
-                        onSuccess?()
-                        showToast(on: presenter, message: "退货信息已提交")
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    sheet.setSubmitting(false)
-                    sheet.presentToast(error.localizedDescription)
-                }
-            }
-        }
-    }
-
-    private static func showToast(on presenter: UIViewController, message: String) {
-        presenter.showToastAlert(message, duration: 1.5)
+        presenter.present(sheet, animated: false)
     }
 }

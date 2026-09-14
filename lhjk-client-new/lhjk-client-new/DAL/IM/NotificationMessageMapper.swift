@@ -57,11 +57,22 @@ enum NotificationMessageMapper {
         Router.shared.push(parsed.path, params: parsed.params, from: viewController)
     }
 
-    /// 将 `businessData` 中的 `orderId` / `id` 拼入 `FundeApp:` 或 `/path` 路由，供 IM 卡片跳转与通知中心共用
+    /// 将 `businessData` 中的 `taskId` / `orderId` 拼入路由，供 IM 卡片与通知中心共用
     static func enrichedPageUrl(_ route: String, businessData: [String: Any]?) -> String {
         let trimmed = route.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, let businessData else { return trimmed }
-        return withBusinessId(trimmed, source: businessData) ?? trimmed
+        return withBusinessQuery(trimmed, source: businessData) ?? trimmed
+    }
+
+    /// urlKey 已有 query 时不覆盖；否则用 `businessData.taskId` 补上，与健康任务 `/supplement/add?taskId=` 对齐
+    static func appendingTaskId(_ route: String, taskId: String?) -> String {
+        let trimmed = route.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return trimmed }
+        let id = taskId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !id.isEmpty else { return trimmed }
+        if trimmed.lowercased().contains("taskid=") { return trimmed }
+        let sep = trimmed.contains("?") ? "&" : "?"
+        return "\(trimmed)\(sep)taskId=\(id)"
     }
 
     // MARK: - Parse
@@ -116,7 +127,7 @@ enum NotificationMessageMapper {
                 icon: IMCardJSON.stringValue(source["icon"]),
                 iconBg: IMCardJSON.stringValue(source["iconBg"]),
                 iconColor: IMCardJSON.stringValue(source["iconColor"]),
-                route: withBusinessId(
+                route: withBusinessQuery(
                     firstNonEmpty(
                         IMCardJSON.stringValue(source["route"]),
                         IMCardJSON.stringValue(source["url"]),
@@ -132,7 +143,7 @@ enum NotificationMessageMapper {
         let displayBody = body.isEmpty ? (fallbackBody ?? "") : body
         guard !displayBody.isEmpty else { return nil }
 
-        let route = withBusinessId(
+        let route = withBusinessQuery(
             firstNonEmpty(
                 IMCardJSON.stringValue(source["route"]),
                 IMCardJSON.stringValue(source["url"]),
@@ -291,9 +302,10 @@ enum NotificationMessageMapper {
         return path
     }
 
-    /// `urlKey` 常只有 path，订单 id 在 businessData
-    private static func withBusinessId(_ route: String?, source: [String: Any]) -> String? {
+    /// `urlKey` 常只有 path；`taskId` 在 businessData，订单 id 也可能在 businessData
+    private static func withBusinessQuery(_ route: String?, source: [String: Any]) -> String? {
         guard var route, !route.isEmpty else { return route }
+        route = appendingTaskId(route, taskId: firstNonEmpty(IMCardJSON.stringValue(source["taskId"])))
         let id = firstNonEmpty(
             IMCardJSON.stringValue(source["orderId"]),
             IMCardJSON.stringValue(source["id"])

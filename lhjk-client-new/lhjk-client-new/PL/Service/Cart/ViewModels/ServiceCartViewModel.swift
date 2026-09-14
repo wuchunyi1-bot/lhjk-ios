@@ -105,6 +105,7 @@ final class ServiceCartViewModel: ObservableObject {
                 isDeleting = false
                 toastMessage = "已删除"
             }
+            ShoppingCartBadgeStore.shared.refresh()
         } catch {
             guard !Task.isCancelled else { return }
             await MainActor.run {

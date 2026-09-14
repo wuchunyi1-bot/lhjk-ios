@@ -13,7 +13,7 @@
 **Goals:**
 
 - 设置主页四组六项 UI + 路由
-- 协议与说明 6 条静态入口 + 详情只读页
+- 协议与说明 7 条静态入口 + 详情只读页
 - 清理缓存本页回显
 
 **Non-Goals:**
@@ -27,7 +27,7 @@
 1. **分组标题在卡片外**：与 Vue `.settings-group__title` 一致（次要色、14 semibold）。
 2. **行布局**：36×36 圆角图标底（`fdPrimarySoft` + SF Symbol）+ label/desc + chevron；清理缓存的 desc 绑定缓存大小字符串。
 3. **缓存**：UserDefaults `fd_settings_cache_size`，默认 `12.8 MB`；清理写 `0 B` 并 toast；同时清 Kingfisher 磁盘缓存（增强真实感，不影响文案回显规则）。
-4. **协议详情路由**：`/auth/agreement/{docType}`，docType ∈ `user|privacy|consent|personal-info|third-party-sharing|benefit-card`；未知类型回退 user。
+4. **协议详情路由**：`/auth/agreement/{docType}`，docType ∈ `user|privacy|consent|personal-info|third-party-sharing|member-service|benefit-card`；未知类型回退 user。正文对齐 Vue `agreementMap`（会员服务协议、权益卡使用规则含 2026-09-10 全文）。
 5. **登出**：仅保留在「我的」Hub，设置页不再展示。
 
 ## Risks / Trade-offs

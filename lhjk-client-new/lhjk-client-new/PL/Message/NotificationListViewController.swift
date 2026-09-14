@@ -28,20 +28,12 @@ final class NotificationListViewController: UIViewController, UITableViewDataSou
         return tv
     }()
 
-    private lazy var emptyContainer: UIView = {
-        let v = UIView()
+    private lazy var emptyView: FDEmptyStateView = {
+        let v = FDEmptyStateView(style: .compact, message: "暂无通知")
         v.backgroundColor = .white
         v.layer.cornerRadius = 16
         v.clipsToBounds = true
         v.isHidden = true
-
-        let label = UILabel()
-        label.text = "暂无通知"
-        label.font = .fdCaption
-        label.textColor = .fdMuted
-        label.textAlignment = .center
-        v.addSubview(label)
-        label.snp.makeConstraints { $0.center.equalToSuperview() }
         return v
     }()
 
@@ -52,16 +44,16 @@ final class NotificationListViewController: UIViewController, UITableViewDataSou
         view.backgroundColor = .clear
 
         view.addSubview(tableView)
-        view.addSubview(emptyContainer)
+        view.addSubview(emptyView)
 
         tableView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
 
-        emptyContainer.snp.makeConstraints { make in
+        emptyView.snp.makeConstraints { make in
             make.top.equalToSuperview()
             make.leading.trailing.equalToSuperview().inset(12)
-            make.height.equalTo(180)
+            make.height.equalTo(240)
         }
 
         IMService.shared.notificationsDidChangePublisher
@@ -104,7 +96,7 @@ final class NotificationListViewController: UIViewController, UITableViewDataSou
     }
 
     private func reloadUI() {
-        emptyContainer.isHidden = !notifications.isEmpty
+        emptyView.isHidden = !notifications.isEmpty
         tableView.reloadData()
         onDataChanged?()
     }

@@ -170,7 +170,7 @@ final class OrderConfirmViewController: BaseViewController {
     }
 
     @objc private func handleCartCheckoutBack() {
-        OrderNavigationCoordinator.navigateToMyOrdersAll(from: self)
+        OrderNavigationCoordinator.navigateToMyOrdersPendingPayment(from: self)
     }
 
     override func bindViewModel() {
@@ -188,6 +188,11 @@ final class OrderConfirmViewController: BaseViewController {
             .store(in: &cancellables)
 
         viewModel.$fulfillment
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.render() }
+            .store(in: &cancellables)
+
+        viewModel.$deliveryAddress
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.render() }
             .store(in: &cancellables)
@@ -217,6 +222,21 @@ final class OrderConfirmViewController: BaseViewController {
             .sink { [weak self] _ in self?.render() }
             .store(in: &cancellables)
 
+        viewModel.$availableCouponCount
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.render() }
+            .store(in: &cancellables)
+
+        viewModel.$availableBenefitCount
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.render() }
+            .store(in: &cancellables)
+
+        viewModel.$selectedBenefitIds
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.render() }
+            .store(in: &cancellables)
+
         viewModel.$toastMessage
             .compactMap { $0 }
             .receive(on: DispatchQueue.main)
@@ -234,7 +254,7 @@ final class OrderConfirmViewController: BaseViewController {
                 guard let self else { return }
                 self.viewModel.consumeNavigationFlags()
                 if self.entry == .cartCheckout {
-                    OrderNavigationCoordinator.navigateToMyOrdersAll(from: self)
+                    OrderNavigationCoordinator.navigateToMyOrdersPendingPayment(from: self)
                 } else {
                     self.navigationController?.popViewController(animated: true)
                 }
@@ -424,7 +444,8 @@ final class OrderConfirmViewController: BaseViewController {
     private func handlePendingPaymentCancel() {
         guard showsOrderListPayPresentation else { return }
         let onSuccess: (OrderCancelFlow.Result) -> Void = { [weak self] _ in
-            self?.navigationController?.popViewController(animated: true)
+            guard let self else { return }
+            OrderNavigationCoordinator.leaveCancelledOrderToAllList(from: self)
         }
         if let detail = viewModel.orderDetail {
             OrderCancelFlow.start(from: self, detail: detail, onSuccess: onSuccess)

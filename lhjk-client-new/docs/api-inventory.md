@@ -16,7 +16,7 @@
 | 不计入本表 | 路由 `/auth/agreement/*`；融云 SDK；OSS 预签名 PUT；媒体 URLSession 下载；`PaymentService`（无 path） |
 | 不写入本表 | App **未调用** 的 Apifox 接口（如 `GET /v1/coupon/getCouponList`）；历史误写 path（如 `getPackageDetail`，已不存在） |
 
-**唯一后端 path 合计：46**（`POST /auth/oauth2/token` 计 1 条）。
+**唯一后端 path 合计：48**（`POST /auth/oauth2/token` 计 1 条）。
 
 ---
 
@@ -66,8 +66,10 @@ App端/
 │   ├── 商城退款订单相关接口
 │   └── 优惠券领用 / 员工权益卡管理
 ├── 内容/
-│   └── 展示位内容设置管理
-│       └── GET /v1/columnContent/getByCode
+│   ├── 展示位内容设置管理
+│   │   └── GET /v1/columnContent/getByCode
+│   └── 版本管理
+│       └── GET /v1/version/getLatestVersionForApp
 ├── IM/
 │   ├── 群组会话
 │   │   ├── GET /v1/session/getGroup
@@ -116,7 +118,7 @@ App端/
 | 5a | GET | `/v1/users/getUserCenterOverview` | `App端/系统/用户管理` | `UserService` / `MyViewModel` | [个人中心概览](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503199941e0.md) |
 | 6 | POST | `/v1/users/resetPasswordByMobile` | `App端/系统/用户管理` | `UserService` | [重置密码](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/476633097e0.md) |
 | 7 | POST | `/v1/users/changeMobile` | `App端/系统/用户管理` | `UserService` | [改手机号](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330847e0.md) |
-| 8 | POST | `/v1/users/cancelCurrentUser` | `App端/系统/用户管理` | `UserService` | [注销](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/483911256e0.md) |
+| 8 | POST | `/v1/users/cancelCurrentUser` | `App端/系统/用户管理` | `UserService` | [注销](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/483911256e0.md)；业务码 `O0012` 表示有未完成订单，`data` 为订单 id |
 | 9 | POST | `/v1/users/changeCurrentPassword` | `App端/系统/用户管理` | `UserService` | [改当前密码](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/476633098e0.md) |
 | 9a | GET | `/v1/users/getWechatBindStatus` | `App端/系统/用户管理` | `UserService` / `SecuritySettingsViewController` / `WechatAuthorizationViewController` | 查询当前用户微信绑定状态（Apifox OAS: `getWechatBindStatus`，响应 `bound: Bool`） |
 | 9b | POST | `/v1/users/bindWechat` | `App端/系统/用户管理` | `UserService` / `WechatAuthorizationViewController` | 为当前用户绑定微信账号（Apifox OAS: `bindWechat`，Query `code`） |
@@ -147,6 +149,7 @@ App端/
 | 20 | POST | `/v1/shoppingCart/saveShoppingCartOrPurchase` | `App端/商城/购物车管理` | `ShoppingCartService` | [加购/购买](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330718e0.md) |
 | 21 | GET | `/v1/shoppingCart/getShoppingCartList` | `App端/商城/购物车管理` | `ShoppingCartService` | [购物车列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330722e0.md) |
 | 22 | DELETE | `/v1/shoppingCart/deleteShoppingCart` | `App端/商城/购物车管理` | `ShoppingCartService` | [删购物车](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330724e0.md) |
+| 22a | GET | `/v1/shoppingCart/getShoppingCartCount` | `App端/商城/购物车管理` | `ShoppingCartService` / `ShoppingCartBadgeStore` | 文档暂无（Apifox OAS：`getShoppingCartCount`，`ResultLong.data` 为当前用户购物车数量；以代码 path 为准） |
 | 23 | GET | `/v1/hospitalPackage/getEnabledHospitalPackagePage` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | [启用套包分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/484150836e0.md) |
 | 24 | GET | `/v1/hospitalPackage/getEnabledRetailHospitalPackagePage` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | [零售套包分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487882770e0.md) |
 | 25 | GET | `/v1/hospitalPackage/getCategoryServiceListByType` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | [业务类别](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487882771e0.md) |
@@ -179,7 +182,10 @@ App端/
 | # | Method | Path | Apifox 层级 | 调用位置 | Apifox（只读） |
 |---|--------|------|-------------|----------|----------------|
 | 36 | GET | `/v1/columnContent/getByCode` | `App端/内容/展示位内容设置管理` | `ColumnContentService` | [栏位内容](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/484052032e0.md) |
+| 36v | GET | `/v1/version/getLatestVersionForApp` | `App端/内容/版本管理` | `AppVersionService` | 文档暂无 / 以代码 path 为准（Apifox OAS `getLatestVersionForApp`） |
 | 36a | GET | `/v1/questionnaire/getSchoolExamUserListCount` | `App端/内容/测评问卷` | `QuestionnaireService` / `MyViewModel` | [测评记录数](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/500500978e0.md) |
+
+> `#36v` Query：`type=1`（iOS）、`versionCode`（`CFBundleVersion` 整数）。响应 `data` 可能为空、`CVersion`，或 `{ isUpdate, isForceInstall, version }`。无更新不弹窗；强制更新不可跳过。
 
 > `#36` Query `code`：服务 Hub Banner = `mall_advertisement`；首页 Banner = `home_banner_code`；首页金刚区 = `home_quickLink_code`；首页推荐健康套餐 = `home_healthService_code`；首页健康陪伴 = `home_news_code`。  
 > 缓存：`ColumnContentCacheService` — 冷启动预拉已知 code 写入内存；界面优先读缓存，未命中再请求；无 TTL，登出清空。  
@@ -239,8 +245,9 @@ App端/
 | `DAL/Networking/OAuthAuthenticator.swift` | 1（复用） | oauth2/token（refresh） |
 | `BLL/User/UserService.swift` | 9 | users/* ×7、archive/* ×2 |
 | `BLL/My/AddressService.swift` | 3 | address/* |
+| `BLL/My/AppVersionService.swift` | 1 | version/getLatestVersionForApp |
 | `BLL/Service/OrderService.swift` | 8 | order/* ×6、orderClearing/submitReturnGoods、orderPay/orderPay |
-| `BLL/Service/ShoppingCartService.swift` | 3 | shoppingCart/* |
+| `BLL/Service/ShoppingCartService.swift` | 4 | shoppingCart/* |
 | `BLL/Service/CouponService.swift` | 2 | couponTake/* |
 | `BLL/My/VoucherService.swift` | 11 | benefitsTake/getCustomerPage、getCustomerStatusCount、getGiftRecordPage、preCheckByKey、bindByKey、giftBenefit、getActivationOverview、getRedeemPageInfo、getRedeemPackagePage、getOrderBenefitsList、updateOrderBenefits |
 | `BLL/Service/HospitalPackageService.swift` | 5 | hospitalPackage/*（含 **getHospitalPackageDetail**、**getEnabledHospitalPackageListByCategory**） |
@@ -266,7 +273,7 @@ App端/
 | `POST /v1/users/changePassword` | Apifox 分享站无文档且 App **无调用**，已从 `UserService` 删除 |
 | 失效链接 `…/485486161e0` | 分享站 404；已从代码注释与清单移除，**不**在 Apifox 补文档 |
 | `GET /v1/coupon/getCouponList` | Apifox 有文档，**本 App 未调用** |
-| 订单绑定权益卡 / 结算权益抵扣字段 | Apifox **文档暂无**；确认订单本期客户端多选试算（复用 35a），不以假 path 调用 |
+| 订单绑定权益卡 | 确认订单选卡后刷新结算；抵扣金额读 `benefitsAmount`（详情 `couponAmount` 为券抵扣） |
 | `/auth/agreement/*` | 协议页路由，非 HTTP API |
 | `/v1/monitor/*`（除 `saveOrUpdateMonitorData`、`getWeightHomePageData`、`delMonitorDataByMonitorId`） | 其它体征录入 path 当前工程无 Swift 调用（多走 H5）；**已封装** `saveOrUpdateMonitorData`、`getWeightHomePageData`、`delMonitorDataByMonitorId` → `EquipmentBindService`；勿与 `/v1/monitorHealth/*` 混淆 |
 

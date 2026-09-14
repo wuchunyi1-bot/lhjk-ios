@@ -84,7 +84,7 @@ Hub 网格独立三列布局（标题 12 / 标签 8 / 数字 12 Medium / 圆环 
 
 ### 4.2 血脂卡（cardType = 14）
 
-Hub 网格独立 2×2 布局（Figma 3543:3452）：标题 12 Regular `#717885`；TC/TG/HDL/LDL 标签与数值均为 12 `#1F2430`（标签 Regular、数值 Medium）；时间 12 Regular `#1F2430`。不展示单位。
+Hub 网格独立 2×2 布局（Figma 3543:3452）：标题 12 Regular `#717885`；TC/TG/HDL/LDL 标签与数值均为 12 `#1F2430`（标签 Regular、数值 Medium）；时间 12 Regular `#717885`（与其它体征卡一致）。不展示单位。
 
 | 格 | 字段 |
 |----|------|
@@ -93,7 +93,7 @@ Hub 网格独立 2×2 布局（Figma 3543:3452）：标题 12 Regular `#717885`�
 | HDL | `monitorData.highDensityLipoprotein` |
 | LDL | `monitorData.lowDensityLipoprotein` |
 
-徽标：`abnormalCount > 0` →「N项异常」；否则 `result`（缺省「正常」）。时间只到日期。
+徽标：`abnormalCount > 0` →「N项异常」；否则 `result`（缺省「正常」）。时间固定 `yyyy-MM-dd`，不带时分。
 
 无四项数据展示「去记录」。跳转优先 `pageUrl`（`FundeH5:/blood-lipid`）。
 

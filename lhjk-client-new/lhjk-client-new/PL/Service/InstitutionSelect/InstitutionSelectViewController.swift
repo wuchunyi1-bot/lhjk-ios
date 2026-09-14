@@ -2,7 +2,7 @@ import UIKit
 import SnapKit
 import Combine
 
-/// 选择服务机构 — 对齐 funde `InstitutionSelectView`
+/// 选择服务机构 — 对齐 Figma `5336:15506`
 final class InstitutionSelectViewController: BaseViewController {
 
     private let viewModel: InstitutionSelectViewModel
@@ -11,15 +11,16 @@ final class InstitutionSelectViewController: BaseViewController {
     /// 选中后回调（Onboarding 等场景）；为 nil 时仅写入 InstitutionSelectionStore 并 pop
     var onInstitutionSelected: ((SelectedServiceInstitution) -> Void)?
 
-    private let locationBar = UIView()
-    private let locationValueLabel = UILabel()
+    private let locationCard = UIView()
+    private let cityLabel = UILabel()
+    private let districtLabel = UILabel()
     private let relocateButton = UIButton(type: .system)
+    private let sheetView = UIView()
     private let searchField = UITextField()
     private let clearButton = UIButton(type: .system)
     private let hintLabel = UILabel()
     private let tableView = UITableView(frame: .zero, style: .plain)
-    private let emptyLabel = UILabel()
-    private let resultCountLabel = UILabel()
+    private let emptyView = FDEmptyStateView(style: .compact, message: "未找到匹配机构\n请尝试搜索机构名称或详细地址")
 
     init(selectedId: String? = nil) {
         self.viewModel = InstitutionSelectViewModel(selectedId: selectedId)
@@ -27,6 +28,11 @@ final class InstitutionSelectViewController: BaseViewController {
     }
 
     required init?(coder: NSCoder) { fatalError() }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
 
     override func setupUI() {
         view.backgroundColor = .fdBg
@@ -38,10 +44,8 @@ final class InstitutionSelectViewController: BaseViewController {
             action: #selector(backTapped)
         )
         navigationItem.leftBarButtonItem?.tintColor = .fdText
-        setupLocationBar()
-        setupSearch()
-        setupTable()
-        setupEmpty()
+        setupLocationCard()
+        setupSheet()
     }
 
     @objc private func backTapped() {
@@ -54,16 +58,19 @@ final class InstitutionSelectViewController: BaseViewController {
     }
 
     override func bindViewModel() {
-        viewModel.$locationLabel
+        Publishers.CombineLatest(viewModel.$cityText, viewModel.$districtText)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] text in self?.locationValueLabel.text = text }
+            .sink { [weak self] city, district in
+                self?.cityLabel.text = city
+                self?.districtLabel.text = district
+                self?.districtLabel.isHidden = district.isEmpty
+            }
             .store(in: &cancellables)
 
         viewModel.$isLocating
             .receive(on: DispatchQueue.main)
             .sink { [weak self] locating in
                 self?.relocateButton.isEnabled = !locating
-                self?.hintLabel.text = locating ? "正在加载服务机构数据..." : "以下为可选择的服务机构"
             }
             .store(in: &cancellables)
 
@@ -72,12 +79,7 @@ final class InstitutionSelectViewController: BaseViewController {
             .sink { [weak self] items in
                 guard let self else { return }
                 self.tableView.reloadData()
-                let searching = !(self.viewModel.keyword.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                self.emptyLabel.isHidden = !items.isEmpty || self.viewModel.isLoadingList
-                self.resultCountLabel.isHidden = !(searching && !items.isEmpty)
-                if searching, !items.isEmpty {
-                    self.resultCountLabel.text = "共找到 \(items.count) 家机构"
-                }
+                self.emptyView.isHidden = !items.isEmpty || self.viewModel.isLoadingList
             }
             .store(in: &cancellables)
 
@@ -85,9 +87,7 @@ final class InstitutionSelectViewController: BaseViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] loading in
                 guard let self else { return }
-                if loading, self.viewModel.items.isEmpty {
-                    self.hintLabel.text = "正在加载服务机构数据..."
-                }
+                self.emptyView.isHidden = !self.viewModel.items.isEmpty || loading
             }
             .store(in: &cancellables)
 
@@ -101,103 +101,161 @@ final class InstitutionSelectViewController: BaseViewController {
 
     // MARK: - UI pieces
 
-    private func setupLocationBar() {
-        locationBar.backgroundColor = .fdPrimarySoft
-        locationBar.layer.cornerRadius = 14
-        locationBar.layer.borderWidth = 1
-        locationBar.layer.borderColor = UIColor.fdPrimaryEdge.cgColor
+    private func setupLocationCard() {
+        locationCard.backgroundColor = .fdSurface
+        locationCard.layer.cornerRadius = 16
+        locationCard.clipsToBounds = true
 
-        let icon = UIImageView(image: UIImage(systemName: "location.fill"))
-        icon.tintColor = .fdPrimary
-        icon.contentMode = .scaleAspectFit
+        let deco = UIImageView(image: UIImage(named: "onboarding_address_bg"))
+        deco.contentMode = .scaleToFill
+        deco.clipsToBounds = true
 
-        let title = UILabel()
-        title.text = "当前定位"
-        title.font = .fdCaption
-        title.textColor = .fdSubtext
+        let iconCircle = UIView()
+        iconCircle.backgroundColor = .fdPrimarySoft
+        iconCircle.layer.cornerRadius = 22
 
-        locationValueLabel.font = .fdBodySemibold
-        locationValueLabel.textColor = .fdText
-        locationValueLabel.numberOfLines = 2
+        let pin = UIImageView(image: UIImage(named: "onboarding_address_icon"))
+        pin.contentMode = .scaleAspectFit
 
-        let textStack = UIStackView(arrangedSubviews: [title, locationValueLabel])
-        textStack.axis = .vertical
-        textStack.spacing = 2
+        let locateTitle = UILabel()
+        locateTitle.text = "当前定位"
+        locateTitle.font = .fdFont(ofSize: 16, weight: .regular)
+        locateTitle.textColor = .fdTabInactive
+
+        cityLabel.font = .fdFont(ofSize: 18, weight: .medium)
+        cityLabel.textColor = .fdText
+        districtLabel.font = .fdFont(ofSize: 18, weight: .medium)
+        districtLabel.textColor = .fdText
+
+        let placeRow = UIStackView(arrangedSubviews: [cityLabel, districtLabel])
+        placeRow.axis = .horizontal
+        placeRow.spacing = 8
+        placeRow.alignment = .center
 
         relocateButton.setTitle("重新定位", for: .normal)
-        relocateButton.titleLabel?.font = .fdCaptionSemibold
+        relocateButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .regular)
         relocateButton.setTitleColor(.fdPrimary, for: .normal)
         relocateButton.addTarget(self, action: #selector(relocateTapped), for: .touchUpInside)
 
-        locationBar.addSubview(icon)
-        locationBar.addSubview(textStack)
-        locationBar.addSubview(relocateButton)
-        view.addSubview(locationBar)
+        locationCard.addSubview(deco)
+        iconCircle.addSubview(pin)
+        locationCard.addSubview(iconCircle)
+        locationCard.addSubview(locateTitle)
+        locationCard.addSubview(placeRow)
+        locationCard.addSubview(relocateButton)
+        view.addSubview(locationCard)
 
-        locationBar.snp.makeConstraints {
+        locationCard.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide).offset(12)
             $0.leading.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(locationCard.snp.width).multipliedBy(80.0 / 343.0)
         }
-        icon.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(14)
+        deco.snp.makeConstraints { $0.edges.equalToSuperview() }
+        iconCircle.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(12)
             $0.centerY.equalToSuperview()
-            $0.size.equalTo(16)
+            $0.size.equalTo(44)
         }
-        textStack.snp.makeConstraints {
-            $0.leading.equalTo(icon.snp.trailing).offset(10)
-            $0.top.bottom.equalToSuperview().inset(12)
-            $0.trailing.lessThanOrEqualTo(relocateButton.snp.leading).offset(-8)
+        pin.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.size.equalTo(32)
+        }
+        locateTitle.snp.makeConstraints {
+            $0.leading.equalTo(iconCircle.snp.trailing).offset(12)
+            $0.top.equalToSuperview().offset(14)
         }
         relocateButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(12)
-            $0.centerY.equalToSuperview()
-            $0.height.equalTo(44)
+            $0.centerY.equalTo(locateTitle)
         }
+        placeRow.snp.makeConstraints {
+            $0.leading.equalTo(locateTitle)
+            $0.top.equalTo(locateTitle.snp.bottom).offset(4)
+            $0.trailing.lessThanOrEqualTo(relocateButton.snp.leading).offset(-8)
+        }
+        locationCard.sendSubviewToBack(deco)
     }
 
-    private func setupSearch() {
-        let searchBox = UIView()
-        searchBox.backgroundColor = .fdSurface
-        searchBox.layer.cornerRadius = 12
-        searchBox.layer.borderWidth = 1
-        searchBox.layer.borderColor = UIColor.fdBorder.cgColor
+    private func setupSheet() {
+        sheetView.backgroundColor = .fdSurface
+        sheetView.layer.cornerRadius = 16
+        sheetView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        sheetView.clipsToBounds = true
+        view.addSubview(sheetView)
 
-        let searchIcon = UIImageView(image: UIImage(systemName: "magnifyingglass"))
-        searchIcon.tintColor = .fdMuted
+        let searchBox = UIView()
+        searchBox.backgroundColor = .fdProductImageBg
+        searchBox.layer.cornerRadius = 12
+
+        let searchIcon = UIImageView(image: .fdNavSearch)
+        searchIcon.tintColor = .fdTabInactive
         searchIcon.contentMode = .scaleAspectFit
 
-        searchField.placeholder = "搜索机构名称或地址"
-        searchField.font = .fdBody
+        searchField.font = .fdFont(ofSize: 16, weight: .regular)
         searchField.textColor = .fdText
         searchField.clearButtonMode = .never
         searchField.returnKeyType = .search
         searchField.addTarget(self, action: #selector(searchChanged), for: .editingChanged)
         searchField.delegate = self
+        searchField.attributedPlaceholder = NSAttributedString(
+            string: "搜索机构名称或地址",
+            attributes: [
+                .font: UIFont.fdFont(ofSize: 16, weight: .regular),
+                .foregroundColor: UIColor.fdTabInactive,
+            ]
+        )
 
         clearButton.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
         clearButton.tintColor = .fdMuted
         clearButton.isHidden = true
         clearButton.addTarget(self, action: #selector(clearSearch), for: .touchUpInside)
 
+        let bell = UIImageView(image: UIImage(named: "change_phone_hint_bell"))
+        bell.contentMode = .scaleAspectFit
+
+        hintLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        hintLabel.textColor = .fdSubtext
+        hintLabel.text = "以下为可选择的服务机构"
+
+        let hintRow = UIStackView(arrangedSubviews: [bell, hintLabel])
+        hintRow.axis = .horizontal
+        hintRow.alignment = .center
+        hintRow.spacing = 4
+
+        tableView.backgroundColor = .clear
+        tableView.separatorStyle = .none
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.keyboardDismissMode = .onDrag
+        tableView.alwaysBounceVertical = true
+        tableView.contentInsetAdjustmentBehavior = .never
+        tableView.register(InstitutionSelectCell.self, forCellReuseIdentifier: InstitutionSelectCell.reuseID)
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 96
+
+        emptyView.isHidden = true
+
         searchBox.addSubview(searchIcon)
         searchBox.addSubview(searchField)
         searchBox.addSubview(clearButton)
-        view.addSubview(searchBox)
+        sheetView.addSubview(searchBox)
+        sheetView.addSubview(hintRow)
+        sheetView.addSubview(tableView)
+        sheetView.addSubview(emptyView)
 
-        hintLabel.font = .fdCaption
-        hintLabel.textColor = .fdSubtext
-        hintLabel.text = "以下为可选择的服务机构"
-        view.addSubview(hintLabel)
-
+        sheetView.snp.makeConstraints {
+            $0.top.equalTo(locationCard.snp.bottom).offset(12)
+            $0.leading.trailing.bottom.equalToSuperview()
+        }
         searchBox.snp.makeConstraints {
-            $0.top.equalTo(locationBar.snp.bottom).offset(12)
+            $0.top.equalToSuperview().offset(16)
             $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(48)
+            $0.height.equalTo(47)
         }
         searchIcon.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(12)
             $0.centerY.equalToSuperview()
-            $0.size.equalTo(18)
+            $0.size.equalTo(16)
         }
         clearButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(8)
@@ -205,57 +263,21 @@ final class InstitutionSelectViewController: BaseViewController {
             $0.size.equalTo(28)
         }
         searchField.snp.makeConstraints {
-            $0.leading.equalTo(searchIcon.snp.trailing).offset(8)
+            $0.leading.equalTo(searchIcon.snp.trailing).offset(6)
             $0.trailing.equalTo(clearButton.snp.leading).offset(-4)
             $0.top.bottom.equalToSuperview()
         }
-        hintLabel.snp.makeConstraints {
-            $0.top.equalTo(searchBox.snp.bottom).offset(12)
+        bell.snp.makeConstraints { $0.size.equalTo(14) }
+        hintRow.snp.makeConstraints {
+            $0.top.equalTo(searchBox.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
-    }
-
-    private func setupTable() {
-        tableView.backgroundColor = .clear
-        tableView.separatorStyle = .none
-        tableView.dataSource = self
-        tableView.delegate = self
-        tableView.keyboardDismissMode = .onDrag
-        tableView.register(InstitutionSelectCell.self, forCellReuseIdentifier: InstitutionSelectCell.reuseID)
-        tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 88
-        view.addSubview(tableView)
-
-        resultCountLabel.font = .fdCaption
-        resultCountLabel.textColor = .fdSubtext
-        resultCountLabel.textAlignment = .center
-        resultCountLabel.isHidden = true
-        view.addSubview(resultCountLabel)
-
         tableView.snp.makeConstraints {
-            $0.top.equalTo(hintLabel.snp.bottom).offset(8)
-            $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(resultCountLabel.snp.top).offset(-4)
+            $0.top.equalTo(hintRow.snp.bottom).offset(12)
+            $0.leading.trailing.bottom.equalToSuperview()
         }
-        resultCountLabel.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-8)
-            $0.height.equalTo(20)
-        }
-    }
-
-    private func setupEmpty() {
-        emptyLabel.text = "未找到匹配机构\n请尝试搜索机构名称或详细地址"
-        emptyLabel.font = .fdBody
-        emptyLabel.textColor = .fdSubtext
-        emptyLabel.textAlignment = .center
-        emptyLabel.numberOfLines = 0
-        emptyLabel.isHidden = true
-        view.addSubview(emptyLabel)
-        emptyLabel.snp.makeConstraints {
-            $0.centerX.equalToSuperview()
-            $0.centerY.equalTo(tableView)
-            $0.leading.trailing.equalToSuperview().inset(32)
+        emptyView.snp.makeConstraints {
+            $0.edges.equalTo(tableView)
         }
     }
 
@@ -301,6 +323,16 @@ extension InstitutionSelectViewController: UITableViewDataSource, UITableViewDel
         } else {
             dismiss(animated: true)
         }
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        guard viewModel.hasMore, !viewModel.isLoadingMore, !viewModel.isLoadingList else { return }
+        let threshold: CGFloat = 100
+        let contentHeight = scrollView.contentSize.height
+        let frameHeight = scrollView.frame.size.height
+        let offset = scrollView.contentOffset.y
+        guard contentHeight > 0, offset + frameHeight >= contentHeight - threshold else { return }
+        viewModel.loadMore()
     }
 }
 

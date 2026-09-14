@@ -54,7 +54,7 @@ Hero 内 SHALL 展示暖橙浅色会员卡，含标题与四格资产。
 |-------|-------|------|
 | 会员等级 | `/me/member-level` | accent 样式，默认 V1 |
 | 健康积分 | `/me/points` | 默认 mock 892，待会员 API |
-| 富德币 | `/me/member-level` | 默认 mock 200 |
+| 富德币 | `/me/member-level` | `GET /v1/users/getUserCenterOverview` 的 `fundeCoin` **原值**；缺省展示 `0`，**不得** mock，**不得**用 K/w 缩写 |
 | 权益卡券 | `/me/vouchers` | 走 `VoucherService` 实时计数 |
 
 ---

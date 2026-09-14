@@ -46,15 +46,7 @@ final class ServicePackageSearchViewController: BaseViewController {
         return tv
     }()
 
-    private let emptyLabel: UILabel = {
-        let label = UILabel()
-        label.font = .fdCaption
-        label.textColor = .fdMuted
-        label.textAlignment = .center
-        label.numberOfLines = 0
-        label.isHidden = true
-        return label
-    }()
+    private let emptyView = FDEmptyStateView(style: .page, message: "未找到相关套餐")
 
     private let activityIndicator: UIActivityIndicatorView = {
         let indicator = UIActivityIndicatorView(style: .medium)
@@ -77,7 +69,8 @@ final class ServicePackageSearchViewController: BaseViewController {
         searchContainer.addSubview(searchField)
         view.addSubview(searchContainer)
         view.addSubview(tableView)
-        view.addSubview(emptyLabel)
+        view.addSubview(emptyView)
+        emptyView.isHidden = true
         view.addSubview(activityIndicator)
 
         searchIcon.snp.makeConstraints {
@@ -99,12 +92,8 @@ final class ServicePackageSearchViewController: BaseViewController {
             $0.top.equalTo(searchContainer.snp.bottom).offset(8)
             $0.leading.trailing.bottom.equalToSuperview()
         }
-        emptyLabel.snp.makeConstraints {
-            $0.centerX.equalToSuperview()
-            $0.centerY.equalToSuperview().offset(-40)
-            $0.leading.trailing.equalToSuperview().inset(32)
-        }
-        activityIndicator.snp.makeConstraints { $0.center.equalTo(emptyLabel) }
+        emptyView.snp.makeConstraints { $0.edges.equalTo(tableView) }
+        activityIndicator.snp.makeConstraints { $0.center.equalTo(tableView) }
 
         searchField.delegate = self
         searchField.addTarget(self, action: #selector(textDidChange), for: .editingChanged)
@@ -150,23 +139,23 @@ final class ServicePackageSearchViewController: BaseViewController {
 
     private func updateEmptyState() {
         guard viewModel.hasSearched, !viewModel.isLoading else {
-            emptyLabel.isHidden = true
+            emptyView.isHidden = true
             return
         }
 
         if let error = viewModel.errorMessage, !error.isEmpty {
-            emptyLabel.text = error
-            emptyLabel.isHidden = false
+            emptyView.configure(message: error)
+            emptyView.isHidden = false
             return
         }
 
         if viewModel.packages.isEmpty {
-            emptyLabel.text = "未找到相关套餐"
-            emptyLabel.isHidden = false
+            emptyView.configure(message: "未找到相关套餐")
+            emptyView.isHidden = false
             return
         }
 
-        emptyLabel.isHidden = true
+        emptyView.isHidden = true
     }
 }
 

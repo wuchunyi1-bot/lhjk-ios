@@ -7,7 +7,10 @@
 #### Scenario: 解码发货状态与预计发货时间
 
 - **WHEN** `getAppOrderDetail` 返回 `shoppingCartPackageDetailList`
-- **THEN** 每行解析 `shipmentStatus`（Int，1 待发货 / 2 已发货）与 `presetDeliveryTime`（String）
+- **THEN** 每行解析 `shipmentStatus`（Int：1 待履约 / 2 已履约）与 `presetDeliveryTime`（String）
+- **AND** 单行印章 **只** 用该行 `shipmentStatus` + 订单 `typeOrder`，不得用整单 `status` 覆盖
+- **AND** 快递（`typeOrder == 1`）：`1` →「待发货」`order_detail_stamp_pending_ship`；`2` →「已发货」`order_detail_stamp_shipped`
+- **AND** 自提（`typeOrder == 0`）：`1` →「待自提」`order_detail_stamp_pending_pickup`；`2` →「已自提」`order_detail_stamp_pickuped`
 - **AND** 字段缺失时不导致整单解析失败
 
 ### Requirement: 收货地址独立卡片
@@ -37,13 +40,27 @@
 - **THEN** 展示「物流信息」卡片
 - **AND** 详情页**仅预览 1 条**商品履约行（对齐 funde `PREVIEW_LIMIT`，用户要求 1 条）
 - **AND** 卡片底部展示「发货记录（共 X 条） >」，点击跳转 `/orders/shipment-records?orderId=&type=express`
-- **AND** `shipmentStatus == 1` 时副文案为「商家备货中，预计发货时间 {presetDeliveryTime}」
-- **AND** `shipmentStatus == 2` 且订单级存在物流公司与单号时展示物流信息并可复制单号
+- **AND** 该行 `shipmentStatus != 2` 时副文案为「商家备货中，预计发货时间 {presetDeliveryTime}」
+- **AND** 该行 `shipmentStatus == 2` 且订单级存在物流公司与单号时展示物流信息并可复制单号
 
 #### Scenario: 自提信息
 
 - **WHEN** `typeOrder == 0` 且存在 `shipmentStatus != nil` 的商品行
 - **THEN** 展示「自提信息」卡片，预览 1 条 +「自提记录（共 X 条） >」入口
+- **AND** 该行 `shipmentStatus != 2` 时副文案为「预计 {presetDeliveryTime} 完成备货，可自提」
+- **AND** 该行 `shipmentStatus == 2` 时印章为「已自提」，不得再用「已发货」
+
+#### Scenario: 商品行印章
+
+- **WHEN** 渲染物流/自提 Item 右上角印章
+- **THEN** 映射为：
+
+| 履约 | `shipmentStatus` | 文案 | 切图 |
+|------|------------------|------|------|
+| 快递 | `1` 或空 | 待发货 | `order_detail_stamp_pending_ship` |
+| 快递 | `2` | 已发货 | `order_detail_stamp_shipped` |
+| 自提 | `1` 或空 | 待自提 | `order_detail_stamp_pending_pickup` |
+| 自提 | `2` | 已自提 | `order_detail_stamp_pickuped` |
 
 ### Requirement: 发货记录列表页
 

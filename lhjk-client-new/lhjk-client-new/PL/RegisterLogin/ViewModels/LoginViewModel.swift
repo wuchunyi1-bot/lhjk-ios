@@ -449,6 +449,6 @@ final class LoginViewModel: ObservableObject {
     // MARK: - Agreement Check
 
     func isAgreementChecked(_ checked: Bool) -> String? {
-        checked ? nil : "请先阅读并同意用户协议、隐私政策与健康管理服务知情同意书"
+        checked ? nil : "请先阅读并同意用户协议、隐私政策、会员服务协议与健康管理服务知情同意书"
     }
 }

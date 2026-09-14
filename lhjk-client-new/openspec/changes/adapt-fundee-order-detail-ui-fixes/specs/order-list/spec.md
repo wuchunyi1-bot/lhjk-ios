@@ -8,7 +8,8 @@
 
 - `cancel`（取消订单）
 - `afterSale`（退款/售后）
-- `returnGoods`（去退货）
+
+合资格时列表 **SHALL** 展示「去退货」（与详情底栏同一资格：`status=6` + `canReturnGoods` + `refundId > 0`）。
 
 #### Scenario: 待支付列表卡片
 
@@ -23,6 +24,6 @@
 
 #### Scenario: 退款/售后列表卡片
 
-- **WHEN** 订单 `status=6` 且 `canReturnGoods == true`
-- **THEN** 列表**不得**展示「去退货」
-- **AND** 用户从详情滚动区底部进入退货流程
+- **WHEN** 订单 `status=6` 且 `canReturnGoods == true` 且 `refundId > 0`
+- **THEN** 列表展示「去退货」
+- **AND** 点击打开去退货抽屉（与详情固定底栏同一流程）

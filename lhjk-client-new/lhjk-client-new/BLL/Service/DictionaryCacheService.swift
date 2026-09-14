@@ -140,24 +140,35 @@ final class DictionaryCacheService {
             let name = child.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             return name.isEmpty ? value : "\(value):\(name)"
         }
+        let dictName = children.first { Int(normalizedValue($0.value)) == type }?
+            .name?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let nameRoute = Self.route(forDictionaryName: dictName)
         let localRoute = Self.monitorTaskRoutes[type]
         let inServerDict = children.contains(where: { Int(normalizedValue($0.value)) == type })
 
         if logContext != nil {
             print(
                 "\(tag)\(ctx) lookup type=\(type) dictLoaded=\(!children.isEmpty) " +
-                "inServerDict=\(inServerDict) localRoute=\(localRoute ?? "nil") " +
+                "inServerDict=\(inServerDict) dictName=\(dictName ?? "nil") " +
+                "nameRoute=\(nameRoute ?? "nil") localRoute=\(localRoute ?? "nil") " +
                 "dictChildren=[\(dictSummary.joined(separator: ", "))]"
             )
         }
 
-        // ① 服务端字典已加载且包含该 type → 用本地路由表（字典管 type/name，路由表管 path）
+        // ① 字典命中：优先按 name 解析（含明确不跳转的空串，如睡眠）
+        if inServerDict, let route = nameRoute {
+            if logContext != nil {
+                print("\(tag)\(ctx) type=\(type) dict name ✓ \(dictName ?? "") → \(route.isEmpty ? "no jump" : route)")
+            }
+            return route
+        }
         if inServerDict, let route = localRoute, !route.isEmpty {
-            if logContext != nil { print("\(tag)\(ctx) type=\(type) server dict ✓ → \(route)") }
+            if logContext != nil { print("\(tag)\(ctx) type=\(type) server dict + local table ✓ → \(route)") }
             return route
         }
 
-        // ② 字典未同步 / 字典无该 type → 本地路由表兜底
+        // ② 字典未同步 / 字典无该 type → 本地编号表兜底
         if let route = localRoute, !route.isEmpty {
             if logContext != nil {
                 let reason = children.isEmpty ? "dict not loaded" : "type not in server dict"
@@ -167,7 +178,7 @@ final class DictionaryCacheService {
         }
 
         if logContext != nil {
-            print("\(tag)\(ctx) type=\(type) no route in server dict nor local table → empty")
+            print("\(tag)\(ctx) type=\(type) no route (dictName=\(dictName ?? "nil")) → empty")
         }
         return ""
     }
@@ -178,11 +189,32 @@ final class DictionaryCacheService {
 
   // MARK: - Private
 
-  /// 本地 `monitorType.value` → App 路由（字典无条目或未同步时的兜底；字典有 type 时同样走此表）
+    /// 按字典 `monitorType.name` 解析路由。编号会变，名称才是稳定依据。
+    /// 返回 `""` 表示明确不跳转（如睡眠）；`nil` 表示未识别、继续走编号表。
+    private static func route(forDictionaryName name: String?) -> String? {
+        let raw = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !raw.isEmpty else { return nil }
+        if raw.contains("睡眠") { return "" }
+        if raw.contains("营养补") || raw.contains("补充剂") || raw.contains("补剂") {
+            return "/supplement/add"
+        }
+        if raw.contains("用药") || raw.contains("药物") { return "/medication" }
+        if raw.contains("血脂") { return "/health/metrics/blood-lipid" }
+        if raw.contains("血压") { return "/health/metrics/blood-pressure/add" }
+        if raw.contains("血糖") { return "/health/metrics/blood-sugar/add" }
+        if raw.contains("血氧") { return "/health/metrics/spo2/add" }
+        if raw.contains("体重") { return "/health/metrics/weight/add" }
+        if raw.contains("体温") { return "/health/metrics/temperature/add" }
+        if raw.contains("心率") { return "/health/metrics/heart-rate/add" }
+        if raw.contains("运动") { return "/exercise-food/check-in" }
+        if raw.contains("饮食") { return "/health/metrics/exercise/home" }
+        return nil
+    }
+
+    /// 本地 `monitorType.value` 编号兜底（字典未同步时）。睡眠无录入页，不配路由。
     private static let monitorTaskRoutes: [Int: String] = [
-        1: "/health/metrics/sleep",
         2: "/health/metrics/blood-pressure/add",
-        3: "/health/metrics/exercise/home",
+        3: "/exercise-food/check-in",
         4: "/health/metrics/weight/add",
         5: "/health/metrics/blood-sugar/add",
         6: "/health/metrics/temperature/add",

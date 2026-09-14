@@ -538,13 +538,11 @@ final class ServicePackageDetailViewController: BaseViewController {
             do {
                 try await self.viewModel.addToCart(selectedDetails: details)
                 await MainActor.run {
-                    self.showToast("已加入购物车") {
-                        Router.shared.push("/services/cart")
-                    }
+                    self.showToast("已加入购物车")
                 }
             } catch {
                 await MainActor.run {
-                    self.showToast(error.localizedDescription)
+                    self.handleCartSubmitFailure(error)
                 }
             }
         }
@@ -575,10 +573,40 @@ final class ServicePackageDetailViewController: BaseViewController {
                 }
             } catch {
                 await MainActor.run {
-                    self.showToast(error.localizedDescription)
+                    self.handleCartSubmitFailure(error)
                 }
             }
         }
+    }
+
+    /// `M0087`：已有未完成订单，弹「下单失败」；其余失败 Toast `msg`
+    private func handleCartSubmitFailure(_ error: Error) {
+        if case let ShoppingCartServiceError.incompleteExistingOrder(orderId, message) = error {
+            presentIncompleteOrderAlert(orderId: orderId, message: message)
+            return
+        }
+        showToast(error.localizedDescription)
+    }
+
+    private func presentIncompleteOrderAlert(orderId: Int64, message: String) {
+        let alert = UIAlertController(title: "下单失败", message: message, preferredStyle: .alert)
+        alert.view.tintColor = .fdPrimary
+        alert.addAction(UIAlertAction(title: "暂不处理", style: .cancel))
+        alert.addAction(UIAlertAction(title: "查看订单", style: .default) { [weak self] _ in
+            guard let self else { return }
+            DispatchQueue.main.async {
+                self.openExistingOrderDetail(orderId: orderId)
+            }
+        })
+        present(alert, animated: true)
+    }
+
+    private func openExistingOrderDetail(orderId: Int64) {
+        guard orderId > 0 else {
+            showToast("订单信息缺失")
+            return
+        }
+        Router.shared.push("/orders/detail", params: ["id": String(orderId)], from: self)
     }
 
     private func buildSelectedComboItems() -> [ServicePackageComboItem] {

@@ -33,6 +33,7 @@ final class AgreementCheckboxView: UIView {
 
     var onUserAgreementTap: (() -> Void)?
     var onPrivacyPolicyTap: (() -> Void)?
+    var onMemberServiceTap: (() -> Void)?
     var onConsentTap: (() -> Void)?
 
     init(textFont: UIFont = .fdLoginMeta) {
@@ -75,7 +76,7 @@ final class AgreementCheckboxView: UIView {
     }
 
     private func buildAgreementText() {
-        let fullText = "我已阅读并同意 《用户协议》 《隐私政策》与 《健康管理服务知情同意书》"
+        let fullText = "我已阅读并同意《用户协议》《隐私政策》《会员服务协议》与《健康管理服务知情同意书》"
         let attributed = NSMutableAttributedString(string: fullText)
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = .left
@@ -89,7 +90,7 @@ final class AgreementCheckboxView: UIView {
             .paragraphStyle: paragraph,
         ], range: NSRange(location: 0, length: fullText.count))
 
-        for link in ["《用户协议》", "《隐私政策》", "《健康管理服务知情同意书》"] {
+        for link in ["《用户协议》", "《隐私政策》", "《会员服务协议》", "《健康管理服务知情同意书》"] {
             if let range = fullText.range(of: link) {
                 attributed.addAttributes([
                     .foregroundColor: UIColor.fdPrimary,
@@ -137,6 +138,7 @@ final class AgreementCheckboxView: UIView {
         let links: [(String, () -> Void)] = [
             ("《用户协议》", { [weak self] in self?.onUserAgreementTap?() }),
             ("《隐私政策》", { [weak self] in self?.onPrivacyPolicyTap?() }),
+            ("《会员服务协议》", { [weak self] in self?.onMemberServiceTap?() }),
             ("《健康管理服务知情同意书》", { [weak self] in self?.onConsentTap?() }),
         ]
         for (title, action) in links {

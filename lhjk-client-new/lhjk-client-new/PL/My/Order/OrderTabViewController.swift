@@ -51,33 +51,8 @@ final class OrderTabViewController: BaseViewController {
         return control
     }()
 
-    private lazy var emptyLabel: UILabel = {
-        let label = UILabel()
-        label.font = .fdFont(ofSize: 16, weight: .regular)
-        label.textColor = UIColor(hexString: "#8591AB")
-        label.textAlignment = .center
-        return label
-    }()
-
-    private lazy var emptyView: UIView = {
-        let v = UIView()
-        let icon = UIImageView(image: UIImage(named: "order_package_placeholder"))
-        icon.contentMode = .scaleAspectFit
-        icon.layer.cornerRadius = 12
-        icon.clipsToBounds = true
-        v.addSubview(icon)
-        icon.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.centerY.equalToSuperview().offset(-20)
-            make.size.equalTo(84)
-        }
-        v.addSubview(emptyLabel)
-        emptyLabel.snp.makeConstraints { make in
-            make.top.equalTo(icon.snp.bottom).offset(12)
-            make.centerX.equalToSuperview()
-            make.leading.trailing.equalToSuperview().inset(24)
-        }
-        return v
+    private lazy var emptyView: FDEmptyStateView = {
+        FDEmptyStateView(style: .page, message: emptyText)
     }()
 
     private lazy var loadingIndicator: UIActivityIndicatorView = {
@@ -112,7 +87,7 @@ final class OrderTabViewController: BaseViewController {
 
     override func setupUI() {
         view.backgroundColor = UIColor(hexString: "#FDF6F3")
-        emptyLabel.text = emptyText
+        emptyView.configure(message: emptyText)
 
         view.addSubview(tableView)
         tableView.snp.makeConstraints { make in
@@ -257,8 +232,18 @@ final class OrderTabViewController: BaseViewController {
         case .pay:
             pushConfirm(order: order)
         case .cancel:
-            OrderCancelFlow.start(from: self, order: order) { [weak self] _ in
-                self?.refresh()
+            OrderCancelFlow.start(from: self, order: order) { [weak self] result in
+                guard let self else { return }
+                if result == .cancelled {
+                    let list = self.parent as? OrderListViewController
+                    DispatchQueue.main.async {
+                        list?.selectAllTab()
+                        (list ?? self).showToastAlert("订单已取消", duration: 1.5)
+                    }
+                } else {
+                    self.refresh()
+                    self.showToastAlert("已提交退款审核", duration: 1.5)
+                }
             }
         case .renew:
             OrderNavigationCoordinator.openPackageRenewal(from: self, order: order)

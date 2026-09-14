@@ -134,13 +134,7 @@ final class DailyTasksViewController: BaseViewController {
     }
 
     private func buildEmpty() -> UIView {
-        let lbl = UILabel()
-        lbl.text = "暂无今日健康任务"
-        lbl.font = .fdBody
-        lbl.textColor = .fdSubtext
-        lbl.textAlignment = .center
-        lbl.snp.makeConstraints { $0.height.equalTo(120) }
-        return lbl
+        FDEmptyStateView(style: .compact, message: "暂无今日健康任务")
     }
 
     private func buildTaskCard(_ task: DailyHealthTask) -> DailyTaskCardView {

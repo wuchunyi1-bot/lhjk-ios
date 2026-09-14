@@ -625,7 +625,10 @@ enum IMCardResolver {
 
     static func tapAction(for card: IMCardResolved) -> IMCardTapAction? {
         guard card.showsJumpButton else { return nil }
-        return .openPageUrl(card.urlKey)
+        let taskId = IMCardJSON.stringValue(card.businessData?["taskId"])
+        let url = NotificationMessageMapper.appendingTaskId(card.urlKey, taskId: taskId)
+        print("[IMCard] tap urlKey=\(card.urlKey) businessTaskId=\(taskId ?? "nil") open=\(url)")
+        return .openPageUrl(url)
     }
 }
 

@@ -54,9 +54,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
-        // 将 deviceToken 发送至服务端，绑定推送设备
         let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
         print("[APNs] Device token: \(tokenString)")
+        RongCloudManager.shared.setDeviceTokenData(deviceToken)
     }
 
     func application(

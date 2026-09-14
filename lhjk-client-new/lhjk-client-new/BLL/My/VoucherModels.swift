@@ -110,8 +110,6 @@ enum BenefitTransferStatus: String {
 
 enum BenefitStatusFilter: Int, CaseIterable {
     case all = 0
-    case pendingBind
-    case pendingReceive
     case available
     case redeemed
     case expired
@@ -120,8 +118,6 @@ enum BenefitStatusFilter: Int, CaseIterable {
     var title: String {
         switch self {
         case .all: return "全部"
-        case .pendingBind: return "待绑定"
-        case .pendingReceive: return "待领取"
         case .available: return "待使用"
         case .redeemed: return "已兑换"
         case .expired: return "已过期"
@@ -131,8 +127,6 @@ enum BenefitStatusFilter: Int, CaseIterable {
 
     var cardStatus: BenefitCardStatus? {
         switch self {
-        case .pendingBind: return .pendingBind
-        case .pendingReceive: return .pendingReceive
         case .available: return .available
         case .redeemed: return .redeemed
         case .expired: return .expired
@@ -143,8 +137,6 @@ enum BenefitStatusFilter: Int, CaseIterable {
     /// `getCustomerPage` Query status；全部 / 转赠记录不传
     var apiStatus: Int? {
         switch self {
-        case .pendingBind: return BenefitAPIStatus.pendingBind.rawValue
-        case .pendingReceive: return BenefitAPIStatus.pendingReceive.rawValue
         case .available: return BenefitAPIStatus.available.rawValue
         case .redeemed: return BenefitAPIStatus.redeemed.rawValue
         case .expired: return BenefitAPIStatus.expired.rawValue

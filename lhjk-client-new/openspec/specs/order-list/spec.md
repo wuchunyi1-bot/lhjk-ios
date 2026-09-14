@@ -57,7 +57,7 @@ Tab 使用 UICollectionView 横向滚动；**恰好 8 个**，顺序同表。选
 - **特色通知条（可选）**：当订单包含退款驳回/清算驳回原因（`refuseReasons`）时展示，背景采用粉红渐变装饰条（`order_notice_bg_single` / `order_notice_bg_double`），搭配 14×14pt 红色叹号图标（`order_notice_alert_icon`）及 10pt 警告文案（`#F93838`）
 - **商品/套餐信息区**：`#FFF9F6` 浅粉色底块，圆角 12pt，包含 84×84pt 商品图（无图时展示 `order_package_placeholder`）、14pt Medium 商品标题、14pt Regular 商品简介，以及右下角 12pt 符号与 16pt Medium 金额（`#1F2942`）。金额取值见下方「列表卡片金额展示」
 - **操作按钮**：高度 28pt，最小宽度 77pt，圆角 14pt 胶囊状，12pt Medium 字体。主按钮为纯色填充（`#FF7950`），次按钮为 0.5pt 细边框线框（`#FF7950`）
-- **空状态**：展示 84×84pt 占位图（`order_package_placeholder`）及 14pt Regular 文案（`#8591AB`）
+- **空状态**：展示默认无数据插图 `noData_default`（145pt，`FDEmptyStateView`）及 14pt Regular 文案（`#8591AB` / `fdMuted`）。订单卡片无套餐图时仍用 `order_package_placeholder`，不与空态混用。
 
 ### Response Data Model: AppOrderListBO
 
@@ -94,7 +94,7 @@ Tab 使用 UICollectionView 横向滚动；**恰好 8 个**，顺序同表。选
 
 **退款/售后按钮（已完成 Tab）**：仅 `packageType == 2`（售卖）或 `4`（体验）时展示。是否已退款以详情/列表 `refundId` 为准。
 
-**去退货按钮（退款/售后 Tab）**：`status=6` 且 `canReturnGoods == true` 且 `refundId > 0`。提交见 [submitReturnGoods](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/493050735e0.md)；细则见 `adapt-fundee-order-return-goods`。
+**去退货按钮（退款/售后 Tab）**：`status=6` 且 `canReturnGoods == true` 且 `refundId > 0`。点击展示去退货客服指引弹窗（对齐 Figma 5607:21157），提示「实物商品需要寄回，请联系客服办理退货」，展示客服电话（0755-61909838）并支持一键拨打。列表与详情页共用 `OrderReturnGoodsFlow`。原物流表单提交见 [submitReturnGoods](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/493050735e0.md)。
 
 **待发货**：用户侧仅「取消订单」，不展示「确认发货」。
 
@@ -139,6 +139,14 @@ Apifox 标准分页为中文 key，解码时同时兼容英文别名：
 - **WHEN** 用户切换 Tab
 - **THEN** 显示对应 Tab 的子 VC；子 VC 仅在首次加载或数据更新时请求网络，切换回已加载的 Tab 不重复请求
 
+#### Scenario: 取消订单回到全部
+- **WHEN** 用户取消待支付订单（`status=1`，待支付详情 / 确认页 / 列表）
+- **THEN** 回到「我的订单」全部 Tab 并刷新
+- **AND** **不得**留在待支付 Tab（已取消订单 `status=8` 仅全部可见）
+- **WHEN** 用户在订单详情页取消订单（含待发货退款申请）
+- **THEN** 同样回到「我的订单」全部 Tab 并刷新
+- **AND** **不得**留在详情页或来源状态 Tab
+
 ---
 
 ### Requirement: 订单状态展示
@@ -174,7 +182,7 @@ Apifox 标准分页为中文 key，解码时同时兼容英文别名：
 
 #### Scenario: 当前 Tab 无订单
 - **WHEN** 当前 Tab 下无订单数据
-- **THEN** 展示空状态图标与该 Tab 对应文案（退款/售后「暂无退款/售后记录」等；详见 `adapt-fundee-order-list`）
+- **THEN** 展示默认空态插图 `noData_default` 与该 Tab 对应文案（退款/售后「暂无退款/售后记录」等；详见 `adapt-fundee-order-list`）
 
 ## UI Architecture
 

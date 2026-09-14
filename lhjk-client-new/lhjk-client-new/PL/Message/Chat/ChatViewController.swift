@@ -69,7 +69,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     }()
     private var quotePreviewBar: QuotePreviewBar?
 
-    /// `getGroup.status != 1` 时底部横幅（Figma 4565:9670）
+    /// `getGroup.status` 为 0 / 2 时底部横幅（Figma 4565:9670）
     private let expiredBanner: ChatExpiredBannerView = {
         let banner = ChatExpiredBannerView()
         banner.isHidden = true
@@ -223,6 +223,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
                     view.addSubview(expiredBanner)
                 }
             }
+            expiredBanner.configure(groupStatus: viewModel.conversation?.groupStatus)
             expiredBanner.isHidden = false
             expiredBanner.snp.remakeConstraints { make in
                 make.leading.trailing.bottom.equalToSuperview()
@@ -336,6 +337,13 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             .receive(on: DispatchQueue.main)
             .sink { [weak self] reply in
                 self?.showQuotePreview(for: reply)
+            }
+            .store(in: &cancellables)
+
+        viewModel.dismissQuotePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.hideQuotePreviewBar()
             }
             .store(in: &cancellables)
 
@@ -469,8 +477,8 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         menu.onAction = { [weak self] action in
             self?.handleAction(action, message: message)
         }
-        menu.configure(above: cellRect, in: view, actions: actions)
         view.addSubview(menu)
+        menu.configure(above: cellRect, in: view, actions: actions)
         actionMenu = menu
     }
 
@@ -537,7 +545,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         let bar = QuotePreviewBar()
         bar.configure(with: reply)
         bar.onDismiss = { [weak self] in
-            self?.dismissQuote()
+            self?.viewModel.dismissQuote()
         }
         bar.onTap = { [weak self] in
             self?.handleQuotePreviewTap(reply: reply)
@@ -551,8 +559,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         quotePreviewBar = bar
     }
 
-    private func dismissQuote() {
-        viewModel.dismissQuote()
+    private func hideQuotePreviewBar() {
         quotePreviewBar?.dismiss()
         quotePreviewBar = nil
     }

@@ -50,9 +50,12 @@ final class CouponService {
         }
 
         let items = response.data?.records ?? []
-        let total = response.total
-            ?? response.data?.totalRecords
-            ?? items.count
+        // 外层 Result.total 在分页接口上经常是 0，不能用 `??` 盖掉 data.总记录数 / list.count
+        let total: Int = {
+            if let pageTotal = response.data?.totalRecords { return pageTotal }
+            if let wrapper = response.total, wrapper > 0 { return wrapper }
+            return items.count
+        }()
         print("[CouponService] getCouponTakeList ✓ count=\(items.count) total=\(total)")
 
         if status == 1 {

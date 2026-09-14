@@ -42,6 +42,18 @@ enum HealthRoutes {
                 title: "营养补剂"
             )
         }
+        r.register(path: "/supplement/add") { params in
+            WebViewController(
+                urlString: H5Config.supplementAddPageURL(taskId: stringParam(params["taskId"])).absoluteString,
+                title: "营养补剂"
+            )
+        }
+        r.register(path: "/exercise-food/check-in") { params in
+            WebViewController(
+                urlString: H5Config.exerciseFoodCheckInPageURL(taskId: stringParam(params["taskId"])).absoluteString,
+                title: "运动打卡"
+            )
+        }
         r.register(path: "/spo2") { _ in
             WebViewController(
                 urlString: H5Config.spo2PageURL.absoluteString,

@@ -191,7 +191,7 @@ extension UIColor {
 | `shield-o` | `shield` |
 | `contact-o` | `person.crop.circle` |
 | `lock` | `lock` |
-| `eye-o` / `closed-eye` | `eye` / `eye.slash` |
+| `eye-o` / `closed-eye` | `login_password_eye_on` / `login_password_eye_off` |
 | `wechat` | 自定义 icon（微信品牌色 #07C160 的圆角图） |
 
 **理由**: SF Symbols 随系统安装，无需额外依赖；支持 Dynamic Type 字号自适应。

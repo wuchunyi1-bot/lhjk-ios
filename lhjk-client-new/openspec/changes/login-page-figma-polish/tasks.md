@@ -14,6 +14,6 @@
 
 - [x] 3.1 Hero + 渐变按钮 + 居中模式切换 + 微信入口
 - [x] 3.2 协议沉底；过期提示
-- [x] 3.3 忘记密码 / PhoneBinding 保持 pill
+- [x] 3.3 忘记密码保持 pill；PhoneBinding 对齐 Figma `5574:18136` 使用 inline 验证码 + 渐变「绑定并登录」
 - [x] 3.4 Xcode simulator build
 - [ ] 3.5 375pt 模拟器截图核对（系统通知权限弹窗阻塞自动截图）

@@ -54,6 +54,7 @@ final class OrderConfirmViewModel: ObservableObject {
     @Published private(set) var settlementPayable: Double = 0
     @Published private(set) var settlementPackageAmount: Double = 0
     @Published private(set) var settlementCouponDiscount: Double = 0
+    @Published private(set) var settlementBenefitDiscount: Double = 0
     @Published private(set) var selectedCouponTakeId: Int64?
     @Published private(set) var selectedCouponName = ""
     @Published private(set) var hospitalDetail: OHospital?
@@ -72,6 +73,7 @@ final class OrderConfirmViewModel: ObservableObject {
     private let couponService: CouponService
     private let voucherService: VoucherService
     private let paymentService: PaymentService
+    private let addressService: AddressService
     private let institutionStore: InstitutionSelectionStore
     private var loadTask: Task<Void, Never>?
     private var payTask: Task<Void, Never>?
@@ -80,6 +82,10 @@ final class OrderConfirmViewModel: ObservableObject {
     private var availableBenefits: [BenefitsRedeemCardVO] = []
     /// 绑单后结算 `totalPrice` 是否已体现权益抵扣（启发式）
     private var settlementIncludesBenefitDiscount = false
+    /// 本页已尝试过静默绑定默认地址（成功、无默认、失败均计一次，避免结算刷新循环）
+    private var didAttemptDefaultAddressFill = false
+    /// 用户已从地址列表手动选址，禁止默认地址回写覆盖
+    private var userDidSelectDeliveryAddress = false
 
     init(
         orderId: Int64,
@@ -90,6 +96,7 @@ final class OrderConfirmViewModel: ObservableObject {
         couponService: CouponService = AppContainer.shared.couponService,
         voucherService: VoucherService = AppContainer.shared.voucherService,
         paymentService: PaymentService = AppContainer.shared.paymentService,
+        addressService: AddressService = AppContainer.shared.addressService,
         institutionStore: InstitutionSelectionStore = AppContainer.shared.institutionSelectionStore
     ) {
         self.orderId = orderId
@@ -100,6 +107,7 @@ final class OrderConfirmViewModel: ObservableObject {
         self.couponService = couponService
         self.voucherService = voucherService
         self.paymentService = paymentService
+        self.addressService = addressService
         self.institutionStore = institutionStore
     }
 
@@ -152,6 +160,9 @@ final class OrderConfirmViewModel: ObservableObject {
     }
 
     var benefitDiscount: Double {
+        if settlementBenefitDiscount > 0.009 {
+            return settlementBenefitDiscount
+        }
         let raw = selectedBenefits.reduce(0) { $0 + $1.effectiveDeduct }
         return min(benefitCardLimit, raw)
     }
@@ -400,9 +411,14 @@ final class OrderConfirmViewModel: ObservableObject {
 
     func fetchCouponOptions() async throws -> [CouponTakeItem] {
         let hospitalId = latestSettlement?.resolvedHospitalId
-        let result = try await couponService.getCouponTakeList(hospitalId: hospitalId)
+        // `status=1`：待使用（Apifox：1 待使用 / 2 已领用 / 3 已过期）
+        let result = try await couponService.getCouponTakeList(
+            hospitalId: hospitalId,
+            status: 1
+        )
         await MainActor.run {
-            availableCouponCount = result.items.count
+            availableCouponCount = max(result.total, result.items.count)
+            objectWillChange.send()
         }
         return result.items
     }
@@ -455,6 +471,7 @@ final class OrderConfirmViewModel: ObservableObject {
     // MARK: - 配送地址绑定
 
     func bindDelivery(address: MAddress) {
+        userDidSelectDeliveryAddress = true
         let previous = deliveryAddress
         deliveryAddress = address
         Task { [weak self] in
@@ -517,11 +534,14 @@ final class OrderConfirmViewModel: ObservableObject {
                 applySettlement(settlement)
                 isLoading = false
             }
-            await loadHospitalDetail(
+            async let hospitalLoad: Void = loadHospitalDetail(
                 hospitalId: settlement.resolvedHospitalId ?? institutionStore.selectedHospitalId
             )
+            async let defaultAddressFill: Void = fillDefaultExpressAddressIfNeeded()
             _ = try? await fetchBenefitOptions()
             _ = try? await fetchCouponOptions()
+            await hospitalLoad
+            await defaultAddressFill
         } catch {
             await MainActor.run {
                 isLoading = false
@@ -583,7 +603,14 @@ final class OrderConfirmViewModel: ObservableObject {
             await MainActor.run { isSyncing = false }
 
         case .express:
-            guard let addr = deliveryAddress else { return }
+            let existingAddress = await MainActor.run { deliveryAddress }
+            if existingAddress == nil {
+                await MainActor.run { isSyncing = true }
+                await fillDefaultExpressAddressIfNeeded(retry: true)
+                await MainActor.run { isSyncing = false }
+                return
+            }
+            guard let addr = existingAddress else { return }
             await MainActor.run { isSyncing = true }
             do {
                 try await orderService.updateOrderDelivery(
@@ -635,6 +662,7 @@ final class OrderConfirmViewModel: ObservableObject {
         settlementPackageAmount = settlement.packageAmountYuan
         settlementPayable = settlement.payableAmountYuan
         settlementCouponDiscount = settlement.couponDiscountYuan
+        settlementBenefitDiscount = settlement.benefitDiscountYuan
         selectedCouponTakeId = settlement.resolvedCouponTakeId
         selectedCouponName = resolveCouponName(from: settlement)
         fallbackHospitalName = settlement.resolvedHospitalName
@@ -649,8 +677,69 @@ final class OrderConfirmViewModel: ObservableObject {
         fulfillment = settlement.supportsExpress
             ? Self.fulfillment(from: settlement)
             : .selfPickup
-        deliveryAddress = Self.deliveryAddress(from: settlement)
+        let fromSettlement = Self.deliveryAddress(from: settlement)
+        if fromSettlement != nil {
+            deliveryAddress = fromSettlement
+        } else if deliveryAddress == nil || (!userDidSelectDeliveryAddress && !didAttemptDefaultAddressFill) {
+            deliveryAddress = nil
+        }
         recomputeSettlementBenefitFlag()
+    }
+
+    /// 快递且无订单快照地址时，静默绑定用户默认地址（不 Toast）。
+    private func fillDefaultExpressAddressIfNeeded(retry: Bool = false) async {
+        let canStart = await MainActor.run { () -> Bool in
+            if retry { didAttemptDefaultAddressFill = false }
+            guard needsExpressAddress,
+                  deliveryAddress == nil,
+                  !userDidSelectDeliveryAddress,
+                  !didAttemptDefaultAddressFill else {
+                return false
+            }
+            didAttemptDefaultAddressFill = true
+            return true
+        }
+        guard canStart else { return }
+
+        do {
+            try Task.checkCancellation()
+            let page = try await addressService.getAddressList()
+            try Task.checkCancellation()
+            guard let address = page.records?.first(where: \.isDefaultAddress),
+                  let addressId = address.id, addressId > 0 else {
+                return
+            }
+
+            let shouldBind = await MainActor.run {
+                needsExpressAddress && deliveryAddress == nil && !userDidSelectDeliveryAddress
+            }
+            guard shouldBind else { return }
+
+            try Task.checkCancellation()
+            try await orderService.updateOrderDelivery(
+                orderId: orderId,
+                typeOrder: 1,
+                addressId: addressId,
+                receiver: address.name,
+                phone: address.mobile,
+                address: address.fullAddress
+            )
+
+            let shouldApply = await MainActor.run { () -> Bool in
+                guard !userDidSelectDeliveryAddress else { return false }
+                if deliveryAddress == nil {
+                    deliveryAddress = address
+                }
+                return true
+            }
+            guard shouldApply else { return }
+
+            await refreshSettlement()
+        } catch is CancellationError {
+            await MainActor.run { didAttemptDefaultAddressFill = false }
+        } catch {
+            print("[OrderConfirm] fill default address skipped: \(error.localizedDescription)")
+        }
     }
 
     private func applyOrderBenefitsList(_ list: [BenefitsRedeemCardVO]) {
@@ -661,6 +750,10 @@ final class OrderConfirmViewModel: ObservableObject {
     }
 
     private func recomputeSettlementBenefitFlag() {
+        if settlementBenefitDiscount > 0.009 {
+            settlementIncludesBenefitDiscount = true
+            return
+        }
         let discount = selectedBenefits.reduce(0) { $0 + $1.effectiveDeduct }
         guard discount > 0.009 else {
             settlementIncludesBenefitDiscount = false

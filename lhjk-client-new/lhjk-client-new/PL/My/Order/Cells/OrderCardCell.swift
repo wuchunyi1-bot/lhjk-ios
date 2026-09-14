@@ -392,12 +392,12 @@ enum OrderListCardAction: Equatable {
         }
     }
 
-    /// 列表卡片隐藏，仅在订单详情内展示
+    /// 列表卡片隐藏，仅在订单详情内展示（「去退货」合资格时列表也展示）
     var isDetailOnlyAction: Bool {
         switch self {
-        case .cancel, .afterSale, .returnGoods:
+        case .cancel, .afterSale:
             return true
-        case .pay, .confirmShip, .confirmReceipt, .renew, .settle:
+        case .pay, .confirmShip, .confirmReceipt, .renew, .settle, .returnGoods:
             return false
         }
     }
@@ -423,19 +423,29 @@ enum OrderListCardAction: Equatable {
         )
     }
 
-    /// 列表卡片可见操作（隐藏取消 / 退款售后 / 去退货）
+    /// 列表卡片可见操作（隐藏取消 / 退款售后；合资格时展示去退货）
     static func listActions(for order: MOrder) -> [OrderListCardAction] {
         actions(for: order).filter { !$0.isDetailOnlyAction }
     }
 
-    /// 详情页固定底栏操作（去支付、确认收货等）
+    /// 详情页固定底栏操作（去支付、确认收货、去退货等）
     static func fixedDetailActions(for detail: AppOrderDetailBO) -> [OrderListCardAction] {
-        actions(for: detail).filter { !$0.isDetailOnlyAction }
+        actions(for: detail).filter { !$0.isScrollInlineDetailAction }
     }
 
-    /// 详情页滚动区底部操作（取消 / 退款售后 / 去退货）
+    /// 详情页滚动区底部操作（取消 / 退款售后）；「去退货」固定在屏幕底栏
     static func scrollDetailActions(for detail: AppOrderDetailBO) -> [OrderListCardAction] {
-        actions(for: detail).filter(\.isDetailOnlyAction)
+        actions(for: detail).filter(\.isScrollInlineDetailAction)
+    }
+
+    /// 随详情内容滚动的内嵌按钮；「去退货」除外（贴屏底）
+    var isScrollInlineDetailAction: Bool {
+        switch self {
+        case .cancel, .afterSale:
+            return true
+        case .pay, .confirmShip, .confirmReceipt, .renew, .settle, .returnGoods:
+            return false
+        }
     }
 
     static func actions(

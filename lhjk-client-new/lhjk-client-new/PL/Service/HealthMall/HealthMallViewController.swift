@@ -31,15 +31,7 @@ final class HealthMallViewController: BaseViewController {
         return cv
     }()
 
-    private let emptyStateView: UILabel = {
-        let label = UILabel()
-        label.text = "该分类暂无商品，敬请期待"
-        label.font = .fdFont(ofSize: 14, weight: .regular)
-        label.textColor = UIColor(hexString: "#8591AB")
-        label.textAlignment = .center
-        label.isHidden = true
-        return label
-    }()
+    private let emptyStateView = FDEmptyStateView(style: .page, message: "该分类暂无商品，敬请期待")
 
     private let loadingIndicator: UIActivityIndicatorView = {
         let spinner = UIActivityIndicatorView(style: .medium)
@@ -103,9 +95,9 @@ final class HealthMallViewController: BaseViewController {
             $0.top.equalTo(categoryTabBar.snp.bottom)
             $0.leading.trailing.bottom.equalToSuperview()
         }
+        emptyStateView.isHidden = true
         emptyStateView.snp.makeConstraints {
-            $0.center.equalTo(collectionView)
-            $0.leading.trailing.equalToSuperview().inset(24)
+            $0.edges.equalTo(collectionView)
         }
         loadingIndicator.snp.makeConstraints {
             $0.center.equalTo(collectionView)

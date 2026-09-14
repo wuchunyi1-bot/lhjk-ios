@@ -43,7 +43,8 @@
 
 - **仅底部按钮可点**，整卡不可点。
 - `urlKey` 非空才出按钮；文案 = `skipTxt`，空则「去查看」。
-- 点击走 `NotificationMessageMapper.openRoute`：`FundeH5:` → `FundePageURL.open`（不要求本地路由已注册）；`FundeApp:` / `/path` 走别名后再 `Router.push`（仅已注册）。
+- 点击走 `NotificationMessageMapper.openRoute`：`FundeH5:` → `FundePageURL.open` 直开 H5（解析 path/query 后拼 `token` + `platform=ios`，**不要求**本地路由已注册）；`FundeApp:` / `/path` 走别名后再 `Router.push`（仅已注册）。
+- `businessData.taskId` 在 urlKey 未带 `taskId` 时补进路由。
 
 ### 示例（type=1 套餐）
 

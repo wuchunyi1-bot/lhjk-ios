@@ -18,7 +18,10 @@
 #### Scenario: 当前版本点击
 
 - **WHEN** 用户点击「当前版本」行
-- **THEN** toast「当前已经是最新版本」
+- **THEN** 调用 `GET /v1/version/getLatestVersionForApp`（Query `type=1` iOS、`versionCode` = `CFBundleVersion`）
+- **AND** 无新版本或 `data` 为空时 toast「当前已经是最新版本」
+- **AND** 有新版本时弹窗展示 `versionName` 与 `description`/`summary`，「立即更新」打开 `addressUrl`
+- **AND** `forceInstall=1` 或 `isForceInstall=true` 时不提供「稍后再说」
 
 #### Scenario: 应用市场评分点击
 

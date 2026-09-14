@@ -45,7 +45,7 @@ H5 hash 路径由 `H5Config` 拼接；饮食运动根路径为 `exercise-food`�
 | 体温 | `#/temperature` … | — | `/health/metrics/temperature` |
 | 饮食运动 | `#/exercise-food` | — | `/health/metrics/exercise` |
 | 添加饮食 | `#/exercise-food/add` | `meal` 必填 | `…/add-diet` |
-| 运动打卡 | `#/exercise-food/check-in` | `monitorId` 可选 | `…/add-motion` |
+| 运动打卡 | `#/exercise-food/check-in` | `taskId`（今日健康任务）；`monitorId` 可选 | `/exercise-food/check-in`、`…/add-motion` |
 | 健康档案 | `#/health/record` | — | `/health/record`、`/me/health-profile` |
 | 健康报告 | `#/health/report` | — | `/health/report`、`/health/assessment/report`、`/me/health-report` |
 | 健康报告详情 | `#/health/report/detail` | `id` 必填（报告 id） | `/health/report/detail`、`/me/health-report/detail` |
@@ -55,7 +55,8 @@ H5 hash 路径由 `H5Config` 拼接；饮食运动根路径为 `exercise-food`�
 | 体检报告 | `#/medical-reports` `/detail` `/upload` | 详情 `reportId` | `/me/medical-reports*` |
 | 监测方案 | `#/monitoring-plan` `/{key}` | `type` 可选 | `/me/monitoring-plan` |
 | 用药 | `#/medication` | — | `/medication` |
-| 营养补剂 | `#/supplement` | — | `/supplement` |
+| 营养补剂 | `#/supplement` | — | `/supplement`（健康 Tab / CMS 列表） |
+| 营养补剂录入 | `#/supplement/add` | `taskId` 可选（今日健康任务） | `/supplement/add?taskId=` |
 | 血氧 | `#/spo2` | — | `/spo2`、`/health/metrics/spo2` |
 | 健康陪伴列表 | `#/companion` | — | 首页「更多 ›」、`/companion`、`FundeH5:/companion` |
 | 资讯详情 | `#/content/detail` | `id` 必填 | 首页健康陪伴条目等 |

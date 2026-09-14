@@ -64,6 +64,7 @@ Query 必填: serialNumber (int32) — 列表行「组编号」
 5. **CartService**：已删除本地读写与 seed
 6. **勾选**：ViewModel 内存 `Set`；刷新后默认全选
 7. **删除**：`DELETE /v1/shoppingCart/deleteShoppingCart?serialNumber=`（[文档](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330724e0.md)）；`CartLineDisplay` 须保留 `serialNumber`；成功后再从本页 `lines` 移除（或重新 `load`）
+8. **导航栏角标（iOS 26）**：套餐选择页购物车是 `UIBarButtonItem(customView:)`。角标原先溢出 24pt 图标框，iOS 26 以下导航栏不裁剪故可见；iOS 26 Liquid Glass 容器 `clipsToBounds`，角标被裁掉。导航态把 9pt peek 算进 intrinsic size，并 `hidesSharedBackground`。
 
 ## Risks
 

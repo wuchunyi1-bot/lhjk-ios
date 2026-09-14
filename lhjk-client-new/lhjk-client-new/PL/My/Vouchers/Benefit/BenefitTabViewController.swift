@@ -13,6 +13,8 @@ final class BenefitTabViewController: BaseViewController {
     private var loadTask: Task<Void, Never>?
 
     var onAvailableCountUpdated: ((Int) -> Void)?
+    /// 赠送接口成功：由权益卡容器切到「转赠记录」并刷新列表。
+    var onGiftSucceeded: (() -> Void)?
 
     private lazy var tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
@@ -37,29 +39,9 @@ final class BenefitTabViewController: BaseViewController {
         return c
     }()
 
-    private lazy var emptyView: UIView = {
-        let v = UIView()
+    private lazy var emptyView: FDEmptyStateView = {
+        let v = FDEmptyStateView(style: .page, message: emptyText)
         v.isHidden = true
-        let icon = UIImageView(image: UIImage(systemName: "gift.fill"))
-        icon.tintColor = .fdMuted
-        icon.contentMode = .scaleAspectFit
-        let label = UILabel()
-        label.text = emptyText
-        label.font = .fdMyCaption
-        label.textColor = .fdMuted
-        label.textAlignment = .center
-        v.addSubview(icon)
-        v.addSubview(label)
-        icon.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.centerY.equalToSuperview().offset(-24)
-            make.size.equalTo(40)
-        }
-        label.snp.makeConstraints { make in
-            make.top.equalTo(icon.snp.bottom).offset(12)
-            make.centerX.equalToSuperview()
-            make.leading.trailing.equalToSuperview().inset(24)
-        }
         return v
     }()
 
@@ -166,7 +148,7 @@ final class BenefitTabViewController: BaseViewController {
             return
         }
         let vc = BenefitTransferViewController(card: card, benefitsTakeId: takeId)
-        vc.onGifted = { [weak self] in self?.reload() }
+        vc.onGifted = { [weak self] in self?.onGiftSucceeded?() }
         navigationController?.pushViewController(vc, animated: true)
     }
 

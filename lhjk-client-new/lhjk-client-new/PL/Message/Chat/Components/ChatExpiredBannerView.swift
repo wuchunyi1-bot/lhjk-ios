@@ -71,6 +71,26 @@ final class ChatExpiredBannerView: UIControl {
 
     required init?(coder: NSCoder) { fatalError() }
 
+    func configure(groupStatus: Int?) {
+        let copy = GroupSessionStatus.readOnlyBannerCopy(status: groupStatus)
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.minimumLineHeight = 24
+        paragraph.maximumLineHeight = 24
+        paragraph.lineBreakMode = .byWordWrapping
+        messageLabel.attributedText = NSAttributedString(
+            string: copy,
+            attributes: [
+                .font: UIFont.fdFont(ofSize: 16, weight: .regular),
+                .foregroundColor: UIColor(hexString: "#C36E20"),
+                .paragraphStyle: paragraph,
+            ]
+        )
+        accessibilityLabel = copy
+        let opensMall = GroupSessionStatus.readOnlyBannerOpensMall(status: groupStatus)
+        isUserInteractionEnabled = opensMall
+        accessibilityTraits = opensMall ? .button : .staticText
+    }
+
     @objc private func handleTap() {
         onTap?()
     }

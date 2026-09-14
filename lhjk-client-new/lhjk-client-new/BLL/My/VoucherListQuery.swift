@@ -19,7 +19,7 @@ enum VoucherListQuery {
 
         let filteredTransfers: [BenefitTransferRecord]
         switch filter {
-        case .all, .pendingReceive:
+        case .all:
             filteredTransfers = transfers.filter { $0.status == .waiting }.sorted(by: compareTransfers)
         case .transferRecords:
             filteredTransfers = transfers.sorted(by: compareTransfers)
@@ -30,7 +30,7 @@ enum VoucherListQuery {
         if filter == .transferRecords {
             return filteredTransfers.map { .transfer($0) }
         }
-        if filter == .all || filter == .pendingReceive {
+        if filter == .all {
             var entries: [BenefitListEntry] =
                 filteredCards.map { .card($0) } + filteredTransfers.map { .transfer($0) }
             entries.sort { lhs, rhs in

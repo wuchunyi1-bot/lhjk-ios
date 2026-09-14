@@ -36,7 +36,7 @@ final class UserService: UserServiceProtocol {
         if let addressProvince = payload.addressProvince { params["addressProvince"] = addressProvince }
         if let addressCity = payload.addressCity { params["addressCity"] = addressCity }
         if let addressArea = payload.addressArea { params["addressArea"] = addressArea }
-        if let address = payload.address { params["address"] = address }
+        if let addressStreet = payload.addressStreet { params["addressStreet"] = addressStreet }
         if let age = payload.age { params["age"] = age }
 
         print("[UserService] updateCurrentProfile → params: \(params)")
@@ -283,17 +283,39 @@ final class UserService: UserServiceProtocol {
 
     // MARK: - 注销用户
 
+    /// 注销当前用户。业务码 `O0012`（兼容 `00012`）表示存在未完成订单，`data` 为命中的订单 id。
     func cancelCurrentUser() async throws {
         print("[UserService] cancelCurrentUser")
 
-        let response: APIResponse<EmptyResponse> = try await APIManager.shared
-            .postAsync(path: "/v1/users/cancelCurrentUser", parameters: nil, responseType: APIResponse<EmptyResponse>.self)
+        do {
+            let response: APIResponse<APIDataID> = try await APIManager.shared
+                .postAsync(path: "/v1/users/cancelCurrentUser", parameters: nil, responseType: APIResponse<APIDataID>.self)
 
-        guard response.isSuccess else {
-            print("[UserService] cancelCurrentUser ✗ code=\(response.code) msg=\(response.msg ?? "")")
-            throw UserServiceError.cancelFailed(response.msg ?? "")
+            if let unfinished = UserServiceError.unfinishedOrdersIfMatched(
+                code: response.code,
+                message: response.msg,
+                orderId: response.data?.value
+            ) {
+                print("[UserService] cancelCurrentUser ✗ unfinished orders code=\(response.code)")
+                throw unfinished
+            }
+            guard response.isSuccess else {
+                print("[UserService] cancelCurrentUser ✗ code=\(response.code) msg=\(response.msg ?? "")")
+                throw UserServiceError.cancelFailed(response.msg ?? "")
+            }
+            print("[UserService] cancelCurrentUser ✓")
+        } catch let error as UserServiceError {
+            throw error
+        } catch {
+            if let unfinished = UserServiceError.unfinishedOrdersIfMatched(
+                code: nil,
+                message: error.localizedDescription,
+                orderId: nil
+            ) {
+                throw unfinished
+            }
+            throw UserServiceError.cancelFailed(error.localizedDescription)
         }
-        print("[UserService] cancelCurrentUser ✓")
     }
 
     func changeCurrentPassword(oldPwd: String, newPwd: String) async throws {
@@ -373,12 +395,19 @@ private extension Encodable {
 // MARK: - Error
 
 enum UserServiceError: Error, LocalizedError {
+    /// `POST /v1/users/cancelCurrentUser` 业务码：存在未完成订单，禁止注销
+    static let unfinishedOrderCancelCode = "O0012"
+    static let unfinishedOrderDefaultMessage =
+        "您当前还有未完成的订单、待发货商品或使用中的服务，请处理完成后再申请注销。"
+
     case saveFailed(String)
     case queryFailed(String)
     case passwordResetFailed(String)
     case passwordChangeFailed(String)
     case mobileChangeFailed(String)
     case cancelFailed(String)
+    /// `code == O0012`：`orderId` 取响应 `data`，文案取 `msg`
+    case unfinishedOrders(orderId: Int64?, message: String)
     case wechatBindFailed(String)
     case wechatUnbindFailed(String)
 
@@ -390,8 +419,42 @@ enum UserServiceError: Error, LocalizedError {
         case .passwordChangeFailed(let msg): return msg.isEmpty ? "密码修改失败" : msg
         case .mobileChangeFailed(let msg): return msg.isEmpty ? "手机号修改失败" : msg
         case .cancelFailed(let msg): return msg.isEmpty ? "注销失败，请稍后重试" : msg
+        case .unfinishedOrders(_, let message): return message
         case .wechatBindFailed(let msg): return msg.isEmpty ? "微信绑定失败" : msg
         case .wechatUnbindFailed(let msg): return msg.isEmpty ? "微信解绑失败" : msg
         }
+    }
+
+    static func unfinishedOrdersIfMatched(
+        code: String?,
+        message: String?,
+        orderId: Int64?
+    ) -> UserServiceError? {
+        let trimmedMessage = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isUnfinishedOrderCancel(code: code, message: trimmedMessage) else { return nil }
+        return .unfinishedOrders(
+            orderId: orderId,
+            message: trimmedMessage.isEmpty ? unfinishedOrderDefaultMessage : trimmedMessage
+        )
+    }
+
+    static func isUnfinishedOrderCancel(code: String?, message: String?) -> Bool {
+        if let code, isUnfinishedOrderCancelCode(code) { return true }
+        return isUnfinishedOrderMessage(message)
+    }
+
+    /// 字母 O 与数字 0 在日志里易混，`O0012` / `00012` 都视为未完成订单。
+    static func isUnfinishedOrderCancelCode(_ code: String) -> Bool {
+        let normalized = code
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+            .replacingOccurrences(of: "O", with: "0")
+        return normalized == "00012"
+    }
+
+    static func isUnfinishedOrderMessage(_ message: String?) -> Bool {
+        let text = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return false }
+        return text.contains("未完成的订单") || text.contains("暂无法注销")
     }
 }

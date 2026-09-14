@@ -13,8 +13,6 @@ final class BenefitListViewController: BaseViewController {
 
     private let tabs: [TabItem] = [
         TabItem(filter: .all, emptyText: "暂无相关权益卡"),
-        TabItem(filter: .pendingBind, emptyText: "暂无待绑定权益卡"),
-        TabItem(filter: .pendingReceive, emptyText: "暂无待领取权益卡"),
         TabItem(filter: .available, emptyText: "暂无待使用权益卡"),
         TabItem(filter: .redeemed, emptyText: "暂无已兑换权益卡"),
         TabItem(filter: .expired, emptyText: "暂无已过期权益卡"),
@@ -115,12 +113,43 @@ final class BenefitListViewController: BaseViewController {
         currentChildVC?.refresh()
     }
 
+    /// `giftBenefit` 成功后：定位「转赠记录」并刷新会受转赠影响的列表。
+    func selectTransferRecordsAfterGift() {
+        guard let index = tabs.firstIndex(where: { $0.filter == .transferRecords }) else { return }
+        if selectedTabIndex != index {
+            selectedTabIndex = index
+            tabCollectionView.reloadData()
+            showChildVC(at: index)
+            let indexPath = IndexPath(item: index, section: 0)
+            if tabCollectionView.numberOfItems(inSection: 0) > index {
+                tabCollectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: false)
+            }
+        }
+        refreshGiftAffectedTabs()
+    }
+
+    private func refreshGiftAffectedTabs() {
+        availableCount = AppContainer.shared.voucherService.availableBenefitCount
+        tabCollectionView.reloadData()
+        for vc in childVCs {
+            switch vc.filter {
+            case .all, .available, .transferRecords:
+                vc.refresh()
+            default:
+                break
+            }
+        }
+    }
+
     private func buildChildVCs() {
         childVCs = tabs.map {
             let vc = BenefitTabViewController(filter: $0.filter, emptyText: $0.emptyText)
             vc.onAvailableCountUpdated = { [weak self] count in
                 self?.availableCount = count
                 self?.tabCollectionView.reloadData()
+            }
+            vc.onGiftSucceeded = { [weak self] in
+                self?.selectTransferRecordsAfterGift()
             }
             return vc
         }
@@ -772,6 +801,7 @@ final class BenefitBindViewController: BaseViewController {
         view.endEditing(true)
         guard agreed else {
             shake(ruleWrap)
+            showToast("请先阅读并同意《权益卡使用规则》")
             return
         }
         // 输入框内容原样提交，不做 trim / 大小写 / 过滤
@@ -1029,24 +1059,15 @@ final class BenefitTransferViewController: BaseViewController {
                     message: self.messageView.text
                 )
                 let operationNo = (issue.operationNo ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !operationNo.isEmpty else {
-                    await MainActor.run {
-                        self.confirmButton.isEnabled = true
-                        self.onGifted?()
-                        self.presentAlert(
-                            title: "赠送成功",
-                            message: "转赠已创建，但未返回分享凭证，请稍后在转赠记录查看。"
-                        ) {
-                            self.navigationController?.popViewController(animated: true)
-                        }
-                    }
-                    return
+                let thumb: UIImage?
+                if operationNo.isEmpty {
+                    thumb = nil
+                } else {
+                    let thumbURL = issue.primaryCard?.imageUrl ?? self.card.imageUrl
+                    thumb = await self.loadShareThumbImage(from: thumbURL)
                 }
-
-                let thumbURL = issue.primaryCard?.imageUrl ?? self.card.imageUrl
-                let thumb = await self.loadShareThumbImage(from: thumbURL)
                 await MainActor.run {
-                    self.shareGiftCard(issue: issue, thumb: thumb)
+                    self.completeGiftSuccess(issue: issue, operationNo: operationNo, thumb: thumb)
                 }
             } catch {
                 await MainActor.run {
@@ -1057,6 +1078,19 @@ final class BenefitTransferViewController: BaseViewController {
         }
     }
 
+    /// `giftBenefit` 成功：拉起微信分享（有凭证时），同时返回上一页并定位「转赠记录」。
+    private func completeGiftSuccess(issue: BenefitsIssueVO, operationNo: String, thumb: UIImage?) {
+        if !operationNo.isEmpty {
+            shareGiftCard(issue: issue, thumb: thumb)
+        }
+        onGifted?()
+        let nav = navigationController
+        nav?.popViewController(animated: true)
+        if operationNo.isEmpty {
+            nav?.topViewController?.showToastAlert("转赠已创建，请稍后在转赠记录查看。", duration: 1.4)
+        }
+    }
+
     private func shareGiftCard(issue: BenefitsIssueVO, thumb: UIImage?) {
         let payload = BenefitGiftShareBuilder.miniProgramPayload(
             issue: issue,
@@ -1064,29 +1098,7 @@ final class BenefitTransferViewController: BaseViewController {
             hdImage: thumb
         )
         print("[BenefitTransfer] share path=\(payload.path) appId=\(issue.appId ?? "") cards=\(issue.cards?.count ?? 0)")
-        WeChatSDKManager.shared.shareMiniProgram(payload) { [weak self] result in
-            DispatchQueue.main.async {
-                guard let self else { return }
-                self.confirmButton.isEnabled = true
-                self.onGifted?()
-                switch result {
-                case .success:
-                    self.presentToast("已分享给微信好友")
-                    self.navigationController?.popViewController(animated: true)
-                case .failure(let error):
-                    let message: String
-                    switch error {
-                    case .userCancelled:
-                        message = "已取消分享。转赠记录仍保留，可请好友在 24 小时内领取。"
-                    default:
-                        message = "\(error.localizedDescription)。转赠已创建，可在转赠记录查看。"
-                    }
-                    self.presentAlert(title: "赠送成功", message: message) {
-                        self.navigationController?.popViewController(animated: true)
-                    }
-                }
-            }
-        }
+        WeChatSDKManager.shared.shareMiniProgram(payload) { _ in }
     }
 
     private func loadShareThumbImage(from rawURL: String?) async -> UIImage? {
@@ -1108,12 +1120,6 @@ final class BenefitTransferViewController: BaseViewController {
 
     private func presentToast(_ message: String) {
         showToastAlert(message, duration: 1.4)
-    }
-
-    private func presentAlert(title: String?, message: String, onOK: @escaping () -> Void) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "知道了", style: .default) { _ in onOK() })
-        present(alert, animated: true)
     }
 }
 
@@ -1155,7 +1161,7 @@ final class BenefitRedeemViewController: BaseViewController {
     private let packageStack = UIStackView()
     private let emptyWrap = UIStackView()
     private let emptyCard = UIView()
-    private let emptyMessage = UILabel()
+    private let emptyStateView = FDEmptyStateView(style: .compact, message: "当前分类暂无可兑换套餐")
     private let loadingIndicator = UIActivityIndicatorView(style: .medium)
 
     private var pageInfo: BenefitsRedeemPageInfoVO?
@@ -1332,14 +1338,13 @@ final class BenefitRedeemViewController: BaseViewController {
         packageStack.isLayoutMarginsRelativeArrangement = true
         packageStack.layoutMargins = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
 
-        emptyMessage.font = .fdFont(ofSize: 13, weight: .regular)
-        emptyMessage.textColor = .fdSubtext
-        emptyMessage.textAlignment = .center
-        emptyMessage.numberOfLines = 0
         emptyCard.backgroundColor = .fdSurface
         emptyCard.layer.cornerRadius = 16
-        emptyCard.addSubview(emptyMessage)
-        emptyMessage.snp.makeConstraints { $0.edges.equalToSuperview().inset(24) }
+        emptyCard.addSubview(emptyStateView)
+        emptyStateView.snp.makeConstraints {
+            $0.edges.equalToSuperview().inset(8)
+            $0.height.equalTo(220)
+        }
         emptyCard.isHidden = true
 
         emptyWrap.axis = .vertical
@@ -1487,7 +1492,7 @@ final class BenefitRedeemViewController: BaseViewController {
     }
 
     private func showEmpty(message: String) {
-        emptyMessage.text = message
+        emptyStateView.configure(message: message)
         emptyCard.isHidden = false
         packageStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
     }

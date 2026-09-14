@@ -51,14 +51,10 @@ final class ScaleDeviceSelectViewController: BaseViewController {
         return b
     }()
 
-    private lazy var emptyLabel: UILabel = {
-        let l = UILabel()
-        l.text = "暂无可绑定设备"
-        l.font = .fdCaption
-        l.textColor = .fdMuted
-        l.textAlignment = .center
-        l.isHidden = true
-        return l
+    private lazy var emptyView: FDEmptyStateView = {
+        let v = FDEmptyStateView(style: .page, message: "暂无可绑定设备")
+        v.isHidden = true
+        return v
     }()
 
     private lazy var loadingIndicator: UIActivityIndicatorView = {
@@ -80,7 +76,7 @@ final class ScaleDeviceSelectViewController: BaseViewController {
 
         view.addSubview(tableView)
         view.addSubview(addButton)
-        view.addSubview(emptyLabel)
+        view.addSubview(emptyView)
         view.addSubview(loadingIndicator)
 
         addButton.snp.makeConstraints { make in
@@ -92,7 +88,7 @@ final class ScaleDeviceSelectViewController: BaseViewController {
 
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        emptyLabel.snp.makeConstraints { $0.center.equalToSuperview() }
+        emptyView.snp.makeConstraints { $0.edges.equalToSuperview() }
         loadingIndicator.snp.makeConstraints { $0.center.equalToSuperview() }
     }
 
@@ -115,7 +111,7 @@ final class ScaleDeviceSelectViewController: BaseViewController {
                 if loading {
                     self.loadingIndicator.startAnimating()
                     self.tableView.isHidden = true
-                    self.emptyLabel.isHidden = true
+                    self.emptyView.isHidden = true
                     self.addButton.isHidden = true
                 } else {
                     self.loadingIndicator.stopAnimating()
@@ -142,7 +138,7 @@ final class ScaleDeviceSelectViewController: BaseViewController {
         tableView.verticalScrollIndicatorInsets.bottom = showAdd ? 63 : 0
 
         let empty = viewModel.isEmpty && !viewModel.isLoading
-        emptyLabel.isHidden = !empty
+        emptyView.isHidden = !empty
         tableView.isHidden = viewModel.isLoading || empty
         tableView.reloadData()
     }

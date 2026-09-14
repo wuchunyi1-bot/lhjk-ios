@@ -51,9 +51,9 @@ payable       = max(0, settlementPayable - benefitDiscount)
 |------|------|------|
 | 列表 | `GET /v1/benefitsTake/getCustomerPage?status=3` | 若提供「按订单/套餐可用」接口则替换 |
 | 写回订单 | **无** | 对齐 `bindCouponTake` 的 `bindBenefitsTake(orderId, benefitsTakeIds[])` |
-| 结算回写 | **无** | `appOrderDetailBO` 增权益抵扣金额与已选列表；应付含权益后去掉本地扣减 |
+| 结算回写 | `getOrderSettlement.benefitsAmount` / `appOrderDetailBO.benefitsAmount` | 有值时费用明细与应付以结算为准；未返回时仍可本地试算 |
 
-切换条件：Apifox 出现绑单接口且结算返回权益金额后，将「本地选中 + 本地扣减」改为「绑单成功 → refreshSettlement」，UI 不变。
+切换条件：结算已返回 `benefitsAmount` 时，费用明细与应付以结算为准；绑单接口仍以现有选卡链路为准。
 
 ## 文件
 

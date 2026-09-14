@@ -280,7 +280,7 @@ final class HomeTaskCardCell: UITableViewCell {
 
         let title = UILabel()
         title.font = .fdFont(ofSize: 16, weight: .medium)
-        title.textColor = .fdText
+        title.textColor = task.done ? UIColor(hexString: "#8591AB") : .fdText
         title.text = task.shortTitle.isEmpty ? task.title : task.shortTitle
         title.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 

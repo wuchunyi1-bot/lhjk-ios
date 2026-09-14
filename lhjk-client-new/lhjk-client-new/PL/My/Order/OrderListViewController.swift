@@ -223,15 +223,32 @@ final class OrderListViewController: BaseViewController {
         currentChildVC?.endAppearanceTransition()
     }
 
+    /// 切到「全部」Tab（已取消订单仅在此可见）
+    func selectAllTab() {
+        selectedTabIndex = 0
+        applySelectedTab(animated: false)
+    }
+
     private func selectTab(at index: Int) {
         guard index != selectedTabIndex else { return }
         selectedTabIndex = index
+        applySelectedTab(animated: true)
+    }
+
+    private func applySelectedTab(animated: Bool) {
+        guard isViewLoaded else { return }
         tabCollectionView.reloadData()
-        tabCollectionView.scrollToItem(
-            at: IndexPath(item: index, section: 0),
-            at: .centeredHorizontally,
-            animated: true
-        )
+        tabCollectionView.layoutIfNeeded()
+        let index = selectedTabIndex
+        if view.window != nil,
+           tabCollectionView.bounds.width > 0,
+           tabCollectionView.numberOfItems(inSection: 0) > index {
+            tabCollectionView.scrollToItem(
+                at: IndexPath(item: index, section: 0),
+                at: .centeredHorizontally,
+                animated: animated
+            )
+        }
         showChildVC(at: index)
     }
 }

@@ -96,6 +96,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func sceneWillEnterForeground(_ scene: UIScene) {
         // 热启动：融云 SDK 内部自动维持/恢复长连接，无需 App 侧干预
+        AppVersionCheckCoordinator.notifyWillEnterForeground()
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
@@ -118,7 +119,6 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
         print("Received Universal Link: \(webpageURL.absoluteString)")
     }
-    
 
     // MARK: - IM Connection
 

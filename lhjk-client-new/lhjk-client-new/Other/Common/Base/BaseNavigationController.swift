@@ -65,7 +65,7 @@ extension UIImage {
 
     /// 服务首页顶栏购物车（彩色切图 `serice_cart`）
     static var fdServiceHubCart: UIImage? {
-        fdServiceHubCart(pointSize: 32)
+        fdServiceHubCart(pointSize: 40)
     }
 
     /// 按展示尺寸缩放 `serice_cart`（切图留白较多，需略大于线框导航图标）

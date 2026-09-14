@@ -12,7 +12,6 @@ final class AddressEditViewModel: ObservableObject {
     @Published var city: String = ""
     @Published var area: String = ""
     @Published var address: String = ""
-    @Published var code: String = ""
     @Published var isDefault: Bool = false
 
     @Published private(set) var isSaving = false
@@ -65,7 +64,6 @@ final class AddressEditViewModel: ObservableObject {
             city = address.city ?? ""
             area = address.area ?? ""
             self.address = address.address ?? ""
-            code = address.code ?? ""
             isDefault = address.isDefaultAddress
         }
     }
@@ -85,9 +83,6 @@ final class AddressEditViewModel: ObservableObject {
             if !result.area.isEmpty { area = result.area }
             if !result.detail.isEmpty {
                 address = result.detail
-            }
-            if let postal = result.postalCode, !postal.isEmpty {
-                code = postal
             }
             if province.isEmpty && city.isEmpty && area.isEmpty {
                 toastMessage.send("定位失败，请手动选择")
@@ -119,10 +114,7 @@ final class AddressEditViewModel: ObservableObject {
             city: city.trimmingCharacters(in: .whitespacesAndNewlines),
             area: area.trimmingCharacters(in: .whitespacesAndNewlines),
             address: address.trimmingCharacters(in: .whitespacesAndNewlines),
-            code: {
-                let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines)
-                return trimmed.isEmpty ? nil : trimmed
-            }()
+            code: nil
         )
 
         do {

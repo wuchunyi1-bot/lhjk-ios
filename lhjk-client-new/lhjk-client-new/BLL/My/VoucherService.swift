@@ -153,14 +153,14 @@ final class VoucherService {
                 transfers: page.pendingTransfers,
                 filter: .all
             )
-        case .pendingBind, .pendingReceive, .available, .redeemed, .expired:
+        case .available, .redeemed, .expired:
             let page = try await getCustomerPage(status: filter.apiStatus)
             if filter == .available {
                 cachedAvailableBenefitCount = page.total
             }
             return VoucherListQuery.benefitEntries(
                 cards: page.cards,
-                transfers: filter == .pendingReceive ? page.pendingTransfers : [],
+                transfers: [],
                 filter: filter
             )
         }

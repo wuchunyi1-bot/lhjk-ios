@@ -11,10 +11,12 @@ struct UserTodayMonitorTask: Decodable, Equatable {
     let isComplete: Int?
     let monitorTime: String?
     let monitorValue: String?
-  /// 监测类型（基础字典 `monitorType`，含义与跳转以字典 value 为准，不以 Apifox 文档枚举为准）
+    /// 监测类型（基础字典 `monitorType`，含义与跳转以字典 value 为准，不以 Apifox 文档枚举为准）
     let type: Int?
     /// 餐次：1 空腹 … 8 睡前（见 Apifox `mealType` 说明）
     let mealType: Int?
+    /// 时段名称（Apifox `mealTypeName`，详情页「计划时段」直接展示）
+    let mealTypeName: String?
     let userId: String?
     let schemeId: String?
     let doctorId: String?
@@ -30,7 +32,7 @@ struct UserTodayMonitorTask: Decodable, Equatable {
     let taskNumber: Int?
     /// 消息提醒开关：1 开启 / 0 关闭
     let remindSwitch: Int?
-    /// 监测说明（优先于本地默认文案）
+    /// 监测说明；空则详情页不展示该块
     let monitorSpecification: String?
     /// 完成一次任务可获得积分
     let quantity: Int?
@@ -43,7 +45,7 @@ struct UserTodayMonitorTask: Decodable, Equatable {
         case id
         case getId = "get_id"
         case taskId, taskName, isComplete, monitorTime, monitorValue
-        case type, mealType, userId, schemeId, doctorId, sessionId, hospitalId
+        case type, mealType, mealTypeName, userId, schemeId, doctorId, sessionId, hospitalId
         case createTime, timeStamp, skipUrl
         case completeTaskNumber, taskNumber, remindSwitch, monitorSpecification
         case quantity, pointsEarned, pointsTotal
@@ -60,6 +62,7 @@ struct UserTodayMonitorTask: Decodable, Equatable {
         monitorValue = try c.decodeIfPresent(String.self, forKey: .monitorValue)
         type = Self.decodeFlexibleInt(c, key: .type)
         mealType = Self.decodeFlexibleInt(c, key: .mealType)
+        mealTypeName = Self.decodeFlexibleString(c, key: .mealTypeName)
         userId = Self.decodeFlexibleString(c, key: .userId)
         schemeId = Self.decodeFlexibleString(c, key: .schemeId)
         doctorId = Self.decodeFlexibleString(c, key: .doctorId)
@@ -71,7 +74,7 @@ struct UserTodayMonitorTask: Decodable, Equatable {
         completeTaskNumber = Self.decodeFlexibleInt(c, key: .completeTaskNumber)
         taskNumber = Self.decodeFlexibleInt(c, key: .taskNumber)
         remindSwitch = Self.decodeFlexibleInt(c, key: .remindSwitch)
-        monitorSpecification = try c.decodeIfPresent(String.self, forKey: .monitorSpecification)
+        monitorSpecification = Self.decodeFlexibleString(c, key: .monitorSpecification)
         quantity = Self.decodeFlexibleInt(c, key: .quantity)
         pointsEarned = Self.decodeFlexibleInt(c, key: .pointsEarned)
         pointsTotal = Self.decodeFlexibleInt(c, key: .pointsTotal)
@@ -121,14 +124,9 @@ extension UserTodayMonitorTask {
         let meta = Self.displayMeta(for: type)
         let title = name.isEmpty ? "\(meta.shortTitle)提醒" : name
         let shortTitle = name.isEmpty ? meta.shortTitle : Self.shorten(name)
-        let category = DictionaryCacheService.shared.monitorTaskDisplayName(type) ?? meta.shortTitle
 
         let formattedPlanTime = Self.formatPlanTime(monitorTime)
-        let planPeriod = Self.planPeriodLabel(
-            monitorValue: monitorValue,
-            mealType: mealType,
-            isComplete: done
-        )
+        let planPeriod = Self.planPeriodLabel(mealTypeName: mealTypeName)
         var rows: [DailyHealthTask.Row] = []
         if let period = planPeriod, !period.isEmpty {
             rows.append(.init(label: "计划时段", value: period))
@@ -152,7 +150,6 @@ extension UserTodayMonitorTask {
         let instructions = monitorSpecification?
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .nilIfEmpty
-            ?? meta.instructions
 
         var extraTags: [String] = []
         if let mealLabel = Self.mealTypeLabel(mealType), !mealLabel.isEmpty {
@@ -172,7 +169,7 @@ extension UserTodayMonitorTask {
             shortTitle: shortTitle,
             desc: meta.defaultDesc,
             done: done,
-            category: category,
+            category: "监测任务",
             planTime: formattedPlanTime,
             actionRoute: resolvedActionRoute(),
             monitorType: type,
@@ -187,45 +184,14 @@ extension UserTodayMonitorTask {
                 taskName: name,
                 shortTitle: shortTitle,
                 mealType: mealType
-            ),
-            detailMessage: Self.detailPageMessage(
-                shortTitle: shortTitle,
-                fallback: meta.defaultDesc
             )
         )
     }
 
-    private static func planPeriodLabel(
-        monitorValue: String?,
-        mealType: Int?,
-        isComplete: Bool
-    ) -> String? {
-        if let meal = mealTypeLabel(mealType), !meal.isEmpty {
-            return meal
-        }
-        guard !isComplete else { return nil }
-        guard let raw = monitorValue?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !raw.isEmpty else {
-            return nil
-        }
-        if looksLikeNumericMeasurement(raw) { return nil }
-        return raw
-    }
-
-    private static func looksLikeNumericMeasurement(_ value: String) -> Bool {
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return false }
-        let numericCharset = CharacterSet(charactersIn: "0123456789./")
-        return trimmed.unicodeScalars.allSatisfy { numericCharset.contains($0) }
-    }
-
-    private static func detailPageMessage(shortTitle: String, fallback: String) -> String {
-        let metric = shortTitle
-            .replacingOccurrences(of: "监测", with: "")
-            .replacingOccurrences(of: "记录", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !metric.isEmpty else { return fallback }
-        return "您好，已到今日\(metric)监测时间，请静坐休息 5 分钟后测量并上传数据。"
+    /// 详情页「计划时段」直接取接口 `mealTypeName`，空则不展示
+    private static func planPeriodLabel(mealTypeName: String?) -> String? {
+        let trimmed = mealTypeName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     private static func rewardPointsPerTask(quantity: Int?) -> Int? {
@@ -308,7 +274,39 @@ extension UserTodayMonitorTask {
     private func resolvedActionRoute() -> String {
         let taskRef = id ?? taskId ?? "?"
         let ctx = "map taskId=\(taskRef) skipUrl=\(skipUrl ?? "nil")(ignored)"
-        return DictionaryCacheService.shared.resolveMonitorTaskActionRoute(type: type, logContext: ctx)
+        let route = DictionaryCacheService.shared.resolveMonitorTaskActionRoute(type: type, logContext: ctx)
+        return Self.appendTaskIdIfNeeded(route: route, taskId: routeQueryTaskId)
+    }
+
+    /// H5 录入页 query：优先接口 `taskId`，否则用实例 `id`
+    private var routeQueryTaskId: String? {
+        for raw in [taskId, id] {
+            let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if !trimmed.isEmpty { return trimmed }
+        }
+        return nil
+    }
+
+    /// 今日任务补剂 / 运动打卡带 `taskId`；补剂列表 `/supplement` 改写为录入页
+    private static func appendTaskIdIfNeeded(route: String, taskId: String?) -> String {
+        let trimmed = route.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        let path = trimmed.split(separator: "?", maxSplits: 1).first.map(String.init) ?? trimmed
+        if path == "/supplement" || path == "/supplement/add" {
+            guard let taskId, !taskId.isEmpty else { return "/supplement/add" }
+            if trimmed.contains("taskId=") {
+                return path == "/supplement"
+                    ? trimmed.replacingOccurrences(of: "/supplement?", with: "/supplement/add?")
+                    : trimmed
+            }
+            return "/supplement/add?taskId=\(taskId)"
+        }
+        if path == "/exercise-food/check-in" {
+            guard let taskId, !taskId.isEmpty else { return "/exercise-food/check-in" }
+            if trimmed.contains("taskId=") { return trimmed }
+            return "/exercise-food/check-in?taskId=\(taskId)"
+        }
+        return trimmed
     }
 
     private static func shorten(_ name: String) -> String {
@@ -333,12 +331,30 @@ extension UserTodayMonitorTask {
             .nilIfEmpty
         let route = DictionaryCacheService.shared.monitorTaskActionRoute(type) ?? ""
         return DisplayMeta(
-            iconKey: base.iconKey,
+            iconKey: iconKey(forDictionaryName: dictName) ?? base.iconKey,
             shortTitle: dictName ?? base.shortTitle,
             actionRoute: route,
             defaultDesc: base.defaultDesc,
             instructions: base.instructions
         )
+    }
+
+    private static func iconKey(forDictionaryName name: String?) -> String? {
+        let raw = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !raw.isEmpty else { return nil }
+        if raw.contains("营养补") || raw.contains("补充剂") || raw.contains("补剂") { return "supplement" }
+        if raw.contains("用药") || raw.contains("药物") { return "medicine" }
+        if raw.contains("血脂") { return "glucose" }
+        if raw.contains("血压") { return "pressure" }
+        if raw.contains("血糖") { return "glucose" }
+        if raw.contains("血氧") { return "oxygen" }
+        if raw.contains("体重") { return "weight" }
+        if raw.contains("体温") { return "temperature" }
+        if raw.contains("心率") { return "heart-rate" }
+        if raw.contains("饮食") { return "diet" }
+        if raw.contains("运动") { return "exercise" }
+        if raw.contains("睡眠") { return "sleep" }
+        return nil
     }
 
     /// 本地兜底：图标 / 默认文案 / 路由模板（按字典 `monitorType.value` 编号，与 Apifox 文档枚举无关）
@@ -364,7 +380,7 @@ extension UserTodayMonitorTask {
             return .init(
                 iconKey: "exercise",
                 shortTitle: "运动记录",
-                actionRoute: "/health/metrics/exercise/home",
+                actionRoute: "/exercise-food/check-in",
                 defaultDesc: "请完成今日饮食或运动记录并上传数据。",
                 instructions: "如实记录当日饮食与运动情况，便于健管师评估。"
             )

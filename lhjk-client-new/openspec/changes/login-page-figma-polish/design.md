@@ -1,6 +1,6 @@
 ## Context
 
-对照 Figma「登录页-优化前 / 优化后」并排稿，仅改登录主路径 UI；忘记密码 / 绑定手机号仍用 pill 验证码按钮。
+对照 Figma「登录页-优化前 / 优化后」并排稿，仅改登录主路径 UI；忘记密码仍用 pill 验证码按钮。微信未绑定手机号弹窗（节点 `5574:18136`）改用与登录页一致的 inline「获取验证码」。
 
 ## Decisions
 
@@ -11,7 +11,7 @@
    - `login_code_icon` ← Figma `3021:579` 原始 PNG
    - `login_wechat` ← Figma `3021:618` 原始 SVG
    - `login_checkbox` ← Figma `3021:624` 原始 SVG
-2. **验证码**：登录页 `VerifyCodeButton(style: .inline)` 挂 `LoginFieldView.trailingAccessoryView`；其它页 `.pill`。
+2. **验证码**：登录页与微信绑定弹窗 `VerifyCodeButton(style: .inline)` 挂 `LoginFieldView.trailingAccessoryView`；忘记密码等其它页 `.pill`。
 3. **主按钮**：`CAGradientLayer` `#FE9B43 → #FE622C`（通过登录 Token），375pt 基准下 `327×51`、圆角 `25.5`。
 4. **协议位置**：底部；业务校验逻辑不变。
 5. **过期提示**：`sessionExpiredLabel`，由 `UserDefaults fd_session_expired_hint` 控制，非常驻。

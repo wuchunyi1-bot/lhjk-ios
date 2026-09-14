@@ -11,7 +11,8 @@
 - **WHEN** `entry=cart`
 - **THEN** 使用 `OrderConfirmEntry.cartCheckout`
 - **AND** 自定义导航栏返回按钮
-- **AND** 返回、加载失败回退、支付成功均调用 `OrderNavigationCoordinator.navigateToMyOrdersAll(from:)`
+- **AND** 返回、加载失败回退调用 `OrderNavigationCoordinator.navigateToMyOrdersPendingPayment(from:)`
+- **AND** 支付成功仍走支付结果页（`presentPayResultOnMyOrders`，订单列表默认「全部」）
 
 #### Scenario: 默认来源
 

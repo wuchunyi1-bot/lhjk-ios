@@ -4,3 +4,4 @@
 - [x] 1.2 新增 AgreementCenterViewController + 路由
 - [x] 1.3 新增 AgreementDetailViewController + `/auth/agreement/{docType}` 路由
 - [x] 1.4 提示开发者将新 Swift 文件加入 Xcode
+- [x] 1.5 协议中心补《会员服务协议》（`member-service`），详情正文对齐 Vue `agreementMap`

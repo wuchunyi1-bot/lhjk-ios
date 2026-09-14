@@ -60,7 +60,7 @@ enum WeChatLoginStep {
 
 ### 5. 绑定发码
 
-`PhoneBindingView` 通过 `onRequestCode: (phone) async throws -> Void`（或 VC 注入）调用 `sendVerificationCode(..., .login)`，去掉本地假倒计时成功。
+`PhoneBindingView` 通过 `onRequestSMSCode` 调用 `sendVerificationCode(..., .login)`，去掉本地假倒计时成功。视觉对齐 Figma `5574:18136`：底部抽屉（Bottom Sheet 从底滑出）、右上关闭、无图标描边输入框、inline「获取验证码」、渐变「绑定并登录」。
 
 ## Risks / Trade-offs
 

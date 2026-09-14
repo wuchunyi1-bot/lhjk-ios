@@ -14,7 +14,8 @@
 #### Scenario: 状态 Tab 独立 TableView
 
 - **WHEN** 权益卡容器展示
-- **THEN** 状态 Tab 为：全部、待使用、已兑换、已过期、转赠记录
+- **THEN** 状态 Tab **恰好**为：全部、待使用、已兑换、已过期、转赠记录（与 funde 正式态一致）
+- **AND** 不展示「模拟领取 / 模拟测试」（原型验收入口）、「待绑定」「待领取」独立 Tab
 - **AND** 每个状态对应一个已缓存的 `BenefitTabViewController`，各自持有独立 `UITableView`
 - **WHEN** 优惠券容器展示
 - **THEN** 状态 Tab 为：全部、待使用、已领用、已过期
@@ -71,10 +72,18 @@
 - **THEN** 等待领取展示倒计时；已转赠展示受赠人与领取时间
 - **AND** 转赠中原卡不出现在持卡 Tab
 
+#### Scenario: 立即赠送成功返回转赠记录
+
+- **WHEN** 用户在赠送权益卡页点击「立即赠送」且 `giftBenefit` 成功
+- **THEN** 拉起微信小程序卡片分享（有 `operationNo` 时）
+- **AND** 同时 pop 返回权益卡列表，状态 Tab 定位到「转赠记录」
+- **AND** 刷新转赠记录与持卡列表（全部 / 待使用），不因微信分享取消或失败而撤销转赠或再次导航
+- **AND** 权威时序见主规格 `openspec/specs/vouchers/`「转赠微信分享」
+
 #### Scenario: 空态
 
 - **WHEN** 当前状态 Tab 无条目
-- **THEN** 「暂无相关权益卡」
+- **THEN** 展示 `noData_default`（`FDEmptyStateView`）和「暂无相关权益卡」
 
 ### Requirement: 优惠券模块列表
 
@@ -99,7 +108,7 @@
 #### Scenario: 空态
 
 - **WHEN** 当前状态 Tab 无券
-- **THEN** 「暂无相关优惠券」及引导文案
+- **THEN** 展示 `noData_default` 与「暂无相关优惠券」及引导文案
 
 ### Requirement: 我的页卡券角标
 

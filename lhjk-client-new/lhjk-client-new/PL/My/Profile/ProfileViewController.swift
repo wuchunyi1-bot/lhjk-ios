@@ -416,7 +416,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             city: user.addressCity ?? "",
             district: user.addressArea ?? ""
         )
-        values[.address] = user.address ?? ""
+        values[.address] = user.addressStreet ?? ""
 
         refreshAllValueLabels()
     }
@@ -575,7 +575,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         case .ethnic:
             payload.ethnic = value
         case .address:
-            payload.address = value
+            payload.addressStreet = value
         case .phone, .nativePlace, .residence:
             return
         }

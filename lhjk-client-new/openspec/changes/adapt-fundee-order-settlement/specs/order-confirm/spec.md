@@ -33,7 +33,7 @@
 #### Scenario: 响应映射
 
 - **WHEN** 接口成功返回 `ShoppingCartPackageDetailMobileBO`
-- **THEN** 用于展示：`packageName`、`details`、`commodityPrice`/`totalPrice`、`expressAmount`、`orderExpress`、`wechat`/`alipay`、`description`、`amount`（优惠券抵扣）、`couponTakeId` 等
+- **THEN** 用于展示：`packageName`、`details`、`commodityPrice`/`totalPrice`、`expressAmount`、`orderExpress`、`wechat`/`alipay`、`description`、`amount`（优惠券抵扣，缺省 `appOrderDetailBO.couponAmount`）、`benefitsAmount`（权益卡抵扣，缺省 `appOrderDetailBO.benefitsAmount`）、`couponTakeId` 等
 - **AND** 解码 `amountVersion`、`expectedPayableAmount`，支付时原样带回 `orderPay`；页面应付优先 `expectedPayableAmount`
 - **AND** 结算根级 `address` 字段**已废弃**（恒为空），**禁止**用于快递地址展示；快递地址**仅**读 `appOrderDetailBO.receiver`/`phone`/`address`
 - **AND** `orderExpress`：`1` = 支持快递；其它 = 仅医院自提
@@ -60,7 +60,7 @@
 - **THEN** 调用 `POST /v1/order/updateOrderDelivery`，**仅**传 `orderId` + `typeOrder=0`
 - **AND** 成功后重新调用 `getOrderSettlement` 刷新确认页金额/地址/优惠券等
 - **WHEN** 用户切换到「快递配送」且当前**无**快递地址信息
-- **THEN** 仅本地切换 UI，**不调用** `updateOrderDelivery`
+- **THEN** 先按「静默绑定默认地址」尝试填充；若无默认地址或绑定失败，仅本地切换 UI，**不调用**无地址的 `updateOrderDelivery`
 - **WHEN** 用户切换到「快递配送」且结算/本地已有快递地址
 - **THEN** 调用 `updateOrderDelivery` 传 `orderId`、`typeOrder=1` 及地址字段，成功后刷新 `getOrderSettlement`
 
@@ -72,9 +72,11 @@
 - **AND** 上述字段任一非空即构造展示地址，**禁止**再附加 `typeOrder` 等额外判断拦截展示
 - **AND** 在「快递配送」Tab 下展示该地址卡；`appOrderDetailBO` 只承载快递配送地址，机构自提地址由 `hospital/getById` 获取
 - **WHEN** `appOrderDetailBO` 无快递地址信息
-- **THEN** 快递地址卡展示**空态**（「请选择收货地址」入口 + chevron），**禁止**回退展示机构自提地址
-- **AND** 点击入口跳转 `/me/address`（`selectMode=true`）
-- **AND** **本页禁止**调用获取地址列表接口；地址列表由 `/me/address` 自行加载
+- **THEN** 若当前为快递配送，调用 `GET /v1/address/getAddressList` **仅**查找 `isDefault=1` 的默认地址（确认订单与待支付 `entry=order_pay` 共用此逻辑）
+- **AND** 找到有效 `addressId` 时静默调用 `updateOrderDelivery`（`typeOrder=1` + 地址字段），成功后刷新 `getOrderSettlement`；**不得** Toast「已选择收货地址」
+- **AND** 不得覆盖订单已有快递快照，也不得覆盖用户本页已手动选中的地址
+- **AND** 无默认地址、列表失败或绑定失败时，快递地址卡展示**空态**（「请选择收货地址」+「去选择」），**禁止**回退展示机构自提地址
+- **AND** 点击入口跳转 `/me/address`（`selectMode=true`）；**禁止**在本页展示地址列表 UI（列表仍由 `/me/address` 自行加载）
 - **WHEN** 用户在地址列表选中一条地址
 - **THEN** 回调 `onSelect(address)` 返回确认页，并调用 `POST /v1/order/updateOrderDelivery`（[Apifox](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/490169536e0.md)）绑定：`orderId`、`typeOrder=1`、`addressId`、`receiver`、`phone`、`address`（JSON body）
 - **AND** 成功后刷新 `getOrderSettlement` 并 Toast「已选择收货地址」；失败回滚原地址并 Toast 错误
@@ -90,6 +92,7 @@
 - **WHEN** 用户点击「优惠券」行
 - **THEN** 调用 `GET /v1/couponTake/getCouponTakeList`（移动端领用列表；需 `couponTakeId` 供绑定）
 - **AND** Query 传 `pageNum`、`pageSize`、`hospitalId`（取自结算 `resolvedHospitalId`）
+- **AND** Query 传 `status=1`（待使用）；**不得**展示已领用（`status=2`）与已过期（`status=3`）
 - **AND** 参考优惠券模板列表：[getCouponList](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330755e0.md)
 - **AND** 自底部弹出选择面板：标题「选择优惠券」、副标题、右上角「不使用」、券列表、底部「完成」
 - **WHEN** 无可用券
@@ -101,7 +104,8 @@
 - **THEN** 调用 `POST /v1/couponTake/bindCouponTake`（[Apifox](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330751e0.md)）
 - **AND** Body 必传 `orderId`；选券时传 `couponTakeId`，不使用时不传 `couponTakeId`
 - **AND** 成功后重新调用 `getOrderSettlement` 刷新套餐金额、运费、优惠券抵扣、应付金额
-- **AND** 优惠券行与费用明细「优惠券抵扣」**统一**取结算响应根级 `amount` 字段，**禁止** `Int` 四舍五入
+- **AND** 优惠券行与费用明细「优惠券抵扣」优先取结算根级 `amount`，缺省 `appOrderDetailBO.couponAmount`，**禁止** `Int` 四舍五入
+- **AND** 费用明细「权益卡抵扣」优先取结算根级 `benefitsAmount`，缺省 `appOrderDetailBO.benefitsAmount`
 
 #### Scenario: 结算刷新
 
@@ -152,9 +156,15 @@
 #### Scenario: 优惠券抵扣金额
 
 - **WHEN** 渲染费用明细「优惠券抵扣」或优惠券行摘要
-- **THEN** 抵扣金额 = 结算响应根级 `amount`；未绑券或无抵扣时为 0
+- **THEN** 抵扣金额 = 结算根级 `amount`；缺省 `appOrderDetailBO.couponAmount`；未绑券或无抵扣时为 0
 - **AND** 确认订单页所有金额展示**保留原始小数**（通常两位），**禁止** `Int` 四舍五入
 - **AND** 优惠券列表弹层中单张券的抵扣展示亦取该券对象的 `amount` 字段
+
+#### Scenario: 权益卡抵扣金额
+
+- **WHEN** 渲染费用明细「权益卡抵扣」
+- **THEN** 抵扣金额 = 结算根级 `benefitsAmount`；缺省 `appOrderDetailBO.benefitsAmount`；无抵扣时为 0
+- **AND** 服务端已返回抵扣时，应付以结算为准，不再本地重复扣减
 
 ### Requirement: 订单备注
 

@@ -103,6 +103,9 @@ final class ServicePackageDetailViewModel: ObservableObject {
             request.parentId = renewalParentOrderId
             let orderId = try await shoppingCartService.saveShoppingCartOrPurchase(request)
             await MainActor.run { isSubmitting = false }
+            if flag == .addToCart {
+                ShoppingCartBadgeStore.shared.refresh()
+            }
             if flag == .purchaseNow {
                 guard let orderId, orderId > 0 else {
                     throw ShoppingCartServiceError.missingOrderId

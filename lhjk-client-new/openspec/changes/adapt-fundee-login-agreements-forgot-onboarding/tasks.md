@@ -4,12 +4,13 @@
 
 - [x] 1.1 proposal / design / register-login delta
 
-## 2. 三协议 + 知情同意
+## 2. 登录四协议 + 知情同意
 
-- [x] 2.1 `AgreementCheckboxView` 三协议文案与第三链接回调
-- [x] 2.2 `PrivacyPromptView` 补知情同意书
+- [x] 2.1 `AgreementCheckboxView` 四协议文案与会员服务协议链接回调
+- [x] 2.2 `PrivacyPromptView` 补知情同意书（仍为三项，不含会员服务协议）
 - [x] 2.3 新增 `AgreementConsentSheet`；`LoginViewController` 最终提交未勾选时弹出并重放动作
 - [x] 2.4 获取验证码不再强制协议勾选
+- [x] 2.5 勾选 / 知情同意弹窗 / 改绑手机号打开 `AgreementDetailViewController`（含 `member-service`）
 
 ## 3. 忘记密码页内步骤
 

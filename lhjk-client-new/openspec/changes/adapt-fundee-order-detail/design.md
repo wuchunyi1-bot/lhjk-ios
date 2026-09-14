@@ -51,7 +51,7 @@ OrderDetailViewController
 | 履约 | `typeOrder`, `receiver`, `phone`, `address`, `hospitalName` | `typeOrder=1` 标题「收货信息」；`0` 为「自提信息」 |
 | 套餐 | `packageImageUrl`, `orderName`, `packageDescription`, `hospitalName` | 与列表卡片一致 |
 | 明细 | `shoppingCartPackageDetailList[]` | `commodityName`/`packageName` + `quantity` + `billingType` 单位 + `price` |
-| 费用 | `payable`, `price`, `expressAmount`, `couponAmount` | 商品金额优先 `payable - express + coupon` 回退 `payable`；实付取 `price` 再退 `payable` |
+| 费用 | `payable`, `price`, `expressAmount`, `couponAmount`, `benefitsAmount`, `settlementAmount` | 套餐金额优先明细合计，再退 `payable`（不含券/卡/运费）；优惠券抵扣取 `couponAmount`；权益卡抵扣取 `benefitsAmount`；实付优先 `settlementAmount` 再 `price` |
 | 订单信息 | `id`, `createTime`, `paymentType`, `description` | 支付方式字典 1微信/2支付宝/3现金/4银行卡 |
 | 底部 | — | 「取消订单」；点击 Toast「功能即将开放」 |
 

@@ -33,7 +33,7 @@ VoucherListViewController          // Hub：顶栏「权益卡 | 优惠券」，
 
 | 模块 | 状态 Tab | 对应子 VC |
 |------|----------|-----------|
-| 权益卡 | 全部 / 待使用 / 已兑换 / 已过期 / 转赠记录 | 5 个 `BenefitTabViewController` |
+| 权益卡 | 全部 / 待使用 / 已兑换 / 已过期 / 转赠记录 | 5 个 `BenefitTabViewController`（**无**「模拟领取」「待绑定」「待领取」） |
 | 优惠券 | 全部 / 待使用 / 已领用 / 已过期 | 4 个 `CouponTabViewController` |
 
 行为对齐订单：

@@ -28,6 +28,8 @@
 
 - **WHEN** `getMonitorCardList` 返回非空数组
 - **THEN** Hub 体征区按列表顺序渲染卡片；展示 `monitorData` 解析出的数值、单位与 `result`/`resultType` 状态；图标优先 `iconUrl`；卡片背景优先 `backgroundUrl`
+- **AND** 卡片时间固定为 `yyyy-MM-dd`（设备时区，不带时分；不得使用「今天 / 昨天 / MM/dd」）
+- **AND** 非空 `monitorTimeType`（如「空腹」）SHALL 展示在类型名后（如「血糖 空腹」），MUST NOT 拼在时间后
 
 #### Scenario: 列表空或失败
 
@@ -162,7 +164,7 @@ progress = 1 - ratio
 
 ### Requirement: 血脂卡（cardType = 14）
 
-系统 SHALL 在 Hub 体征网格以独立 2×2 布局渲染血脂卡：图标 + 标题「血脂」+ 状态徽标 + TC / TG / HDL / LDL + 时间；不得用单值+单位布局替代。卡片不展示 `mmol/L` 单位。时间只展示到日期（今天 / 昨天 / `MM/dd`），不带时分。
+系统 SHALL 在 Hub 体征网格以独立 2×2 布局渲染血脂卡：图标 + 标题「血脂」+ 状态徽标 + TC / TG / HDL / LDL + 时间；不得用单值+单位布局替代。卡片不展示 `mmol/L` 单位。时间固定为 `yyyy-MM-dd`，不带时分；时间颜色与其它体征卡一致（`#717885`）。
 
 字段映射：
 

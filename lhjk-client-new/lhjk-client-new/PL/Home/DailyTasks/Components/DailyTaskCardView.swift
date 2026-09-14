@@ -43,20 +43,6 @@ final class DailyTaskCardView: UIView {
         return v
     }()
 
-    private let descLabel: UILabel = {
-        let l = UILabel()
-        l.font = .fdFont(ofSize: 14, weight: .regular)
-        l.textColor = UIColor(hexString: "#535D72")
-        l.numberOfLines = 0
-        return l
-    }()
-
-    private let divider: UIView = {
-        let v = UIView()
-        v.backgroundColor = UIColor(hexString: "#EEEEEE")
-        return v
-    }()
-
     private let periodTitleLabel = DailyTaskCardView.kvTitleLabel("计划时段")
     private let periodValueLabel = DailyTaskCardView.kvValueLabel()
     private let timeTitleLabel = DailyTaskCardView.kvTitleLabel("计划时间")
@@ -97,10 +83,6 @@ final class DailyTaskCardView: UIView {
         boundMonitorType = task.monitorType
         titleLabel.text = task.title
         categoryLabel.text = task.category
-        descLabel.text = {
-            let message = task.detailMessage.trimmingCharacters(in: .whitespacesAndNewlines)
-            return message.isEmpty ? task.desc : message
-        }()
 
         let period = task.planPeriod?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let planTime = task.planTime.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -111,9 +93,16 @@ final class DailyTaskCardView: UIView {
         timeTitleLabel.isHidden = planTime.isEmpty
         timeValueLabel.isHidden = planTime.isEmpty
 
+        periodTitleLabel.snp.remakeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.equalToSuperview().offset(12)
+            if period.isEmpty {
+                make.height.equalTo(0)
+            }
+        }
         timeTitleLabel.snp.remakeConstraints { make in
             if period.isEmpty {
-                make.top.equalTo(divider.snp.bottom).offset(12)
+                make.top.equalToSuperview().offset(12)
             } else {
                 make.top.equalTo(periodTitleLabel.snp.bottom).offset(8)
             }
@@ -123,7 +112,6 @@ final class DailyTaskCardView: UIView {
             }
             make.bottom.equalToSuperview().offset(-12)
         }
-        timeValueLabel.isHidden = planTime.isEmpty
 
         if let instructions = task.instructions?.trimmingCharacters(in: .whitespacesAndNewlines),
            !instructions.isEmpty {
@@ -207,8 +195,6 @@ final class DailyTaskCardView: UIView {
         addSubview(instructionsLabel)
         addSubview(actionButton)
 
-        innerCard.addSubview(descLabel)
-        innerCard.addSubview(divider)
         innerCard.addSubview(periodTitleLabel)
         innerCard.addSubview(periodValueLabel)
         innerCard.addSubview(timeTitleLabel)
@@ -245,18 +231,8 @@ final class DailyTaskCardView: UIView {
             make.leading.trailing.equalToSuperview().inset(12)
         }
 
-        descLabel.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview().inset(12)
-        }
-
-        divider.snp.makeConstraints { make in
-            make.top.equalTo(descLabel.snp.bottom).offset(12)
-            make.leading.trailing.equalToSuperview().inset(12)
-            make.height.equalTo(0.5)
-        }
-
         periodTitleLabel.snp.makeConstraints { make in
-            make.top.equalTo(divider.snp.bottom).offset(12)
+            make.top.equalToSuperview().offset(12)
             make.leading.equalToSuperview().offset(12)
         }
         periodValueLabel.snp.makeConstraints { make in

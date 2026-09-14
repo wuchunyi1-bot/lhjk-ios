@@ -87,7 +87,7 @@ struct MAddress: Codable {
         userId      = Self.decodeFlexibleInt64(c, key: .userId)
         name        = try c.decodeIfPresent(String.self, forKey: .name)
         mobile      = try c.decodeIfPresent(String.self, forKey: .mobile)
-        isDefault   = try c.decodeIfPresent(Int.self, forKey: .isDefault)
+        isDefault   = Self.decodeFlexibleInt(c, key: .isDefault)
         province    = try c.decodeIfPresent(String.self, forKey: .province)
         city        = try c.decodeIfPresent(String.self, forKey: .city)
         area        = try c.decodeIfPresent(String.self, forKey: .area)
@@ -103,6 +103,14 @@ struct MAddress: Codable {
     private static func decodeFlexibleInt64<K: CodingKey>(_ container: KeyedDecodingContainer<K>, key: K) -> Int64? {
         if let v = try? container.decodeIfPresent(Int64.self, forKey: key) { return v }
         if let s = try? container.decodeIfPresent(String.self, forKey: key) { return Int64(s) }
+        return nil
+    }
+
+    /// 兼容 `isDefault`：Int / 数字字符串 / Bool
+    private static func decodeFlexibleInt<K: CodingKey>(_ container: KeyedDecodingContainer<K>, key: K) -> Int? {
+        if let v = try? container.decodeIfPresent(Int.self, forKey: key) { return v }
+        if let s = try? container.decodeIfPresent(String.self, forKey: key) { return Int(s) }
+        if let b = try? container.decodeIfPresent(Bool.self, forKey: key) { return b ? 1 : 0 }
         return nil
     }
 }

@@ -40,7 +40,7 @@ final class ChatViewModel: ObservableObject {
 
     private var lastTimestamp: Int64 = 0
 
-    /// `GET /v1/session/getGroup` 仅 `status == 1` 可发送，其它值只读
+    /// `GET /v1/session/getGroup` 仅 `status == 0` / `2` 不可发送
     var isMessagingReadOnly: Bool {
         conversation?.isMessagingReadOnly == true
     }
@@ -171,7 +171,7 @@ final class ChatViewModel: ObservableObject {
         let localMsg = makeLocalMessage(type: MessageType.text, text: RongEmoji.symbolToEmoji(text), imagePath: nil, thumbWidth: nil, thumbHeight: nil)
 
         let reply = quotedMessage.flatMap { ReplyMessage.from($0) }
-        quotedMessage = nil
+        dismissQuote()
 
         messages.append(localMsg)
         scrollToBottomPublisher.send(false)
@@ -201,7 +201,7 @@ final class ChatViewModel: ObservableObject {
         )
 
         let reply = quotedMessage.flatMap { ReplyMessage.from($0) }
-        quotedMessage = nil
+        dismissQuote()
 
         messages.append(localMsg)
         scrollToBottomPublisher.send(false)
@@ -251,7 +251,7 @@ final class ChatViewModel: ObservableObject {
         )
 
         let reply = quotedMessage.flatMap { ReplyMessage.from($0) }
-        quotedMessage = nil
+        dismissQuote()
 
         messages.append(localMsg)
         scrollToBottomPublisher.send(true)
@@ -312,7 +312,7 @@ final class ChatViewModel: ObservableObject {
         localMsg.fileContent = content
 
         let reply = quotedMessage.flatMap { ReplyMessage.from($0) }
-        quotedMessage = nil
+        dismissQuote()
 
         messages.append(localMsg)
         scrollToBottomPublisher.send(true)
@@ -368,9 +368,11 @@ final class ChatViewModel: ObservableObject {
         showQuotePreviewPublisher.send(ReplyMessage.from(message))
     }
 
-    /// 取消引用
+    /// 取消引用（发送后 / 点关闭 共用，通知 VC 收起预览条）
     func dismissQuote() {
+        guard quotedMessage != nil else { return }
         quotedMessage = nil
+        dismissQuotePublisher.send()
     }
 
     /// 获取可复制的文本
@@ -406,7 +408,7 @@ final class ChatViewModel: ObservableObject {
 
     private func ensureCanSend() -> Bool {
         guard !isMessagingReadOnly else {
-            toastPublisher.send("服务已过期，仅可查看历史消息")
+            toastPublisher.send(GroupSessionStatus.readOnlyToast(status: conversation?.groupStatus))
             return false
         }
         return true

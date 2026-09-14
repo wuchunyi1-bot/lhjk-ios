@@ -11,7 +11,8 @@
 
 ## 3. PL: CancelAccountViewModel
 
-- [ ] 3.1 创建 `PL/My/Settings/Security/ViewModels/CancelAccountViewModel.swift`
+- [x] 3.1 创建 `PL/My/Settings/Security/ViewModels/CancelAccountViewModel.swift`
+- [x] 3.2 `O0012` 未完成订单走 `unfinishedOrderPublisher`，不 Toast、不清理会话
 
 ## 4. PL: CancelAccountViewController 重构
 

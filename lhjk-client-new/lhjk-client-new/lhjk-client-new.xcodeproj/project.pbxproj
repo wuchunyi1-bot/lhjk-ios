@@ -200,7 +200,6 @@
 		A5A6F4E22FFF7B3D0065C921 /* CancelAccountViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4DC2FFF7B3D0065C921 /* CancelAccountViewController.swift */; };
 		A5A6F4E32FFF7B3D0065C921 /* SecuritySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4DF2FFF7B3D0065C921 /* SecuritySettingsViewController.swift */; };
 		A5A6F4E42FFF7B3D0065C921 /* CancelAccountViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4DA2FFF7B3D0065C921 /* CancelAccountViewModel.swift */; };
-		A5A6F4E52FFF7B3D0065C921 /* PasswordSetupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4DE2FFF7B3D0065C921 /* PasswordSetupViewController.swift */; };
 		A5A6F4E92FFF7B7E0065C921 /* NotificationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4E82FFF7B7E0065C921 /* NotificationsViewController.swift */; };
 		A5A6F4EA2FFF7B7E0065C921 /* MessagesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4E62FFF7B7E0065C921 /* MessagesViewController.swift */; };
 		A5A6F4EB2FFF7B7E0065C921 /* NotificationListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4E72FFF7B7E0065C921 /* NotificationListViewController.swift */; };
@@ -318,6 +317,12 @@
 		A5C2BBD8303C237900E1FC31 /* VoicePlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C2BBD7303C237900E1FC31 /* VoicePlaybackController.swift */; };
 		A5C2BBDB303C261B00E1FC31 /* OpusVoiceTranscoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C2BBD9303C261B00E1FC31 /* OpusVoiceTranscoder.swift */; };
 		A5C2BBDC303C261B00E1FC31 /* VoiceAssetInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C2BBDA303C261B00E1FC31 /* VoiceAssetInspector.swift */; };
+		A5C30E4830513F49000554E1 /* OnboardingBirthdayPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C30E4730513F49000554E1 /* OnboardingBirthdayPickerSheet.swift */; };
+		A5C30E53305152A7000554E1 /* ChangeLoginPasswordSetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C30E4B305152A7000554E1 /* ChangeLoginPasswordSetViewModel.swift */; };
+		A5C30E54305152A7000554E1 /* ChangeLoginPasswordViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C30E4F305152A7000554E1 /* ChangeLoginPasswordViewModel.swift */; };
+		A5C30E55305152A7000554E1 /* ChangeLoginPasswordComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C30E49305152A7000554E1 /* ChangeLoginPasswordComponents.swift */; };
+		A5C30E56305152A7000554E1 /* ChangeLoginPasswordSetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C30E4D305152A7000554E1 /* ChangeLoginPasswordSetViewController.swift */; };
+		A5C30E57305152A7000554E1 /* ChangeLoginPasswordViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C30E51305152A7000554E1 /* ChangeLoginPasswordViewController.swift */; };
 		A5C71AEB3018592B006EA79C /* VoucherBindEntryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AEA3018592B006EA79C /* VoucherBindEntryCell.swift */; };
 		A5C71AEC3018592B006EA79C /* BenefitCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AE83018592B006EA79C /* BenefitCardCell.swift */; };
 		A5C71AED3018592B006EA79C /* CouponCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C71AE93018592B006EA79C /* CouponCardCell.swift */; };
@@ -365,6 +370,11 @@
 		A5D28F373046A8EB00D5D437 /* AddressComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D28F353046A8EB00D5D437 /* AddressComponents.swift */; };
 		A5D28F393046C5F400D5D437 /* SettingsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D28F383046C5F400D5D437 /* SettingsComponents.swift */; };
 		A5D48496304E8FBA00F8D18D /* ChatExpiredBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D48495304E8FBA00F8D18D /* ChatExpiredBannerView.swift */; };
+		A5D6009530579FF1009ED753 /* FDEmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D6009430579FF1009ED753 /* FDEmptyStateView.swift */; };
+		A5D600983057D7F8009ED753 /* AppVersionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D600963057D7F8009ED753 /* AppVersionModels.swift */; };
+		A5D600993057D7F8009ED753 /* AppVersionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D600973057D7F8009ED753 /* AppVersionService.swift */; };
+		A5D6009B3057D846009ED753 /* AppVersionCheckCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D6009A3057D846009ED753 /* AppVersionCheckCoordinator.swift */; };
+		A5D6009D3057F9E8009ED753 /* AppUpdateDialogViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D6009C3057F9E8009ED753 /* AppUpdateDialogViewController.swift */; };
 		A5E0891E3045511D00D610FF /* GroupMembersVO.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E0891D3045511D00D610FF /* GroupMembersVO.swift */; };
 		A5E08928304551E300D610FF /* GroupMembersViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E08924304551E300D610FF /* GroupMembersViewModel.swift */; };
 		A5E08929304551E300D610FF /* GroupMembersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E08926304551E300D610FF /* GroupMembersViewController.swift */; };
@@ -591,7 +601,6 @@
 		A5A6F4DA2FFF7B3D0065C921 /* CancelAccountViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancelAccountViewModel.swift; sourceTree = "<group>"; };
 		A5A6F4DC2FFF7B3D0065C921 /* CancelAccountViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancelAccountViewController.swift; sourceTree = "<group>"; };
 		A5A6F4DD2FFF7B3D0065C921 /* ChangePhoneViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePhoneViewController.swift; sourceTree = "<group>"; };
-		A5A6F4DE2FFF7B3D0065C921 /* PasswordSetupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordSetupViewController.swift; sourceTree = "<group>"; };
 		A5A6F4DF2FFF7B3D0065C921 /* SecuritySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecuritySettingsViewController.swift; sourceTree = "<group>"; };
 		A5A6F4E62FFF7B7E0065C921 /* MessagesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesViewController.swift; sourceTree = "<group>"; };
 		A5A6F4E72FFF7B7E0065C921 /* NotificationListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationListViewController.swift; sourceTree = "<group>"; };
@@ -710,6 +719,12 @@
 		A5C2BBD7303C237900E1FC31 /* VoicePlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicePlaybackController.swift; sourceTree = "<group>"; };
 		A5C2BBD9303C261B00E1FC31 /* OpusVoiceTranscoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpusVoiceTranscoder.swift; sourceTree = "<group>"; };
 		A5C2BBDA303C261B00E1FC31 /* VoiceAssetInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceAssetInspector.swift; sourceTree = "<group>"; };
+		A5C30E4730513F49000554E1 /* OnboardingBirthdayPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingBirthdayPickerSheet.swift; sourceTree = "<group>"; };
+		A5C30E49305152A7000554E1 /* ChangeLoginPasswordComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeLoginPasswordComponents.swift; sourceTree = "<group>"; };
+		A5C30E4B305152A7000554E1 /* ChangeLoginPasswordSetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeLoginPasswordSetViewModel.swift; sourceTree = "<group>"; };
+		A5C30E4D305152A7000554E1 /* ChangeLoginPasswordSetViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeLoginPasswordSetViewController.swift; sourceTree = "<group>"; };
+		A5C30E4F305152A7000554E1 /* ChangeLoginPasswordViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeLoginPasswordViewModel.swift; sourceTree = "<group>"; };
+		A5C30E51305152A7000554E1 /* ChangeLoginPasswordViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeLoginPasswordViewController.swift; sourceTree = "<group>"; };
 		A5C71AE83018592B006EA79C /* BenefitCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenefitCardCell.swift; sourceTree = "<group>"; };
 		A5C71AE93018592B006EA79C /* CouponCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CouponCardCell.swift; sourceTree = "<group>"; };
 		A5C71AEA3018592B006EA79C /* VoucherBindEntryCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoucherBindEntryCell.swift; sourceTree = "<group>"; };
@@ -757,6 +772,11 @@
 		A5D28F353046A8EB00D5D437 /* AddressComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressComponents.swift; sourceTree = "<group>"; };
 		A5D28F383046C5F400D5D437 /* SettingsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsComponents.swift; sourceTree = "<group>"; };
 		A5D48495304E8FBA00F8D18D /* ChatExpiredBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatExpiredBannerView.swift; sourceTree = "<group>"; };
+		A5D6009430579FF1009ED753 /* FDEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FDEmptyStateView.swift; sourceTree = "<group>"; };
+		A5D600963057D7F8009ED753 /* AppVersionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersionModels.swift; sourceTree = "<group>"; };
+		A5D600973057D7F8009ED753 /* AppVersionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersionService.swift; sourceTree = "<group>"; };
+		A5D6009A3057D846009ED753 /* AppVersionCheckCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppVersionCheckCoordinator.swift; path = Other/Common/AppVersionCheckCoordinator.swift; sourceTree = "<group>"; };
+		A5D6009C3057F9E8009ED753 /* AppUpdateDialogViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateDialogViewController.swift; sourceTree = "<group>"; };
 		A5E0891D3045511D00D610FF /* GroupMembersVO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GroupMembersVO.swift; path = DAL/IM/GroupMembersVO.swift; sourceTree = "<group>"; };
 		A5E08922304551E300D610FF /* GroupMemberCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupMemberCell.swift; sourceTree = "<group>"; };
 		A5E08924304551E300D610FF /* GroupMembersViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupMembersViewModel.swift; sourceTree = "<group>"; };
@@ -839,6 +859,7 @@
 		75BC1DDC53A99376450DD2BB /* Common */ = {
 			isa = PBXGroup;
 			children = (
+				A5D6009A3057D846009ED753 /* AppVersionCheckCoordinator.swift */,
 				A5C2BBD3303C1C4F00E1FC31 /* WebViewSystemChromeLocalizer.swift */,
 				A5B77A5D302B24F70054B2C4 /* FundePageURL.swift */,
 				A5BD9DE330199326008C44FC /* Components */,
@@ -1041,6 +1062,8 @@
 		A57D2F1D2FDC0647002E43BA /* My */ = {
 			isa = PBXGroup;
 			children = (
+				A5D600963057D7F8009ED753 /* AppVersionModels.swift */,
+				A5D600973057D7F8009ED753 /* AppVersionService.swift */,
 				A5C8BB90304AB8D500D6398E /* DiningSchemeService.swift */,
 				A5C7B740303E9D08008D89A5 /* ChinaRegionService.swift */,
 				A5C13258303D9F3B0047F06D /* CacheCleanupService.swift */,
@@ -1491,6 +1514,7 @@
 		A590FC9A2FEA91170056EF52 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A5C30E4730513F49000554E1 /* OnboardingBirthdayPickerSheet.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -1756,12 +1780,12 @@
 		A5A6F4E02FFF7B3D0065C921 /* Security */ = {
 			isa = PBXGroup;
 			children = (
+				A5C30E52305152A7000554E1 /* ChangeLoginPassword */,
 				A5D28F2F3046803D00D5D437 /* Components */,
 				A5C71B023018917A006EA79C /* WechatAuthorizationViewController.swift */,
 				A5A6F4DB2FFF7B3D0065C921 /* ViewModels */,
 				A5A6F4DC2FFF7B3D0065C921 /* CancelAccountViewController.swift */,
 				A5A6F4DD2FFF7B3D0065C921 /* ChangePhoneViewController.swift */,
-				A5A6F4DE2FFF7B3D0065C921 /* PasswordSetupViewController.swift */,
 				A5A6F4DF2FFF7B3D0065C921 /* SecuritySettingsViewController.swift */,
 			);
 			path = Security;
@@ -2048,6 +2072,8 @@
 		A5BD9DE330199326008C44FC /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A5D6009C3057F9E8009ED753 /* AppUpdateDialogViewController.swift */,
+				A5D6009430579FF1009ED753 /* FDEmptyStateView.swift */,
 				A5C13253303D750B0047F06D /* MainTabBarView.swift */,
 				A5BD9DE230199326008C44FC /* TabHubBrandHeaderView.swift */,
 			);
@@ -2180,6 +2206,50 @@
 				A5C13255303D8CB70047F06D /* ActivateViewController.swift */,
 			);
 			path = Activate;
+			sourceTree = "<group>";
+		};
+		A5C30E4A305152A7000554E1 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A5C30E49305152A7000554E1 /* ChangeLoginPasswordComponents.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A5C30E4C305152A7000554E1 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A5C30E4B305152A7000554E1 /* ChangeLoginPasswordSetViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A5C30E4E305152A7000554E1 /* SetPassword */ = {
+			isa = PBXGroup;
+			children = (
+				A5C30E4C305152A7000554E1 /* ViewModels */,
+				A5C30E4D305152A7000554E1 /* ChangeLoginPasswordSetViewController.swift */,
+			);
+			path = SetPassword;
+			sourceTree = "<group>";
+		};
+		A5C30E50305152A7000554E1 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A5C30E4F305152A7000554E1 /* ChangeLoginPasswordViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A5C30E52305152A7000554E1 /* ChangeLoginPassword */ = {
+			isa = PBXGroup;
+			children = (
+				A5C30E4A305152A7000554E1 /* Components */,
+				A5C30E4E305152A7000554E1 /* SetPassword */,
+				A5C30E50305152A7000554E1 /* ViewModels */,
+				A5C30E51305152A7000554E1 /* ChangeLoginPasswordViewController.swift */,
+			);
+			path = ChangeLoginPassword;
 			sourceTree = "<group>";
 		};
 		A5C71AF030185CD6006EA79C /* Benefit */ = {
@@ -2793,6 +2863,7 @@
 				A590FCB22FEA91170056EF52 /* SettingsViewController.swift in Sources */,
 				A5A6F5382FFF7D9B0065C921 /* LoginViewModel.swift in Sources */,
 				A590FCB32FEA91170056EF52 /* HealthViewController.swift in Sources */,
+				A5D6009B3057D846009ED753 /* AppVersionCheckCoordinator.swift in Sources */,
 				A5C7B743303E9D22008D89A5 /* RegionPickerSheet.swift in Sources */,
 				A5B1FB33300A022F0039B16C /* ShoppingCartModels.swift in Sources */,
 				A52EB5DC30385ABE009C763D /* ChatBubbleStyle.swift in Sources */,
@@ -2862,6 +2933,7 @@
 				A5B1FB243009E2F80039B16C /* InstitutionSelectionStore.swift in Sources */,
 				A5ACE2333000C25200056C52 /* MeMembershipCardView.swift in Sources */,
 				A5BD9DF83019D5B4008C44FC /* ScaleBroadcastMeasureViewModel.swift in Sources */,
+				A5C30E4830513F49000554E1 /* OnboardingBirthdayPickerSheet.swift in Sources */,
 				A5BD9DF93019D5B4008C44FC /* ScaleBroadcastMeasureViewController.swift in Sources */,
 				A590FCD52FEA91170056EF52 /* HealthRecordMetricRowCell.swift in Sources */,
 				A590FCD62FEA91170056EF52 /* MyViewController.swift in Sources */,
@@ -2884,7 +2956,6 @@
 				A56DDEAE30172D4D000E03A0 /* OrderReturnGoodsSheet.swift in Sources */,
 				A5A6F4E32FFF7B3D0065C921 /* SecuritySettingsViewController.swift in Sources */,
 				A5A6F4E42FFF7B3D0065C921 /* CancelAccountViewModel.swift in Sources */,
-				A5A6F4E52FFF7B3D0065C921 /* PasswordSetupViewController.swift in Sources */,
 				A5A6F5882FFF9C5C0065C921 /* ServiceHubCacheService.swift in Sources */,
 				A590FCDF2FEA91170056EF52 /* SettingsToggleCell.swift in Sources */,
 				A590FCE12FEA91170056EF52 /* OptionChipView.swift in Sources */,
@@ -2949,6 +3020,7 @@
 				A590FCF92FEA91170056EF52 /* HomeArticleCell.swift in Sources */,
 				A590FCFA2FEA91170056EF52 /* NotificationGuideView.swift in Sources */,
 				A5A6F4CA2FFF7AB80065C921 /* ServicePackageSearchViewModel.swift in Sources */,
+				A5D6009530579FF1009ED753 /* FDEmptyStateView.swift in Sources */,
 				A5A6F4CB2FFF7AB80065C921 /* ServiceViewModel.swift in Sources */,
 				A528D7B130078E1C005B0CA7 /* H5Config.swift in Sources */,
 				A590FCFC2FEA91170056EF52 /* HealthArchiveCardCell.swift in Sources */,
@@ -3002,6 +3074,8 @@
 				A56DDEB430174B8E000E03A0 /* DoctorService.swift in Sources */,
 				A56120CB3010A31C00505C32 /* OrderRemarkEditorSheet.swift in Sources */,
 				A5C8BB91304AB8D500D6398E /* DiningSchemeService.swift in Sources */,
+				A5D600983057D7F8009ED753 /* AppVersionModels.swift in Sources */,
+				A5D600993057D7F8009ED753 /* AppVersionService.swift in Sources */,
 				A56120CC3010A31C00505C32 /* OrderTabViewController.swift in Sources */,
 				A56120CD3010A31C00505C32 /* OrderConfirmComponents.swift in Sources */,
 				A56120CE3010A31C00505C32 /* OrderListViewController.swift in Sources */,
@@ -3027,6 +3101,11 @@
 				A5917D072FDFC8EF00878961 /* UIViewController+Alert.swift in Sources */,
 				A5917D082FDFC8EF00878961 /* UIView+Shadow.swift in Sources */,
 				A5BDA396303547E300E306EB /* WeightScaleBleStatusBarView.swift in Sources */,
+				A5C30E53305152A7000554E1 /* ChangeLoginPasswordSetViewModel.swift in Sources */,
+				A5C30E54305152A7000554E1 /* ChangeLoginPasswordViewModel.swift in Sources */,
+				A5C30E55305152A7000554E1 /* ChangeLoginPasswordComponents.swift in Sources */,
+				A5C30E56305152A7000554E1 /* ChangeLoginPasswordSetViewController.swift in Sources */,
+				A5C30E57305152A7000554E1 /* ChangeLoginPasswordViewController.swift in Sources */,
 				A5917D092FDFC8EF00878961 /* UIView+Layout.swift in Sources */,
 				A5917D0A2FDFC8EF00878961 /* UIColor+Theme.swift in Sources */,
 				A5917D0B2FDFC8EF00878961 /* UIButton+Funde.swift in Sources */,
@@ -3057,6 +3136,7 @@
 				A576A2222FE8E22E004F6070 /* ECGDataBuffer.swift in Sources */,
 				A5917CE22FDFA7C000878961 /* HomeRoutes.swift in Sources */,
 				A57D2F1E2FDC0647002E43BA /* MyRoutes.swift in Sources */,
+				A5D6009D3057F9E8009ED753 /* AppUpdateDialogViewController.swift in Sources */,
 				A5B48010302DA29400319851 /* NotificationMessageMapper.swift in Sources */,
 				A5A6F4FF2FFF7BBD0065C921 /* SysNotifyCell.swift in Sources */,
 				A5ACE2463000F57B00056C52 /* ServicePackageDetailViewModel.swift in Sources */,

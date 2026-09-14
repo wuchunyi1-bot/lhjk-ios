@@ -79,7 +79,7 @@
 - **AND** `benefitDiscount = min(max(0, packageAmount − couponDiscount), Σ 已选面值)`
 - **AND** 权益卡**不**抵扣运费；优惠券与权益卡可同时使用，先券后卡
 - **AND** `payable = max(0, settlementPayable − benefitDiscount)`（结算未含权益抵扣时）
-- **AND** 费用明细「权益卡抵扣」与底栏应付使用上述结果；抵扣为 0 仍展示 `-¥0.00`
+- **AND** 费用明细「权益卡抵扣」优先 `benefitsAmount`；未返回时才用本地试算；抵扣为 0 仍展示 `-¥0.00`
 - **AND** 默认不自动勾选任何权益卡
 
 #### Scenario: 与结算 / 优惠券联动
@@ -91,10 +91,10 @@
 #### Scenario: 绑单与核销（后续）
 
 - **WHEN** Apifox 提供订单绑定权益卡接口且结算返回权益抵扣字段
-- **THEN** 选择完成后改为绑单成功 → `getOrderSettlement` 刷新；应付与抵扣以结算为准
+- **THEN** 选择完成后刷新 `getOrderSettlement`；应付与抵扣以 `benefitsAmount` / `expectedPayableAmount` 为准
 - **AND** 支付成功后才核销实际使用的权益卡；待支付不锁定、不占用卡包状态
 
 #### Scenario: API 缺口标注
 
 - **WHEN** 查阅本仓库接口清单
-- **THEN** 确认页权益卡列表标注复用 `GET /v1/benefitsTake/getCustomerPage`；绑单 / 结算权益字段标注「文档暂无 / 本期客户端试算」
+- **THEN** 确认页权益卡列表标注复用 `GET /v1/benefitsTake/getCustomerPage`；结算权益抵扣取 `benefitsAmount`，优惠券实际抵扣取 `couponAmount` / 结算根级 `amount`

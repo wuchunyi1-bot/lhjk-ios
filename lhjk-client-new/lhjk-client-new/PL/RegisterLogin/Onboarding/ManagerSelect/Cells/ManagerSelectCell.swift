@@ -1,15 +1,35 @@
 import UIKit
 import SnapKit
+import Kingfisher
 
-/// 业务经理列表 Cell — 对齐 funde `.manager-item`
+/// 业务经理列表 Cell — 对齐 Figma `5346:16364`
 final class ManagerSelectCell: UITableViewCell {
     static let reuseID = "ManagerSelectCell"
 
     private let card = UIView()
+    private let gradientLayer: CAGradientLayer = {
+        let layer = CAGradientLayer()
+        layer.colors = [
+            UIColor.fdBg.cgColor,
+            UIColor.fdBg.withAlphaComponent(0).cgColor,
+        ]
+        layer.startPoint = CGPoint(x: 0, y: 0.5)
+        layer.endPoint = CGPoint(x: 1, y: 0.5)
+        return layer
+    }()
+
+    private let avatarImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFill
+        iv.clipsToBounds = true
+        iv.layer.cornerRadius = 20
+        iv.backgroundColor = .fdPrimarySoft
+        return iv
+    }()
 
     private let avatarLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdLoginButton
+        l.font = .fdFont(ofSize: 18, weight: .medium)
         l.textColor = .white
         l.textAlignment = .center
         l.backgroundColor = .fdPrimary
@@ -20,31 +40,32 @@ final class ManagerSelectCell: UITableViewCell {
 
     private let nameLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdLoginButton
+        l.font = .fdFont(ofSize: 16, weight: .medium)
         l.textColor = .fdText
-        return l
-    }()
-
-    private let codeLabel: UILabel = {
-        let l = UILabel()
-        l.font = .fdLoginMeta
-        l.textColor = .fdMuted
         return l
     }()
 
     private let metaLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdLoginMeta
+        l.font = .fdFont(ofSize: 14, weight: .regular)
         l.textColor = .fdSubtext
         return l
     }()
 
-    private let checkView: UIImageView = {
-        let iv = UIImageView(image: UIImage(systemName: "checkmark.circle.fill"))
-        iv.tintColor = .fdPrimary
-        iv.contentMode = .scaleAspectFit
-        iv.isHidden = true
-        return iv
+    private let codeBadgeWrap: UIView = {
+        let v = UIView()
+        v.layer.cornerRadius = 4
+        v.layer.borderWidth = 0.5
+        v.layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.5).cgColor
+        return v
+    }()
+
+    private let codeBadge: UILabel = {
+        let l = UILabel()
+        l.font = .fdFont(ofSize: 14, weight: .regular)
+        l.textColor = .fdPrimary
+        l.textAlignment = .right
+        return l
     }()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -57,63 +78,96 @@ final class ManagerSelectCell: UITableViewCell {
 
     required init?(coder: NSCoder) { fatalError() }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        gradientLayer.frame = card.bounds
+        gradientLayer.cornerRadius = card.layer.cornerRadius
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        avatarImageView.kf.cancelDownloadTask()
+        avatarImageView.image = nil
+    }
+
     func configure(item: DoctorVo, isSelected: Bool) {
         let name = item.displayName
         avatarLabel.text = String(name.prefix(1))
         nameLabel.text = name
-        codeLabel.text = item.displayCode
-        codeLabel.isHidden = item.displayCode.isEmpty
 
-        let title = item.displayTitle
+        let title = item.displayTitle.isEmpty ? "业务经理" : item.displayTitle
         let phone = item.maskedMobile
-        let parts = [title, phone].filter { !$0.isEmpty }
-        metaLabel.text = parts.joined(separator: " · ")
-        metaLabel.isHidden = parts.isEmpty
+        if phone.isEmpty {
+            metaLabel.text = title
+        } else {
+            metaLabel.text = "\(title)｜\(phone)"
+        }
 
-        checkView.isHidden = !isSelected
-        card.layer.borderWidth = isSelected ? 1.5 : 1
-        card.layer.borderColor = (isSelected ? UIColor.fdPrimary : UIColor.fdBorder).cgColor
-        card.backgroundColor = isSelected ? UIColor.fdPrimarySoft.withAlphaComponent(0.35) : .fdSurface
+        let code = item.displayCode
+        codeBadge.text = code
+        codeBadgeWrap.isHidden = code.isEmpty
+
+        let urlString = item.imageUrl?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if let url = URL(string: urlString), !urlString.isEmpty {
+            avatarLabel.isHidden = true
+            avatarImageView.isHidden = false
+            avatarImageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+        } else {
+            avatarImageView.isHidden = true
+            avatarLabel.isHidden = false
+        }
+
+        card.layer.borderWidth = isSelected ? 0.5 : 0
+        card.layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.5).cgColor
     }
 
     private func setupUI() {
         card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 14
-        card.layer.borderWidth = 1
-        card.layer.borderColor = UIColor.fdBorder.cgColor
+        card.layer.cornerRadius = 12
+        card.clipsToBounds = true
+        card.layer.insertSublayer(gradientLayer, at: 0)
         contentView.addSubview(card)
 
-        let head = UIStackView(arrangedSubviews: [nameLabel, codeLabel])
-        head.axis = .horizontal
-        head.spacing = 8
-        head.alignment = .center
-
-        let body = UIStackView(arrangedSubviews: [head, metaLabel])
-        body.axis = .vertical
-        body.spacing = 4
-
+        codeBadgeWrap.addSubview(codeBadge)
         card.addSubview(avatarLabel)
-        card.addSubview(body)
-        card.addSubview(checkView)
+        card.addSubview(avatarImageView)
+        card.addSubview(nameLabel)
+        card.addSubview(metaLabel)
+        card.addSubview(codeBadgeWrap)
 
         card.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview().inset(4)
+            make.top.equalToSuperview()
+            make.bottom.equalToSuperview().offset(-12)
             make.leading.trailing.equalToSuperview().inset(16)
+            make.height.equalTo(68)
         }
         avatarLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(14)
+            make.leading.equalToSuperview().offset(12)
             make.centerY.equalToSuperview()
             make.size.equalTo(40)
         }
-        body.snp.makeConstraints { make in
-            make.leading.equalTo(avatarLabel.snp.trailing).offset(12)
-            make.trailing.equalTo(checkView.snp.leading).offset(-8)
-            make.top.bottom.equalToSuperview().inset(14)
+        avatarImageView.snp.makeConstraints { make in
+            make.edges.equalTo(avatarLabel)
         }
-        checkView.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().inset(14)
-            make.centerY.equalToSuperview()
-            make.size.equalTo(20)
+        codeBadge.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview().inset(2)
+            make.leading.trailing.equalToSuperview().inset(4)
         }
+        codeBadgeWrap.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().inset(12)
+            make.top.equalToSuperview().offset(12)
+        }
+        nameLabel.snp.makeConstraints { make in
+            make.leading.equalTo(avatarLabel.snp.trailing).offset(13)
+            make.top.equalToSuperview().offset(12)
+            make.trailing.lessThanOrEqualTo(codeBadgeWrap.snp.leading).offset(-8)
+        }
+        metaLabel.snp.makeConstraints { make in
+            make.leading.equalTo(nameLabel)
+            make.top.equalTo(nameLabel.snp.bottom).offset(2)
+            make.trailing.equalToSuperview().inset(12)
+        }
+        codeBadgeWrap.setContentHuggingPriority(.required, for: .horizontal)
+        codeBadgeWrap.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
 }

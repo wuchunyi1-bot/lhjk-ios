@@ -39,6 +39,7 @@ final class ServiceViewController: BaseViewController {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
         viewModel.load()
+        AppContainer.shared.shoppingCartBadgeStore.refresh()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -66,6 +67,13 @@ final class ServiceViewController: BaseViewController {
     }
 
     override func bindViewModel() {
+        AppContainer.shared.shoppingCartBadgeStore.$count
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] count in
+                self?.hubHeader.applyCartCount(count)
+            }
+            .store(in: &cancellables)
+
         viewModel.$snapshot
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in

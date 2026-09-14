@@ -136,7 +136,8 @@ struct SUsersOnboardingPayload: Encodable {
     var addressProvince: String? = nil
     var addressCity: String? = nil
     var addressArea: String? = nil
-    var address: String? = nil
+    /// 详细地址（现居地街道门牌）
+    var addressStreet: String? = nil
     var age: Int? = nil
     var medicalHistory: String? = nil
     var smokingStatus: String? = nil
@@ -457,7 +458,7 @@ struct UserCenterOverviewVO: Decodable, Equatable {
     }
 
     var healthPointsText: String { Self.countText(accountPoint) }
-    var fundeCoinText: String { Self.countText(fundeCoin) }
+    var fundeCoinText: String { Self.plainCountText(fundeCoin) }
     var benefitsCountText: String { Self.countText(availableBenefitsCount) }
 
     var pendingPaymentText: String { Self.countText(pendingPaymentOrderCount) }
@@ -472,20 +473,25 @@ struct UserCenterOverviewVO: Decodable, Equatable {
     private static func countText(_ value: Int64?) -> String {
         let n = max(0, Int(value ?? 0))
         if n >= 10_000 {
-            return compactWanText(n)
+            return compactUnitText(n, divisor: 10_000, suffix: "w")
         }
         if n > 99 { return "99+" }
         return "\(n)"
     }
 
-    /// ≥ 10000 时按「万」缩写，如 10000 → `1w`、15000 → `1.5w`
-    private static func compactWanText(_ value: Int) -> String {
-        let wan = Double(value) / 10_000.0
-        let roundedTenth = (wan * 10).rounded() / 10
+    /// 富德币展示接口原值，不用 K / w 缩写
+    private static func plainCountText(_ value: Int?) -> String {
+        "\(max(0, value ?? 0))"
+    }
+
+    /// 保留一位小数；整数则去掉 `.0`。如 1500 → `1.5K`，10000 → `1w`
+    private static func compactUnitText(_ value: Int, divisor: Double, suffix: String) -> String {
+        let scaled = Double(value) / divisor
+        let roundedTenth = (scaled * 10).rounded() / 10
         if abs(roundedTenth - roundedTenth.rounded()) < 0.001 {
-            return "\(Int(roundedTenth))w"
+            return "\(Int(roundedTenth))\(suffix)"
         }
-        return String(format: "%.1fw", roundedTenth)
+        return String(format: "%.1f%@", roundedTenth, suffix)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -512,6 +518,7 @@ struct UserCenterOverviewVO: Decodable, Equatable {
     ) -> Int? {
         if let v = try? c.decodeIfPresent(Int.self, forKey: key) { return v }
         if let v = try? c.decodeIfPresent(Int64.self, forKey: key) { return Int(v) }
+        if let v = try? c.decodeIfPresent(Double.self, forKey: key) { return Int(v) }
         if let s = try? c.decodeIfPresent(String.self, forKey: key) {
             return Int(s.trimmingCharacters(in: .whitespacesAndNewlines))
         }

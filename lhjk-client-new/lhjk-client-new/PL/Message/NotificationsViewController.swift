@@ -19,15 +19,10 @@ final class NotificationsViewController: BaseViewController, UITableViewDataSour
         return tv
     }()
 
-    private lazy var emptyLabel: UILabel = {
-        let l = UILabel()
-        l.text = "暂无通知，平台通知将在此处显示"
-        l.font = .fdCaption
-        l.textColor = .fdMuted
-        l.textAlignment = .center
-        l.numberOfLines = 0
-        l.isHidden = true
-        return l
+    private lazy var emptyView: FDEmptyStateView = {
+        let v = FDEmptyStateView(style: .page, message: "暂无通知，平台通知将在此处显示")
+        v.isHidden = true
+        return v
     }()
 
     // MARK: - Lifecycle
@@ -43,18 +38,16 @@ final class NotificationsViewController: BaseViewController, UITableViewDataSour
         view.backgroundColor = .fdBg
 
         view.addSubview(tableView)
-        view.addSubview(emptyLabel)
+        view.addSubview(emptyView)
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
-        emptyLabel.snp.makeConstraints {
-            $0.center.equalToSuperview()
-            $0.leading.trailing.equalToSuperview().inset(32)
-        }
+        emptyView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
         IMService.shared.notificationsDidChangePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 guard let self else { return }
                 self.notifications = IMService.shared.getNotifications()
-                self.emptyLabel.isHidden = !self.notifications.isEmpty
+                self.emptyView.isHidden = !self.notifications.isEmpty
                 self.tableView.reloadData()
             }
             .store(in: &cancellables)
@@ -66,7 +59,7 @@ final class NotificationsViewController: BaseViewController, UITableViewDataSour
             let list = IMService.shared.getNotifications()
             await MainActor.run {
                 self.notifications = list
-                self.emptyLabel.isHidden = !list.isEmpty
+                self.emptyView.isHidden = !list.isEmpty
                 self.tableView.reloadData()
             }
         }

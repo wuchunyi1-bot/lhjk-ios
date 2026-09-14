@@ -2,7 +2,7 @@ import UIKit
 import SnapKit
 import Combine
 
-/// 选择业务经理 — 对齐 funde `ManagerSelectView`
+/// 选择业务经理 — 对齐 Figma `5346:16150`
 final class ManagerSelectViewController: BaseViewController {
 
     private let viewModel: ManagerSelectViewModel
@@ -11,13 +11,14 @@ final class ManagerSelectViewController: BaseViewController {
     /// 选中后回调
     var onManagerSelected: ((DoctorVo) -> Void)?
 
+    private let hospitalIcon = UIImageView(image: UIImage(named: "onboarding_hospital_icon_small"))
     private let institutionLabel = UILabel()
     private let searchField = UITextField()
     private let clearButton = UIButton(type: .system)
+    private let sheetView = UIView()
     private let hintLabel = UILabel()
     private let tableView = UITableView(frame: .zero, style: .plain)
-    private let emptyLabel = UILabel()
-    private let resultCountLabel = UILabel()
+    private let emptyView = FDEmptyStateView(style: .compact, message: "暂无业务经理\n请稍后再试或更换机构")
 
     init(hospitalId: String, hospitalName: String, selectedId: String? = nil) {
         self.viewModel = ManagerSelectViewModel(
@@ -30,6 +31,11 @@ final class ManagerSelectViewController: BaseViewController {
 
     required init?(coder: NSCoder) { fatalError() }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+
     override func setupUI() {
         view.backgroundColor = .fdBg
         title = "选择业务经理"
@@ -41,41 +47,39 @@ final class ManagerSelectViewController: BaseViewController {
         )
         navigationItem.leftBarButtonItem?.tintColor = .fdText
 
-        institutionLabel.font = .fdLoginMeta
+        hospitalIcon.contentMode = .scaleAspectFit
+
+        institutionLabel.font = .fdFont(ofSize: 14, weight: .regular)
         institutionLabel.textColor = .fdSubtext
-        institutionLabel.numberOfLines = 2
-        if !viewModel.hospitalName.isEmpty {
-            let attachment = NSTextAttachment()
-            attachment.image = UIImage(systemName: "building.2")?
-                .withTintColor(.fdSubtext, renderingMode: .alwaysOriginal)
-            attachment.bounds = CGRect(x: 0, y: -2, width: 14, height: 14)
-            let attr = NSMutableAttributedString(attachment: attachment)
-            attr.append(NSAttributedString(
-                string: " \(viewModel.hospitalName)",
-                attributes: [
-                    .font: UIFont.fdLoginMeta,
-                    .foregroundColor: UIColor.fdSubtext,
-                ]
-            ))
-            institutionLabel.attributedText = attr
-        }
+        institutionLabel.numberOfLines = 1
+        institutionLabel.text = viewModel.hospitalName
+
+        let hospitalRow = UIStackView(arrangedSubviews: [hospitalIcon, institutionLabel])
+        hospitalRow.axis = .horizontal
+        hospitalRow.alignment = .center
+        hospitalRow.spacing = 4
+        hospitalRow.isHidden = viewModel.hospitalName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
         let searchShell = UIView()
         searchShell.backgroundColor = .fdSurface
         searchShell.layer.cornerRadius = 12
-        searchShell.layer.borderWidth = 1
-        searchShell.layer.borderColor = UIColor.fdBorder.cgColor
 
-        let searchIcon = UIImageView(image: UIImage(systemName: "magnifyingglass"))
-        searchIcon.tintColor = .fdMuted
+        let searchIcon = UIImageView(image: .fdNavSearch)
+        searchIcon.tintColor = .fdTabInactive
         searchIcon.contentMode = .scaleAspectFit
 
-        searchField.placeholder = "搜索姓名、经理号或职位"
-        searchField.font = .fdLoginInput
+        searchField.font = .fdFont(ofSize: 16, weight: .regular)
         searchField.textColor = .fdText
         searchField.clearButtonMode = .never
         searchField.returnKeyType = .search
         searchField.addTarget(self, action: #selector(keywordChanged), for: .editingChanged)
+        searchField.attributedPlaceholder = NSAttributedString(
+            string: "搜索姓名 / 经理号 / 职位",
+            attributes: [
+                .font: UIFont.fdFont(ofSize: 16, weight: .regular),
+                .foregroundColor: UIColor.fdTabInactive,
+            ]
+        )
 
         clearButton.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
         clearButton.tintColor = .fdMuted
@@ -86,49 +90,61 @@ final class ManagerSelectViewController: BaseViewController {
         searchShell.addSubview(searchField)
         searchShell.addSubview(clearButton)
 
+        sheetView.backgroundColor = .fdSurface
+        sheetView.layer.cornerRadius = 16
+        sheetView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        sheetView.clipsToBounds = true
+
+        let bell = UIImageView(image: UIImage(named: "change_phone_hint_bell"))
+        bell.contentMode = .scaleAspectFit
+
         hintLabel.text = "请选择一位业务经理，提交后将自动绑定"
-        hintLabel.font = .fdLoginMeta
+        hintLabel.font = .fdFont(ofSize: 14, weight: .regular)
         hintLabel.textColor = .fdSubtext
+
+        let hintRow = UIStackView(arrangedSubviews: [bell, hintLabel])
+        hintRow.axis = .horizontal
+        hintRow.alignment = .center
+        hintRow.spacing = 4
 
         tableView.backgroundColor = .clear
         tableView.separatorStyle = .none
         tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 78
+        tableView.estimatedRowHeight = 76
         tableView.dataSource = self
         tableView.delegate = self
         tableView.keyboardDismissMode = .onDrag
+        tableView.alwaysBounceVertical = true
+        tableView.contentInsetAdjustmentBehavior = .never
         tableView.register(ManagerSelectCell.self, forCellReuseIdentifier: ManagerSelectCell.reuseID)
 
-        emptyLabel.font = .fdLoginInput
-        emptyLabel.textColor = .fdMuted
-        emptyLabel.textAlignment = .center
-        emptyLabel.numberOfLines = 0
-        emptyLabel.isHidden = true
+        emptyView.isHidden = true
 
-        resultCountLabel.font = .fdLoginMeta
-        resultCountLabel.textColor = .fdSubtext
-        resultCountLabel.isHidden = true
-
-        view.addSubview(institutionLabel)
+        view.addSubview(hospitalRow)
         view.addSubview(searchShell)
-        view.addSubview(hintLabel)
-        view.addSubview(tableView)
-        view.addSubview(emptyLabel)
-        view.addSubview(resultCountLabel)
+        view.addSubview(sheetView)
+        sheetView.addSubview(hintRow)
+        sheetView.addSubview(tableView)
+        sheetView.addSubview(emptyView)
 
-        institutionLabel.snp.makeConstraints { make in
+        hospitalIcon.snp.makeConstraints { $0.size.equalTo(14) }
+        hospitalRow.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide).offset(12)
-            make.leading.trailing.equalToSuperview().inset(18)
+            make.leading.trailing.equalToSuperview().inset(16)
         }
         searchShell.snp.makeConstraints { make in
-            make.top.equalTo(institutionLabel.snp.bottom).offset(12)
+            if hospitalRow.isHidden {
+                make.top.equalTo(view.safeAreaLayoutGuide).offset(12)
+            } else {
+                make.top.equalTo(hospitalRow.snp.bottom).offset(12)
+            }
             make.leading.trailing.equalToSuperview().inset(16)
-            make.height.equalTo(44)
+            make.height.equalTo(47)
         }
         searchIcon.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(12)
             make.centerY.equalToSuperview()
-            make.size.equalTo(18)
+            make.size.equalTo(16)
         }
         clearButton.snp.makeConstraints { make in
             make.trailing.equalToSuperview().inset(10)
@@ -136,26 +152,25 @@ final class ManagerSelectViewController: BaseViewController {
             make.size.equalTo(20)
         }
         searchField.snp.makeConstraints { make in
-            make.leading.equalTo(searchIcon.snp.trailing).offset(8)
+            make.leading.equalTo(searchIcon.snp.trailing).offset(6)
             make.trailing.equalTo(clearButton.snp.leading).offset(-6)
             make.centerY.equalToSuperview()
         }
-        hintLabel.snp.makeConstraints { make in
-            make.top.equalTo(searchShell.snp.bottom).offset(10)
-            make.leading.trailing.equalToSuperview().inset(18)
-        }
-        tableView.snp.makeConstraints { make in
-            make.top.equalTo(hintLabel.snp.bottom).offset(8)
+        sheetView.snp.makeConstraints { make in
+            make.top.equalTo(searchShell.snp.bottom).offset(12)
             make.leading.trailing.bottom.equalToSuperview()
         }
-        emptyLabel.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.centerY.equalToSuperview().offset(20)
-            make.leading.trailing.equalToSuperview().inset(40)
+        bell.snp.makeConstraints { $0.size.equalTo(14) }
+        hintRow.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.trailing.equalToSuperview().inset(16)
         }
-        resultCountLabel.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(18)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-8)
+        tableView.snp.makeConstraints { make in
+            make.top.equalTo(hintRow.snp.bottom).offset(12)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
+        emptyView.snp.makeConstraints { make in
+            make.edges.equalTo(tableView)
         }
     }
 
@@ -167,26 +182,13 @@ final class ManagerSelectViewController: BaseViewController {
                 self.tableView.reloadData()
                 let searching = !self.viewModel.keyword.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 let empty = items.isEmpty && !self.viewModel.isLoading
-                self.emptyLabel.isHidden = !empty
+                self.emptyView.isHidden = !empty
                 if empty {
-                    self.emptyLabel.text = searching
-                        ? "未找到匹配人员\n请尝试搜索姓名或经理号"
-                        : "暂无业务经理\n请稍后再试或更换机构"
-                }
-                self.resultCountLabel.isHidden = !(searching && !items.isEmpty)
-                if searching, !items.isEmpty {
-                    self.resultCountLabel.text = "共找到 \(items.count) 位业务经理"
-                }
-            }
-            .store(in: &cancellables)
-
-        viewModel.$isLoading
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] loading in
-                if loading, self?.viewModel.items.isEmpty == true {
-                    self?.hintLabel.text = "正在加载业务经理..."
-                } else {
-                    self?.hintLabel.text = "请选择一位业务经理，提交后将自动绑定"
+                    self.emptyView.configure(
+                        message: searching
+                            ? "未找到匹配人员\n请尝试搜索姓名或经理号"
+                            : "暂无业务经理\n请稍后再试或更换机构"
+                    )
                 }
             }
             .store(in: &cancellables)
@@ -238,5 +240,15 @@ extension ManagerSelectViewController: UITableViewDataSource, UITableViewDelegat
         viewModel.select(item)
         onManagerSelected?(item)
         navigationController?.popViewController(animated: true)
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        guard viewModel.hasMore, !viewModel.isLoadingMore, !viewModel.isLoading else { return }
+        let threshold: CGFloat = 100
+        let contentHeight = scrollView.contentSize.height
+        let frameHeight = scrollView.frame.size.height
+        let offset = scrollView.contentOffset.y
+        guard contentHeight > 0, offset + frameHeight >= contentHeight - threshold else { return }
+        viewModel.loadMore()
     }
 }
