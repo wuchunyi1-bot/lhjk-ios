@@ -140,9 +140,4 @@ enum AddressIcons {
     static func close(size: CGFloat = 16) -> UIImage? {
         scaledImage(named: "address_close", size: size)
     }
-
-    /// Figma 4522:6659 定位 pin，14pt 设计稿 +2 → 16pt
-    static func locate(size: CGFloat = 16) -> UIImage? {
-        scaledImage(named: "address_locate_icon", size: size)
-    }
 }

@@ -106,6 +106,8 @@ final class ManagerSelectViewController: BaseViewController {
         hintRow.axis = .horizontal
         hintRow.alignment = .center
         hintRow.spacing = 4
+        hintRow.setContentHuggingPriority(.required, for: .vertical)
+        hintRow.setContentCompressionResistancePriority(.required, for: .vertical)
 
         tableView.backgroundColor = .clear
         tableView.separatorStyle = .none
@@ -170,7 +172,8 @@ final class ManagerSelectViewController: BaseViewController {
             make.leading.trailing.bottom.equalToSuperview()
         }
         emptyView.snp.makeConstraints { make in
-            make.edges.equalTo(tableView)
+            make.center.equalTo(tableView)
+            make.leading.trailing.equalTo(tableView).inset(24)
         }
     }
 

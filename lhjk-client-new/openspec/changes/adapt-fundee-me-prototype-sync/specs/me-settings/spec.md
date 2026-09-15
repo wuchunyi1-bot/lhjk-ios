@@ -10,7 +10,6 @@
 - **THEN** 依次展示：
   - 账号与安全 → 安全中心 → `/me/settings/security`
   - 地址与设备 → 我的地址 → `/me/settings/addresses`
-  - 地址与设备 → 智能设备 → `/me/devices`
   - 消息提醒 → 通知设置 → `/me/settings/notifications`
   - 隐私与协议 → 隐私设置 → `/me/settings/privacy`
   - 隐私与协议 → 协议与说明 → `/me/settings/agreement-center`

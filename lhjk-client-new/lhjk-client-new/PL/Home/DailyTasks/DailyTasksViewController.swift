@@ -134,7 +134,9 @@ final class DailyTasksViewController: BaseViewController {
     }
 
     private func buildEmpty() -> UIView {
-        FDEmptyStateView(style: .compact, message: "暂无今日健康任务")
+        let v = FDEmptyStateView(style: .compact, message: "暂无今日健康任务")
+        v.snp.makeConstraints { $0.height.equalTo(220) }
+        return v
     }
 
     private func buildTaskCard(_ task: DailyHealthTask) -> DailyTaskCardView {

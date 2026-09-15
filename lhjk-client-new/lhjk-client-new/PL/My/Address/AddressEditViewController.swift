@@ -41,31 +41,6 @@ final class AddressEditViewController: BaseViewController {
         return iv
     }()
 
-    private lazy var locateButton: UIButton = {
-        var cfg = UIButton.Configuration.plain()
-        cfg.image = AddressIcons.locate()
-        cfg.title = "定位"
-        cfg.imagePadding = 2
-        cfg.imagePlacement = .leading
-        cfg.baseForegroundColor = .fdPrimary
-        cfg.contentInsets = .zero
-        cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-            var outgoing = incoming
-            outgoing.font = AddressStyle.fieldFont
-            return outgoing
-        }
-        let btn = UIButton(configuration: cfg)
-        btn.addTarget(self, action: #selector(locateTapped), for: .touchUpInside)
-        return btn
-    }()
-
-    private lazy var locateSpinner: UIActivityIndicatorView = {
-        let i = UIActivityIndicatorView(style: .medium)
-        i.color = .fdPrimary
-        i.hidesWhenStopped = true
-        return i
-    }()
-
     private lazy var addressTextView: UITextView = {
         let tv = UITextView()
         tv.font = AddressStyle.fieldFont
@@ -181,19 +156,6 @@ final class AddressEditViewController: BaseViewController {
     }
 
     override func bindViewModel() {
-        viewModel.$isLocating
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] locating in
-                self?.locateButton.isEnabled = !locating
-                self?.locateButton.alpha = locating ? 0.5 : 1
-                if locating {
-                    self?.locateSpinner.startAnimating()
-                } else {
-                    self?.locateSpinner.stopAnimating()
-                }
-            }
-            .store(in: &cancellables)
-
         viewModel.$isSaving
             .receive(on: DispatchQueue.main)
             .sink { [weak self] saving in
@@ -349,8 +311,6 @@ final class AddressEditViewController: BaseViewController {
 
         row.addSubview(titleLabel)
         row.addSubview(valueStack)
-        row.addSubview(locateButton)
-        row.addSubview(locateSpinner)
 
         titleLabel.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(AddressStyle.cardHorizontalInset)
@@ -358,20 +318,11 @@ final class AddressEditViewController: BaseViewController {
             make.width.equalTo(AddressStyle.labelWidth)
         }
 
-        locateButton.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-AddressStyle.cardHorizontalInset)
-            make.centerY.equalToSuperview()
-        }
-
-        locateSpinner.snp.makeConstraints { make in
-            make.center.equalTo(locateButton)
-        }
-
         regionChevron.snp.makeConstraints { $0.size.equalTo(12) }
 
         valueStack.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(86)
-            make.trailing.lessThanOrEqualTo(locateButton.snp.leading).offset(-8)
+            make.trailing.equalToSuperview().offset(-AddressStyle.cardHorizontalInset)
             make.centerY.equalToSuperview()
         }
 
@@ -484,11 +435,6 @@ final class AddressEditViewController: BaseViewController {
         viewModel.isDefault = sender.isOn
     }
 
-    @objc private func locateTapped() {
-        view.endEditing(true)
-        Task { await viewModel.locate() }
-    }
-
     @objc private func regionRowTapped() {
         presentRegionEditor()
     }
@@ -550,6 +496,6 @@ extension AddressEditViewController: UITextViewDelegate {
 
 extension AddressEditViewController: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        !(touch.view is UIControl) && !(touch.view?.isDescendant(of: locateButton) ?? false)
+        !(touch.view is UIControl)
     }
 }

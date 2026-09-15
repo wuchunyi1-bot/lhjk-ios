@@ -23,7 +23,7 @@
 1. **结构**：品牌 Hero → 单卡三行 → 页脚两行文本；去掉第二、三张卡与品牌下版本 Label。
 2. **版本号**：展示 `Bundle.main` 的 `CFBundleShortVersionString`（`v{version}`）；点击调用 `getLatestVersionForApp`，无更新 toast「当前已经是最新版本」，有更新弹窗并可打开 `addressUrl`。启动/回前台静默检查，强制更新不可跳过。
 3. **评分**：点击 toast「暂无法打开应用市场」，不调 StoreKit / 外链。
-4. **联系我们**：右侧 `400-888-6520`，无箭头、无 tap。
+4. **联系我们**：右侧 `0755-61909838`，无箭头；点击拨号。
 5. **页脚**：`Copyright © 2026 富德联好健康` + `粤ICP备2023016723号-1`。
 6. **视觉**：顶区浅橙到 `fdBg` 渐变；Logo 68×68、圆角 18、`fdPrimary`→浅橙渐变、「富」白字；卡用 `fdSurface` + 圆角/轻阴影，行高 ≥52。
 7. **实现范围**：仅重写 `AboutSettingsViewController`；路由已注册。

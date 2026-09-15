@@ -15,7 +15,6 @@ final class AddressEditViewModel: ObservableObject {
     @Published var isDefault: Bool = false
 
     @Published private(set) var isSaving = false
-    @Published private(set) var isLocating = false
 
     let saveSucceeded = PassthroughSubject<Void, Never>()
     let toastMessage = PassthroughSubject<String, Never>()
@@ -24,7 +23,6 @@ final class AddressEditViewModel: ObservableObject {
 
     private let existingAddress: MAddress?
     private let addressService: AddressService
-    private let locationManager: LocationManager
 
     var isEditMode: Bool { existingAddress != nil }
 
@@ -50,12 +48,10 @@ final class AddressEditViewModel: ObservableObject {
 
     init(
         address: MAddress? = nil,
-        addressService: AddressService = AppContainer.shared.addressService,
-        locationManager: LocationManager = AppContainer.shared.locationManager
+        addressService: AddressService = AppContainer.shared.addressService
     ) {
         self.existingAddress = address
         self.addressService = addressService
-        self.locationManager = locationManager
 
         if let address {
             name = address.name ?? ""
@@ -65,30 +61,6 @@ final class AddressEditViewModel: ObservableObject {
             area = address.area ?? ""
             self.address = address.address ?? ""
             isDefault = address.isDefaultAddress
-        }
-    }
-
-    // MARK: - Locate
-
-    @MainActor
-    func locate() async {
-        guard !isLocating else { return }
-        isLocating = true
-        defer { isLocating = false }
-
-        do {
-            let result = try await locationManager.locateAndReverseGeocode()
-            if !result.province.isEmpty { province = result.province }
-            if !result.city.isEmpty { city = result.city }
-            if !result.area.isEmpty { area = result.area }
-            if !result.detail.isEmpty {
-                address = result.detail
-            }
-            if province.isEmpty && city.isEmpty && area.isEmpty {
-                toastMessage.send("定位失败，请手动选择")
-            }
-        } catch {
-            toastMessage.send(error.localizedDescription)
         }
     }
 

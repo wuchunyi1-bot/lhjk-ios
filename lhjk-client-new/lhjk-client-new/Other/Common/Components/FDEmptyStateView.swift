@@ -17,7 +17,6 @@ final class FDEmptyStateView: UIView {
     private let imageView: UIImageView = {
         let iv = UIImageView(image: UIImage(named: FDEmptyStateView.imageName))
         iv.contentMode = .scaleAspectFit
-        iv.setContentHuggingPriority(.required, for: .vertical)
         return iv
     }()
 
@@ -46,6 +45,8 @@ final class FDEmptyStateView: UIView {
         super.init(frame: .zero)
         isUserInteractionEnabled = false
         backgroundColor = .clear
+        // 贴四边或与列表抢高度时，把剩余空间让给列表，避免把提示行撑开
+        setContentHuggingPriority(.defaultLow, for: .vertical)
 
         stack.axis = .vertical
         stack.alignment = .center

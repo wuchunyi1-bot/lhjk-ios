@@ -221,6 +221,8 @@ final class InstitutionSelectViewController: BaseViewController {
         hintRow.axis = .horizontal
         hintRow.alignment = .center
         hintRow.spacing = 4
+        hintRow.setContentHuggingPriority(.required, for: .vertical)
+        hintRow.setContentCompressionResistancePriority(.required, for: .vertical)
 
         tableView.backgroundColor = .clear
         tableView.separatorStyle = .none
@@ -277,7 +279,8 @@ final class InstitutionSelectViewController: BaseViewController {
             $0.leading.trailing.bottom.equalToSuperview()
         }
         emptyView.snp.makeConstraints {
-            $0.edges.equalTo(tableView)
+            $0.center.equalTo(tableView)
+            $0.leading.trailing.equalTo(tableView).inset(24)
         }
     }
 

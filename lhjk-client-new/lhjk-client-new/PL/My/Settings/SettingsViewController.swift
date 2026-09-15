@@ -73,11 +73,6 @@ final class SettingsViewController: BaseViewController {
                     subtitle: "收货地址管理",
                     action: { Router.shared.push("/me/settings/addresses") }
                 ),
-                .init(
-                    title: "智能设备",
-                    subtitle: "已绑定的健康监测设备",
-                    action: { Router.shared.push("/me/devices") }
-                ),
             ]
         ))
 

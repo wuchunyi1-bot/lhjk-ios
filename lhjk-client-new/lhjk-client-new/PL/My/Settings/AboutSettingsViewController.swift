@@ -78,8 +78,8 @@ final class AboutSettingsViewController: BaseViewController {
 
         let contactRow = SettingsInfoRow(
             title: "联系我们",
-            value: "400-999-6520",
-            showChevron: true,
+            value: "0755-61909838",
+            showChevron: false,
             showDivider: false
         ) { [weak self] in
             self?.handleContactTap()
@@ -152,7 +152,7 @@ final class AboutSettingsViewController: BaseViewController {
     }
 
     private func handleContactTap() {
-        guard let url = URL(string: "tel://4009996520") else { return }
+        guard let url = URL(string: "tel://075561909838") else { return }
         UIApplication.shared.open(url)
     }
 
