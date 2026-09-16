@@ -9,9 +9,7 @@ final class HealthRecordUserInfoCell: UITableViewCell {
 
     // MARK: - Views
     private let card = UIView()
-    private let avatarView = UIView()
-    private let avatarLabel = UILabel()
-    private let avatarGradient = CAGradientLayer()
+    private let avatarImageView = UIImageView()
     private let nameLbl = UILabel()
     private let metaLbl = UILabel()
     private let tagView = UIView(); private let tagLabel = UILabel()
@@ -35,13 +33,12 @@ final class HealthRecordUserInfoCell: UITableViewCell {
         contentView.addSubview(card); card.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
 
         // Avatar
-        avatarView.layer.cornerRadius = 24; avatarView.clipsToBounds = true
-        avatarGradient.colors = [UIColor(hexString: "#F4ECE3").cgColor, UIColor(hexString: "#E8DAC8").cgColor]
-        avatarGradient.startPoint = CGPoint(x: 0, y: 0); avatarGradient.endPoint = CGPoint(x: 1, y: 1)
-        avatarView.layer.insertSublayer(avatarGradient, at: 0)
-        avatarView.layer.borderColor = UIColor.white.withAlphaComponent(0.8).cgColor; avatarView.layer.borderWidth = 2
-        avatarLabel.font = .fdH3; avatarLabel.textColor = UIColor(hexString: "#7B5E40"); avatarLabel.textAlignment = .center
-        avatarView.addSubview(avatarLabel); avatarLabel.snp.makeConstraints { $0.center.equalToSuperview() }
+        avatarImageView.contentMode = .scaleAspectFill
+        avatarImageView.clipsToBounds = true
+        avatarImageView.layer.cornerRadius = 24
+        avatarImageView.layer.borderColor = UIColor.white.withAlphaComponent(0.8).cgColor
+        avatarImageView.layer.borderWidth = 2
+        avatarImageView.image = DefaultUserAvatar.image
 
         // Name + tag
         nameLbl.font = .fdH2; nameLbl.textColor = .fdText
@@ -69,9 +66,9 @@ final class HealthRecordUserInfoCell: UITableViewCell {
         let metaStack = UIStackView(arrangedSubviews: [nameRow, metaLbl, progressTextRow, progressBg]); metaStack.axis = .vertical; metaStack.spacing = 4; metaStack.alignment = .leading
         progressBg.snp.makeConstraints { $0.width.equalTo(110); $0.height.equalTo(8) }
 
-        let leftStack = UIStackView(arrangedSubviews: [avatarView, metaStack]); leftStack.spacing = 12; leftStack.alignment = .center
+        let leftStack = UIStackView(arrangedSubviews: [avatarImageView, metaStack]); leftStack.spacing = 12; leftStack.alignment = .center
         card.addSubview(leftStack)
-        avatarView.snp.makeConstraints { $0.size.equalTo(48) }
+        avatarImageView.snp.makeConstraints { $0.size.equalTo(48) }
         leftStack.snp.makeConstraints { $0.leading.equalToSuperview().offset(16); $0.centerY.equalToSuperview() }
 
         // Six-dim button
@@ -86,22 +83,17 @@ final class HealthRecordUserInfoCell: UITableViewCell {
         card.snp.makeConstraints { $0.height.greaterThanOrEqualTo(80) }
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        avatarGradient.frame = avatarView.bounds
-    }
-
     // MARK: - Configure
 
     func configure(
         userName: String,
-        avatarText: String,
+        avatarURL: String?,
         archiveProgress: Int,
         genderText: String,
         pregnancyText: String?,
         showPregnancy: Bool
     ) {
-        avatarLabel.text = avatarText
+        DefaultUserAvatar.apply(urlString: avatarURL, to: avatarImageView)
         nameLbl.text = userName
         pctLabel.text = "\(archiveProgress)%"
         fillWidthConstraint?.update(offset: 110 * CGFloat(archiveProgress) / 100.0)

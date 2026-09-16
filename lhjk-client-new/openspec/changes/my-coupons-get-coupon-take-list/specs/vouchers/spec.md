@@ -21,11 +21,11 @@
 #### Scenario: 票券主信息
 
 - **WHEN** 渲染优惠券卡片
-- **THEN** 展示名称（`name`）、有效期至（`endTime`）、状态角标
+- **THEN** 展示名称（`name`）、有效期至（`endTime`，精确到秒，格式 `yyyy-MM-dd HH:mm:ss`）、状态角标
 - **AND** 响应 `status`：`1`→「待使用」且可「去使用」；`2`→「已领用」；`3`→「已过期」
 - **AND** `type`：`1` 满减 / `2` 减价 / `3` 折扣
-- **AND** 左侧力度：满减用 `amount`；减价优先 `couponAmount` 否则 `amount`；折扣用 `discountRatio`
-- **AND** 门槛文案取 `conditionPrice`（空或 ≤0 为「无门槛」）
+- **AND** 左侧力度：满减用 `amount`；减价优先 `couponAmount` 否则 `amount`；折扣用 `discountRatio`（已是折数，不得乘 10）
+- **AND** 门槛文案取 `conditionPrice`：`0` 为「满¥0可用」，不得展示「无门槛」
 
 #### Scenario: 使用规则展开（按返回字段）
 
@@ -74,11 +74,11 @@
 #### Scenario: 力度与门槛字段
 
 - **WHEN** `type=1`（满减）
-- **THEN** 力度取 `amount`，门槛取 `conditionPrice`
+- **THEN** 力度取 `amount`，门槛取 `conditionPrice`（`0` 展示「满¥0可用」）
 - **WHEN** `type=2`（减价）
 - **THEN** 力度取 `couponAmount`，若为空则取 `amount`
 - **WHEN** `type=3`（折扣）
-- **THEN** 力度取 `discountRatio` 并格式化为「x折」
+- **THEN** 力度取 `discountRatio` 原样格式化为「x折」，不得把 ≤1 的值再乘 10
 
 #### Scenario: 空值不展示
 

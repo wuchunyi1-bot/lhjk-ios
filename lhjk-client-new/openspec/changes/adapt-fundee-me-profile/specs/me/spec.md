@@ -53,7 +53,7 @@
 #### Scenario: 样式与交互
 
 - **WHEN** 渲染头像区
-- **THEN** 头像约 80×80、圆角约 24；无图时品牌渐变底 + 首字；下方文案「点击更换头像」
+- **THEN** 头像约 80×80、圆角约 24；无 `imageUrl` 或加载失败时展示默认头像 `chat_im_avatar`，不得用姓名首字/末字代替；下方文案「点击更换头像」
 - **AND** 点击打开相册；选图后 OSS 上传并 `updateCurrentProfile(imageUrl:)`（保留现有能力）
 
 ## MODIFIED Requirements

@@ -154,7 +154,7 @@ SHALL 展示用户基础信息与档案完整度，参考 funde `hp-header-card`
 
 #### Scenario: 头像 + 姓名
 - **WHEN** 卡片渲染
-- **THEN** 左侧 48×48pt 圆形头像（渐变色背景 `#F4ECE3→#E8DAC8` + 姓名字符 + 白色 2pt 边框）
+- **THEN** 左侧 48×48pt 圆形头像（有 `imageUrl` 用默认加载，空或失败回落 `chat_im_avatar` + 白色 2pt 边框）
 - **AND** 右侧 "姓名"（17pt bold fdText）+ "本人" tag（10pt primary 背景 primary 文字，圆角 pill）
 
 #### Scenario: 档案完整度进度条

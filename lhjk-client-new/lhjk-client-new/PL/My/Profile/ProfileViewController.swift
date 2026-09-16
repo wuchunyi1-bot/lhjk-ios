@@ -1,6 +1,5 @@
 import UIKit
 import SnapKit
-import Kingfisher
 
 /// 个人信息页 — 对齐 `ProfileView.vue`
 ///
@@ -119,8 +118,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     private let infoStack = UIStackView()
     private let avatarSection = UIControl()
     private let avatarImageView = UIImageView()
-    private let avatarTextLabel = UILabel()
-    private let avatarGradient = CAGradientLayer()
     private var avatarLoading: UIActivityIndicatorView?
 
     // MARK: - Lifecycle
@@ -145,11 +142,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
         loadUserProfile()
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        avatarGradient.frame = avatarImageView.bounds
     }
 
     override func setupUI() {
@@ -177,23 +169,11 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             $0.leading.trailing.equalToSuperview()
         }
 
-        avatarGradient.colors = [
-            UIColor(hexString: "#CC4A20").cgColor,
-            UIColor(hexString: "#FF7A50").cgColor
-        ]
-        avatarGradient.startPoint = CGPoint(x: 0, y: 0)
-        avatarGradient.endPoint = CGPoint(x: 1, y: 1)
-        avatarImageView.layer.insertSublayer(avatarGradient, at: 0)
         avatarImageView.layer.cornerRadius = 24
         avatarImageView.clipsToBounds = true
         avatarImageView.contentMode = .scaleAspectFill
         avatarImageView.isUserInteractionEnabled = false
-
-        avatarTextLabel.font = .fdFont(ofSize: 36, weight: .bold)
-        avatarTextLabel.textColor = .white
-        avatarTextLabel.textAlignment = .center
-        avatarImageView.addSubview(avatarTextLabel)
-        avatarTextLabel.snp.makeConstraints { $0.center.equalToSuperview() }
+        avatarImageView.image = DefaultUserAvatar.image
 
         let hint = UILabel()
         hint.text = "点击更换头像"
@@ -382,19 +362,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     }
 
     private func applyUserData(_ user: SUsers) {
-        let displayName = user.chineseName ?? user.surname ?? user.nickname ?? "用户"
-        let char = String(displayName.prefix(1))
-
-        if let urlStr = user.imageUrl, let url = URL(string: urlStr) {
-            avatarTextLabel.isHidden = true
-            avatarGradient.isHidden = true
-            avatarImageView.kf.setImage(with: url)
-        } else {
-            avatarImageView.image = nil
-            avatarTextLabel.isHidden = false
-            avatarTextLabel.text = char
-            avatarGradient.isHidden = false
-        }
+        DefaultUserAvatar.apply(urlString: user.imageUrl, to: avatarImageView)
 
         values[.name] = user.chineseName ?? user.surname ?? ""
         values[.gender] = UserManager.sexDisplayLabel(user.sex)
@@ -549,12 +517,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         switch field.key {
         case .name:
             payload.chineseName = value
-            // 无头像图时同步首字兜底
-            if avatarImageView.image == nil {
-                avatarTextLabel.isHidden = false
-                avatarTextLabel.text = String(value.prefix(1))
-                avatarGradient.isHidden = false
-            }
         case .gender:
             payload.sex = value == "男" ? "1" : (value == "女" ? "2" : nil)
         case .birthday:
@@ -609,8 +571,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             return
         }
         avatarImageView.image = img
-        avatarTextLabel.isHidden = true
-        avatarGradient.isHidden = true
         picker.dismiss(animated: true)
         uploadAvatar(img)
     }
@@ -652,6 +612,10 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             } catch {
                 await MainActor.run {
                     loading.removeFromSuperview()
+                    DefaultUserAvatar.apply(
+                        urlString: UserManager.shared.currentUser?.imageUrl,
+                        to: avatarImageView
+                    )
                     showToast("头像上传失败: \(error.localizedDescription)")
                 }
             }

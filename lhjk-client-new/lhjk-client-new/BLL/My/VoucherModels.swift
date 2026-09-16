@@ -159,21 +159,23 @@ struct BenefitCard: Equatable {
     let imageUrl: String?
     /// 好友转赠 / 员工发放领取后的来源方快照
     let sourcePartyName: String?
+    /// `getCustomerPage.expiringSoon`：是否展示即将到期
+    let expiringSoon: Bool
+    /// `getCustomerPage.remainDays`：剩余天数
+    let remainDays: Int?
 
     /// 待使用且未处于转赠锁定
     var canGift: Bool {
         status == .available && (pendingTransferId?.isEmpty ?? true)
     }
 
-    var isExpiringSoon: Bool {
-        guard status == .available,
-              let date = Self.parseDate(validUntil) else { return false }
-        let days = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? -1
-        return days >= 0 && days <= 7
-    }
-
-    private static func parseDate(_ value: String) -> Date? {
-        VoucherListQuery.parseDate(value)
+    /// Figma：即将到期｜剩余 N 天；仅接口 flag 为 true 时展示，不再按本地日期推算
+    var expiryWarningText: String? {
+        guard expiringSoon else { return nil }
+        if let remainDays {
+            return "即将到期｜剩余 \(remainDays) 天"
+        }
+        return "即将到期"
     }
 }
 
@@ -303,11 +305,10 @@ struct VoucherCouponAsset: Equatable {
     }
 
     var thresholdText: String {
-        if threshold <= 0 { return "无门槛" }
         if threshold == floor(threshold) {
-            return "满 ¥\(Int(threshold)) 可用"
+            return "满¥\(Int(threshold))可用"
         }
-        return String(format: "满 ¥%.2f 可用", threshold)
+        return String(format: "满¥%.2f可用", threshold)
     }
 
     /// 是否有可展开的使用规则内容（对齐 Apifox 非空才展示）
@@ -353,11 +354,14 @@ struct BenefitsTakePageItem: Decodable, Equatable {
     let sourcePartyUserId: Int64?
     let sourcePartyName: String?
     let createTime: String?
+    let expiringSoon: Bool?
+    let remainDays: Int?
 
     private enum CodingKeys: String, CodingKey {
         case id, benefitsNumber, benefitsName, imageUrl, price, status, endTime
         case pendingTransferId, pendingTransferNo, giftedAt, expiresAt, redeemedAt
         case operationNo, orderId, orderNo, sourcePartyUserId, sourcePartyName, createTime
+        case expiringSoon, remainDays
     }
 
     init(from decoder: Decoder) throws {
@@ -380,6 +384,8 @@ struct BenefitsTakePageItem: Decodable, Equatable {
         sourcePartyUserId = Self.int64(c, .sourcePartyUserId)
         sourcePartyName = try c.decodeIfPresent(String.self, forKey: .sourcePartyName)
         createTime = try c.decodeIfPresent(String.self, forKey: .createTime)
+        expiringSoon = Self.bool(c, .expiringSoon)
+        remainDays = HospitalPackageInt.decodeIfPresent(c, key: .remainDays)
     }
 
     private static func int64<K: CodingKey>(_ c: KeyedDecodingContainer<K>, _ key: K) -> Int64? {
@@ -396,6 +402,17 @@ struct BenefitsTakePageItem: Decodable, Equatable {
         if let v = try? c.decodeIfPresent(Int.self, forKey: key) { return Double(v) }
         if let s = try? c.decodeIfPresent(String.self, forKey: key) {
             return Double(s.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        return nil
+    }
+
+    private static func bool<K: CodingKey>(_ c: KeyedDecodingContainer<K>, _ key: K) -> Bool? {
+        if let v = try? c.decodeIfPresent(Bool.self, forKey: key) { return v }
+        if let v = try? c.decodeIfPresent(Int.self, forKey: key) { return v != 0 }
+        if let s = try? c.decodeIfPresent(String.self, forKey: key) {
+            let t = s.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            if t == "true" || t == "1" { return true }
+            if t == "false" || t == "0" { return false }
         }
         return nil
     }
@@ -698,8 +715,6 @@ enum BenefitMapper {
         guard let apiStatus = item.status, let mapped = BenefitCardStatus.fromAPI(apiStatus) else {
             return nil
         }
-        // status=2 走转赠展示，不进普通卡列表
-        if apiStatus == BenefitAPIStatus.pendingReceive.rawValue { return nil }
 
         let id = item.id.map(String.init) ?? UUID().uuidString
         let pendingId = item.pendingTransferId.map(String.init)
@@ -715,14 +730,16 @@ enum BenefitMapper {
             orderId: item.orderId.map(String.init) ?? item.orderNo,
             pendingTransferId: pendingId,
             imageUrl: item.imageUrl,
-            sourcePartyName: nonEmpty(item.sourcePartyName)
+            sourcePartyName: nonEmpty(item.sourcePartyName),
+            expiringSoon: item.expiringSoon ?? false,
+            remainDays: item.remainDays
         )
     }
 
-    /// 卡包中 status=2（转赠中）→ 等待领取样式
+    /// 自己转赠、对方尚未领取：status 仍为待使用但带 pendingTransferId
     static func pendingTransfer(from item: BenefitsTakePageItem) -> BenefitTransferRecord? {
-        guard item.status == BenefitAPIStatus.pendingReceive.rawValue
-                || item.pendingTransferId != nil else { return nil }
+        guard item.status != BenefitAPIStatus.pendingReceive.rawValue,
+              item.pendingTransferId != nil else { return nil }
         let id = item.pendingTransferId.map(String.init)
             ?? item.pendingTransferNo
             ?? item.id.map { "pending-\($0)" }

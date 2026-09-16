@@ -11,13 +11,17 @@ final class BenefitCardCell: UITableViewCell {
         static let horizontalInset: CGFloat = 32
         static let cellVerticalInset: CGFloat = 12
 
-        static let contentInset: CGFloat = 10
+        static let contentInset: CGFloat = 12
         static let contentTrailingInset: CGFloat = 76
-        static let contentToActionsSpacing: CGFloat = 8
-        static let coverSize: CGFloat = 82
-        static let coverCornerRadius: CGFloat = 12
+        static let contentToActionsSpacing: CGFloat = 12
+        static let coverSize: CGFloat = 106
+        static let coverCornerRadius: CGFloat = 16
         static let contentSpacing: CGFloat = 10
         static let actionsHeight: CGFloat = 40
+        /// 待使用文案相对封面顶部（Figma 18−12）；待领取 24−12；已兑换/已过期/已转赠 30−12
+        static let availableDetailsTopInset: CGFloat = 6
+        static let pendingDetailsTopInset: CGFloat = 12
+        static let inactiveDetailsTopInset: CGFloat = 18
 
         /// Figma 3835:32622+ — 标题 16 / 面值 16+18 / 赠送人+有效期 12
         static let nameFontSize: CGFloat = 16
@@ -27,11 +31,10 @@ final class BenefitCardCell: UITableViewCell {
         static let warnFontSize: CGFloat = 12
         static let actionFontSize: CGFloat = 16
 
-        static let nameToAmountSpacing: CGFloat = 3
-        static let amountToSublineSpacing: CGFloat = 4
-        /// 无赠送人时，日期与面值间距略大，视觉更舒展
+        static let nameToAmountSpacing: CGFloat = 8
+        static let amountToSublineSpacing: CGFloat = 11
         static let amountToMetaWithoutGiverSpacing: CGFloat = 12
-        static let sublineSpacing: CGFloat = 4
+        static let sublineSpacing: CGFloat = 6
 
         static let activeTitleColor = UIColor(hexString: "#522B0F")
         static let inactiveTitleColor = UIColor(hexString: "#535353")
@@ -75,7 +78,8 @@ final class BenefitCardCell: UITableViewCell {
     private var contentBottomToActions: Constraint?
     private var actionsHeightConstraint: Constraint?
 
-    private var coverSizeConstraint: Constraint?
+    private var coverWidthConstraint: Constraint?
+    private var coverHeightConstraint: Constraint?
     private var contentLeadingConstraint: Constraint?
     private var contentTrailingConstraint: Constraint?
     private var contentTopConstraint: Constraint?
@@ -87,6 +91,7 @@ final class BenefitCardCell: UITableViewCell {
     private var lastAmountIsActive = false
     private var detailsStack: UIStackView!
     private var contentRowStack: UIStackView!
+    private var detailsTopInset: CGFloat = 0
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -99,14 +104,14 @@ final class BenefitCardCell: UITableViewCell {
     required init?(coder: NSCoder) { fatalError() }
 
     static func rowHeight(for tableWidth: CGFloat, card: BenefitCard) -> CGFloat {
-        Design.cellVerticalInset + cardHeight(for: tableWidth, imageName: card.status.cardBackgroundImageName)
+        Design.cellVerticalInset + imageCardHeight(for: tableWidth, imageName: card.status.cardBackgroundImageName)
     }
 
     static func rowHeight(for tableWidth: CGFloat, transfer: BenefitTransferRecord) -> CGFloat {
-        Design.cellVerticalInset + cardHeight(for: tableWidth, imageName: transfer.status.cardBackgroundImageName)
+        Design.cellVerticalInset + imageCardHeight(for: tableWidth, imageName: transfer.status.cardBackgroundImageName)
     }
 
-    private static func cardHeight(for tableWidth: CGFloat, imageName: String) -> CGFloat {
+    private static func imageCardHeight(for tableWidth: CGFloat, imageName: String) -> CGFloat {
         let width = max(0, tableWidth - Design.horizontalInset)
         guard let image = UIImage(named: imageName), image.size.width > 0 else {
             return width * Design.fallbackAspectRatio
@@ -120,12 +125,16 @@ final class BenefitCardCell: UITableViewCell {
         onSecondary = nil
         setActionsVisible(false)
         warnLabel.isHidden = true
+        warnLabel.text = nil
         giverLabel.isHidden = true
         giverLabel.text = nil
+        metaLabel.isHidden = true
+        metaLabel.text = nil
         coverImageView.kf.cancelDownloadTask()
         coverImageView.image = nil
         backgroundImageName = nil
         lastLayoutScale = 0
+        detailsTopInset = 0
     }
 
     func configureCard(_ item: BenefitCard) {
@@ -139,54 +148,58 @@ final class BenefitCardCell: UITableViewCell {
         switch item.status {
         case .available:
             applyGiver(name: item.sourcePartyName, textColor: Design.activeSublineColor)
-            metaLabel.text = "有效期至 \(item.validUntil)"
-            metaLabel.textColor = Design.activeSublineColor
-            metaLabel.numberOfLines = 1
+            applyMeta("有效期至 \(item.validUntil)", textColor: Design.activeSublineColor)
             nameLabel.textColor = Design.activeTitleColor
-            warnLabel.isHidden = !item.isExpiringSoon
-            warnLabel.text = "即将到期"
+            applyExpiryWarning(item.expiryWarningText)
             showActions(gift: item.canGift, primary: "立即兑换")
+            detailsTopInset = Design.availableDetailsTopInset
 
-        case .pendingReceive, .pendingBind:
+        case .pendingReceive:
             applyGiver(name: item.sourcePartyName, textColor: Design.activeSublineColor)
-            metaLabel.text = "有效期至 \(item.validUntil)"
-            metaLabel.textColor = Design.activeSublineColor
-            metaLabel.numberOfLines = 1
+            applyMeta("有效期至 \(item.validUntil)", textColor: Design.activeSublineColor)
             nameLabel.textColor = Design.activeTitleColor
-            warnLabel.isHidden = true
+            applyExpiryWarning(item.expiryWarningText)
             setActionsVisible(false)
+            detailsTopInset = Design.pendingDetailsTopInset
+
+        case .pendingBind:
+            applyGiver(name: item.sourcePartyName, textColor: Design.activeSublineColor)
+            applyMeta("有效期至 \(item.validUntil)", textColor: Design.activeSublineColor)
+            nameLabel.textColor = Design.activeTitleColor
+            applyExpiryWarning(nil)
+            setActionsVisible(false)
+            detailsTopInset = Design.pendingDetailsTopInset
 
         case .redeemed:
             applyGiver(name: nil, textColor: Design.inactiveSublineColor)
             let day = item.redeemedAt.map { String($0.replacingOccurrences(of: "T", with: " ").prefix(10)) } ?? "--"
-            metaLabel.text = "兑换时间 \(day)"
-            metaLabel.textColor = Design.inactiveSublineColor
-            metaLabel.numberOfLines = 1
+            applyMeta("兑换时间 \(day)", textColor: Design.inactiveSublineColor)
             nameLabel.textColor = Design.inactiveTitleColor
-            warnLabel.isHidden = true
+            applyExpiryWarning(nil)
             showActions(gift: false, primary: "查看订单")
             primaryButton.isEnabled = !(item.orderId?.isEmpty ?? true)
+            detailsTopInset = Design.inactiveDetailsTopInset
 
         case .expired:
-            applyGiver(name: item.sourcePartyName, textColor: Design.inactiveSublineColor)
-            metaLabel.text = "到期时间 \(item.validUntil)"
-            metaLabel.textColor = Design.inactiveSublineColor
-            metaLabel.numberOfLines = 1
+            applyGiver(name: nil, textColor: Design.inactiveSublineColor)
+            applyMeta("有效期至 \(item.validUntil)", textColor: Design.inactiveSublineColor)
             nameLabel.textColor = Design.inactiveTitleColor
-            warnLabel.isHidden = true
+            applyExpiryWarning(nil)
             setActionsVisible(false)
+            detailsTopInset = Design.inactiveDetailsTopInset
 
         case .transferred:
-            applyGiver(name: item.sourcePartyName, textColor: Design.inactiveSublineColor)
-            metaLabel.text = "有效期至 \(item.validUntil)"
-            metaLabel.textColor = Design.inactiveSublineColor
-            metaLabel.numberOfLines = 1
+            applyGiver(name: nil, textColor: Design.inactiveSublineColor)
+            applyMeta("有效期至 \(item.validUntil)", textColor: Design.inactiveSublineColor)
             nameLabel.textColor = Design.inactiveTitleColor
-            warnLabel.isHidden = true
+            applyExpiryWarning(nil)
             setActionsVisible(false)
+            detailsTopInset = Design.inactiveDetailsTopInset
         }
 
         applyDetailsSpacing(scale: currentScale())
+        [nameLabel, giverLabel, metaLabel, warnLabel].forEach { tightenLineHeight(of: $0) }
+        refreshCardHeight()
         setNeedsLayout()
     }
 
@@ -198,32 +211,39 @@ final class BenefitCardCell: UITableViewCell {
         let isActive = item.status == .waiting
         setAmountText(item.amount, isActive: isActive)
         applyCover(imageUrl: item.imageUrl, isActive: isActive)
-        warnLabel.isHidden = true
-        giverLabel.isHidden = true
-        giverLabel.text = nil
+        applyExpiryWarning(nil)
+        applyGiver(name: nil, textColor: Design.inactiveSublineColor)
         setActionsVisible(false)
 
         if item.status == .waiting {
             nameLabel.textColor = Design.activeTitleColor
-            metaLabel.textColor = Design.activeSublineColor
-            metaLabel.numberOfLines = 2
-            metaLabel.text = VoucherListQuery.waitingTransferMeta(sharedAt: item.sharedAt)
+            applyMeta(
+                VoucherListQuery.waitingTransferMeta(sharedAt: item.sharedAt),
+                textColor: Design.activeSublineColor,
+                numberOfLines: 2
+            )
+            detailsTopInset = Design.pendingDetailsTopInset
         } else {
             nameLabel.textColor = Design.inactiveTitleColor
-            metaLabel.textColor = Design.inactiveSublineColor
-            metaLabel.numberOfLines = 2
             let name = (item.recipientName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let claimed = Self.formatDay(item.claimedAt)
-            metaLabel.text = "已赠送给 \(name.isEmpty ? "—" : name)\n领取时间 \(claimed)"
+            applyMeta(
+                "已赠送给 \(name.isEmpty ? "—" : name)\n领取时间 \(claimed)",
+                textColor: Design.inactiveSublineColor,
+                numberOfLines: 2
+            )
+            detailsTopInset = Design.inactiveDetailsTopInset
         }
 
         applyDetailsSpacing(scale: currentScale())
+        [nameLabel, giverLabel, metaLabel, warnLabel].forEach { tightenLineHeight(of: $0) }
+        refreshCardHeight()
         setNeedsLayout()
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        updateCardHeightIfNeeded()
+        refreshCardHeight()
         applyProportionalLayoutIfNeeded()
     }
 
@@ -238,17 +258,30 @@ final class BenefitCardCell: UITableViewCell {
         bgImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         nameLabel.numberOfLines = 1
+        nameLabel.lineBreakMode = .byTruncatingTail
+        amountLabel.numberOfLines = 1
         giverLabel.numberOfLines = 1
         giverLabel.isHidden = true
         metaLabel.numberOfLines = 1
         metaLabel.lineBreakMode = .byTruncatingTail
-        warnLabel.textColor = .fdDanger
+        warnLabel.numberOfLines = 1
+        warnLabel.textColor = UIColor(hexString: "#F93838")
         warnLabel.isHidden = true
+        [nameLabel, amountLabel, giverLabel, metaLabel, warnLabel].forEach {
+            $0.setContentCompressionResistancePriority(.required, for: .vertical)
+            $0.setContentHuggingPriority(.required, for: .vertical)
+        }
+        coverImageView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
+        coverImageView.setContentHuggingPriority(.required, for: .vertical)
+        coverImageView.setContentCompressionResistancePriority(.required, for: .horizontal)
+        coverImageView.setContentHuggingPriority(.required, for: .horizontal)
 
         let details = UIStackView(arrangedSubviews: [nameLabel, amountLabel, giverLabel, metaLabel, warnLabel])
         details.axis = .vertical
         details.spacing = 0
         details.alignment = .leading
+        details.isLayoutMarginsRelativeArrangement = true
+        details.layoutMargins = .zero
         detailsStack = details
 
         contentRowStack = UIStackView(arrangedSubviews: [coverImageView, details])
@@ -273,6 +306,7 @@ final class BenefitCardCell: UITableViewCell {
 
         card.addSubview(contentRowStack)
         card.addSubview(actionsWrap)
+        actionsWrap.isHidden = true
 
         card.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(6)
@@ -282,16 +316,18 @@ final class BenefitCardCell: UITableViewCell {
         }
 
         coverImageView.snp.makeConstraints { make in
-            coverSizeConstraint = make.size.equalTo(Design.coverSize).constraint
+            coverWidthConstraint = make.width.equalTo(Design.coverSize).constraint
+            coverHeightConstraint = make.height.equalTo(Design.coverSize).priority(999).constraint
         }
 
         contentRowStack.snp.makeConstraints { make in
             contentTopConstraint = make.top.equalToSuperview().inset(Design.contentInset).constraint
             contentLeadingConstraint = make.leading.equalToSuperview().inset(Design.contentInset).constraint
             contentTrailingConstraint = make.trailing.equalToSuperview().inset(Design.contentTrailingInset).constraint
-            contentBottomInsetConstraint = make.bottom.equalToSuperview().inset(Design.contentInset).constraint
-            contentBottomToActions = make.bottom.equalTo(actionsWrap.snp.top)
-                .offset(-Design.contentToActionsSpacing).constraint
+            contentBottomInsetConstraint = make.bottom.lessThanOrEqualToSuperview()
+                .inset(Design.contentInset).constraint
+            contentBottomToActions = make.bottom.lessThanOrEqualTo(actionsWrap.snp.top)
+                .offset(-Design.contentToActionsSpacing).priority(750).constraint
         }
         contentBottomToActions?.deactivate()
 
@@ -314,11 +350,11 @@ final class BenefitCardCell: UITableViewCell {
         buttonsStack.snp.makeConstraints { $0.edges.equalToSuperview() }
     }
 
-    private func updateCardHeightIfNeeded() {
+    private func refreshCardHeight() {
         guard let name = backgroundImageName else { return }
         let tableWidth = contentView.bounds.width
         guard tableWidth > 0 else { return }
-        cardHeightConstraint?.update(offset: Self.cardHeight(for: tableWidth, imageName: name))
+        cardHeightConstraint?.update(offset: Self.imageCardHeight(for: tableWidth, imageName: name))
     }
 
     private func applyProportionalLayoutIfNeeded() {
@@ -330,13 +366,16 @@ final class BenefitCardCell: UITableViewCell {
 
         card.layer.cornerRadius = 16 * scale
         coverImageView.layer.cornerRadius = Design.coverCornerRadius * scale
-        coverSizeConstraint?.update(offset: Design.coverSize * scale)
+        coverWidthConstraint?.update(offset: Design.coverSize * scale)
+        coverHeightConstraint?.update(offset: Design.coverSize * scale)
 
         contentTopConstraint?.update(inset: Design.contentInset * scale)
         contentLeadingConstraint?.update(inset: Design.contentInset * scale)
         contentTrailingConstraint?.update(inset: Design.contentTrailingInset * scale)
         contentBottomInsetConstraint?.update(inset: Design.contentInset * scale)
-        contentBottomToActions?.update(offset: -Design.contentToActionsSpacing * scale)
+        if actionsWrap.isHidden == false {
+            contentBottomToActions?.update(offset: -Design.contentToActionsSpacing * scale)
+        }
 
         applyDetailsSpacing(scale: scale)
 
@@ -345,14 +384,15 @@ final class BenefitCardCell: UITableViewCell {
         nameLabel.font = .fdFont(ofSize: Design.nameFontSize * scale, weight: .medium)
         giverLabel.font = .fdFont(ofSize: Design.sublineFontSize * scale, weight: .regular)
         metaLabel.font = .fdFont(ofSize: Design.sublineFontSize * scale, weight: .regular)
-        warnLabel.font = .fdFont(ofSize: Design.warnFontSize * scale, weight: .medium)
+        warnLabel.font = .fdFont(ofSize: Design.warnFontSize * scale, weight: .regular)
+        [nameLabel, giverLabel, metaLabel, warnLabel].forEach { tightenLineHeight(of: $0) }
 
         secondaryButton.titleLabel?.font = .fdFont(ofSize: Design.actionFontSize * scale, weight: .regular)
         primaryButton.titleLabel?.font = .fdFont(ofSize: Design.actionFontSize * scale, weight: .medium)
 
-        if actionsWrap.isHidden == false {
-            actionsHeightConstraint?.update(offset: Design.actionsHeight * scale)
-        }
+        actionsHeightConstraint?.update(
+            offset: actionsWrap.isHidden ? 0 : Design.actionsHeight * scale
+        )
 
         actionsCenterDivider.snp.updateConstraints { make in
             make.height.equalTo(18 * scale)
@@ -362,17 +402,83 @@ final class BenefitCardCell: UITableViewCell {
     }
 
     private func applyDetailsSpacing(scale: CGFloat) {
-        detailsStack.setCustomSpacing(Design.nameToAmountSpacing * scale, after: nameLabel)
-        let amountToNextSpacing = giverLabel.isHidden
-            ? Design.amountToMetaWithoutGiverSpacing * scale
-            : Design.amountToSublineSpacing * scale
-        detailsStack.setCustomSpacing(amountToNextSpacing, after: amountLabel)
-        if !giverLabel.isHidden {
-            detailsStack.setCustomSpacing(Design.sublineSpacing * scale, after: giverLabel)
+        detailsStack.isLayoutMarginsRelativeArrangement = true
+        let extraLines = (giverLabel.isHidden ? 0 : 1) + (warnLabel.isHidden ? 0 : 1)
+        let topInset: CGFloat
+        let nameToAmount: CGFloat
+        let amountToNext: CGFloat
+        let subline: CGFloat
+        switch extraLines {
+        case 0:
+            topInset = detailsTopInset
+            nameToAmount = Design.nameToAmountSpacing
+            amountToNext = Design.amountToMetaWithoutGiverSpacing
+            subline = Design.sublineSpacing
+        case 1:
+            topInset = min(detailsTopInset, 7)
+            nameToAmount = 5
+            amountToNext = giverLabel.isHidden ? 9 : 6
+            subline = 5
+        default:
+            topInset = 3
+            nameToAmount = 4
+            amountToNext = 5
+            subline = 4
         }
-        if !warnLabel.isHidden {
-            detailsStack.setCustomSpacing(Design.sublineSpacing * scale, after: metaLabel)
+        detailsStack.layoutMargins = UIEdgeInsets(top: topInset * scale, left: 0, bottom: 0, right: 0)
+        detailsStack.setCustomSpacing(nameToAmount * scale, after: nameLabel)
+        detailsStack.setCustomSpacing(amountToNext * scale, after: amountLabel)
+        detailsStack.setCustomSpacing(
+            giverLabel.isHidden ? 0 : subline * scale,
+            after: giverLabel
+        )
+        detailsStack.setCustomSpacing(
+            (metaLabel.isHidden || warnLabel.isHidden) ? 0 : subline * scale,
+            after: metaLabel
+        )
+    }
+
+    private func tightenLineHeight(of label: UILabel) {
+        guard let font = label.font else { return }
+        let text = label.text ?? label.attributedText?.string ?? ""
+        guard !text.isEmpty, label.isHidden == false else { return }
+        let style = NSMutableParagraphStyle()
+        let line = ceil(font.pointSize + 1)
+        style.minimumLineHeight = line
+        style.maximumLineHeight = line
+        style.lineBreakMode = label.lineBreakMode
+        label.attributedText = NSAttributedString(
+            string: text,
+            attributes: [
+                .font: font,
+                .foregroundColor: label.textColor ?? .black,
+                .paragraphStyle: style,
+            ]
+        )
+    }
+
+    private func applyExpiryWarning(_ text: String?) {
+        let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else {
+            warnLabel.isHidden = true
+            warnLabel.text = nil
+            return
         }
+        warnLabel.isHidden = false
+        warnLabel.text = trimmed
+    }
+
+    private func applyMeta(_ text: String?, textColor: UIColor, numberOfLines: Int = 1) {
+        let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else {
+            metaLabel.isHidden = true
+            metaLabel.text = nil
+            return
+        }
+        metaLabel.isHidden = false
+        metaLabel.text = trimmed
+        metaLabel.textColor = textColor
+        metaLabel.numberOfLines = numberOfLines
     }
 
     private func applyGiver(name: String?, textColor: UIColor) {
@@ -412,13 +518,18 @@ final class BenefitCardCell: UITableViewCell {
         let prefixFont = UIFont.fdFont(ofSize: Design.amountPrefixFontSize * scale, weight: .medium)
         let valueFont = UIFont.fdFont(ofSize: Design.amountValueFontSize * scale, weight: .medium)
 
+        let line = ceil(Design.amountValueFontSize * scale + 1)
+        let style = NSMutableParagraphStyle()
+        style.minimumLineHeight = line
+        style.maximumLineHeight = line
+
         let attr = NSMutableAttributedString(
             string: "面值 ｜ ¥ ",
-            attributes: [.font: prefixFont, .foregroundColor: color]
+            attributes: [.font: prefixFont, .foregroundColor: color, .paragraphStyle: style]
         )
         attr.append(NSAttributedString(
             string: Self.formatAmount(value),
-            attributes: [.font: valueFont, .foregroundColor: color]
+            attributes: [.font: valueFont, .foregroundColor: color, .paragraphStyle: style]
         ))
         amountLabel.attributedText = attr
     }

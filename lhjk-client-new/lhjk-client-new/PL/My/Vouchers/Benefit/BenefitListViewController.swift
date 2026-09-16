@@ -34,11 +34,17 @@ final class BenefitListViewController: BaseViewController {
         cv.showsHorizontalScrollIndicator = false
         cv.dataSource = self
         cv.delegate = self
-        cv.register(BenefitFilterTabCell.self, forCellWithReuseIdentifier: BenefitFilterTabCell.reuseID)
+        cv.register(VoucherFilterTabCell.self, forCellWithReuseIdentifier: VoucherFilterTabCell.reuseID)
+        cv.clipsToBounds = false
         return cv
     }()
 
-    private let containerView = UIView()
+    private let containerView: UIView = {
+        let v = UIView()
+        v.backgroundColor = .white
+        v.clipsToBounds = true
+        return v
+    }()
 
     override var shouldAutomaticallyForwardAppearanceMethods: Bool { false }
 
@@ -53,6 +59,7 @@ final class BenefitListViewController: BaseViewController {
 
         let tabContainer = UIView()
         tabContainer.backgroundColor = .white
+        tabContainer.clipsToBounds = false
         view.addSubview(tabContainer)
         tabContainer.addSubview(tabCollectionView)
         tabContainer.snp.makeConstraints { make in
@@ -69,6 +76,7 @@ final class BenefitListViewController: BaseViewController {
             make.top.equalTo(tabContainer.snp.bottom)
             make.leading.trailing.bottom.equalToSuperview()
         }
+        view.bringSubviewToFront(tabContainer)
     }
 
     override func viewDidLayoutSubviews() {
@@ -195,12 +203,8 @@ final class BenefitListViewController: BaseViewController {
         showChildVC(at: index)
     }
 
-    private func tabTitle(at index: Int) -> String {
-        let item = tabs[index]
-        if item.filter == .available, availableCount > 0 {
-            return "\(item.title) \(availableCount)"
-        }
-        return item.title
+    private func tabBadgeCount(at index: Int) -> Int {
+        tabs[index].filter == .available ? availableCount : 0
     }
 }
 
@@ -211,10 +215,14 @@ extension BenefitListViewController: UICollectionViewDataSource, UICollectionVie
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: BenefitFilterTabCell.reuseID,
+            withReuseIdentifier: VoucherFilterTabCell.reuseID,
             for: indexPath
-        ) as! BenefitFilterTabCell
-        cell.configure(title: tabTitle(at: indexPath.item), isSelected: indexPath.item == selectedTabIndex)
+        ) as! VoucherFilterTabCell
+        cell.configure(
+            title: tabs[indexPath.item].title,
+            isSelected: indexPath.item == selectedTabIndex,
+            badgeCount: tabBadgeCount(at: indexPath.item)
+        )
         return cell
     }
 
@@ -227,13 +235,13 @@ extension BenefitListViewController: UICollectionViewDataSource, UICollectionVie
         layout collectionViewLayout: UICollectionViewLayout,
         sizeForItemAt indexPath: IndexPath
     ) -> CGSize {
-        let title = tabTitle(at: indexPath.item)
+        let title = tabs[indexPath.item].title
         let width = title.boundingRect(
             with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: 30),
             options: .usesLineFragmentOrigin,
-            attributes: [.font: UIFont.fdMyCaptionSemibold],
+            attributes: [.font: UIFont.fdFont(ofSize: 16, weight: .medium)],
             context: nil
-        ).width + 16
+        ).width + 16 + (tabBadgeCount(at: indexPath.item) > 0 ? VoucherFilterTabCell.badgePeek : 0)
         return CGSize(width: ceil(width), height: 46)
     }
 
@@ -243,63 +251,6 @@ extension BenefitListViewController: UICollectionViewDataSource, UICollectionVie
         insetForSectionAt section: Int
     ) -> UIEdgeInsets {
         UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
-    }
-}
-
-// MARK: - BenefitFilterTabCell
-
-/// 权益卡筛选 Tab — 与优惠券 `CouponFilterTabCell` 垂直居中一致
-private final class BenefitFilterTabCell: UICollectionViewCell {
-    static let reuseID = "BenefitFilterTabCell"
-
-    private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.textAlignment = .center
-        label.font = .fdFont(ofSize: 16, weight: .regular)
-        return label
-    }()
-
-    private let indicatorView: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(hexString: "#FF7A50")
-        view.layer.cornerRadius = 2
-        view.clipsToBounds = true
-        return view
-    }()
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        contentView.addSubview(titleLabel)
-        contentView.addSubview(indicatorView)
-
-        titleLabel.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.centerY.equalToSuperview().offset(2)
-            make.leading.greaterThanOrEqualToSuperview().offset(4)
-            make.trailing.lessThanOrEqualToSuperview().offset(-4)
-        }
-
-        indicatorView.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(4)
-            make.centerX.equalToSuperview()
-            make.width.equalTo(18)
-            make.height.equalTo(4)
-        }
-    }
-
-    required init?(coder: NSCoder) { fatalError() }
-
-    func configure(title: String, isSelected: Bool) {
-        titleLabel.text = title
-        if isSelected {
-            titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
-            titleLabel.textColor = UIColor(hexString: "#1F2942")
-            indicatorView.alpha = 1
-        } else {
-            titleLabel.font = .fdFont(ofSize: 16, weight: .regular)
-            titleLabel.textColor = UIColor(hexString: "#535D72")
-            indicatorView.alpha = 0
-        }
     }
 }
 
@@ -857,24 +808,31 @@ final class BenefitBindViewController: BaseViewController {
     }
 
     @objc private func tapGoRedeem() {
-        if let nav = navigationController {
-            var stack = nav.viewControllers.filter { !($0 is BenefitBindViewController) }
-            stack.append(BenefitRedeemViewController())
-            nav.setViewControllers(stack, animated: true)
-        } else {
-            Router.shared.push("/activate/redeem")
-        }
+        replaceBindPage(with: BenefitRedeemViewController())
     }
 
     @objc private func tapGoVouchers() {
-        if let nav = navigationController {
-            var stack = nav.viewControllers.filter {
-                !($0 is BenefitBindViewController) && !($0 is ActivateViewController)
-            }
-            stack.append(VoucherListViewController(topTab: .benefit))
-            nav.setViewControllers(stack, animated: true)
-        } else {
+        guard let nav = navigationController else {
             Router.shared.push("/me/vouchers", params: ["tab": "benefit"])
+            return
+        }
+        var stack = nav.viewControllers.filter { !($0 is BenefitBindViewController) }
+        if let idx = stack.lastIndex(where: { $0 is VoucherListViewController }),
+           let existing = stack[idx] as? VoucherListViewController {
+            existing.selectTopTab(.benefit)
+            nav.setViewControllers(Array(stack.prefix(through: idx)), animated: true)
+            return
+        }
+        stack.append(VoucherListViewController(topTab: .benefit))
+        nav.setViewControllers(stack, animated: true)
+    }
+
+    /// 对齐 funde `router.replace`：用目标页替换绑定页，保留进入绑定前的栈（含激活兑换 Hub）
+    private func replaceBindPage(with destination: UIViewController) {
+        if let nav = navigationController {
+            var stack = nav.viewControllers.filter { !($0 is BenefitBindViewController) }
+            stack.append(destination)
+            nav.setViewControllers(stack, animated: true)
         }
     }
 

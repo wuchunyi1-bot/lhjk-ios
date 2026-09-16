@@ -53,7 +53,7 @@ Hub 底部 SHALL 提供「退出登录」按钮，行为与设置页退出一致
 #### Scenario: 头像与用户名
 
 - **WHEN** 页面渲染 Hero 区
-- **THEN** 左侧 64×64 圆形头像（有 `imageUrl` 用 Kingfisher，否则首字兜底）；右侧用户名
+- **THEN** 左侧 64×64 圆形头像（有 `imageUrl` 用 Kingfisher，否则默认头像 `chat_im_avatar`）；右侧用户名
 
 #### Scenario: 快捷操作按钮
 

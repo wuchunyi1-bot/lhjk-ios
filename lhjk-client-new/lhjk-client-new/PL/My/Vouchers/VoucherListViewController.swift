@@ -120,6 +120,10 @@ final class VoucherListViewController: BaseViewController {
             target.endAppearanceTransition()
         }
     }
+
+    func selectTopTab(_ tab: VoucherTopTab) {
+        showModule(at: tab.rawValue)
+    }
 }
 
 // MARK: - VoucherTopTabBar
@@ -213,5 +217,99 @@ final class VoucherTopTabBar: UIView {
         selectedIndex = 1
         updateTabState(animated: true)
         onTabSelected?(1)
+    }
+}
+
+// MARK: - VoucherFilterTabCell
+
+/// 权益卡 / 优惠券状态筛选 Tab。待使用数量用红底数字角标（与购物车、TabBar 同源），不拼进标题。
+final class VoucherFilterTabCell: UICollectionViewCell {
+    static let reuseID = "VoucherFilterTabCell"
+
+    /// 角标半宽，计算 Tab 宽度时预留，避免多位数裁切
+    static let badgePeek: CGFloat = 10
+
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.textAlignment = .center
+        label.font = .fdFont(ofSize: 16, weight: .regular)
+        return label
+    }()
+
+    private let indicatorView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .fdPrimary
+        view.layer.cornerRadius = 2
+        view.clipsToBounds = true
+        return view
+    }()
+
+    private let badgeView: UIView = {
+        let v = UIView()
+        v.backgroundColor = .fdDanger
+        v.layer.cornerRadius = 9
+        v.clipsToBounds = true
+        v.isHidden = true
+        v.isUserInteractionEnabled = false
+        return v
+    }()
+
+    private let badgeLabel = UnreadBadgeCountLabel()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        clipsToBounds = false
+        contentView.clipsToBounds = false
+
+        contentView.addSubview(titleLabel)
+        contentView.addSubview(indicatorView)
+        contentView.addSubview(badgeView)
+        badgeView.addSubview(badgeLabel)
+
+        titleLabel.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.centerY.equalToSuperview().offset(2)
+            make.leading.greaterThanOrEqualToSuperview().offset(4)
+            make.trailing.lessThanOrEqualToSuperview().offset(-4)
+        }
+
+        indicatorView.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(4)
+            make.centerX.equalTo(titleLabel)
+            make.width.equalTo(18)
+            make.height.equalTo(4)
+        }
+
+        badgeView.snp.makeConstraints {
+            $0.centerX.equalTo(titleLabel.snp.trailing)
+            $0.centerY.equalTo(titleLabel.snp.top)
+            $0.height.equalTo(18)
+            $0.width.greaterThanOrEqualTo(18)
+        }
+        badgeLabel.snp.makeConstraints { $0.edges.equalToSuperview() }
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    func configure(title: String, isSelected: Bool, badgeCount: Int = 0) {
+        titleLabel.text = title
+        if isSelected {
+            titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+            titleLabel.textColor = UIColor(hexString: "#1F2942")
+            indicatorView.alpha = 1
+        } else {
+            titleLabel.font = .fdFont(ofSize: 16, weight: .regular)
+            titleLabel.textColor = UIColor(hexString: "#535D72")
+            indicatorView.alpha = 0
+        }
+
+        if badgeCount > 0 {
+            badgeView.isHidden = false
+            badgeLabel.text = badgeCount > 99 ? "99+" : "\(badgeCount)"
+            badgeLabel.invalidateIntrinsicContentSize()
+        } else {
+            badgeView.isHidden = true
+            badgeLabel.text = nil
+        }
     }
 }

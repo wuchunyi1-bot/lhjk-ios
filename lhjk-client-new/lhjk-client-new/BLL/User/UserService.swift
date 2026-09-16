@@ -126,6 +126,26 @@ final class UserService: UserServiceProtocol {
         return overview
     }
 
+    /// `GET /v1/users/getUserCenterHealthManage`
+    /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/515137082e0.md
+    func getUserCenterHealthManage() async throws -> UserCenterHealthManageVO {
+        print("[UserService] getUserCenterHealthManage")
+
+        let response: APIResponse<UserCenterHealthManageVO> = try await APIManager.shared.getAsync(
+            path: "/v1/users/getUserCenterHealthManage",
+            parameters: nil,
+            responseType: APIResponse<UserCenterHealthManageVO>.self
+        )
+
+        guard response.isSuccess, let data = response.data else {
+            print("[UserService] getUserCenterHealthManage ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            throw UserServiceError.queryFailed(response.msg ?? "")
+        }
+
+        print("[UserService] getUserCenterHealthManage ✓")
+        return data
+    }
+
     /// `GET /v1/archive/getOArchiveByUserId`
     /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/486441727e0.md
     func getOArchiveByUserId(_ userId: String) async throws -> OArchive? {

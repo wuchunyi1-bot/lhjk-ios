@@ -397,18 +397,21 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 系统 SHALL 在底部 Tab Bar「消息」Tab 上展示未读消息角标，角标数字 = 团队对话未读数 + 通知中心未读数。不依赖用户是否打开过消息 Tab。
 
 **数据源**：`IMService.totalUnreadCount()`（`conversations` 的 `unread` 之和 + `notifications` 中 `unread == true` 的条数）
-**更新机制**：`IMService` 通过 Combine publisher `totalUnreadCountDidChangePublisher` 发布变更，`RootTabBarController` 订阅并更新 `messageNav.tabBarItem.badgeValue`
+**更新机制**：`IMService` 通过 Combine publisher `totalUnreadCountDidChangePublisher` 发布变更，`RootTabBarController` 订阅并更新 `messageNav.tabBarItem.badgeValue`；`AppIconBadgeSync` 订阅同一 publisher，将桌面 App 图标角标写成同一数字（iOS 16+ `UNUserNotificationCenter.setBadgeCount`，更早版本 `applicationIconBadgeNumber`）。推送 payload 的 `badge` 只在后台把数字写上 SpringBoard，App 内已读 MUST 显式回写桌面角标，不得只改 Tab。
+
+冷启动尚未完成会话加载时，不得把桌面角标清成 0（避免抹掉推送留下的数字）；会话加载完成或登出 `clear()` 后按真实未读写入。回前台时若已加载过会话，再次用当前未读覆盖 APNs 可能留下的旧数字。
 
 #### Scenario: 显示规则
 - **WHEN** 总未读数 > 0
-- **THEN** 消息 Tab 显示角标数字（总未读数 > 99 显示 "99+"）
+- **THEN** 消息 Tab 显示角标数字（总未读数 > 99 显示 "99+"），桌面图标角标为同一数字
 - **WHEN** 总未读数 == 0
-- **THEN** 消息 Tab 隐藏角标（`badgeValue = nil`）
+- **THEN** 消息 Tab 隐藏角标（`badgeValue = nil`），桌面图标角标为 0
 
 #### Scenario: 会话加载后更新角标
 - **WHEN** `IMService.loadConversations()` 完成并设置 `conversations` 列表
 - **THEN** 调用 `notifyUnreadCountChanged()` → 通过 `totalUnreadCountDidChangePublisher` 发布新的总未读数
 - **AND** `RootTabBarController` 收到后更新消息 Tab 角标
+- **AND** `AppIconBadgeSync` 收到后写入桌面图标角标
 
 #### Scenario: 收到新消息后更新角标
 - **WHEN** 融云推送群聊新消息 → `messageReceivedPublisher` 发出
@@ -422,7 +425,7 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 - **WHEN** 用户在会话详情页退出（`ChatViewController.viewDidDisappear`）或点击会话行
 - **THEN** 调用 `IMService.markAsRead(_:)` → 将 `unread` 重置为 0
 - **AND** 调用 `RongCloudManager.clearGroupUnreadCount(for:)` 清除融云侧未读
-- **AND** 调用 `notifyUnreadCountChanged()` → 角标自动刷新
+- **AND** 调用 `notifyUnreadCountChanged()` → 消息 Tab 与桌面图标角标同步刷新
 
 #### Scenario: 删除会话后更新角标
 - **WHEN** `IMService.deleteConversation(_:)` 被调用
@@ -430,7 +433,7 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 
 #### Scenario: 登出后清除角标
 - **WHEN** `IMService.clear()` 被调用（用户登出时）
-- **THEN** 清空 `conversations` + 重置 `hasLoadedConversations = false` + 调用 `notifyUnreadCountChanged()` → 角标归零
+- **THEN** 清空 `conversations` + 重置 `hasLoadedConversations = false` + 调用 `notifyUnreadCountChanged()` → 消息 Tab 与桌面图标角标归零
 
 #### Scenario: 初始状态
 - **WHEN** App 冷启动后尚未加载会话列表与通知
@@ -792,6 +795,7 @@ App 冷启动
 | Component | Type | funde ref | 说明 |
 |-----------|------|-----------|------|
 | `RootTabBarController` | UITabBarController | — | 根 TabBar，订阅 `totalUnreadCountDidChangePublisher` 更新消息 Tab 角标 |
+| `AppIconBadgeSync` | enum | — | 订阅同一 publisher，将桌面 App 图标角标写成 `totalUnreadCount()` |
 | `MessagesViewController` | UIViewController | `MessagesView.vue` | 消息根页（分段 Tab + 团队横幅 + 会话列表 + 通知内联） |
 | `ConversationCell` | UITableViewCell | ChatRow | 会话行（角色色头像 + 姓名 + 角色标签 + 预览 + 未读角标） |
 | `NotificationCell` | UITableViewCell | noti-row | 通知行（图标区 + 标题 + 摘要 + tag badge + 时间） |
@@ -836,6 +840,7 @@ App 冷启动
 
 ### 底部消息角标
 - [ ] 消息 Tab 角标 = 所有团队对话 unread 之和（通知中心未读暂不纳入）
+- [ ] 桌面 App 图标角标 = `IMService.totalUnreadCount()`，与消息 Tab 同源；已读后桌面数字同步递减，全部已读后消失
 - [ ] IM 连接成功后自动加载会话列表，无需等待用户进入消息 Tab
 - [ ] 冷启动停留在首页时收到新消息 → 角标实时更新（IMService 自行处理，不依赖 ConversationListVC）
 - [ ] 首次进入消息 Tab → 命中 `hasLoadedConversations` 缓存，不重复 HTTP 请求

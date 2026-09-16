@@ -34,11 +34,11 @@ struct UserTodayMonitorTask: Decodable, Equatable {
     let remindSwitch: Int?
     /// 监测说明；空则详情页不展示该块
     let monitorSpecification: String?
-    /// 完成一次任务可获得积分
+    /// 完成一次**本条**任务可获得的积分（任务行角标）
     let quantity: Int?
-    /// 该类任务今日已获得积分
+    /// 该 `type` 当天已获得积分（同 type 多条任务值相同，已含日上限，不是本条完成分）
     let pointsEarned: Int?
-    /// 该类任务今日可获得总积分
+    /// 该 `type` 当天可获得积分上限（同 type 多条任务值相同）
     let pointsTotal: Int?
 
     private enum CodingKeys: String, CodingKey {
@@ -179,6 +179,7 @@ extension UserTodayMonitorTask {
             planPeriod: planPeriod,
             extraTags: extraTags,
             rewardPoints: Self.rewardPointsPerTask(quantity: quantity),
+            typePointsEarned: max(0, pointsEarned ?? 0),
             homeSubtitle: Self.homeListSubtitle(
                 planTime: formattedPlanTime,
                 taskName: name,
@@ -252,6 +253,26 @@ extension UserTodayMonitorTask {
         guard let total, total > 0 else { return nil }
         let got = max(0, earned ?? 0)
         return "\(got)/\(total)"
+    }
+
+    /// 首页「+N分」：按 `type` 去重后累加 `pointsEarned`（类型日已得分，不是单条任务分）
+    static func summedEarnedPointsByType(
+        _ items: [(type: Int?, pointsEarned: Int)]
+    ) -> Int {
+        var earnedByType: [Int: Int] = [:]
+        var missingTypeEarned = 0
+        var hasMissingType = false
+        for item in items {
+            let earned = max(0, item.pointsEarned)
+            if let type = item.type {
+                earnedByType[type] = max(earnedByType[type] ?? 0, earned)
+            } else {
+                hasMissingType = true
+                missingTypeEarned = max(missingTypeEarned, earned)
+            }
+        }
+        let typed = earnedByType.values.reduce(0, +)
+        return typed + (hasMissingType ? missingTypeEarned : 0)
     }
 
     private static func formatPlanTime(_ raw: String?) -> String {

@@ -36,7 +36,6 @@ final class MyViewModel: ObservableObject {
     }
 
     @Published var userName: String = "加载中…"
-    @Published var avatarChar: String = "我"
     @Published var avatarURL: String?
 
     @Published var memberAssets: [MemberAsset]
@@ -45,20 +44,14 @@ final class MyViewModel: ObservableObject {
 
     private let userManager: UserManager
     private let userService: UserService
-    private let medicalReportService: MedicalReportService
-    private let questionnaireService: QuestionnaireService
     private var cancellables = Set<AnyCancellable>()
 
     init(
         userManager: UserManager = AppContainer.shared.userManager,
-        userService: UserService = AppContainer.shared.userService,
-        medicalReportService: MedicalReportService = AppContainer.shared.medicalReportService,
-        questionnaireService: QuestionnaireService = AppContainer.shared.questionnaireService
+        userService: UserService = AppContainer.shared.userService
     ) {
         self.userManager = userManager
         self.userService = userService
-        self.medicalReportService = medicalReportService
-        self.questionnaireService = questionnaireService
         self.memberAssets = Self.defaultMemberAssets
         self.fulfillmentStats = Self.defaultFulfillmentStats
         self.healthManagement = Self.defaultHealthManagement
@@ -75,11 +68,10 @@ final class MyViewModel: ObservableObject {
         guard let user = userManager.currentUser else { return }
         let name = user.chineseName ?? user.surname ?? user.nickname ?? "用户"
         userName = name
-        avatarChar = String(name.prefix(1))
         avatarURL = user.imageUrl
     }
 
-    /// 刷新 Hub 概览（个人中心 + 健康管理统计）
+    /// 刷新 Hub 概览（个人中心资产 / 履约 + 健康管理各行文案）
     func refreshOverview() {
         Task { [weak self] in
             guard let self else { return }
@@ -93,45 +85,24 @@ final class MyViewModel: ObservableObject {
                 }
             }()
 
-            async let medicalReportStatsResult: MedicalReportStatisticsVO? = {
+            async let healthManageResult: UserCenterHealthManageVO? = {
                 do {
-                    return try await self.medicalReportService.getMedicalReportStatistics(
-                        userId: self.userManager.currentUser?.id
-                    )
+                    return try await self.userService.getUserCenterHealthManage()
                 } catch {
-                    print("[MyViewModel] getMedicalReportStatistics ✗ \(error.localizedDescription)")
-                    return nil
-                }
-            }()
-
-            async let schoolExamCountResult: [ExamUserListCountVO]? = {
-                do {
-                    return try await self.questionnaireService.getSchoolExamUserListCount()
-                } catch {
-                    print("[MyViewModel] getSchoolExamUserListCount ✗ \(error.localizedDescription)")
+                    print("[MyViewModel] getUserCenterHealthManage ✗ \(error.localizedDescription)")
                     return nil
                 }
             }()
 
             let overview = await overviewResult
-            let medicalReportStats = await medicalReportStatsResult
-            let schoolExamCounts = await schoolExamCountResult
+            let healthManage = await healthManageResult
 
             await MainActor.run {
                 if let overview {
                     self.applyOverview(overview)
                 }
-                if let medicalReportStats {
-                    self.updateHealthManagementDetail(
-                        label: "体检报告单",
-                        detail: medicalReportStats.hubDetailText
-                    )
-                }
-                if let schoolExamCounts {
-                    self.updateHealthManagementDetail(
-                        label: "健康测评",
-                        detail: schoolExamCounts.hubHealthEvaluationDetail
-                    )
+                if let healthManage {
+                    self.applyHealthManage(healthManage)
                 }
             }
         }
@@ -173,16 +144,15 @@ final class MyViewModel: ObservableObject {
         }
     }
 
-    private func updateHealthManagementDetail(label: String, detail: String?) {
+    private func applyHealthManage(_ vo: UserCenterHealthManageVO) {
         healthManagement = FuncGroup(
             title: healthManagement.title,
             rows: healthManagement.rows.map { row in
-                guard row.label == label else { return row }
-                return FuncRow(
+                FuncRow(
                     icon: row.icon,
                     color: row.color,
                     label: row.label,
-                    detail: detail,
+                    detail: vo.hubDetail(forLabel: row.label),
                     route: row.route
                 )
             }

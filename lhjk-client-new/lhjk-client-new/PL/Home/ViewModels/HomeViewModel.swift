@@ -272,7 +272,7 @@ final class HomeViewModel: ObservableObject {
             snap.appendItems([.teamList], toSection: .team)
         }
         if !tasks.isEmpty {
-            let taskSig = tasks.map { "\($0.id):\($0.done)" }.joined(separator: "|")
+            let taskSig = tasks.map { "\($0.id):\($0.done):\($0.typePointsEarned)" }.joined(separator: "|")
                 + "#\(tasks.count)"
             snap.appendItems([.taskCard(taskSig)], toSection: .tasks)
         }
@@ -290,9 +290,11 @@ final class HomeViewModel: ObservableObject {
     var taskDoneCount: Int { tasks.filter(\.done).count }
     var taskTotalCount: Int { tasks.count }
 
-    /// 今日已完成任务累计积分（按单次 `quantity` 汇总）
+    /// 今日已得积分：按监测 `type` 去重后累加 `pointsEarned`（类型日已得分，非单条 `quantity`）
     var taskEarnedPoints: Int {
-        tasks.filter(\.done).compactMap(\.rewardPoints).reduce(0, +)
+        UserTodayMonitorTask.summedEarnedPointsByType(
+            tasks.map { (type: $0.monitorType, pointsEarned: $0.typePointsEarned) }
+        )
     }
 
     private static func mapTeamMember(_ vo: MyDoctorTeamVO) -> HomeTeamCardCell.Member? {

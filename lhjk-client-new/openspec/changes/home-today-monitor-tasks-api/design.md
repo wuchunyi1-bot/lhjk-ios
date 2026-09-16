@@ -48,8 +48,11 @@
 | `completeTaskNumber` / `taskNumber` | int32 | `taskNumber > 1` 时 detailRows「今日进度」+ 首页 tag |
 | `remindSwitch` | int32 | 解码保留 |
 | `monitorSpecification` | string | 详情「监测说明」（优先于本地默认文案） |
-| `quantity` | int32 | 解码保留（单次积分） |
-| `pointsEarned` / `pointsTotal` | int32 | `pointsTotal > 0` 时 detailRows「今日积分」+ 首页 tag |
+| `quantity` | int32 | 完成**单条**任务可获得的积分（任务行 `home_task_goal` 角标） |
+| `pointsEarned` | int32 | **该 `type` 当天已获得积分**（同 type 多条相同，已含日上限；不是单条完成分） |
+| `pointsTotal` | int32 | **该 `type` 当天积分上限**；`> 0` 时 detailRows「今日积分」+ 首页 tag |
+
+首页进度「+N分」= 按 `type` 去重后的 `pointsEarned` 之和，禁止 `Σ quantity`（已完成）或 `Σ 每条 pointsEarned`。见 spec「首页完成积分按监测类型汇总」。
 
 4. **type 映射（字典 `monitorType`，非 Apifox 文档枚举）**：
 

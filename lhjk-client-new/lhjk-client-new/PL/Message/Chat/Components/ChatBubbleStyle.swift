@@ -1,6 +1,29 @@
 import UIKit
 import Kingfisher
 
+/// 无头像 URL 或加载失败时的默认图（FDMINIAPP-101）
+enum DefaultUserAvatar {
+  static let image = UIImage(named: "chat_im_avatar")
+
+  static func apply(urlString: String?, to imageView: UIImageView) {
+    imageView.kf.cancelDownloadTask()
+    let trimmed = urlString?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    guard !trimmed.isEmpty, let url = URL(string: trimmed) else {
+      imageView.image = image
+      return
+    }
+    imageView.kf.setImage(
+      with: url,
+      placeholder: image,
+      options: [.transition(.fade(0.2))]
+    ) { result in
+      if case .failure = result {
+        imageView.image = image
+      }
+    }
+  }
+}
+
 // MARK: - Figma 3876:35332 聊天气泡规范
 
 enum ChatBubbleTail {
@@ -30,7 +53,7 @@ enum ChatBubbleStyle {
   static let cornerLarge: CGFloat = 16
   static let cornerSmall: CGFloat = 4
 
-  static let defaultAvatarImage = UIImage(named: "chat_im_avatar")
+  static let defaultAvatarImage = DefaultUserAvatar.image
 
   /// 气泡起点：16 + 38 + 8 = 62
   static var contentStartOffset: CGFloat {
@@ -172,7 +195,7 @@ enum ChatBubbleStyle {
     imageView.contentMode = .scaleAspectFill
   }
 
-  /// 加载头像；无网络图时使用 `chat_im_avatar`
+  /// 加载头像；无网络图或失败时使用 `chat_im_avatar`
   static func applyAvatar(
     portraitUrl: String?,
     label: UILabel,
@@ -180,17 +203,7 @@ enum ChatBubbleStyle {
   ) {
     label.isHidden = true
     imageView.isHidden = false
-    imageView.image = defaultAvatarImage
-
-    guard let urlStr = portraitUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
-          !urlStr.isEmpty,
-          let url = URL(string: urlStr) else { return }
-
-    imageView.kf.setImage(
-      with: url,
-      placeholder: defaultAvatarImage,
-      options: [.transition(.fade(0.2))]
-    )
+    DefaultUserAvatar.apply(urlString: portraitUrl, to: imageView)
   }
 }
 

@@ -22,7 +22,7 @@ final class CouponTabViewController: BaseViewController {
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
         tv.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 24, right: 0)
-        tv.clipsToBounds = false
+        tv.clipsToBounds = true
         tv.estimatedRowHeight = CouponCardCell.collapsedRowHeight(for: UIScreen.main.bounds.width)
         tv.dataSource = self
         tv.delegate = self
@@ -65,6 +65,7 @@ final class CouponTabViewController: BaseViewController {
 
     override func setupUI() {
         view.backgroundColor = .white
+        view.clipsToBounds = true
         view.addSubview(tableView)
         view.addSubview(emptyView)
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
@@ -98,10 +99,7 @@ final class CouponTabViewController: BaseViewController {
                 )
                 guard !Task.isCancelled else { return }
 
-                var assets = result.items.map { $0.toVoucherAsset() }
-                if self.filter == .all {
-                    assets = VoucherListQuery.coupons(assets: assets, filter: .all)
-                }
+                let assets = result.items.map { $0.toVoucherAsset() }
 
                 await MainActor.run {
                     self.coupons = assets

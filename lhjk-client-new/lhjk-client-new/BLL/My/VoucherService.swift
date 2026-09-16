@@ -67,7 +67,12 @@ final class VoucherService {
         status: Int? = nil,
         pageNum: Int = 1,
         pageSize: Int = 50
-    ) async throws -> (cards: [BenefitCard], pendingTransfers: [BenefitTransferRecord], total: Int) {
+    ) async throws -> (
+        cards: [BenefitCard],
+        pendingTransfers: [BenefitTransferRecord],
+        total: Int,
+        ordered: [BenefitListEntry]
+    ) {
         var params: [String: Any] = [
             "pageNum": String(pageNum),
             "pageSize": String(pageSize),
@@ -91,15 +96,18 @@ final class VoucherService {
         let total = response.total ?? response.data?.totalRecords ?? records.count
         var cards: [BenefitCard] = []
         var pending: [BenefitTransferRecord] = []
+        var ordered: [BenefitListEntry] = []
         for item in records {
             if let t = BenefitMapper.pendingTransfer(from: item) {
                 pending.append(t)
+                ordered.append(.transfer(t))
             } else if let c = BenefitMapper.card(from: item) {
                 cards.append(c)
+                ordered.append(.card(c))
             }
         }
         print("[VoucherService] getCustomerPage ✓ cards=\(cards.count) pending=\(pending.count) total=\(total)")
-        return (cards, pending, total)
+        return (cards, pending, total, ordered)
     }
 
     /// `GET /v1/benefitsTake/getGiftRecordPage`
@@ -147,12 +155,7 @@ final class VoucherService {
             return VoucherListQuery.benefitEntries(cards: [], transfers: records, filter: filter)
         case .all:
             let page = try await getCustomerPage(status: nil)
-            // 全部 Tab 还需已转赠？原型：已转赠仅在转赠记录。全部只含等待领取 + 卡
-            return VoucherListQuery.benefitEntries(
-                cards: page.cards,
-                transfers: page.pendingTransfers,
-                filter: .all
-            )
+            return VoucherListQuery.allTabEntries(page.ordered)
         case .available, .redeemed, .expired:
             let page = try await getCustomerPage(status: filter.apiStatus)
             if filter == .available {

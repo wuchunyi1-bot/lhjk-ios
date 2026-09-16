@@ -97,6 +97,8 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func sceneWillEnterForeground(_ scene: UIScene) {
         // 热启动：融云 SDK 内部自动维持/恢复长连接，无需 App 侧干预
         AppVersionCheckCoordinator.notifyWillEnterForeground()
+        // 后台期间 APNs 可能改写桌面角标，回前台用当前未读覆盖
+        AppIconBadgeSync.syncIfLoaded()
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {

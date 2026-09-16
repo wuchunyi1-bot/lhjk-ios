@@ -73,10 +73,10 @@ struct CouponTakeItem: Decodable, Identifiable, Equatable {
     }
 
     var subtitle: String {
-        if thresholdAmount > 0 {
-            return String(format: "满 ¥%.2f 可用", thresholdAmount)
+        if thresholdAmount == floor(thresholdAmount) {
+            return "满¥\(Int(thresholdAmount))可用"
         }
-        return "无门槛"
+        return String(format: "满¥%.2f可用", thresholdAmount)
     }
 
     /// 映射为卡包列表 UI 模型
@@ -92,7 +92,7 @@ struct CouponTakeItem: Decodable, Identifiable, Equatable {
 
         let mappedType = Self.mapType(type)
         let amountValue: Double? = mappedType == .discount ? nil : discountAmount
-        let rateValue: Double? = mappedType == .discount ? Self.mapDiscountRate(discountRatio) : nil
+        let rateValue: Double? = mappedType == .discount ? discountRatio.flatMap { $0 > 0 ? $0 : nil } : nil
 
         return VoucherCouponAsset(
             id: assetId,
@@ -132,15 +132,6 @@ struct CouponTakeItem: Decodable, Identifiable, Equatable {
         }
     }
 
-    /// 折扣比例：≤1 视为小数（0.88 → 8.8 折），否则按折数展示
-    private static func mapDiscountRate(_ ratio: Double?) -> Double? {
-        guard let ratio, ratio > 0 else { return nil }
-        if ratio <= 1 {
-            return (ratio * 10 * 100).rounded() / 100
-        }
-        return ratio
-    }
-
     private static func splitNames(_ raw: String?) -> [String] {
         guard let raw else { return [] }
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -157,7 +148,7 @@ struct CouponTakeItem: Decodable, Identifiable, Equatable {
         return t.isEmpty ? nil : t
     }
 
-    /// 将接口 date-time 格式化为展示串；解析失败则原样返回
+    /// 将接口 date-time 格式化为展示串（精确到秒）；解析失败则原样返回
     private static func displayDateTime(_ raw: String?) -> String? {
         guard let raw else { return nil }
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -169,6 +160,7 @@ struct CouponTakeItem: Decodable, Identifiable, Equatable {
                 "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
                 "yyyy-MM-dd'T'HH:mm:ss",
                 "yyyy-MM-dd HH:mm:ss",
+                "yyyy-MM-dd HH:mm",
                 "yyyy-MM-dd",
             ]
             return formats.map { format in
@@ -185,7 +177,7 @@ struct CouponTakeItem: Decodable, Identifiable, Equatable {
 
         let out = DateFormatter()
         out.locale = Locale(identifier: "en_US_POSIX")
-        out.dateFormat = "yyyy-MM-dd HH:mm"
+        out.dateFormat = "yyyy-MM-dd HH:mm:ss"
         return out.string(from: date)
     }
 

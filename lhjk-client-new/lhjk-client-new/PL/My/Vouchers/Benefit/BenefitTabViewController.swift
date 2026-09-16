@@ -21,7 +21,9 @@ final class BenefitTabViewController: BaseViewController {
         tv.backgroundColor = .white
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
-        tv.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 24, right: 0)
+        tv.contentInsetAdjustmentBehavior = .never
+        tv.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 24, right: 0)
+        tv.clipsToBounds = true
         tv.rowHeight = UITableView.automaticDimension
         tv.estimatedRowHeight = 160
         tv.dataSource = self
@@ -64,6 +66,7 @@ final class BenefitTabViewController: BaseViewController {
 
     override func setupUI() {
         view.backgroundColor = .white
+        view.clipsToBounds = true
         view.addSubview(tableView)
         view.addSubview(emptyView)
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }

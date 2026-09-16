@@ -16,7 +16,6 @@
 - **WHEN** ViewModel 初始化
 - **THEN** 包含以下 `@Published` 属性：
   - `userName: String` — 用户姓名（默认"加载中…"）
-  - `avatarChar: String` — 头像文字（取姓名首字）
   - `avatarURL: String?` — 头像远程 URL
   - `stats: [StatItem]` — 统计条数据（积分/家庭成员/保单/健康等级）
   - `fulfillmentStats: [FulfillmentStat]` — 订单履约统计
@@ -26,7 +25,7 @@
 #### Scenario: 数据加载
 - **WHEN** ViewModel 初始化或 `loadUserProfile()` 被调用
 - **THEN** 从 `UserManager.shared.currentUser` 读取用户信息
-- **AND** 更新 `userName`、`avatarChar`、`avatarURL`
+- **AND** 更新 `userName`、`avatarURL`
 - **AND** Mock 数据（stats/services/functionGroups）在 init 时从静态默认值加载
 
 ### Requirement: Notification 监听
@@ -42,7 +41,7 @@
 #### Scenario: 移除的代码
 - **WHEN** 完成重构
 - **THEN** 从 VC 移除：
-  - `private var userName/avatarChar/avatarURL` 状态变量
+  - `private var userName/avatarURL` 状态变量
   - `private let stats/fulfillmentStats/services/functionGroups` mock 数据数组
   - `loadUserProfile()` / `onUserUpdated()` 方法
   - `refreshHeader()` 中的手动 tag 查找逻辑（改为 sink 驱动）
@@ -59,7 +58,7 @@
 #### Scenario: ViewModel 绑定
 - **WHEN** `bindViewModel()` 被调用
 - **THEN** 订阅 `$userName` → 触发 `refreshHeader()` 更新 UI
-- **AND** `refreshHeader()` 从 `viewModel.avatarChar`、`viewModel.avatarURL`、`viewModel.userName` 读取数据
+- **AND** `refreshHeader()` 从 `viewModel.avatarURL`、`viewModel.userName` 读取数据
 
 ## Acceptance Checklist
 

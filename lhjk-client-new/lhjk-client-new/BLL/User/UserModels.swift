@@ -538,6 +538,70 @@ struct UserCenterOverviewVO: Decodable, Equatable {
     }
 }
 
+// MARK: - 个人中心健康管理
+
+/// `GET /v1/users/getUserCenterHealthManage` 响应 `data`
+/// Apifox schema 名 `UserCenterHeathManageVO`（拼写 Heath）
+/// https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/515137082e0.md
+struct UserCenterHealthManageVO: Decodable, Equatable {
+    /// 饮食方案
+    let dietary: String?
+    /// 健康测评
+    let schoolExam: String?
+    /// 健康报告
+    let healthReport: String?
+    /// 健康评估
+    let healthAssessment: String?
+    /// 监测方案
+    let monitor: String?
+    /// 体检报告单（Apifox 字段名 `accountPoint`，title「体检报告数量」）
+    let accountPoint: String?
+
+    func hubDetail(forLabel label: String) -> String? {
+        switch label {
+        case "健康报告": return Self.displayText(healthReport)
+        case "体检报告单": return Self.displayText(accountPoint)
+        case "监测方案": return Self.displayText(monitor)
+        case "饮食方案": return Self.displayText(dietary)
+        case "健康评估": return Self.displayText(healthAssessment)
+        case "健康测评": return Self.displayText(schoolExam)
+        default: return nil
+        }
+    }
+
+    private static func displayText(_ raw: String?) -> String? {
+        let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case dietary, schoolExam, healthReport, healthAssessment, monitor, accountPoint
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        dietary = Self.decodeString(c, .dietary)
+        schoolExam = Self.decodeString(c, .schoolExam)
+        healthReport = Self.decodeString(c, .healthReport)
+        healthAssessment = Self.decodeString(c, .healthAssessment)
+        monitor = Self.decodeString(c, .monitor)
+        accountPoint = Self.decodeString(c, .accountPoint)
+    }
+
+    private static func decodeString(
+        _ c: KeyedDecodingContainer<CodingKeys>,
+        _ key: CodingKeys
+    ) -> String? {
+        if let s = try? c.decodeIfPresent(String.self, forKey: key) {
+            let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+            return t.isEmpty ? nil : t
+        }
+        if let i = try? c.decodeIfPresent(Int64.self, forKey: key) { return String(i) }
+        if let i = try? c.decodeIfPresent(Int.self, forKey: key) { return String(i) }
+        return nil
+    }
+}
+
 // MARK: - 档案完善进度
 
 /// `GET /v1/archive/calculateArchiveCompletion` 响应 data

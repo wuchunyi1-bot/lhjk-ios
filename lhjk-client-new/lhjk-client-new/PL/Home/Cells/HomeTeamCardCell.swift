@@ -1,6 +1,5 @@
 import UIKit
 import SnapKit
-import Kingfisher
 
 /// 健管团队整卡 — 对齐 Figma：标题 + 多成员行 + 分割线 + 描边「发消息」
 final class HomeTeamCardCell: UITableViewCell {
@@ -174,19 +173,13 @@ final class HomeTeamCardCell: UITableViewCell {
         avatarLabel.snp.makeConstraints { $0.center.equalToSuperview() }
         avatarImage.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        if let urlString = member.imageUrl, let url = URL(string: urlString), !urlString.isEmpty {
+        if let urlString = member.imageUrl, !urlString.isEmpty {
             avatarLabel.isHidden = true
             avatarImage.isHidden = false
-            let placeholder = UIImage(named: "chat_im_avatar")
-            avatarImage.kf.setImage(with: url, placeholder: placeholder, options: [.transition(.fade(0.2))]) { result in
-                if case .failure = result {
-                    avatarImage.image = placeholder
-                    avatarLabel.isHidden = placeholder != nil
-                }
-            }
+            DefaultUserAvatar.apply(urlString: urlString, to: avatarImage)
         } else {
             avatarImage.isHidden = false
-            avatarImage.image = UIImage(named: "chat_im_avatar")
+            avatarImage.image = DefaultUserAvatar.image
             avatarLabel.isHidden = avatarImage.image != nil
         }
 

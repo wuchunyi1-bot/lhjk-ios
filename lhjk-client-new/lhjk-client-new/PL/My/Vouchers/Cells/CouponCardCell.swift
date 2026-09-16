@@ -56,6 +56,21 @@ final class CouponCardCell: UITableViewCell {
         static let bgCapRight: CGFloat = 46
     }
 
+    /// 左侧字号只按展示字符串长度，不按面额数值
+    private enum LeftValueTypography {
+        static func amountSize(for displayText: String) -> CGFloat {
+            switch displayText.filter({ !$0.isWhitespace }).count {
+            case 0...5: return 22
+            case 6...7: return 18
+            default: return 15
+            }
+        }
+
+        static func thresholdSize(for displayText: String) -> CGFloat {
+            displayText.filter({ !$0.isWhitespace }).count >= 11 ? 10 : 12
+        }
+    }
+
     /// 列表行高（与内部约束一致，避免 automaticDimension 与比例高度冲突）
     static func rowHeight(
         for tableWidth: CGFloat,
@@ -337,10 +352,12 @@ final class CouponCardCell: UITableViewCell {
 
         amountLabel.textAlignment = .center
         amountLabel.numberOfLines = 1
-        thresholdLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        amountLabel.lineBreakMode = .byClipping
+        amountLabel.adjustsFontSizeToFitWidth = false
         thresholdLabel.textAlignment = .center
-        thresholdLabel.adjustsFontSizeToFitWidth = true
-        thresholdLabel.minimumScaleFactor = 0.8
+        thresholdLabel.numberOfLines = 1
+        thresholdLabel.lineBreakMode = .byClipping
+        thresholdLabel.adjustsFontSizeToFitWidth = false
 
         let leftStack = UIStackView(arrangedSubviews: [amountLabel, thresholdLabel])
         leftStack.axis = .vertical
@@ -552,38 +569,56 @@ final class CouponCardCell: UITableViewCell {
 
     private func setAmountAndThreshold(_ item: VoucherCouponAsset, isActive: Bool) {
         let color = isActive ? UIColor(hexString: "#F93838") : UIColor(hexString: "#8591AB")
-        thresholdLabel.textColor = color
-        thresholdLabel.text = item.thresholdText
+        let amountSize = LeftValueTypography.amountSize(for: item.benefitText)
+        let thresholdSize = LeftValueTypography.thresholdSize(for: item.thresholdText)
+        amountLabel.attributedText = Self.amountAttributedString(
+            item.benefitText,
+            size: amountSize,
+            color: color
+        )
+        thresholdLabel.attributedText = NSAttributedString(
+            string: item.thresholdText,
+            attributes: [
+                .font: UIFont.fdFont(ofSize: thresholdSize, weight: .medium),
+                .foregroundColor: color,
+            ]
+        )
+    }
 
-        let text = item.benefitText
+    private static func amountAttributedString(
+        _ text: String,
+        size: CGFloat,
+        color: UIColor
+    ) -> NSAttributedString {
         if text.hasPrefix("¥") {
-            let num = text.trimmingCharacters(in: CharacterSet(charactersIn: "¥ ")).trimmingCharacters(in: .whitespaces)
+            let num = text.trimmingCharacters(in: CharacterSet(charactersIn: "¥ "))
+                .trimmingCharacters(in: .whitespaces)
             let attr = NSMutableAttributedString(
                 string: "¥ ",
-                attributes: [.font: UIFont.fdFont(ofSize: 20, weight: .medium), .foregroundColor: color]
+                attributes: [.font: UIFont.fdFont(ofSize: size, weight: .medium), .foregroundColor: color]
             )
             attr.append(NSAttributedString(
                 string: num,
-                attributes: [.font: UIFont.fdFont(ofSize: 26, weight: .bold), .foregroundColor: color]
+                attributes: [.font: UIFont.fdFont(ofSize: size, weight: .bold), .foregroundColor: color]
             ))
-            amountLabel.attributedText = attr
-        } else if text.hasSuffix("折") {
+            return attr
+        }
+        if text.hasSuffix("折") {
             let num = text.replacingOccurrences(of: "折", with: "").trimmingCharacters(in: .whitespaces)
             let attr = NSMutableAttributedString(
                 string: num,
-                attributes: [.font: UIFont.fdFont(ofSize: 26, weight: .bold), .foregroundColor: color]
+                attributes: [.font: UIFont.fdFont(ofSize: size, weight: .bold), .foregroundColor: color]
             )
             attr.append(NSAttributedString(
-                string: " 折",
-                attributes: [.font: UIFont.fdFont(ofSize: 20, weight: .medium), .foregroundColor: color]
+                string: "折",
+                attributes: [.font: UIFont.fdFont(ofSize: size, weight: .medium), .foregroundColor: color]
             ))
-            amountLabel.attributedText = attr
-        } else {
-            amountLabel.attributedText = NSAttributedString(
-                string: text,
-                attributes: [.font: UIFont.fdFont(ofSize: 26, weight: .bold), .foregroundColor: color]
-            )
+            return attr
         }
+        return NSAttributedString(
+            string: text,
+            attributes: [.font: UIFont.fdFont(ofSize: size, weight: .bold), .foregroundColor: color]
+        )
     }
 
     private func updateRulesDividerStyle(isActive: Bool) {

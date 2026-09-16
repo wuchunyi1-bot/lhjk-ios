@@ -36,6 +36,7 @@ App端/
 │   │   ├── POST /v1/users/updateCurrentProfile
 │   │   ├── GET  /v1/users/getCurrentUserBaseInfo
 │   │   ├── GET  /v1/users/getUserCenterOverview
+│   │   ├── GET  /v1/users/getUserCenterHealthManage
 │   │   ├── POST /v1/users/resetPasswordByMobile
 │   │   ├── POST /v1/users/changeMobile
 │   │   ├── POST /v1/users/cancelCurrentUser
@@ -116,6 +117,7 @@ App端/
 | 4 | POST | `/v1/users/updateCurrentProfile` | `App端/系统/用户管理` | `UserService` | [修改资料](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/477932114e0.md) |
 | 5 | GET | `/v1/users/getCurrentUserBaseInfo` | `App端/系统/用户管理` | `UserService` / `UserManager` | [当前用户](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/478379956e0.md) |
 | 5a | GET | `/v1/users/getUserCenterOverview` | `App端/系统/用户管理` | `UserService` / `MyViewModel` | [个人中心概览](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/503199941e0.md) |
+| 5b | GET | `/v1/users/getUserCenterHealthManage` | `App端/系统/用户管理` | `UserService` / `MyViewModel` | [个人中心健康管理](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/515137082e0.md) |
 | 6 | POST | `/v1/users/resetPasswordByMobile` | `App端/系统/用户管理` | `UserService` | [重置密码](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/476633097e0.md) |
 | 7 | POST | `/v1/users/changeMobile` | `App端/系统/用户管理` | `UserService` | [改手机号](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330847e0.md) |
 | 8 | POST | `/v1/users/cancelCurrentUser` | `App端/系统/用户管理` | `UserService` | [注销](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/483911256e0.md)；业务码 `O0012` 表示有未完成订单，`data` 为订单 id |
@@ -165,7 +167,7 @@ App端/
 | 33a | POST | `/v1/orderPay/orderPay` | `App端/商城/订单支付服务` | `OrderService` / `PaymentService.payMallOrder`；确认订单立即支付；**JSON body** 带回 `amountVersion`、`expectedPayableAmount` | [支付统一接口](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330716e0.md) |
 | 34 | GET | `/v1/couponTake/getCouponTakeList` | `App端/商城/优惠券领用` | `CouponService` | [领用列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330752e0.md) |
 | 35 | POST | `/v1/couponTake/bindCouponTake` | `App端/商城/优惠券领用` | `CouponService` | [绑定优惠券](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330751e0.md) |
-| 35a | GET | `/v1/benefitsTake/getCustomerPage` | `App端/商城/员工权益卡管理` | `VoucherService`（卡包列表） | [用户卡包分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/498029202e0.md) |
+| 35a | GET | `/v1/benefitsTake/getCustomerPage` | `App端/商城/员工权益卡管理` | `VoucherService`（卡包列表；`expiringSoon` / `remainDays` 驱动待领取、待使用「即将到期」） | [用户卡包分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/498029202e0.md) |
 | 35b | GET | `/v1/benefitsTake/getCustomerStatusCount` | `App端/商城/员工权益卡管理` | `VoucherService`（角标回退） | [用户状态数量](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/498029201e0.md) |
 | 35c | GET | `/v1/benefitsTake/getGiftRecordPage` | `App端/商城/员工权益卡管理` | `VoucherService` | [转赠记录](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/498029200e0.md) |
 | 35d | POST | `/v1/benefitsTake/preCheckByKey` | `App端/商城/员工权益卡管理` | `VoucherService` | [卡密预校验](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/498029194e0.md) |
@@ -183,7 +185,7 @@ App端/
 |---|--------|------|-------------|----------|----------------|
 | 36 | GET | `/v1/columnContent/getByCode` | `App端/内容/展示位内容设置管理` | `ColumnContentService` | [栏位内容](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/484052032e0.md) |
 | 36v | GET | `/v1/version/getLatestVersionForApp` | `App端/内容/版本管理` | `AppVersionService` | 文档暂无 / 以代码 path 为准（Apifox OAS `getLatestVersionForApp`） |
-| 36a | GET | `/v1/questionnaire/getSchoolExamUserListCount` | `App端/内容/测评问卷` | `QuestionnaireService` / `MyViewModel` | [测评记录数](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/500500978e0.md) |
+| 36a | GET | `/v1/questionnaire/getSchoolExamUserListCount` | `App端/内容/测评问卷` | `QuestionnaireService`（Hub 已改走 `#5b`） | [测评记录数](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/500500978e0.md) |
 
 > `#36v` Query：`type=1`（iOS）、`versionCode`（`CFBundleVersion` 整数）。响应 `data` 可能为空、`CVersion`，或 `{ isUpdate, isForceInstall, version }`。无更新不弹窗；强制更新不可跳过。
 
@@ -210,7 +212,7 @@ App端/
 | 43 | GET | `/v1/monitorHealth/getMonitorCardList` | `App端/监测/体征监测卡片` | `HealthPageService` | [监测卡片列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657300e0.md) |
 | 44 | GET | `/v1/userMonitorCardConfig/getUserMonitorCardConfig` | `App端/监测/用户监测卡片配置` | `HealthPageService` | [查询卡片配置](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657299e0.md) |
 | 45 | POST | `/v1/userMonitorCardConfig/saveUserMonitorCardConfig` | `App端/监测/用户监测卡片配置` | `HealthPageService` | [保存卡片配置](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657298e0.md) |
-| 45a | GET | `/v1/medicalReport/getMedicalReportStatistics` | `App端/监测/体检报告管理` | `MedicalReportService` / `MyViewModel` | [体检报告统计](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657297e0.md) |
+| 45a | GET | `/v1/medicalReport/getMedicalReportStatistics` | `App端/监测/体检报告管理` | `MedicalReportService`（Hub 已改走 `#5b`） | [体检报告统计](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495657297e0.md) |
 
 ### 2.7 App端 / 监测 / 设备绑定（蓝牙流程 BLL 封装）
 

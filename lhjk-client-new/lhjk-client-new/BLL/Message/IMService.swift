@@ -35,7 +35,7 @@ final class IMService {
     /// 会话已读状态变更（conversationId），用于会话列表局部刷新
     let conversationMarkedReadPublisher = PassthroughSubject<String, Never>()
 
-    /// 团队对话总未读数变更，用于底部消息 Tab 角标更新
+    /// 团队对话 + 通知中心总未读数变更，用于消息 Tab 与桌面图标角标
     let totalUnreadCountDidChangePublisher = PassthroughSubject<Int, Never>()
 
     /// 通知中心列表已更新（实时新消息或重新拉取）

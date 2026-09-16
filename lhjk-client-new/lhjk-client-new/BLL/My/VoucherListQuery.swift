@@ -13,78 +13,37 @@ enum VoucherListQuery {
         let visible: [BenefitCardStatus] = [.pendingBind, .pendingReceive, .available, .redeemed, .expired]
         let filteredCards = cards
             .filter { visible.contains($0.status) }
-            .filter { $0.pendingTransferId == nil }
+            .filter { $0.status == .pendingReceive || $0.pendingTransferId == nil }
             .filter { filter.cardStatus == nil || $0.status == filter.cardStatus }
-            .sorted { compareCards($0, $1, filter: filter) }
-
-        let filteredTransfers: [BenefitTransferRecord]
-        switch filter {
-        case .all:
-            filteredTransfers = transfers.filter { $0.status == .waiting }.sorted(by: compareTransfers)
-        case .transferRecords:
-            filteredTransfers = transfers.sorted(by: compareTransfers)
-        default:
-            filteredTransfers = []
-        }
+            .sorted { compareCards($0, $1) }
 
         if filter == .transferRecords {
-            return filteredTransfers.map { .transfer($0) }
-        }
-        if filter == .all {
-            var entries: [BenefitListEntry] =
-                filteredCards.map { .card($0) } + filteredTransfers.map { .transfer($0) }
-            entries.sort { lhs, rhs in
-                let lr = entryRank(lhs)
-                let rr = entryRank(rhs)
-                if lr != rr { return lr < rr }
-                switch (lhs, rhs) {
-                case (.card(let a), .card(let b)): return compareCards(a, b, filter: filter)
-                case (.transfer(let a), .transfer(let b)): return compareTransfers(a, b)
-                default: return false
-                }
-            }
-            return entries
+            return transfers.sorted(by: compareTransfers).map { .transfer($0) }
         }
         return filteredCards.map { .card($0) }
+    }
+
+    /// 「全部」Tab：保持 `getCustomerPage` records 顺序，不按待领取/待使用等状态重排
+    static func allTabEntries(_ entries: [BenefitListEntry]) -> [BenefitListEntry] {
+        let visible: [BenefitCardStatus] = [.pendingBind, .pendingReceive, .available, .redeemed, .expired]
+        return entries.filter { entry in
+            switch entry {
+            case .card(let card):
+                return visible.contains(card.status)
+                    && (card.status == .pendingReceive || card.pendingTransferId == nil)
+            case .transfer(let record):
+                return record.status == .waiting
+            }
+        }
     }
 
     static func showsBindEntry(for filter: BenefitStatusFilter) -> Bool {
         filter != .transferRecords
     }
 
-    // MARK: - Coupon
-
-    static func coupons(
-        assets: [VoucherCouponAsset],
-        filter: CouponStatusFilter
-    ) -> [VoucherCouponAsset] {
-        assets
-            .filter { filter.status == nil || $0.status == filter.status }
-            .sorted { compareCoupons($0, $1, filter: filter) }
-    }
-
     // MARK: - Private
 
-    private static func entryRank(_ entry: BenefitListEntry) -> Int {
-        switch entry {
-        case .card(let c):
-            switch c.status {
-            case .pendingReceive: return 0
-            case .pendingBind: return 1
-            case .available: return 2
-            case .redeemed: return 4
-            case .expired: return 5
-            case .transferred: return 6
-            }
-        case .transfer:
-            return 3
-        }
-    }
-
-    private static func compareCards(_ a: BenefitCard, _ b: BenefitCard, filter: BenefitStatusFilter) -> Bool {
-        if filter == .all, a.status != b.status {
-            return statusRank(a.status) < statusRank(b.status)
-        }
+    private static func compareCards(_ a: BenefitCard, _ b: BenefitCard) -> Bool {
         switch a.status {
         case .available:
             let va = parseDate(a.validUntil)?.timeIntervalSince1970 ?? 0
@@ -117,50 +76,6 @@ enum VoucherListQuery {
             if ca != cb { return ca > cb }
         }
         return a.id < b.id
-    }
-
-    private static func compareCoupons(
-        _ a: VoucherCouponAsset,
-        _ b: VoucherCouponAsset,
-        filter: CouponStatusFilter
-    ) -> Bool {
-        if filter == .all, a.status != b.status {
-            return couponRank(a.status) < couponRank(b.status)
-        }
-        switch a.status {
-        case .received:
-            let ta = parseDate(a.receivedAt)?.timeIntervalSince1970 ?? 0
-            let tb = parseDate(b.receivedAt)?.timeIntervalSince1970 ?? 0
-            if ta != tb { return ta > tb }
-        case .used:
-            let ta = parseDate(a.usedAt ?? "")?.timeIntervalSince1970 ?? 0
-            let tb = parseDate(b.usedAt ?? "")?.timeIntervalSince1970 ?? 0
-            if ta != tb { return ta > tb }
-        case .expired:
-            let ta = parseDate(a.effectiveEndAt)?.timeIntervalSince1970 ?? 0
-            let tb = parseDate(b.effectiveEndAt)?.timeIntervalSince1970 ?? 0
-            if ta != tb { return ta > tb }
-        }
-        return a.id < b.id
-    }
-
-    private static func statusRank(_ s: BenefitCardStatus) -> Int {
-        switch s {
-        case .pendingReceive: return 0
-        case .pendingBind: return 1
-        case .available: return 2
-        case .redeemed: return 3
-        case .expired: return 4
-        case .transferred: return 5
-        }
-    }
-
-    private static func couponRank(_ s: VoucherCouponStatus) -> Int {
-        switch s {
-        case .received: return 0
-        case .used: return 1
-        case .expired: return 2
-        }
     }
 
     static func parseDate(_ value: String) -> Date? {

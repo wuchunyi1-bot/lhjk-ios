@@ -28,7 +28,7 @@ Hero SHALL 使用暖色渐变背景，展示身份与快捷入口。
 #### Scenario: 头像与姓名
 
 - **WHEN** 渲染 Hero
-- **THEN** 左侧 64×64 圆形头像（有 `imageUrl` 用 Kingfisher，否则姓名首字兜底）
+- **THEN** 左侧 64×64 圆形头像（有 `imageUrl` 用 Kingfisher，否则默认头像 `chat_im_avatar`）
 - **AND** 右侧展示用户姓名（来自 `UserManager.currentUser`）
 
 #### Scenario: 设置齿轮

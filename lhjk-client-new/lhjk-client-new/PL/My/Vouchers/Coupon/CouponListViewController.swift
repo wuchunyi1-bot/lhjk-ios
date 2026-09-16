@@ -33,11 +33,17 @@ final class CouponListViewController: BaseViewController {
         cv.showsHorizontalScrollIndicator = false
         cv.dataSource = self
         cv.delegate = self
-        cv.register(CouponFilterTabCell.self, forCellWithReuseIdentifier: CouponFilterTabCell.reuseID)
+        cv.register(VoucherFilterTabCell.self, forCellWithReuseIdentifier: VoucherFilterTabCell.reuseID)
+        cv.clipsToBounds = false
         return cv
     }()
 
-    private let containerView = UIView()
+    private let containerView: UIView = {
+        let v = UIView()
+        v.backgroundColor = .white
+        v.clipsToBounds = true
+        return v
+    }()
 
     override var shouldAutomaticallyForwardAppearanceMethods: Bool { false }
 
@@ -53,6 +59,7 @@ final class CouponListViewController: BaseViewController {
 
         let tabContainer = UIView()
         tabContainer.backgroundColor = .white
+        tabContainer.clipsToBounds = false
         view.addSubview(tabContainer)
         tabContainer.addSubview(tabCollectionView)
         tabContainer.snp.makeConstraints { make in
@@ -69,6 +76,7 @@ final class CouponListViewController: BaseViewController {
             make.top.equalTo(tabContainer.snp.bottom)
             make.leading.trailing.bottom.equalToSuperview()
         }
+        view.bringSubviewToFront(tabContainer)
     }
 
     override func viewDidLayoutSubviews() {
@@ -170,12 +178,8 @@ final class CouponListViewController: BaseViewController {
         showChildVC(at: index)
     }
 
-    private func tabTitle(at index: Int) -> String {
-        let item = tabs[index]
-        if item.filter == .available, availableCount > 0 {
-            return "\(item.title) \(availableCount)"
-        }
-        return item.title
+    private func tabBadgeCount(at index: Int) -> Int {
+        tabs[index].filter == .available ? availableCount : 0
     }
 }
 
@@ -186,10 +190,14 @@ extension CouponListViewController: UICollectionViewDataSource, UICollectionView
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: CouponFilterTabCell.reuseID,
+            withReuseIdentifier: VoucherFilterTabCell.reuseID,
             for: indexPath
-        ) as! CouponFilterTabCell
-        cell.configure(title: tabTitle(at: indexPath.item), isSelected: indexPath.item == selectedTabIndex)
+        ) as! VoucherFilterTabCell
+        cell.configure(
+            title: tabs[indexPath.item].title,
+            isSelected: indexPath.item == selectedTabIndex,
+            badgeCount: tabBadgeCount(at: indexPath.item)
+        )
         return cell
     }
 
@@ -212,63 +220,5 @@ extension CouponListViewController: UICollectionViewDataSource, UICollectionView
         insetForSectionAt section: Int
     ) -> UIEdgeInsets {
         .zero
-    }
-}
-
-// MARK: - CouponFilterTabCell
-
-/// 优惠券筛选 Tab — 对齐 Figma 3838:33165
-private final class CouponFilterTabCell: UICollectionViewCell {
-    static let reuseID = "CouponFilterTabCell"
-
-    private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.textAlignment = .center
-        label.font = .fdFont(ofSize: 16, weight: .regular)
-        return label
-    }()
-
-    private let indicatorView: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(hexString: "#FF7A50")
-        view.layer.cornerRadius = 2
-        view.clipsToBounds = true
-        return view
-    }()
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        contentView.addSubview(titleLabel)
-        contentView.addSubview(indicatorView)
-
-        // 标题固定垂直位置；下划线始终占位，选中仅改透明度，避免文字上下跳动
-        titleLabel.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.centerY.equalToSuperview().offset(2)
-            make.leading.greaterThanOrEqualToSuperview().offset(4)
-            make.trailing.lessThanOrEqualToSuperview().offset(-4)
-        }
-
-        indicatorView.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(4)
-            make.centerX.equalToSuperview()
-            make.width.equalTo(18)
-            make.height.equalTo(4)
-        }
-    }
-
-    required init?(coder: NSCoder) { fatalError() }
-
-    func configure(title: String, isSelected: Bool) {
-        titleLabel.text = title
-        if isSelected {
-            titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
-            titleLabel.textColor = UIColor(hexString: "#1F2942")
-            indicatorView.alpha = 1
-        } else {
-            titleLabel.font = .fdFont(ofSize: 16, weight: .regular)
-            titleLabel.textColor = UIColor(hexString: "#535D72")
-            indicatorView.alpha = 0
-        }
     }
 }

@@ -1,6 +1,5 @@
 import UIKit
 import SnapKit
-import Kingfisher
 import Combine
 
 /// 我的模块 Hub 页 — 对齐 Figma 3594:8470
@@ -28,7 +27,6 @@ final class MyViewController: BaseViewController {
     private let avatarContainerView = UIView()
     private let avatarButton = UIButton(type: .custom)
     private let avatarImageView = UIImageView()
-    private let avatarCharLabel = UILabel()
     private let nameButton = UIButton(type: .custom)
     private let nameLabel = UILabel()
     private let healthArchiveContainer = UIView()
@@ -128,14 +126,9 @@ final class MyViewController: BaseViewController {
 
         avatarImageView.contentMode = .scaleAspectFill
         avatarImageView.clipsToBounds = true
+        avatarImageView.image = DefaultUserAvatar.image
         avatarButton.addSubview(avatarImageView)
         avatarImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-        avatarCharLabel.font = .fdFont(ofSize: 22, weight: .semibold)
-        avatarCharLabel.textColor = UIColor(hexString: "#754200")
-        avatarCharLabel.textAlignment = .center
-        avatarButton.addSubview(avatarCharLabel)
-        avatarCharLabel.snp.makeConstraints { $0.center.equalToSuperview() }
 
         // Name — 18pt Medium（登录态昵称需比 16pt 更醒目）
         nameLabel.font = .fdFont(ofSize: 20, weight: .medium)
@@ -251,16 +244,7 @@ final class MyViewController: BaseViewController {
     }
 
     private func refreshHeader() {
-        if let urlStr = viewModel.avatarURL, let url = URL(string: urlStr) {
-            avatarCharLabel.isHidden = true
-            avatarImageView.isHidden = false
-            let placeholder = UIImage(named: "chat_im_avatar")
-            avatarImageView.kf.setImage(with: url, placeholder: placeholder)
-        } else {
-            avatarCharLabel.isHidden = true
-            avatarImageView.isHidden = false
-            avatarImageView.image = UIImage(named: "chat_im_avatar")
-        }
+        DefaultUserAvatar.apply(urlString: viewModel.avatarURL, to: avatarImageView)
         nameLabel.text = viewModel.userName
     }
 

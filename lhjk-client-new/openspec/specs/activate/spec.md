@@ -10,6 +10,8 @@
 |------|------|------|
 | `/activate` | 激活兑换 Hub | 首页快捷入口等 |
 | `/activate/bind` | 绑定权益卡 | Hub「去绑定」整卡；卡包绑定入口 |
+
+绑定成功页出口对齐 funde `BenefitCardBindView`：`router.replace('/activate/redeem')` / `router.replace('/me/vouchers?tab=benefit')`。iOS 用目标页替换绑定页，保留进入绑定前的栈；已有「我的卡券」则回到该页，避免重复 push。从 Hub 绑定后查看卡券，返回应回到 Hub。
 | `/activate/redeem` | 兑换套餐专区 | Hub「去兑换」整卡；卡包立即兑换 |
 
 ## Hub 导航（对齐 `ActivateView.vue`）

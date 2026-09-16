@@ -69,6 +69,42 @@
 
 ---
 
+### Requirement: 首页完成积分按监测类型汇总
+
+系统 SHALL 将首页「今日健康任务」进度摘要中的已得积分，按监测 `type` 汇总 `pointsEarned`，不得把每条任务的单次分或同 type 多条 `pointsEarned` 重复相加。
+
+**字段语义（`GET /v1/scheme/getUserToDayMonitorTask`）**：
+
+| 字段 | 含义 |
+|------|------|
+| `quantity` | 完成**这一条**任务可获得的积分（任务行角标仍可用） |
+| `pointsEarned` | **该 `type` 当天已经获得的积分**（同 type 多条任务值相同；受该类型日上限约束） |
+| `pointsTotal` | **该 `type` 当天可获得的积分上限**（同 type 多条任务值相同） |
+
+同 type 每天总分有上限。例如 type=11 有 5 条营养补充剂任务，`quantity=5`、`pointsTotal=15`：完成第 4 条后单次相加会变成 20，但类型上限是 15，接口在每条上返回的 `pointsEarned` 已是该类型当天实得（≤ `pointsTotal`）。
+
+#### Scenario: 按 type 去重后相加
+
+- **WHEN** 计算首页进度摘要「+N分」（`taskEarnedPoints`）
+- **THEN** 将任务列表按 `type` 分组
+- **AND** 每个 `type` 只取一条 `pointsEarned`（同 type 各条应相同；若不一致取较大值）
+- **AND** 将各 type 的 `pointsEarned` 相加，得到今日已得总分
+- **AND** **不得**再对已完成任务的 `quantity` 求和
+- **AND** **不得**把同 type 多条任务的 `pointsEarned` 按条数累加（会重复计算该类型当天已得分）
+
+#### Scenario: 示例
+
+- **WHEN** 今日任务含 type=11 三条（`pointsEarned=10`）与 type=5 两条（`pointsEarned=3`）
+- **THEN** 首页已得积分 = `10 + 3` = 13
+- **AND** 不是 `10+10+10+3+3`，也不是已完成条数 × `quantity`
+
+#### Scenario: 缺 type
+
+- **WHEN** 某条任务 `type` 为空
+- **THEN** 将所有无 `type` 的任务视为一组，取该组 `pointsEarned` 最大值计入总分（不按条数相加）
+
+---
+
 ### Requirement: 今日任务会话缓存与条件刷新
 
 系统 SHALL 对今日监测任务做会话级缓存，避免因页面反复出现而重复请求；仅在冷启动、自然日变化、任务完成态需同步时刷新网络。

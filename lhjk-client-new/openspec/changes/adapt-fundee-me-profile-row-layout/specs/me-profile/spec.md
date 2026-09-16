@@ -42,7 +42,6 @@
 
 - **WHEN** 校验通过
 - **THEN** 本地回显 → `updateCurrentProfile` 提交 `chineseName` → 成功 toast「姓名已保存」并刷新用户信息
-- **AND** 同步更新头像首字兜底（若无头像图）
 
 #### Scenario: 必填标识
 

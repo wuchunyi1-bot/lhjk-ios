@@ -1,3 +1,4 @@
+import Combine
 import UIKit
 import UserNotifications
 
@@ -24,6 +25,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         configureDatabase()
         configureThirdPartySDKs()
         configureRoutes()
+        AppIconBadgeSync.install()
 
         return true
     }
@@ -137,5 +139,53 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     private func configureRoutes() {
         RouteSetup.registerAll()
+    }
+}
+
+/// 桌面 App 图标角标与 `IMService.totalUnreadCount()` 对齐（与消息 Tab 同源）。
+///
+/// 推送 payload 的 `badge` 只负责后台把数字写上 SpringBoard；App 内已读不会自动改桌面角标，必须显式回写。
+enum AppIconBadgeSync {
+    private static var cancellable: AnyCancellable?
+    /// 本进程是否已根据真实未读快照写过桌面角标（含登出归零）
+    private static var hasAppliedRealCount = false
+
+    static func install() {
+        guard cancellable == nil else { return }
+        cancellable = IMService.shared.totalUnreadCountDidChangePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { apply($0) }
+    }
+
+    static func apply(_ unread: Int) {
+        let count = max(0, unread)
+        let loaded = IMService.shared.hasLoadedConversations
+        // 冷启动尚未拉会话时 total=0 是占位，不要把推送留下的桌面角标先抹掉。
+        // 登出 `clear()` 同样是 0 + hasLoaded=false，但此时已经写过真实快照，必须清零。
+        if count == 0 && !loaded && !hasAppliedRealCount {
+            return
+        }
+        hasAppliedRealCount = true
+        write(count)
+    }
+
+    /// 从后台回前台：用当前未读覆盖 APNs 可能留下的旧数字
+    static func syncIfLoaded() {
+        guard IMService.shared.hasLoadedConversations || hasAppliedRealCount else { return }
+        write(max(0, IMService.shared.totalUnreadCount()))
+    }
+
+    private static func write(_ count: Int) {
+        if #available(iOS 16.0, *) {
+            UNUserNotificationCenter.current().setBadgeCount(count) { error in
+                if error != nil {
+                    DispatchQueue.main.async {
+                        UIApplication.shared.applicationIconBadgeNumber = count
+                    }
+                }
+            }
+        } else {
+            UIApplication.shared.applicationIconBadgeNumber = count
+        }
     }
 }

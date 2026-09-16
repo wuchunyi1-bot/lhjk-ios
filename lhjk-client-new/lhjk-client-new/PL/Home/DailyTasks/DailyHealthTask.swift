@@ -26,8 +26,10 @@ struct DailyHealthTask: Equatable {
     let planPeriod: String?
     /// 首页任务行额外标签（餐次、进度、积分等）
     let extraTags: [String]
-    /// 完成单次任务可获得积分（首页 `home_task_goal` 角标）
+    /// 完成单次任务可获得积分（首页 `home_task_goal` 角标，对应接口 `quantity`）
     let rewardPoints: Int?
+    /// 该监测 `type` 当天已获得积分（接口 `pointsEarned`，同 type 多条相同）
+    let typePointsEarned: Int
     /// 首页列表副标题，如 `07:00｜已到今日血压监测`
     let homeSubtitle: String
     /// 详情页卡片主文案（白色信息区内）
@@ -50,6 +52,7 @@ struct DailyHealthTask: Equatable {
         planPeriod: String? = nil,
         extraTags: [String] = [],
         rewardPoints: Int? = nil,
+        typePointsEarned: Int = 0,
         homeSubtitle: String = "",
         detailMessage: String = ""
     ) {
@@ -69,6 +72,7 @@ struct DailyHealthTask: Equatable {
         self.planPeriod = planPeriod
         self.extraTags = extraTags
         self.rewardPoints = rewardPoints
+        self.typePointsEarned = typePointsEarned
         self.homeSubtitle = homeSubtitle
         self.detailMessage = detailMessage
     }

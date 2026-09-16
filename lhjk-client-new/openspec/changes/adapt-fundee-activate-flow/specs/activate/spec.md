@@ -43,6 +43,9 @@
 
 - **WHEN** 绑定成功
 - **THEN** 提供「去兑换套餐」（`/activate/redeem`）与「查看我的权益卡」（`/me/vouchers`）
+- **AND** 两个出口均 **replace** 绑定页（对齐 funde `router.replace`），不得把绑定成功页留在返回栈中
+- **AND** 不得顺带移除激活兑换 Hub：从 Hub 进入绑定时，卡券页返回应回到 Hub，而不是跳过 Hub
+- **AND** 若栈中已有「我的卡券」，「查看我的权益卡」回到该页并选中权益卡 Tab，不得再 push 一层卡券
 
 ### Requirement: 兑换套餐专区
 

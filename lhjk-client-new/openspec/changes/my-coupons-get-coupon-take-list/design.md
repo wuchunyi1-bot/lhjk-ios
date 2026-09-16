@@ -28,9 +28,9 @@
 | `type` | 1 满减 / 2 减价 / 3 折扣 → 左侧力度样式 |
 | `amount` | 卡券金额（满减等） |
 | `couponAmount` | **仅减价券**优先展示金额，缺省回退 `amount` |
-| `discountRatio` | 折扣券力度；≤1 按小数换算为「折」（0.88→8.8） |
-| `conditionPrice` | 门槛；≤0 或空 →「无门槛」 |
-| `endTime` | 「有效期至 …」 |
+| `discountRatio` | 折扣券力度，接口已是「折」数，原样展示（8.8→8.8折），**不得**再乘 10 |
+| `conditionPrice` | 门槛；`0` 展示「满¥0可用」，**不得**写成「无门槛」 |
+| `endTime` | 「有效期至 yyyy-MM-dd HH:mm:ss」（精确到秒，不得截到分钟） |
 | `getTime` | 领取时间（排序/内部用） |
 | `status` | 1 已领取→待使用；2 已使用→已领用；3 已过期 |
 | `rule` | **只影响**业务/套餐标题：1「适用*」/ 0「不适用*」；**不影响**机构与排除商品标题 |
@@ -51,5 +51,5 @@
 
 ## Risks / Trade-offs
 
-- [服务端 `discountRatio` 量纲不一致] → ≤1 乘 10；>1 原样当折数  
+- [服务端 `discountRatio` 已是折数] → 原样展示，不乘 10  
 - [减价券同时有 `amount`/`couponAmount`] → 展示优先 `couponAmount`

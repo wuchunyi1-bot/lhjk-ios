@@ -28,8 +28,8 @@
 
 - **WHEN** 渲染单条成员
 - **THEN**：
-  - `userName` → 姓名；首字 → 文字头像
-  - `imageUrl` 非空 → Kingfisher 加载头像，失败回落文字头像
+  - `userName` → 姓名
+  - `imageUrl` 非空 → Kingfisher 加载头像，空或失败回落默认头像 `chat_im_avatar`
   - `position` → 职称（空则按角色默认文案）
   - `openBusinessName`（可截断）→ 专长标签
   - 角色色：doctor / nutrition / manager（见 design 映射表）

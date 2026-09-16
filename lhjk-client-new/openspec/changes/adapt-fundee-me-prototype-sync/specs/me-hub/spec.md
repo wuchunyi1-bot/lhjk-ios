@@ -26,7 +26,7 @@ Hero SHALL 使用暖色渐变背景（`#FFF7F1` → `#FFE9DC`）。
 #### Scenario: 头像与姓名
 
 - **WHEN** 渲染 Hero
-- **THEN** 左侧 64×64 圆形头像（有 `imageUrl` 用 Kingfisher，否则姓名首字）
+- **THEN** 左侧 64×64 圆形头像（有 `imageUrl` 用 Kingfisher，否则默认头像 `chat_im_avatar`，不得用姓名字）
 - **AND** 点击头像或姓名 push `/me/profile`
 
 #### Scenario: 设置与健康档案
@@ -94,7 +94,18 @@ SHALL 展示 6 项功能行，对齐 `me.json` → `healthManagementActions`（*
 | 健康评估 | `/me/health-assessment` |
 | 健康测评 | `/me/health-evaluations` |
 
-未接 API 时 detail 副文案留空，MUST NOT 用 mock 文案顶替。
+各行右侧 `detail` 文案 SHALL 来自 `GET /v1/users/getUserCenterHealthManage`（Apifox `UserCenterHeathManageVO`），**替换**原先 Hub 使用的 `getMedicalReportStatistics`（体检报告单）与 `getSchoolExamUserListCount`（健康测评）。接口已返回展示字符串，客户端按行映射后原样展示，不得本地拼「N份已上传 / N项待完成」。
+
+| 行 label | 响应字段 |
+|----------|----------|
+| 健康报告 | `healthReport` |
+| 体检报告单 | `accountPoint`（title「体检报告数量」） |
+| 监测方案 | `monitor` |
+| 饮食方案 | `dietary` |
+| 健康评估 | `healthAssessment` |
+| 健康测评 | `schoolExam` |
+
+空串 / 缺省 / 请求失败时该行 detail 留空，MUST NOT 用 mock 文案顶替。会员资产与履约四格仍走 `getUserCenterOverview`，本接口只更新健康管理六行。
 
 ---
 

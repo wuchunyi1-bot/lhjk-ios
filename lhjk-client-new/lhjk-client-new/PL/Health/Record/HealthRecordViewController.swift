@@ -15,7 +15,7 @@ final class HealthRecordViewController: BaseViewController, UITableViewDataSourc
     // MARK: - Mock Data
 
     private var userName = "加载中…"
-    private var avatarText = "我"
+    private var avatarURL: String?
 
     private var archiveProgress: Int {
         UserManager.shared.archiveCompletionPercentage ?? 0
@@ -77,7 +77,7 @@ final class HealthRecordViewController: BaseViewController, UITableViewDataSourc
     private func loadUserProfile() {
         guard let user = UserManager.shared.currentUser else { return }
         self.userName = user.chineseName ?? user.surname ?? user.nickname ?? "用户"
-        self.avatarText = String(self.userName.prefix(1))
+        self.avatarURL = user.imageUrl
         self.tableView.reloadData()
     }
 
@@ -119,7 +119,7 @@ final class HealthRecordViewController: BaseViewController, UITableViewDataSourc
             }
             cell.configure(
                 userName: userName,
-                avatarText: avatarText,
+                avatarURL: avatarURL,
                 archiveProgress: archiveProgress,
                 genderText: userGenderText,
                 pregnancyText: userPregnancyText,

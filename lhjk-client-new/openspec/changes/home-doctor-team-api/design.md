@@ -76,7 +76,7 @@
 | `position` | `title`（空则按 role 默认职称文案） |
 | `openBusinessName` 首段 / 截断 | `tags`（空则用 role 默认标签） |
 | — | `status`：接口无在线态 → 空字符串；Cell 隐藏 status badge 与 onlineDot |
-| `imageUrl` | Cell Kingfisher 加载；失败回落文字头像 |
+| `imageUrl` | Cell Kingfisher 加载；失败回落默认头像 `chat_im_avatar` |
 | `groupId` | Member 增加 `groupId`，发消息跳转参数 |
 
 7. **发消息**：`Router.push("/conversations/:id", params: ["id": groupId])`，其中 `id` = 成员 `groupId`（与消息列表点进会话一致：`ChatViewController(conversationId:)`）。无 `groupId` 时不跳转。不经 `/messages` 中转。
