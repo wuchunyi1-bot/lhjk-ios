@@ -10,9 +10,8 @@
 **Goals**
 
 - BLL 对接零售分页接口，中文 Key 解码
-- Hub 首屏 10 条 + 上拉加载至 `currentPage >= totalPages`
-- 加载中 / 无更多 Footer 状态
-- Tab 切回不丢失已加载页
+- Hub 首屏最多 6 条（`pageSize = 6`），不上拉分页
+- Tab 切回复用会话缓存预览
 
 **Non-Goals**
 
@@ -39,22 +38,19 @@ func fetchRetailPackages(
 
 ### 3. 缓存 `ServiceHubCacheService`
 
-- `ensureRetailPreview`：首屏去重 in-flight，返回 `(packages, totalPages)`
-- `updateRetailPreview(packages:totalPages:)`：`loadMore` 成功后写回会话缓存，供 `/mall` 与 Tab 复用
+- `ensureRetailPreview`：首屏去重 in-flight，`pageSize = 6`，返回最多 6 条
 
 ### 4. PL `ServiceViewModel`
 
-状态：`currentPage`、`totalPages`、`isLoadingMore`、`hasMore`（`currentPage < totalPages`）
-
 - `load()`：仅当 `mallPreviewPackages` 为空时拉首屏；已有数据时只合并静态层（Banner/矩阵）
-- `loadMore()`：追加 `snapshot.mallPreviewPackages`，更新缓存与分页游标
+- 展示层 `prefix(6)`，不维护分页游标、不实现 `loadMore()`
 
 ### 5. PL `ServiceViewController`
 
-- `scrollViewDidScroll`：距底部 100pt 触发 `loadMore()`
-- `tableFooterView`：`isLoadingMore` → Spinner；`!hasMore && count > 0` →「没有更多数据了」
+- 无 `scrollViewDidScroll` 分页
+- 无加载更多 / 「没有更多数据了」Footer
 
 ## Risks / Trade-offs
 
 - **中文 Key 变更** → 已确认网关返回英文 Key，与推荐套包共用 `PaginatedHospitalPackageData`
-- **快速滑底重复触发** → `isLoadingMore` 互斥 + `hasMore` 判断
+- **会话缓存残留旧分页数据** → 读取与展示均 `prefix(6)`

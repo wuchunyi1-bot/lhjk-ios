@@ -51,6 +51,8 @@ struct AppOrderDetailBO: Decodable {
     let parentId: Int64?
     /// 是否可去退货（与列表字段对齐；详情可能暂未下发）
     let canReturnGoods: Bool?
+    /// 是否展示「退款/售后」（`AppOrderDetailBO.canApplyAfterSale`）
+    let canApplyAfterSale: Bool?
     /// 结算版本，支付时原样带回；缺省可读 `settlementVersion`
     let amountVersion: Int?
     /// 期望应付金额，支付时原样带回
@@ -59,6 +61,9 @@ struct AppOrderDetailBO: Decodable {
     let settlementVersion: Int?
     /// 订单应付（套包+运费-券-权益）
     let settlementAmount: Double?
+
+    /// 退款原因展示类型：0-不显示，1-显示退款申请原因，2-显示退款拒绝原因；其他订单状态返回0
+    let refundReasonType: Int?
 
     private enum CodingKeys: String, CodingKey {
         case id, parentId, orderName, status, payable, price, paymentType, paymentNo, createTime
@@ -69,8 +74,9 @@ struct AppOrderDetailBO: Decodable {
         case shoppingCartPackageDetailList
         case refundId, refundReasons, refuseReasons, refundApplyTime, applyRefund, refundApplyChannel
         case packageId, hospitalId, categoryServiceId, renewed
-        case canReturnGoods
+        case canReturnGoods, canApplyAfterSale
         case amountVersion, expectedPayableAmount, settlementVersion, settlementAmount
+        case refundReasonType
     }
 
     init(from decoder: Decoder) throws {
@@ -116,10 +122,12 @@ struct AppOrderDetailBO: Decodable {
         renewed = Self.decodeFlexibleInt(c, key: .renewed)
         parentId = Self.decodeFlexibleInt64(c, key: .parentId)
         canReturnGoods = Self.decodeFlexibleBool(c, key: .canReturnGoods)
+        canApplyAfterSale = Self.decodeFlexibleBool(c, key: .canApplyAfterSale)
         amountVersion = Self.decodeFlexibleInt(c, key: .amountVersion)
         expectedPayableAmount = Self.decodeFlexibleDouble(c, key: .expectedPayableAmount)
         settlementVersion = Self.decodeFlexibleInt(c, key: .settlementVersion)
         settlementAmount = Self.decodeFlexibleDouble(c, key: .settlementAmount)
+        refundReasonType = Self.decodeFlexibleInt(c, key: .refundReasonType)
     }
 
     var resolvedPackageId: String? {
@@ -146,11 +154,9 @@ struct AppOrderDetailBO: Decodable {
         return false
     }
 
-    /// 是否展示「退款/售后」
+    /// 是否展示「退款/售后」：只认后端 `canApplyAfterSale`，不做套餐类型/退款历史判断
     var canShowAfterSaleAction: Bool {
-        guard AppPackageType.supportsAfterSale(packageType: packageType) else { return false }
-        if isInAfterSaleFlow { return false }
-        return !hasRefundHistory
+        canApplyAfterSale == true
     }
 
     /// 是否展示「去退货」
@@ -193,7 +199,7 @@ struct AppOrderDetailBO: Decodable {
     }
 
     var statusHint: String {
-        if let reject = afterSaleRejectHint { return reject }
+        if let reject = noticeBannerText { return reject }
         switch orderStatus {
         case .pendingShip: return "商家备货中，请耐心等待"
         case .pendingReceive: return "商品已发货，请注意查收"
@@ -319,9 +325,43 @@ struct AppOrderDetailBO: Decodable {
             || (applyRefund ?? 0) > 0
     }
 
-    var afterSaleRejectHint: String? {
-        guard let reason = refuseReasons?.nilIfEmpty, !isInAfterSaleFlow else { return nil }
-        return "退款未通过：\(reason)"
+    /// 售后信息卡标题：审核中用「退款审核信息」，退款/售后用「退款/售后信息」
+    var afterSaleInfoCardTitle: String {
+        orderStatus == .refundReview ? "退款审核信息" : "退款/售后信息"
+    }
+
+    /// 已完成订单退款原因展示类型：0-不显示，1-显示退款申请原因，2-显示退款拒绝原因；其他订单状态返回0
+    /// 兼容老数据或未下发 refundReasonType：若 refuseReasons 有值且非售后流程，仍展示拒绝退款原因
+    var resolvedRefundReasonInfo: (title: String, content: String)? {
+        if let type = refundReasonType {
+            switch type {
+            case 1:
+                if let reason = refundReasons?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty {
+                    return ("申请退款原因", reason)
+                }
+            case 2:
+                if let reason = refuseReasons?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty {
+                    return ("拒绝退款原因", reason)
+                }
+            default:
+                return nil
+            }
+        }
+        // 兜底逻辑：未下发 refundReasonType（或为 nil）时，维持旧逻辑
+        if let reject = refuseReasons?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
+           !isInAfterSaleFlow {
+            return ("拒绝退款原因", reject)
+        }
+        return nil
+    }
+
+    /// 特色通知条（顶部状态横幅下方）：当订单有拒绝退款原因时展示（如逾期订单拒绝退款通知）
+    var noticeBannerText: String? {
+        guard let reject = refuseReasons?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
+              !isInAfterSaleFlow else {
+            return nil
+        }
+        return "拒绝退款：\(reject)"
     }
 
     var refundNoText: String? {

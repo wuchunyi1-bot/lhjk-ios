@@ -47,8 +47,9 @@
 #### Scenario: 优先级
 
 - **WHEN** 解析 API `hospitalId`
-- **THEN** 优先：服务模块已选机构 id → 用户 loginUserInfo.hospitalId → 临时常量
+- **THEN** 优先：服务模块已选机构 id → 用户档案 `hospitalId` → 临时常量
 - **AND** 禁止把 mock 非数字 id 传入 API
+- **AND** 已选机构为空且档案有 `hospitalId` 时，先 `GET /v1/hospital/getById` 写入本地，之后顶栏与请求均使用该机构，不得展示占位「富德联好健康」
 
 #### Scenario: 登出清空
 

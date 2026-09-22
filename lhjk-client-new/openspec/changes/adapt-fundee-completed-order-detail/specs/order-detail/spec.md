@@ -87,6 +87,26 @@
 - **AND** 信息行字体与订单信息一致（`fdBody`、行高 40pt）
 - **AND** 退款金额行使用 danger-soft 背景高亮
 
+### Requirement: 订单信息卡退款原因展示
+
+#### Scenario: 根据 refundReasonType 展示退款原因
+
+- **WHEN** 渲染订单信息卡且 `refundReasonType` 有值
+- **THEN** 按照以下规则在「下单时间」下方展示退款原因：
+  - `refundReasonType == 1`：当存在 `refundReasons` 时，展示「申请退款原因」及对应内容
+  - `refundReasonType == 2`：当存在 `refuseReasons` 时，展示「拒绝退款原因」及对应内容
+  - `refundReasonType == 0` 或其他：不展示退款原因行
+- **AND** 若 `refundReasonType` 为空/未下发，兼容降级为：若存在 `refuseReasons` 且订单非售后流程中，展示「拒绝退款原因」
+
+### Requirement: 特色通知条
+
+#### Scenario: 拒绝退款通知条
+
+- **WHEN** 订单存在 `refuseReasons` 且非退款流程态（如逾期或已驳回退款订单）
+- **THEN** 在顶部状态横幅下方展示特色通知条（`OrderDetailNoticeBannerView`）
+- **AND** 文案格式为「拒绝退款：{refuseReasons}」
+- **AND** 背景采用粉红渐变装饰条（`order_notice_bg_single` / `order_notice_bg_double`），搭配 14×14pt 红色叹号图标（`order_notice_alert_icon`）及 12pt Regular 警告文案（`#F93838`）
+
 ### Requirement: 详情区块顺序
 
 #### Scenario: 已完成订单区块顺序

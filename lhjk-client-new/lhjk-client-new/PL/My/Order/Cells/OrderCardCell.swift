@@ -402,12 +402,12 @@ enum OrderListCardAction: Equatable {
         }
     }
 
-    /// 按订单状态、套餐类型与退款历史展示操作按钮（对齐 PRD 3.4 / 5.8 与 Figma 3509:9304）
+    /// 按订单状态展示操作；「退款/售后」只认后端 `canApplyAfterSale`
     static func actions(for order: MOrder) -> [OrderListCardAction] {
         actions(
             for: order.orderStatus,
             packageType: order.packageType,
-            hasRefundHistory: order.hasRefundHistory,
+            canApplyAfterSale: order.canShowAfterSaleAction,
             canRenew: order.canShowRenewAction,
             canReturnGoods: order.canShowReturnGoodsAction
         )
@@ -417,7 +417,7 @@ enum OrderListCardAction: Equatable {
         actions(
             for: detail.orderStatus,
             packageType: detail.packageType,
-            hasRefundHistory: detail.hasRefundHistory,
+            canApplyAfterSale: detail.canShowAfterSaleAction,
             canRenew: detail.canShowRenewAction,
             canReturnGoods: detail.canShowReturnGoodsAction
         )
@@ -451,73 +451,48 @@ enum OrderListCardAction: Equatable {
     static func actions(
         for status: AppOrderStatus?,
         packageType: Int? = nil,
-        hasRefundHistory: Bool = false,
+        canApplyAfterSale: Bool = false,
         canRenew: Bool = false,
         canReturnGoods: Bool = false
     ) -> [OrderListCardAction] {
         guard let status else { return [] }
+        var actions: [OrderListCardAction]
         switch status {
         case .pendingPayment:
-            return [.cancel, .pay]
+            actions = [.cancel, .pay]
         case .pendingShip:
-            return [.cancel]
+            actions = [.cancel]
         case .pendingReceive:
-            return pendingReceiveActions(packageType: packageType, hasRefundHistory: hasRefundHistory)
+            actions = [.confirmReceipt]
         case .inProgress:
-            return inProgressActions(
-                packageType: packageType,
-                hasRefundHistory: hasRefundHistory,
-                canRenew: canRenew
-            )
+            actions = inProgressActions(packageType: packageType, canRenew: canRenew)
         case .overdue:
-            return overdueActions(packageType: packageType, canRenew: canRenew)
+            actions = overdueActions(packageType: packageType, canRenew: canRenew)
         case .completed:
-            return completedActions(packageType: packageType, hasRefundHistory: hasRefundHistory)
+            actions = []
         case .refund:
-            return canReturnGoods ? [.returnGoods] : []
+            actions = canReturnGoods ? [.returnGoods] : []
         case .cancelled, .refundReview:
-            return []
+            actions = []
         }
-    }
-
-    private static func pendingReceiveActions(packageType: Int?, hasRefundHistory: Bool) -> [OrderListCardAction] {
-        var actions: [OrderListCardAction] = []
-        if AppPackageType.supportsAfterSale(packageType: packageType), !hasRefundHistory {
-            actions.append(.afterSale)
+        if canApplyAfterSale {
+            if let idx = actions.firstIndex(where: { $0.isPrimary }) {
+                actions.insert(.afterSale, at: idx)
+            } else {
+                actions.append(.afterSale)
+            }
         }
-        actions.append(.confirmReceipt)
         return actions
     }
 
-    private static func inProgressActions(
-        packageType: Int?,
-        hasRefundHistory: Bool,
-        canRenew: Bool
-    ) -> [OrderListCardAction] {
-        guard let type = packageType.flatMap({ AppPackageType(rawValue: $0) }) else {
-            return []
-        }
-        switch type {
-        case .experience:
-            return hasRefundHistory ? [] : [.afterSale]
-        case .lease:
-            return leaseRenewSettleActions(canRenew: canRenew)
-        case .sale, .virtual:
-            return []
-        }
+    private static func inProgressActions(packageType: Int?, canRenew: Bool) -> [OrderListCardAction] {
+        guard AppPackageType(rawValue: packageType ?? -1) == .lease else { return [] }
+        return leaseRenewSettleActions(canRenew: canRenew)
     }
 
     private static func overdueActions(packageType: Int?, canRenew: Bool) -> [OrderListCardAction] {
         guard AppPackageType(rawValue: packageType ?? -1) == .lease else { return [] }
         return leaseRenewSettleActions(canRenew: canRenew)
-    }
-
-    /// 已完成：仅售卖(电商零售)、体验套餐且未退款过可申请（PRD 5.8.1）
-    private static func completedActions(packageType: Int?, hasRefundHistory: Bool) -> [OrderListCardAction] {
-        guard AppPackageType.supportsAfterSale(packageType: packageType), !hasRefundHistory else {
-            return []
-        }
-        return [.afterSale]
     }
 
     private static func leaseRenewSettleActions(canRenew: Bool) -> [OrderListCardAction] {

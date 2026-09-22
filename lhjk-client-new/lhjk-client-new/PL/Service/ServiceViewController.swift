@@ -78,43 +78,8 @@ final class ServiceViewController: BaseViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.tableView.reloadData()
-                self?.updateFooterView()
             }
             .store(in: &cancellables)
-
-        Publishers.CombineLatest(viewModel.$isLoadingMore, viewModel.$hasMore)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.updateFooterView()
-            }
-            .store(in: &cancellables)
-    }
-
-    private func updateFooterView() {
-        if viewModel.isLoadingMore {
-            let container = UIView(frame: CGRect(x: 0, y: 0, width: tableView.bounds.width, height: 50))
-            let spinner = UIActivityIndicatorView(style: .medium)
-            spinner.startAnimating()
-            container.addSubview(spinner)
-            spinner.snp.makeConstraints { make in
-                make.center.equalToSuperview()
-            }
-            tableView.tableFooterView = container
-        } else if !viewModel.hasMore && (viewModel.snapshot?.mallPreviewPackages.count ?? 0) > 0 {
-            let container = UIView(frame: CGRect(x: 0, y: 0, width: tableView.bounds.width, height: 50))
-            let label = UILabel()
-            label.text = "没有更多数据了"
-            label.font = .fdCaption
-            label.textColor = .fdMuted
-            label.textAlignment = .center
-            container.addSubview(label)
-            label.snp.makeConstraints { make in
-                make.center.equalToSuperview()
-            }
-            tableView.tableFooterView = container
-        } else {
-            tableView.tableFooterView = nil
-        }
     }
 
     private func sectionKind(at index: Int) -> ServiceViewModel.Section? {
@@ -263,18 +228,5 @@ extension ServiceViewController: UITableViewDataSource, UITableViewDelegate {
         let v = UIView()
         v.snp.makeConstraints { $0.height.equalTo(height) }
         return v
-    }
-
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        guard viewModel.hasMore, !viewModel.isLoadingMore else { return }
-
-        let threshold: CGFloat = 100
-        let contentHeight = scrollView.contentSize.height
-        let frameHeight = scrollView.frame.size.height
-        let contentOffset = scrollView.contentOffset.y
-
-        if contentHeight > 0, contentOffset + frameHeight >= contentHeight - threshold {
-            viewModel.loadMore()
-        }
     }
 }

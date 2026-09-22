@@ -67,19 +67,9 @@ enum AppPackageType: Int {
     /// 仅租赁套餐支持续费
     var supportsRenewal: Bool { self == .lease }
 
-    /// 售卖（电商零售）、体验套餐可申请普通退款/售后
-    var supportsAfterSale: Bool {
-        self == .sale || self == .experience
-    }
-
     static func supportsRenewal(packageType: Int?) -> Bool {
         guard let packageType, let type = AppPackageType(rawValue: packageType) else { return false }
         return type.supportsRenewal
-    }
-
-    static func supportsAfterSale(packageType: Int?) -> Bool {
-        guard let packageType, let type = AppPackageType(rawValue: packageType) else { return false }
-        return type.supportsAfterSale
     }
 }
 
@@ -274,6 +264,8 @@ struct MOrder {
     let renewed: Int?
     /// 是否可去退货（`AppOrderListBO.canReturnGoods`）
     let canReturnGoods: Bool?
+    /// 是否展示「退款/售后」（`canApplyAfterSale`）；客户端不做套餐类型/退款历史判断
+    let canApplyAfterSale: Bool?
     /// 退款单 ID（提交退货用，非订单 id）
     let refundId: Int64?
     /// 拒绝退款原因（如果有）
@@ -339,10 +331,9 @@ struct MOrder {
         )
     }
 
-    /// 是否展示「退款/售后」
+    /// 是否展示「退款/售后」：只认后端 `canApplyAfterSale`
     var canShowAfterSaleAction: Bool {
-        guard AppPackageType.supportsAfterSale(packageType: packageType) else { return false }
-        return !hasRefundHistory
+        canApplyAfterSale == true
     }
 
     /// 拒绝退款/通知栏文案（如果有）
@@ -378,7 +369,7 @@ extension MOrder: Decodable {
         case hospitalName, doctorName, packageDescription
         case packageType, packageImageUrl, beginTime, endTime, serviceTime
         case packageId, hospitalId, categoryServiceId, renewed
-        case canReturnGoods, refundId, refuseReasons
+        case canReturnGoods, canApplyAfterSale, refundId, refuseReasons
     }
 
     init(from decoder: Decoder) throws {
@@ -404,6 +395,7 @@ extension MOrder: Decodable {
         categoryServiceId   = HospitalPackageID.decodeOptional(c, key: .categoryServiceId)
         renewed             = HospitalPackageInt.decodeIfPresent(c, key: .renewed)
         canReturnGoods      = Self.decodeFlexibleBool(c, key: .canReturnGoods)
+        canApplyAfterSale   = Self.decodeFlexibleBool(c, key: .canApplyAfterSale)
         refundId            = Self.decodeFlexibleInt64(c, key: .refundId)
         refuseReasons       = try c.decodeIfPresent(String.self, forKey: .refuseReasons)
     }

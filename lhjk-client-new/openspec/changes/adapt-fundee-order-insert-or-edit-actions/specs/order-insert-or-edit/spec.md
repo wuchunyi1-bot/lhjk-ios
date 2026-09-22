@@ -21,14 +21,14 @@
 #### Scenario: 待收货
 
 - **WHEN** `status=3`
-- **THEN** 展示「确认收货」；电商零售（`packageType=2`）且未退款过时额外展示「退款/售后」
+- **THEN** 展示「确认收货」；`canApplyAfterSale == true` 时额外展示「退款/售后」
 
 #### Scenario: 使用中
 
 - **WHEN** `status=4` 且 `packageType=1`（租赁/综合服务）
 - **THEN** 展示「结算订单」；满足续费资格时额外展示「续费订单」
 - **WHEN** `status=4` 且 `packageType=4`（体验）
-- **THEN** 未退款过时仅展示「退款/售后」
+- **THEN** 「退款/售后」仅当 `canApplyAfterSale == true`
 
 #### Scenario: 已逾期
 
@@ -40,10 +40,10 @@
 
 #### Scenario: 已完成
 
-- **WHEN** `status=5` 且 `packageType` 为 2 或 4，且无退款历史
+- **WHEN** `canApplyAfterSale == true`
 - **THEN** 展示「退款/售后」
-- **WHEN** `packageType` 为 1 或 3，或已有退款历史
-- **THEN** 无业务变更按钮
+- **WHEN** `canApplyAfterSale` 为 false 或未返回
+- **THEN** 无「退款/售后」按钮（其它按钮仍按状态矩阵）
 
 ---
 
@@ -95,4 +95,4 @@
 
 #### Scenario: 待收货
 
-- **THEN** 展示「退款/售后」（符合类型与未退款条件时）、「确认收货」
+- **THEN** 展示「确认收货」；`canApplyAfterSale == true` 时额外「退款/售后」

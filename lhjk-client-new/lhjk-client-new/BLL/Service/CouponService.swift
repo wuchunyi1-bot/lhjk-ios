@@ -16,10 +16,12 @@ final class CouponService {
     /// `GET /v1/couponTake/getCouponTakeList`
     /// - Parameters:
     ///   - hospitalId: 订单场景可选机构筛选
+    ///   - orderId: 订单详情选券时传入当前订单；卡包列表不传
     ///   - status: 卡包 Tab — 1 待使用 / 2 已领用 / 3 已过期；`nil` 表示全部
     @discardableResult
     func getCouponTakeList(
         hospitalId: String? = nil,
+        orderId: Int64? = nil,
         status: Int? = nil,
         pageNum: Int = 1,
         pageSize: Int = 50
@@ -32,11 +34,14 @@ final class CouponService {
         if !hospital.isEmpty {
             params["hospitalId"] = hospital
         }
+        if let orderId, orderId > 0 {
+            params["orderId"] = String(orderId)
+        }
         if let status {
             params["status"] = String(status)
         }
 
-        print("[CouponService] getCouponTakeList → hospitalId=\(hospital) status=\(status.map(String.init) ?? "nil") pageNum=\(pageNum) pageSize=\(pageSize)")
+        print("[CouponService] getCouponTakeList → hospitalId=\(hospital) orderId=\(orderId.map(String.init) ?? "nil") status=\(status.map(String.init) ?? "nil") pageNum=\(pageNum) pageSize=\(pageSize)")
 
         let response: APIResponse<PaginatedCouponTakeData> = try await APIManager.shared.getAsync(
             path: "/v1/couponTake/getCouponTakeList",
@@ -75,7 +80,7 @@ final class CouponService {
 
     /// 绑定 / 解绑优惠券与订单
     /// `POST /v1/couponTake/bindCouponTake`
-    func bindCouponTake(orderId: Int64, couponTakeId: Int64?) async throws {
+    func bindCouponTake(orderId: Int64, couponTakeId: Int64?) async throws -> String? {
         var body: [String: Any] = ["orderId": orderId]
         if let couponTakeId { body["couponTakeId"] = couponTakeId }
 
@@ -89,9 +94,15 @@ final class CouponService {
 
         guard response.isSuccess else {
             print("[CouponService] bindCouponTake ✗ code=\(response.code) msg=\(response.msg ?? "")")
-            throw CouponServiceError.requestFailed(response.msg ?? "绑定优惠券失败")
+            throw CouponServiceError.requestFailed(Self.serverMessage(response.msg) ?? "")
         }
         print("[CouponService] bindCouponTake ✓")
+        return Self.serverMessage(response.msg)
+    }
+
+    private static func serverMessage(_ msg: String?) -> String? {
+        let text = msg?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return text.isEmpty ? nil : text
     }
 }
 

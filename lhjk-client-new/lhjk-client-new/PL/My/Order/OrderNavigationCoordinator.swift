@@ -113,7 +113,8 @@ enum OrderNavigationCoordinator {
     }
 
     private static func showToast(_ message: String, on source: UIViewController) {
-        source.showToastAlert(message, duration: 1.5)
+        _ = source
+        FDToast.show(message, duration: 1.5)
     }
 
     /// 落到：我的 Tab → 我的订单 → 全部
@@ -126,6 +127,18 @@ enum OrderNavigationCoordinator {
     static func leaveCancelledOrderToAllList(from source: UIViewController) {
         dismissPresentedThen(from: source) {
             relocateToMyOrders(from: source, extra: nil, animated: false, tab: "all")
+        }
+    }
+
+    /// FDAPP-938「选择套餐」：切到服务 Tab 根页（服务首页）
+    static func leaveToServiceHub(from source: UIViewController) {
+        dismissPresentedThen(from: source) {
+            let serviceNav = source.tabBarController?.viewControllers?[RootTabBarController.Tab.service]
+                as? UINavigationController
+            if let nav = source.navigationController, nav !== serviceNav {
+                nav.popViewController(animated: false)
+            }
+            RootTabBarController.selectServiceTab()
         }
     }
 

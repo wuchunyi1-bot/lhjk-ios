@@ -21,7 +21,7 @@
 - **THEN** 调用 `GET /v1/version/getLatestVersionForApp`（Query `type=1` iOS、`versionCode` = `CFBundleVersion`）
 - **AND** 无新版本或 `data` 为空时 toast「当前已经是最新版本」
 - **AND** 有新版本时弹窗展示 `versionName` 与 `description`/`summary`，「立即更新」打开 `addressUrl`
-- **AND** `forceInstall=1` 或 `isForceInstall=true` 时不提供「稍后再说」
+- **AND** `forceInstall=1` 或 `isForceInstall=true` 时不提供「稍后再说」与关闭「X」，遮罩不可点关；点「去更新」只打开 `addressUrl`、不关闭弹窗；从商店回到 App 弹窗仍在，直至安装新版本后本地 `versionCode` 已最新
 
 #### Scenario: 应用市场评分点击
 

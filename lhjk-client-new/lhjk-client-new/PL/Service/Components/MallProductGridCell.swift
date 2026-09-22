@@ -109,7 +109,8 @@ final class MallProductGridCell: UITableViewCell {
             $0.leading.equalToSuperview().offset(Self.cardContentInset)
             $0.trailing.equalToSuperview().offset(-Self.cardContentInset)
             $0.bottom.equalToSuperview().inset(Self.cardBottomInset)
-            collectionHeightConstraint = $0.height.equalTo(1).constraint
+            // 999：让给 TableView 的 UIView-Encapsulated-Layout-Height，避免小数高度互相顶死
+            collectionHeightConstraint = $0.height.equalTo(1).priority(999).constraint
         }
 
         moreButton.addTarget(self, action: #selector(moreTapped), for: .touchUpInside)
@@ -202,17 +203,21 @@ final class MallProductGridCell: UITableViewCell {
     /// 富德优选白卡总高度（标题 51 + 网格 + 底部 12）。
     static func gridHeight(productCount: Int, containerWidth: CGFloat) -> CGFloat {
         guard productCount > 0, containerWidth > 0 else { return 0 }
-        return headerHeight
-            + collectionHeight(productCount: productCount, outerWidth: containerWidth)
-            + cardBottomInset
+        return ceil(
+            headerHeight
+                + collectionHeight(productCount: productCount, outerWidth: containerWidth)
+                + cardBottomInset
+        )
     }
 
     private static func collectionHeight(productCount: Int, outerWidth: CGFloat) -> CGFloat {
         guard productCount > 0 else { return 0 }
         let rowCount = (productCount + 1) / 2
         let itemHeight = itemSize(for: outerWidth).height
-        return CGFloat(rowCount) * itemHeight
-            + CGFloat(max(rowCount - 1, 0)) * rowSpacing
+        return ceil(
+            CGFloat(rowCount) * itemHeight
+                + CGFloat(max(rowCount - 1, 0)) * rowSpacing
+        )
     }
 
     private static func makeGridLayout(outerWidth: CGFloat) -> UICollectionViewFlowLayout {

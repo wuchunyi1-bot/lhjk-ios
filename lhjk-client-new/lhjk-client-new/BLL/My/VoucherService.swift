@@ -336,7 +336,7 @@ final class VoucherService {
     }
 
     /// `POST /v1/benefitsTake/updateOrderBenefits`（query：orderId、benefitsTakeIds）
-    func updateOrderBenefits(orderId: Int64, benefitsTakeIds: [Int64]) async throws {
+    func updateOrderBenefits(orderId: Int64, benefitsTakeIds: [Int64]) async throws -> String? {
         var params: [String: Any] = ["orderId": orderId]
         params["benefitsTakeIds"] = benefitsTakeIds
 
@@ -348,8 +348,14 @@ final class VoucherService {
             responseType: APIResponse<EmptyResponse>.self
         )
         guard response.isSuccess else {
-            throw VoucherServiceError.requestFailed(response.msg ?? "保存权益卡失败")
+            throw VoucherServiceError.requestFailed(Self.serverMessage(response.msg) ?? "")
         }
+        return Self.serverMessage(response.msg)
+    }
+
+    private static func serverMessage(_ msg: String?) -> String? {
+        let text = msg?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return text.isEmpty ? nil : text
     }
 }
 

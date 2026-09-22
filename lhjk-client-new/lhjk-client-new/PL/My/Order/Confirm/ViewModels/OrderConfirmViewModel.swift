@@ -33,6 +33,15 @@ enum OrderPayMethod: String, CaseIterable {
     }
 }
 
+private enum DefaultAddressFillOutcome {
+    case notNeeded
+    /// 无默认地址或地址列表失败：停在快递空态，不回滚收货方式
+    case awaitingManualAddress
+    case bound
+    /// `updateOrderDelivery` 失败；用户切换时回滚并 Toast，进页静默绑定不提示
+    case updateFailed(Error)
+}
+
 /// 确认订单 ViewModel — 主数据源：`getOrderSettlement(orderId)`
 final class OrderConfirmViewModel: ObservableObject {
 
@@ -59,6 +68,8 @@ final class OrderConfirmViewModel: ObservableObject {
     @Published private(set) var selectedCouponName = ""
     @Published private(set) var hospitalDetail: OHospital?
     @Published var navigateBack = false
+    /// `getOrderSettlement` 返回 `M0104`：套餐价格/内容已变化
+    @Published var packageContentChangedMessage: String?
     @Published var payResult: OrderPayResultPayload?
     @Published private(set) var orderDetail: AppOrderDetailBO?
     @Published private(set) var availableCouponCount = 0
@@ -86,6 +97,8 @@ final class OrderConfirmViewModel: ObservableObject {
     private var didAttemptDefaultAddressFill = false
     /// 用户已从地址列表手动选址，禁止默认地址回写覆盖
     private var userDidSelectDeliveryAddress = false
+    /// 收货方式切换请求未结束前忽略下一次点击，避免后返回的失败把选项滚回错误一侧
+    private var isSwitchingFulfillment = false
 
     init(
         orderId: Int64,
@@ -174,9 +187,31 @@ final class OrderConfirmViewModel: ObservableObject {
         return max(0, settlementPayable - benefitDiscount)
     }
 
+    /// 订单/结算已记录的优惠券抵扣。列表接口只补充「有 N 张可用」，不覆盖这里。
+    private var orderCouponDiscount: Double {
+        max(settlementCouponDiscount, max(0, orderDetail?.couponAmount ?? 0))
+    }
+
+    /// 订单已绑定或已抵扣优惠券（根级 `couponTakeId`、内嵌 `couponTakeList`、抵扣金额）。
+    private var orderHasUsedCoupon: Bool {
+        if orderCouponDiscount > 0.009 { return true }
+        if selectedCouponTakeId != nil { return true }
+        let takes = latestSettlement?.appOrderDetailBO?.couponTakeList ?? []
+        return !takes.isEmpty
+    }
+
+    /// 订单/结算已记录的权益卡抵扣。
+    private var orderBenefitDiscountAmount: Double {
+        max(settlementBenefitDiscount, max(0, orderDetail?.benefitsAmount ?? 0))
+    }
+
+    private var orderHasUsedBenefit: Bool {
+        orderBenefitDiscountAmount > 0.009
+    }
+
     var couponSummaryText: String {
-        if settlementCouponDiscount > 0, selectedCouponTakeId != nil {
-            return "已使用一张，共优惠\(OrderConfirmMoney.yen(settlementCouponDiscount))"
+        if orderHasUsedCoupon {
+            return "已使用一张，共优惠\(OrderConfirmMoney.yen(orderCouponDiscount))"
         }
         if availableCouponCount > 0 {
             return "有\(availableCouponCount)张可用"
@@ -185,22 +220,22 @@ final class OrderConfirmViewModel: ObservableObject {
     }
 
     var couponSummaryIsPlaceholder: Bool {
-        settlementCouponDiscount <= 0 && availableCouponCount == 0
+        !orderHasUsedCoupon && availableCouponCount == 0
     }
 
     var benefitSummaryText: String {
-        let selectedCount = selectedBenefitIds.count
-        if selectedCount > 0 {
-            return "已使用\(selectedCount)张，共优惠\(OrderConfirmMoney.yen(benefitDiscount))"
+        if orderHasUsedBenefit {
+            let count = selectedBenefitIds.count
+            let amount = OrderConfirmMoney.yen(orderBenefitDiscountAmount)
+            if count > 0 {
+                return "已使用\(count)张，共优惠\(amount)"
+            }
+            return "已使用，共优惠\(amount)"
         }
         if availableBenefitCount > 0 {
             return "有\(availableBenefitCount)张可用"
         }
         return "暂无可用"
-    }
-
-    var benefitSummaryIsPlaceholder: Bool {
-        selectedBenefitIds.isEmpty && availableBenefitCount == 0
     }
 
     private var selectedBenefits: [BenefitsRedeemCardVO] {
@@ -242,13 +277,16 @@ final class OrderConfirmViewModel: ObservableObject {
     func selectFulfillment(_ method: OrderFulfillmentMethod) {
         if method == .express, !supportsExpress { return }
         guard method != fulfillment else { return }
+        guard !isSwitchingFulfillment else { return }
 
         let previous = fulfillment
         fulfillment = method
+        isSwitchingFulfillment = true
 
         Task { [weak self] in
             guard let self else { return }
             await self.syncFulfillmentChange(from: previous, to: method)
+            await MainActor.run { self.isSwitchingFulfillment = false }
         }
     }
 
@@ -370,6 +408,10 @@ final class OrderConfirmViewModel: ObservableObject {
         toastMessage = nil
     }
 
+    func consumePackageContentChangedAlert() {
+        packageContentChangedMessage = nil
+    }
+
     func consumeNavigationFlags() {
         navigateBack = false
     }
@@ -409,18 +451,21 @@ final class OrderConfirmViewModel: ObservableObject {
 
     // MARK: - 优惠券
 
-    func fetchCouponOptions() async throws -> [CouponTakeItem] {
+    func fetchCouponOptions(pageNum: Int = 1) async throws -> CouponTakeListResult {
         let hospitalId = latestSettlement?.resolvedHospitalId
         // `status=1`：待使用（Apifox：1 待使用 / 2 已领用 / 3 已过期）
         let result = try await couponService.getCouponTakeList(
             hospitalId: hospitalId,
-            status: 1
+            orderId: orderId > 0 ? orderId : nil,
+            status: 1,
+            pageNum: pageNum
         )
+        guard pageNum == 1 else { return result }
         await MainActor.run {
             availableCouponCount = max(result.total, result.items.count)
             objectWillChange.send()
         }
-        return result.items
+        return result
     }
 
     func bindCoupon(takeId: Int64?) {
@@ -449,20 +494,18 @@ final class OrderConfirmViewModel: ObservableObject {
             await MainActor.run { self.isSyncing = true }
             do {
                 let takeIds = ids.compactMap { Int64($0) }
-                try await self.voucherService.updateOrderBenefits(
+                _ = try await self.voucherService.updateOrderBenefits(
                     orderId: self.orderId,
                     benefitsTakeIds: takeIds
                 )
-                await self.refreshSettlement(
-                    showToast: takeIds.isEmpty ? "已取消权益卡" : "已选择权益卡"
-                )
+                await self.refreshSettlement()
                 _ = try? await self.fetchBenefitOptions()
-            } catch {
-                await MainActor.run {
-                    self.toastMessage = error.localizedDescription.isEmpty
-                        ? "保存权益卡失败"
-                        : error.localizedDescription
+            } catch VoucherServiceError.requestFailed(let message) {
+                let text = message.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !text.isEmpty {
+                    await MainActor.run { self.toastMessage = text }
                 }
+            } catch {
             }
             await MainActor.run { self.isSyncing = false }
         }
@@ -537,21 +580,14 @@ final class OrderConfirmViewModel: ObservableObject {
             async let hospitalLoad: Void = loadHospitalDetail(
                 hospitalId: settlement.resolvedHospitalId ?? institutionStore.selectedHospitalId
             )
-            async let defaultAddressFill: Void = fillDefaultExpressAddressIfNeeded()
+            async let defaultAddressFill: DefaultAddressFillOutcome = fillDefaultExpressAddressIfNeeded()
             _ = try? await fetchBenefitOptions()
             _ = try? await fetchCouponOptions()
             await hospitalLoad
-            await defaultAddressFill
+            _ = await defaultAddressFill
         } catch {
             await MainActor.run {
-                isLoading = false
-                errorMessage = error.localizedDescription
-                toastMessage = error.localizedDescription.isEmpty
-                    ? "获取结算信息失败"
-                    : error.localizedDescription
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.25) { [weak self] in
-                    self?.navigateBack = true
-                }
+                self.applySettlementLoadFailure(error)
             }
         }
     }
@@ -571,12 +607,35 @@ final class OrderConfirmViewModel: ObservableObject {
             }
         } catch {
             await MainActor.run {
-                toastMessage = error.localizedDescription.isEmpty
-                    ? "刷新订单信息失败"
-                    : error.localizedDescription
-                isSyncing = false
+                self.applySettlementRefreshFailure(error)
             }
         }
+    }
+
+    private func applySettlementLoadFailure(_ error: Error) {
+        isLoading = false
+        if case OrderServiceError.packageContentChanged(let message) = error {
+            packageContentChangedMessage = message
+            return
+        }
+        errorMessage = error.localizedDescription
+        toastMessage = error.localizedDescription.isEmpty
+            ? "获取结算信息失败"
+            : error.localizedDescription
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.25) { [weak self] in
+            self?.navigateBack = true
+        }
+    }
+
+    private func applySettlementRefreshFailure(_ error: Error) {
+        isSyncing = false
+        if case OrderServiceError.packageContentChanged(let message) = error {
+            packageContentChangedMessage = message
+            return
+        }
+        toastMessage = error.localizedDescription.isEmpty
+            ? "刷新订单信息失败"
+            : error.localizedDescription
     }
 
     private func syncFulfillmentChange(
@@ -595,9 +654,7 @@ final class OrderConfirmViewModel: ObservableObject {
             } catch {
                 await MainActor.run {
                     fulfillment = previous
-                    toastMessage = error.localizedDescription.isEmpty
-                        ? "切换收货方式失败"
-                        : error.localizedDescription
+                    toastMessage = fulfillmentSwitchFailureMessage(error)
                 }
             }
             await MainActor.run { isSyncing = false }
@@ -606,7 +663,13 @@ final class OrderConfirmViewModel: ObservableObject {
             let existingAddress = await MainActor.run { deliveryAddress }
             if existingAddress == nil {
                 await MainActor.run { isSyncing = true }
-                await fillDefaultExpressAddressIfNeeded(retry: true)
+                let outcome = await fillDefaultExpressAddressIfNeeded(retry: true)
+                if case .updateFailed(let error) = outcome {
+                    await MainActor.run {
+                        fulfillment = previous
+                        toastMessage = fulfillmentSwitchFailureMessage(error)
+                    }
+                }
                 await MainActor.run { isSyncing = false }
                 return
             }
@@ -625,9 +688,7 @@ final class OrderConfirmViewModel: ObservableObject {
             } catch {
                 await MainActor.run {
                     fulfillment = previous
-                    toastMessage = error.localizedDescription.isEmpty
-                        ? "切换收货方式失败"
-                        : error.localizedDescription
+                    toastMessage = fulfillmentSwitchFailureMessage(error)
                 }
             }
             await MainActor.run { isSyncing = false }
@@ -637,15 +698,14 @@ final class OrderConfirmViewModel: ObservableObject {
     private func performBindCoupon(takeId: Int64?) async {
         await MainActor.run { isSyncing = true }
         do {
-            try await couponService.bindCouponTake(orderId: orderId, couponTakeId: takeId)
-            let toast = takeId == nil ? "已取消优惠券" : "已选择优惠券"
-            await refreshSettlement(showToast: toast)
-        } catch {
-            await MainActor.run {
-                toastMessage = error.localizedDescription.isEmpty
-                    ? "绑定优惠券失败"
-                    : error.localizedDescription
+            _ = try await couponService.bindCouponTake(orderId: orderId, couponTakeId: takeId)
+            await refreshSettlement()
+        } catch CouponServiceError.requestFailed(let message) {
+            let text = message.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !text.isEmpty {
+                await MainActor.run { toastMessage = text }
             }
+        } catch {
         }
         await MainActor.run { isSyncing = false }
     }
@@ -686,8 +746,9 @@ final class OrderConfirmViewModel: ObservableObject {
         recomputeSettlementBenefitFlag()
     }
 
-    /// 快递且无订单快照地址时，静默绑定用户默认地址（不 Toast）。
-    private func fillDefaultExpressAddressIfNeeded(retry: Bool = false) async {
+    /// 快递且无订单快照地址时绑定用户默认地址。
+    /// 进页调用失败不 Toast；用户切换收货方式时由调用方根据 `.updateFailed` 回滚并提示。
+    private func fillDefaultExpressAddressIfNeeded(retry: Bool = false) async -> DefaultAddressFillOutcome {
         let canStart = await MainActor.run { () -> Bool in
             if retry { didAttemptDefaultAddressFill = false }
             guard needsExpressAddress,
@@ -699,7 +760,7 @@ final class OrderConfirmViewModel: ObservableObject {
             didAttemptDefaultAddressFill = true
             return true
         }
-        guard canStart else { return }
+        guard canStart else { return .notNeeded }
 
         do {
             try Task.checkCancellation()
@@ -707,23 +768,32 @@ final class OrderConfirmViewModel: ObservableObject {
             try Task.checkCancellation()
             guard let address = page.records?.first(where: \.isDefaultAddress),
                   let addressId = address.id, addressId > 0 else {
-                return
+                return .awaitingManualAddress
             }
 
             let shouldBind = await MainActor.run {
                 needsExpressAddress && deliveryAddress == nil && !userDidSelectDeliveryAddress
             }
-            guard shouldBind else { return }
+            guard shouldBind else { return .notNeeded }
 
             try Task.checkCancellation()
-            try await orderService.updateOrderDelivery(
-                orderId: orderId,
-                typeOrder: 1,
-                addressId: addressId,
-                receiver: address.name,
-                phone: address.mobile,
-                address: address.fullAddress
-            )
+            do {
+                try await orderService.updateOrderDelivery(
+                    orderId: orderId,
+                    typeOrder: 1,
+                    addressId: addressId,
+                    receiver: address.name,
+                    phone: address.mobile,
+                    address: address.fullAddress
+                )
+            } catch is CancellationError {
+                await MainActor.run { didAttemptDefaultAddressFill = false }
+                return .notNeeded
+            } catch {
+                await MainActor.run { didAttemptDefaultAddressFill = false }
+                print("[OrderConfirm] fill default address skipped: \(error.localizedDescription)")
+                return .updateFailed(error)
+            }
 
             let shouldApply = await MainActor.run { () -> Bool in
                 guard !userDidSelectDeliveryAddress else { return false }
@@ -732,14 +802,23 @@ final class OrderConfirmViewModel: ObservableObject {
                 }
                 return true
             }
-            guard shouldApply else { return }
+            guard shouldApply else { return .notNeeded }
 
             await refreshSettlement()
+            return .bound
         } catch is CancellationError {
             await MainActor.run { didAttemptDefaultAddressFill = false }
+            return .notNeeded
         } catch {
+            await MainActor.run { didAttemptDefaultAddressFill = false }
             print("[OrderConfirm] fill default address skipped: \(error.localizedDescription)")
+            return .awaitingManualAddress
         }
+    }
+
+    private func fulfillmentSwitchFailureMessage(_ error: Error) -> String {
+        let text = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.isEmpty ? "切换收货方式失败" : text
     }
 
     private func applyOrderBenefitsList(_ list: [BenefitsRedeemCardVO]) {

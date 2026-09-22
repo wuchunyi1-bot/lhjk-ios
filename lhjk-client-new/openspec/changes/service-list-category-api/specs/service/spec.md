@@ -38,8 +38,20 @@
 
 #### Scenario: 空态与详情
 
-- **WHEN** 套包为空 → 展示「暂无套餐」
+- **WHEN** 某类目 `packageList` 为空
+- **THEN** 左栏仍展示该类目 `serviceName`
+- **AND** 右栏展示该类目标题，下方不展示套餐卡片、不展示全页「暂无套餐」插画（对齐小程序）
+- **WHEN** 接口 `data` 为空或无有效类目
+- **THEN** 右栏展示「暂无套餐」
 - **WHEN** 点击卡片或「查看详情 ›」→ `/services/pkg?id=`
+
+#### Scenario: 本地无选中机构时补全
+
+- **WHEN** `InstitutionSelectionStore` 无已选机构，且用户档案有合法 `hospitalId`
+- **THEN** 调用 `GET /v1/hospital/getById`
+- **AND** 将返回的医院写入 `InstitutionSelectionStore`
+- **AND** 顶栏展示该医院名称 / 类型 / 地址，**不得**展示占位「富德联好健康」
+- **AND** 套餐列表 `hospitalId` 与顶栏为同一机构
 
 #### Scenario: 禁止 mock
 

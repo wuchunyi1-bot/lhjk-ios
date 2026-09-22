@@ -10,3 +10,4 @@
 - [x] 2.2 `HealthMallViewModel` Tab + 分类商品加载
 - [x] 2.3 `HealthMallViewController` 布局与空态
 - [x] 2.4 `MallProductCell` 对齐 funde 1:1 封面
+- [x] 2.5 `HealthMallViewModel` / `HealthMallViewController` 上拉加载更多（`pageSize=10`）

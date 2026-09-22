@@ -26,6 +26,11 @@ final class HealthMallViewController: BaseViewController {
         cv.backgroundColor = .clear
         cv.showsVerticalScrollIndicator = false
         cv.register(MallProductCell.self, forCellWithReuseIdentifier: MallProductCell.reuseID)
+        cv.register(
+            MallLoadMoreFooterView.self,
+            forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter,
+            withReuseIdentifier: MallLoadMoreFooterView.reuseID
+        )
         cv.dataSource = self
         cv.delegate = self
         return cv
@@ -154,13 +159,28 @@ final class HealthMallViewController: BaseViewController {
             }
             .store(in: &cancellables)
 
-        viewModel.$isLoadingProducts
+        Publishers.CombineLatest(viewModel.$isLoadingProducts, viewModel.$products)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] isLoading in
-                if isLoading {
+            .sink { [weak self] isLoading, products in
+                if isLoading, products.isEmpty {
                     self?.loadingIndicator.startAnimating()
                 } else {
                     self?.loadingIndicator.stopAnimating()
+                }
+            }
+            .store(in: &cancellables)
+
+        Publishers.CombineLatest(viewModel.$isLoadingMore, viewModel.$hasMore)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading, hasMore in
+                guard let self else { return }
+                self.collectionView.collectionViewLayout.invalidateLayout()
+                let footerIndex = IndexPath(item: 0, section: 0)
+                if let footer = self.collectionView.supplementaryView(
+                    forElementKind: UICollectionView.elementKindSectionFooter,
+                    at: footerIndex
+                ) as? MallLoadMoreFooterView {
+                    footer.configure(isLoading: isLoading, hasMore: hasMore)
                 }
             }
             .store(in: &cancellables)
@@ -191,5 +211,97 @@ extension HealthMallViewController: UICollectionViewDataSource, UICollectionView
                 categoryServiceId: categoryId.isEmpty ? nil : categoryId
             )
         )
+    }
+
+    func collectionView(
+        _ collectionView: UICollectionView,
+        viewForSupplementaryElementOfKind kind: String,
+        at indexPath: IndexPath
+    ) -> UICollectionReusableView {
+        guard kind == UICollectionView.elementKindSectionFooter else {
+            return UICollectionReusableView()
+        }
+        let footer = collectionView.dequeueReusableSupplementaryView(
+            ofKind: kind,
+            withReuseIdentifier: MallLoadMoreFooterView.reuseID,
+            for: indexPath
+        ) as! MallLoadMoreFooterView
+        footer.configure(isLoading: viewModel.isLoadingMore, hasMore: viewModel.hasMore)
+        return footer
+    }
+
+    func collectionView(
+        _ collectionView: UICollectionView,
+        willDisplay cell: UICollectionViewCell,
+        forItemAt indexPath: IndexPath
+    ) {
+        let triggerIndex = max(viewModel.products.count - 2, 0)
+        guard indexPath.item >= triggerIndex else { return }
+        viewModel.loadMore()
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        guard viewModel.hasMore, !viewModel.isLoadingMore, !viewModel.isLoadingProducts else { return }
+        let threshold: CGFloat = 100
+        let contentHeight = scrollView.contentSize.height
+        let frameHeight = scrollView.frame.size.height
+        let offset = scrollView.contentOffset.y
+        guard contentHeight > 0, offset + frameHeight >= contentHeight - threshold else { return }
+        viewModel.loadMore()
+    }
+}
+
+extension HealthMallViewController: UICollectionViewDelegateFlowLayout {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        referenceSizeForFooterInSection section: Int
+    ) -> CGSize {
+        guard !viewModel.products.isEmpty else { return .zero }
+        if viewModel.isLoadingMore || !viewModel.hasMore {
+            return CGSize(width: collectionView.bounds.width, height: 50)
+        }
+        return .zero
+    }
+}
+
+// MARK: - Load more footer
+
+private final class MallLoadMoreFooterView: UICollectionReusableView {
+    static let reuseID = "MallLoadMoreFooterView"
+
+    private let spinner: UIActivityIndicatorView = {
+        let view = UIActivityIndicatorView(style: .medium)
+        view.hidesWhenStopped = true
+        return view
+    }()
+
+    private let endLabel: UILabel = {
+        let label = UILabel()
+        label.text = "没有更多数据了"
+        label.font = .fdCaption
+        label.textColor = .fdMuted
+        label.textAlignment = .center
+        return label
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        addSubview(spinner)
+        addSubview(endLabel)
+        spinner.snp.makeConstraints { $0.center.equalToSuperview() }
+        endLabel.snp.makeConstraints { $0.center.equalToSuperview() }
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    func configure(isLoading: Bool, hasMore: Bool) {
+        if isLoading {
+            endLabel.isHidden = true
+            spinner.startAnimating()
+        } else {
+            spinner.stopAnimating()
+            endLabel.isHidden = hasMore
+        }
     }
 }

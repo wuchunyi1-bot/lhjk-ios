@@ -8,15 +8,16 @@
 1. **路由**：`/services/pkg`，params：`id`（packageId）、`orderId`（续费父订单）、可选 `hospitalId` / `categoryServiceId`
 2. **续费态判定**：`orderId` 有效即 `isRenewalMode`
 3. **价格**：`HospitalPackageDetailMapper` 在续费态用 `reprice ?? price` 填充 `ServicePackageComboItem.priceValue`；底栏合计为已选明细续费价之和
-4. **提交**：`SaveShoppingCartRequest.parentId` = 路由 `orderId`；`flag = 1` 成功后进 `/orders/confirm`
-5. **取消**：续费态左侧按钮 `navigationController?.popViewController`
-6. **packageId 来源**：优先列表/详情 `packageId`；列表缺失时拉 `getAppOrderDetail` 再跳转
-7. **续费按钮资格**（Apifox + PRD 状态窗口）：
+4. **详情 Query**：续费态 `getHospitalPackageDetail` 传 `orderId`；普通购买不传。响应 `commodityIdList` 仅叠加勾选，不改套餐分组构造；用户可改选
+5. **提交**：`SaveShoppingCartRequest.parentId` = 路由 `orderId`；`flag = 1` 成功后进 `/orders/confirm`
+6. **取消**：续费态左侧按钮 `navigationController?.popViewController`
+7. **packageId 来源**：优先列表/详情 `packageId`；列表缺失时拉 `getAppOrderDetail` 再跳转
+8. **续费按钮资格**（Apifox + PRD 状态窗口）：
    - 基础：`packageType == 1`
    - `renewed == 1`（文档字段；0 / 缺失隐藏）
    - 使用中可续费；已逾期仅由 `endTime` 推算天数 ∈ [0,5]
    - **不**使用未文档化字段：`renewalEligible` / `renewedOnce` / `renewPendingChildId` / 订单级 `overdueDays`
-8. **确认收货终态**：是否进入已完成由后端处理，客户端不改写目标 status 规则
+9. **确认收货终态**：是否进入已完成由后端处理，客户端不改写目标 status 规则
 
 ## Risks
 

@@ -8,7 +8,7 @@
 
 - **WHEN** 确认订单页完成结算加载
 - **THEN** 调用 `GET /v1/benefitsTake/getOrderBenefitsList?orderId=`
-- **AND** 行文案：已选 →「已使用 N 张，共优惠 ¥x」；有可用未选 →「有 N 张可用」；否则「暂无可用」
+- **AND** 行文案优先订单/结算使用情况：已抵扣 →「已使用 N 张，共优惠 ¥x」（无张数时「已使用，共优惠 ¥x」）；未使用且有可用 →「有 N 张可用」；否则「暂无可用」。列表回调不得把已使用改成「有 N 张可用」
 - **AND** 抵扣展示优先使用返回的 `deductAmount`；**不再**用全量 `getCustomerPage(status=3)` 作为本行数据源
 
 #### Scenario: 多选弹层与绑单

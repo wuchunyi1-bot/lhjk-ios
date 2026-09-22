@@ -20,6 +20,8 @@ final class HealthMallViewModel: ObservableObject {
     @Published private(set) var products: [HealthPackageItem] = []
     @Published private(set) var isLoadingTabs = false
     @Published private(set) var isLoadingProducts = false
+    @Published private(set) var isLoadingMore = false
+    @Published private(set) var hasMore = true
     @Published private(set) var showEmptyState = false
 
     private let hospitalPackageService: HospitalPackageService
@@ -27,7 +29,9 @@ final class HealthMallViewModel: ObservableObject {
     private var productsTask: Task<Void, Never>?
     private var loadGeneration = 0
 
-    private let productPageSize = 50
+    private let productPageSize = 10
+    private var currentPage = 1
+    private var totalPages = 1
 
     init(hospitalPackageService: HospitalPackageService = .shared) {
         self.hospitalPackageService = hospitalPackageService
@@ -49,6 +53,7 @@ final class HealthMallViewModel: ObservableObject {
 
     func load() {
         loadTask?.cancel()
+        productsTask?.cancel()
         loadGeneration += 1
         let generation = loadGeneration
 
@@ -64,6 +69,7 @@ final class HealthMallViewModel: ObservableObject {
         guard tabs.indices.contains(index), index != selectedTabIndex else { return }
         selectedTabIndex = index
         productsTask?.cancel()
+        loadGeneration += 1
         let generation = loadGeneration
         productsTask = Task { [weak self] in
             guard let self else { return }
@@ -71,10 +77,46 @@ final class HealthMallViewModel: ObservableObject {
         }
     }
 
+    func loadMore() {
+        guard !isLoadingMore, !isLoadingProducts, hasMore else { return }
+        isLoadingMore = true
+
+        let generation = loadGeneration
+        let tab = selectedTab
+        let nextPage = currentPage + 1
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let pageData = try await self.hospitalPackageService.fetchRetailPackages(
+                    categoryServiceId: tab.categoryServiceId,
+                    pageNum: nextPage,
+                    pageSize: self.productPageSize
+                )
+                guard self.isCurrent(generation) else { return }
+
+                let newItems = Self.mapItems(pageData.records, pageNum: nextPage, pageSize: self.productPageSize)
+                self.applyPage(pageData, items: newItems, append: true)
+                self.isLoadingMore = false
+            } catch {
+                print("[HealthMallVM] loadMore failed: \(error.localizedDescription)")
+                guard self.isCurrent(generation) else { return }
+                self.isLoadingMore = false
+            }
+        }
+    }
+
     // MARK: - Private
 
     private func isCurrent(_ generation: Int) -> Bool {
         generation == loadGeneration
+    }
+
+    private func resetPaging() {
+        currentPage = 1
+        totalPages = 1
+        hasMore = true
+        isLoadingMore = false
     }
 
     private func loadTabs(generation: Int) async {
@@ -106,28 +148,61 @@ final class HealthMallViewModel: ObservableObject {
     }
 
     private func loadProducts(for tab: MallCategoryTab, generation: Int) async {
+        resetPaging()
         isLoadingProducts = true
         showEmptyState = false
+        products = []
         defer {
-            if isCurrent(generation) {
-                isLoadingProducts = false
-            }
+            if isCurrent(generation) { isLoadingProducts = false }
         }
 
         do {
-            let items = try await hospitalPackageService.fetchRetailPackageItems(
+            let pageData = try await hospitalPackageService.fetchRetailPackages(
                 categoryServiceId: tab.categoryServiceId,
                 pageNum: 1,
                 pageSize: productPageSize
             )
             guard isCurrent(generation) else { return }
-            products = items
-            showEmptyState = items.isEmpty
+            let items = Self.mapItems(pageData.records, pageNum: 1, pageSize: productPageSize)
+            applyPage(pageData, items: items, append: false)
         } catch {
             print("[HealthMallVM] load products failed: \(error.localizedDescription)")
             guard isCurrent(generation) else { return }
             products = []
+            hasMore = false
             showEmptyState = true
+        }
+    }
+
+    private func applyPage(
+        _ pageData: PaginatedHospitalPackageData,
+        items: [HealthPackageItem],
+        append: Bool
+    ) {
+        if append {
+            products += items
+        } else {
+            products = items
+        }
+
+        let resolvedCurrent = pageData.currentPage ?? (append ? currentPage + 1 : 1)
+        currentPage = resolvedCurrent
+        if let total = pageData.totalPages, total > 0 {
+            totalPages = total
+            hasMore = !items.isEmpty && resolvedCurrent < total
+        } else {
+            hasMore = items.count >= productPageSize
+        }
+        showEmptyState = products.isEmpty
+    }
+
+    private static func mapItems(
+        _ records: [HospitalPackagePageVO]?,
+        pageNum: Int,
+        pageSize: Int
+    ) -> [HealthPackageItem] {
+        (records ?? []).enumerated().map { index, vo in
+            HospitalPackageMapper.toPackageItem(vo, index: (pageNum - 1) * pageSize + index)
         }
     }
 }

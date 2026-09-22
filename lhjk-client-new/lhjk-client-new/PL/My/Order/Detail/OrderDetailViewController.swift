@@ -15,6 +15,7 @@ final class OrderDetailViewController: BaseViewController {
     private let errorLabel = UILabel()
 
     private let statusView = OrderDetailStatusView()
+    private let noticeBannerView = OrderDetailNoticeBannerView()
     private let afterSaleCard = OrderDetailCardView()
     private let afterSaleView = OrderDetailAfterSaleView()
     private let packageCard = OrderDetailCardView()
@@ -152,6 +153,7 @@ final class OrderDetailViewController: BaseViewController {
 
         [
             statusView,
+            noticeBannerView,
             afterSaleCard,
             packageCard,
             addressCard,
@@ -289,6 +291,8 @@ final class OrderDetailViewController: BaseViewController {
             )
         )
 
+        noticeBannerView.configure(text: detail.noticeBannerText)
+
         let showsAfterSale = detail.showsAfterSaleInfoCard
         afterSaleCard.isHidden = !showsAfterSale
         if showsAfterSale {
@@ -379,8 +383,7 @@ final class OrderDetailViewController: BaseViewController {
     }
 
     private func showToast(_ message: String) {
-        guard !message.isEmpty else { return }
-        showToastAlert(message, duration: 1.2)
+        FDToast.show(message, duration: 1.2)
     }
 
     private func collapseActionBar() {

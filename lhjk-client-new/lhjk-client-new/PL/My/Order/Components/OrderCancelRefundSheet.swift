@@ -237,7 +237,7 @@ final class OrderCancelRefundSheet: UIViewController {
     }
 
     private func showHint(_ message: String) {
-        showToastAlert(message, duration: 1.2)
+        FDToast.show(message, duration: 1.2)
     }
 }
 
@@ -491,7 +491,7 @@ final class OrderSettlementSheet: UIViewController {
     }
 
     private func showHint(_ message: String) {
-        showToastAlert(message, duration: 1.2)
+        FDToast.show(message, duration: 1.2)
     }
 }
 

@@ -85,6 +85,7 @@ Tab 使用 UICollectionView 横向滚动；**恰好 8 个**，顺序同表。选
 | `hospitalId` | Int64 | 医院 id |
 | `renewed` | Int | **1=允许续租，0=不允许** |
 | `canReturnGoods` | Bool | **是否可去退货**（退款/售后处理中） |
+| `canApplyAfterSale` | Bool | **是否展示「退款/售后」**；详情 [getAppOrderDetail](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330739e0.md) 已声明；列表文档暂无同名字段，有则解码 |
 | `refundId` | Int64 | **退款单 ID**（提交退货 `submitReturnGoods` 必填） |
 
 **续费按钮**：仅 `packageType == 1`（租赁），且：
@@ -92,7 +93,7 @@ Tab 使用 UICollectionView 横向滚动；**恰好 8 个**，顺序同表。选
 - 使用中；或已逾期且由 `endTime` 推算的逾期天数 ∈ [0, 5]
 - 文档**无** `overdueDays` / `renewalEligible` / `renewedOnce` / `renewPendingChildId`，客户端不得自造这些请求/响应字段
 
-**退款/售后按钮（已完成 Tab）**：仅 `packageType == 2`（售卖）或 `4`（体验）时展示。是否已退款以详情/列表 `refundId` 为准。
+**退款/售后按钮**：只认后端 `canApplyAfterSale == true`，**不得**再按套餐类型、`refundId`、退款历史在客户端推断。列表卡片本身不展示该按钮（详情滚动区底部展示）。
 
 **去退货按钮（退款/售后 Tab）**：`status=6` 且 `canReturnGoods == true` 且 `refundId > 0`。点击展示去退货客服指引弹窗（对齐 Figma 5607:21157），提示「实物商品需要寄回，请联系客服办理退货」，展示客服电话（0755-61909838）并支持一键拨打。列表与详情页共用 `OrderReturnGoodsFlow`。原物流表单提交见 [submitReturnGoods](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/493050735e0.md)。
 

@@ -247,6 +247,16 @@ final class OrderConfirmViewController: BaseViewController {
             }
             .store(in: &cancellables)
 
+        viewModel.$packageContentChangedMessage
+            .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] message in
+                guard let self else { return }
+                self.viewModel.consumePackageContentChangedAlert()
+                self.presentPackageContentChangedAlert(message: message)
+            }
+            .store(in: &cancellables)
+
         viewModel.$navigateBack
             .filter { $0 }
             .receive(on: DispatchQueue.main)
@@ -329,11 +339,7 @@ final class OrderConfirmViewController: BaseViewController {
             isPlaceholder: viewModel.couponSummaryIsPlaceholder,
             hasAvailable: viewModel.availableCouponCount > 0 || viewModel.couponDiscount > 0
         )
-        optionsCard.configureBenefit(
-            text: viewModel.benefitSummaryText,
-            isPlaceholder: viewModel.benefitSummaryIsPlaceholder,
-            hasDiscount: viewModel.benefitDiscount > 0
-        )
+        optionsCard.configureBenefit(text: viewModel.benefitSummaryText)
 
         feeView.configure(
             packageAmount: viewModel.packageAmount,
@@ -394,14 +400,24 @@ final class OrderConfirmViewController: BaseViewController {
         Task { [weak self] in
             guard let self else { return }
             do {
-                let coupons = try await self.viewModel.fetchCouponOptions()
+                let result = try await self.viewModel.fetchCouponOptions()
                 await MainActor.run {
                     let sheet = OrderCouponPickerSheet(
-                        coupons: coupons,
+                        coupons: result.items,
+                        total: result.total,
                         selectedTakeId: self.viewModel.selectedCouponTakeId
                     )
                     sheet.onSelect = { [weak self] takeId in
                         self?.viewModel.bindCoupon(takeId: takeId)
+                    }
+                    sheet.onLoadMore = { [weak self] page in
+                        guard let self else { throw CancellationError() }
+                        return try await self.viewModel.fetchCouponOptions(pageNum: page)
+                    }
+                    sheet.onLoadMoreFailed = { [weak self] error in
+                        let text = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !text.isEmpty else { return }
+                        self?.showToast(text)
                     }
                     self.present(sheet, animated: true)
                 }
@@ -459,6 +475,37 @@ final class OrderConfirmViewController: BaseViewController {
         )
     }
 
+    /// FDAPP-938：`getOrderSettlement` `M0104` — 套餐价格或内容已变化
+    private func presentPackageContentChangedAlert(message: String) {
+        guard presentedViewController == nil else { return }
+        let alert = UIAlertController(title: "提示", message: message, preferredStyle: .alert)
+        alert.view.tintColor = .fdPrimary
+        let cancelOrder = UIAlertAction(title: "取消订单", style: .default) { [weak self] _ in
+            self?.cancelOrderAfterPackageChanged()
+        }
+        let selectPackage = UIAlertAction(title: "选择套餐", style: .default) { [weak self] _ in
+            guard let self else { return }
+            OrderNavigationCoordinator.leaveToServiceHub(from: self)
+        }
+        alert.addAction(cancelOrder)
+        alert.addAction(selectPackage)
+        alert.preferredAction = selectPackage
+        present(alert, animated: true)
+    }
+
+    private func cancelOrderAfterPackageChanged() {
+        OrderCancelFlow.cancelPendingPaymentDirectly(
+            from: self,
+            orderId: viewModel.currentOrderId,
+            hospitalId: viewModel.orderDetail.flatMap {
+                OrderInsertOrEditContext.resolvedHospitalId(from: $0)
+            }
+        ) { [weak self] _ in
+            guard let self else { return }
+            OrderNavigationCoordinator.leaveCancelledOrderToAllList(from: self)
+        }
+    }
+
     private func callInstitution() {
         let phone = viewModel.institutionPhone.filter { $0.isNumber || $0 == "+" }
         guard !phone.isEmpty,
@@ -486,6 +533,7 @@ final class OrderConfirmViewController: BaseViewController {
     }
 
     private func showToast(_ message: String, completion: (() -> Void)? = nil) {
-        showToastAlert(message, duration: 1.2, completion: completion)
+        FDToast.show(message, duration: 1.2)
+        completion?()
     }
 }

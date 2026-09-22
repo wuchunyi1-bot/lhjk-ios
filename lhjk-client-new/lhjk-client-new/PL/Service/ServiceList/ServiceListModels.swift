@@ -19,18 +19,18 @@ struct ServiceListPackageSection: Equatable {
     let rows: [ServiceListPackageRow]
 }
 
-/// 列表页机构展示（机构 API 未接时的默认态）
+/// 列表页机构展示
 struct ServiceListInstitutionDisplay: Equatable {
     let name: String
     let typeLabel: String
     let address: String
     let distance: String
 
-    static let `default` = ServiceListInstitutionDisplay(
-        name: "富德联好健康",
-        typeLabel: "品牌机构",
-        address: "全国服务网络",
-        distance: "距离最近"
+    static let empty = ServiceListInstitutionDisplay(
+        name: "",
+        typeLabel: "",
+        address: "",
+        distance: ""
     )
 }
 

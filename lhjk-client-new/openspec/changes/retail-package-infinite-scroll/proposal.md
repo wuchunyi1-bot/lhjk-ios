@@ -7,9 +7,9 @@
 ## What Changes
 
 - 对接 `GET /v1/hospitalPackage/getEnabledRetailHospitalPackagePage`
-- Hub 富德优选：首屏 10 条 + 上拉加载更多
-- 加载态 / 无更多 / 空态 Section 隐藏
-- Tab 切回保留已加载列表
+- Hub 富德优选：最多 6 条（`pageSize = 6`），不上拉加载
+- 空态 Section 隐藏
+- Tab 切回复用会话缓存
 
 ## Capabilities
 
@@ -27,6 +27,6 @@
 |----|------|
 | BLL Models | `ServiceRecommendModels.swift` — `PaginatedRetailHospitalPackageData` |
 | BLL Service | `HospitalPackageService.swift` — `fetchRetailPackages` |
-| BLL Cache | `ServiceHubCacheService.swift` — 首屏 + `updateRetailPreview` |
-| PL VM | `ServiceViewModel.swift` — 分页状态、`loadMore` |
-| PL VC | `ServiceViewController.swift` — 滚动触发、Footer |
+| BLL Cache | `ServiceHubCacheService.swift` — 首屏预览 `pageSize = 6` |
+| PL VM | `ServiceViewModel.swift` — 预览最多 6 条 |
+| PL VC | `ServiceViewController.swift` — 网格展示，无分页 Footer |

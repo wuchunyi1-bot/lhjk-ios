@@ -82,6 +82,7 @@ enum AppVersionCheckCoordinator {
 
     private static func presentUpdate(_ info: AppVersionCheckInfo) {
         guard let host = topViewController() else { return }
+        if host is AppUpdateDialogViewController { return }
         if host.presentedViewController is AppUpdateDialogViewController, isPresenting { return }
 
         isPresenting = true
@@ -89,7 +90,11 @@ enum AppVersionCheckCoordinator {
         dialog.onDismiss = {
             isPresenting = false
         }
-        dialog.onConfirmUpdate = {
+        dialog.onConfirmUpdate = { [weak dialog] in
+            if info.isForce {
+                openStore(info.version.storeURL, from: dialog ?? host)
+                return
+            }
             isPresenting = false
             openStore(info.version.storeURL, from: host)
         }

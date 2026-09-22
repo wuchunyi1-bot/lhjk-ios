@@ -108,6 +108,10 @@ struct ServicePackageComboItem: Equatable {
     let categoryName: String?
     let groupNumber: Int?
     let defaultCheck: Int?
+    /// 详情接口原价，提交 `packageHospitalDetailList[].price`
+    let catalogPrice: Double?
+    /// 详情接口续费金额，提交 `packageHospitalDetailList[].reprice`
+    let reprice: Double?
 
     init(
         name: String,
@@ -129,7 +133,9 @@ struct ServicePackageComboItem: Equatable {
         categoryId: String? = nil,
         categoryName: String? = nil,
         groupNumber: Int? = nil,
-        defaultCheck: Int? = nil
+        defaultCheck: Int? = nil,
+        catalogPrice: Double? = nil,
+        reprice: Double? = nil
     ) {
         self.name = name
         self.qty = qty
@@ -151,6 +157,8 @@ struct ServicePackageComboItem: Equatable {
         self.categoryName = categoryName
         self.groupNumber = groupNumber
         self.defaultCheck = defaultCheck
+        self.catalogPrice = catalogPrice
+        self.reprice = reprice
     }
 
     var qtyLabel: String {
@@ -181,6 +189,22 @@ struct ServicePackageComboGroup: Equatable {
     let selectMode: ServicePackageSelectMode
     let emoji: String
     let items: [ServicePackageComboItem]
+    /// 勾选 / 计价用，组间必须唯一。不能用 `categoryName`：多个批次会撞成同一个 key。
+    let pickKey: String
+
+    init(
+        name: String,
+        selectMode: ServicePackageSelectMode,
+        emoji: String,
+        items: [ServicePackageComboItem],
+        pickKey: String? = nil
+    ) {
+        self.name = name
+        self.selectMode = selectMode
+        self.emoji = emoji
+        self.items = items
+        self.pickKey = pickKey ?? name
+    }
 
     /// 首个父项下标（跳过子行）
     var firstParentIndex: Int {
@@ -230,6 +254,8 @@ struct ServicePackageDetail {
     let carouselImageURLs: [String]
     let tiers: [ServicePackageTier]
     let accentHex: String
+    /// 续费传入 `orderId` 时，原订单已购商品 id；未传则为空
+    let purchasedCommodityIds: [String]
 
     var accent: UIColor { UIColor(hexString: accentHex) }
     var displayName: String { name }
@@ -251,7 +277,8 @@ struct ServicePackageDetail {
         carouselLabels: [String],
         carouselImageURLs: [String] = [],
         tiers: [ServicePackageTier],
-        accentHex: String
+        accentHex: String,
+        purchasedCommodityIds: [String] = []
     ) {
         self.id = id
         self.hospitalId = hospitalId
@@ -270,6 +297,7 @@ struct ServicePackageDetail {
         self.carouselImageURLs = carouselImageURLs
         self.tiers = tiers
         self.accentHex = accentHex
+        self.purchasedCommodityIds = purchasedCommodityIds
     }
 }
 

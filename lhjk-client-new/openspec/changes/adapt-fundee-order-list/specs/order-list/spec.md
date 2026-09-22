@@ -57,7 +57,7 @@
 - **WHEN** 待发货
 - **THEN** **仅**展示「取消订单」；**不得**展示「确认发货」
 - **WHEN** 待收货
-- **THEN** 展示「确认收货」（主按钮）；电商零售（`packageType=2`）且未退款过时额外「退款/售后」
+- **THEN** 展示「确认收货」（主按钮）；`canApplyAfterSale == true` 时额外「退款/售后」
 - **WHEN** 使用中 / 已逾期 且 `packageType == 1`
 - **THEN** 展示「结算订单」为主按钮
 - **AND** 满足续费资格时额外展示「续费订单」（`packageType==1` 且 `renewed==1`；使用中；已逾期仅 `endTime` 推算逾期 0–5 天）
@@ -67,21 +67,18 @@
 
 #### Scenario: 已完成 Tab 退款/售后
 
-- **WHEN** 订单 `status=5`（已完成）
-- **AND** `packageType == 2`（售卖/电商零售）或 `packageType == 4`（体验套餐）
-- **AND** 未发生过退款（无 `refundId`、无已完成退款记录）
-- **THEN** 卡片展示「退款/售后」
-- **WHEN** `packageType` 为 1（租赁/综合服务）或 3（虚拟/权益卡）
+- **WHEN** 订单详情 `canApplyAfterSale == true`
+- **THEN** 展示「退款/售后」
+- **WHEN** `canApplyAfterSale` 为 false 或未返回
 - **THEN** **不得**展示「退款/售后」
-- **WHEN** 订单已退款完成（存在 `refundId` 或退款历史字段）
-- **THEN** 隐藏「退款/售后」，避免二次申请
+- **AND** 客户端 **不得**再按 `packageType` / `refundId` / 退款历史推断
 
 #### Scenario: 使用中体验套餐退款/售后
 
 - **WHEN** 订单 `status=4`（使用中）且 `packageType == 4`（体验套餐）
-- **THEN** 展示「退款/售后」（不展示续费/结算）
+- **THEN** 不展示续费/结算；「退款/售后」仅当 `canApplyAfterSale == true`
 - **WHEN** `packageType == 1`（租赁/综合服务）
-- **THEN** 展示续费（若满足续费规则）与「结算订单」，不展示普通「退款/售后」
+- **THEN** 展示续费（若满足续费规则）与「结算订单」；「退款/售后」仍只认 `canApplyAfterSale`
 - **WHEN** 用户点击操作按钮且对应 API 未接入
 - **THEN** Toast「功能即将开放」，**不得**崩溃
 - **WHEN** 用户点击卡片非按钮区域

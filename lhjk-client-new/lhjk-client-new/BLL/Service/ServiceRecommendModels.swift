@@ -230,7 +230,6 @@ enum HospitalPackageCategoryListMapper {
             guard !id.isEmpty, !title.isEmpty else { continue }
 
             let records = vo.packageList ?? []
-            guard !records.isEmpty else { continue }
 
             let imageUrl = vo.imgUrl?.trimmingCharacters(in: .whitespacesAndNewlines)
             let category = ServiceListCategory(

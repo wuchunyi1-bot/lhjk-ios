@@ -24,12 +24,7 @@ final class InstitutionSelectionStore {
             return try? decoder.decode(SelectedServiceInstitution.self, from: data)
         }
         set {
-            if let newValue, let data = try? encoder.encode(newValue) {
-                defaults.set(data, forKey: storageKey)
-            } else {
-                defaults.removeObject(forKey: storageKey)
-            }
-            NotificationCenter.default.post(name: Self.didChangeNotification, object: newValue)
+            applySelected(newValue, postingNotification: true)
         }
     }
 
@@ -38,11 +33,22 @@ final class InstitutionSelectionStore {
         ServiceCatalogService.validApiHospitalId(selected?.id)
     }
 
-    func select(_ institution: SelectedServiceInstitution) {
-        selected = institution
+    func select(_ institution: SelectedServiceInstitution, postingNotification: Bool = true) {
+        applySelected(institution, postingNotification: postingNotification)
     }
 
     func clear() {
-        selected = nil
+        applySelected(nil, postingNotification: true)
+    }
+
+    private func applySelected(_ newValue: SelectedServiceInstitution?, postingNotification: Bool) {
+        if let newValue, let data = try? encoder.encode(newValue) {
+            defaults.set(data, forKey: storageKey)
+        } else {
+            defaults.removeObject(forKey: storageKey)
+        }
+        if postingNotification {
+            NotificationCenter.default.post(name: Self.didChangeNotification, object: newValue)
+        }
     }
 }

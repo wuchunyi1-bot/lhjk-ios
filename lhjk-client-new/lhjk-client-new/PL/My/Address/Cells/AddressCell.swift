@@ -165,7 +165,7 @@ final class AddressCell: UITableViewCell {
         regionLabel.text = address.regionSummary.isEmpty ? "—" : address.regionSummary
         detailLabel.text = address.address?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "—"
         nameLabel.text = address.name ?? "未设置"
-        phoneLabel.text = maskPhone(address.mobile)
+        phoneLabel.text = address.mobile?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         defaultTag.isHidden = !address.isDefaultAddress
     }
 
@@ -177,13 +177,6 @@ final class AddressCell: UITableViewCell {
 
     @objc private func handleDelete() {
         onDelete?()
-    }
-
-    // MARK: - Helpers
-
-    private func maskPhone(_ phone: String?) -> String {
-        guard let phone, phone.count == 11 else { return phone ?? "" }
-        return "\(phone.prefix(3))****\(phone.suffix(4))"
     }
 }
 

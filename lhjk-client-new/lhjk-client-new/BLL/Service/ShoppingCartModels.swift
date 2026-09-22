@@ -67,6 +67,7 @@ struct PackageHospitalDetailSubmitItem: Encodable {
     var name: String?
     var quantity: Int?
     var price: Double?
+    var reprice: Double?
     var billingType: Int?
     var checkType: Int?
     var defaultCheck: Int?
@@ -80,7 +81,7 @@ struct PackageHospitalDetailSubmitItem: Encodable {
     var number: Int?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, quantity, price, billingType, checkType, defaultCheck
+        case id, name, quantity, price, reprice, billingType, checkType, defaultCheck
         case parentId, packageDetailId, commodityId, imageUrl, saleFlag
         case categoryId, categoryName, number
     }
@@ -91,6 +92,7 @@ struct PackageHospitalDetailSubmitItem: Encodable {
         try c.encodeIfPresent(name, forKey: .name)
         try c.encodeIfPresent(quantity, forKey: .quantity)
         try c.encodeIfPresent(price, forKey: .price)
+        try c.encodeIfPresent(reprice, forKey: .reprice)
         try c.encodeIfPresent(billingType, forKey: .billingType)
         try c.encodeIfPresent(checkType, forKey: .checkType)
         try c.encodeIfPresent(defaultCheck, forKey: .defaultCheck)
@@ -115,7 +117,8 @@ extension ServicePackageComboItem {
             id: id,
             name: name,
             quantity: quantityValue,
-            price: priceValue,
+            price: catalogPrice ?? priceValue,
+            reprice: reprice,
             billingType: billingType,
             checkType: checkType,
             defaultCheck: defaultCheck ?? (defaultSelected ? 1 : 2),

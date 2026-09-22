@@ -133,6 +133,14 @@ struct SelectedServiceInstitution: Codable, Equatable {
         typeLabel = HospitalTypeLabel.display(for: vo.hospitalType)
         fullAddress = vo.fullAddress?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? ""
     }
+
+    init?(hospital: OHospital) {
+        guard let id = ServiceCatalogService.validApiHospitalId(hospital.id) else { return nil }
+        self.id = id
+        name = hospital.name?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "服务机构"
+        typeLabel = HospitalTypeLabel.display(for: hospital.hospitalType)
+        fullAddress = hospital.fullAddress
+    }
 }
 
 private extension String {

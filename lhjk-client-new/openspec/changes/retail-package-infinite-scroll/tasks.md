@@ -15,3 +15,9 @@
 
 - [x] 3.1 `ServiceHubCacheService.updateRetailPreview` 同步 loadMore 结果
 - [x] 3.2 `ServiceViewModel.load()` Tab 切回不重置已加载分页
+
+## 4. 首页预览改为最多 6 条（不上拉分页）
+
+- [x] 4.1 去掉 `ServiceViewModel.loadMore` 与分页状态
+- [x] 4.2 `ensureRetailPreview` / 请求 `pageSize = 6`，展示层 `prefix(6)`
+- [x] 4.3 去掉 `ServiceViewController` 滚动加载与 Footer

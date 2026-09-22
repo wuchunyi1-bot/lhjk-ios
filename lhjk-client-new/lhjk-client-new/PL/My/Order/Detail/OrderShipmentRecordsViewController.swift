@@ -121,6 +121,6 @@ final class OrderShipmentRecordsViewController: BaseViewController {
     }
 
     private func showToast(_ message: String) {
-        showToastAlert(message, duration: 1.2)
+        FDToast.show(message, duration: 1.2)
     }
 }

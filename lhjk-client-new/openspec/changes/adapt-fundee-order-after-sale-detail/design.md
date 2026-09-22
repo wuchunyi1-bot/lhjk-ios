@@ -23,9 +23,10 @@ OrderDetailViewController
 | 申请退款原因 | `refundReasons` | 有值展示 |
 | 退款金额 | `applyRefund` | 有值且 > 0 时高亮展示 |
 
-展示条件（对齐 `OrderAfterSaleInfoCard.vue`）：
-- `status` 为 6（退款/售后）或 9（退款审核）
-- 或存在 `refundApplyTime` / `refundReasons` / `refundId`
+展示条件：
+- `status` 为 6（退款/售后）时展示「退款/售后信息」
+- `status` 为 9（退款审核中）时展示「退款审核信息」，状态头用 `order_detail_status_checking`
+- 或存在 `refundApplyTime` / `refundReasons` / `refundId`（且非驳回回落态）
 
 审核驳回后（`refuseReasons` 有值且不在售后流程态）：隐藏售后信息卡，状态区展示拒绝原因。
 

@@ -27,7 +27,9 @@ struct OrderDetailStatusPresentation {
             return "order_detail_status_in_use"
         case .completed:
             return "order_detail_status_completed"
-        case .refund, .refundReview:
+        case .refundReview:
+            return "order_detail_status_checking"
+        case .refund:
             return "order_detail_status_refund"
         case .cancelled:
             return "order_detail_status_cancel"

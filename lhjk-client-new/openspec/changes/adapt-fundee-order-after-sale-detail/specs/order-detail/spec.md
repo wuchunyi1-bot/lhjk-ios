@@ -15,9 +15,16 @@
 
 #### Scenario: 退款/售后态详情
 
-- **WHEN** 详情 `status=6` 或 `status=9`
-- **THEN** 状态头展示对应售后状态与提示文案
+- **WHEN** 详情 `status=6`（退款/售后）
+- **THEN** 状态头使用 `order_detail_status_refund`
 - **AND** 展示「退款/售后信息」卡片，含申请时间、退款单号、申请退款原因（接口有值时）
+- **AND** 底部不展示业务操作按钮（只读）
+
+#### Scenario: 退款审核中详情
+
+- **WHEN** 详情 `status=9`（退款审核中）
+- **THEN** 状态头使用 `order_detail_status_checking`（文案「退款审核」在切图内）
+- **AND** 展示「退款审核信息」卡片，含申请时间、退款单号、申请退款原因（接口有值时）
 - **AND** 底部不展示业务操作按钮（只读）
 
 #### Scenario: 已出款金额

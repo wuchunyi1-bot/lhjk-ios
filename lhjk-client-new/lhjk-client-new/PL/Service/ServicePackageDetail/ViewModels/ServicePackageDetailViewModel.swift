@@ -154,6 +154,7 @@ final class ServicePackageDetailViewModel: ObservableObject {
                 let detail = try await hospitalPackageService.fetchPackageDetail(
                     packageId: packageId,
                     hospitalId: hospitalId ?? institutionStore.selectedHospitalId,
+                    orderId: isRenewalMode ? renewalParentOrderId : nil,
                     renewalMode: isRenewalMode
                 )
                 guard !Task.isCancelled else { return }

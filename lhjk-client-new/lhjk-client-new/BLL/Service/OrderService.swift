@@ -118,7 +118,7 @@ final class OrderService {
 
         guard response.isSuccess, let data = response.data else {
             print("[OrderService] getOrderSettlement ✗ code=\(response.code) msg=\(response.msg ?? "")")
-            throw OrderServiceError.queryFailed(response.msg ?? "获取结算信息失败")
+            throw OrderServiceError.fromSettlementFailure(code: response.code, msg: response.msg)
         }
 
         print("[OrderService] getOrderSettlement ✓ package=\(data.packageName ?? "") orderExpress=\(data.orderExpress?.description ?? "nil")")
@@ -362,14 +362,33 @@ final class OrderService {
 // MARK: - Error
 
 enum OrderServiceError: Error, LocalizedError {
+    /// `GET /v1/order/getOrderSettlement` 业务码：套餐价格或内容已变化
+    static let packageContentChangedCode = "M0104"
+    static let packageContentChangedFallbackMessage = "套餐价格或内容已发生变化，请重新选择套餐后下单。"
+
     case queryFailed(String)
     /// 支付统一接口业务失败（含金额/版本变化）
     case payRejected(String)
+    /// `code == M0104`：待支付订单对应套餐已变更，需取消或重选
+    case packageContentChanged(String)
 
     var errorDescription: String? {
         switch self {
         case .queryFailed(let msg): return msg.isEmpty ? "查询订单失败" : msg
         case .payRejected(let msg): return msg.isEmpty ? "发起支付失败" : msg
+        case .packageContentChanged(let msg):
+            return msg.isEmpty ? Self.packageContentChangedFallbackMessage : msg
         }
+    }
+
+    static func fromSettlementFailure(code: String, msg: String?) -> OrderServiceError {
+        let trimmedCode = code.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedMsg = (msg ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedCode == packageContentChangedCode {
+            return .packageContentChanged(
+                trimmedMsg.isEmpty ? packageContentChangedFallbackMessage : trimmedMsg
+            )
+        }
+        return .queryFailed(trimmedMsg.isEmpty ? "获取结算信息失败" : trimmedMsg)
     }
 }

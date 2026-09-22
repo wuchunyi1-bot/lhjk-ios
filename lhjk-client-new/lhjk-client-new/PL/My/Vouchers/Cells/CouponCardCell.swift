@@ -370,8 +370,13 @@ final class CouponCardCell: UITableViewCell {
         nameLabel.lineBreakMode = .byTruncatingTail
         nameLabel.numberOfLines = 1
 
-        validityLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        validityLabel.font = .fdFont(ofSize: 12, weight: .regular)
         validityLabel.textColor = UIColor(hexString: "#8591AB")
+        validityLabel.numberOfLines = 1
+        validityLabel.lineBreakMode = .byClipping
+        validityLabel.adjustsFontSizeToFitWidth = true
+        validityLabel.minimumScaleFactor = 10.0 / 12.0
+        validityLabel.allowsDefaultTighteningForTruncation = true
 
         let rulesTitle = UILabel()
         rulesTitle.text = "使用规则"

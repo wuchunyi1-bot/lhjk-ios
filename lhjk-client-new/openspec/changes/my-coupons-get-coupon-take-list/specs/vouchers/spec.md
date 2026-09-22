@@ -22,6 +22,7 @@
 
 - **WHEN** 渲染优惠券卡片
 - **THEN** 展示名称（`name`）、有效期至（`endTime`，精确到秒，格式 `yyyy-MM-dd HH:mm:ss`）、状态角标
+- **AND** 有效期用 12pt Regular，窄屏可再缩小到 10pt，完整展示到秒，不得用省略号截断
 - **AND** 响应 `status`：`1`→「待使用」且可「去使用」；`2`→「已领用」；`3`→「已过期」
 - **AND** `type`：`1` 满减 / `2` 减价 / `3` 折扣
 - **AND** 左侧力度：满减用 `amount`；减价优先 `couponAmount` 否则 `amount`；折扣用 `discountRatio`（已是折数，不得乘 10）

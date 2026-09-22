@@ -128,7 +128,9 @@ final class ServiceInstitutionCardView: UIView {
 
     func configure(_ display: ServiceListInstitutionDisplay) {
         nameLabel.text = display.name
-        typeBadgeLabel.text = display.typeLabel
+        let type = display.typeLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+        typeBadgeLabel.text = type
+        typeBadgeContainer.isHidden = type.isEmpty
         let address = display.address.trimmingCharacters(in: .whitespacesAndNewlines)
         let distance = display.distance.trimmingCharacters(in: .whitespacesAndNewlines)
         if address.isEmpty {

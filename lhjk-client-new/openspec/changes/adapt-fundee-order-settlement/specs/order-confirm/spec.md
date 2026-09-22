@@ -27,8 +27,13 @@
 - **AND** Query 必传 `orderId`（int64）
 - **AND** 若路由/购物车有 `serialNumber` 则一并传入
 - **AND** **禁止**用 mock / 假 orderId；**禁止**用上一页 package 草稿顶替结算结果
-- **WHEN** 缺少 `orderId` 或结算请求失败
+- **WHEN** 缺少 `orderId` 或结算请求失败（**不含** `code = M0104`）
 - **THEN** Toast 提示并返回上一页
+- **WHEN** `GET /v1/order/getOrderSettlement` 返回 `code = M0104`（套餐价格或内容已变化，FDAPP-938）
+- **THEN** **不** Toast、**不**自动返回
+- **AND** 弹出「提示」Alert，文案优先用接口 `msg`，缺省为「套餐价格或内容已发生变化，请重新选择套餐后下单。」
+- **AND** 左侧「取消订单」直接取消该待支付订单（`insertOrEdit` status=8），成功后落到「我的订单 · 全部」
+- **AND** 右侧「选择套餐」切到服务 Tab 根页（服务首页），并 pop 当前确认/待支付页
 
 #### Scenario: 响应映射
 
@@ -60,7 +65,11 @@
 - **THEN** 调用 `POST /v1/order/updateOrderDelivery`，**仅**传 `orderId` + `typeOrder=0`
 - **AND** 成功后重新调用 `getOrderSettlement` 刷新确认页金额/地址/优惠券等
 - **WHEN** 用户切换到「快递配送」且当前**无**快递地址信息
-- **THEN** 先按「静默绑定默认地址」尝试填充；若无默认地址或绑定失败，仅本地切换 UI，**不调用**无地址的 `updateOrderDelivery`
+- **THEN** 先按「静默绑定默认地址」尝试填充
+- **AND** 无默认地址或地址列表失败时，仅本地切到快递并展示地址空态，**不调用**无地址的 `updateOrderDelivery`，**不** Toast
+- **AND** 默认地址绑定的 `updateOrderDelivery` 失败时，收货方式回滚到切换前，Toast 服务端文案（如 `M0067`「订单支付处理中，请稍后再试」），并允许再次切换重试
+- **AND** 进页静默绑定同一接口失败时不 Toast、不把已是快递的订单改回自提
+- **AND** 切换请求未结束前忽略下一次收货方式点击
 - **WHEN** 用户切换到「快递配送」且结算/本地已有快递地址
 - **THEN** 调用 `updateOrderDelivery` 传 `orderId`、`typeOrder=1` 及地址字段，成功后刷新 `getOrderSettlement`
 

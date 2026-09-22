@@ -51,7 +51,8 @@ final class HomeBannerCarouselCell: UITableViewCell {
         scrollView.snp.makeConstraints {
             $0.top.leading.trailing.equalToSuperview()
             heightConstraint = $0.height.equalTo(Self.fallbackHeight(for: UIScreen.main.bounds.width)).constraint
-            $0.bottom.equalToSuperview()
+            // 表格初次布局会临时套上 44pt 的 encapsulated height，底部用 999 让开。
+            $0.bottom.equalToSuperview().priority(999)
         }
         pageControl.snp.makeConstraints {
             $0.centerX.equalToSuperview()

@@ -248,25 +248,32 @@ final class HospitalPackageService {
     // MARK: - 套餐详情
 
     /// `GET /v1/hospitalPackage/getHospitalPackageDetail`
-    /// Apifox：`App端/商城/商城套餐相关接口`（只读查阅；无公开 md 时以本 path 为准）
+    /// Apifox：`App端/商城/商城套餐相关接口`（只读查阅）
     /// - Parameters:
     ///   - packageId: 列表接口返回的商品 id
     ///   - hospitalId: 列表/路由传入的机构 id；无效时回退临时常量
+    ///   - orderId: 续费时传入原订单 id，返回 `commodityIdList`；普通购买不传
+    ///   - renewalMode: 明细价使用 `reprice`
     func fetchPackageDetail(
         packageId: String,
         hospitalId: String? = nil,
+        orderId: Int64? = nil,
         renewalMode: Bool = false
     ) async throws -> ServicePackageDetail {
         guard let pkgId = Self.apiHospitalId(packageId) else {
             throw HospitalPackageServiceError.invalidPackageId
         }
         let hid = Self.apiHospitalId(hospitalId) ?? Self.temporaryHospitalId
+        var params: [String: Any] = [
+            "hospitalId": hid,
+            "packageId": pkgId,
+        ]
+        if let orderId, orderId > 0 {
+            params["orderId"] = String(orderId)
+        }
         let response: APIResponse<HospitalPackageDetailBO> = try await APIManager.shared.getAsync(
             path: "/v1/hospitalPackage/getHospitalPackageDetail",
-            parameters: [
-                "hospitalId": hid,
-                "packageId": pkgId,
-            ],
+            parameters: params,
             responseType: APIResponse<HospitalPackageDetailBO>.self
         )
         guard response.isSuccess else {

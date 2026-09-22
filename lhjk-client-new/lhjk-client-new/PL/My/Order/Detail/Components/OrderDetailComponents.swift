@@ -67,6 +67,69 @@ final class OrderDetailStatusView: UIView {
     }
 }
 
+// MARK: - 特色通知条（Figma 5943:3215 退款驳回/清算驳回通知条）
+
+final class OrderDetailNoticeBannerView: UIView {
+    private let noticeBgImageView = UIImageView()
+    private let noticeAlertIcon = UIImageView()
+    private let noticeLabel = UILabel()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    private func setupUI() {
+        backgroundColor = UIColor(hexString: "#F93838").withAlphaComponent(0.05)
+        layer.cornerRadius = 8
+        clipsToBounds = true
+
+        noticeBgImageView.image = UIImage(named: "order_notice_bg_single")
+        noticeBgImageView.contentMode = .scaleToFill
+        addSubview(noticeBgImageView)
+        noticeBgImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        noticeAlertIcon.image = UIImage(named: "order_notice_alert_icon")
+        noticeAlertIcon.contentMode = .scaleAspectFit
+        addSubview(noticeAlertIcon)
+        noticeAlertIcon.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(12)
+            make.centerY.equalToSuperview()
+            make.size.equalTo(14)
+        }
+
+        noticeLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        noticeLabel.textColor = UIColor(hexString: "#F93838")
+        noticeLabel.numberOfLines = 0
+        noticeLabel.lineBreakMode = .byWordWrapping
+        addSubview(noticeLabel)
+        noticeLabel.snp.makeConstraints { make in
+            make.leading.equalTo(noticeAlertIcon.snp.trailing).offset(6)
+            make.trailing.equalToSuperview().offset(-12)
+            make.top.equalToSuperview().offset(8)
+            make.bottom.equalToSuperview().offset(-8)
+        }
+
+        isHidden = true
+    }
+
+    func configure(text: String?) {
+        guard let notice = text?.trimmingCharacters(in: .whitespacesAndNewlines), !notice.isEmpty else {
+            isHidden = true
+            return
+        }
+        noticeLabel.text = notice
+        isHidden = false
+        if notice.count > 25 {
+            noticeBgImageView.image = UIImage(named: "order_notice_bg_double")
+        } else {
+            noticeBgImageView.image = UIImage(named: "order_notice_bg_single")
+        }
+    }
+}
+
 // MARK: - 状态提示条（已废弃，兼容保留）
 
 final class OrderDetailHintBar: UIView {
@@ -896,6 +959,7 @@ final class OrderDetailAfterSaleView: UIView {
     required init?(coder: NSCoder) { fatalError() }
 
     func configure(detail: AppOrderDetailBO) {
+        titleLabel.text = detail.afterSaleInfoCardTitle
         stack.arrangedSubviews.forEach {
             stack.removeArrangedSubview($0)
             $0.removeFromSuperview()
@@ -1028,9 +1092,8 @@ final class OrderDetailInfoView: UIView {
         if let createTime = detail.createTime?.nilIfEmpty {
             stack.addArrangedSubview(infoRow("下单时间", createTime))
         }
-        if let reject = detail.refuseReasons?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
-           !detail.isInAfterSaleFlow {
-            stack.addArrangedSubview(infoRow("拒绝退款原因", reject, multiline: true))
+        if let refundInfo = detail.resolvedRefundReasonInfo {
+            stack.addArrangedSubview(infoRow(refundInfo.title, refundInfo.content, multiline: true))
         }
         let remark = remarkOverride?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
             ?? detail.remarkText
@@ -1183,11 +1246,12 @@ final class OrderDetailActionBar: UIView {
 
         switch style {
         case .fixedBottom:
+            // 无操作时外层会把栏高收到 0。这三条用 999，避免和 height == 0 打架。
             stack.snp.makeConstraints { make in
-                make.top.equalToSuperview().offset(16)
+                make.top.equalToSuperview().offset(16).priority(999)
                 make.leading.trailing.equalToSuperview().inset(16)
-                make.bottom.equalTo(safeAreaLayoutGuide).offset(-10)
-                make.height.equalTo(40)
+                make.bottom.equalTo(safeAreaLayoutGuide).offset(-10).priority(999)
+                make.height.equalTo(40).priority(999)
             }
         case .scrollInline:
             stack.snp.makeConstraints { make in

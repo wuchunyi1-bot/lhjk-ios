@@ -375,6 +375,7 @@
 		A5D600993057D7F8009ED753 /* AppVersionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D600973057D7F8009ED753 /* AppVersionService.swift */; };
 		A5D6009B3057D846009ED753 /* AppVersionCheckCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D6009A3057D846009ED753 /* AppVersionCheckCoordinator.swift */; };
 		A5D6009D3057F9E8009ED753 /* AppUpdateDialogViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D6009C3057F9E8009ED753 /* AppUpdateDialogViewController.swift */; };
+		A5D8E1383062867A0037165F /* FDToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D8E1373062867A0037165F /* FDToast.swift */; };
 		A5E0891E3045511D00D610FF /* GroupMembersVO.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E0891D3045511D00D610FF /* GroupMembersVO.swift */; };
 		A5E08928304551E300D610FF /* GroupMembersViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E08924304551E300D610FF /* GroupMembersViewModel.swift */; };
 		A5E08929304551E300D610FF /* GroupMembersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E08926304551E300D610FF /* GroupMembersViewController.swift */; };
@@ -777,6 +778,7 @@
 		A5D600973057D7F8009ED753 /* AppVersionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersionService.swift; sourceTree = "<group>"; };
 		A5D6009A3057D846009ED753 /* AppVersionCheckCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppVersionCheckCoordinator.swift; path = Other/Common/AppVersionCheckCoordinator.swift; sourceTree = "<group>"; };
 		A5D6009C3057F9E8009ED753 /* AppUpdateDialogViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateDialogViewController.swift; sourceTree = "<group>"; };
+		A5D8E1373062867A0037165F /* FDToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FDToast.swift; sourceTree = "<group>"; };
 		A5E0891D3045511D00D610FF /* GroupMembersVO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GroupMembersVO.swift; path = DAL/IM/GroupMembersVO.swift; sourceTree = "<group>"; };
 		A5E08922304551E300D610FF /* GroupMemberCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupMemberCell.swift; sourceTree = "<group>"; };
 		A5E08924304551E300D610FF /* GroupMembersViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupMembersViewModel.swift; sourceTree = "<group>"; };
@@ -2072,6 +2074,7 @@
 		A5BD9DE330199326008C44FC /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A5D8E1373062867A0037165F /* FDToast.swift */,
 				A5D6009C3057F9E8009ED753 /* AppUpdateDialogViewController.swift */,
 				A5D6009430579FF1009ED753 /* FDEmptyStateView.swift */,
 				A5C13253303D750B0047F06D /* MainTabBarView.swift */,
@@ -2816,6 +2819,7 @@
 				A5A6F4B62FFF7A720065C921 /* HospitalPackageService.swift in Sources */,
 				A5ACE23A3000CC8A00056C52 /* ProfileFieldEditorSheet.swift in Sources */,
 				A5F6AF2630296D1A00D1BF74 /* SessionExpiryPresenter.swift in Sources */,
+				A5D8E1383062867A0037165F /* FDToast.swift in Sources */,
 				A5F6AF2730296D1A00D1BF74 /* SessionExpirySheet.swift in Sources */,
 				A5A6F4B72FFF7A720065C921 /* ServiceModels.swift in Sources */,
 				A5A6F4C62FFF7AA20065C921 /* AppContainer.swift in Sources */,

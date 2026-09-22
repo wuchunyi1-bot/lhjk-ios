@@ -1,7 +1,7 @@
 import Foundation
 
 // MARK: - 套餐详情 DTO
-// Path: GET /v1/hospitalPackage/getHospitalPackageDetail（Query: hospitalId、packageId）
+// Path: GET /v1/hospitalPackage/getHospitalPackageDetail（Query: hospitalId、packageId；续费可选 orderId）
 // Apifox 层级：App端/商城/商城套餐相关接口（与同组套餐列表接口一致；分享站无公开 md 时以本 path 为准）
 
 /// `GET /v1/hospitalPackage/getHospitalPackageDetail` → `data`
@@ -9,6 +9,42 @@ struct HospitalPackageDetailBO: Decodable {
     let packageInfo: MPackageVO?
     let packageHospitalDetailList: [PackageHospitalDetailListBO]?
     let bannerList: [String]?
+    /// 传入 `orderId` 时返回原订单已购商品 id；未传则为空
+    let commodityIdList: [String]
+
+    private enum CodingKeys: String, CodingKey {
+        case packageInfo, packageHospitalDetailList, bannerList, commodityIdList
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        packageInfo = try c.decodeIfPresent(MPackageVO.self, forKey: .packageInfo)
+        packageHospitalDetailList = try c.decodeIfPresent(
+            [PackageHospitalDetailListBO].self,
+            forKey: .packageHospitalDetailList
+        )
+        bannerList = try c.decodeIfPresent([String].self, forKey: .bannerList)
+        commodityIdList = Self.decodeIdList(c, key: .commodityIdList)
+    }
+
+    private static func decodeIdList<K: CodingKey>(
+        _ container: KeyedDecodingContainer<K>,
+        key: K
+    ) -> [String] {
+        if let values = try? container.decodeIfPresent([Int64].self, forKey: key) {
+            return values.map(String.init)
+        }
+        if let values = try? container.decodeIfPresent([Int].self, forKey: key) {
+            return values.map(String.init)
+        }
+        if let values = try? container.decodeIfPresent([String].self, forKey: key) {
+            return values.compactMap { value in
+                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                return trimmed.isEmpty ? nil : trimmed
+            }
+        }
+        return []
+    }
 }
 
 /// 套餐主信息 `MPackage`
@@ -189,7 +225,8 @@ enum HospitalPackageDetailMapper {
             carouselLabels: banners.labels,
             carouselImageURLs: banners.urls,
             tiers: [tier],
-            accentHex: "#FF7A50"
+            accentHex: "#FF7A50",
+            purchasedCommodityIds: bo.commodityIdList
         )
     }
 
@@ -267,15 +304,24 @@ enum HospitalPackageDetailMapper {
                 categoryId: row.bo.categoryId,
                 categoryName: row.bo.categoryName,
                 groupNumber: fallbackNumber,
-                defaultCheck: row.bo.defaultCheck
+                defaultCheck: row.bo.defaultCheck,
+                catalogPrice: row.bo.price,
+                reprice: row.bo.reprice
             )
         }
+
+        let pickKey = [
+            nonEmpty(parents.first?.id),
+            fallbackNumber.map { "n\($0)" },
+            "t\(checkType)"
+        ].compactMap { $0 }.joined(separator: ":")
 
         return ServicePackageComboGroup(
             name: title,
             selectMode: mode,
             emoji: mode == .required ? "🩺" : (mode == .radio ? "⌚" : "🌿"),
-            items: items
+            items: items,
+            pickKey: pickKey
         )
     }
 

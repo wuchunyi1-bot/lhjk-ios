@@ -63,6 +63,25 @@ enum OrderCancelFlow {
         )
     }
 
+    /// 套餐内容变化弹窗「取消订单」：不再二次确认，直接取消待支付订单
+    static func cancelPendingPaymentDirectly(
+        from presenter: UIViewController,
+        orderId: Int64,
+        hospitalId: String? = nil,
+        onSuccess: @escaping (Result) -> Void
+    ) {
+        guard orderId > 0 else {
+            showToast("订单信息缺失", on: presenter)
+            return
+        }
+        submitPendingPaymentCancel(
+            from: presenter,
+            orderId: orderId,
+            hospitalId: hospitalId,
+            onSuccess: onSuccess
+        )
+    }
+
     // MARK: - Private
 
     private static func start(
@@ -262,6 +281,7 @@ enum OrderCancelFlow {
     }
 
     private static func showToast(_ message: String, on presenter: UIViewController) {
-        presenter.showToastAlert(message, duration: 1.5)
+        _ = presenter
+        FDToast.show(message, duration: 1.5)
     }
 }

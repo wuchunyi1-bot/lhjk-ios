@@ -60,6 +60,8 @@ final class AppUpdateDialogViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .overFullScreen
         modalTransitionStyle = .crossDissolve
+        // 强制更新：禁止下滑/系统手势关掉弹窗
+        isModalInPresentation = info.isForce
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -271,18 +273,25 @@ final class AppUpdateDialogViewController: UIViewController {
     }
 
     @objc private func handleCloseTap() {
+        guard !info.isForce else { return }
         dismissWithAnimation { [weak self] in
             self?.onDismiss?()
         }
     }
 
     @objc private func handleLaterTap() {
+        guard !info.isForce else { return }
         dismissWithAnimation { [weak self] in
             self?.onDismiss?()
         }
     }
 
     @objc private func handleUpdateTap() {
+        if info.isForce {
+            // 强制更新未完成前不关窗；去商店回来弹窗仍在
+            onConfirmUpdate?()
+            return
+        }
         dismissWithAnimation { [weak self] in
             self?.onConfirmUpdate?()
         }

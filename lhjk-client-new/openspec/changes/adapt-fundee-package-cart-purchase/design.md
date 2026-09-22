@@ -21,7 +21,7 @@ tags: App端/商城/购物车管理
 | instruction / authCode / receiver / phone / address | string | 可选 |
 | orderChannel | int32 | 可选 |
 
-**PackageHospitalDetailBO**：id、sortId、packageId、hospitalId、packageDetailId、parentId、commodityId、billingType（1天/2月/3次/4件）、quantity、price、checkType（1单选/2强制/3可选）、defaultCheck、name、children、categoryId、categoryName 等。
+**PackageHospitalDetailBO**：id、sortId、packageId、hospitalId、packageDetailId、parentId、commodityId、billingType（1天/2月/3次/4件）、quantity、price、reprice（续费金额）、checkType（1单选/2强制/3可选）、defaultCheck、name、children、categoryId、categoryName 等。
 
 **Result**：`code` / `data`（object）/ `msg` / `success` / `failed`。
 

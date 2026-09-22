@@ -32,7 +32,8 @@
 - **WHEN** 组装已选明细
 - **THEN** 必选组（`checkType=2`）全部行；单选组（`checkType=1`）仅当前选中行；可选组（`checkType=3`）仅已勾选行
 - **AND** 含子项行（详情 `children` 展平后的行）；子项 `parentId` 为父明细 id
-- **AND** 每条至少携带服务端下发的明细 `id`，以及已知的 `name`、`quantity`、`price`、`billingType`、`checkType`、`defaultCheck`、`packageDetailId`、`commodityId`、`categoryId`、`categoryName`、`imageUrl`、`number` 等字段
+- **AND** 每条至少携带服务端下发的明细 `id`，以及已知的 `name`、`quantity`、`price`、`reprice`、`billingType`、`checkType`、`defaultCheck`、`packageDetailId`、`commodityId`、`categoryId`、`categoryName`、`imageUrl`、`number` 等字段
+- **AND** `price` 为详情原价；`reprice` 为详情续费金额（有值则传，无值不传）
 
 #### Scenario: 选中明细为空或非法
 

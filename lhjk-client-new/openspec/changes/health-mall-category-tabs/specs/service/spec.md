@@ -19,13 +19,15 @@
 - **THEN** 调用 `GET /v1/hospitalPackage/getEnabledRetailHospitalPackagePage`
 - **AND** `categoryServiceId` 传空字符串 `""`
 - **AND** 以 2 列 `UICollectionView` 展示套包卡片
+- **AND** 首屏 `pageNum=1`、`pageSize=10`；上拉距底部约 100pt 或即将露出末尾卡片时请求下一页
+- **AND** 加载中底部展示 Spinner；没有更多且已有商品时展示「没有更多数据了」
 
 #### Scenario: 分类商品列表
 
 - **WHEN** 用户点击某业务分类 Tab
 - **THEN** 调用同一零售分页接口
 - **AND** `categoryServiceId` 传该 Tab 的 `id`
-- **AND** 刷新双栏商品网格
+- **AND** 重置分页并从第一页刷新双栏商品网格
 
 #### Scenario: 商品卡片与跳转
 

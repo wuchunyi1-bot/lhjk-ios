@@ -20,8 +20,9 @@ funde-client 商城页结构：
 
 **商品请求**：
 
-- 「全部」：`categoryServiceId=""`，`pageNum=1`，`pageSize=50`
-- 指定分类：`categoryServiceId={Tab.id}`
+- 「全部」：`categoryServiceId=""`，`pageNum` 从 1 递增，`pageSize=10`
+- 指定分类：`categoryServiceId={Tab.id}`，分页参数相同
+- 切 Tab 重置为第一页；上拉加载更多直至 `currentPage >= totalPages` 或本页为空
 
 ## Decisions
 
@@ -38,7 +39,7 @@ struct MallCategoryTab: Equatable {
 
 ### 2. 切换 Tab 重新拉取
 
-与 funde mock「本地过滤」不同，iOS 每次切换 Tab 调用零售分页接口（首版不分页，单页 `pageSize=50`）。
+与 funde mock「本地过滤」不同，iOS 每次切换 Tab 重新请求零售分页接口（从第一页开始）。
 
 ### 3. UI 组件
 
@@ -48,5 +49,4 @@ struct MallCategoryTab: Equatable {
 
 ## Non-Goals
 
-- 商城内无限滚动（后续可复用 Hub `loadMore`）
 - 商品搜索、排序

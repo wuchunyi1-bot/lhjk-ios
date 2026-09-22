@@ -65,8 +65,13 @@
 #### Scenario: 明细续费价
 
 - **WHEN** 拉取 `getHospitalPackageDetail` 且为续费态
-- **THEN** `packageHospitalDetailList` 各行展示与合计使用 `reprice`（续费金额）
+- **THEN** Query 传 `orderId`（原订单 id）
+- **AND** `packageHospitalDetailList` 各行展示与合计使用 `reprice`（续费金额）
 - **AND** `reprice` 缺失时回退 `price`
+- **AND** 套餐分组构造与默勾选逻辑保持原样
+- **AND** 在原有勾选之上叠加响应 `commodityIdList`（匹配 `commodityId`，否则匹配明细 `id`）；用户仍可改选
+- **WHEN** 非续费进入套餐详情
+- **THEN** **不得**传 `orderId`
 
 ---
 
@@ -80,6 +85,7 @@
 - **THEN** `flag = 1`
 - **AND** Body 传 `parentId` = 路由带入的 `orderId`
 - **AND** 其余字段对齐 `SaveShoppingCartVO`（必填 `hospitalId`、`packageId`）
+- **AND** `packageHospitalDetailList` 各行传详情原价 `price` 与续费金额 `reprice`
 - **AND** 成功后进入 `/orders/confirm`，params 含返回的 `orderId`
 
 #### Scenario: 续费态不加购

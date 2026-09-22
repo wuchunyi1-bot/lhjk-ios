@@ -72,7 +72,7 @@ final class ServiceBannerCarouselCell: UITableViewCell {
                     imageSize: nil,
                     fallbackRatio: Self.fallbackRatio
                 )
-            ).constraint
+            ).priority(999).constraint
         }
         pageControl.snp.makeConstraints {
             $0.centerX.equalTo(collectionView)
@@ -83,6 +83,11 @@ final class ServiceBannerCarouselCell: UITableViewCell {
             pageControl.allowsContinuousInteraction = false
         }
         pageControl.transform = CGAffineTransform(scaleX: 0.75, y: 0.75)
+        lastAppliedHeight = BannerImageAspectLayout.height(
+            width: initialWidth,
+            imageSize: nil,
+            fallbackRatio: Self.fallbackRatio
+        )
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -107,6 +112,23 @@ final class ServiceBannerCarouselCell: UITableViewCell {
                 layout.invalidateLayout()
             }
         }
+    }
+
+    override func systemLayoutSizeFitting(
+        _ targetSize: CGSize,
+        withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority,
+        verticalFittingPriority: UILayoutPriority
+    ) -> CGSize {
+        let width = targetSize.width > 0 ? targetSize.width : UIScreen.main.bounds.width
+        let bannerWidth = max(0, width - Self.horizontalInset * 2)
+        let height = lastAppliedHeight > 0
+            ? lastAppliedHeight
+            : BannerImageAspectLayout.height(
+                width: bannerWidth,
+                imageSize: resolvedImageSize,
+                fallbackRatio: Self.fallbackRatio
+            )
+        return CGSize(width: width, height: height)
     }
 
     func configure(_ banners: [ServiceHubBanner]) {

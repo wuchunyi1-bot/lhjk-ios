@@ -225,7 +225,8 @@ final class OrderConfirmAddressView: UIView {
 
         addressLabel.font = .fdFont(ofSize: 16, weight: .regular)
         addressLabel.textColor = OrderConfirmFigma.subtitle
-        addressLabel.numberOfLines = 0
+        addressLabel.numberOfLines = 2
+        addressLabel.lineBreakMode = .byTruncatingTail
         addSubview(addressLabel)
         addressLabel.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(68)
@@ -738,6 +739,7 @@ final class OrderConfirmOptionsCardView: UIView {
             arrow: benefitArrow,
             action: #selector(handleBenefit)
         )
+        benefitValueLabel.textColor = UIColor(hexString: "#F93838")
 
         divider1.backgroundColor = UIColor(hexString: "#F0F0F0")
         divider2.backgroundColor = UIColor(hexString: "#F0F0F0")
@@ -829,7 +831,7 @@ final class OrderConfirmOptionsCardView: UIView {
         couponBadge.snp.makeConstraints { $0.size.equalTo(14) }
 
         couponValueLabel.font = .fdFont(ofSize: 14, weight: .regular)
-        couponValueLabel.textColor = UIColor(hexString: "#717885")
+        couponValueLabel.textColor = UIColor(hexString: "#F93838")
         couponValueLabel.textAlignment = .right
         couponValueLabel.lineBreakMode = .byTruncatingTail
 
@@ -868,22 +870,13 @@ final class OrderConfirmOptionsCardView: UIView {
 
     func configureCoupon(text: String, isPlaceholder: Bool, hasAvailable: Bool) {
         couponValueLabel.text = text
-        if hasAvailable || !isPlaceholder {
-            couponValueLabel.textColor = UIColor(hexString: "#F93838")
-            couponBadge.isHidden = false
-        } else {
-            couponValueLabel.textColor = UIColor(hexString: "#717885")
-            couponBadge.isHidden = true
-        }
+        couponValueLabel.textColor = UIColor(hexString: "#F93838")
+        couponBadge.isHidden = isPlaceholder && !hasAvailable
     }
 
-    func configureBenefit(text: String, isPlaceholder: Bool, hasDiscount: Bool) {
+    func configureBenefit(text: String) {
         benefitValueLabel.text = text
-        if hasDiscount {
-            benefitValueLabel.textColor = UIColor(hexString: "#F93838")
-        } else {
-            benefitValueLabel.textColor = UIColor(hexString: "#717885")
-        }
+        benefitValueLabel.textColor = UIColor(hexString: "#F93838")
     }
 
     @objc private func handleRemark() { onTapRemark?() }
@@ -1264,5 +1257,123 @@ enum OrderConfirmMoney {
             ]
         ))
         return result
+    }
+}
+
+// MARK: - 套餐内容变化弹窗（对齐小程序 wx.showModal：深色遮罩 + 白卡片）
+
+/// `getOrderSettlement` `M0104`：全屏半透明黑遮罩，避免系统 Alert 浅色蒙层把空表单透出来
+final class PackageContentChangedAlertController: UIViewController {
+
+    var onCancelOrder: (() -> Void)?
+    var onSelectPackage: (() -> Void)?
+
+    private let message: String
+    private let dimView = UIView()
+    private let cardView = UIView()
+    private let titleLabel = UILabel()
+    private let messageLabel = UILabel()
+    private let cancelButton = UIButton(type: .custom)
+    private let selectButton = UIButton(type: .custom)
+
+    init(message: String) {
+        self.message = message
+        super.init(nibName: nil, bundle: nil)
+        modalPresentationStyle = .overFullScreen
+        modalTransitionStyle = .crossDissolve
+        isModalInPresentation = true
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        buildUI()
+    }
+
+    private func buildUI() {
+        view.backgroundColor = .clear
+
+        dimView.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        dimView.isUserInteractionEnabled = true
+        view.addSubview(dimView)
+        dimView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        cardView.backgroundColor = .white
+        cardView.layer.cornerRadius = 12
+        cardView.clipsToBounds = true
+        view.addSubview(cardView)
+        cardView.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.width.equalTo(311)
+        }
+
+        titleLabel.text = "提示"
+        titleLabel.font = .fdFont(ofSize: 17, weight: .medium)
+        titleLabel.textColor = OrderConfirmFigma.title
+        titleLabel.textAlignment = .center
+        cardView.addSubview(titleLabel)
+        titleLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(32)
+            $0.leading.trailing.equalToSuperview().inset(24)
+        }
+
+        messageLabel.text = message
+        messageLabel.font = .fdFont(ofSize: 15, weight: .regular)
+        messageLabel.textColor = OrderConfirmFigma.subtitle
+        messageLabel.textAlignment = .center
+        messageLabel.numberOfLines = 0
+        cardView.addSubview(messageLabel)
+        messageLabel.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(12)
+            $0.leading.trailing.equalToSuperview().inset(24)
+        }
+
+        let hLine = UIView()
+        hLine.backgroundColor = UIColor(hexString: "#E8E8E8")
+        cardView.addSubview(hLine)
+        hLine.snp.makeConstraints {
+            $0.top.equalTo(messageLabel.snp.bottom).offset(24)
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(1 / UIScreen.main.scale)
+        }
+
+        let vLine = UIView()
+        vLine.backgroundColor = UIColor(hexString: "#E8E8E8")
+
+        cancelButton.setTitle("取消订单", for: .normal)
+        cancelButton.setTitleColor(OrderConfirmFigma.title, for: .normal)
+        cancelButton.titleLabel?.font = .fdFont(ofSize: 17, weight: .regular)
+        cancelButton.addTarget(self, action: #selector(tapCancelOrder), for: .touchUpInside)
+
+        selectButton.setTitle("选择套餐", for: .normal)
+        selectButton.setTitleColor(.fdPrimary, for: .normal)
+        selectButton.titleLabel?.font = .fdFont(ofSize: 17, weight: .medium)
+        selectButton.addTarget(self, action: #selector(tapSelectPackage), for: .touchUpInside)
+
+        let buttonStack = UIStackView(arrangedSubviews: [cancelButton, vLine, selectButton])
+        buttonStack.axis = .horizontal
+        buttonStack.alignment = .fill
+        cardView.addSubview(buttonStack)
+        buttonStack.snp.makeConstraints {
+            $0.top.equalTo(hLine.snp.bottom)
+            $0.leading.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(56)
+        }
+        cancelButton.snp.makeConstraints { $0.width.equalTo(selectButton) }
+        vLine.snp.makeConstraints { $0.width.equalTo(1 / UIScreen.main.scale) }
+    }
+
+    @objc private func tapCancelOrder() {
+        cancelButton.isEnabled = false
+        selectButton.isEnabled = false
+        onCancelOrder?()
+    }
+
+    @objc private func tapSelectPackage() {
+        cancelButton.isEnabled = false
+        selectButton.isEnabled = false
+        let action = onSelectPackage
+        dismiss(animated: true) { action?() }
     }
 }

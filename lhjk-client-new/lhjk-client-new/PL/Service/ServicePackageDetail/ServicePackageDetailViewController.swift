@@ -399,40 +399,78 @@ final class ServicePackageDetailViewController: BaseViewController {
         for group in tier.groups {
             switch group.selectMode {
             case .radio:
-                radios[group.name] = group.firstParentIndex
+                radios[group.pickKey] = group.firstParentIndex
             case .checkbox:
                 let picked = group.items.enumerated().compactMap { idx, item -> Int? in
                     guard !item.isChild else { return nil }
                     return (item.defaultCheck == 1 || item.defaultSelected) ? idx : nil
                 }
-                checks[group.name] = Set(picked)
+                checks[group.pickKey] = Set(picked)
             case .required:
                 break
             }
         }
+        applyPurchasedCommodityPicks(in: tier, radios: &radios, checks: &checks)
         radioPicks = radios
         checkPicks = checks
+    }
+
+    /// 续费：在原有默认勾选之上叠加原订单已购商品，用户仍可改选
+    private func applyPurchasedCommodityPicks(
+        in tier: ServicePackageTier,
+        radios: inout [String: Int],
+        checks: inout [String: Set<Int>]
+    ) {
+        let ids = Set((package?.purchasedCommodityIds ?? []).filter { !$0.isEmpty })
+        guard !ids.isEmpty else { return }
+
+        for group in tier.groups {
+            let purchasedParents = group.items.enumerated().compactMap { idx, item -> Int? in
+                guard !item.isChild, itemMatchesPurchased(item, ids: ids) else { return nil }
+                return idx
+            }
+            guard !purchasedParents.isEmpty else { continue }
+            switch group.selectMode {
+            case .radio:
+                radios[group.pickKey] = purchasedParents[0]
+            case .checkbox:
+                var set = checks[group.pickKey] ?? []
+                purchasedParents.forEach { set.insert($0) }
+                checks[group.pickKey] = set
+            case .required:
+                break
+            }
+        }
+    }
+
+    private func itemMatchesPurchased(_ item: ServicePackageComboItem, ids: Set<String>) -> Bool {
+        if let commodityId = item.commodityId?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !commodityId.isEmpty,
+           ids.contains(commodityId) {
+            return true
+        }
+        return ids.contains(item.detailId)
     }
 
     private func makeComboGroupView(_ group: ServicePackageComboGroup) -> PackageComboGroupView {
         let view = PackageComboGroupView()
         view.configure(
             group: group,
-            radioPick: radioPicks[group.name],
-            checkPicks: checkPicks[group.name] ?? []
+            radioPick: radioPicks[group.pickKey],
+            checkPicks: checkPicks[group.pickKey] ?? []
         )
         view.onRadioSelect = { [weak self] index in
             guard let self else { return }
             guard group.items.indices.contains(index), !group.items[index].isChild else { return }
-            self.radioPicks[group.name] = index
+            self.radioPicks[group.pickKey] = index
             self.refreshPayable()
         }
         view.onCheckToggle = { [weak self] index in
             guard let self else { return }
             guard group.items.indices.contains(index), !group.items[index].isChild else { return }
-            var set = self.checkPicks[group.name] ?? []
+            var set = self.checkPicks[group.pickKey] ?? []
             if set.contains(index) { set.remove(index) } else { set.insert(index) }
-            self.checkPicks[group.name] = set
+            self.checkPicks[group.pickKey] = set
             self.refreshPayable()
         }
         return view
@@ -454,10 +492,10 @@ final class ServicePackageDetailViewController: BaseViewController {
         case .required:
             return Array(group.items.indices)
         case .radio:
-            let parent = radioPicks[group.name] ?? group.firstParentIndex
+            let parent = radioPicks[group.pickKey] ?? group.firstParentIndex
             return group.subtreeIndices(forParentAt: parent)
         case .checkbox:
-            let picked = checkPicks[group.name] ?? []
+            let picked = checkPicks[group.pickKey] ?? []
             return picked
                 .filter { group.items.indices.contains($0) && !group.items[$0].isChild }
                 .sorted()

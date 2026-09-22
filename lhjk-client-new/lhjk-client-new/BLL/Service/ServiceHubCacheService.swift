@@ -75,19 +75,15 @@ actor ServiceHubCacheService {
     }
 
     func cachedRetailPreview() -> [HealthPackageItem]? {
-        retailPreviewPackages
+        guard let packages = retailPreviewPackages else { return nil }
+        return Array(packages.prefix(6))
     }
 
-    /// `loadMore` 成功后同步会话缓存，避免 Tab 切回或 `/mall` 只读到首屏
-    func updateRetailPreview(packages: [HealthPackageItem], totalPages: Int) {
-        retailPreviewPackages = packages
-        retailTotalPages = max(1, totalPages)
-    }
-
-    /// Hub 富德优选预览（前 10 条零售套包）
-    func ensureRetailPreview(hospitalId: String?, pageSize: Int = 10) async -> (packages: [HealthPackageItem], totalPages: Int) {
+    /// Hub 富德优选预览（最多 6 条零售套包）
+    func ensureRetailPreview(hospitalId: String?, pageSize: Int = 6) async -> (packages: [HealthPackageItem], totalPages: Int) {
         if let retailPreviewPackages, !retailPreviewPackages.isEmpty {
-            return (retailPreviewPackages, retailTotalPages)
+            let capped = Array(retailPreviewPackages.prefix(pageSize))
+            return (capped, retailTotalPages)
         }
         if let retailTask {
             return await retailTask.value
@@ -115,11 +111,13 @@ actor ServiceHubCacheService {
         retailTask = nil
 
         guard gen == generation else {
-            return (packages: retailPreviewPackages ?? result.packages, totalPages: retailTotalPages)
+            let packages = retailPreviewPackages ?? result.packages
+            return (packages: Array(packages.prefix(pageSize)), totalPages: retailTotalPages)
         }
-        retailPreviewPackages = result.packages
+        let capped = Array(result.packages.prefix(pageSize))
+        retailPreviewPackages = capped
         retailTotalPages = result.totalPages
-        return result
+        return (packages: capped, totalPages: result.totalPages)
     }
 
     // MARK: - Preload / Ensure

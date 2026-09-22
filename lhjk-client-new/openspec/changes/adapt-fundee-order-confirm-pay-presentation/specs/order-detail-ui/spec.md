@@ -19,7 +19,7 @@
 - 右侧主文案 20pt semibold，棕色渐变 `#A15313 → #522B0F`
 - 卡片内不展示副文案
 
-插画映射：待支付 `pending_pay`、待发货 `pending_ship`、待收货 `pending_receive`、使用中 `in_use`、已逾期/已取消 `overdue`、退款/售后/审核中 `refund`、已完成 `completed`。
+插画映射：待支付 `pending_pay`、待发货 `pending_ship`、待收货 `pending_receive`、使用中 `in_use`、已逾期/已取消 `overdue`、退款/售后 `refund`、退款审核中 `checking`、已完成 `completed`。
 
 ### Requirement: 套餐内容与费用明细样式
 
@@ -67,4 +67,4 @@
 - 填充主按钮：去支付 / 确认收货 / 结算订单 / 去退货 / 确认发货（`fdPrimary` 底、白字）
 - 描边次按钮：取消订单 / 退款/售后 / 续费订单（0.5pt `fdPrimary` 描边）
 - 已完成且无售后入口时不展示底栏
-- 按钮显隐仍按 `OrderListCardAction.actions(for:)`（套餐类型与退款历史），不以稿面是否画了按钮覆盖业务规则
+- 按钮显隐：「退款/售后」只认 `canApplyAfterSale`；其余仍按 `OrderListCardAction.actions(for:)`，不以稿面是否画了按钮覆盖业务规则

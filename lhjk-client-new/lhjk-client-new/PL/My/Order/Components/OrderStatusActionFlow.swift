@@ -303,6 +303,7 @@ enum OrderStatusActionFlow {
     }
 
     private static func showToast(_ message: String, on presenter: UIViewController) {
-        presenter.showToastAlert(message, duration: 1.5)
+        _ = presenter
+        FDToast.show(message, duration: 1.5)
     }
 }

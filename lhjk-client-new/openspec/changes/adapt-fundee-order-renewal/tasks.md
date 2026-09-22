@@ -7,6 +7,7 @@
 
 - [x] 2.1 路由与 VC/VM 传 `renewalParentOrderId`
 - [x] 2.2 Mapper 续费价、`parentId` 提交、底栏文案
+- [x] 2.3 续费拉详情传 `orderId`；`commodityIdList` 预选已购商品；非续费不传
 
 ## 3. 订单入口
 

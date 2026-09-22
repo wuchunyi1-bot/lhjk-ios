@@ -237,7 +237,7 @@ final class OrderReturnGoodsSheet: UIViewController {
 
     private func copyPhoneAndToast(_ phone: String) {
         UIPasteboard.general.string = phone
-        showToastAlert("客服电话已复制：\(phone)", duration: 1.5)
+        FDToast.show("客服电话已复制：\(phone)", duration: 1.5)
     }
 }
 
