@@ -23,19 +23,27 @@
 
 ### Requirement: 确认订单履约方式与地址卡
 
-确认订单 SHALL 将机构自提作为始终可用的履约方式；`supportsExpress == true` 时同时展示「机构自提」与「快递配送」，`supportsExpress == false` 时默认使用机构自提且**不展示「收货方式」选择卡**。
+确认订单与待支付页（`entry=order_pay`）SHALL 用 `GET /v1/order/getOrderSettlement` 的 `equipmentFlag` 决定是否展示履约区。`equipmentFlag == false`（套餐不含设备类或零售类实物）时，**不展示**「收货方式」「自提地址」「快递收货地址」。`equipmentFlag == true` 或字段缺省时，机构自提始终可用；`supportsExpress == true` 时同时展示「机构自提」与「快递配送」，`supportsExpress == false` 时默认使用机构自提且**不展示「收货方式」选择卡**。
 
-#### Scenario: 机构自提 + 快递配送
+#### Scenario: 不含实物
 
-- **WHEN** 结算支持快递配送
+- **WHEN** `getOrderSettlement.data.equipmentFlag == false`
+- **THEN** 确认订单页与待支付页都不展示「收货方式」
+- **AND** 不展示「自提地址」和快递收货地址
+- **AND** 费用明细运费按 0 展示
+- **AND** 不请求机构详情，也不为补默认地址调用 `updateOrderDelivery`
+
+#### Scenario: 含实物且支持快递
+
+- **WHEN** `equipmentFlag != false` 且结算支持快递配送
 - **THEN** 展示 343pt 宽、129pt 高的「收货方式」卡，卡内边距 16pt，标题 16pt Medium `#1F2942`
 - **AND** 两个选项均为 149×58pt、圆角 12pt、间距 13pt，底色 `#FDF6F3`
 - **AND** 当前选项使用 1pt `#FF7A50` 描边与 Figma 选中角标；图标圆底为 `#FF9D45`，文案 14pt Medium
 - **AND** 选中机构自提时展示 343×158pt「自提地址」卡；选中快递时展示快递收货地址卡
 
-#### Scenario: 仅机构自提
+#### Scenario: 含实物且仅机构自提
 
-- **WHEN** 结算不支持快递配送
+- **WHEN** `equipmentFlag != false` 且结算不支持快递配送
 - **THEN** 不展示「收货方式」卡
 - **AND** 直接展示机构自提地址卡，不因为隐藏快递选项产生空白或半宽布局
 

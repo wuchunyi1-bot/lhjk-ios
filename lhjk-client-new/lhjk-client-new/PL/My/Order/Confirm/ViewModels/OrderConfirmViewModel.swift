@@ -57,6 +57,8 @@ final class OrderConfirmViewModel: ObservableObject {
     @Published var remark = ""
     @Published private(set) var deliveryAddress: MAddress?
     @Published private(set) var supportsExpress = false
+    /// `equipmentFlag == false` 时为 false，确认订单与待支付都不展示收货方式 / 自提地址 / 快递地址
+    @Published private(set) var containsPhysicalGoods = true
     @Published private(set) var supportsWechat = true
     @Published private(set) var supportsAlipay = true
     @Published private(set) var settlementExpressFee: Double = 0
@@ -136,15 +138,15 @@ final class OrderConfirmViewModel: ObservableObject {
 
     var selectedPaymentMethodLabel: String { payMethod.title }
 
-    /// 机构自提始终可用；仅机构自提时不展示「收货方式」选择卡。
-    var showsFulfillment: Bool { supportsExpress }
+    /// 含实物且支持快递时才展示「收货方式」；仅自提时不展示选择卡。
+    var showsFulfillment: Bool { containsPhysicalGoods && supportsExpress }
 
     var needsExpressAddress: Bool {
-        fulfillment == .express
+        containsPhysicalGoods && fulfillment == .express
     }
 
     var needsPickupInfo: Bool {
-        fulfillment == .selfPickup
+        containsPhysicalGoods && fulfillment == .selfPickup
     }
 
     var selectedAddress: MAddress? { deliveryAddress }
@@ -162,7 +164,7 @@ final class OrderConfirmViewModel: ObservableObject {
     var packageAmount: Double { settlementPackageAmount }
 
     var shippingFee: Double {
-        fulfillment == .express ? settlementExpressFee : 0
+        containsPhysicalGoods && fulfillment == .express ? settlementExpressFee : 0
     }
 
     var couponDiscount: Double { settlementCouponDiscount }
@@ -187,9 +189,9 @@ final class OrderConfirmViewModel: ObservableObject {
         return max(0, settlementPayable - benefitDiscount)
     }
 
-    /// 订单/结算已记录的优惠券抵扣。列表接口只补充「有 N 张可用」，不覆盖这里。
+    /// 最新一次 `getOrderSettlement` 的优惠券抵扣。进页 `getAppOrderDetail` 不参与，避免刷新后旧金额盖住 0。
     private var orderCouponDiscount: Double {
-        max(settlementCouponDiscount, max(0, orderDetail?.couponAmount ?? 0))
+        max(0, settlementCouponDiscount)
     }
 
     /// 订单已绑定或已抵扣优惠券（根级 `couponTakeId`、内嵌 `couponTakeList`、抵扣金额）。
@@ -200,9 +202,9 @@ final class OrderConfirmViewModel: ObservableObject {
         return !takes.isEmpty
     }
 
-    /// 订单/结算已记录的权益卡抵扣。
+    /// 最新一次 `getOrderSettlement` 的权益卡抵扣。进页 `getAppOrderDetail` 不参与，避免刷新后旧金额盖住 0。
     private var orderBenefitDiscountAmount: Double {
-        max(settlementBenefitDiscount, max(0, orderDetail?.benefitsAmount ?? 0))
+        max(0, settlementBenefitDiscount)
     }
 
     private var orderHasUsedBenefit: Bool {
@@ -275,6 +277,7 @@ final class OrderConfirmViewModel: ObservableObject {
     }
 
     func selectFulfillment(_ method: OrderFulfillmentMethod) {
+        guard containsPhysicalGoods else { return }
         if method == .express, !supportsExpress { return }
         guard method != fulfillment else { return }
         guard !isSwitchingFulfillment else { return }
@@ -291,7 +294,7 @@ final class OrderConfirmViewModel: ObservableObject {
     }
 
     func updateRemark(_ text: String) {
-        let trimmed = String(text.prefix(300))
+        let trimmed = String(text.prefix(200))
         let previous = remark
         remark = trimmed
         Task { [weak self] in
@@ -577,13 +580,14 @@ final class OrderConfirmViewModel: ObservableObject {
                 applySettlement(settlement)
                 isLoading = false
             }
-            async let hospitalLoad: Void = loadHospitalDetail(
-                hospitalId: settlement.resolvedHospitalId ?? institutionStore.selectedHospitalId
-            )
             async let defaultAddressFill: DefaultAddressFillOutcome = fillDefaultExpressAddressIfNeeded()
             _ = try? await fetchBenefitOptions()
             _ = try? await fetchCouponOptions()
-            await hospitalLoad
+            if settlement.containsPhysicalGoods {
+                await loadHospitalDetail(
+                    hospitalId: settlement.resolvedHospitalId ?? institutionStore.selectedHospitalId
+                )
+            }
             _ = await defaultAddressFill
         } catch {
             await MainActor.run {
@@ -718,6 +722,7 @@ final class OrderConfirmViewModel: ObservableObject {
             serialNumber: serialNumber
         )
         supportsExpress = settlement.supportsExpress
+        containsPhysicalGoods = settlement.containsPhysicalGoods
         settlementExpressFee = settlement.expressAmountYuan
         settlementPackageAmount = settlement.packageAmountYuan
         settlementPayable = settlement.payableAmountYuan
@@ -935,7 +940,7 @@ final class OrderConfirmViewModel: ObservableObject {
             hospitalAddress: nil,
             categoryServiceId: settlement.categoryServiceId,
             contractedFulfillmentMethod: nil,
-            hasPhysicalGoods: settlement.supportsExpress,
+            hasPhysicalGoods: settlement.containsPhysicalGoods,
             orderId: String(orderId),
             serialNumber: serialNumber,
             updatedAt: Date().timeIntervalSince1970

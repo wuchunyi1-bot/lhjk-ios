@@ -61,6 +61,8 @@ struct AppOrderDetailBO: Decodable {
     let settlementVersion: Int?
     /// 订单应付（套包+运费-券-权益）
     let settlementAmount: Double?
+    /// 是否包含设备类或零售类实物。`false` 时详情不展示自提/收货履约信息
+    let equipmentFlag: Bool?
 
     /// 退款原因展示类型：0-不显示，1-显示退款申请原因，2-显示退款拒绝原因；其他订单状态返回0
     let refundReasonType: Int?
@@ -76,7 +78,7 @@ struct AppOrderDetailBO: Decodable {
         case packageId, hospitalId, categoryServiceId, renewed
         case canReturnGoods, canApplyAfterSale
         case amountVersion, expectedPayableAmount, settlementVersion, settlementAmount
-        case refundReasonType
+        case refundReasonType, equipmentFlag
     }
 
     init(from decoder: Decoder) throws {
@@ -128,7 +130,11 @@ struct AppOrderDetailBO: Decodable {
         settlementVersion = Self.decodeFlexibleInt(c, key: .settlementVersion)
         settlementAmount = Self.decodeFlexibleDouble(c, key: .settlementAmount)
         refundReasonType = Self.decodeFlexibleInt(c, key: .refundReasonType)
+        equipmentFlag = Self.decodeFlexibleBool(c, key: .equipmentFlag)
     }
+
+    /// 套餐含设备类或零售类实物。字段缺省时按含实物处理。
+    var containsPhysicalGoods: Bool { equipmentFlag != false }
 
     var resolvedPackageId: String? {
         guard let raw = packageId?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
@@ -271,20 +277,20 @@ struct AppOrderDetailBO: Decodable {
     // MARK: - 详情区块可见性（对齐 funde PaidOrderDetailView）
 
     var showsDeliveryAddressCard: Bool {
-        guard isExpressDelivery else { return false }
+        guard containsPhysicalGoods, isExpressDelivery else { return false }
         return hasNonEmpty(receiver) || hasNonEmpty(phone) || hasNonEmpty(address)
     }
 
     var showsInstitutionCard: Bool {
-        !isExpressDelivery
+        containsPhysicalGoods && !isExpressDelivery
     }
 
     var showsExpressLogisticsCard: Bool {
-        isExpressDelivery
+        containsPhysicalGoods && isExpressDelivery
     }
 
     var showsPickupLogisticsCard: Bool {
-        !isExpressDelivery
+        containsPhysicalGoods && !isExpressDelivery
     }
 
     var institutionCardTitle: String {
@@ -464,10 +470,12 @@ struct OrderDetailPackageLineBO: Decodable {
     let shipmentStatus: Int?
     /// 预计发货/备货时间
     let presetDeliveryTime: String?
+    /// 租售标识：1 租 / 2 售（仅出租展示标记）
+    let saleFlag: Int?
 
     private enum CodingKeys: String, CodingKey {
         case packageName, commodityName, quantity, billingType, price
-        case shipmentStatus, presetDeliveryTime
+        case shipmentStatus, presetDeliveryTime, saleFlag
     }
 
     init(from decoder: Decoder) throws {
@@ -479,7 +487,11 @@ struct OrderDetailPackageLineBO: Decodable {
         price = Self.decodeFlexibleDouble(c, key: .price)
         shipmentStatus = Self.decodeFlexibleInt(c, key: .shipmentStatus)
         presetDeliveryTime = try c.decodeIfPresent(String.self, forKey: .presetDeliveryTime)
+        saleFlag = Self.decodeFlexibleInt(c, key: .saleFlag)
     }
+
+    /// `saleFlag == 1` 出租；出售及其它值不展示标记
+    var showsRentBadge: Bool { PackageSaleFlag.showsRentBadge(saleFlag) }
 
     var displayName: String {
         let commodity = commodityName?.nilIfEmpty

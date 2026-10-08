@@ -197,11 +197,11 @@
 
 ### Requirement: 履约与地址
 
-#### Scenario: 纯服务（废止隐藏收货方式）
+#### Scenario: 不含设备或零售实物
 
-- **WHEN** 用户进入确认订单页
-- **THEN** **仍须展示**收货方式（默认自提）
-- **AND** 是否可选快递仅由 `orderExpress` 决定
+- **WHEN** `getOrderSettlement.data.equipmentFlag == false`
+- **THEN** 确认订单页与待支付页**不展示**收货方式、自提地址、快递收货地址
+- **AND** 是否可选快递仅在 `equipmentFlag != false` 时由 `orderExpress` 决定
 
 ### Requirement: 订单草稿（降级）
 

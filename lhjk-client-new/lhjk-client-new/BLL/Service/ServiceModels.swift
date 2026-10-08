@@ -165,10 +165,24 @@ struct ServicePackageComboItem: Equatable {
         unit.isEmpty ? qty : "\(qty)\(unit)"
     }
 
+    /// `saleFlag == 1` 出租；出售及其它值不展示标记
+    var showsRentBadge: Bool { PackageSaleFlag.showsRentBadge(saleFlag) }
+
     var priceLabel: String {
         ServicePackageMoney.yen(priceValue)
     }
 }
+/// 商品租售标识。Apifox：`saleFlag` 1 租 / 2 售
+enum PackageSaleFlag {
+    static let rent = 1
+    /// imageset 目录名含空格，与 `订单详情/package_detail_ rent` 一致
+    static let rentBadgeAssetName = "package_detail_ rent"
+
+    static func showsRentBadge(_ saleFlag: Int?) -> Bool {
+        saleFlag == rent
+    }
+}
+
 /// 组合分组选择模式
 enum ServicePackageSelectMode: String {
     case required = "强制"

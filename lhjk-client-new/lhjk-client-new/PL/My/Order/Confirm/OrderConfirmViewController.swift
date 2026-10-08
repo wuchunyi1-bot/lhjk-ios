@@ -85,6 +85,9 @@ final class OrderConfirmViewController: BaseViewController {
         infoView.onOrderNumberCopied = { [weak self] in
             self?.showToast("订单号已复制")
         }
+        infoView.onRemarkTapped = { [weak self] text in
+            self?.present(OrderRemarkDetailSheet(text: text), animated: true)
+        }
 
         var sections: [UIView] = []
         if showsOrderListPayPresentation {

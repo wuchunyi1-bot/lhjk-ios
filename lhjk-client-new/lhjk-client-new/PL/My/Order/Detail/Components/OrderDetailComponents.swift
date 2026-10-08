@@ -798,6 +798,22 @@ final class OrderDetailPackageView: UIView {
         name.textColor = OrderDetailFigma.title
         name.text = line.displayName
         name.lineBreakMode = .byTruncatingTail
+        name.setContentHuggingPriority(.required, for: .horizontal)
+        name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        let rentBadge = UIImageView(image: UIImage(named: PackageSaleFlag.rentBadgeAssetName))
+        rentBadge.contentMode = .scaleAspectFit
+        rentBadge.isHidden = !line.showsRentBadge
+        rentBadge.setContentHuggingPriority(.required, for: .horizontal)
+        rentBadge.setContentCompressionResistancePriority(.required, for: .horizontal)
+        rentBadge.snp.makeConstraints { $0.size.equalTo(CGSize(width: 40, height: 16)) }
+
+        let nameSpacer = UIView()
+        nameSpacer.setContentHuggingPriority(.fittingSizeLevel, for: .horizontal)
+        let nameRow = UIStackView(arrangedSubviews: [name, rentBadge, nameSpacer])
+        nameRow.axis = .horizontal
+        nameRow.alignment = .center
+        nameRow.spacing = 4
 
         let meta = UILabel()
         meta.font = .fdFont(ofSize: 14, weight: .regular)
@@ -813,7 +829,7 @@ final class OrderDetailPackageView: UIView {
         price.textAlignment = .right
         price.setContentHuggingPriority(.required, for: .horizontal)
 
-        let row = UIStackView(arrangedSubviews: [name, meta, price])
+        let row = UIStackView(arrangedSubviews: [nameRow, meta, price])
         row.axis = .horizontal
         row.spacing = 8
         row.alignment = .center
@@ -1021,6 +1037,7 @@ final class OrderDetailAfterSaleView: UIView {
 final class OrderDetailInfoView: UIView {
 
     var onOrderNumberCopied: (() -> Void)?
+    var onRemarkTapped: ((String) -> Void)?
 
     private let titleLabel = UILabel()
     private let stack = UIStackView()
@@ -1030,6 +1047,7 @@ final class OrderDetailInfoView: UIView {
     private let toggleIcon = UIImageView()
     private var isExpanded = true
     private var orderNumberText: String?
+    private var remarkText: String?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -1097,7 +1115,13 @@ final class OrderDetailInfoView: UIView {
         }
         let remark = remarkOverride?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
             ?? detail.remarkText
-        stack.addArrangedSubview(infoRow("订单备注", remark ?? "无", mutedValue: remark == nil))
+        if let remark {
+            remarkText = remark
+            stack.addArrangedSubview(remarkRow(remark))
+        } else {
+            remarkText = nil
+            stack.addArrangedSubview(infoRow("订单备注", "无", mutedValue: true))
+        }
 
         var mergedExpanded = expandedRows
         if !mergedExpanded.contains(where: { $0.0 == "支付状态" }) {
@@ -1169,18 +1193,61 @@ final class OrderDetailInfoView: UIView {
         return row
     }
 
+    private func remarkRow(_ value: String) -> UIView {
+        let left = UILabel()
+        left.text = "订单备注"
+        left.font = .fdFont(ofSize: 16, weight: .regular)
+        left.textColor = OrderDetailFigma.subtitle
+        left.setContentHuggingPriority(.required, for: .horizontal)
+        left.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let valueLabel = UILabel()
+        valueLabel.text = value
+        valueLabel.font = .fdFont(ofSize: 16, weight: .regular)
+        valueLabel.textColor = OrderDetailFigma.title
+        valueLabel.textAlignment = .right
+        valueLabel.numberOfLines = 1
+        valueLabel.lineBreakMode = .byTruncatingTail
+        valueLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        let arrow = UIImageView(image: UIImage(named: "order_confirm_arrow_right"))
+        arrow.contentMode = .scaleAspectFit
+        arrow.setContentHuggingPriority(.required, for: .horizontal)
+        arrow.setContentCompressionResistancePriority(.required, for: .horizontal)
+        arrow.snp.makeConstraints { $0.size.equalTo(12) }
+
+        let row = UIStackView(arrangedSubviews: [left, valueLabel, arrow])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = 4
+        row.setCustomSpacing(12, after: left)
+        row.isUserInteractionEnabled = true
+        row.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tapRemark)))
+        return row
+    }
+
+    @objc private func tapRemark() {
+        guard let remarkText else { return }
+        onRemarkTapped?(remarkText)
+    }
+
     private func infoRow(_ title: String, _ value: String, mutedValue: Bool = false, multiline: Bool = false) -> UIView {
         let left = UILabel()
         left.text = title
         left.font = .fdFont(ofSize: 16, weight: .regular)
         left.textColor = OrderDetailFigma.subtitle
         left.setContentHuggingPriority(.required, for: .horizontal)
+        left.setContentCompressionResistancePriority(.required, for: .horizontal)
         let right = UILabel()
         right.text = value
         right.font = .fdFont(ofSize: 16, weight: .regular)
         right.textColor = mutedValue ? OrderDetailFigma.subtitle : OrderDetailFigma.title
         right.numberOfLines = multiline ? 0 : 1
+        right.lineBreakMode = multiline ? .byCharWrapping : .byTruncatingTail
         right.textAlignment = .right
+        if multiline {
+            right.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        }
         let row = UIStackView(arrangedSubviews: [left, right])
         row.axis = .horizontal
         row.alignment = multiline ? .top : .center
@@ -1197,6 +1264,111 @@ final class OrderDetailInfoView: UIView {
     private func updateToggleTitle() {
         toggleTitleLabel.text = isExpanded ? "收起" : "展开"
         toggleIcon.image = UIImage(named: isExpanded ? "order_detail_collapse" : "order_detail_expand")
+    }
+}
+
+// MARK: - 订单备注全文（订单信息行点击后底部弹层）
+
+final class OrderRemarkDetailSheet: UIViewController {
+
+    private let text: String
+    private let dimView = UIView()
+    private let panel = UIView()
+    private let titleLabel = UILabel()
+    private let closeButton = UIButton(type: .custom)
+    private let contentBox = UIView()
+    private let bodyLabel = UILabel()
+    private let backButton = UIButton(type: .custom)
+
+    init(text: String) {
+        self.text = text
+        super.init(nibName: nil, bundle: nil)
+        modalPresentationStyle = .overFullScreen
+        modalTransitionStyle = .crossDissolve
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .clear
+
+        dimView.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        dimView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(close)))
+        view.addSubview(dimView)
+        dimView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        panel.backgroundColor = .white
+        panel.layer.cornerRadius = 16
+        panel.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        panel.clipsToBounds = true
+        view.addSubview(panel)
+        panel.snp.makeConstraints {
+            $0.leading.trailing.bottom.equalToSuperview()
+        }
+
+        titleLabel.text = "订单备注"
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
+        titleLabel.textColor = OrderDetailFigma.title
+        panel.addSubview(titleLabel)
+
+        closeButton.setImage(UIImage(named: "order_return_close"), for: .normal)
+        closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
+        panel.addSubview(closeButton)
+        closeButton.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(18)
+            $0.trailing.equalToSuperview().offset(-16)
+            $0.size.equalTo(24)
+        }
+        titleLabel.snp.makeConstraints {
+            $0.centerY.equalTo(closeButton)
+            $0.leading.equalToSuperview().offset(16)
+            $0.trailing.lessThanOrEqualTo(closeButton.snp.leading).offset(-8)
+        }
+
+        contentBox.backgroundColor = UIColor(hexString: "#F5F7FA")
+        contentBox.layer.cornerRadius = 12
+        panel.addSubview(contentBox)
+        contentBox.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(16)
+            $0.leading.trailing.equalToSuperview().inset(16)
+        }
+
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineSpacing = 4
+        paragraph.lineBreakMode = .byCharWrapping
+        bodyLabel.numberOfLines = 0
+        bodyLabel.attributedText = NSAttributedString(
+            string: text,
+            attributes: [
+                .font: UIFont.fdFont(ofSize: 14, weight: .regular),
+                .foregroundColor: UIColor(hexString: "#535D72"),
+                .paragraphStyle: paragraph
+            ]
+        )
+        contentBox.addSubview(bodyLabel)
+        bodyLabel.snp.makeConstraints {
+            $0.edges.equalToSuperview().inset(16)
+        }
+
+        backButton.setTitle("返回", for: .normal)
+        backButton.setTitleColor(.white, for: .normal)
+        backButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
+        backButton.backgroundColor = OrderDetailFigma.primaryOrange
+        backButton.layer.cornerRadius = 21.5
+        backButton.clipsToBounds = true
+        backButton.addTarget(self, action: #selector(close), for: .touchUpInside)
+        panel.addSubview(backButton)
+        backButton.snp.makeConstraints {
+            $0.top.equalTo(contentBox.snp.bottom).offset(20)
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(43)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12)
+        }
+    }
+
+    @objc private func close() {
+        dismiss(animated: true)
     }
 }
 

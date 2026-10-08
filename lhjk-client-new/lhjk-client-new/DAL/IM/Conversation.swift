@@ -327,10 +327,13 @@ extension Conversation {
 
         let statusStr = GroupSessionStatus.listStatusText(status: group.status, memberCount: group.numbers)
 
+        let serviceName = group.serviceName?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
         return Conversation(
             id: convId,
             role: role,
-            roleLabel: group.serviceName ?? role.label,
+            roleLabel: serviceName,
             name: name,
             title: group.serviceName ?? "健康管理",
             avatar: avatarChar,

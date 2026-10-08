@@ -85,16 +85,27 @@ final class MetricCardEditViewModel: ObservableObject {
         renumberDisplayed()
     }
 
+    /// 显示区拖拽换位。`destination` 为松手前的插入下标（原数组坐标系）。
+    /// 向下拖时先减 1，避免「拖一格又弹回原位」。
+    /// 返回移动后的最终下标；顺序未变时返回 `nil`。
     @MainActor
-    func moveDisplayed(from source: Int, to destination: Int) {
+    @discardableResult
+    func moveDisplayed(from source: Int, to destination: Int) -> Int? {
         guard source != destination,
               displayed.indices.contains(source),
-              destination >= 0, destination <= displayed.count else { return }
-        let item = displayed.remove(at: source)
+              destination >= 0, destination <= displayed.count else { return nil }
+        var next = displayed
+        let item = next.remove(at: source)
         let dest = destination > source ? destination - 1 : destination
-        let clamped = min(max(dest, 0), displayed.count)
-        displayed.insert(item, at: clamped)
-        renumberDisplayed()
+        let clamped = min(max(dest, 0), next.count)
+        guard clamped != source else { return nil }
+        next.insert(item, at: clamped)
+        displayed = next.enumerated().map { index, card in
+            var copy = card
+            copy.sortId = index
+            return copy
+        }
+        return clamped
     }
 
     @MainActor
@@ -154,9 +165,13 @@ final class MetricCardEditViewModel: ObservableObject {
     }
 
     private func renumberDisplayed() {
-        for i in displayed.indices {
-            displayed[i].sortId = i
+        let next = displayed.enumerated().map { index, card in
+            var copy = card
+            copy.sortId = index
+            return copy
         }
+        guard next != displayed else { return }
+        displayed = next
     }
 
     private static func mapItem(_ item: MonitorCardItemVO) -> EditCard? {

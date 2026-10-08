@@ -27,6 +27,8 @@ struct OrderSettlementBO: Decodable {
     let fundeChannelFlag: Bool?
     /// 1 支持快递发货；0 医院自提
     let orderExpress: Int?
+    /// 是否包含设备类或零售类实物。`false` 时确认订单/待支付隐藏收货方式与自提地址
+    let equipmentFlag: Bool?
     /// 结算版本，支付时原样带回 `orderPay.amountVersion`
     let amountVersion: Int?
     /// 期望应付金额，支付时原样带回 `orderPay.expectedPayableAmount`
@@ -36,7 +38,7 @@ struct OrderSettlementBO: Decodable {
         case packageName, img, totalPrice, details, address, appOrderDetailBO
         case categoryServiceId, couponTakeId, amount, discountRatio
         case commodityPrice, expressAmount, description, benefitsAmount
-        case wechat, alipay, fundeChannelFlag, orderExpress
+        case wechat, alipay, fundeChannelFlag, orderExpress, equipmentFlag
         case amountVersion, expectedPayableAmount
     }
 
@@ -60,12 +62,16 @@ struct OrderSettlementBO: Decodable {
         alipay = try c.decodeIfPresent(Bool.self, forKey: .alipay)
         fundeChannelFlag = try c.decodeIfPresent(Bool.self, forKey: .fundeChannelFlag)
         orderExpress = HospitalPackageInt.decodeIfPresent(c, key: .orderExpress)
+        equipmentFlag = Self.decodeFlexibleBool(c, key: .equipmentFlag)
         amountVersion = HospitalPackageInt.decodeIfPresent(c, key: .amountVersion)
         expectedPayableAmount = Self.decodeFlexibleDouble(c, key: .expectedPayableAmount)
     }
 
     /// 是否支持快递发货
     var supportsExpress: Bool { orderExpress == 1 }
+
+    /// 套餐含设备类或零售类实物。字段缺省时按含实物处理，避免旧响应误隐藏履约区。
+    var containsPhysicalGoods: Bool { equipmentFlag != false }
 
     /// 套餐金额（商品金额，元）
     /// 优先 `commodityPrice`；缺省时用 `totalPrice` 减运费、再退到订单应付减运费
@@ -163,6 +169,22 @@ struct OrderSettlementBO: Decodable {
         if let v = try? container.decodeIfPresent(Int64.self, forKey: key) { return Double(v) }
         if let s = try? container.decodeIfPresent(String.self, forKey: key) {
             return Double(s.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        return nil
+    }
+
+    private static func decodeFlexibleBool<K: CodingKey>(
+        _ container: KeyedDecodingContainer<K>,
+        key: K
+    ) -> Bool? {
+        if let v = try? container.decodeIfPresent(Bool.self, forKey: key) { return v }
+        if let v = try? container.decodeIfPresent(Int.self, forKey: key) { return v != 0 }
+        if let s = try? container.decodeIfPresent(String.self, forKey: key) {
+            switch s.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+            case "true", "1": return true
+            case "false", "0": return false
+            default: return nil
+            }
         }
         return nil
     }

@@ -43,9 +43,16 @@
 - **AND** 该行 `shipmentStatus != 2` 时副文案为「商家备货中，预计发货时间 {presetDeliveryTime}」
 - **AND** 该行 `shipmentStatus == 2` 且订单级存在物流公司与单号时展示物流信息并可复制单号
 
+#### Scenario: 不含实物不展示履约信息
+
+- **WHEN** `getAppOrderDetail.data.equipmentFlag == false`
+- **THEN** 订单详情不展示「自提信息」「自提地址」
+- **AND** 也不展示「物流信息」「收货地址」
+- **AND** `equipmentFlag` 缺省时仍按 `typeOrder` 展示对应履约卡片
+
 #### Scenario: 自提信息
 
-- **WHEN** `typeOrder == 0` 且存在 `shipmentStatus != nil` 的商品行
+- **WHEN** `equipmentFlag != false` 且 `typeOrder == 0` 且存在 `shipmentStatus != nil` 的商品行
 - **THEN** 展示「自提信息」卡片，预览 1 条 +「自提记录（共 X 条） >」入口
 - **AND** 该行 `shipmentStatus != 2` 时副文案为「预计 {presetDeliveryTime} 完成备货，可自提」
 - **AND** 该行 `shipmentStatus == 2` 时印章为「已自提」，不得再用「已发货」

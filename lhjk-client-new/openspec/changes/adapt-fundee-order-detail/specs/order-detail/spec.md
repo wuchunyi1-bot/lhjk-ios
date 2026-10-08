@@ -37,7 +37,7 @@
 | `expressAmount` | Double | 运费 |
 | `couponAmount` | Double | 优惠券实际抵扣金额 |
 | `benefitsAmount` | Double | 权益卡实际抵扣总额 |
-| `shoppingCartPackageDetailList` | Array | 商品明细 |
+| `shoppingCartPackageDetailList` | Array | 商品明细；行内 `saleFlag`：1 租（展示出租标记）/ 2 售（不展示）。见 `package-order-rent-badge` |
 | `createTime` | String | 下单时间 |
 | `paymentType` | Int | 1 微信 / 2 支付宝 / 3 现金 / 4 银行卡 |
 | `description` | String | 订单备注 |

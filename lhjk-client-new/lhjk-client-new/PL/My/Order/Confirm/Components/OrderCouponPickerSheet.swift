@@ -1,5 +1,6 @@
 import UIKit
 import SnapKit
+import Kingfisher
 
 // MARK: - 垂直虚线视图
 
@@ -30,7 +31,7 @@ private final class VerticalDashedLineView: UIView {
     }
 }
 
-// MARK: - 优惠券选择底部弹层（对齐 Figma 6013:3517）
+// MARK: - 优惠券选择底部弹层（对齐 Figma 6086:4704）
 
 final class OrderCouponPickerSheet: UIViewController {
 
@@ -53,10 +54,10 @@ final class OrderCouponPickerSheet: UIViewController {
     private let closeButton = UIButton(type: .custom)
     private let titleLabel = UILabel()
     private let subtitleLabel = UILabel()
-    private let headerDivider = UIView()
     private let tableView = UITableView(frame: .zero, style: .plain)
+    private let buttonStack = UIStackView()
     private let doneButton = UIButton(type: .custom)
-    private let skipButton = UIButton(type: .system)
+    private let skipButton = UIButton(type: .custom)
     private let emptyLabel = UILabel()
 
     init(coupons: [CouponTakeItem], total: Int, selectedTakeId: Int64?) {
@@ -102,7 +103,7 @@ final class OrderCouponPickerSheet: UIViewController {
             $0.centerX.equalToSuperview()
         }
 
-        // 右上角关闭按钮（20pt 图标）
+        // 右上角关闭按钮（24pt）
         closeButton.setImage(UIImage(named: "order_return_close"), for: .normal)
         closeButton.tintColor = UIColor(hexString: "#8591AB")
         closeButton.addTarget(self, action: #selector(cancel), for: .touchUpInside)
@@ -114,7 +115,7 @@ final class OrderCouponPickerSheet: UIViewController {
         }
 
         // 副标题（14pt Regular，颜色 #8591AB，居中）
-        subtitleLabel.text = "默认先领取先使用，可选择不使用"
+        subtitleLabel.text = "每个订单仅可使用一张优惠券，可选择不使用"
         subtitleLabel.font = .fdFont(ofSize: 14, weight: .regular)
         subtitleLabel.textColor = UIColor(hexString: "#8591AB")
         subtitleLabel.textAlignment = .center
@@ -124,31 +125,22 @@ final class OrderCouponPickerSheet: UIViewController {
             $0.leading.trailing.equalToSuperview().inset(16)
         }
 
-        // 顶部分割线
-        headerDivider.backgroundColor = UIColor(hexString: "#F0F2F5")
-        panel.addSubview(headerDivider)
-        headerDivider.snp.makeConstraints {
-            $0.top.equalTo(subtitleLabel.snp.bottom).offset(14)
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(0.5)
-        }
-
         // 列表
         tableView.backgroundColor = .clear
         tableView.separatorStyle = .none
         tableView.showsVerticalScrollIndicator = false
-        tableView.rowHeight = 89
-        tableView.estimatedRowHeight = 89
+        tableView.rowHeight = 111
+        tableView.estimatedRowHeight = 111
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(OrderCouponPickerCell.self, forCellReuseIdentifier: OrderCouponPickerCell.reuseId)
         panel.addSubview(tableView)
 
-        let tableContentHeight = CGFloat(coupons.count) * 89
+        let tableContentHeight = CGFloat(coupons.count) * 111
         tableView.snp.makeConstraints {
-            $0.top.equalTo(headerDivider.snp.bottom).offset(8)
+            $0.top.equalTo(subtitleLabel.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(min(max(tableContentHeight, 89), 356)).priority(.high)
+            $0.height.equalTo(min(max(tableContentHeight, 111), 356)).priority(.high)
         }
 
         emptyLabel.text = "暂无可用优惠券"
@@ -161,33 +153,40 @@ final class OrderCouponPickerSheet: UIViewController {
             $0.center.equalTo(tableView)
         }
 
+        // 底部双按钮横排（不使用 / 完成）
+        buttonStack.axis = .horizontal
+        buttonStack.spacing = 11
+        buttonStack.distribution = .fillEqually
+        panel.addSubview(buttonStack)
+        buttonStack.snp.makeConstraints {
+            $0.top.equalTo(tableView.snp.bottom).offset(16)
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(43)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12)
+        }
+
+        // 底部「不使用」描边按钮（43pt，#FF7A50 描边）
+        skipButton.setTitle("不使用", for: .normal)
+        skipButton.setTitleColor(UIColor(hexString: "#FF7A50"), for: .normal)
+        skipButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .regular)
+        skipButton.backgroundColor = .white
+        skipButton.layer.borderColor = UIColor(hexString: "#FF7A50").cgColor
+        skipButton.layer.borderWidth = 0.5
+        skipButton.layer.cornerRadius = 21.5
+        skipButton.clipsToBounds = true
+        skipButton.addTarget(self, action: #selector(skip), for: .touchUpInside)
+        skipButton.isHidden = coupons.isEmpty
+        buttonStack.addArrangedSubview(skipButton)
+
         // 底部「完成」主按钮（胶囊形，43pt，#FF7A50）
-        doneButton.setTitle("完成", for: .normal)
+        doneButton.setTitle(coupons.isEmpty ? "我知道了" : "完成", for: .normal)
         doneButton.setTitleColor(.white, for: .normal)
         doneButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
         doneButton.backgroundColor = UIColor(hexString: "#FF7A50")
         doneButton.layer.cornerRadius = 21.5
         doneButton.clipsToBounds = true
         doneButton.addTarget(self, action: #selector(done), for: .touchUpInside)
-        panel.addSubview(doneButton)
-        doneButton.snp.makeConstraints {
-            $0.top.equalTo(tableView.snp.bottom).offset(16)
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(43)
-        }
-
-        // 底部「不使用」文字按钮（14pt，#FF7A50，居中）
-        skipButton.setTitle("不使用", for: .normal)
-        skipButton.setTitleColor(UIColor(hexString: "#FF7A50"), for: .normal)
-        skipButton.titleLabel?.font = .fdFont(ofSize: 14, weight: .regular)
-        skipButton.addTarget(self, action: #selector(skip), for: .touchUpInside)
-        panel.addSubview(skipButton)
-        skipButton.snp.makeConstraints {
-            $0.top.equalTo(doneButton.snp.bottom).offset(14)
-            $0.centerX.equalToSuperview()
-            $0.height.equalTo(20)
-            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12)
-        }
+        buttonStack.addArrangedSubview(doneButton)
     }
 
     @objc private func cancel() {
@@ -288,18 +287,54 @@ extension OrderCouponPickerSheet: UITableViewDataSource, UITableViewDelegate {
     }
 }
 
-// MARK: - 优惠券 Cell（对齐 Figma 6013:3517 79pt 卡片样式）
+// MARK: - 优惠券 Cell（对齐 Figma 6086:4704 票券卡片样式，使用背景图与选中图标）
 
 private final class OrderCouponPickerCell: UITableViewCell {
     static let reuseId = "OrderCouponPickerCell"
 
-    private let card = UIView()
-    private let rightBg = UIView()
-    private let dashedLine = VerticalDashedLineView()
-    private let nameLabel = UILabel()
-    private let descLabel = UILabel()
+    private static let bgCapInsets = UIEdgeInsets(top: 20, left: 111, bottom: 20, right: 50)
+    private static let selectedBgImage = UIImage(named: "order_confirm_coupon_bg_selected")?.resizableImage(withCapInsets: bgCapInsets, resizingMode: .stretch)
+    private static let unselectedBgImage = UIImage(named: "order_confirm_coupon_bg_unselected")?.resizableImage(withCapInsets: bgCapInsets, resizingMode: .stretch)
+
+    /// 左侧金额与门槛字号阶梯：默认字体更醒目大气，内容字符较多、宽度受限时自动缩小字号
+    private enum LeftValueTypography {
+        static func amountSizes(for displayText: String) -> (numberSize: CGFloat, unitSize: CGFloat) {
+            let count = displayText.filter { !$0.isWhitespace }.count
+            switch count {
+            case 0...4:
+                return (26, 16)
+            case 5...6:
+                return (22, 14)
+            case 7...8:
+                return (18, 12)
+            default:
+                return (15, 11)
+            }
+        }
+
+        static func thresholdSize(for displayText: String) -> CGFloat {
+            let count = displayText.filter { !$0.isWhitespace }.count
+            switch count {
+            case 0...6:
+                return 13
+            case 7...9:
+                return 12
+            case 10...11:
+                return 11
+            default:
+                return 10
+            }
+        }
+    }
+
+    private let cardContainer = UIView()
+    private let bgImageView = UIImageView()
+    private let leftStack = UIStackView()
     private let amountLabel = UILabel()
-    private let selectedBadge = UIImageView()
+    private let thresholdLabel = UILabel()
+    private let nameLabel = UILabel()
+    private let timeLabel = UILabel()
+    private let chooseImageView = UIImageView()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -307,87 +342,91 @@ private final class OrderCouponPickerCell: UITableViewCell {
         backgroundColor = .clear
         contentView.backgroundColor = .clear
 
-        // 卡片容器（343 x 79，圆角 16pt，浅底 #FFF9F6）
-        card.backgroundColor = UIColor(hexString: "#FFF9F6")
-        card.layer.cornerRadius = 16
-        card.layer.borderWidth = 0.5
-        card.layer.borderColor = UIColor(hexString: "#FFECE2").cgColor
-        card.clipsToBounds = true
-        contentView.addSubview(card)
-        card.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(5)
-            $0.bottom.equalToSuperview().offset(-5)
+        // 卡片外层容器（343 x 99，底部留白 12pt）
+        contentView.addSubview(cardContainer)
+        cardContainer.snp.makeConstraints {
+            $0.top.equalToSuperview()
+            $0.bottom.equalToSuperview().offset(-12)
             $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(79)
+            $0.height.equalTo(99)
         }
 
-        // 右侧金额浅色底块（宽 110pt，右侧圆角）
-        rightBg.backgroundColor = UIColor(hexString: "#FFF0E6")
-        rightBg.layer.cornerRadius = 16
-        rightBg.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
-        rightBg.clipsToBounds = true
-        card.addSubview(rightBg)
-        rightBg.snp.makeConstraints {
-            $0.trailing.top.bottom.equalToSuperview()
-            $0.width.equalTo(110)
+        // 背景图（order_confirm_coupon_bg_selected / order_confirm_coupon_bg_unselected）
+        bgImageView.contentMode = .scaleToFill
+        cardContainer.addSubview(bgImageView)
+        bgImageView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
         }
 
-        // 中间垂直虚线
-        card.addSubview(dashedLine)
-        dashedLine.snp.makeConstraints {
-            $0.trailing.equalTo(rightBg.snp.leading)
-            $0.top.bottom.equalToSuperview()
-            $0.width.equalTo(1)
-        }
-
-        // 金额标签（18pt Medium，#F93838，靠右；放不下时缩小字号，完整展示）
-        amountLabel.font = .fdFont(ofSize: 18, weight: .medium)
-        amountLabel.textColor = UIColor(hexString: "#F93838")
-        amountLabel.textAlignment = .right
+        // 左侧金额与门槛纵向容器（居中对齐左侧 98pt 浅色底块区）
+        amountLabel.textAlignment = .center
         amountLabel.numberOfLines = 1
         amountLabel.lineBreakMode = .byClipping
         amountLabel.adjustsFontSizeToFitWidth = true
         amountLabel.minimumScaleFactor = 0.5
         amountLabel.baselineAdjustment = .alignCenters
-        rightBg.addSubview(amountLabel)
-        amountLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(4)
-            $0.trailing.equalToSuperview().offset(-16)
+
+        thresholdLabel.font = .fdFont(ofSize: 13, weight: .regular)
+        thresholdLabel.textColor = UIColor(hexString: "#F93838")
+        thresholdLabel.textAlignment = .center
+        thresholdLabel.numberOfLines = 1
+        thresholdLabel.lineBreakMode = .byClipping
+        thresholdLabel.adjustsFontSizeToFitWidth = true
+        thresholdLabel.minimumScaleFactor = 0.7
+        thresholdLabel.baselineAdjustment = .alignCenters
+
+        leftStack.axis = .vertical
+        leftStack.spacing = 2
+        leftStack.alignment = .center
+        leftStack.distribution = .fill
+        leftStack.addArrangedSubview(amountLabel)
+        leftStack.addArrangedSubview(thresholdLabel)
+        cardContainer.addSubview(leftStack)
+        leftStack.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(2)
+            $0.width.equalTo(96)
             $0.centerY.equalToSuperview()
         }
+        amountLabel.snp.makeConstraints {
+            $0.width.equalTo(96)
+        }
+        thresholdLabel.snp.makeConstraints {
+            $0.width.equalTo(96)
+        }
 
-        // 左侧优惠券名称（16pt Medium，#1F2942）
+        // 右侧选中图标（18 x 18，使用 order_confirm_coupon_choose，与背景图右侧圆圈完全居中对齐）
+        chooseImageView.image = UIImage(named: "order_confirm_coupon_choose")
+        chooseImageView.contentMode = .scaleAspectFit
+        cardContainer.addSubview(chooseImageView)
+        chooseImageView.snp.makeConstraints {
+            $0.trailing.equalToSuperview().offset(-14)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(18)
+        }
+
+        // 中间优惠券名称（16pt Medium，#1F2942，最多 2 行）
         nameLabel.font = .fdFont(ofSize: 16, weight: .medium)
         nameLabel.textColor = .fdText
+        nameLabel.numberOfLines = 2
         nameLabel.lineBreakMode = .byTruncatingTail
-        card.addSubview(nameLabel)
+        cardContainer.addSubview(nameLabel)
 
-        // 左侧使用门槛（12pt Regular，#8591AB）
-        descLabel.font = .fdFont(ofSize: 12, weight: .regular)
-        descLabel.textColor = UIColor(hexString: "#8591AB")
-        descLabel.lineBreakMode = .byTruncatingTail
-        card.addSubview(descLabel)
+        // 中间有效期（12pt Regular，#8591AB）
+        timeLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        timeLabel.textColor = UIColor(hexString: "#8591AB")
+        timeLabel.lineBreakMode = .byTruncatingTail
+        cardContainer.addSubview(timeLabel)
 
         nameLabel.snp.makeConstraints {
             $0.top.equalToSuperview().offset(18)
-            $0.leading.equalToSuperview().offset(16)
-            $0.trailing.lessThanOrEqualTo(dashedLine.snp.leading).offset(-8)
+            $0.leading.equalToSuperview().offset(108)
+            $0.trailing.lessThanOrEqualTo(chooseImageView.snp.leading).offset(-14)
         }
 
-        descLabel.snp.makeConstraints {
+        timeLabel.snp.makeConstraints {
             $0.top.equalTo(nameLabel.snp.bottom).offset(6)
-            $0.leading.equalToSuperview().offset(16)
-            $0.trailing.lessThanOrEqualTo(dashedLine.snp.leading).offset(-8)
-        }
-
-        // 右下角选中角标
-        selectedBadge.image = UIImage(named: "order_card_selected_badge")
-        selectedBadge.contentMode = .scaleAspectFit
-        selectedBadge.isHidden = true
-        card.addSubview(selectedBadge)
-        selectedBadge.snp.makeConstraints {
-            $0.trailing.bottom.equalToSuperview()
-            $0.size.equalTo(22)
+            $0.leading.equalToSuperview().offset(108)
+            $0.trailing.lessThanOrEqualTo(chooseImageView.snp.leading).offset(-14)
         }
     }
 
@@ -396,22 +435,68 @@ private final class OrderCouponPickerCell: UITableViewCell {
     func configure(item: CouponTakeItem, selected: Bool) {
         nameLabel.text = item.displayName
         let threshold = item.subtitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        descLabel.text = threshold.isEmpty ? "无门槛" : threshold
-        amountLabel.text = "-\(OrderConfirmMoney.yen(item.discountAmount))"
+        let thresholdText = threshold.isEmpty ? "无门槛" : threshold
+        let tSize = LeftValueTypography.thresholdSize(for: thresholdText)
+        thresholdLabel.font = .fdFont(ofSize: tSize, weight: .regular)
+        thresholdLabel.text = thresholdText
+        amountLabel.attributedText = Self.formatAmount(item: item)
+
+        let end = item.endTime?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !end.isEmpty {
+            let clean = end.replacingOccurrences(of: "T", with: " ")
+            timeLabel.text = "有效期至 \(clean)"
+        } else {
+            timeLabel.text = "长期有效"
+        }
 
         if selected {
-            card.layer.borderColor = UIColor(hexString: "#FF7A50").cgColor
-            card.layer.borderWidth = 1.0
-            selectedBadge.isHidden = false
+            bgImageView.image = Self.selectedBgImage
+            chooseImageView.isHidden = false
         } else {
-            card.layer.borderColor = UIColor(hexString: "#FFECE2").cgColor
-            card.layer.borderWidth = 0.5
-            selectedBadge.isHidden = true
+            bgImageView.image = Self.unselectedBgImage
+            chooseImageView.isHidden = true
+        }
+    }
+
+    private static func formatAmount(item: CouponTakeItem) -> NSAttributedString {
+        let color = UIColor(hexString: "#F93838")
+        if item.type == 3, let rate = item.discountRatio, rate > 0 {
+            let str = String(format: "%g", rate)
+            let displayText = "\(str)折"
+            let sizes = LeftValueTypography.amountSizes(for: displayText)
+            let attr = NSMutableAttributedString(
+                string: str,
+                attributes: [.font: UIFont.fdFont(ofSize: sizes.numberSize, weight: .medium), .foregroundColor: color]
+            )
+            attr.append(NSAttributedString(
+                string: "折",
+                attributes: [.font: UIFont.fdFont(ofSize: sizes.unitSize, weight: .medium), .foregroundColor: color]
+            ))
+            return attr
+        } else {
+            let amount = item.discountAmount
+            let amountStr: String
+            if amount == floor(amount) {
+                amountStr = "\(Int(amount))"
+            } else {
+                amountStr = String(format: "%.2f", amount)
+            }
+            let displayText = "¥\(amountStr)"
+            let sizes = LeftValueTypography.amountSizes(for: displayText)
+            let attr = NSMutableAttributedString(
+                string: "¥ ",
+                attributes: [.font: UIFont.fdFont(ofSize: sizes.unitSize, weight: .medium), .foregroundColor: color]
+            )
+            attr.append(NSAttributedString(
+                string: amountStr,
+                attributes: [.font: UIFont.fdFont(ofSize: sizes.numberSize, weight: .medium), .foregroundColor: color]
+            ))
+            return attr
         }
     }
 }
 
-// MARK: - 权益卡多选弹层（对齐 Figma 6014:4224）
+// MARK: - 权益卡多选弹层（对齐 Figma 6093:5091）
 
 final class OrderBenefitPickerSheet: UIViewController {
 
@@ -426,11 +511,11 @@ final class OrderBenefitPickerSheet: UIViewController {
     private let closeButton = UIButton(type: .custom)
     private let titleLabel = UILabel()
     private let subtitleLabel = UILabel()
-    private let headerDivider = UIView()
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let hintLabel = UILabel()
+    private let buttonStack = UIStackView()
     private let doneButton = UIButton(type: .custom)
-    private let skipButton = UIButton(type: .system)
+    private let skipButton = UIButton(type: .custom)
     private let emptyLabel = UILabel()
 
     init(cards: [BenefitsRedeemCardVO], selectedIds: [String], cardLimit: Double) {
@@ -498,31 +583,22 @@ final class OrderBenefitPickerSheet: UIViewController {
             $0.leading.trailing.equalToSuperview().inset(16)
         }
 
-        // 顶部分割线
-        headerDivider.backgroundColor = UIColor(hexString: "#F0F2F5")
-        panel.addSubview(headerDivider)
-        headerDivider.snp.makeConstraints {
-            $0.top.equalTo(subtitleLabel.snp.bottom).offset(14)
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(0.5)
-        }
-
         // 列表
         tableView.backgroundColor = .clear
         tableView.separatorStyle = .none
         tableView.showsVerticalScrollIndicator = false
-        tableView.rowHeight = 89
-        tableView.estimatedRowHeight = 89
+        tableView.rowHeight = 111
+        tableView.estimatedRowHeight = 111
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(OrderBenefitPickerCell.self, forCellReuseIdentifier: OrderBenefitPickerCell.reuseId)
         panel.addSubview(tableView)
 
-        let tableContentHeight = CGFloat(cards.count) * 89
+        let tableContentHeight = CGFloat(cards.count) * 111
         tableView.snp.makeConstraints {
-            $0.top.equalTo(headerDivider.snp.bottom).offset(8)
+            $0.top.equalTo(subtitleLabel.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(min(max(tableContentHeight, 89), 356)).priority(.high)
+            $0.height.equalTo(min(max(tableContentHeight, 111), 356)).priority(.high)
         }
 
         emptyLabel.text = "暂无可用权益卡"
@@ -547,6 +623,35 @@ final class OrderBenefitPickerSheet: UIViewController {
         }
         refreshHint()
 
+        // 底部双按钮横排（不使用 / 完成）
+        buttonStack.axis = .horizontal
+        buttonStack.spacing = 11
+        buttonStack.distribution = .fillEqually
+        panel.addSubview(buttonStack)
+        buttonStack.snp.makeConstraints {
+            if cards.isEmpty {
+                $0.top.equalTo(tableView.snp.bottom).offset(16)
+            } else {
+                $0.top.equalTo(hintLabel.snp.bottom).offset(12)
+            }
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(43)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12)
+        }
+
+        // 底部「不使用」描边按钮（43pt，#FF7A50 描边）
+        skipButton.setTitle("不使用", for: .normal)
+        skipButton.setTitleColor(UIColor(hexString: "#FF7A50"), for: .normal)
+        skipButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .regular)
+        skipButton.backgroundColor = .white
+        skipButton.layer.borderColor = UIColor(hexString: "#FF7A50").cgColor
+        skipButton.layer.borderWidth = 0.5
+        skipButton.layer.cornerRadius = 21.5
+        skipButton.clipsToBounds = true
+        skipButton.addTarget(self, action: #selector(skip), for: .touchUpInside)
+        skipButton.isHidden = cards.isEmpty
+        buttonStack.addArrangedSubview(skipButton)
+
         // 底部「完成」主按钮（胶囊形，43pt，#FF7A50）
         doneButton.setTitle(cards.isEmpty ? "我知道了" : "完成", for: .normal)
         doneButton.setTitleColor(.white, for: .normal)
@@ -555,30 +660,7 @@ final class OrderBenefitPickerSheet: UIViewController {
         doneButton.layer.cornerRadius = 21.5
         doneButton.clipsToBounds = true
         doneButton.addTarget(self, action: #selector(done), for: .touchUpInside)
-        panel.addSubview(doneButton)
-        doneButton.snp.makeConstraints {
-            if cards.isEmpty {
-                $0.top.equalTo(tableView.snp.bottom).offset(16)
-            } else {
-                $0.top.equalTo(hintLabel.snp.bottom).offset(12)
-            }
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(43)
-        }
-
-        // 底部「不使用」文字按钮（14pt，#FF7A50，居中）
-        skipButton.setTitle("不使用", for: .normal)
-        skipButton.setTitleColor(UIColor(hexString: "#FF7A50"), for: .normal)
-        skipButton.titleLabel?.font = .fdFont(ofSize: 14, weight: .regular)
-        skipButton.isHidden = cards.isEmpty
-        skipButton.addTarget(self, action: #selector(skip), for: .touchUpInside)
-        panel.addSubview(skipButton)
-        skipButton.snp.makeConstraints {
-            $0.top.equalTo(doneButton.snp.bottom).offset(14)
-            $0.centerX.equalToSuperview()
-            $0.height.equalTo(20)
-            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12)
-        }
+        buttonStack.addArrangedSubview(doneButton)
     }
 
     private var currentDiscount: Double {
@@ -648,16 +730,16 @@ extension OrderBenefitPickerSheet: UITableViewDataSource, UITableViewDelegate {
     }
 }
 
-// MARK: - 权益卡 Cell（对齐 Figma 6014:4224 79pt 卡片样式）
+// MARK: - 权益卡 Cell（对齐 Figma 6093:5091 99pt 卡片样式，左卡片图标，中标题/有效期，右金额）
 
 private final class OrderBenefitPickerCell: UITableViewCell {
     static let reuseId = "OrderBenefitPickerCell"
 
     private let card = UIView()
-    private let rightBg = UIView()
-    private let dashedLine = VerticalDashedLineView()
+    private let iconImageView = UIImageView()
     private let nameLabel = UILabel()
     private let descLabel = UILabel()
+    private let dashedLine = VerticalDashedLineView()
     private let amountLabel = UILabel()
     private let selectedBadge = UIImageView()
 
@@ -667,52 +749,51 @@ private final class OrderBenefitPickerCell: UITableViewCell {
         backgroundColor = .clear
         contentView.backgroundColor = .clear
 
-        // 卡片容器（343 x 79，圆角 16pt，浅底 #FFF9F6）
-        card.backgroundColor = UIColor(hexString: "#FFF9F6")
+        // 卡片容器（343 x 99，圆角 16pt，米黄色渐变底）
+        card.backgroundColor = UIColor(hexString: "#FFFBF5")
         card.layer.cornerRadius = 16
         card.layer.borderWidth = 0.5
-        card.layer.borderColor = UIColor(hexString: "#FFECE2").cgColor
+        card.layer.borderColor = UIColor(hexString: "#FFECD2").cgColor
         card.clipsToBounds = true
         contentView.addSubview(card)
         card.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(5)
-            $0.bottom.equalToSuperview().offset(-5)
+            $0.top.equalToSuperview()
+            $0.bottom.equalToSuperview().offset(-12)
             $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(79)
+            $0.height.equalTo(99)
         }
 
-        // 右侧金额浅色底块（宽 110pt，右侧圆角）
-        rightBg.backgroundColor = UIColor(hexString: "#FFF0E6")
-        rightBg.layer.cornerRadius = 16
-        rightBg.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
-        rightBg.clipsToBounds = true
-        card.addSubview(rightBg)
-        rightBg.snp.makeConstraints {
-            $0.trailing.top.bottom.equalToSuperview()
-            $0.width.equalTo(110)
+        // 左侧权益卡图标（75 x 75，圆角 11pt）
+        iconImageView.contentMode = .scaleAspectFit
+        iconImageView.layer.cornerRadius = 11
+        iconImageView.clipsToBounds = true
+        card.addSubview(iconImageView)
+        iconImageView.snp.makeConstraints {
+            $0.leading.top.equalToSuperview().offset(12)
+            $0.size.equalTo(75)
         }
 
-        // 中间垂直虚线
+        // 中间分隔虚线（距离右侧 82pt，高度 79.5pt，垂直居中）
+        dashedLine.dashColor = UIColor(hexString: "#FFD9C6")
         card.addSubview(dashedLine)
         dashedLine.snp.makeConstraints {
-            $0.trailing.equalTo(rightBg.snp.leading)
-            $0.top.bottom.equalToSuperview()
+            $0.trailing.equalToSuperview().offset(-82)
+            $0.top.equalToSuperview().offset(10)
+            $0.bottom.equalToSuperview().offset(-10)
             $0.width.equalTo(1)
         }
 
-        // 金额标签（18pt Medium，#F93838，靠右；放不下时缩小字号，完整展示）
-        amountLabel.font = .fdFont(ofSize: 18, weight: .medium)
-        amountLabel.textColor = UIColor(hexString: "#F93838")
-        amountLabel.textAlignment = .right
+        // 右侧金额标签（主数字 22pt Medium，货币符号 14pt，颜色 #883400，居中）
+        amountLabel.textAlignment = .center
         amountLabel.numberOfLines = 1
         amountLabel.lineBreakMode = .byClipping
         amountLabel.adjustsFontSizeToFitWidth = true
         amountLabel.minimumScaleFactor = 0.5
         amountLabel.baselineAdjustment = .alignCenters
-        rightBg.addSubview(amountLabel)
+        card.addSubview(amountLabel)
         amountLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(4)
-            $0.trailing.equalToSuperview().offset(-16)
+            $0.leading.equalTo(dashedLine.snp.trailing).offset(4)
+            $0.trailing.equalToSuperview().offset(-4)
             $0.centerY.equalToSuperview()
         }
 
@@ -729,18 +810,18 @@ private final class OrderBenefitPickerCell: UITableViewCell {
         card.addSubview(descLabel)
 
         nameLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(18)
-            $0.leading.equalToSuperview().offset(16)
+            $0.top.equalToSuperview().offset(26)
+            $0.leading.equalTo(iconImageView.snp.trailing).offset(14)
             $0.trailing.lessThanOrEqualTo(dashedLine.snp.leading).offset(-8)
         }
 
         descLabel.snp.makeConstraints {
             $0.top.equalTo(nameLabel.snp.bottom).offset(6)
-            $0.leading.equalToSuperview().offset(16)
+            $0.leading.equalTo(iconImageView.snp.trailing).offset(14)
             $0.trailing.lessThanOrEqualTo(dashedLine.snp.leading).offset(-8)
         }
 
-        // 右下角选中角标
+        // 右下角选中角标（22 x 22）
         selectedBadge.image = UIImage(named: "order_card_selected_badge")
         selectedBadge.contentMode = .scaleAspectFit
         selectedBadge.isHidden = true
@@ -753,27 +834,73 @@ private final class OrderBenefitPickerCell: UITableViewCell {
 
     required init?(coder: NSCoder) { fatalError() }
 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        iconImageView.kf.cancelDownloadTask()
+        iconImageView.image = nil
+    }
+
     func configure(card item: BenefitsRedeemCardVO, selected: Bool) {
         nameLabel.text = item.displayName
         let until = item.endTime?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let day = until.isEmpty ? "" : String(until.replacingOccurrences(of: "T", with: " ").prefix(10))
         if item.isAvailable {
             descLabel.text = day.isEmpty ? "可使用" : "有效期至 \(day)"
-            contentView.alpha = 1
+            descLabel.textColor = UIColor(hexString: "#8591AB")
+            nameLabel.textColor = .fdText
         } else {
-            descLabel.text = "当前不可用"
-            contentView.alpha = 0.45
+            descLabel.text = "不可用"
+            descLabel.textColor = .fdMuted
+            nameLabel.textColor = .fdMuted
         }
-        amountLabel.text = OrderConfirmMoney.yen(item.effectiveDeduct)
+
+        let defaultImage = UIImage(named: "order_benefit_card_icon")
+        if let raw = item.imageUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !raw.isEmpty,
+           let url = URL(string: raw) {
+            iconImageView.kf.setImage(
+                with: url,
+                placeholder: defaultImage,
+                options: [.transition(.fade(0.2))]
+            ) { [weak iconImageView] result in
+                if case .failure = result {
+                    iconImageView?.image = defaultImage
+                }
+            }
+        } else {
+            iconImageView.image = defaultImage
+        }
+
+        amountLabel.attributedText = Self.formatBenefitValue(item: item)
 
         if selected {
-            card.layer.borderColor = UIColor(hexString: "#FF7A50").cgColor
+            card.layer.borderColor = UIColor(hexString: "#FF9502").cgColor
             card.layer.borderWidth = 1.0
             selectedBadge.isHidden = false
         } else {
-            card.layer.borderColor = UIColor(hexString: "#FFECE2").cgColor
+            card.layer.borderColor = UIColor(hexString: "#FFECD2").cgColor
             card.layer.borderWidth = 0.5
             selectedBadge.isHidden = true
         }
+    }
+
+    private static func formatBenefitValue(item: BenefitsRedeemCardVO) -> NSAttributedString {
+        let color = UIColor(hexString: "#883400")
+        let amount = item.effectiveDeduct
+        let amountStr: String
+        if amount == floor(amount) {
+            amountStr = "\(Int(amount))"
+        } else {
+            amountStr = String(format: "%.2f", amount)
+        }
+        let attr = NSMutableAttributedString(
+            string: "¥ ",
+            attributes: [.font: UIFont.fdFont(ofSize: 14, weight: .medium), .foregroundColor: color]
+        )
+        attr.append(NSAttributedString(
+            string: amountStr,
+            attributes: [.font: UIFont.fdFont(ofSize: 22, weight: .medium), .foregroundColor: color]
+        ))
+        return attr
     }
 }

@@ -127,11 +127,11 @@ final class OrderService {
 
     // MARK: - 修改订单备注
 
-    /// `POST /v1/order/updateOrderDescription`（Query：orderId 必填，description 可选，≤300）
+    /// `POST /v1/order/updateOrderDescription`（Query：orderId 必填，description 可选，≤200）
     func updateOrderDescription(orderId: Int64, description: String?) async throws {
         var params: [String: Any] = ["orderId": String(orderId)]
         if let description {
-            params["description"] = String(description.prefix(300))
+            params["description"] = String(description.prefix(200))
         }
 
         print("[OrderService] updateOrderDescription → orderId=\(orderId) len=\(description?.count ?? 0)")
@@ -328,7 +328,7 @@ final class OrderService {
         }
         let desc = description?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !desc.isEmpty {
-            body["description"] = String(desc.prefix(300))
+            body["description"] = String(desc.prefix(200))
         }
         let authCode = code?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !authCode.isEmpty {

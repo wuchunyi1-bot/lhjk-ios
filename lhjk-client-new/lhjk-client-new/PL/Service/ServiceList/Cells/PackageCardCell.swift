@@ -304,6 +304,8 @@ final class PackageCardCell: UITableViewCell {
             badgeView.backgroundColor = UIColor(hexString: "#DF0340")
         case "推荐":
             badgeView.backgroundColor = UIColor(hexString: "#FF7A50")
+        case "新品":
+            badgeView.backgroundColor = UIColor(hexString: "#2B73FF")
         default:
             badgeView.backgroundColor = UIColor(hexString: "#FF7A50")
         }

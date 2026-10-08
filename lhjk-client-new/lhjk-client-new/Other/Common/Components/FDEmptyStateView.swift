@@ -2,7 +2,7 @@ import UIKit
 import SnapKit
 
 /// 列表无数据默认空态：插图 `noData_default` + 文案。
-/// 全页 / 全列表空态统一使用；购物车等已有业务专属插图的页面除外。
+/// 全页 / 全列表空态统一使用。
 final class FDEmptyStateView: UIView {
 
     static let imageName = "noData_default"

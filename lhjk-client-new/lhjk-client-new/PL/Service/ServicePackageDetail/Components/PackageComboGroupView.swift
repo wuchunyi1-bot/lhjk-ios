@@ -12,6 +12,7 @@ private enum ComboBenefitRowMetrics {
 private final class ComboBenefitRowView: UIView {
 
     private let nameLabel = UILabel()
+    private let rentBadge = UIImageView()
     private let qtyLabel = UILabel()
     private let priceLabel = UILabel()
 
@@ -22,7 +23,14 @@ private final class ComboBenefitRowView: UIView {
         nameLabel.font = .fdFont(ofSize: 16, weight: .regular)
         nameLabel.textColor = UIColor(hexString: "#1F2942")
         nameLabel.numberOfLines = 0
+        nameLabel.setContentHuggingPriority(.required, for: .horizontal)
         nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        rentBadge.image = UIImage(named: PackageSaleFlag.rentBadgeAssetName)
+        rentBadge.contentMode = .scaleAspectFit
+        rentBadge.isHidden = !item.showsRentBadge
+        rentBadge.setContentHuggingPriority(.required, for: .horizontal)
+        rentBadge.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         qtyLabel.text = item.qtyLabel
         qtyLabel.font = .fdFont(ofSize: 16, weight: .regular)
@@ -34,9 +42,19 @@ private final class ComboBenefitRowView: UIView {
         priceLabel.textColor = UIColor(hexString: "#1F2942")
         priceLabel.textAlignment = .right
 
-        addSubview(nameLabel)
+        let nameSpacer = UIView()
+        nameSpacer.setContentHuggingPriority(.fittingSizeLevel, for: .horizontal)
+        let nameRow = UIStackView(arrangedSubviews: [nameLabel, rentBadge, nameSpacer])
+        nameRow.axis = .horizontal
+        nameRow.alignment = .center
+        nameRow.spacing = 4
+
+        addSubview(nameRow)
         addSubview(qtyLabel)
         addSubview(priceLabel)
+        rentBadge.snp.makeConstraints {
+            $0.size.equalTo(CGSize(width: 40, height: 16))
+        }
 
         priceLabel.snp.makeConstraints {
             $0.trailing.equalToSuperview()
@@ -50,9 +68,9 @@ private final class ComboBenefitRowView: UIView {
             $0.width.equalTo(ComboBenefitRowMetrics.qtyColumnWidth)
         }
 
-        nameLabel.snp.makeConstraints {
+        nameRow.snp.makeConstraints {
             $0.leading.equalToSuperview()
-            $0.trailing.lessThanOrEqualTo(qtyLabel.snp.leading).offset(-8)
+            $0.trailing.equalTo(qtyLabel.snp.leading).offset(-8)
             $0.top.bottom.equalToSuperview()
         }
     }

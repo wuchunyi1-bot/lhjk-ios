@@ -303,7 +303,6 @@
 
 - **WHEN** 空态属于下列之一
 - **THEN** **不得**用 `noData_default` 替换现有视觉：
-  - 已有业务专属插图：购物车 `serice_cart`
   - 卡片封面占位：订单卡片无套餐图时仍用 `order_package_placeholder`
   - 行内/卡片内一行空文案：首页任务卡「今日暂无健康任务」、确认订单选券/选卡底部弹层「暂无可用」
   - 图表无曲线：`DGCharts.noDataText`

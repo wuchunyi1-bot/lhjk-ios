@@ -8,6 +8,8 @@ final class MetricCardEditViewController: BaseViewController {
 
     private let viewModel = MetricCardEditViewModel()
     private var cancellables = Set<AnyCancellable>()
+    /// 拖拽换位期间跳过 `reloadData`，避免冲掉 `moveItem` 后的顺序
+    private var isReorderingCards = false
 
     private enum Section: Int, CaseIterable {
         case displayed
@@ -86,7 +88,10 @@ final class MetricCardEditViewController: BaseViewController {
     override func bindViewModel() {
         Publishers.CombineLatest(viewModel.$displayed, viewModel.$hidden)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _, _ in self?.collectionView.reloadData() }
+            .sink { [weak self] _, _ in
+                guard let self, !self.isReorderingCards else { return }
+                self.collectionView.reloadData()
+            }
             .store(in: &cancellables)
 
         viewModel.$toastMessage
@@ -259,6 +264,17 @@ extension MetricCardEditViewController: UICollectionViewDragDelegate, UICollecti
         return [item]
     }
 
+    func collectionView(_ collectionView: UICollectionView, dragSessionWillBegin session: UIDragSession) {
+        isReorderingCards = true
+    }
+
+    func collectionView(_ collectionView: UICollectionView, dragSessionDidEnd session: UIDragSession) {
+        // 模型更新经 `receive(on:)` 异步刷新；延后一拍再放开，避免这次 reload 把换位冲掉
+        DispatchQueue.main.async { [weak self] in
+            self?.isReorderingCards = false
+        }
+    }
+
     func collectionView(
         _ collectionView: UICollectionView,
         dropSessionDidUpdate session: UIDropSession,
@@ -276,18 +292,25 @@ extension MetricCardEditViewController: UICollectionViewDragDelegate, UICollecti
         _ collectionView: UICollectionView,
         performDropWith coordinator: UICollectionViewDropCoordinator
     ) {
-        guard let dest = coordinator.destinationIndexPath,
-              Section(rawValue: dest.section) == .displayed,
-              let item = coordinator.items.first,
-              let cardType = item.dragItem.localObject as? Int else { return }
+        guard let item = coordinator.items.first,
+              let sourceIndexPath = item.sourceIndexPath,
+              Section(rawValue: sourceIndexPath.section) == .displayed else { return }
 
-        var order = viewModel.displayed.map(\.cardType)
-        guard let from = order.firstIndex(of: cardType) else { return }
-        order.remove(at: from)
-        let to = min(dest.item, order.count)
-        order.insert(cardType, at: to)
-        viewModel.reorderDisplayed(to: order)
-        coordinator.drop(item.dragItem, toItemAt: IndexPath(item: to, section: Section.displayed.rawValue))
+        let proposed = coordinator.destinationIndexPath
+            ?? IndexPath(item: viewModel.displayed.count, section: Section.displayed.rawValue)
+        guard Section(rawValue: proposed.section) == .displayed else { return }
+
+        let finalIndex = viewModel.moveDisplayed(from: sourceIndexPath.item, to: proposed.item)
+        guard let finalIndex else {
+            coordinator.drop(item.dragItem, toItemAt: sourceIndexPath)
+            return
+        }
+
+        let finalPath = IndexPath(item: finalIndex, section: Section.displayed.rawValue)
+        collectionView.performBatchUpdates {
+            collectionView.moveItem(at: sourceIndexPath, to: finalPath)
+        }
+        coordinator.drop(item.dragItem, toItemAt: finalPath)
     }
 }
 

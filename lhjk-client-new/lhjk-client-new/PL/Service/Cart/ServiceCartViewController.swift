@@ -101,23 +101,7 @@ final class ServiceCartViewController: BaseViewController {
         view.addSubview(emptyView)
         emptyView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        let card = UIView()
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 16
-        emptyView.addSubview(card)
-        card.snp.makeConstraints {
-            $0.center.equalToSuperview()
-            $0.leading.trailing.equalToSuperview().inset(24)
-        }
-
-        let icon = UIImageView(image: UIImage(named: "serice_cart"))
-        icon.contentMode = .scaleAspectFit
-
-        let tip = UILabel()
-        tip.text = "购物车还是空的"
-        tip.font = .fdFont(ofSize: 16, weight: .medium)
-        tip.textColor = .fdText
-        tip.textAlignment = .center
+        let emptyState = FDEmptyStateView(style: .page, message: "购物车还是空的")
 
         let action = UIButton(type: .custom)
         action.setTitle("去看看服务", for: .normal)
@@ -128,15 +112,20 @@ final class ServiceCartViewController: BaseViewController {
         action.clipsToBounds = true
         action.contentEdgeInsets = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
         action.addTarget(self, action: #selector(emptyActionTapped), for: .touchUpInside)
+        action.snp.makeConstraints { $0.height.equalTo(36) }
 
-        let stack = UIStackView(arrangedSubviews: [icon, tip, action])
+        let stack = UIStackView(arrangedSubviews: [emptyState, action])
         stack.axis = .vertical
         stack.alignment = .center
-        stack.spacing = 12
-        icon.snp.makeConstraints { $0.size.equalTo(48) }
-        action.snp.makeConstraints { $0.height.equalTo(36) }
-        card.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(32) }
+        stack.spacing = 16
+        emptyView.addSubview(stack)
+        stack.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.leading.trailing.equalToSuperview().inset(24)
+        }
+        emptyState.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview()
+        }
     }
 
     @objc private func emptyActionTapped() {
