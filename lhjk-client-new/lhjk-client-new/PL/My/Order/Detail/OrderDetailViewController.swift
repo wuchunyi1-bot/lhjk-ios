@@ -382,7 +382,7 @@ final class OrderDetailViewController: BaseViewController {
     }
 
     private func packageSubtitle(from detail: AppOrderDetailBO) -> String {
-        detail.packageDescription?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        detail.introduction?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 
     private func showToast(_ message: String) {

@@ -4,29 +4,26 @@ import Combine
 
 /// 健康模块 Hub — 对齐 Figma 3444:4712 / 3021:1121
 ///
-/// Section 0: HealthScoreCardCell（健康评分卡）
-/// Section 1: HealthArchiveCardCell（健康档案完整度）
-/// Section 2: HealthQuickEntriesCell（金刚区快捷入口）
-/// Section 3: HealthVitalMetricsCell（体征监测卡片）
+/// 健康评分卡（HealthScoreCardCell）暂时不进入列表，档案完整度顶到顶栏下方。
+/// Section: HealthArchiveCardCell（健康档案完整度）
+/// Section: HealthQuickEntriesCell（金刚区快捷入口）
+/// Section: HealthVitalMetricsCell（体征监测卡片）
 final class HealthViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate {
 
     private enum SectionType {
-        case score
         case archive
         case quickEntries
         case vitalMetrics
     }
 
     private var activeSections: [SectionType] {
-        var list: [SectionType] = [.score, .archive]
+        var list: [SectionType] = [.archive]
         if !viewModel.quickEntries.isEmpty {
             list.append(.quickEntries)
         }
         list.append(.vitalMetrics)
         return list
     }
-
-    private let riskScore = 62
 
     private var riskLevelText: String {
         let level = UserManager.shared.defaultArchive?.riskLevel
@@ -50,7 +47,6 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         tv.showsVerticalScrollIndicator = false
         tv.dataSource = self
         tv.delegate = self
-        tv.register(HealthScoreCardCell.self, forCellReuseIdentifier: HealthScoreCardCell.reuseIdentifier)
         tv.register(HealthArchiveCardCell.self, forCellReuseIdentifier: HealthArchiveCardCell.reuseIdentifier)
         tv.register(HealthQuickEntriesCell.self, forCellReuseIdentifier: HealthQuickEntriesCell.reuseIdentifier)
         tv.register(HealthVitalMetricsCell.self, forCellReuseIdentifier: HealthVitalMetricsCell.reuseIdentifier)
@@ -158,10 +154,6 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard indexPath.section < activeSections.count else { return UITableViewCell() }
         switch activeSections[indexPath.section] {
-        case .score:
-            let cell = tableView.dequeueReusableCell(withIdentifier: HealthScoreCardCell.reuseIdentifier, for: indexPath) as! HealthScoreCardCell
-            cell.configure(riskScore: riskScore, riskLevel: riskLevelText)
-            return cell
         case .archive:
             let cell = tableView.dequeueReusableCell(withIdentifier: HealthArchiveCardCell.reuseIdentifier, for: indexPath) as! HealthArchiveCardCell
             cell.configure(archiveProgress: archiveProgress)

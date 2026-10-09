@@ -348,7 +348,7 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 - **AND** `GroupVO` + `RCConversation` → `Conversation` 字段映射：
   - 实时数据优先融云：`unreadMessageCount` → `unread`，`sentTime` → `lastMessageAt` / `lastTime`，`latestMessage` → `lastMessage`
   - 展示元数据优先 `GroupVO`：`principalName ?? groupName` → `name`，`serviceName` → `title` / `roleLabel`
-  - `groupImg` 取首字 → `avatar`，`numbers` → `status`（"N 人在线"）
+  - `groupImg` → `avatarURL`（团队对话头像）；空或图片加载失败展示聊天默认头像 `chat_im_avatar`。`numbers` → `status`（"N 人在线"）
   - `labelType == 1` → `important = true`，`serviceId` → `role`
   - `GroupVO.status` → `Conversation.groupStatus`；`status == 0` 展示「已过期」，`status == 2` 展示「会话已结束」，其它值展示在线人数
   - rc 为 nil 时：`unread = 0`，`lastTime = ""`，`lastMessage` fallback 到 GroupVO.lastContent

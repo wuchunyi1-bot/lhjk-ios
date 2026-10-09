@@ -184,7 +184,8 @@ extension UserTodayMonitorTask {
                 planTime: formattedPlanTime,
                 taskName: name,
                 shortTitle: shortTitle,
-                mealType: mealType
+                mealType: mealType,
+                done: done
             )
         )
     }
@@ -200,25 +201,54 @@ extension UserTodayMonitorTask {
         return quantity
     }
 
+    /// 首页副文案：`HH:mm｜已到/请完成/已完成今日{任务名}`
+    /// 已完成优先；未完成且当前时间已到计划时间 →「已到今日」；未到计划时间 →「请完成今日」。
     private static func homeListSubtitle(
         planTime: String,
         taskName: String,
         shortTitle: String,
-        mealType: Int?
+        mealType: Int?,
+        done: Bool,
+        now: Date = Date()
     ) -> String {
-        let status: String
-        if !taskName.isEmpty {
-            status = taskName
-        } else if let meal = mealTypeLabel(mealType), !meal.isEmpty {
-            let metric = shortTitle.replacingOccurrences(of: "监测", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
-            status = "已到今日\(meal)\(metric)监测"
-        } else if !shortTitle.isEmpty {
-            status = "已到今日\(shortTitle)"
+        let name = homeListTaskName(taskName: taskName, shortTitle: shortTitle, mealType: mealType)
+        let phrase: String
+        if done {
+            phrase = "已完成今日\(name)"
+        } else if hasReachedPlanTime(planTime, now: now) {
+            phrase = "已到今日\(name)"
         } else {
-            status = "请按时完成今日健康监测"
+            phrase = "请完成今日\(name)"
         }
-        guard !planTime.isEmpty else { return status }
-        return "\(planTime)｜\(status)"
+        guard !planTime.isEmpty else { return phrase }
+        return "\(planTime)｜\(phrase)"
+    }
+
+    private static func homeListTaskName(taskName: String, shortTitle: String, mealType: Int?) -> String {
+        if !taskName.isEmpty { return taskName }
+        if let meal = mealTypeLabel(mealType), !meal.isEmpty {
+            let metric = shortTitle
+                .replacingOccurrences(of: "监测", with: "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            return metric.isEmpty ? "\(meal)监测" : "\(meal)\(metric)监测"
+        }
+        if !shortTitle.isEmpty { return shortTitle }
+        return "健康监测"
+    }
+
+    /// 计划时间为 `HH:mm`。当前时分大于等于计划时分视为已到；无法解析时视为未到。
+    private static func hasReachedPlanTime(_ planTime: String, now: Date) -> Bool {
+        let parts = planTime.split(separator: ":")
+        guard parts.count >= 2,
+              let hour = Int(parts[0]),
+              let minute = Int(parts[1]),
+              (0...23).contains(hour),
+              (0...59).contains(minute) else {
+            return false
+        }
+        let clock = Calendar.current.dateComponents([.hour, .minute], from: now)
+        let nowMinutes = (clock.hour ?? 0) * 60 + (clock.minute ?? 0)
+        return nowMinutes >= hour * 60 + minute
     }
 
     private static func mealTypeLabel(_ mealType: Int?) -> String? {

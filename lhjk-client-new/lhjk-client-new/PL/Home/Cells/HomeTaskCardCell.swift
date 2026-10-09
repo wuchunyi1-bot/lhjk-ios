@@ -269,7 +269,7 @@ final class HomeTaskCardCell: UITableViewCell {
         row.clipsToBounds = true
 
         let iconImageView = UIImageView()
-        iconImageView.image = UIImage(named: "home_task_icon")
+        iconImageView.image = UIImage(named: "home_task_icon_high")
         iconImageView.contentMode = .scaleAspectFit
         iconImageView.clipsToBounds = true
 
@@ -292,7 +292,8 @@ final class HomeTaskCardCell: UITableViewCell {
         let subtitle = UILabel()
         subtitle.font = .fdFont(ofSize: 12, weight: .regular)
         subtitle.textColor = UIColor(hexString: "#8591AB")
-        subtitle.numberOfLines = 2
+        subtitle.numberOfLines = 1
+        subtitle.lineBreakMode = .byTruncatingTail
         let subtitleText = task.homeSubtitle.trimmingCharacters(in: .whitespacesAndNewlines)
         subtitle.text = subtitleText.isEmpty ? task.desc : subtitleText
 

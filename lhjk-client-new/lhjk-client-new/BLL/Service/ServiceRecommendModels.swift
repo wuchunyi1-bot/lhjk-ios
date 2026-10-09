@@ -323,7 +323,7 @@ enum HospitalPackageMapper {
             hospitalId: nonEmpty(vo.hospitalId),
             productCode: coverCode(from: packageName),
             name: packageName,
-            subtitle: intro.isEmpty ? packageName : intro,
+            subtitle: intro,
             price: priceText,
             badge: badge,
             accentHex: "#FF7A50",

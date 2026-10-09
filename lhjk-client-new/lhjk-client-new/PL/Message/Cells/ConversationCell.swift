@@ -1,4 +1,5 @@
 import UIKit
+import Kingfisher
 import SnapKit
 
 /// 会话行 Cell — 对齐 Figma 3444:5583（消息首页-优化后）
@@ -165,6 +166,13 @@ final class ConversationCell: UITableViewCell {
 
     required init?(coder: NSCoder) { fatalError() }
 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        avatarView.kf.cancelDownloadTask()
+        avatarView.image = nil
+        avatarPlaceholder.isHidden = true
+    }
+
     // MARK: - Configure
 
     func configure(_ conv: Conversation, isFirst: Bool = false, isLast: Bool = false, isSingle: Bool = false) {
@@ -207,6 +215,13 @@ final class ConversationCell: UITableViewCell {
     // MARK: - Avatar
 
     private func applyAvatar(for conv: Conversation) {
+        if let avatarURL = conv.avatarURL {
+            avatarView.backgroundColor = .clear
+            avatarView.contentMode = .scaleAspectFill
+            avatarPlaceholder.isHidden = true
+            DefaultUserAvatar.apply(urlString: avatarURL, to: avatarView)
+            return
+        }
         if let img = Self.fallbackAvatar(for: conv) {
             avatarView.image = img
             avatarView.backgroundColor = conv.role == .service

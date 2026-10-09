@@ -1,7 +1,7 @@
 import UIKit
 import SnapKit
 
-/// 健管团队整卡 — 对齐 Figma：标题 + 多成员行 + 分割线 + 描边「发消息」
+/// 健管团队整卡 — 对齐 Figma：标题 + 多成员行 + 分割线 + 实心「发消息」
 final class HomeTeamCardCell: UITableViewCell {
 
     static let reuseID = "HomeTeamCardCell"
@@ -203,13 +203,13 @@ final class HomeTeamCardCell: UITableViewCell {
         }
         tagsRow.isHidden = tagsRow.arrangedSubviews.isEmpty
 
-        let messageBtn = UIButton(type: .system)
+        let messageBtn = UIButton(type: .custom)
         messageBtn.setTitle("发消息", for: .normal)
         messageBtn.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
-        messageBtn.setTitleColor(.fdPrimary, for: .normal)
+        messageBtn.setTitleColor(.white, for: .normal)
+        messageBtn.backgroundColor = .fdPrimary
         messageBtn.layer.cornerRadius = 14
-        messageBtn.layer.borderWidth = 0.5
-        messageBtn.layer.borderColor = UIColor.fdPrimary.cgColor
+        messageBtn.clipsToBounds = true
         messageBtn.contentEdgeInsets = UIEdgeInsets(top: 6, left: 12, bottom: 6, right: 12)
         messageBtn.addAction(UIAction { [weak self] _ in
             self?.onMessageTapped?(member)

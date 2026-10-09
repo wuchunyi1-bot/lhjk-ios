@@ -76,8 +76,21 @@ final class PackageDetailInfoView: UIView {
         priceHeaderView.configure(price: rawPrice, unit: unit)
 
         titleLabel.text = pkg.name
-        subtitleLabel.text = pkg.subtitle
-        subtitleLabel.isHidden = pkg.subtitle.isEmpty
+        let subtitle = pkg.subtitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        subtitleLabel.text = subtitle
+        subtitleLabel.isHidden = subtitle.isEmpty
+        subtitleLabel.snp.remakeConstraints {
+            $0.leading.equalToSuperview().offset(16)
+            $0.trailing.equalToSuperview().offset(-16)
+            if subtitle.isEmpty {
+                $0.top.equalTo(titleLabel.snp.bottom)
+                $0.height.equalTo(0)
+                $0.bottom.equalToSuperview().offset(-16)
+            } else {
+                $0.top.equalTo(titleLabel.snp.bottom).offset(6)
+                $0.bottom.equalToSuperview().offset(-16)
+            }
+        }
 
         let tagText = pkg.tag.trimmingCharacters(in: .whitespacesAndNewlines)
         if tagText.contains("热销") {

@@ -17,7 +17,7 @@
 - **WHEN** Banner 下方渲染价格与简介
 - **THEN** 价格头部：橙红色渐变卡片（`#FD383F` → `#FE8A54`），内置 `package_detail_price_bg` 购物袋暗纹与流光背景图，顶部左右圆角 20pt，展示「¥」（18pt 粗体）+ 价格（28pt 粗体）+「元起」（14pt 常规）
 - **AND** **价格兜底规则**：若接口未配置价格或拿不到价格，**禁止展示「面议」**，统一展示为「¥ 0 元起」
-- **AND** 简介卡片：白色带微渐变与白边框圆角卡片（`cornerRadius = 16`），展示套餐标题（20pt 粗体 `#1F2430`）、副标题简介（14pt 常规 `#6D7381`）
+- **AND** 简介卡片：白色带微渐变与白边框圆角卡片（`cornerRadius = 16`），展示套餐标题（20pt 粗体 `#1F2430`）、副标题取 `packageInfo.introduction`（空则不展示，不用 `description` 或默认文案兜底）
 - **AND** 右上角展示印章角标（`recommend == 1` 为「推荐」`package_detail_stamp_recommend`，`recommend == 2` 为「热销」`package_detail_stamp_hot`），金色波浪外圈与双层金环
 
 #### Scenario: 区域三 — 权益与详情连续楼层

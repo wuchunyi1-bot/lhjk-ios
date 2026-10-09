@@ -185,7 +185,7 @@ enum HospitalPackageDetailMapper {
     ) -> ServicePackageDetail {
         let info = bo.packageInfo
         let name = nonEmpty(info?.name) ?? "套餐详情"
-        let subtitle = nonEmpty(info?.introduction) ?? nonEmpty(info?.description) ?? ""
+        let subtitle = nonEmpty(info?.introduction) ?? ""
         let priceValue = max(0, info?.price ?? 0)
         let priceText = priceValue > 0 ? ServicePackageMoney.yenText(priceValue) : "0"
         let tag: String = HospitalPackageMapper.badgeText(from: info?.recommend) ?? ""
@@ -209,7 +209,7 @@ enum HospitalPackageDetailMapper {
             hospitalId: nonEmpty(info?.hospitalId),
             productCode: nonEmpty(info?.categoryServiceName) ?? "德好",
             name: name,
-            subtitle: subtitle.isEmpty ? "综合健康管理服务" : subtitle,
+            subtitle: subtitle,
             category: nonEmpty(info?.categoryServiceName) ?? "健康管理",
             categoryServiceId: nonEmpty(info?.categoryServiceId),
             tag: tag,

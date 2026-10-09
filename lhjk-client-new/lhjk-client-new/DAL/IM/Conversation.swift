@@ -78,6 +78,8 @@ struct Conversation: Identifiable, Codable {
     let name: String
     let title: String
     let avatar: String
+    /// 群头像地址，来自 `GET /v1/session/getGroup` 的 `groupImg`。`nil` 表示非该列表行；空字符串表示无图，展示默认头像。
+    let avatarURL: String?
     var status: String
     let serviceScope: String
     var lastMessage: String
@@ -280,6 +282,7 @@ extension Conversation {
             name: meta.name,
             title: meta.title,
             avatar: meta.avatar,
+            avatarURL: nil,
             status: meta.status,
             serviceScope: meta.serviceScope,
             lastMessage: lastMsg.isEmpty ? "暂无消息" : RongEmoji.symbolToEmoji(lastMsg),
@@ -321,9 +324,8 @@ extension Conversation {
         let role = mapServiceIdToRole(group.serviceId)
 
         let name = group.principalName ?? group.groupName ?? convId
-        let avatarChar = group.groupImg?.isEmpty == false
-            ? String((group.groupImg ?? name).prefix(1))
-            : String(name.prefix(1))
+        let groupImg = group.groupImg?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let avatarChar = String(name.prefix(1))
 
         let statusStr = GroupSessionStatus.listStatusText(status: group.status, memberCount: group.numbers)
 
@@ -337,6 +339,7 @@ extension Conversation {
             name: name,
             title: group.serviceName ?? "健康管理",
             avatar: avatarChar,
+            avatarURL: groupImg,
             status: statusStr,
             serviceScope: group.groupName ?? "日常随访",
             lastMessage: RongEmoji.symbolToEmoji(lastMsg),

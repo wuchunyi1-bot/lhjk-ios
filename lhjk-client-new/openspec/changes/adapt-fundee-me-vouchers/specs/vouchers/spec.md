@@ -62,7 +62,7 @@
 - **WHEN** 待使用权益卡
 - **THEN** 展示名称、面值、有效期、印章；临近到期提示；可「赠送好友」「立即兑换」
 - **WHEN** 已兑换
-- **THEN** 可「查看订单」
+- **THEN** 可「查看订单」，跳转 `/orders/detail` 的 id 取 `relationOrderId`，不用 `orderId`；`relationOrderId` 为空则按钮不可点
 - **WHEN** 已过期
 - **THEN** 低饱和、无操作
 

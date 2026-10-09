@@ -160,8 +160,17 @@ final class IMService {
             default:                        typeStr = "其他(\(conv.conversationType.rawValue))"
             }
             print("[IMService] conv id=\(conv.targetId), type=\(typeStr), unread=\(conv.unreadMessageCount)")
+            Self.logRCConversationAvatar(conv)
         }
         print("[IMService] 共 \(list.count) 个会话")
+    }
+
+    /// `RCConversation` 本身没有头像属性。托管信息 `dataMgmtInfo.portraitUri` 才是会话头像，未开启托管时为 nil。
+    private static func logRCConversationAvatar(_ rc: RCConversation) {
+        let hostedName = rc.dataMgmtInfo?.name ?? "nil"
+        let hostedPortrait = rc.dataMgmtInfo?.portraitUri ?? "nil"
+        let senderPortrait = rc.latestMessage?.senderUserInfo?.portraitUri ?? "nil"
+        print("[IMService] RCConversation targetId=\(rc.targetId) dataMgmtInfo.name=\(hostedName) dataMgmtInfo.portraitUri=\(hostedPortrait) latestMessage.senderUserInfo.portraitUri=\(senderPortrait)")
     }
 
     /// 两步合并加载会话列表：
@@ -209,6 +218,7 @@ final class IMService {
             // 匹配上融云的会话（RCConversation + GroupVO），在前展示
             var matchedList: [Conversation] = []
             for rc in sortedRC {
+                Self.logRCConversationAvatar(rc)
                 if let group = groupDict[rc.targetId] {
                     matchedList.append(Conversation.fromGroupVO(group, rc: rc))
                     matchedIds.insert(rc.targetId)

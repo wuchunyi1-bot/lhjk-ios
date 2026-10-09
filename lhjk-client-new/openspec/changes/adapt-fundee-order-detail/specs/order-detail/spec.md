@@ -29,7 +29,8 @@
 | `amountVersion` | Int | 结算版本，支付时原样带回 |
 | `expectedPayableAmount` | Double | 期望应付，支付时原样带回 |
 | `price` | Double | 实付 |
-| `packageDescription` | String | 卖点 |
+| `packageDescription` | String | 卖点（套餐名下方副标题不使用） |
+| `introduction` | String | 套餐名下方副标题；空或未下发则不展示，不用 `description` / `packageDescription` 兜底 |
 | `packageImageUrl` | String | 封面 |
 | `hospitalName` | String | 机构 |
 | `typeOrder` | Int | 0 自提 / 1 快递 |

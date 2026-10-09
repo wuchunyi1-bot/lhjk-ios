@@ -17,6 +17,8 @@ struct AppOrderDetailBO: Decodable {
     let hospitalName: String?
     let doctorName: String?
     let packageDescription: String?
+    /// 套餐名下方副标题。后端补齐前可能缺失，空则不展示。
+    let introduction: String?
     let packageType: Int?
     let packageImageUrl: String?
     let typeOrder: Int?
@@ -69,7 +71,7 @@ struct AppOrderDetailBO: Decodable {
 
     private enum CodingKeys: String, CodingKey {
         case id, parentId, orderName, status, payable, price, paymentType, paymentNo, createTime
-        case hospitalName, doctorName, packageDescription, packageType, packageImageUrl
+        case hospitalName, doctorName, packageDescription, introduction, packageType, packageImageUrl
         case typeOrder, address, receiver, phone, expressAmount, couponAmount, benefitsAmount
         case description, logisticsNumber, logisticsVendor, logisticsChineseName
         case shipmentTime, beginTime, endTime, serviceTime
@@ -94,6 +96,7 @@ struct AppOrderDetailBO: Decodable {
         hospitalName = try c.decodeIfPresent(String.self, forKey: .hospitalName)
         doctorName = try c.decodeIfPresent(String.self, forKey: .doctorName)
         packageDescription = try c.decodeIfPresent(String.self, forKey: .packageDescription)
+        introduction = try c.decodeIfPresent(String.self, forKey: .introduction)
         packageType = Self.decodeFlexibleInt(c, key: .packageType)
         packageImageUrl = try c.decodeIfPresent(String.self, forKey: .packageImageUrl)
         typeOrder = Self.decodeFlexibleInt(c, key: .typeOrder)

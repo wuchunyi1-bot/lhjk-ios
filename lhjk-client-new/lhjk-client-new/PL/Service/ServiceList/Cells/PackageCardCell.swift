@@ -50,6 +50,7 @@ final class PackageCardCell: UITableViewCell {
     private var lastBadge: String?
     private var lastLayoutScale: CGFloat = 0
     private var lastAppliedShowsBadge = false
+    private var lastAppliedShowsSubtitle = false
 
     private let cardView: UIView = {
         let view = UIView()
@@ -175,13 +176,15 @@ final class PackageCardCell: UITableViewCell {
         }
 
         let showsBadge = !badgeView.isHidden
-        if scaleChanged || showsBadge != lastAppliedShowsBadge {
+        let showsSubtitle = !subtitleLabel.isHidden
+        if scaleChanged || showsBadge != lastAppliedShowsBadge || showsSubtitle != lastAppliedShowsSubtitle {
             lastAppliedShowsBadge = showsBadge
-            applyContentConstraints(scale: scale, showsBadge: showsBadge)
+            lastAppliedShowsSubtitle = showsSubtitle
+            applyContentConstraints(scale: scale, showsBadge: showsBadge, showsSubtitle: showsSubtitle)
         }
     }
 
-    private func applyContentConstraints(scale: CGFloat, showsBadge: Bool) {
+    private func applyContentConstraints(scale: CGFloat, showsBadge: Bool, showsSubtitle: Bool) {
 
         coverImageView.snp.remakeConstraints { make in
             make.top.leading.equalToSuperview().offset(Design.coverInset * scale)
@@ -222,9 +225,14 @@ final class PackageCardCell: UITableViewCell {
         }
 
         subtitleLabel.snp.remakeConstraints { make in
-            make.top.equalTo(nameLabel.snp.bottom).offset(Design.nameToSubtitle * scale)
             make.leading.equalTo(nameLabel)
             make.trailing.equalToSuperview().offset(-8 * scale)
+            if showsSubtitle {
+                make.top.equalTo(nameLabel.snp.bottom).offset(Design.nameToSubtitle * scale)
+            } else {
+                make.top.equalTo(nameLabel.snp.bottom)
+                make.height.equalTo(0)
+            }
         }
 
         priceLabel.snp.remakeConstraints { make in
@@ -243,6 +251,7 @@ final class PackageCardCell: UITableViewCell {
         lastBadge = nil
         lastLayoutScale = 0
         lastAppliedShowsBadge = false
+        lastAppliedShowsSubtitle = false
         badgeView.isHidden = true
         badgeLabel.isHidden = true
         coverImageView.kf.cancelDownloadTask()
@@ -254,7 +263,9 @@ final class PackageCardCell: UITableViewCell {
         hospitalId = item.hospitalId
         self.categoryServiceId = categoryServiceId
         nameLabel.text = item.name
-        subtitleLabel.text = item.subtitle.isEmpty ? "健康管理服务套餐" : item.subtitle
+        let subtitle = item.subtitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        subtitleLabel.text = subtitle
+        subtitleLabel.isHidden = subtitle.isEmpty
         lastPriceText = item.price
         priceLabel.attributedText = Self.priceAttributed(from: item.price, scale: lastLayoutScale > 0 ? lastLayoutScale : 1)
         applyBadge(item.badge)
@@ -278,7 +289,9 @@ final class PackageCardCell: UITableViewCell {
         hospitalId = nil
         categoryServiceId = nil
         nameLabel.text = p.name
-        subtitleLabel.text = p.subtitle
+        let subtitle = p.subtitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        subtitleLabel.text = subtitle
+        subtitleLabel.isHidden = subtitle.isEmpty
         lastPriceText = p.price
         priceLabel.attributedText = Self.priceAttributed(from: p.price, scale: lastLayoutScale > 0 ? lastLayoutScale : 1)
         applyBadge(p.tag.isEmpty ? nil : p.tag)

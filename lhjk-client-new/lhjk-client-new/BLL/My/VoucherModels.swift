@@ -350,6 +350,8 @@ struct BenefitsTakePageItem: Decodable, Equatable {
     let redeemedAt: String?
     let operationNo: String?
     let orderId: Int64?
+    /// 已兑换后关联的订单 id，「查看订单」跳转用此字段
+    let relationOrderId: Int64?
     let orderNo: String?
     let sourcePartyUserId: Int64?
     let sourcePartyName: String?
@@ -360,7 +362,7 @@ struct BenefitsTakePageItem: Decodable, Equatable {
     private enum CodingKeys: String, CodingKey {
         case id, benefitsNumber, benefitsName, imageUrl, price, status, endTime
         case pendingTransferId, pendingTransferNo, giftedAt, expiresAt, redeemedAt
-        case operationNo, orderId, orderNo, sourcePartyUserId, sourcePartyName, createTime
+        case operationNo, orderId, relationOrderId, orderNo, sourcePartyUserId, sourcePartyName, createTime
         case expiringSoon, remainDays
     }
 
@@ -380,6 +382,7 @@ struct BenefitsTakePageItem: Decodable, Equatable {
         redeemedAt = try c.decodeIfPresent(String.self, forKey: .redeemedAt)
         operationNo = try c.decodeIfPresent(String.self, forKey: .operationNo)
         orderId = Self.int64(c, .orderId)
+        relationOrderId = Self.int64(c, .relationOrderId)
         orderNo = try c.decodeIfPresent(String.self, forKey: .orderNo)
         sourcePartyUserId = Self.int64(c, .sourcePartyUserId)
         sourcePartyName = try c.decodeIfPresent(String.self, forKey: .sourcePartyName)
@@ -727,7 +730,7 @@ enum BenefitMapper {
             status: mapped,
             boundAt: item.createTime,
             redeemedAt: item.redeemedAt,
-            orderId: item.orderId.map(String.init) ?? item.orderNo,
+            orderId: item.relationOrderId.map(String.init),
             pendingTransferId: pendingId,
             imageUrl: item.imageUrl,
             sourcePartyName: nonEmpty(item.sourcePartyName),

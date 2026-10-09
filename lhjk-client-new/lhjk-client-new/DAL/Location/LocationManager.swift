@@ -126,13 +126,10 @@ final class LocationManager: NSObject {
     }
 
     private func systemAuthorizationStatus() -> CLAuthorizationStatus {
-        if #available(iOS 14.0, *) {
-            if let locationManager {
-                return locationManager.authorizationStatus
-            }
-            return CLLocationManager().authorizationStatus
+        if let locationManager {
+            return locationManager.authorizationStatus
         }
-        return CLLocationManager.authorizationStatus()
+        return CLLocationManager().authorizationStatus
     }
 
     private func mapStatus(_ status: CLAuthorizationStatus) -> AppLocationAuthorizationStatus {
