@@ -12,7 +12,7 @@ enum MessageType: String, Codable {
     case vip              // AD:Vip
     case serviceComment   // AD:ServiceComment
     case checkUserMsg     // AD:CheckUserMsg
-    case timeMarker   // 日期分隔
+    case timeMarker   // 时间分割线（间隔 ≥ 5 分钟）
     case recall       // 撤回通知
     case voice        // 语音消息
     case metricCard = "metric-card"

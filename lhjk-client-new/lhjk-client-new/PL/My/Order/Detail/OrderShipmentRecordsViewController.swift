@@ -114,6 +114,10 @@ final class OrderShipmentRecordsViewController: BaseViewController {
                 UIPasteboard.general.string = trackingNo
                 self?.showToast("物流单号已复制")
             }
+            taskView.onOpenTracking = { [weak self] in
+                guard let self else { return }
+                OrderLogisticsTracking.open(line: line, isPickup: self.isPickup, from: self)
+            }
             card.addSubview(taskView)
             taskView.snp.makeConstraints { $0.edges.equalToSuperview() }
             contentStack.addArrangedSubview(card)

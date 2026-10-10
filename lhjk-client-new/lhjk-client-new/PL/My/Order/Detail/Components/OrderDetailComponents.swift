@@ -480,14 +480,16 @@ private final class OrderDetailInstitutionCallBar: UIView {
 
 // MARK: - 物流任务卡（对齐 Figma 3546:4446）
 
-final class OrderDetailShipmentTaskCardView: UIView {
+final class OrderDetailShipmentTaskCardView: UIView, UIGestureRecognizerDelegate {
     var onCopyTracking: ((String) -> Void)?
+    var onOpenTracking: (() -> Void)?
 
     private let iconView = UIImageView()
     private let nameLabel = UILabel()
     private let subtitleLabel = UILabel()
     private let copyButton = UIButton(type: .system)
     private let stampImageView = UIImageView()
+    private let tapGesture = UITapGestureRecognizer()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -513,6 +515,10 @@ final class OrderDetailShipmentTaskCardView: UIView {
 
         stampImageView.contentMode = .scaleAspectFit
         stampImageView.isUserInteractionEnabled = false
+
+        tapGesture.addTarget(self, action: #selector(tapCard))
+        tapGesture.delegate = self
+        addGestureRecognizer(tapGesture)
 
         addSubview(iconView)
         addSubview(nameLabel)
@@ -575,11 +581,37 @@ final class OrderDetailShipmentTaskCardView: UIView {
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let showsCopy = line.isShipped && !trackingNo.isEmpty
         copyButton.isHidden = !showsCopy
+        let canOpenTracking = line.logisticsTrackingShoppingCartId(isPickup: isPickup) != nil
+        tapGesture.isEnabled = canOpenTracking
+        isUserInteractionEnabled = true
     }
 
     @objc private func tapCopy() {
         guard !trackingNo.isEmpty else { return }
         onCopyTracking?(trackingNo)
+    }
+
+    @objc private func tapCard() {
+        onOpenTracking?()
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        guard !copyButton.isHidden else { return true }
+        let point = touch.location(in: copyButton)
+        return !copyButton.bounds.contains(point)
+    }
+}
+
+/// 已发货商品行 → H5 物流轨迹 `#/logistics-tracking?shoppingCartId=`
+enum OrderLogisticsTracking {
+    @MainActor
+    static func open(line: OrderDetailPackageLineBO, isPickup: Bool, from viewController: UIViewController) {
+        guard let shoppingCartId = line.logisticsTrackingShoppingCartId(isPickup: isPickup) else { return }
+        FundePageURL.open(
+            "FundeH5:logistics-tracking?shoppingCartId=\(shoppingCartId)",
+            title: "物流信息",
+            from: viewController
+        )
     }
 }
 
@@ -590,6 +622,7 @@ final class OrderDetailLogisticsView: UIView {
 
     var onCopyTracking: ((String) -> Void)?
     var onOpenRecords: (() -> Void)?
+    var onOpenTracking: ((OrderDetailPackageLineBO) -> Void)?
 
     private let titleLabel = UILabel()
     private let previewStack = UIStackView()
@@ -655,6 +688,9 @@ final class OrderDetailLogisticsView: UIView {
             )
             card.onCopyTracking = { [weak self] trackingNo in
                 self?.onCopyTracking?(trackingNo)
+            }
+            card.onOpenTracking = { [weak self] in
+                self?.onOpenTracking?(line)
             }
             previewStack.addArrangedSubview(card)
         }

@@ -42,6 +42,9 @@
 - **AND** 卡片底部展示「发货记录（共 X 条） >」，点击跳转 `/orders/shipment-records?orderId=&type=express`
 - **AND** 该行 `shipmentStatus != 2` 时副文案为「商家备货中，预计发货时间 {presetDeliveryTime}」
 - **AND** 该行 `shipmentStatus == 2` 且订单级存在物流公司与单号时展示物流信息并可复制单号
+- **AND** 该行 `shipmentStatus == 2`（已发货）时整行可点击，打开 H5 `#/logistics-tracking?shoppingCartId={id}`
+- **AND** `shoppingCartId` 取该行 `shoppingCartPackageDetailList[].id`；`id` 缺失或 `shipmentStatus != 2` 时不可点击
+- **AND** 复制物流单号不触发跳转；自提行（待自提 / 已自提）不可进入物流轨迹页
 
 #### Scenario: 不含实物不展示履约信息
 
@@ -77,6 +80,8 @@
 - **THEN** 进入 `OrderShipmentRecordsViewController`
 - **AND** 展示全部 `shipmentStatus != nil` 的商品履约行
 - **AND** 无数据时展示「暂无发货记录」/「暂无自提记录」
+- **AND** 发货记录中 `shipmentStatus == 2` 的行与详情物流预览行相同：点击打开 `#/logistics-tracking?shoppingCartId={shoppingCartPackageDetailList[].id}`
+- **AND** 待发货行、自提记录行不可点击跳转物流轨迹
 
 ### Requirement: 服务机构卡片
 

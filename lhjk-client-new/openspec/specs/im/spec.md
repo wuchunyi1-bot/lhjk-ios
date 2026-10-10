@@ -297,6 +297,7 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 - **WHEN** 用户进入消息页
 - **THEN** 顶部导航栏展示标题"消息" + 副标题"您的健管团队 7×24 在线"
 - **AND** 下方 FdSegment 分段控件，两个 Tab：「团队对话」（角标 = 所有会话 unread 之和）、「通知中心」（角标 = 未读通知数）
+- **AND** 两处 Tab 角标与底部「消息」Tab 角标：数量 `> 99` 时展示 `99+`，否则展示实际数字；为 0 时隐藏
 - **AND** 默认激活「团队对话」Tab
 - **AND** 「团队对话」和「通知中心」是**两个独立的子 ViewController**（`ConversationListViewController` / `NotificationListViewController`），通过分段控件切换，各自管理自己的数据加载和刷新
 
@@ -310,7 +311,7 @@ App 启动时 SHALL 初始化融云 IM SDK 并注册消息接收代理。
 - **WHEN** 遍历 conversations 数组渲染
 - **THEN** 每行展示：
   - 左侧 46×46pt `fd-avatar--{role}` 角色色圆形头像（首字），`cornerRadius = 23` 确保正圆
-  - 头像右上角未读角标（unread > 0 时，红色圆形 badge）
+  - 头像右上角未读角标（unread > 0 时展示；背景与团队对话角标一致，为品牌橙 `#FF7A50`；`unread > 99` 显示 `99+`，胶囊随文案横向撑开）
   - 姓名（15pt bold）+ roleLabel 标签 pill（10pt，灰底灰字）
   - 消息预览单行截断（12pt `fdSubtext`）
   - 右侧时间戳（10pt `fdMuted`，固定宽度 44pt，始终展示不被挤压）
@@ -539,9 +540,14 @@ App 冷启动
 - **WHEN** `type == "system"`
 - **THEN** 居中灰色胶囊样式（padding 5×12pt，`fdMuted` 文字，灰底 6% 透明度），无头像
 
-#### Scenario: 日期分割线
-- **WHEN** 消息区渲染
-- **THEN** 在消息顶部显示"今天"居中分割线（11pt `fdMuted`，灰色胶囊背景）
+#### Scenario: 时间分割线
+
+- **WHEN** 渲染聊天消息流
+- **THEN** 使用居中提示 Cell（`CenteredTipCell`，消息类型 `timeMarker`）插入时间分割线
+- **AND** 首条消息前必须有一条；之后仅当与上一条真实消息的发送时间间隔 **≥ 5 分钟** 时再插入一条
+- **AND** 文案取该条消息的发送时间：当天 `HH:mm`；昨天 `昨天 HH:mm`；今年 `MM-dd HH:mm`；跨年 `yyyy-MM-dd HH:mm`
+- **AND** 新收到或本端发出的消息同样按 5 分钟间隔补分割线
+- **AND** 撤回提示仍用同一 Cell，不按 5 分钟规则插入
 
 #### Scenario: 结构化服务卡片
 - **WHEN** `type` 为 `metric-card` / `report-card` / `diet-card` / `appointment-card` / `case-card` / `plan-card`
@@ -854,7 +860,7 @@ App 冷启动
 - [ ] staff 文本气泡：左对齐白色气泡 + 头像 + 姓名/角色/时间
 - [ ] user 文本气泡：右对齐品牌色气泡 + "我"头像 + 时间
 - [ ] 系统消息：居中灰色胶囊
-- [ ] 日期分割线："今天"
+- [ ] 时间分割线：首条必有；相邻消息间隔 ≥ 5 分钟再插一条（当天 `HH:mm`，昨天 `昨天 HH:mm`）
 - [ ] 服务卡片渲染：icon + 标题 + 摘要 + 数据行 + footnote + action 按钮
 - [ ] 餐食分析卡片：餐食标签 + 照片占位 + 食材标注（红/绿/黄）+ 点评
 - [ ] AI 周报卡片：评分对比 + 亮点 + 勋章（如有）+ 下周目标

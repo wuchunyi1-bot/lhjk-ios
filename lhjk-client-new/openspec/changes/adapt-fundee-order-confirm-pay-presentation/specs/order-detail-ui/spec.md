@@ -44,7 +44,8 @@
 
 - 左 16pt 套餐图标 + 名称 14 + 副文案 12 `#8591AB`
 - 右倾斜圆形印章：快递「待发货 / 已发货」；自提「待自提 / 已自提」（切图见 `order_detail_stamp_*`，已自提为 `order_detail_stamp_pickuped`）；**只**随该行 `shipmentStatus` 与履约方式变化，不随整单 status
-- 已发货行可复制物流单号
+- 已发货行可复制物流单号；整行点击打开 H5 物流轨迹（`#/logistics-tracking?shoppingCartId=`，id 为商品行 `id`）；待发货与自提行不可点
+- 发货记录列表中已发货行同样可点进该 H5；自提记录不可点
 - 底部居中「发货记录 (共 N 条)」或「自提记录」，12pt 灰色 + 展开箭头
 
 ### Requirement: 退款/售后信息

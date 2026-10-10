@@ -464,6 +464,8 @@ struct AppOrderDetailBO: Decodable {
 
 /// 订单商品明细 `ShoppingCartPackageDetailBO`
 struct OrderDetailPackageLineBO: Decodable {
+    /// `shoppingCartPackageDetailList[].id`，物流轨迹 H5 的 `shoppingCartId`
+    let id: String?
     let packageName: String?
     let commodityName: String?
     let quantity: Int?
@@ -477,12 +479,13 @@ struct OrderDetailPackageLineBO: Decodable {
     let saleFlag: Int?
 
     private enum CodingKeys: String, CodingKey {
-        case packageName, commodityName, quantity, billingType, price
+        case id, packageName, commodityName, quantity, billingType, price
         case shipmentStatus, presetDeliveryTime, saleFlag
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = Self.decodeFlexibleID(c, key: .id)
         packageName = try c.decodeIfPresent(String.self, forKey: .packageName)
         commodityName = try c.decodeIfPresent(String.self, forKey: .commodityName)
         quantity = Self.decodeFlexibleInt(c, key: .quantity)
@@ -519,6 +522,13 @@ struct OrderDetailPackageLineBO: Decodable {
 
     var isShipped: Bool { shipmentStatus == 2 }
 
+    /// 快递已发货才可进物流轨迹；自提不跳
+    func logisticsTrackingShoppingCartId(isPickup: Bool) -> String? {
+        guard !isPickup, isShipped else { return nil }
+        let trimmed = id?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
     /// 物流行右上角印章文案：只看本行 `shipmentStatus` + 履约方式
     func stampText(isPickup: Bool) -> String {
         if isPickup {
@@ -553,6 +563,19 @@ struct OrderDetailPackageLineBO: Decodable {
 
     private static func billingUnit(_ type: Int?) -> String {
         DictionaryCacheService.shared.billingUnitLabel(type, default: "份")
+    }
+
+    private static func decodeFlexibleID<K: CodingKey>(
+        _ container: KeyedDecodingContainer<K>,
+        key: K
+    ) -> String? {
+        if let value = try? container.decodeIfPresent(String.self, forKey: key) {
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        if let value = try? container.decodeIfPresent(Int64.self, forKey: key) { return String(value) }
+        if let value = try? container.decodeIfPresent(Int.self, forKey: key) { return String(value) }
+        return nil
     }
 
     private static func decodeFlexibleInt<K: CodingKey>(

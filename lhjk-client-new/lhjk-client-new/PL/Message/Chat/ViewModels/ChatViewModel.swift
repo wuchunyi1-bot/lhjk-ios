@@ -149,7 +149,7 @@ final class ChatViewModel: ObservableObject {
                 guard let self else { return }
                 guard msg.conversationId == self.conversationId else { return }
                 guard !self.messages.contains(where: { $0.id == msg.id }) else { return }
-                self.messages.append(msg)
+                self.appendWithTimeMarker(msg)
             }
             .store(in: &cancellables)
 
@@ -173,7 +173,7 @@ final class ChatViewModel: ObservableObject {
         let reply = quotedMessage.flatMap { ReplyMessage.from($0) }
         dismissQuote()
 
-        messages.append(localMsg)
+        appendWithTimeMarker(localMsg)
         scrollToBottomPublisher.send(false)
 
         Task {
@@ -203,7 +203,7 @@ final class ChatViewModel: ObservableObject {
         let reply = quotedMessage.flatMap { ReplyMessage.from($0) }
         dismissQuote()
 
-        messages.append(localMsg)
+        appendWithTimeMarker(localMsg)
         scrollToBottomPublisher.send(false)
 
         Task {
@@ -253,7 +253,7 @@ final class ChatViewModel: ObservableObject {
         let reply = quotedMessage.flatMap { ReplyMessage.from($0) }
         dismissQuote()
 
-        messages.append(localMsg)
+        appendWithTimeMarker(localMsg)
         scrollToBottomPublisher.send(true)
 
         Task {
@@ -314,7 +314,7 @@ final class ChatViewModel: ObservableObject {
         let reply = quotedMessage.flatMap { ReplyMessage.from($0) }
         dismissQuote()
 
-        messages.append(localMsg)
+        appendWithTimeMarker(localMsg)
         scrollToBottomPublisher.send(true)
 
         Task {
@@ -442,7 +442,7 @@ final class ChatViewModel: ObservableObject {
             senderName: nil, senderRole: nil, avatar: nil, portraitUrl: nil,
             text: text,
             time: "刚刚",
-            sentTime: nil,
+            sentTime: Int64(Date().timeIntervalSince1970 * 1000),
             card: nil, meal: nil, report: nil,
             imagePath: imagePath,
             thumbWidth: thumbWidth,
@@ -451,6 +451,17 @@ final class ChatViewModel: ObservableObject {
             conversationTypeRaw: conversationType.rawValue,
             extra: nil, reply: nil, messageId: -1
         )
+    }
+
+    private func appendWithTimeMarker(_ msg: ChatMessage) {
+        if let marker = Self.timeMarkerIfNeeded(
+            before: msg,
+            in: messages,
+            conversationId: conversationId
+        ) {
+            messages.append(marker)
+        }
+        messages.append(msg)
     }
 
     private func replaceLocalMessage(localId: String, with sentMsg: ChatMessage?) {
@@ -507,44 +518,51 @@ final class ChatViewModel: ObservableObject {
 
 extension ChatViewModel {
 
-    /// 在消息列表中插入日期分隔标记
+    /// 相邻真实消息间隔 ≥ 5 分钟时插入居中时间分割线（`CenteredTipCell` / `timeMarker`）
+    static let timeMarkerInterval: TimeInterval = 5 * 60
+
     static func insertTimeMarkers(_ list: [ChatMessage], conversationId: String) -> [ChatMessage] {
         guard !list.isEmpty else { return list }
 
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
-
         var result: [ChatMessage] = []
-        var lastDate: Date?
+        var placed: [ChatMessage] = []
 
-        for msg in list {
-            guard let sentTime = parseMessageDate(msg) else {
-                result.append(msg)
-                continue
-            }
-            let msgDate = calendar.startOfDay(for: sentTime)
-
-            if lastDate == nil || msgDate != lastDate {
-                let dateText = formatDateMarker(msgDate, today: today, yesterday: yesterday, calendar: calendar)
-                let marker = ChatMessage(
-                    id: "marker-\(msg.id)",
-                    type: .timeMarker,
-                    role: .user,
-                    senderName: nil, senderRole: nil, avatar: nil, portraitUrl: nil,
-                    text: dateText, time: "", sentTime: nil,
-                    card: nil, meal: nil, report: nil,
-                    imagePath: nil, thumbWidth: nil, thumbHeight: nil,
-                    conversationId: conversationId,
-                    extra: nil, reply: nil, messageId: -1
-                )
+        for msg in list where msg.type != .timeMarker {
+            if let marker = timeMarkerIfNeeded(before: msg, in: placed, conversationId: conversationId) {
                 result.append(marker)
             }
             result.append(msg)
-            lastDate = msgDate
+            placed.append(msg)
         }
 
         return result
+    }
+
+    static func timeMarkerIfNeeded(
+        before msg: ChatMessage,
+        in list: [ChatMessage],
+        conversationId: String
+    ) -> ChatMessage? {
+        guard let sentTime = parseMessageDate(msg) else { return nil }
+        if let previous = list.last(where: { $0.type != .timeMarker }) {
+            guard let previousDate = parseMessageDate(previous) else { return nil }
+            guard sentTime.timeIntervalSince(previousDate) >= timeMarkerInterval else { return nil }
+        }
+        return makeTimeMarker(at: sentTime, anchorId: msg.id, conversationId: conversationId)
+    }
+
+    private static func makeTimeMarker(at date: Date, anchorId: String, conversationId: String) -> ChatMessage {
+        ChatMessage(
+            id: "marker-\(anchorId)",
+            type: .timeMarker,
+            role: .user,
+            senderName: nil, senderRole: nil, avatar: nil, portraitUrl: nil,
+            text: formatTimeMarker(date), time: "", sentTime: nil,
+            card: nil, meal: nil, report: nil,
+            imagePath: nil, thumbWidth: nil, thumbHeight: nil,
+            conversationId: conversationId,
+            extra: nil, reply: nil, messageId: -1
+        )
     }
 
     private static func parseMessageDate(_ msg: ChatMessage) -> Date? {
@@ -571,21 +589,21 @@ extension ChatViewModel {
         return Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: baseDate)
     }
 
-    private static func formatDateMarker(_ date: Date, today: Date, yesterday: Date, calendar: Calendar) -> String {
-        if calendar.isDate(date, inSameDayAs: today) {
-            return "今天"
+    private static func formatTimeMarker(_ date: Date) -> String {
+        let calendar = Calendar.current
+        let clock = DateFormatter()
+        clock.dateFormat = "HH:mm"
+        let timeText = clock.string(from: date)
+        if calendar.isDateInToday(date) {
+            return timeText
         }
-        if calendar.isDate(date, inSameDayAs: yesterday) {
-            return "昨天"
+        if calendar.isDateInYesterday(date) {
+            return "昨天 \(timeText)"
         }
-        let fmt = DateFormatter()
+        let day = DateFormatter()
         let year = calendar.component(.year, from: date)
         let thisYear = calendar.component(.year, from: Date())
-        if year == thisYear {
-            fmt.dateFormat = "MM-dd"
-        } else {
-            fmt.dateFormat = "yyyy-MM-dd"
-        }
-        return fmt.string(from: date)
+        day.dateFormat = year == thisYear ? "MM-dd" : "yyyy-MM-dd"
+        return "\(day.string(from: date)) \(timeText)"
     }
 }

@@ -41,7 +41,7 @@ final class ConversationCell: UITableViewCell {
     /// 未读徽标：红底容器 + 居中数字（避免 UILabel 固定高度时字形视觉偏上）
     private let badgeView: UIView = {
         let v = UIView()
-        v.backgroundColor = .fdDanger
+        v.backgroundColor = .fdPrimary
         v.layer.cornerRadius = 9
         v.clipsToBounds = true
         v.isHidden = true
@@ -49,6 +49,7 @@ final class ConversationCell: UITableViewCell {
     }()
 
     private let badgeLabel = UnreadBadgeCountLabel()
+    private var badgeWidthConstraint: Constraint?
 
     private let nameLabel: UILabel = {
         let l = UILabel()
@@ -126,7 +127,7 @@ final class ConversationCell: UITableViewCell {
             make.top.equalTo(avatarView).offset(-2)
             make.trailing.equalTo(avatarView).offset(2)
             make.height.equalTo(18)
-            make.width.greaterThanOrEqualTo(18)
+            badgeWidthConstraint = make.width.equalTo(18).constraint
         }
         badgeLabel.snp.makeConstraints { make in
             make.edges.equalToSuperview()
@@ -188,6 +189,8 @@ final class ConversationCell: UITableViewCell {
         if let badge = conv.unreadBadge {
             badgeView.isHidden = false
             badgeLabel.text = badge
+            let width = max(18, ceil(badgeLabel.intrinsicContentSize.width))
+            badgeWidthConstraint?.update(offset: width)
         } else {
             badgeView.isHidden = true
         }
@@ -262,6 +265,8 @@ final class UnreadBadgeCountLabel: UILabel {
         textColor = .white
         textAlignment = .center
         isUserInteractionEnabled = false
+        setContentCompressionResistancePriority(.required, for: .horizontal)
+        setContentHuggingPriority(.required, for: .horizontal)
     }
 
     required init?(coder: NSCoder) { fatalError() }

@@ -129,6 +129,9 @@ final class OrderDetailViewController: BaseViewController {
         expressLogisticsView.onOpenRecords = { [weak self] in
             self?.openShipmentRecords(isPickup: false)
         }
+        expressLogisticsView.onOpenTracking = { [weak self] line in
+            self?.openLogisticsTracking(line: line, isPickup: false)
+        }
 
         pickupLogisticsCard.addSubview(pickupLogisticsView)
         pickupLogisticsView.snp.makeConstraints { $0.edges.equalToSuperview() }
@@ -417,5 +420,9 @@ final class OrderDetailViewController: BaseViewController {
             ],
             from: self
         )
+    }
+
+    private func openLogisticsTracking(line: OrderDetailPackageLineBO, isPickup: Bool) {
+        OrderLogisticsTracking.open(line: line, isPickup: isPickup, from: self)
     }
 }
