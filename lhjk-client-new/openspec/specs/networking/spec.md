@@ -110,6 +110,11 @@
 - **WHEN** 发起网络请求前
 - **THEN** Alamofire `RequestInterceptor` 协议的方法依次执行，可添加通用 Header（如 Content-Type）、记录请求日志
 
+#### Scenario: 设备信息请求头
+- **WHEN** 通过 `APIManager.session` 或 `publicSession` 发起请求（含登录、刷新 Token）
+- **THEN** 请求适配阶段把 `DeviceInformation` 写入 `URLRequest`（DEBUG 下 `[API] Headers` 可见），值为紧凑 JSON：`deviceName`（`uname().machine`）、`manufacturerName`（`Apple`）、`sysName`、`sysVersion`、`appVersion`（`CFBundleShortVersionString`）、`deviceId`（`identifierForVendor`，为空时用 Keychain 中首次生成的 UUID）
+- **AND** 字段按库长度截断：`deviceName` / `manufacturerName` / `deviceId` 128，`sysName` / `sysVersion` / `appVersion` 64
+
 #### Scenario: 响应日志
 - **WHEN** 收到网络响应后
 - **THEN** Alamofire `EventMonitor` 协议的方法记录响应状态码、响应体和错误信息

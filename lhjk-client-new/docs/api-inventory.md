@@ -167,9 +167,9 @@ App端/
 | 33a | POST | `/v1/orderPay/orderPay` | `App端/商城/订单支付服务` | `OrderService` / `PaymentService.payMallOrder`；确认订单立即支付；**JSON body** 带回 `amountVersion`、`expectedPayableAmount` | [支付统一接口](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330716e0.md) |
 | 34 | GET | `/v1/couponTake/getCouponTakeList` | `App端/商城/优惠券领用` | `CouponService` | [领用列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330752e0.md) |
 | 35 | POST | `/v1/couponTake/bindCouponTake` | `App端/商城/优惠券领用` | `CouponService` | [绑定优惠券](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330751e0.md) |
-| 35a | GET | `/v1/benefitsTake/getCustomerPage` | `App端/商城/员工权益卡管理` | `VoucherService`（卡包列表；`expiringSoon` / `remainDays` 驱动待领取、待使用「即将到期」） | [用户卡包分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/498029202e0.md) |
+| 35a | GET | `/v1/benefitsTake/getCustomerPage` | `App端/商城/员工权益卡管理` | `VoucherService`（卡包列表；`expiringSoon` / `remainDays` 驱动即将到期；`purchaseSubject` 来源，`sourcePartyName` 赠送人，`allowGift` 控制赠送好友，`issuedAt` / `operationNo` 区分员工发放） | [用户卡包分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/498029202e0.md) |
 | 35b | GET | `/v1/benefitsTake/getCustomerStatusCount` | `App端/商城/员工权益卡管理` | `VoucherService`（角标回退） | [用户状态数量](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/498029201e0.md) |
-| 35c | GET | `/v1/benefitsTake/getGiftRecordPage` | `App端/商城/员工权益卡管理` | `VoucherService` | [转赠记录](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/498029200e0.md) |
+| 35c | GET | `/v1/benefitsTake/getGiftRecordPage` | `App端/商城/员工权益卡管理` | `VoucherService`（转赠记录；`purchaseSubject` 展示来源） | [转赠记录](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/498029200e0.md) |
 | 35d | POST | `/v1/benefitsTake/preCheckByKey` | `App端/商城/员工权益卡管理` | `VoucherService` | [卡密预校验](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/498029194e0.md) |
 | 35e | POST | `/v1/benefitsTake/bindByKey` | `App端/商城/员工权益卡管理` | `VoucherService` | [卡密绑定](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/498029199e0.md) |
 | 35f | POST | `/v1/benefitsTake/giftBenefit` | `App端/商城/员工权益卡管理` | `VoucherService` | [好友转赠](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/498029198e0.md) |

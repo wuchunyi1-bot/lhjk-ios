@@ -1,6 +1,9 @@
 import Alamofire
 import Combine
+import Darwin
 import Foundation
+import Security
+import UIKit
 
 // MARK: - API 环境配置
 
@@ -85,9 +88,10 @@ final class APIManager {
     private init() {
         let savedCredential = Self.loadCredentialFromStorage()
         configureSession(with: savedCredential)
-        // 无认证 Session — 公开接口不需 Token
+        // 无认证 Session — 公开接口不需 Token，仍带设备信息头
         publicSession = Session(
             configuration: configuration,
+            interceptor: DeviceInformationInterceptor(),
             eventMonitors: [LogMonitor()]
         )
     }
@@ -95,10 +99,15 @@ final class APIManager {
     /// 使用指定 Credential 重建 Session
     private func configureSession(with credential: OAuthCredential?) {
         let authenticator = OAuthAuthenticator()
-        let interceptor = AuthenticationInterceptor(
+        let authInterceptor = AuthenticationInterceptor(
             authenticator: authenticator,
             credential: credential
         )
+        // 先写设备信息，再注入 Token。头在 URLRequest 上，联调日志能打印出来。
+        let interceptor = Interceptor(interceptors: [
+            DeviceInformationInterceptor(),
+            authInterceptor,
+        ])
 
         session = Session(
             configuration: configuration,
@@ -567,6 +576,146 @@ struct APIDataID: Decodable {
         // data 偶发为空对象 `{}`：消费后视为无 id
         _ = try? decoder.container(keyedBy: AnyKey.self)
         value = nil
+    }
+}
+
+// MARK: - DeviceInformation
+
+/// 把设备信息写进 `URLRequest`。`URLSession` 配置里的附加头不会出现在 Alamofire 的请求日志中。
+private struct DeviceInformationInterceptor: RequestInterceptor {
+    func adapt(
+        _ urlRequest: URLRequest,
+        for session: Session,
+        completion: @escaping @Sendable (Result<URLRequest, any Error>) -> Void
+    ) {
+        var request = urlRequest
+        request.setValue(DeviceInformationHeader.value, forHTTPHeaderField: "DeviceInformation")
+        completion(.success(request))
+    }
+}
+
+/// 每个业务请求携带的设备信息头。值为紧凑 JSON，字段对齐服务端库长度。
+private enum DeviceInformationHeader {
+
+    static let value: String = make()
+
+    private static func make() -> String {
+        let payload: [String: String] = [
+            "deviceName": truncate(machineIdentifier(), limit: 128),
+            "appVersion": truncate(appVersion(), limit: 64),
+            "sysName": truncate(systemName(), limit: 64),
+            "sysVersion": truncate(systemVersion(), limit: 64),
+            "deviceId": truncate(deviceId(), limit: 128),
+            "manufacturerName": "Apple",
+        ]
+        guard JSONSerialization.isValidJSONObject(payload),
+              let data = try? JSONSerialization.data(withJSONObject: payload),
+              let json = String(data: data, encoding: .utf8),
+              !json.isEmpty
+        else {
+            return "{}"
+        }
+        return json
+    }
+
+    /// `uname().machine`，例如 `iPhone15,2`
+    private static func machineIdentifier() -> String {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        let machine = withUnsafeBytes(of: systemInfo.machine) { raw -> String in
+            guard let base = raw.bindMemory(to: CChar.self).baseAddress else { return "" }
+            return String(cString: base)
+        }
+        let trimmed = machine.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty { return trimmed }
+        return readOnMain { UIDevice.current.model }
+    }
+
+    private static func appVersion() -> String {
+        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        let trimmed = short.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "1.0.0" : trimmed
+    }
+
+    private static func systemName() -> String {
+        let name = readOnMain { UIDevice.current.systemName }
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? "iOS" : name
+    }
+
+    private static func systemVersion() -> String {
+        readOnMain { UIDevice.current.systemVersion }
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// `identifierForVendor`；取不到时用 Keychain 里首次生成的 UUID
+    private static func deviceId() -> String {
+        let vendor = readOnMain { UIDevice.current.identifierForVendor?.uuidString }?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !vendor.isEmpty { return vendor }
+        return FallbackDeviceIdStore.value()
+    }
+
+    private static func truncate(_ value: String, limit: Int) -> String {
+        guard value.count > limit else { return value }
+        return String(value.prefix(limit))
+    }
+
+    private static func readOnMain<T>(_ work: () -> T) -> T {
+        if Thread.isMainThread { return work() }
+        return DispatchQueue.main.sync(execute: work)
+    }
+}
+
+/// `identifierForVendor` 为空时的持久化设备号，只在本机、首次解锁后可读。
+private enum FallbackDeviceIdStore {
+
+    private static let service = Bundle.main.bundleIdentifier.map { "\($0).device-information" }
+        ?? "lhjk.device-information"
+    private static let account = "fallbackDeviceId"
+
+    static func value() -> String {
+        if let existing = read() { return existing }
+        let created = UUID().uuidString
+        save(created)
+        return created
+    }
+
+    private static func read() -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+        ]
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        guard status == errSecSuccess,
+              let data = item as? Data,
+              let value = String(data: data, encoding: .utf8)
+        else {
+            return nil
+        }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private static func save(_ value: String) {
+        guard let data = value.data(using: .utf8) else { return }
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+        ]
+        let attributes: [String: Any] = [
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+        ]
+        let status = SecItemAdd(query.merging(attributes) { _, new in new } as CFDictionary, nil)
+        if status == errSecDuplicateItem {
+            SecItemUpdate(query as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+        }
     }
 }
 

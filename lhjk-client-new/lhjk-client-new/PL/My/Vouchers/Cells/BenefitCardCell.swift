@@ -64,6 +64,7 @@ final class BenefitCardCell: UITableViewCell {
 
     private let nameLabel = UILabel()
     private let amountLabel = UILabel()
+    private let sourceLabel = UILabel()
     private let giverLabel = UILabel()
     private let metaLabel = UILabel()
     private let warnLabel = UILabel()
@@ -128,6 +129,8 @@ final class BenefitCardCell: UITableViewCell {
         warnLabel.text = nil
         giverLabel.isHidden = true
         giverLabel.text = nil
+        sourceLabel.isHidden = true
+        sourceLabel.text = nil
         metaLabel.isHidden = true
         metaLabel.text = nil
         coverImageView.kf.cancelDownloadTask()
@@ -137,7 +140,8 @@ final class BenefitCardCell: UITableViewCell {
         detailsTopInset = 0
     }
 
-    func configureCard(_ item: BenefitCard) {
+    /// `showsActions == false` 时与列表同一张卡，只是不放「赠送好友 / 立即兑换」等按钮（赠送页预览）。
+    func configureCard(_ item: BenefitCard, showsActions: Bool = true) {
         backgroundImageName = item.status.cardBackgroundImageName
         applyBackgroundImage(item.status.cardBackgroundImageName)
 
@@ -147,14 +151,20 @@ final class BenefitCardCell: UITableViewCell {
 
         switch item.status {
         case .available:
+            applySource(name: item.purchaseSubject, textColor: Design.activeSublineColor)
             applyGiver(name: item.sourcePartyName, textColor: Design.activeSublineColor)
             applyMeta("有效期至 \(item.validUntil)", textColor: Design.activeSublineColor)
             nameLabel.textColor = Design.activeTitleColor
             applyExpiryWarning(item.expiryWarningText)
-            showActions(gift: item.canGift, primary: "立即兑换")
+            if showsActions {
+                showActions(gift: item.canGift, primary: "立即兑换")
+            } else {
+                setActionsVisible(false)
+            }
             detailsTopInset = Design.availableDetailsTopInset
 
         case .pendingReceive:
+            applySource(name: item.purchaseSubject, textColor: Design.activeSublineColor)
             applyGiver(name: item.sourcePartyName, textColor: Design.activeSublineColor)
             applyMeta("有效期至 \(item.validUntil)", textColor: Design.activeSublineColor)
             nameLabel.textColor = Design.activeTitleColor
@@ -163,6 +173,7 @@ final class BenefitCardCell: UITableViewCell {
             detailsTopInset = Design.pendingDetailsTopInset
 
         case .pendingBind:
+            applySource(name: item.purchaseSubject, textColor: Design.activeSublineColor)
             applyGiver(name: item.sourcePartyName, textColor: Design.activeSublineColor)
             applyMeta("有效期至 \(item.validUntil)", textColor: Design.activeSublineColor)
             nameLabel.textColor = Design.activeTitleColor
@@ -171,16 +182,22 @@ final class BenefitCardCell: UITableViewCell {
             detailsTopInset = Design.pendingDetailsTopInset
 
         case .redeemed:
+            applySource(name: item.purchaseSubject, textColor: Design.inactiveSublineColor)
             applyGiver(name: nil, textColor: Design.inactiveSublineColor)
             let day = item.redeemedAt.map { String($0.replacingOccurrences(of: "T", with: " ").prefix(10)) } ?? "--"
             applyMeta("兑换时间 \(day)", textColor: Design.inactiveSublineColor)
             nameLabel.textColor = Design.inactiveTitleColor
             applyExpiryWarning(nil)
-            showActions(gift: false, primary: "查看订单")
-            primaryButton.isEnabled = !(item.orderId?.isEmpty ?? true)
+            if showsActions {
+                showActions(gift: false, primary: "查看订单")
+                primaryButton.isEnabled = !(item.orderId?.isEmpty ?? true)
+            } else {
+                setActionsVisible(false)
+            }
             detailsTopInset = Design.inactiveDetailsTopInset
 
         case .expired:
+            applySource(name: item.purchaseSubject, textColor: Design.inactiveSublineColor)
             applyGiver(name: nil, textColor: Design.inactiveSublineColor)
             applyMeta("有效期至 \(item.validUntil)", textColor: Design.inactiveSublineColor)
             nameLabel.textColor = Design.inactiveTitleColor
@@ -189,6 +206,7 @@ final class BenefitCardCell: UITableViewCell {
             detailsTopInset = Design.inactiveDetailsTopInset
 
         case .transferred:
+            applySource(name: item.purchaseSubject, textColor: Design.inactiveSublineColor)
             applyGiver(name: nil, textColor: Design.inactiveSublineColor)
             applyMeta("有效期至 \(item.validUntil)", textColor: Design.inactiveSublineColor)
             nameLabel.textColor = Design.inactiveTitleColor
@@ -198,7 +216,7 @@ final class BenefitCardCell: UITableViewCell {
         }
 
         applyDetailsSpacing(scale: currentScale())
-        [nameLabel, giverLabel, metaLabel, warnLabel].forEach { tightenLineHeight(of: $0) }
+        [nameLabel, sourceLabel, giverLabel, metaLabel, warnLabel].forEach { tightenLineHeight(of: $0) }
         refreshCardHeight()
         setNeedsLayout()
     }
@@ -216,6 +234,7 @@ final class BenefitCardCell: UITableViewCell {
         setActionsVisible(false)
 
         if item.status == .waiting {
+            applySource(name: item.purchaseSubject, textColor: Design.activeSublineColor)
             nameLabel.textColor = Design.activeTitleColor
             applyMeta(
                 VoucherListQuery.waitingTransferMeta(sharedAt: item.sharedAt),
@@ -224,6 +243,7 @@ final class BenefitCardCell: UITableViewCell {
             )
             detailsTopInset = Design.pendingDetailsTopInset
         } else {
+            applySource(name: item.purchaseSubject, textColor: Design.inactiveSublineColor)
             nameLabel.textColor = Design.inactiveTitleColor
             let name = (item.recipientName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let claimed = Self.formatDay(item.claimedAt)
@@ -236,7 +256,7 @@ final class BenefitCardCell: UITableViewCell {
         }
 
         applyDetailsSpacing(scale: currentScale())
-        [nameLabel, giverLabel, metaLabel, warnLabel].forEach { tightenLineHeight(of: $0) }
+        [nameLabel, sourceLabel, giverLabel, metaLabel, warnLabel].forEach { tightenLineHeight(of: $0) }
         refreshCardHeight()
         setNeedsLayout()
     }
@@ -260,6 +280,9 @@ final class BenefitCardCell: UITableViewCell {
         nameLabel.numberOfLines = 1
         nameLabel.lineBreakMode = .byTruncatingTail
         amountLabel.numberOfLines = 1
+        sourceLabel.numberOfLines = 1
+        sourceLabel.lineBreakMode = .byTruncatingTail
+        sourceLabel.isHidden = true
         giverLabel.numberOfLines = 1
         giverLabel.isHidden = true
         metaLabel.numberOfLines = 1
@@ -267,7 +290,7 @@ final class BenefitCardCell: UITableViewCell {
         warnLabel.numberOfLines = 1
         warnLabel.textColor = UIColor(hexString: "#F93838")
         warnLabel.isHidden = true
-        [nameLabel, amountLabel, giverLabel, metaLabel, warnLabel].forEach {
+        [nameLabel, amountLabel, sourceLabel, giverLabel, metaLabel, warnLabel].forEach {
             $0.setContentCompressionResistancePriority(.required, for: .vertical)
             $0.setContentHuggingPriority(.required, for: .vertical)
         }
@@ -276,7 +299,7 @@ final class BenefitCardCell: UITableViewCell {
         coverImageView.setContentCompressionResistancePriority(.required, for: .horizontal)
         coverImageView.setContentHuggingPriority(.required, for: .horizontal)
 
-        let details = UIStackView(arrangedSubviews: [nameLabel, amountLabel, giverLabel, metaLabel, warnLabel])
+        let details = UIStackView(arrangedSubviews: [nameLabel, amountLabel, sourceLabel, giverLabel, metaLabel, warnLabel])
         details.axis = .vertical
         details.spacing = 0
         details.alignment = .leading
@@ -382,10 +405,11 @@ final class BenefitCardCell: UITableViewCell {
         contentRowStack.spacing = Design.contentSpacing * scale
 
         nameLabel.font = .fdFont(ofSize: Design.nameFontSize * scale, weight: .medium)
+        sourceLabel.font = .fdFont(ofSize: Design.sublineFontSize * scale, weight: .regular)
         giverLabel.font = .fdFont(ofSize: Design.sublineFontSize * scale, weight: .regular)
         metaLabel.font = .fdFont(ofSize: Design.sublineFontSize * scale, weight: .regular)
         warnLabel.font = .fdFont(ofSize: Design.warnFontSize * scale, weight: .regular)
-        [nameLabel, giverLabel, metaLabel, warnLabel].forEach { tightenLineHeight(of: $0) }
+        [nameLabel, sourceLabel, giverLabel, metaLabel, warnLabel].forEach { tightenLineHeight(of: $0) }
 
         secondaryButton.titleLabel?.font = .fdFont(ofSize: Design.actionFontSize * scale, weight: .regular)
         primaryButton.titleLabel?.font = .fdFont(ofSize: Design.actionFontSize * scale, weight: .medium)
@@ -403,7 +427,7 @@ final class BenefitCardCell: UITableViewCell {
 
     private func applyDetailsSpacing(scale: CGFloat) {
         detailsStack.isLayoutMarginsRelativeArrangement = true
-        let extraLines = (giverLabel.isHidden ? 0 : 1) + (warnLabel.isHidden ? 0 : 1)
+        let extraLines = [sourceLabel, giverLabel, warnLabel].filter { !$0.isHidden }.count
         let topInset: CGFloat
         let nameToAmount: CGFloat
         let amountToNext: CGFloat
@@ -428,6 +452,10 @@ final class BenefitCardCell: UITableViewCell {
         detailsStack.layoutMargins = UIEdgeInsets(top: topInset * scale, left: 0, bottom: 0, right: 0)
         detailsStack.setCustomSpacing(nameToAmount * scale, after: nameLabel)
         detailsStack.setCustomSpacing(amountToNext * scale, after: amountLabel)
+        detailsStack.setCustomSpacing(
+            sourceLabel.isHidden ? 0 : subline * scale,
+            after: sourceLabel
+        )
         detailsStack.setCustomSpacing(
             giverLabel.isHidden ? 0 : subline * scale,
             after: giverLabel
@@ -479,6 +507,18 @@ final class BenefitCardCell: UITableViewCell {
         metaLabel.text = trimmed
         metaLabel.textColor = textColor
         metaLabel.numberOfLines = numberOfLines
+    }
+
+    private func applySource(name: String?, textColor: UIColor) {
+        let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else {
+            sourceLabel.isHidden = true
+            sourceLabel.text = nil
+            return
+        }
+        sourceLabel.isHidden = false
+        sourceLabel.text = "来源：\(trimmed)"
+        sourceLabel.textColor = textColor
     }
 
     private func applyGiver(name: String?, textColor: UIColor) {

@@ -23,9 +23,9 @@
 
 | UI | API | 说明 |
 |----|-----|------|
-| 全部 | `GET /v1/benefitsTake/getCustomerPage` | 无 status；列表顺序与接口 `records` 一致，不按待领取/待使用等状态重排；2→待领取卡（有效期 + `expiringSoon`/`remainDays`），3/4/5→卡；即将到期文案以接口字段为准，不按本地日期推算 |
+| 全部 | `GET /v1/benefitsTake/getCustomerPage` | 无 status；列表顺序与接口 `records` 一致，不按待领取/待使用等状态重排；2→待领取卡（有效期 + `expiringSoon`/`remainDays`），3/4/5→卡；即将到期文案以接口字段为准，不按本地日期推算。`purchaseSubject` 为来源，`allowGift` 控制「赠送好友」，`sourcePartyName` 为赠送人 |
 | 待使用/已兑换/已过期 | 同上 `?status=3/4/5` | |
-| 转赠记录 | `GET /v1/benefitsTake/getGiftRecordPage` | PENDING_RECEIVE / TRANSFERRED |
+| 转赠记录 | `GET /v1/benefitsTake/getGiftRecordPage` | PENDING_RECEIVE / TRANSFERRED；`purchaseSubject` 展示「来源：」 |
 | 角标 | `GET /v1/benefitsTake/getCustomerStatusCount` | value=3 待使用 |
 | 绑定 | `preCheckByKey` → `bindByKey` | |
 | 赠送 | `POST /v1/benefitsTake/giftBenefit` | 必传 `operationNo`；成功后拉起微信小程序卡片分享，同时返回权益卡列表并定位「转赠记录」 |
@@ -63,6 +63,26 @@
 6. path / 小程序原始 id / 兜底 URL：见 `WeChatConfig`
 
 代码：`BenefitTransferViewController`（赠送页）→ `BenefitListViewController.selectTransferRecordsAfterGift()`（切 Tab + 刷新）→ `BenefitGiftShareBuilder` + `WeChatSDKManager.shareMiniProgram`。
+
+### 权益卡来源与赠送开关（FDAPP-978）
+
+来源文案为 `purchaseSubject`（采购主体），展示为「来源：{采购主体}」。赠送人仍为 `sourcePartyName`，展示为「赠送人：{姓名}」。两条可以同时出现。
+
+`getCustomerPage` 列表（待使用 / 已兑换 / 已过期，以及全部里的待绑定、待领取）：
+
+| 领取方式 | 判定 | 来源 | 赠送人 |
+|----------|------|------|--------|
+| 本人绑卡密 | `sourcePartyName` 为空 | 有采购主体则展示 | 不展示 |
+| 好友转赠领取 | 有赠送人，且 `issuedAt`、员工发放批次号 `operationNo` 都为空 | 不展示 | 展示 |
+| 工作人员发放领取 | 有赠送人，且 `issuedAt` 或 `operationNo` 有值 | 展示 | 展示 |
+
+「赠送好友」仅在待使用、没有待领取转赠，且 `allowGift == 1` 时展示。`allowGift` 为 0 或未返回时不展示。
+
+转赠记录（当前用户是赠送人，`getGiftRecordPage` 与列表里尚未被领取的转出卡）：等待领取、已转赠都展示「来源：{purchaseSubject}」；采购主体为空则不画这一行。不展示赠送人。已转赠仍保留「已赠送给 {受赠人}」。
+
+赠送页「权益卡信息」采用独立圆角卡片（暖色底、左侧封面、右侧垂直排列卡名、面值、来源、赠送人、有效期、即将到期），信息与列表规则一致且全部自适应展开展示；不使用列表的切图背景（避免带入「待使用」印章及多余留白），且不展示「赠送好友」「立即兑换」等操作按钮。
+
+代码：`BenefitMapper`、`BenefitCard.canGift`、`BenefitCardCell`（列表与转赠记录卡）、`BenefitTransferViewController`（赠送页独立卡片与转赠流程）。
 
 ### 确认订单权益卡
 
@@ -329,6 +349,47 @@ Tab 使用 `UISegmentedControl` 实现，置于导航栏下方固定位置（sti
 
 - **WHEN** 面值为 `¥9999`（长度 5）与 `¥10000`（长度 6）
 - **THEN** 前者字号 22、后者字号 18（由字符串长度决定，不是由数值大小决定）
+
+---
+
+### Requirement: 权益卡来源与赠送好友开关
+
+权益卡列表 SHALL 按领取方式展示「来源：{purchaseSubject}」与「赠送人：{sourcePartyName}」。「赠送好友」SHALL 仅在 `allowGift == 1` 且卡为待使用、未处于转赠锁定时展示。转赠记录 SHALL 在等待领取与已转赠时展示来源。赠送页「权益卡信息」SHALL 与列表卡片一致，且不展示操作按钮。
+
+#### Scenario: 本人绑卡密
+
+- **WHEN** `getCustomerPage` 返回的卡没有 `sourcePartyName`，且 `purchaseSubject` 非空
+- **THEN** 待使用、已兑换、已过期展示「来源：{purchaseSubject}」
+- **AND** 不展示赠送人
+
+#### Scenario: 好友转赠领取
+
+- **WHEN** 卡有 `sourcePartyName`，且 `issuedAt` 与员工发放批次号 `operationNo` 均为空
+- **THEN** 展示「赠送人：{sourcePartyName}」、卡名、面值、有效期、即将到期
+- **AND** 不展示来源
+
+#### Scenario: 工作人员发放领取
+
+- **WHEN** 卡有 `sourcePartyName`，且 `issuedAt` 或 `operationNo` 有值，且 `purchaseSubject` 非空
+- **THEN** 同时展示「来源：{purchaseSubject}」与「赠送人：{sourcePartyName}」
+
+#### Scenario: 不允许转赠
+
+- **WHEN** 待使用卡的 `allowGift` 不为 1
+- **THEN** 不展示「赠送好友」
+
+#### Scenario: 转赠记录展示来源
+
+- **WHEN** `getGiftRecordPage` 或尚未被领取的转出卡带有非空 `purchaseSubject`
+- **THEN** 等待领取与已转赠都展示「来源：{purchaseSubject}」
+- **AND** 不展示赠送人
+
+#### Scenario: 赠送页权益卡信息
+
+- **WHEN** 用户打开赠送权益卡页
+- **THEN** 「权益卡信息」采用独立圆角卡片全量展示卡名、面值、来源、赠送人、有效期、即将到期
+- **AND** 不展示列表状态切图背景与「待使用」图章，卡片高度随文本自适应，无多余留白
+- **AND** 不展示「赠送好友」「立即兑换」等按钮
 
 ---
 

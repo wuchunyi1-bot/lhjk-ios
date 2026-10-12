@@ -881,37 +881,31 @@ final class BenefitTransferViewController: BaseViewController {
     private let voucherService: VoucherService
     private var giftTask: Task<Void, Never>?
 
-    private let cardNameLabel = UILabel()
-    private let amountLabel = UILabel()
     private let messageView: UITextView = {
         let tv = UITextView()
-        tv.font = .fdMyBody
-        tv.textColor = .fdText
-        tv.backgroundColor = .fdSurface
-        tv.layer.cornerRadius = 12
-        tv.layer.borderWidth = 1
-        tv.layer.borderColor = UIColor.fdBorder.cgColor
-        tv.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
+        tv.font = .fdFont(ofSize: 14, weight: .regular)
+        tv.textColor = UIColor(hexString: "#1F2942")
+        tv.backgroundColor = .clear
+        tv.textContainerInset = UIEdgeInsets(top: 12, left: 8, bottom: 28, right: 8)
         return tv
+    }()
+    private let messagePlaceholderLabel: UILabel = {
+        let l = UILabel()
+        l.font = .fdFont(ofSize: 14, weight: .regular)
+        l.textColor = UIColor(hexString: "#8591AB")
+        l.text = "写下祝福或使用说明，最多 50 字"
+        return l
     }()
     private let counterLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdMyMicro
-        l.textColor = .fdMuted
+        l.font = .fdFont(ofSize: 12, weight: .regular)
+        l.textColor = UIColor(hexString: "#8591AB")
         l.textAlignment = .right
         l.text = "0/50"
         return l
     }()
-    private let hintLabel: UILabel = {
-        let l = UILabel()
-        l.font = .fdMyCaption
-        l.textColor = .fdWarning
-        l.numberOfLines = 0
-        l.text = "赠送后24小时未领取自动退回，期间不可兑换或转赠。"
-        return l
-    }()
-    private let cancelButton = UIButton(type: .system)
-    private let confirmButton = UIButton(type: .system)
+    private let cancelButton = UIButton(type: .custom)
+    private let confirmButton = UIButton(type: .custom)
 
     init(
         card: BenefitCard,
@@ -930,69 +924,305 @@ final class BenefitTransferViewController: BaseViewController {
 
     override func setupUI() {
         title = "赠送权益卡"
-        view.backgroundColor = .fdBg
+        view.backgroundColor = UIColor(hexString: "#FDF6F3")
 
-        let summary = UIView()
-        summary.backgroundColor = .fdSurface
-        summary.layer.cornerRadius = 14
-        summary.layer.borderWidth = 1
-        summary.layer.borderColor = UIColor.fdBorder.cgColor
+        let infoCard = buildInfoSection()
+        let messageCard = buildMessageSection()
+        let tipBanner = buildTipBanner()
+        let bottomBar = buildBottomBar()
 
-        cardNameLabel.font = .fdMyBodyBold
-        cardNameLabel.textColor = .fdText
-        cardNameLabel.text = card.name
-        amountLabel.font = .fdNumM
-        amountLabel.textColor = .fdPrimary
-        amountLabel.text = "面值：¥\(card.amount == floor(card.amount) ? "\(Int(card.amount))" : String(format: "%.2f", card.amount))"
+        view.addSubview(bottomBar)
+        bottomBar.snp.makeConstraints { make in
+            make.leading.trailing.bottom.equalToSuperview()
+        }
 
-        let summaryStack = UIStackView(arrangedSubviews: [cardNameLabel, amountLabel])
-        summaryStack.axis = .vertical
-        summaryStack.spacing = 6
-        summary.addSubview(summaryStack)
-        summaryStack.snp.makeConstraints { $0.edges.equalToSuperview().inset(14) }
+        let contentStack = UIStackView(arrangedSubviews: [infoCard, messageCard, tipBanner])
+        contentStack.axis = .vertical
+        contentStack.spacing = 16
+
+        let scrollView = UIScrollView()
+        scrollView.alwaysBounceVertical = true
+        scrollView.showsVerticalScrollIndicator = false
+        view.addSubview(scrollView)
+
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(12)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(bottomBar.snp.top)
+        }
+
+        scrollView.addSubview(contentStack)
+        contentStack.snp.makeConstraints { make in
+            make.top.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.width.equalTo(scrollView.snp.width).offset(-32)
+            make.bottom.equalToSuperview().offset(-20)
+        }
+    }
+
+    private func buildInfoSection() -> UIView {
+        let outerCard = UIView()
+        outerCard.backgroundColor = .white
+        outerCard.layer.cornerRadius = 16
+        outerCard.clipsToBounds = true
+
+        let titleLabel = UILabel()
+        titleLabel.text = "权益卡信息"
+        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.textColor = UIColor(hexString: "#1F2942")
+        outerCard.addSubview(titleLabel)
+        titleLabel.snp.makeConstraints { make in
+            make.top.leading.equalToSuperview().offset(16)
+        }
+
+        let innerCard = UIView()
+        innerCard.layer.cornerRadius = 16
+        innerCard.clipsToBounds = true
+
+        let bgImageView = UIImageView()
+        bgImageView.image = UIImage(named: "benefit_gift_card_bg")?.resizableImage(
+            withCapInsets: UIEdgeInsets(top: 20, left: 20, bottom: 20, right: 20),
+            resizingMode: .stretch
+        )
+        bgImageView.contentMode = .scaleToFill
+        innerCard.addSubview(bgImageView)
+        bgImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        let coverImageView = UIImageView()
+        coverImageView.contentMode = .scaleAspectFill
+        coverImageView.layer.cornerRadius = 16
+        coverImageView.clipsToBounds = true
+        let fallback = UIImage(named: "benefit_card_cover_active")
+        if let raw = card.imageUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !raw.isEmpty,
+           let url = URL(string: raw) {
+            coverImageView.kf.setImage(with: url, placeholder: fallback)
+        } else {
+            coverImageView.image = fallback
+        }
+        innerCard.addSubview(coverImageView)
+        coverImageView.snp.makeConstraints { make in
+            make.top.leading.equalToSuperview().offset(12)
+            make.size.equalTo(106)
+            make.bottom.lessThanOrEqualToSuperview().offset(-12)
+        }
+
+        let nameLabel = UILabel()
+        nameLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        nameLabel.textColor = UIColor(hexString: "#522B0F")
+        nameLabel.numberOfLines = 2
+        nameLabel.text = card.name
+
+        let amountLabel = UILabel()
+        let prefixFont = UIFont.fdFont(ofSize: 16, weight: .medium)
+        let valueFont = UIFont.fdFont(ofSize: 18, weight: .medium)
+        let amountColor = UIColor(hexString: "#522B0F")
+        let attr = NSMutableAttributedString(
+            string: "面值 ｜ ¥ ",
+            attributes: [.font: prefixFont, .foregroundColor: amountColor]
+        )
+        attr.append(NSAttributedString(
+            string: Self.formatAmount(card.amount),
+            attributes: [.font: valueFont, .foregroundColor: amountColor]
+        ))
+        amountLabel.attributedText = attr
+
+        var textViews: [UIView] = [nameLabel, amountLabel]
+
+        if let subject = card.purchaseSubject?.trimmingCharacters(in: .whitespacesAndNewlines), !subject.isEmpty {
+            let sourceLabel = UILabel()
+            sourceLabel.font = .fdFont(ofSize: 12, weight: .regular)
+            sourceLabel.textColor = UIColor(hexString: "#8C714F")
+            sourceLabel.numberOfLines = 1
+            sourceLabel.lineBreakMode = .byTruncatingTail
+            sourceLabel.text = "来源：\(subject)"
+            textViews.append(sourceLabel)
+        }
+
+        if let giver = card.sourcePartyName?.trimmingCharacters(in: .whitespacesAndNewlines), !giver.isEmpty {
+            let giverLabel = UILabel()
+            giverLabel.font = .fdFont(ofSize: 12, weight: .regular)
+            giverLabel.textColor = UIColor(hexString: "#8C714F")
+            giverLabel.numberOfLines = 1
+            giverLabel.lineBreakMode = .byTruncatingTail
+            giverLabel.text = "赠送人：\(giver)"
+            textViews.append(giverLabel)
+        }
+
+        let valid = card.validUntil.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !valid.isEmpty {
+            let validLabel = UILabel()
+            validLabel.font = .fdFont(ofSize: 12, weight: .regular)
+            validLabel.textColor = UIColor(hexString: "#8C714F")
+            validLabel.numberOfLines = 1
+            validLabel.text = "有效期至 \(valid)"
+            textViews.append(validLabel)
+        }
+
+        if let warn = card.expiryWarningText?.trimmingCharacters(in: .whitespacesAndNewlines), !warn.isEmpty {
+            let warnLabel = UILabel()
+            warnLabel.font = .fdFont(ofSize: 12, weight: .regular)
+            warnLabel.textColor = UIColor(hexString: "#F93838")
+            warnLabel.numberOfLines = 1
+            warnLabel.text = warn
+            textViews.append(warnLabel)
+        }
+
+        let textStack = UIStackView(arrangedSubviews: textViews)
+        textStack.axis = .vertical
+        textStack.spacing = 4
+        textStack.alignment = .leading
+
+        innerCard.addSubview(textStack)
+        textStack.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(14)
+            make.leading.equalTo(coverImageView.snp.trailing).offset(10)
+            make.trailing.equalToSuperview().offset(-12)
+            make.bottom.lessThanOrEqualToSuperview().offset(-12)
+        }
+
+        innerCard.snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(130)
+        }
+
+        outerCard.addSubview(innerCard)
+        innerCard.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(12)
+            make.leading.trailing.equalToSuperview().inset(12)
+            make.bottom.equalToSuperview().offset(-16)
+        }
+
+        return outerCard
+    }
+
+    private func buildMessageSection() -> UIView {
+        let outerCard = UIView()
+        outerCard.backgroundColor = .white
+        outerCard.layer.cornerRadius = 16
+        outerCard.clipsToBounds = true
 
         let msgTitle = UILabel()
         msgTitle.text = "留言（选填）"
-        msgTitle.font = .fdMyCaptionSemibold
-        msgTitle.textColor = .fdText2
+        msgTitle.font = .fdFont(ofSize: 16, weight: .medium)
+        msgTitle.textColor = UIColor(hexString: "#1F2942")
+        outerCard.addSubview(msgTitle)
+        msgTitle.snp.makeConstraints { make in
+            make.top.leading.equalToSuperview().offset(16)
+        }
+
+        let inputWrap = UIView()
+        inputWrap.backgroundColor = UIColor(hexString: "#FDF6F3")
+        inputWrap.layer.cornerRadius = 16
+        inputWrap.clipsToBounds = true
+        outerCard.addSubview(inputWrap)
+        inputWrap.snp.makeConstraints { make in
+            make.top.equalTo(msgTitle.snp.bottom).offset(12)
+            make.leading.trailing.equalToSuperview().inset(12)
+            make.bottom.equalToSuperview().offset(-16)
+            make.height.equalTo(96)
+        }
 
         messageView.delegate = self
+        inputWrap.addSubview(messageView)
+        messageView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
+        inputWrap.addSubview(messagePlaceholderLabel)
+        messagePlaceholderLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.equalToSuperview().offset(12)
+            make.trailing.lessThanOrEqualToSuperview().offset(-12)
+        }
+
+        inputWrap.addSubview(counterLabel)
+        counterLabel.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-14)
+            make.bottom.equalToSuperview().offset(-10)
+        }
+
+        return outerCard
+    }
+
+    private func buildTipBanner() -> UIView {
+        let banner = UIView()
+        banner.backgroundColor = UIColor(hexString: "#FF7015").withAlphaComponent(0.08)
+        banner.layer.cornerRadius = 8
+        banner.clipsToBounds = true
+
+        let icon = UIImageView()
+        icon.image = UIImage(named: "benefit_gift_tip_icon")
+        icon.contentMode = .scaleAspectFit
+
+        let label = UILabel()
+        label.font = .fdFont(ofSize: 12, weight: .regular)
+        label.textColor = UIColor(hexString: "#FF7A50")
+        label.numberOfLines = 0
+        label.text = "赠送后24小时未领取自动退回，期间不可兑换或转赠。"
+
+        let row = UIStackView(arrangedSubviews: [icon, label])
+        row.axis = .horizontal
+        row.spacing = 6
+        row.alignment = .center
+
+        banner.addSubview(row)
+        row.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(10)
+            make.trailing.lessThanOrEqualToSuperview().offset(-10)
+            make.top.bottom.equalToSuperview().inset(8)
+        }
+        icon.snp.makeConstraints { make in
+            make.size.equalTo(14)
+        }
+        return banner
+    }
+
+    private func buildBottomBar() -> UIView {
+        let bar = UIView()
+        bar.backgroundColor = .white
 
         cancelButton.setTitle("我再想想", for: .normal)
-        cancelButton.titleLabel?.font = .fdMyBodySemibold
-        cancelButton.setTitleColor(.fdPrimary, for: .normal)
-        cancelButton.backgroundColor = .fdPrimarySoft
-        cancelButton.layer.cornerRadius = 24
+        cancelButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .regular)
+        cancelButton.setTitleColor(UIColor(hexString: "#FF7A50"), for: .normal)
+        cancelButton.backgroundColor = .white
+        cancelButton.layer.borderWidth = 0.5
+        cancelButton.layer.borderColor = UIColor(hexString: "#FD6111").cgColor
+        cancelButton.layer.cornerRadius = 21.5
         cancelButton.addTarget(self, action: #selector(tapCancel), for: .touchUpInside)
 
         confirmButton.setTitle("立即赠送", for: .normal)
-        confirmButton.titleLabel?.font = .fdMyBodySemibold
+        confirmButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
         confirmButton.setTitleColor(.white, for: .normal)
-        confirmButton.backgroundColor = .fdPrimary
-        confirmButton.layer.cornerRadius = 24
+        confirmButton.backgroundColor = UIColor(hexString: "#FF7A50")
+        confirmButton.layer.cornerRadius = 21.5
         confirmButton.addTarget(self, action: #selector(tapConfirm), for: .touchUpInside)
 
         let actions = UIStackView(arrangedSubviews: [cancelButton, confirmButton])
         actions.axis = .horizontal
-        actions.spacing = 12
+        actions.spacing = 9
         actions.distribution = .fillEqually
 
-        let stack = UIStackView(arrangedSubviews: [
-            summary, msgTitle, messageView, counterLabel, hintLabel, actions,
-        ])
-        stack.axis = .vertical
-        stack.spacing = 12
-        stack.setCustomSpacing(8, after: msgTitle)
-        stack.setCustomSpacing(4, after: messageView)
-        stack.setCustomSpacing(20, after: hintLabel)
-
-        view.addSubview(stack)
-        stack.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(16)
+        bar.addSubview(actions)
+        actions.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview().inset(16)
+            make.top.equalToSuperview().offset(12)
+            make.height.equalTo(43)
+            make.bottom.equalTo(bar.safeAreaLayoutGuide.snp.bottom).offset(-12)
         }
-        messageView.snp.makeConstraints { $0.height.equalTo(120) }
-        actions.snp.makeConstraints { $0.height.equalTo(48) }
+
+        return bar
+    }
+
+    private static func formatAmount(_ val: Double) -> String {
+        if val.truncatingRemainder(dividingBy: 1) == 0 {
+            return String(Int(val))
+        }
+        return String(format: "%.2f", val)
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        view.endEditing(true)
     }
 
     @objc private func tapCancel() {
@@ -1086,6 +1316,7 @@ extension BenefitTransferViewController: UITextViewDelegate {
         if textView.text.count > 50 {
             textView.text = String(textView.text.prefix(50))
         }
+        messagePlaceholderLabel.isHidden = !textView.text.isEmpty
         counterLabel.text = "\(textView.text.count)/50"
     }
 }

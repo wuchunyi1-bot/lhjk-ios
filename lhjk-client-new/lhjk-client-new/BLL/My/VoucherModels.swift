@@ -157,16 +157,20 @@ struct BenefitCard: Equatable {
     let orderId: String?
     let pendingTransferId: String?
     let imageUrl: String?
-    /// 好友转赠 / 员工发放领取后的来源方快照
+    /// 好友转赠 / 员工发放领取后的来源方快照（「赠送人：」）
     let sourcePartyName: String?
+    /// 采购主体。好友转赠领取时为 nil，不展示「来源：」
+    let purchaseSubject: String?
+    /// `getCustomerPage.allowGift == 1`
+    let allowGift: Bool
     /// `getCustomerPage.expiringSoon`：是否展示即将到期
     let expiringSoon: Bool
     /// `getCustomerPage.remainDays`：剩余天数
     let remainDays: Int?
 
-    /// 待使用且未处于转赠锁定
+    /// 待使用、未处于转赠锁定，且接口允许转赠
     var canGift: Bool {
-        status == .available && (pendingTransferId?.isEmpty ?? true)
+        status == .available && (pendingTransferId?.isEmpty ?? true) && allowGift
     }
 
     /// Figma：即将到期｜剩余 N 天；仅接口 flag 为 true 时展示，不再按本地日期推算
@@ -192,6 +196,8 @@ struct BenefitTransferRecord: Equatable {
     let recipientName: String?
     let message: String?
     let imageUrl: String?
+    /// `purchaseSubject`：转赠记录展示「来源：」
+    let purchaseSubject: String?
 }
 
 enum BenefitListEntry: Equatable {
@@ -355,6 +361,11 @@ struct BenefitsTakePageItem: Decodable, Equatable {
     let orderNo: String?
     let sourcePartyUserId: Int64?
     let sourcePartyName: String?
+    let purchaseSubject: String?
+    /// 0 不允许，1 允许
+    let allowGift: Int?
+    /// 员工发放时间；与 `operationNo` 一起区分员工发放和好友转赠
+    let issuedAt: String?
     let createTime: String?
     let expiringSoon: Bool?
     let remainDays: Int?
@@ -363,6 +374,7 @@ struct BenefitsTakePageItem: Decodable, Equatable {
         case id, benefitsNumber, benefitsName, imageUrl, price, status, endTime
         case pendingTransferId, pendingTransferNo, giftedAt, expiresAt, redeemedAt
         case operationNo, orderId, relationOrderId, orderNo, sourcePartyUserId, sourcePartyName, createTime
+        case purchaseSubject, allowGift, issuedAt
         case expiringSoon, remainDays
     }
 
@@ -386,6 +398,9 @@ struct BenefitsTakePageItem: Decodable, Equatable {
         orderNo = try c.decodeIfPresent(String.self, forKey: .orderNo)
         sourcePartyUserId = Self.int64(c, .sourcePartyUserId)
         sourcePartyName = try c.decodeIfPresent(String.self, forKey: .sourcePartyName)
+        purchaseSubject = try c.decodeIfPresent(String.self, forKey: .purchaseSubject)
+        allowGift = HospitalPackageInt.decodeIfPresent(c, key: .allowGift)
+        issuedAt = try c.decodeIfPresent(String.self, forKey: .issuedAt)
         createTime = try c.decodeIfPresent(String.self, forKey: .createTime)
         expiringSoon = Self.bool(c, .expiringSoon)
         remainDays = HospitalPackageInt.decodeIfPresent(c, key: .remainDays)
@@ -434,10 +449,12 @@ struct BenefitsGiftRecordItem: Decodable, Equatable {
     let expiresAt: String?
     let recipientName: String?
     let claimedAt: String?
+    /// 采购主体，转赠记录「来源：」
+    let purchaseSubject: String?
 
     private enum CodingKeys: String, CodingKey {
         case benefitsTakeId, operationNo, benefitsName, imageUrl, price, status
-        case giftedAt, expiresAt, recipientName, claimedAt
+        case giftedAt, expiresAt, recipientName, claimedAt, purchaseSubject
     }
 
     init(from decoder: Decoder) throws {
@@ -452,6 +469,7 @@ struct BenefitsGiftRecordItem: Decodable, Equatable {
         expiresAt = try c.decodeIfPresent(String.self, forKey: .expiresAt)
         recipientName = try c.decodeIfPresent(String.self, forKey: .recipientName)
         claimedAt = try c.decodeIfPresent(String.self, forKey: .claimedAt)
+        purchaseSubject = try c.decodeIfPresent(String.self, forKey: .purchaseSubject)
     }
 
     private static func int64<K: CodingKey>(_ c: KeyedDecodingContainer<K>, _ key: K) -> Int64? {
@@ -734,9 +752,21 @@ enum BenefitMapper {
             pendingTransferId: pendingId,
             imageUrl: item.imageUrl,
             sourcePartyName: nonEmpty(item.sourcePartyName),
+            purchaseSubject: listPurchaseSubject(from: item),
+            allowGift: item.allowGift == 1,
             expiringSoon: item.expiringSoon ?? false,
             remainDays: item.remainDays
         )
+    }
+
+    /// 本人绑卡、员工发放展示采购主体；好友转赠领取不展示来源。
+    /// 员工发放：有赠送人，且有 `issuedAt` 或发放批次号 `operationNo`。
+    private static func listPurchaseSubject(from item: BenefitsTakePageItem) -> String? {
+        let giver = nonEmpty(item.sourcePartyName)
+        let staffIssued = nonEmpty(item.issuedAt) != nil || nonEmpty(item.operationNo) != nil
+        let friendClaim = giver != nil && !staffIssued
+        if friendClaim { return nil }
+        return nonEmpty(item.purchaseSubject)
     }
 
     /// 自己转赠、对方尚未领取：status 仍为待使用但带 pendingTransferId
@@ -759,7 +789,8 @@ enum BenefitMapper {
             claimedAt: nil,
             recipientName: nil,
             message: nil,
-            imageUrl: item.imageUrl
+            imageUrl: item.imageUrl,
+            purchaseSubject: nonEmpty(item.purchaseSubject)
         )
     }
 
@@ -782,7 +813,8 @@ enum BenefitMapper {
             claimedAt: item.claimedAt,
             recipientName: item.recipientName,
             message: nil,
-            imageUrl: item.imageUrl
+            imageUrl: item.imageUrl,
+            purchaseSubject: nonEmpty(item.purchaseSubject)
         )
     }
 
