@@ -48,6 +48,11 @@ final class GroupMembersViewController: BaseViewController {
         Task { await viewModel.loadMembers() }
     }
 
+    override func refreshForSeniorMode() {
+        super.refreshForSeniorMode()
+        tableView.reloadData()
+    }
+
     override func setupUI() {
         title = "群成员"
         view.backgroundColor = .fdBg

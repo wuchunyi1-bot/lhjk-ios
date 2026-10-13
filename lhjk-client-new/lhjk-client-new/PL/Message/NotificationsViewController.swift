@@ -67,6 +67,11 @@ final class NotificationsViewController: BaseViewController, UITableViewDataSour
 
     // MARK: - UITableView
 
+    override func refreshForSeniorMode() {
+        super.refreshForSeniorMode()
+        tableView.reloadData()
+    }
+
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         notifications.count
     }

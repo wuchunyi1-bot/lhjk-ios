@@ -90,7 +90,8 @@ final class MessageSegmentedControl: UIControl {
     private func applySelection() {
         for idx in titleLabels.indices {
             let active = idx == selectedIndex
-            titleLabels[idx].font = .fdFont(ofSize: 18, weight: active ? .medium : .regular)
+            titleLabels[idx].font = .fdFont(designSize: 18, weight: active ? .medium : .regular)
+            badgeLabels[idx].font = .fdFont(designSize: 11, weight: .medium)
             titleLabels[idx].textColor = active ? UIColor(hexString: "#1F2430") : UIColor(hexString: "#A7ABB3")
 
             guard idx < badgeLabels.count, idx < items.count else { continue }
@@ -102,6 +103,11 @@ final class MessageSegmentedControl: UIControl {
                 ? UIColor(hexString: "#FF7A50")
                 : UIColor(hexString: "#C8CCD4")
         }
+    }
+
+    /// 长辈模式切换后重取分段标题字号。未读数刷新会走 `applySelection`，同样从设计字号计算。
+    func refreshFonts() {
+        applySelection()
     }
 
     @objc private func tapped(_ sender: UIButton) {

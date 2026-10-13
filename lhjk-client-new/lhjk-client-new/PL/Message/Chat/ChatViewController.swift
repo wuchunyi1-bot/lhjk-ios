@@ -55,7 +55,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
 
     private let recordingHintLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdFont(ofSize: 16)
+        label.font = .fdFont(designSize: 16)
         label.textColor = .white
         label.textAlignment = .center
         label.text = "松手 发语音"
@@ -137,6 +137,12 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         viewModel.markAsRead()
+    }
+
+    override func refreshForSeniorMode() {
+        super.refreshForSeniorMode()
+        expiredBanner.configure(groupStatus: viewModel.conversation?.groupStatus)
+        tableView.reloadData()
     }
 
     override func setupUI() {
@@ -683,7 +689,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         container.clipsToBounds = true
         let label = UILabel()
         label.text = message
-        label.font = .fdFont(ofSize: 16)
+        label.font = .fdFont(designSize: 16)
         label.textColor = .white
         label.textAlignment = .center
         container.addSubview(label)
@@ -1032,7 +1038,7 @@ final class ChatInputBar: UIView {
     private lazy var voiceLabel: UILabel = {
         let label = UILabel()
         label.text = "按住说话"
-        label.font = .fdFont(ofSize: 16, weight: .medium)
+        label.font = .fdFont(designSize: 16, weight: .medium)
         label.textColor = .fdText
         label.textAlignment = .center
         label.isUserInteractionEnabled = true
@@ -1044,7 +1050,7 @@ final class ChatInputBar: UIView {
 
     private lazy var textField: UITextField = {
         let field = UITextField()
-        field.font = .fdFont(ofSize: 16)
+        field.font = .fdFont(designSize: 16)
         field.textColor = .fdText
         field.backgroundColor = .white
         field.returnKeyType = .send
@@ -1055,7 +1061,7 @@ final class ChatInputBar: UIView {
 
     private lazy var placeholderLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdFont(ofSize: 16)
+        label.font = .fdFont(designSize: 16)
         label.textColor = UIColor(hexString: "#8591AB")
         label.text = placeholderText
         label.isUserInteractionEnabled = false
@@ -1344,7 +1350,7 @@ final class ChatInputBar: UIView {
 
         let label = UILabel()
         label.text = title
-        label.font = .fdFont(ofSize: 14, weight: .medium)
+        label.font = .fdFont(designSize: 14, weight: .medium)
         label.textColor = .fdText
         label.textAlignment = .center
 

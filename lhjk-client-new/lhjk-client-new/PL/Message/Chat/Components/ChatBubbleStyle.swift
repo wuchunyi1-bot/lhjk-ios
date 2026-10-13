@@ -74,12 +74,12 @@ enum ChatBubbleStyle {
     screenWidth - 141
   }
 
-  static let metaFont: UIFont = .fdFont(ofSize: 14, weight: .regular)
+  static var metaFont: UIFont { .fdFont(designSize: 14, weight: .regular) }
   static let metaColor = UIColor(hexString: "#8591AB")
 
-  /// 普通聊天气泡正文
-  static let textFont: UIFont = .fdBody
-  static let textMediumFont: UIFont = .fdBodySemibold
+  /// 普通聊天气泡正文。每次读取，避免 `static let` 在第一次访问时把字号定死。
+  static var textFont: UIFont { .fdBody }
+  static var textMediumFont: UIFont { .fdBodySemibold }
 
   static let primaryText = UIColor(hexString: "#1F2942")
   static let secondaryText = UIColor(hexString: "#8591AB")
@@ -174,13 +174,13 @@ enum ChatBubbleStyle {
     static let iconSize: CGFloat = 22
     static let iconGlyphSize: CGFloat = 14
 
-    static let titleFont: UIFont = .fdFont(ofSize: 16, weight: .medium)
-    static let bodyFont: UIFont = .fdFont(ofSize: 14, weight: .regular)
-    static let rowLabelFont: UIFont = .fdFont(ofSize: 14, weight: .regular)
-    static let rowValueFont: UIFont = .fdFont(ofSize: 14, weight: .medium)
-    static let tagFont: UIFont = .fdFont(ofSize: 12, weight: .regular)
-    static let actionFont: UIFont = .fdFont(ofSize: 14, weight: .medium)
-    static let statusFont: UIFont = .fdFont(ofSize: 14, weight: .medium)
+    static var titleFont: UIFont { .fdFont(designSize: 16, weight: .medium) }
+    static var bodyFont: UIFont { .fdFont(designSize: 14, weight: .regular) }
+    static var rowLabelFont: UIFont { .fdFont(designSize: 14, weight: .regular) }
+    static var rowValueFont: UIFont { .fdFont(designSize: 14, weight: .medium) }
+    static var tagFont: UIFont { .fdFont(designSize: 12, weight: .regular) }
+    static var actionFont: UIFont { .fdFont(designSize: 14, weight: .medium) }
+    static var statusFont: UIFont { .fdFont(designSize: 14, weight: .medium) }
   }
 
   static func staffMetaText(name: String?) -> String? {

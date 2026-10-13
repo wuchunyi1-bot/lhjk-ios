@@ -44,14 +44,14 @@ final class GroupMemberCell: UITableViewCell {
 
     private let nameLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 16, weight: .medium)
+        l.font = .fdFont(designSize: 16, weight: .medium)
         l.textColor = UIColor(hexString: "#1F2430")
         return l
     }()
 
     private let selfRoleLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 12, weight: .regular)
+        l.font = .fdFont(designSize: 12, weight: .regular)
         l.textColor = UIColor(hexString: "#535D72")
         l.text = "我"
         return l
@@ -115,6 +115,8 @@ final class GroupMemberCell: UITableViewCell {
     }
 
     func configure(_ member: ImSessionDetails, isSelf: Bool) {
+        nameLabel.font = .fdFont(designSize: 16, weight: .medium)
+        selfRoleLabel.font = .fdFont(designSize: 12, weight: .regular)
         nameLabel.text = member.displayName
         ChatBubbleStyle.applyAvatar(
             portraitUrl: member.portraitURL,
@@ -162,7 +164,7 @@ private final class GroupMemberRoleBadgeView: UIView {
 
     private let label: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 12, weight: .medium)
+        l.font = .fdFont(designSize: 12, weight: .medium)
         l.textColor = UIColor(hexString: "#862804")
         return l
     }()
@@ -180,6 +182,7 @@ private final class GroupMemberRoleBadgeView: UIView {
     required init?(coder: NSCoder) { fatalError() }
 
     func configure(title: String) {
+        label.font = .fdFont(designSize: 12, weight: .medium)
         label.text = title
     }
 

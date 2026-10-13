@@ -7,6 +7,8 @@ final class SettingsSectionCard: UIView {
     struct Item {
         let title: String
         let subtitle: String
+        /// 箭头左侧状态，如「未开启」
+        var trailing: String? = nil
         var action: (() -> Void)?
     }
 
@@ -25,6 +27,11 @@ final class SettingsSectionCard: UIView {
     func updateSubtitle(at index: Int, text: String) {
         guard index >= 0, index < itemsStack.arrangedSubviews.count else { return }
         (itemsStack.arrangedSubviews[index] as? SettingsHubItemRow)?.descText = text
+    }
+
+    func updateTrailing(at index: Int, text: String) {
+        guard index >= 0, index < itemsStack.arrangedSubviews.count else { return }
+        (itemsStack.arrangedSubviews[index] as? SettingsHubItemRow)?.trailingText = text
     }
 
     private func setupCard(sectionTitle: String, iconImageName: String, items: [Item]) {
@@ -76,6 +83,7 @@ final class SettingsSectionCard: UIView {
             let row = SettingsHubItemRow(
                 title: item.title,
                 desc: item.subtitle,
+                trailing: item.trailing,
                 showDivider: index < items.count - 1,
                 action: item.action ?? {}
             )
@@ -89,6 +97,7 @@ final class SettingsHubItemRow: UIControl {
 
     private let titleLabel = UILabel()
     private let descLabel = UILabel()
+    private let trailingLabel = UILabel()
     private let arrowView = UIImageView()
     private let divider = UIView()
 
@@ -97,20 +106,26 @@ final class SettingsHubItemRow: UIControl {
         set { descLabel.text = newValue }
     }
 
+    var trailingText: String? {
+        get { trailingLabel.text }
+        set { trailingLabel.text = newValue }
+    }
+
     init(
         title: String,
         desc: String,
+        trailing: String? = nil,
         showDivider: Bool,
         action: @escaping () -> Void
     ) {
         super.init(frame: .zero)
         addAction(UIAction { _ in action() }, for: .touchUpInside)
-        setupUI(title: title, desc: desc, showDivider: showDivider)
+        setupUI(title: title, desc: desc, trailing: trailing, showDivider: showDivider)
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
-    private func setupUI(title: String, desc: String, showDivider: Bool) {
+    private func setupUI(title: String, desc: String, trailing: String?, showDivider: Bool) {
         titleLabel.text = title
         titleLabel.font = SettingsStyle.rowTitleFont
         titleLabel.textColor = SettingsStyle.titleColor
@@ -121,6 +136,13 @@ final class SettingsHubItemRow: UIControl {
         descLabel.textColor = SettingsStyle.subtitleColor
         descLabel.numberOfLines = 2
         descLabel.isUserInteractionEnabled = false
+
+        trailingLabel.text = trailing
+        trailingLabel.font = SettingsStyle.rowValueFont
+        trailingLabel.textColor = SettingsStyle.subtitleColor
+        trailingLabel.isHidden = trailing == nil
+        trailingLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        trailingLabel.isUserInteractionEnabled = false
 
         arrowView.image = UIImage(named: "order_confirm_arrow_right")
         arrowView.contentMode = .scaleAspectFit
@@ -135,19 +157,28 @@ final class SettingsHubItemRow: UIControl {
         textStack.alignment = .leading
         textStack.isUserInteractionEnabled = false
 
+        let sideStack = UIStackView(arrangedSubviews: trailing == nil ? [arrowView] : [trailingLabel, arrowView])
+        sideStack.axis = .horizontal
+        sideStack.spacing = 4
+        sideStack.alignment = .center
+        sideStack.isUserInteractionEnabled = false
+
         addSubview(textStack)
-        addSubview(arrowView)
+        addSubview(sideStack)
         addSubview(divider)
 
         arrowView.snp.makeConstraints { make in
+            make.size.equalTo(12)
+        }
+
+        sideStack.snp.makeConstraints { make in
             make.trailing.equalToSuperview().offset(-12)
             make.centerY.equalToSuperview()
-            make.size.equalTo(12)
         }
 
         textStack.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(12)
-            make.trailing.equalTo(arrowView.snp.leading).offset(-8)
+            make.trailing.equalTo(sideStack.snp.leading).offset(-8)
             make.top.equalToSuperview().offset(12)
             make.bottom.equalToSuperview().offset(-12)
         }

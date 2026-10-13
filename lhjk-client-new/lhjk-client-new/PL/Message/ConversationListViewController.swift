@@ -104,8 +104,12 @@ final class ConversationListViewController: UIViewController, UITableViewDataSou
         return cell
     }
 
+    func reloadForSeniorMode() {
+        tableView.reloadData()
+    }
+
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        78
+        ConversationCell.rowHeight
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

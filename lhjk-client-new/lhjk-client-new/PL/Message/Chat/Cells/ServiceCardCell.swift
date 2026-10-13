@@ -34,24 +34,24 @@ final class ServiceCardCell: UITableViewCell {
         iconView.addSubview(iconImageView)
         iconImageView.snp.makeConstraints { $0.center.equalToSuperview(); $0.size.equalTo(24) }
 
-        titleLabel.font = .fdFont(ofSize: 17, weight: .bold)
+        titleLabel.font = .fdFont(designSize: 17, weight: .bold)
         titleLabel.textColor = .fdText
 
-        summaryLabel.font = .fdFont(ofSize: 14)
+        summaryLabel.font = .fdFont(designSize: 14)
         summaryLabel.textColor = .fdSubtext
         summaryLabel.numberOfLines = 0
 
         rowsStack.axis = .vertical
         rowsStack.spacing = 4
 
-        footnoteLabel.font = .fdFont(ofSize: 14)
+        footnoteLabel.font = .fdFont(designSize: 14)
         footnoteLabel.textColor = .fdSubtext
         footnoteLabel.numberOfLines = 0
         footnoteLabel.backgroundColor = .fdBg2
         footnoteLabel.layer.cornerRadius = 12
         footnoteLabel.clipsToBounds = true
 
-        actionBtn.titleLabel?.font = .fdFont(ofSize: 15, weight: .bold)
+        actionBtn.titleLabel?.font = .fdFont(designSize: 15, weight: .bold)
         actionBtn.layer.cornerRadius = 12
 
         contentView.addSubview(cardView)
@@ -102,6 +102,10 @@ final class ServiceCardCell: UITableViewCell {
     required init?(coder: NSCoder) { fatalError() }
 
     func configure(_ msg: ChatMessage, tone: String) {
+        titleLabel.font = .fdFont(designSize: 17, weight: .bold)
+        summaryLabel.font = .fdFont(designSize: 14)
+        footnoteLabel.font = .fdFont(designSize: 14)
+        actionBtn.titleLabel?.font = .fdFont(designSize: 15, weight: .bold)
         guard let card = msg.card else { return }
         let accent = UIColor(hexString: card.accent ?? tone)
 
@@ -144,13 +148,13 @@ final class ServiceCardCell: UITableViewCell {
 
         let label = UILabel()
         label.text = row.label
-        label.font = .fdFont(ofSize: 14)
+        label.font = .fdFont(designSize: 14)
         label.textColor = .fdMuted
         label.setContentHuggingPriority(.required, for: .horizontal)
 
         let value = UILabel()
         value.text = row.value
-        value.font = .fdFont(ofSize: 14)
+        value.font = .fdFont(designSize: 14)
         value.textColor = .fdText
         value.numberOfLines = 0
 
@@ -160,7 +164,7 @@ final class ServiceCardCell: UITableViewCell {
         if let status = row.status {
             let badge = UILabel()
             badge.text = status
-            badge.font = .fdFont(ofSize: 12, weight: .bold)
+            badge.font = .fdFont(designSize: 12, weight: .bold)
             badge.textColor = accent
             badge.backgroundColor = accent.withAlphaComponent(0.08)
             badge.layer.cornerRadius = 8

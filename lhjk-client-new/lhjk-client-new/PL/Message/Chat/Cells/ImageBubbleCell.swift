@@ -72,11 +72,11 @@ final class ImageBubbleCell: UITableViewCell {
     // MARK: - Configure
 
     func configure(_ msg: ChatMessage, tone: String, convRole: ConversationRole) {
+        avatarLabel.font = .fdFont(designSize: 15, weight: .semibold)
+        metaLabel.font = ChatBubbleStyle.metaFont
         currentMessage = msg
         let isStaff = msg.isStaff
         imagePath = msg.imagePath
-
-        metaLabel.font = ChatBubbleStyle.metaFont
 
         ChatBubbleStyle.applyAvatar(portraitUrl: msg.portraitUrl, label: avatarLabel, imageView: avatarImageView)
 

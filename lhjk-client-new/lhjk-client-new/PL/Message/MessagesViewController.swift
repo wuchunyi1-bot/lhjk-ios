@@ -117,6 +117,14 @@ final class MessagesViewController: BaseViewController {
         updateSegmentBadges()
     }
 
+    /// 先让基类把已显示的字扫一遍，再整表重绑，使复用池里的 cell 也从设计字号取当前字号。
+    override func refreshForSeniorMode() {
+        super.refreshForSeniorMode()
+        segmentedControl.refreshFonts()
+        chatListVC.reloadForSeniorMode()
+        notiListVC.reloadForSeniorMode()
+    }
+
     // MARK: - Tab Switching
 
     private func switchTab(to index: Int) {

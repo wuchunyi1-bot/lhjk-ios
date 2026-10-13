@@ -47,33 +47,9 @@ class BaseViewController: UIViewController {
 
 // MARK: - Senior Mode Helpers
 
-/// 标准 ↔ 老年 字号映射表（双向）
-private let seniorFontSizeMap: [(standard: CGFloat, senior: CGFloat)] = [
-    (10, 13),  // 未使用 token 的硬编码小字号（roleTag / timeLabel / badge 等）
-    (11, 14),  // fdMicro
-    (12, 15),  // 未使用 token 的硬编码字号（previewLabel 等）
-    (13, 16),  // fdCaption
-    (14, 18),  // 介于 caption~body 的 monospaced 数字
-    (15, 19),  // fdBody
-    (16, 20),  // 商品价格 monospaced 数字
-    (18, 22),  // fdH3
-    (22, 26),  // fdH2
-    (28, 34),  // fdH1
-    (36, 44),  // fdNumL
-    (56, 64),  // fdNumXL
-]
-
-/// 根据当前 senior 模式，将字号映射为目标字号
+/// 根据当前 senior 模式，将字号映射为目标字号。对照表在 `UIFont.seniorMappedPointSize`。
 private func mapFontSize(_ size: CGFloat, toSenior: Bool) -> CGFloat {
-    for pair in seniorFontSizeMap {
-        if toSenior && abs(size - pair.standard) < 0.5 {
-            return pair.senior
-        }
-        if !toSenior && abs(size - pair.senior) < 0.5 {
-            return pair.standard
-        }
-    }
-    return size // 不在映射表中的字号不变（如特殊装饰尺寸）
+    UIFont.seniorMappedPointSize(size, toSenior: toSenior)
 }
 
 /// 从 UIFont 提取 weight

@@ -16,7 +16,7 @@ final class SysNotifyCell: UITableViewCell {
 
     private let avatarLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 15, weight: .bold)
+        l.font = .fdFont(designSize: 15, weight: .bold)
         l.textColor = .white
         l.textAlignment = .center
         l.clipsToBounds = true
@@ -212,7 +212,19 @@ final class SysNotifyCell: UITableViewCell {
         let isStaff = msg.isStaff
         let showUser = card?.isShowUser ?? true
 
+        avatarLabel.font = .fdFont(designSize: 15, weight: .bold)
         metaLabel.font = ChatBubbleStyle.metaFont
+        titleLabel.font = ChatBubbleStyle.Card.titleFont
+        descLabel.font = ChatBubbleStyle.Card.bodyFont
+        actionButton.titleLabel?.font = ChatBubbleStyle.Card.actionFont
+        if var config = tagButton.configuration {
+            config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+                var out = incoming
+                out.font = ChatBubbleStyle.Card.tagFont
+                return out
+            }
+            tagButton.configuration = config
+        }
 
         if showUser {
             ChatBubbleStyle.applyAvatar(portraitUrl: msg.portraitUrl, label: avatarLabel, imageView: avatarImageView)
@@ -589,11 +601,11 @@ final class SysNotifyCell: UITableViewCell {
             row.alignment = .center
             let nameLabel = UILabel()
             nameLabel.text = name
-            nameLabel.font = .fdFont(ofSize: 14)
+            nameLabel.font = .fdFont(designSize: 14)
             nameLabel.textColor = .fdMuted
             let stars = UILabel()
             stars.text = "★★★★★"
-            stars.font = .fdFont(ofSize: 16)
+            stars.font = .fdFont(designSize: 16)
             stars.textColor = UIColor.fdBorder
             row.addArrangedSubview(nameLabel)
             row.addArrangedSubview(stars)
@@ -601,7 +613,7 @@ final class SysNotifyCell: UITableViewCell {
         }
         let input = UILabel()
         input.text = "  评价内容（只读）"
-        input.font = .fdFont(ofSize: 14)
+        input.font = .fdFont(designSize: 14)
         input.textColor = .fdMuted
         input.backgroundColor = .fdBg2
         input.layer.cornerRadius = 8
@@ -614,7 +626,7 @@ final class SysNotifyCell: UITableViewCell {
         let attr = NSMutableAttributedString(
             string: title,
             attributes: [
-                .font: UIFont.fdFont(ofSize: 17, weight: .bold),
+                .font: UIFont.fdFont(designSize: 17, weight: .bold),
                 .foregroundColor: UIColor.fdText,
             ]
         )

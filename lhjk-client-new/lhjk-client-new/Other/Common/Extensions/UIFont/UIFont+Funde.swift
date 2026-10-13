@@ -14,6 +14,43 @@ extension UIFont {
         return .systemFont(ofSize: size, weight: weight)
     }
 
+    /// 设计字号 → 当前字号。每次从设计字号计算，不从 label 上的当前点值再映射。
+    /// 未列入对照表的字号保持设计值。Token（`fdBody` 等）仍走各自的标准/老年分支，不要再套这一层。
+    static func fdFont(designSize: CGFloat, weight: UIFont.Weight = .regular) -> UIFont {
+        .fdFont(ofSize: seniorAdjustedSize(designSize), weight: weight)
+    }
+
+    /// 长辈模式打开时，把设计字号换成对照表里的大字号。
+    static func seniorAdjustedSize(_ designSize: CGFloat) -> CGFloat {
+        guard isSeniorMode else { return designSize }
+        return seniorMappedPointSize(designSize, toSenior: true)
+    }
+
+    /// 按当前点值在标准/大字之间互换。仅给已经显示在屏幕上的 label 做一次性刷新。
+    static func seniorMappedPointSize(_ size: CGFloat, toSenior: Bool) -> CGFloat {
+        for pair in seniorSizePairs {
+            if toSenior, abs(size - pair.standard) < 0.5 { return pair.senior }
+            if !toSenior, abs(size - pair.senior) < 0.5 { return pair.standard }
+        }
+        return size
+    }
+
+    /// 与 `BaseViewController` 的就地刷新共用。标准字号在左，长辈模式字号在右。
+    private static let seniorSizePairs: [(standard: CGFloat, senior: CGFloat)] = [
+        (10, 13),
+        (11, 14),
+        (12, 15),
+        (13, 16),
+        (14, 18),
+        (15, 19),
+        (16, 20),
+        (18, 22),
+        (22, 26),
+        (28, 34),
+        (36, 44),
+        (56, 64),
+    ]
+
     /// 等宽数字字体 — SF Mono。仅表格/列表竖向对齐时使用，指标读数请用 `fdFont` / `fdNum*`。
     static func fdMonoFont(ofSize size: CGFloat, weight: UIFont.Weight = .regular) -> UIFont {
         let base = UIFont.monospacedDigitSystemFont(ofSize: size, weight: weight)

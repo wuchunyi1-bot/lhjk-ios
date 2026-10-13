@@ -82,6 +82,9 @@ final class NotificationCardCell: UITableViewCell {
     required init?(coder: NSCoder) { fatalError() }
 
     func configure(_ noti: AppNotification) {
+        titleLabel.font = .fdFont(designSize: 17, weight: .bold)
+        bodyLabel.font = .fdFont(designSize: 15)
+        timeLabel.font = .fdFont(designSize: 14)
         iconView.backgroundColor = UIColor(hexString: noti.iconBg)
         iconImageView.image = UIImage(systemName: noti.icon)
         iconImageView.tintColor = UIColor(hexString: noti.iconColor)

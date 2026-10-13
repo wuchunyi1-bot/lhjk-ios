@@ -8,6 +8,11 @@ final class NotificationCell: UITableViewCell {
 
     static let reuseIdentifier = "NotificationCell"
 
+    /// 标准 74；长辈模式标题 22 + 正文 18，行高加一档避免裁切。
+    static var rowHeight: CGFloat { UIFont.isSeniorMode ? 86 : 74 }
+    /// 分类标签高度。标准 18；长辈模式 14→18 后改为 24。
+    static var tagHeight: CGFloat { UIFont.isSeniorMode ? 24 : 18 }
+
     // MARK: - UI
 
     /// 单行白色卡片容器（左右 inset 12，首尾行根据位置裁切 16pt 圆角）
@@ -77,6 +82,8 @@ final class NotificationCell: UITableViewCell {
         return l
     }()
 
+    private var tagHeightConstraint: Constraint?
+
     private let separatorLine: UIView = {
         let v = UIView()
         v.backgroundColor = UIColor(hexString: "#EEEEEE")
@@ -127,7 +134,7 @@ final class NotificationCell: UITableViewCell {
             make.centerY.equalTo(titleLabel)
             make.leading.equalTo(titleLabel.snp.trailing).offset(4)
             make.trailing.lessThanOrEqualTo(timeLabel.snp.leading).offset(-8)
-            make.height.equalTo(18)
+            tagHeightConstraint = make.height.equalTo(Self.tagHeight).constraint
         }
 
         bodyLabel.snp.makeConstraints { make in
@@ -148,6 +155,7 @@ final class NotificationCell: UITableViewCell {
     // MARK: - Configure
 
     func configure(_ noti: AppNotification, isFirst: Bool = false, isLast: Bool = false, isSingle: Bool = false) {
+        applyFonts()
         if let customIcon = UIImage(named: noti.icon) {
             iconImageView.image = customIcon
         } else {
@@ -180,5 +188,14 @@ final class NotificationCell: UITableViewCell {
         } else {
             cardContainer.layer.cornerRadius = 0
         }
+    }
+
+    /// 每次绑定都从设计字号取字体，避免复用或 reloadRows 退回创建时的小字。
+    private func applyFonts() {
+        titleLabel.font = .fdFont(designSize: 18, weight: .medium)
+        tagBadge.font = .fdFont(designSize: 14, weight: .regular)
+        timeLabel.font = .fdFont(designSize: 14, weight: .regular)
+        bodyLabel.font = .fdFont(designSize: 14, weight: .regular)
+        tagHeightConstraint?.update(offset: Self.tagHeight)
     }
 }

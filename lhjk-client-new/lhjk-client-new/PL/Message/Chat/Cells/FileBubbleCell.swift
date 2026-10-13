@@ -86,6 +86,10 @@ final class FileBubbleCell: UITableViewCell {
     required init?(coder: NSCoder) { fatalError() }
 
     func configure(_ msg: ChatMessage, tone: String, convRole: ConversationRole) {
+        avatarLabel.font = .fdFont(designSize: 15, weight: .bold)
+        metaLabel.font = ChatBubbleStyle.metaFont
+        nameLabel.font = .fdFont(designSize: 16, weight: .medium)
+        sizeLabel.font = .fdFont(designSize: 14)
         currentMessage = msg
         let isStaff = msg.isStaff
         let file = msg.fileContent

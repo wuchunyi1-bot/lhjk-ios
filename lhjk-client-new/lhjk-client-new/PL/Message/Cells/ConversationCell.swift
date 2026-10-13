@@ -9,6 +9,11 @@ final class ConversationCell: UITableViewCell {
 
     static let reuseIdentifier = "ConversationCell"
 
+    /// 标准 78；长辈模式名称 22 + 预览 18，行高加一档。
+    static var rowHeight: CGFloat { UIFont.isSeniorMode ? 90 : 78 }
+    /// 角色标签高度。标准 18；长辈模式 14→18 后改为 24。
+    static var roleTagHeight: CGFloat { UIFont.isSeniorMode ? 24 : 18 }
+
     // MARK: - UI
 
     /// 单行白色卡片容器（左右 inset 12，首尾行根据位置裁切 16pt 圆角）
@@ -91,6 +96,8 @@ final class ConversationCell: UITableViewCell {
         return l
     }()
 
+    private var roleTagHeightConstraint: Constraint?
+
     private let separatorLine: UIView = {
         let v = UIView()
         v.backgroundColor = UIColor(hexString: "#EEEEEE")
@@ -148,7 +155,7 @@ final class ConversationCell: UITableViewCell {
             make.centerY.equalTo(nameLabel)
             make.leading.equalTo(nameLabel.snp.trailing).offset(4)
             make.trailing.lessThanOrEqualTo(timeLabel.snp.leading).offset(-8)
-            make.height.equalTo(18)
+            roleTagHeightConstraint = make.height.equalTo(Self.roleTagHeight).constraint
         }
 
         previewLabel.snp.makeConstraints { make in
@@ -177,6 +184,7 @@ final class ConversationCell: UITableViewCell {
     // MARK: - Configure
 
     func configure(_ conv: Conversation, isFirst: Bool = false, isLast: Bool = false, isSingle: Bool = false) {
+        applyFonts()
         applyAvatar(for: conv)
 
         nameLabel.text = conv.name
@@ -213,6 +221,17 @@ final class ConversationCell: UITableViewCell {
         } else {
             cardContainer.layer.cornerRadius = 0
         }
+    }
+
+    /// 每次绑定都从设计字号取字体，避免滚动复用后退回创建时的小字。
+    private func applyFonts() {
+        avatarPlaceholder.font = .fdFont(designSize: 18, weight: .semibold)
+        nameLabel.font = .fdFont(designSize: 18, weight: .medium)
+        roleTag.font = .fdFont(designSize: 14, weight: .regular)
+        previewLabel.font = .fdFont(designSize: 14, weight: .regular)
+        timeLabel.font = .fdFont(designSize: 14, weight: .regular)
+        badgeLabel.font = .fdFont(designSize: 11, weight: .medium)
+        roleTagHeightConstraint?.update(offset: Self.roleTagHeight)
     }
 
     // MARK: - Avatar

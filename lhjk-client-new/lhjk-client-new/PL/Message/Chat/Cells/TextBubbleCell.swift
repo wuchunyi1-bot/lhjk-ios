@@ -123,6 +123,10 @@ final class TextBubbleCell: UITableViewCell {
         currentMessage = msg
         let isStaff = msg.isStaff
 
+        avatarLabel.font = .fdFont(designSize: 15, weight: .bold)
+        replyNameLabel.font = .fdMicro
+        replyContentLabel.font = .fdCaption
+        replyVoiceDurationLabel.font = .fdCaption
         metaLabel.font = ChatBubbleStyle.metaFont
         timeLabel.font = ChatBubbleStyle.metaFont
         msgLabel.font = ChatBubbleStyle.textFont

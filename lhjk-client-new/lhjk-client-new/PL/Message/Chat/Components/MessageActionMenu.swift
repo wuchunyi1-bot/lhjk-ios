@@ -121,7 +121,7 @@ final class MessageActionMenu: UIView {
 
         let titleLabel = UILabel()
         titleLabel.text = Self.title(for: action)
-        titleLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        titleLabel.font = .fdFont(designSize: 12, weight: .regular)
         titleLabel.textColor = .white
         titleLabel.textAlignment = .center
         titleLabel.isUserInteractionEnabled = false

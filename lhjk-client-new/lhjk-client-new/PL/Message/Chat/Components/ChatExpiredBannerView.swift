@@ -38,7 +38,7 @@ final class ChatExpiredBannerView: UIControl {
         l.attributedText = NSAttributedString(
             string: "您的服务已过期，可前往商城重新购买健康管理服务！",
             attributes: [
-                .font: UIFont.fdFont(ofSize: 16, weight: .regular),
+                .font: UIFont.fdFont(designSize: 16, weight: .regular),
                 .foregroundColor: UIColor(hexString: "#C36E20"),
                 .paragraphStyle: paragraph,
             ]
@@ -80,7 +80,7 @@ final class ChatExpiredBannerView: UIControl {
         messageLabel.attributedText = NSAttributedString(
             string: copy,
             attributes: [
-                .font: UIFont.fdFont(ofSize: 16, weight: .regular),
+                .font: UIFont.fdFont(designSize: 16, weight: .regular),
                 .foregroundColor: UIColor(hexString: "#C36E20"),
                 .paragraphStyle: paragraph,
             ]

@@ -87,11 +87,12 @@ final class VideoBubbleCell: UITableViewCell {
     // MARK: - Configure
 
     func configure(_ msg: ChatMessage, tone: String, convRole: ConversationRole) {
+        avatarLabel.font = .fdFont(designSize: 15, weight: .bold)
+        metaLabel.font = ChatBubbleStyle.metaFont
+        durationLabel.font = .fdFont(designSize: 13, weight: .medium)
         currentMessage = msg
         let isStaff = msg.isStaff
         let video = msg.videoContent
-
-        metaLabel.font = ChatBubbleStyle.metaFont
 
         ChatBubbleStyle.applyAvatar(portraitUrl: msg.portraitUrl, label: avatarLabel, imageView: avatarImageView)
 

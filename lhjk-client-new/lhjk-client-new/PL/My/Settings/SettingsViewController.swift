@@ -17,9 +17,15 @@ final class SettingsViewController: BaseViewController {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    private enum GeneralRow {
+        static let senior = 0
+        static let cache = 1
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        refreshSeniorModeStatus()
         refreshCacheSize()
     }
 
@@ -110,6 +116,12 @@ final class SettingsViewController: BaseViewController {
             icon: "settings_section_general",
             items: [
                 .init(
+                    title: "长辈模式",
+                    subtitle: "字更大，操作更简单",
+                    trailing: Self.seniorModeStatusText,
+                    action: { Router.shared.push("/me/settings/accessibility") }
+                ),
+                .init(
                     title: "清理缓存",
                     subtitle: "计算中...",
                     action: { [weak self] in self?.handleClearCache() }
@@ -138,6 +150,14 @@ final class SettingsViewController: BaseViewController {
         SettingsSectionCard(sectionTitle: title, iconImageName: icon, items: items)
     }
 
+    private static var seniorModeStatusText: String {
+        UIFont.isSeniorMode ? "已开启" : "未开启"
+    }
+
+    private func refreshSeniorModeStatus() {
+        generalSection?.updateTrailing(at: GeneralRow.senior, text: Self.seniorModeStatusText)
+    }
+
     // MARK: - Cache
 
     private func refreshCacheSize() {
@@ -147,7 +167,7 @@ final class SettingsViewController: BaseViewController {
             let text = await self.cacheCleanup.formattedSize()
             await MainActor.run {
                 guard !self.isClearingCache else { return }
-                self.generalSection?.updateSubtitle(at: 0, text: text)
+                self.generalSection?.updateSubtitle(at: GeneralRow.cache, text: text)
             }
         }
     }
@@ -155,14 +175,14 @@ final class SettingsViewController: BaseViewController {
     private func handleClearCache() {
         guard !isClearingCache else { return }
         isClearingCache = true
-        generalSection?.updateSubtitle(at: 0, text: "清理中...")
+        generalSection?.updateSubtitle(at: GeneralRow.cache, text: "清理中...")
         Task { [weak self] in
             guard let self else { return }
             await self.cacheCleanup.clear()
             let text = await self.cacheCleanup.formattedSize()
             await MainActor.run {
                 self.isClearingCache = false
-                self.generalSection?.updateSubtitle(at: 0, text: text)
+                self.generalSection?.updateSubtitle(at: GeneralRow.cache, text: text)
                 self.showToast("清理成功")
             }
         }

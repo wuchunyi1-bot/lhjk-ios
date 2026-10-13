@@ -85,6 +85,9 @@ final class VoiceBubbleCell: UITableViewCell {
     }
 
     func configure(_ msg: ChatMessage, tone: String, convRole: ConversationRole) {
+        avatarLabel.font = .fdFont(designSize: 15, weight: .bold)
+        metaLabel.font = .fdFont(designSize: 12, weight: .regular)
+        durationLabel.font = .fdFont(designSize: 14, weight: .regular)
         currentMessage = msg
         let isStaff = msg.isStaff
         let seconds = msg.thumbHeight ?? 0

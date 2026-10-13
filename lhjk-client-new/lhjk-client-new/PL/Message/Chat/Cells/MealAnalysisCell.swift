@@ -25,7 +25,7 @@ final class MealAnalysisCell: UITableViewCell {
         cardView.layer.shadowOpacity = 0.04
         cardView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner, .layerMinXMaxYCorner]
 
-        headerLabel.font = .fdFont(ofSize: 14, weight: .semibold)
+        headerLabel.font = .fdFont(designSize: 14, weight: .semibold)
         headerLabel.textColor = .fdPrimary
 
         photoPlaceholder.backgroundColor = UIColor(hexString: "#F5F0EB")
@@ -36,7 +36,7 @@ final class MealAnalysisCell: UITableViewCell {
         photoIcon.contentMode = .scaleAspectFit
         let photoText = UILabel()
         photoText.text = "餐食照片"
-        photoText.font = .fdFont(ofSize: 14)
+        photoText.font = .fdFont(designSize: 14)
         photoText.textColor = .fdMuted
 
         [photoIcon, photoText].forEach(photoPlaceholder.addSubview)
@@ -53,11 +53,11 @@ final class MealAnalysisCell: UITableViewCell {
         annotationsStack.axis = .vertical
         annotationsStack.spacing = 7
 
-        commentLabel.font = .fdFont(ofSize: 15)
+        commentLabel.font = .fdFont(designSize: 15)
         commentLabel.textColor = .fdSubtext
         commentLabel.numberOfLines = 0
 
-        fromLabel.font = .fdFont(ofSize: 13)
+        fromLabel.font = .fdFont(designSize: 13)
         fromLabel.textColor = .fdSubtext
         fromLabel.textAlignment = .right
 
@@ -101,6 +101,9 @@ final class MealAnalysisCell: UITableViewCell {
     required init?(coder: NSCoder) { fatalError() }
 
     func configure(_ msg: ChatMessage) {
+        headerLabel.font = .fdFont(designSize: 14, weight: .semibold)
+        commentLabel.font = .fdFont(designSize: 15)
+        fromLabel.font = .fdFont(designSize: 13)
         guard let meal = msg.meal else { return }
         headerLabel.text = "\(meal.label) · 营养师分析"
 
@@ -132,12 +135,12 @@ final class MealAnalysisCell: UITableViewCell {
 
         let textLabel = UILabel()
         textLabel.text = a.text
-        textLabel.font = .fdFont(ofSize: 15, weight: .semibold)
+        textLabel.font = .fdFont(designSize: 15, weight: .semibold)
         textLabel.textColor = .fdText
 
         let tipLabel = UILabel()
         tipLabel.text = a.tip
-        tipLabel.font = .fdFont(ofSize: 13)
+        tipLabel.font = .fdFont(designSize: 13)
         tipLabel.textColor = .fdSubtext
 
         [dot, textLabel, tipLabel].forEach(v.addSubview)
