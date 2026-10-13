@@ -78,10 +78,8 @@ final class ServiceBannerCarouselCell: UITableViewCell {
             $0.centerX.equalTo(collectionView)
             $0.bottom.equalTo(collectionView).offset(-12)
         }
-        if #available(iOS 14.0, *) {
-            pageControl.backgroundStyle = .minimal
-            pageControl.allowsContinuousInteraction = false
-        }
+        pageControl.backgroundStyle = .minimal
+        pageControl.allowsContinuousInteraction = false
         pageControl.transform = CGAffineTransform(scaleX: 0.75, y: 0.75)
         lastAppliedHeight = BannerImageAspectLayout.height(
             width: initialWidth,

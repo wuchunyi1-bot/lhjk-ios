@@ -415,6 +415,29 @@ struct OArchive: Codable {
     }
 }
 
+// MARK: - 用户年龄
+
+/// 出生日期须满 18 周岁。最晚可选日为「今天往前 18 年」的当天（当天满 18 岁可选）。
+enum UserMinimumAge {
+    static let years = 18
+
+    static func latestBirthDate(
+        now: Date = Date(),
+        calendar: Calendar = Calendar(identifier: .gregorian)
+    ) -> Date {
+        let today = calendar.startOfDay(for: now)
+        return calendar.date(byAdding: .year, value: -years, to: today) ?? today
+    }
+
+    static func isSatisfied(
+        birthDate: Date,
+        now: Date = Date(),
+        calendar: Calendar = Calendar(identifier: .gregorian)
+    ) -> Bool {
+        calendar.startOfDay(for: birthDate) <= latestBirthDate(now: now, calendar: calendar)
+    }
+}
+
 // MARK: - 档案机构 + 基本信息（完善资料提交）
 
 /// `POST /v1/archive/saveArchiveHospital`
@@ -426,6 +449,10 @@ struct SaveArchiveHospitalDTO {
     /// 出生日期，优先 `yyyy-MM-dd`
     let birthday: String
     let hospitalId: Int64
+    /// 身高（厘米，整数）
+    let height: Int
+    /// 体重（千克）
+    let weight: Double
     /// 业务经理（医生 id），选填
     let businessManagerId: Int64?
 }

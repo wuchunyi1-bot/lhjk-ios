@@ -125,10 +125,16 @@ final class ProfileFieldEditorSheet: UIViewController {
             datePicker.preferredDatePickerStyle = .wheels
             datePicker.locale = Locale(identifier: "zh_CN")
             datePicker.calendar = Calendar(identifier: .gregorian)
-            datePicker.maximumDate = Date()
-            datePicker.minimumDate = Calendar.current.date(from: DateComponents(year: 1920, month: 1, day: 1))
-            let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
-            if let d = fmt.date(from: draft) { datePicker.date = d }
+            let earliest = Calendar.current.date(from: DateComponents(year: 1920, month: 1, day: 1))
+            datePicker.minimumDate = earliest
+            let latest = fieldTitle == "出生日期" ? UserMinimumAge.latestBirthDate() : Date()
+            datePicker.maximumDate = latest
+            let fmt = DateFormatter()
+            fmt.locale = Locale(identifier: "en_US_POSIX")
+            fmt.dateFormat = "yyyy-MM-dd"
+            if let parsed = fmt.date(from: String(draft.prefix(10))) {
+                datePicker.date = min(max(parsed, earliest ?? parsed), latest)
+            }
             panel.addSubview(datePicker)
             datePicker.snp.makeConstraints {
                 $0.top.equalTo(divider.snp.bottom).offset(8)
@@ -264,6 +270,10 @@ final class ProfileFieldEditorSheet: UIViewController {
         }
         if fieldTitle == "邮箱", !value.contains("@") {
             showToastAlert("请输入正确的邮箱格式")
+            return
+        }
+        if fieldTitle == "出生日期", !UserMinimumAge.isSatisfied(birthDate: datePicker.date) {
+            showToastAlert("用户年龄需满18岁")
             return
         }
         onSave?(value)

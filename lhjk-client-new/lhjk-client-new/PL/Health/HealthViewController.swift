@@ -55,7 +55,7 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         tv.scrollIndicatorInsets = .zero
         tv.estimatedRowHeight = 200
         tv.rowHeight = UITableView.automaticDimension
-        if #available(iOS 15.0, *) { tv.sectionHeaderTopPadding = 0 }
+        tv.sectionHeaderTopPadding = 0
         return tv
     }()
 

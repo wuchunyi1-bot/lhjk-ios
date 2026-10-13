@@ -81,10 +81,7 @@ final class WebViewController: BaseViewController {
 
         let config = WKWebViewConfiguration()
         config.userContentController = userContent
-        if #available(iOS 14.0, *) {
-            config.defaultWebpagePreferences.allowsContentJavaScript = true
-        }
-
+        config.defaultWebpagePreferences.allowsContentJavaScript = true
         let wv = WKWebView(frame: .zero, configuration: config)
         wv.navigationDelegate = self
         wv.allowsBackForwardNavigationGestures = true
@@ -101,11 +98,7 @@ final class WebViewController: BaseViewController {
 
     private let indicator: UIActivityIndicatorView = {
         let i: UIActivityIndicatorView
-        if #available(iOS 13.0, *) {
-            i = UIActivityIndicatorView(style: .medium)
-        } else {
-            i = UIActivityIndicatorView(style: .gray)
-        }
+        i = UIActivityIndicatorView(style: .medium)
         i.hidesWhenStopped = true
         return i
     }()

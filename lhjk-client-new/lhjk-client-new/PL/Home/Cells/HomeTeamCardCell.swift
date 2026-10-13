@@ -88,9 +88,6 @@ final class HomeTeamCardCell: UITableViewCell {
 
         preservesSuperviewLayoutMargins = false
         contentView.preservesSuperviewLayoutMargins = false
-        if #available(iOS 11.0, *) {
-            contentView.directionalLayoutMargins = .zero
-        }
 
         contentView.addSubview(cardView)
         cardView.addSubview(titleLabel)

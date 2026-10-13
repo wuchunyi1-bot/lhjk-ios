@@ -61,12 +61,14 @@ final class UserService: UserServiceProtocol {
             "sex": dto.sex,
             "birthday": dto.birthday,
             "hospitalId": dto.hospitalId,
+            "height": dto.height,
+            "weight": dto.weight,
         ]
         if let managerId = dto.businessManagerId {
             params["businessManagerId"] = managerId
         }
 
-        print("[UserService] saveArchiveHospital → name=\(dto.chineseName) hospitalId=\(dto.hospitalId) managerId=\(dto.businessManagerId.map(String.init) ?? "nil")")
+        print("[UserService] saveArchiveHospital → name=\(dto.chineseName) hospitalId=\(dto.hospitalId) height=\(dto.height) weight=\(dto.weight) managerId=\(dto.businessManagerId.map(String.init) ?? "nil")")
 
         let response: APIResponse<EmptyResponse> = try await APIManager.shared
             .postAsync(path: "/v1/archive/saveArchiveHospital", parameters: params, responseType: APIResponse<EmptyResponse>.self)

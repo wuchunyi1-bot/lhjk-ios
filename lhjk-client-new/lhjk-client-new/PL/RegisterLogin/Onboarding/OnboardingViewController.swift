@@ -99,6 +99,9 @@ final class OnboardingViewController: BaseViewController {
         iconInset: 12
     )
 
+    private lazy var heightField = makeMeasureField(placeholder: "请输入身高", unit: "cm", keyboard: .numberPad)
+    private lazy var weightField = makeMeasureField(placeholder: "请输入体重", unit: "kg", keyboard: .decimalPad)
+
     private lazy var institutionButton = makePickerButton(
         placeholder: "请选择服务机构",
         action: #selector(openInstitutionSelect)
@@ -252,6 +255,11 @@ final class OnboardingViewController: BaseViewController {
         birthdayBlock.isUserInteractionEnabled = true
         birthdayBlock.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openBirthdayPicker)))
 
+        heightField.snp.makeConstraints { $0.height.equalTo(Design.fieldHeight) }
+        let heightBlock = makeLabeledField(required: true, title: "身高", content: heightField)
+        weightField.snp.makeConstraints { $0.height.equalTo(Design.fieldHeight) }
+        let weightBlock = makeLabeledField(required: true, title: "体重", content: weightField)
+
         institutionButton.snp.makeConstraints { $0.height.equalTo(Design.fieldHeight) }
         let institutionBlock = makeLabeledField(required: true, title: "所属机构", content: institutionButton)
 
@@ -263,7 +271,7 @@ final class OnboardingViewController: BaseViewController {
         managerBlock.setCustomSpacing(12, after: managerButton)
 
         let formStack = UIStackView(arrangedSubviews: [
-            nameBlock, genderBlock, birthdayBlock, institutionBlock, managerBlock,
+            nameBlock, genderBlock, birthdayBlock, heightBlock, weightBlock, institutionBlock, managerBlock,
         ])
         formStack.axis = .vertical
         formStack.spacing = Design.groupSpacing
@@ -321,6 +329,22 @@ final class OnboardingViewController: BaseViewController {
         tf.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
         tf.leftViewMode = .always
         tf.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
+        tf.rightViewMode = .always
+        return tf
+    }
+
+    private func makeMeasureField(placeholder: String, unit: String, keyboard: UIKeyboardType) -> UITextField {
+        let tf = makeInputField(placeholder: placeholder)
+        tf.keyboardType = keyboard
+        let unitLabel = UILabel()
+        unitLabel.text = unit
+        unitLabel.font = .fdFont(ofSize: 15, weight: .regular)
+        unitLabel.textColor = .fdTabInactive
+        unitLabel.sizeToFit()
+        let wrap = UIView(frame: CGRect(x: 0, y: 0, width: ceil(unitLabel.bounds.width) + 24, height: Design.fieldHeight))
+        unitLabel.frame = CGRect(x: 0, y: 0, width: ceil(unitLabel.bounds.width), height: Design.fieldHeight)
+        wrap.addSubview(unitLabel)
+        tf.rightView = wrap
         tf.rightViewMode = .always
         return tf
     }
@@ -481,6 +505,32 @@ final class OnboardingViewController: BaseViewController {
             showAlert("请选择出生日期")
             return
         }
+        guard UserMinimumAge.isSatisfied(birthDate: date) else {
+            showAlert("用户年龄需满18岁")
+            return
+        }
+        let heightText = heightField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !heightText.isEmpty else {
+            showAlert("请输入身高")
+            heightField.becomeFirstResponder()
+            return
+        }
+        guard let height = Self.parseHeight(heightText) else {
+            showAlert("请输入正确的身高")
+            heightField.becomeFirstResponder()
+            return
+        }
+        let weightText = weightField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !weightText.isEmpty else {
+            showAlert("请输入体重")
+            weightField.becomeFirstResponder()
+            return
+        }
+        guard let weight = Self.parseWeight(weightText) else {
+            showAlert("请输入正确的体重")
+            weightField.becomeFirstResponder()
+            return
+        }
         guard let hospitalIdRaw = selectedHospitalId?.trimmingCharacters(in: .whitespacesAndNewlines),
               !hospitalIdRaw.isEmpty,
               let hospitalId = Int64(hospitalIdRaw) else {
@@ -497,6 +547,8 @@ final class OnboardingViewController: BaseViewController {
             sex: sexCode,
             birthday: birthdayStr,
             hospitalId: hospitalId,
+            height: height,
+            weight: weight,
             businessManagerId: managerId
         )
 
@@ -558,6 +610,13 @@ final class OnboardingViewController: BaseViewController {
            let date = Self.parseBirthday(birthday) {
             birthDate = date
             setPickerTitle(birthdayButton, text: Self.displayBirthday(date))
+        }
+
+        if let height = archive?.height, height > 0 {
+            heightField.text = String(height)
+        }
+        if let weight = archive?.weight, weight > 0 {
+            weightField.text = Self.displayWeight(weight)
         }
 
         let hospitalId = firstNonBlank(archive?.hospitalId)
@@ -628,6 +687,32 @@ final class OnboardingViewController: BaseViewController {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: date)
+    }
+
+    /// 身高：正整数（厘米）
+    private static func parseHeight(_ raw: String) -> Int? {
+        guard let value = Int(raw), value > 0 else { return nil }
+        return value
+    }
+
+    /// 体重：正数（千克），允许一位小数输入
+    private static func parseWeight(_ raw: String) -> Double? {
+        let normalized = raw.replacingOccurrences(of: ",", with: ".")
+        guard let value = Double(normalized), value > 0, value.isFinite else { return nil }
+        return value
+    }
+
+    private static func displayWeight(_ value: Double) -> String {
+        if value.rounded() == value {
+            return String(Int(value))
+        }
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
+        formatter.numberStyle = .decimal
+        formatter.usesGroupingSeparator = false
+        return formatter.string(from: NSNumber(value: value)) ?? String(value)
     }
 
     // MARK: - Helpers

@@ -21,12 +21,13 @@ final class OnboardingBirthdayPickerSheet: UIViewController {
     private var didApplyDraft = false
 
     private let calendar = Calendar(identifier: .gregorian)
-    private let maxDate = Date()
+    private let maxDate = UserMinimumAge.latestBirthDate()
     private let draft: Date
 
     init(selected: Date?) {
-        let fallback = Calendar.current.date(byAdding: .year, value: -30, to: Date()) ?? Date()
-        self.draft = min(selected ?? fallback, Date())
+        let limit = UserMinimumAge.latestBirthDate()
+        let fallback = Calendar.current.date(byAdding: .year, value: -30, to: Date()) ?? limit
+        self.draft = min(selected ?? fallback, limit)
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .overFullScreen
         modalTransitionStyle = .crossDissolve

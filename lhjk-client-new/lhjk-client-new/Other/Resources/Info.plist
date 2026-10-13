@@ -2,17 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>用于选择头像、发送图片等</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>需要将食谱清单保存到您的相册</string>
-	<key>UIUserInterfaceStyle</key>
-	<string>Light</string>
-	<key>CFBundleLocalizations</key>
-	<array>
-		<string>zh_CN</string>
-		<string>en</string>
-	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -23,6 +12,11 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>zh_CN</string>
+		<string>en</string>
+	</array>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
@@ -32,14 +26,14 @@
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>alipay</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>ap2021006196675244</string>
 			</array>
-			<key>CFBundleURLName</key>
-			<string>alipay</string>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
 		</dict>
 		<dict>
 			<key>CFBundleTypeRole</key>
@@ -101,6 +95,10 @@
 	<string>用于获取当前位置并自动填写收货地址</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>需要访问麦克风用于录制语音消息</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>需要将食谱清单保存到您的相册</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>用于选择头像、发送图片等</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -133,5 +131,7 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
+	<key>UIUserInterfaceStyle</key>
+	<string>Light</string>
 </dict>
 </plist>

@@ -232,11 +232,8 @@ extension LocationManager: CLLocationManagerDelegate {
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status: CLAuthorizationStatus
-        if #available(iOS 14.0, *) {
-            status = manager.authorizationStatus
-        } else {
-            status = CLLocationManager.authorizationStatus()
-        }
+        status = manager.authorizationStatus
+        
         // 仅在等待授权 continuation 时结束；忽略后续无关回调
         if authorizationContinuation != nil, status != .notDetermined {
             resumeAuthorization(status)

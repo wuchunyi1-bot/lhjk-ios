@@ -11,7 +11,7 @@ Apifox：
 **Goals:**
 - Onboarding UI 对齐 funde ProfileSetup 结构与交互文案
 - 业务经理二级页按 `hospitalId` 拉医生分页列表并回填
-- 提交改走 `saveArchiveHospital`，携带必填四字段 + 可选 `businessManagerId`
+- 提交改走 `saveArchiveHospital`，携带姓名、性别、生日、机构，以及身高、体重，另加可选 `businessManagerId`
 
 **Non-Goals:**
 - 不改「我的-个人信息」的 `updateCurrentProfile` 路径
@@ -28,7 +28,7 @@ Apifox：
 | Profile 页保留 `updateCurrentProfile` | 职责分离：档案机构绑定 vs 日常资料编辑 |
 
 Body（`SaveArchiveHospitalDTO`）：
-- `chineseName` / `sex` / `birthday` / `hospitalId`（必填）
+- `chineseName` / `sex` / `birthday` / `hospitalId` / `height`（厘米，整数） / `weight`（千克，数字）
 - `businessManagerId`（选填，医生 `id`）
 - `sex` 传 `"1"`/`"2"`；`birthday` 传 `yyyy-MM-dd`（与现网其它接口一致；若后端要求 date-time 再补 `T00:00:00`）
 - `hospitalId` / `businessManagerId` 以 int64 编码（与订单等模块一致，可用字符串再由 encoder 处理，或直接传 Number）
