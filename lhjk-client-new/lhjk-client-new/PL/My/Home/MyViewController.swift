@@ -204,7 +204,7 @@ final class MyViewController: BaseViewController {
         fulfillmentCardView.snp.makeConstraints { make in
             make.top.equalTo(membershipCardView.snp.bottom).offset(12)
             make.leading.trailing.equalToSuperview().inset(16)
-            make.height.equalTo(110)
+            make.height.equalTo(MeServiceFulfillmentCardView.preferredHeight)
         }
 
         // Health Management Card
@@ -272,6 +272,9 @@ final class MyViewController: BaseViewController {
 
     override func refreshForSeniorMode() {
         super.refreshForSeniorMode()
+        fulfillmentCardView.snp.updateConstraints {
+            $0.height.equalTo(MeServiceFulfillmentCardView.preferredHeight)
+        }
         refreshHeader()
         refreshCards()
         view.setNeedsLayout()

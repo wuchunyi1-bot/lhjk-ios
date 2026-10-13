@@ -18,6 +18,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         _ = Self.localeBootstrap
+        FDSeniorFontHooks.install()
         configureAppLocale()
         // MARK: - SDK 初始化
         configureWindow()

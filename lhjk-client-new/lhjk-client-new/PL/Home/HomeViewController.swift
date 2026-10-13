@@ -34,6 +34,11 @@ final class HomeViewController: BaseViewController {
         updateTableBottomInsetIfNeeded()
     }
 
+    override func refreshForSeniorMode() {
+        super.refreshForSeniorMode()
+        tableView.reloadData()
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)

@@ -58,7 +58,7 @@ final class HomeTeamCardCell: UITableViewCell {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.text = "我的富德联好健康管家团队"
+        l.text = "我的健康管家团队"
         l.font = .fdFont(ofSize: 18, weight: .medium)
         l.textColor = .fdText
         return l
@@ -208,9 +208,12 @@ final class HomeTeamCardCell: UITableViewCell {
         messageBtn.layer.cornerRadius = 14
         messageBtn.clipsToBounds = true
         messageBtn.contentEdgeInsets = UIEdgeInsets(top: 6, left: 12, bottom: 6, right: 12)
+        messageBtn.titleLabel?.lineBreakMode = .byClipping
         messageBtn.addAction(UIAction { [weak self] _ in
             self?.onMessageTapped?(member)
         }, for: .touchUpInside)
+        let buttonSize = Self.messageButtonSize()
+        messageBtn.layer.cornerRadius = buttonSize.height / 2
 
         row.addSubview(avatarBg)
         row.addSubview(nameLabel)
@@ -244,11 +247,19 @@ final class HomeTeamCardCell: UITableViewCell {
         messageBtn.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(13)
             $0.centerY.equalTo(avatarBg)
-            $0.width.equalTo(70)
-            $0.height.equalTo(28)
+            $0.width.equalTo(buttonSize.width)
+            $0.height.equalTo(buttonSize.height)
         }
 
         return row
+    }
+
+    /// 普通模式 70×28。长辈模式字号变大，按「发消息」实际宽度加高加宽，避免变成省略号。
+    private static func messageButtonSize() -> CGSize {
+        guard UIFont.isSeniorMode else { return CGSize(width: 70, height: 28) }
+        let font = UIFont.fdFont(ofSize: 14, weight: .medium)
+        let textWidth = ceil(("发消息" as NSString).size(withAttributes: [.font: font]).width)
+        return CGSize(width: max(96, textWidth + 32), height: 36)
     }
 
     private func makeTitleBadge(_ title: String) -> UIView {

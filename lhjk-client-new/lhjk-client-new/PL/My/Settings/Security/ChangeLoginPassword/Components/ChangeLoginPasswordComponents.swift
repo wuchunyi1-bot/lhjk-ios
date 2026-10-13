@@ -25,12 +25,12 @@ enum ChangeLoginPasswordStyle {
     static let placeholderColor = UIColor(hexString: "#A4A4A6")
     static let fieldBorderColor = UIColor(red: 113 / 255, green: 120 / 255, blue: 133 / 255, alpha: 0.3)
 
-    static let titleFont = UIFont.fdFont(ofSize: 18, weight: .medium)
-    static let subtitleFont = UIFont.fdFont(ofSize: 12, weight: .regular)
-    static let phoneFont = UIFont.fdFont(ofSize: 18, weight: .medium)
-    static let captionFont = UIFont.fdFont(ofSize: 14, weight: .regular)
-    static let fieldFont = UIFont.fdFont(ofSize: 14, weight: .regular)
-    static let buttonFont = UIFont.fdFont(ofSize: 16, weight: .medium)
+    static var titleFont: UIFont { .fdFont(ofSize: 18, weight: .medium) }
+    static var subtitleFont: UIFont { .fdFont(ofSize: 12, weight: .regular) }
+    static var phoneFont: UIFont { .fdFont(ofSize: 18, weight: .medium) }
+    static var captionFont: UIFont { .fdFont(ofSize: 14, weight: .regular) }
+    static var fieldFont: UIFont { .fdFont(ofSize: 14, weight: .regular) }
+    static var buttonFont: UIFont { .fdFont(ofSize: 16, weight: .medium) }
 }
 
 /// 白色渐变表单卡片

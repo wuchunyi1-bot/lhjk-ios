@@ -33,31 +33,18 @@ class BaseViewController: UIViewController {
         NotificationCenter.default.removeObserver(self)
     }
 
-    /// 老年模式变更时的刷新方法
-    /// 策略：不在 cell 层面做 destroy/recreate（开销大、浪费）
-    ///   1. 递归遍历所有 UILabel / UIButton / UITextField，按字号映射表原地替换字体（O(n)，不销毁视图）
-    ///   2. 失效 table/collection view 布局，触发行高重算（不重建 cell，只调 heightForRow）
-    /// 子类可重写以添加自定义刷新逻辑（如重建 table header）
+    /// 老年模式变更时的刷新方法。
+    /// 已显示的文字按字体上记下的设计字号，对照本地 `isSeniorMode` 重算，不根据当前点值猜。
+    /// 子类可重写，并调用 super。
     func refreshForSeniorMode() {
-        // 先失效布局让 cell 重建（token 字体自动拿正确值），再映射非 token 字号
-        view.invalidateTableAndCollectionLayouts()
         view.refreshAllLabelFonts()
+        navigationController?.navigationBar.refreshAllLabelFonts()
+        tabBarController?.tabBar.refreshAllLabelFonts()
+        view.invalidateTableAndCollectionLayouts()
     }
 }
 
 // MARK: - Senior Mode Helpers
-
-/// 根据当前 senior 模式，将字号映射为目标字号。对照表在 `UIFont.seniorMappedPointSize`。
-private func mapFontSize(_ size: CGFloat, toSenior: Bool) -> CGFloat {
-    UIFont.seniorMappedPointSize(size, toSenior: toSenior)
-}
-
-/// 从 UIFont 提取 weight
-private func fontWeight(from font: UIFont) -> UIFont.Weight {
-    let traits = font.fontDescriptor.object(forKey: .traits) as? [UIFontDescriptor.TraitKey: Any]
-    let raw = (traits?[.weight] as? NSNumber)?.floatValue ?? 0
-    return UIFont.Weight(rawValue: CGFloat(raw))
-}
 
 extension UIView {
 
@@ -75,57 +62,73 @@ extension UIView {
         }
     }
 
-    /// 递归遍历所有 UILabel / UIButton / UITextField，按字号映射表替换字体
-    /// 保留原字体的 weight 和 monospaced trait
+    /// 按字体上记下的设计字号，用本地长辈模式重算。没有记录的系统字不动。
     func refreshAllLabelFonts() {
-        let toSenior = UIFont.isSeniorMode
-
-        func applyMappedFont(to label: UILabel) {
-            guard let oldFont = label.font else { return }
-            let oldSize = oldFont.pointSize
-            let newSize = mapFontSize(oldSize, toSenior: toSenior)
-            guard (newSize - oldSize).magnitude > 0.5 else { return }
-
-            let weight = fontWeight(from: oldFont)
-            let isMono = oldFont.fontDescriptor.symbolicTraits.contains(.traitMonoSpace)
-            label.font = isMono
-                ? UIFont.fdMonoFont(ofSize: newSize, weight: weight)
-                : UIFont.fdFont(ofSize: newSize, weight: weight)
-        }
-
         if let label = self as? UILabel {
-            applyMappedFont(to: label)
-
-        } else if let btn = self as? UIButton {
-            if let oldFont = btn.titleLabel?.font {
-                let oldSize = oldFont.pointSize
-                let newSize = mapFontSize(oldSize, toSenior: toSenior)
-                if (newSize - oldSize).magnitude > 0.5 {
-                    let weight = fontWeight(from: oldFont)
-                    let isMono = oldFont.fontDescriptor.symbolicTraits.contains(.traitMonoSpace)
-                    btn.titleLabel?.font = isMono
-                        ? UIFont.fdMonoFont(ofSize: newSize, weight: weight)
-                        : UIFont.fdFont(ofSize: newSize, weight: weight)
-                }
-            }
-
-        } else if let tf = self as? UITextField {
-            if let oldFont = tf.font {
-                let oldSize = oldFont.pointSize
-                let newSize = mapFontSize(oldSize, toSenior: toSenior)
-                if (newSize - oldSize).magnitude > 0.5 {
-                    let weight = fontWeight(from: oldFont)
-                    let isMono = oldFont.fontDescriptor.symbolicTraits.contains(.traitMonoSpace)
-                    tf.font = isMono
-                        ? UIFont.fdMonoFont(ofSize: newSize, weight: weight)
-                        : UIFont.fdFont(ofSize: newSize, weight: weight)
-                }
-            }
+            label.fd_refreshSeniorFont()
+        } else if let button = self as? UIButton {
+            button.fd_refreshSeniorChrome()
+        } else if let field = self as? UITextField {
+            field.fd_refreshSeniorFont()
+        } else if let textView = self as? UITextView {
+            textView.fd_refreshSeniorFont()
         }
 
-        // 递归子视图
         for subview in subviews {
             subview.refreshAllLabelFonts()
+        }
+    }
+}
+
+extension UILabel {
+    func fd_refreshSeniorFont() {
+        guard fd_beginSeniorRefresh(on: self) else { return }
+        defer { fd_endSeniorRefresh(on: self) }
+        let next = fd_fontForSeniorRefresh()
+        if next !== font {
+            font = next
+        }
+        guard let attributed = attributedText, attributed.length > 0 else { return }
+        let updated = attributed.fdRefreshingSeniorFonts()
+        if updated !== attributed {
+            attributedText = updated
+        }
+    }
+}
+
+extension UITextField {
+    func fd_refreshSeniorFont() {
+        guard fd_beginSeniorRefresh(on: self) else { return }
+        defer { fd_endSeniorRefresh(on: self) }
+        if let next = fd_fontForSeniorRefresh(), next !== font {
+            font = next
+        }
+        if let attributed = attributedText, attributed.length > 0 {
+            let updated = attributed.fdRefreshingSeniorFonts()
+            if updated !== attributed {
+                attributedText = updated
+            }
+        }
+        if let placeholder = attributedPlaceholder, placeholder.length > 0 {
+            let updated = placeholder.fdRefreshingSeniorFonts()
+            if updated !== placeholder {
+                attributedPlaceholder = updated
+            }
+        }
+    }
+}
+
+extension UITextView {
+    func fd_refreshSeniorFont() {
+        guard fd_beginSeniorRefresh(on: self) else { return }
+        defer { fd_endSeniorRefresh(on: self) }
+        if let next = fd_fontForSeniorRefresh(), next !== font {
+            font = next
+        }
+        guard let attributed = attributedText, attributed.length > 0 else { return }
+        let updated = attributed.fdRefreshingSeniorFonts()
+        if updated !== attributed {
+            attributedText = updated
         }
     }
 }

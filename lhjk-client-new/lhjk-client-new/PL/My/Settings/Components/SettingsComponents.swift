@@ -5,7 +5,7 @@ import SnapKit
 //
 // 标杆来源：设置主页 `SettingsHubItemRow`（账号与安全 / 安全中心 / 手机号、密码与账号管理）
 // | 层级     | 示例                     | 字号 | 字重   | 颜色     |
-// | 分组标题 | 账号与安全               | 20pt | medium | #1F2942 |
+// | 分组标题 | 账号与安全               | 20pt / 长辈 24pt | medium | #1F2942 |
 // | 行标题   | 安全中心                 | 18pt | regular| #1F2942 |
 // | 行副标题 | 手机号、密码与账号管理   | 16pt | regular| #8591AB |
 
@@ -22,12 +22,12 @@ enum SettingsStyle {
     static let titleColor = UIColor(hexString: "#1F2942")
     static let subtitleColor = UIColor(hexString: "#8591AB")
 
-    static let sectionTitleFont = UIFont.fdFont(ofSize: 20, weight: .medium)
-    static let rowTitleFont = UIFont.fdFont(ofSize: 18, weight: .regular)
-    static let rowSubtitleFont = UIFont.fdFont(ofSize: 16, weight: .regular)
-    static let rowValueFont = rowSubtitleFont
-    static let tipFont = rowSubtitleFont
-    static let footerFont = rowSubtitleFont
+    static var sectionTitleFont: UIFont { .fdFont(designSize: 20, weight: .medium) }
+    static var rowTitleFont: UIFont { .fdFont(ofSize: 18, weight: .regular) }
+    static var rowSubtitleFont: UIFont { .fdFont(ofSize: 16, weight: .regular) }
+    static var rowValueFont: UIFont { rowSubtitleFont }
+    static var tipFont: UIFont { rowSubtitleFont }
+    static var footerFont: UIFont { rowSubtitleFont }
 
     static let valueColor = subtitleColor
 }

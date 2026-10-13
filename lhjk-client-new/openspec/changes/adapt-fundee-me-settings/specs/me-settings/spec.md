@@ -22,6 +22,7 @@
 - **WHEN** 用户点击「长辈模式」
 - **THEN** 进入 `/me/settings/accessibility`，页标题为「长辈模式」
 - **AND** 页内开关读写 `UIFont.isSeniorMode`（原老年模式）；开启后 `fd*` 字号放大并通知已打开页面刷新
+- **AND** 已打开页面收到 `UIFont.seniorModeDidChangeNotification` 后，按本地 `fd_senior_mode` 和字体记下的设计字号 / 大字号重算，不按当前点值反查
 - **AND** 消息列表、分段标题和聊天气泡在绑定数据时按设计字号重取字体；点击、滚动复用或 `reloadRows` 后仍是当前开关下的字号，不退回创建时的小字
 - **AND** 返回设置主页后，该行右侧状态为「已开启」或「未开启」
 

@@ -10,6 +10,11 @@ final class MeServiceFulfillmentCardView: UIView {
         let tabKey: String
     }
 
+    /// 普通模式 110。长辈模式数字和状态字号变大，加高以免「待支付」等被裁切。
+    static var preferredHeight: CGFloat {
+        UIFont.isSeniorMode ? 132 : 110
+    }
+
     var onAllOrdersTap: (() -> Void)?
     var onStatTap: ((Int) -> Void)?
 
@@ -81,10 +86,6 @@ final class MeServiceFulfillmentCardView: UIView {
             $0.top.equalToSuperview().offset(55)
             $0.bottom.equalToSuperview().offset(-15)
         }
-
-        snp.makeConstraints {
-            $0.height.equalTo(110)
-        }
     }
 
     func configure(stats: [StatItem]) {
@@ -108,6 +109,7 @@ final class MeServiceFulfillmentCardView: UIView {
             valLbl.font = .fdFont(ofSize: 20, weight: .medium)
             valLbl.textAlignment = .center
             valLbl.isUserInteractionEnabled = false
+            valLbl.setContentCompressionResistancePriority(.required, for: .vertical)
 
             let lblLbl = UILabel()
             lblLbl.text = stat.label
@@ -115,6 +117,7 @@ final class MeServiceFulfillmentCardView: UIView {
             lblLbl.textColor = UIColor(hexString: "#1F2942")
             lblLbl.textAlignment = .center
             lblLbl.isUserInteractionEnabled = false
+            lblLbl.setContentCompressionResistancePriority(.required, for: .vertical)
 
             button.addSubview(valLbl)
             button.addSubview(lblLbl)
@@ -126,7 +129,7 @@ final class MeServiceFulfillmentCardView: UIView {
             lblLbl.snp.makeConstraints {
                 $0.top.equalTo(valLbl.snp.bottom).offset(4)
                 $0.centerX.equalToSuperview()
-                $0.bottom.equalToSuperview()
+                $0.bottom.lessThanOrEqualToSuperview()
             }
 
             valueLabels.append(valLbl)
@@ -175,6 +178,7 @@ final class MeServiceFulfillmentCell: UITableViewCell {
         cardView.snp.makeConstraints {
             $0.top.bottom.equalToSuperview()
             $0.leading.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(MeServiceFulfillmentCardView.preferredHeight)
         }
     }
 

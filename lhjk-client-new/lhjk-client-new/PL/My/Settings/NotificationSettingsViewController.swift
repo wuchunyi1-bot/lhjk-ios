@@ -20,10 +20,10 @@ final class NotificationSettingsViewController: BaseViewController {
     }
 
     private enum Typography {
-        static let sectionTitle = SettingsStyle.sectionTitleFont
-        static let rowTitle = SettingsStyle.rowTitleFont
-        static let rowSubtitle = SettingsStyle.rowSubtitleFont
-        static let statusBadge = UIFont.fdFont(ofSize: 12, weight: .bold)
+        static var sectionTitle: UIFont { SettingsStyle.sectionTitleFont }
+        static var rowTitle: UIFont { SettingsStyle.rowTitleFont }
+        static var rowSubtitle: UIFont { SettingsStyle.rowSubtitleFont }
+        static var statusBadge: UIFont { .fdFont(ofSize: 12, weight: .bold) }
     }
 
     private enum PrefKey: String, CaseIterable {

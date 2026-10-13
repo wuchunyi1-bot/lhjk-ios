@@ -299,8 +299,10 @@ final class HomeTaskCardCell: UITableViewCell {
 
         let action = UIButton(type: .system)
         action.titleLabel?.font = .fdFont(ofSize: 12, weight: .medium)
-        action.layer.cornerRadius = 14
         action.clipsToBounds = true
+        action.titleLabel?.lineBreakMode = .byClipping
+        let buttonSize = Self.actionButtonSize()
+        action.layer.cornerRadius = buttonSize.height / 2
 
         if task.done {
             action.setTitle("已完成", for: .normal)
@@ -339,8 +341,8 @@ final class HomeTaskCardCell: UITableViewCell {
         action.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(12)
             $0.centerY.equalToSuperview()
-            $0.width.equalTo(70)
-            $0.height.equalTo(28)
+            $0.width.equalTo(buttonSize.width)
+            $0.height.equalTo(buttonSize.height)
         }
 
         titleRow.snp.makeConstraints { make in
@@ -357,6 +359,14 @@ final class HomeTaskCardCell: UITableViewCell {
         }
 
         return row
+    }
+
+    /// 普通模式 70×28。长辈模式按「去完成」字号加宽加高。
+    private static func actionButtonSize() -> CGSize {
+        guard UIFont.isSeniorMode else { return CGSize(width: 70, height: 28) }
+        let font = UIFont.fdFont(ofSize: 12, weight: .medium)
+        let textWidth = ceil(("去完成" as NSString).size(withAttributes: [.font: font]).width)
+        return CGSize(width: max(88, textWidth + 32), height: 36)
     }
 
     private func makePointsBadge(points: Int?) -> UIView? {

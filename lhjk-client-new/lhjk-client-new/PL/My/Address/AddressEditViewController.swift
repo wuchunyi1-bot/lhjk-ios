@@ -22,6 +22,8 @@ final class AddressEditViewController: BaseViewController {
     private let contentView = UIView()
     private let stackView = UIStackView()
     private let bottomBar = UIView()
+    private var titleWidthConstraints: [Constraint] = []
+    private var fieldLeadingConstraints: [Constraint] = []
 
     private lazy var nameField = makeTextField(placeholder: "请输入收货人姓名")
     private lazy var mobileField = makeTextField(placeholder: "请输入收货人手机号码", keyboardType: .numberPad)
@@ -131,11 +133,7 @@ final class AddressEditViewController: BaseViewController {
             make.bottom.equalToSuperview().offset(-12)
         }
 
-        stackView.addArrangedSubview(makeSectionTitle("收货信息"))
-        stackView.setCustomSpacing(8, after: stackView.arrangedSubviews.last!)
         stackView.addArrangedSubview(makeFormCard())
-        stackView.addArrangedSubview(makeSectionTitle("默认设置"))
-        stackView.setCustomSpacing(8, after: stackView.arrangedSubviews.last!)
         stackView.addArrangedSubview(makeDefaultCard())
 
         applyInitialForm()
@@ -153,6 +151,14 @@ final class AddressEditViewController: BaseViewController {
             name: UIResponder.keyboardWillHideNotification,
             object: nil
         )
+    }
+
+    override func refreshForSeniorMode() {
+        super.refreshForSeniorMode()
+        let width = AddressStyle.labelWidth
+        let leading = AddressStyle.fieldLeading
+        titleWidthConstraints.forEach { $0.update(offset: width) }
+        fieldLeadingConstraints.forEach { $0.update(offset: leading) }
     }
 
     override func bindViewModel() {
@@ -203,14 +209,6 @@ final class AddressEditViewController: BaseViewController {
     }
 
     // MARK: - Build UI
-
-    private func makeSectionTitle(_ text: String) -> UILabel {
-        let label = UILabel()
-        label.text = text
-        label.font = .fdFont(ofSize: 13, weight: .semibold)
-        label.textColor = .fdSubtext
-        return label
-    }
 
     private func makeFormCard() -> UIView {
         let card = UIView()
@@ -275,11 +273,13 @@ final class AddressEditViewController: BaseViewController {
         titleLabel.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(AddressStyle.cardHorizontalInset)
             make.centerY.equalToSuperview()
-            make.width.equalTo(AddressStyle.labelWidth)
+            titleWidthConstraints.append(make.width.equalTo(AddressStyle.labelWidth).constraint)
         }
 
         content.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(86)
+            fieldLeadingConstraints.append(
+                make.leading.equalToSuperview().offset(AddressStyle.fieldLeading).constraint
+            )
             make.trailing.equalToSuperview().offset(-AddressStyle.cardHorizontalInset)
             make.centerY.equalToSuperview()
         }
@@ -315,13 +315,15 @@ final class AddressEditViewController: BaseViewController {
         titleLabel.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(AddressStyle.cardHorizontalInset)
             make.centerY.equalToSuperview()
-            make.width.equalTo(AddressStyle.labelWidth)
+            titleWidthConstraints.append(make.width.equalTo(AddressStyle.labelWidth).constraint)
         }
 
         regionChevron.snp.makeConstraints { $0.size.equalTo(12) }
 
         valueStack.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(86)
+            fieldLeadingConstraints.append(
+                make.leading.equalToSuperview().offset(AddressStyle.fieldLeading).constraint
+            )
             make.trailing.equalToSuperview().offset(-AddressStyle.cardHorizontalInset)
             make.centerY.equalToSuperview()
         }
@@ -356,11 +358,13 @@ final class AddressEditViewController: BaseViewController {
         titleLabel.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(AddressStyle.cardHorizontalInset)
             make.top.equalToSuperview().offset(16)
-            make.width.equalTo(AddressStyle.labelWidth)
+            titleWidthConstraints.append(make.width.equalTo(AddressStyle.labelWidth).constraint)
         }
 
         addressTextView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(86)
+            fieldLeadingConstraints.append(
+                make.leading.equalToSuperview().offset(AddressStyle.fieldLeading).constraint
+            )
             make.trailing.equalToSuperview().offset(-AddressStyle.cardHorizontalInset)
             make.top.equalToSuperview().offset(12)
             make.bottom.equalToSuperview().offset(-12)

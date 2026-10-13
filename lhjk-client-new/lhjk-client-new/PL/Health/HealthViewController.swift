@@ -216,6 +216,11 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
 
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? { nil }
 
+    override func refreshForSeniorMode() {
+        super.refreshForSeniorMode()
+        tableView.reloadData()
+    }
+
     @objc private func goToRecord() {
         Router.shared.push("/health/record")
     }

@@ -20,9 +20,9 @@ final class WechatAuthorizationViewController: BaseViewController {
     }
 
     private enum Typography {
-        static let cardTitle = SettingsStyle.rowTitleFont
-        static let cardSubtitle = SettingsStyle.rowSubtitleFont
-        static let actionButton = UIFont.fdFont(ofSize: 16, weight: .medium)
+        static var cardTitle: UIFont { SettingsStyle.rowTitleFont }
+        static var cardSubtitle: UIFont { SettingsStyle.rowSubtitleFont }
+        static var actionButton: UIFont { .fdFont(ofSize: 16, weight: .medium) }
     }
 
     private var isBound: Bool = false

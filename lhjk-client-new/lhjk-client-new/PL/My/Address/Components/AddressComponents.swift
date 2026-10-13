@@ -8,15 +8,23 @@ enum AddressStyle {
     static let horizontalInset: CGFloat = 16
     static let cardHorizontalInset: CGFloat = 12
     static let rowHeight: CGFloat = 50
-    static let labelWidth: CGFloat = 74
-    static let fieldFont = UIFont.fdFont(ofSize: 16, weight: .regular)
-    static let fieldMediumFont = UIFont.fdFont(ofSize: 16, weight: .medium)
-    static let captionFont = UIFont.fdFont(ofSize: 14, weight: .regular)
-    static let buttonFont = UIFont.fdFont(ofSize: 18, weight: .medium)
-    static let sheetTitleFont = UIFont.fdFont(ofSize: 20, weight: .medium)
-    static let pickerSelectedFont = UIFont.fdFont(ofSize: 18, weight: .medium)
-    static let pickerNormalFont = UIFont.fdFont(ofSize: 16, weight: .regular)
-    static let defaultBadgeFont = UIFont.fdFont(ofSize: 14, weight: .semibold)
+    /// 普通模式保持 74。长辈模式字号变大后，按「所在地区」四个字撑开，避免标题被截成「所在…」。
+    static var labelWidth: CGFloat {
+        let textWidth = ("所在地区" as NSString).size(withAttributes: [.font: fieldFont]).width
+        return max(74, ceil(textWidth) + 4)
+    }
+    /// 输入区起点：左边距 + 标题栏宽。
+    static var fieldLeading: CGFloat {
+        cardHorizontalInset + labelWidth
+    }
+    static var fieldFont: UIFont { .fdFont(ofSize: 16, weight: .regular) }
+    static var fieldMediumFont: UIFont { .fdFont(ofSize: 16, weight: .medium) }
+    static var captionFont: UIFont { .fdFont(ofSize: 14, weight: .regular) }
+    static var buttonFont: UIFont { .fdFont(ofSize: 18, weight: .medium) }
+    static var sheetTitleFont: UIFont { .fdFont(ofSize: 20, weight: .medium) }
+    static var pickerSelectedFont: UIFont { .fdFont(ofSize: 18, weight: .medium) }
+    static var pickerNormalFont: UIFont { .fdFont(ofSize: 16, weight: .regular) }
+    static var defaultBadgeFont: UIFont { .fdFont(ofSize: 14, weight: .semibold) }
     static let primaryButtonHeight: CGFloat = 51
     static let pickerSaveButtonHeight: CGFloat = 48
     static let primaryButtonRadius: CGFloat = 25.5

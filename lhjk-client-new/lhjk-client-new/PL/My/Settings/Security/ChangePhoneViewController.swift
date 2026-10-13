@@ -5,10 +5,10 @@ import SnapKit
 final class ChangePhoneViewController: BaseViewController {
 
     private enum Font {
-        static let field = UIFont.fdFont(ofSize: 15, weight: .regular)
-        static let submit = UIFont.fdFont(ofSize: 17, weight: .medium)
-        static let agreement = UIFont.fdFont(ofSize: 15, weight: .regular)
-        static let verifyCode = UIFont.fdFont(ofSize: 15, weight: .regular)
+        static var field: UIFont { .fdFont(ofSize: 15, weight: .regular) }
+        static var submit: UIFont { .fdFont(ofSize: 17, weight: .medium) }
+        static var agreement: UIFont { .fdFont(ofSize: 15, weight: .regular) }
+        static var verifyCode: UIFont { .fdFont(ofSize: 15, weight: .regular) }
     }
 
     // MARK: - State

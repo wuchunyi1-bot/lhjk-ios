@@ -88,7 +88,7 @@ final class MeHealthManagementCardView: UIView {
 
         let titleLbl = UILabel()
         titleLbl.text = row.title
-        titleLbl.font = .fdFont(ofSize: 17, weight: .regular)
+        titleLbl.font = .fdMyBody
         titleLbl.textColor = UIColor(hexString: "#1F2942")
         button.addSubview(titleLbl)
         titleLbl.snp.makeConstraints {

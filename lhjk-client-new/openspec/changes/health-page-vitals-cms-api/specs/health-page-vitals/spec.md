@@ -43,7 +43,7 @@
 
 ### Requirement: 体征卡片背景图优先级
 
-系统 SHALL 按以下优先级渲染体征监测卡片背景（水印铺满卡片）：
+普通模式 SHALL 按以下优先级渲染体征监测卡片背景（水印铺满两列卡片）。长辈模式列表行不铺背景水印。
 
 1. `getMonitorCardList` 单项的 `backgroundUrl`（非空合法 URL）— 网络图（Kingfisher）
 2. 否则按 `metricKey` 映射本地 Assets：`metric_bp` / `metric_bs` / `metric_weight` / `metric_hr` / `metric_sleep` / `metric_ecg` / `metric_fundus` / `metric_exercise` / `metric_spo2` / `metric_digestive` / `metric_temperature` 等
@@ -117,7 +117,7 @@ CMS 空壳路径（仅 `monitorCardMeta`）无 `backgroundUrl`，MUST 走本地�
 
 ### Requirement: 饮食运动卡（cardType = 10）
 
-系统 SHALL 在 Hub 体征网格以独立布局渲染饮食运动卡（Figma 3543:3425）：图标 + 标题「饮食运动」+ 状态徽标 + 三列热量 + 时间；不得用单值+单位布局替代。
+普通模式 SHALL 在 Hub 体征网格以独立布局渲染饮食运动卡（Figma 3543:3425）：图标 + 标题「饮食运动」+ 状态徽标 + 三列热量 + 时间；不得用单值+单位布局替代。长辈模式改走列表行，见「长辈模式列表」。
 
 热量数字只展示整数（向 0 截断，不四舍五入）。「还可摄入」展示值下限为 0，不出现负数。
 
@@ -164,7 +164,7 @@ progress = 1 - ratio
 
 ### Requirement: 血脂卡（cardType = 14）
 
-系统 SHALL 在 Hub 体征网格以独立 2×2 布局渲染血脂卡：图标 + 标题「血脂」+ 状态徽标 + TC / TG / HDL / LDL + 时间；不得用单值+单位布局替代。卡片不展示 `mmol/L` 单位。时间固定为 `yyyy-MM-dd`，不带时分；时间颜色与其它体征卡一致（`#717885`）。
+普通模式 SHALL 在 Hub 体征网格以独立 2×2 布局渲染血脂卡：图标 + 标题「血脂」+ 状态徽标 + TC / TG / HDL / LDL + 时间；不得用单值+单位布局替代。长辈模式改走列表行，不展示四项数值。卡片不展示 `mmol/L` 单位。时间固定为 `yyyy-MM-dd`，不带时分；时间颜色与其它体征卡一致（`#717885`）。
 
 字段映射：
 
@@ -202,6 +202,28 @@ progress = 1 - ratio
 
 - **WHEN** JSON 中 `monitorTime` 为字符串数字
 - **THEN** 成功解码为 `Int64`，卡片列表可用
+
+### Requirement: 长辈模式列表
+
+`UIFont.isSeniorMode` 为真时，健康首页体征区仍用同一张白卡。「体征监测」和「编辑卡片 ›」留在卡内，不放到页面底色上。卡内指标由 2 列大卡改为纵向列表。普通模式仍用 `MetricCardCell` 两列网格。编辑卡片页和指标详情不改。
+
+每行从左到右：图标、名称、数值、单位、状态徽标、右箭头。图标直接使用图片，不加方形底。名称用设计 20pt / 长辈 24pt。名称过长时尾部省略，数值、徽标和箭头不被挤掉。不展示时间和背景水印。
+
+- 无监测数据：徽标位置展示「去记录」，点击仍进记录页
+- 饮食运动：数值展示还可摄入，不展示三列热量和圆环
+- 血脂：不展示 TC / TG / HDL / LDL，徽标仍为「N项异常」或「正常」
+- 异常数值（`warning` / `info`）用强调色，正常数值用正文色
+
+#### Scenario: 长辈模式打开首页
+
+- **WHEN** 长辈模式已开启，健康首页渲染体征区
+- **THEN** 白卡顶部仍是「体征监测」和「编辑卡片 ›」
+- **AND** 卡内每条指标占一行，不再使用 2 列 `155:144` 卡片
+
+#### Scenario: 关闭长辈模式
+
+- **WHEN** 长辈模式关闭后回到健康首页
+- **THEN** 体征区恢复 2 列网格，饮食运动和血脂恢复原有特殊布局
 
 ### Requirement: 分层与依赖
 

@@ -61,7 +61,7 @@ Hero 内 SHALL 展示暖橙浅色会员卡，含标题与四格资产。
 
 ### Requirement: 服务履约
 
-SHALL 展示「服务履约」标题 + 右侧「全部订单 ›」，卡片内四格统计。
+SHALL 展示「服务履约」标题 + 右侧「全部订单 ›」，卡片内四格统计。长辈模式下卡片加高，四格数字和状态文案完整落在卡片内。
 
 #### Scenario: 四格与跳转
 
@@ -83,7 +83,7 @@ SHALL 展示「服务履约」标题 + 右侧「全部订单 ›」，卡片内�
 
 ### Requirement: 健康管理功能组
 
-SHALL 展示 6 项功能行，对齐 `me.json` → `healthManagementActions`（**不含**健康档案）。
+SHALL 展示 6 项功能行，对齐 `me.json` → `healthManagementActions`（**不含**健康档案）。行标题使用「我的」正文 Token（标准 17pt / 长辈 21pt）。
 
 | label | route |
 |-------|-------|
