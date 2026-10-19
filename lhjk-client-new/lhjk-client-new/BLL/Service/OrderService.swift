@@ -8,6 +8,7 @@ import Foundation
 /// - `GET /v1/order/getAppOrderList` — 分页查询用户订单列表
 /// - `GET /v1/order/getAppOrderDetail` — 根据订单 id 查询详情
 /// - `GET /v1/order/getOrderSettlement` — 确认订单结算信息
+/// - `GET /v1/order/getPaymentDiscountAdvice` — 支付前券卡确认
 /// - `POST /v1/order/insertOrEdit` — 新增或编辑订单（取消 / 退款申请）
 /// - `POST /v1/orderClearing/submitReturnGoods` — 提交退货信息
 /// - `POST /v1/orderPay/orderPay` — 支付统一接口
@@ -122,6 +123,32 @@ final class OrderService {
         }
 
         print("[OrderService] getOrderSettlement ✓ package=\(data.packageName ?? "") orderExpress=\(data.orderExpress?.description ?? "nil")")
+        return data
+    }
+
+    // MARK: - 支付前券卡确认
+
+    /// 支付前判断是否有更优券卡方案。`GET /v1/order/getPaymentDiscountAdvice`
+    /// - Parameter orderId: 订单 ID（必填，禁止 mock）
+    func getPaymentDiscountAdvice(orderId: Int64) async throws -> PaymentDiscountAdvice {
+        let params: [String: Any] = ["orderId": String(orderId)]
+
+        print("[OrderService] getPaymentDiscountAdvice → orderId=\(orderId)")
+
+        let response: APIResponse<PaymentDiscountAdvice> = try await APIManager.shared
+            .getAsync(
+                path: "/v1/order/getPaymentDiscountAdvice",
+                parameters: params,
+                responseType: APIResponse<PaymentDiscountAdvice>.self
+            )
+
+        guard response.isSuccess, let data = response.data else {
+            print("[OrderService] getPaymentDiscountAdvice ✗ code=\(response.code) msg=\(response.msg ?? "")")
+            let message = (response.msg ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            throw OrderServiceError.queryFailed(message.isEmpty ? "获取支付建议失败，请稍后重试" : message)
+        }
+
+        print("[OrderService] getPaymentDiscountAdvice ✓ adviceType=\(data.adviceType)")
         return data
     }
 

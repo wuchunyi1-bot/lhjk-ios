@@ -7,6 +7,16 @@ final class HealthMallViewController: BaseViewController {
 
     private let viewModel = HealthMallViewModel()
     private var cancellables = Set<AnyCancellable>()
+    /// 嵌在首页页签里时不改导航栏。
+    private let embedsInHomeHub: Bool
+    private let serviceBanner = ServiceHubBannerBar()
+
+    init(embedsInHomeHub: Bool = false) {
+        self.embedsInHomeHub = embedsInHomeHub
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     private let categoryTabBar = MallCategoryTabBar()
     private var lastCollectionWidth: CGFloat = 0
@@ -46,12 +56,18 @@ final class HealthMallViewController: BaseViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "富德优选"
+        if !embedsInHomeHub {
+            title = "富德优选"
+        }
         viewModel.load()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        guard !embedsInHomeHub else {
+            serviceBanner.load()
+            return
+        }
         navigationController?.setNavigationBarHidden(false, animated: animated)
         configureNavigationBarAppearance()
     }
@@ -91,8 +107,22 @@ final class HealthMallViewController: BaseViewController {
         view.addSubview(emptyStateView)
         view.addSubview(loadingIndicator)
 
+        if embedsInHomeHub {
+            serviceBanner.onBannerTap = { [weak self] banner in
+                self?.serviceBanner.open(banner, from: self)
+            }
+            view.addSubview(serviceBanner)
+            serviceBanner.snp.makeConstraints {
+                $0.top.leading.trailing.equalToSuperview()
+            }
+        }
+
         categoryTabBar.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide)
+            if embedsInHomeHub {
+                $0.top.equalTo(serviceBanner.snp.bottom)
+            } else {
+                $0.top.equalTo(view.safeAreaLayoutGuide)
+            }
             $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(48)
         }

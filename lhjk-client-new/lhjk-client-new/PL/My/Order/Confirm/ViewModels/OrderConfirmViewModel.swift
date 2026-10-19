@@ -33,6 +33,12 @@ enum OrderPayMethod: String, CaseIterable {
     }
 }
 
+/// 支付前券卡确认弹窗文案，标题与正文来自 `getPaymentDiscountAdvice`。
+struct PaymentDiscountAdvicePrompt: Equatable {
+    let title: String
+    let message: String
+}
+
 private enum DefaultAddressFillOutcome {
     case notNeeded
     /// 无默认地址或地址列表失败：停在快递空态，不回滚收货方式
@@ -72,6 +78,8 @@ final class OrderConfirmViewModel: ObservableObject {
     @Published var navigateBack = false
     /// `getOrderSettlement` 返回 `M0104`：套餐价格/内容已变化
     @Published var packageContentChangedMessage: String?
+    /// FDAPP-1049：`adviceType` 1/2/3 时弹出券卡确认，用户点「继续支付」后才拉起支付
+    @Published var paymentDiscountAdvicePrompt: PaymentDiscountAdvicePrompt?
     @Published var payResult: OrderPayResultPayload?
     @Published private(set) var orderDetail: AppOrderDetailBO?
     @Published private(set) var availableCouponCount = 0
@@ -317,21 +325,80 @@ final class OrderConfirmViewModel: ObservableObject {
 
     func submitPay() {
         guard !isSubmitting else { return }
-        guard draft != nil else {
-            toastMessage = "订单信息已失效，请重新下单"
-            navigateBack = true
-            return
-        }
-        if needsExpressAddress, selectedAddress == nil {
-            toastMessage = "请选择收货地址"
-            return
-        }
+        guard canStartPay() else { return }
 
         isSubmitting = true
         payTask?.cancel()
         payTask = Task { [weak self] in
             guard let self else { return }
+            await self.resolveDiscountAdviceThenPay()
+        }
+    }
+
+    /// 券卡确认弹窗点「继续支付」：保留当前券卡，不再次请求建议接口。
+    func continuePayAfterDiscountAdvice() {
+        guard !isSubmitting else { return }
+        guard canStartPay() else { return }
+        isSubmitting = true
+        payTask?.cancel()
+        payTask = Task { [weak self] in
+            guard let self else { return }
             await self.performSubmitPay()
+        }
+    }
+
+    func consumePaymentDiscountAdvicePrompt() {
+        paymentDiscountAdvicePrompt = nil
+    }
+
+    private func canStartPay() -> Bool {
+        guard draft != nil else {
+            toastMessage = "订单信息已失效，请重新下单"
+            navigateBack = true
+            return false
+        }
+        if needsExpressAddress, selectedAddress == nil {
+            toastMessage = "请选择收货地址"
+            return false
+        }
+        return true
+    }
+
+    /// 本地校验通过后、`orderPay` 之前询问更优支付策略。失败或非法 `adviceType` 拦住支付。
+    private func resolveDiscountAdviceThenPay() async {
+        do {
+            let advice = try await orderService.getPaymentDiscountAdvice(orderId: orderId)
+            if Task.isCancelled {
+                await MainActor.run { self.isSubmitting = false }
+                return
+            }
+            switch advice.payDecision {
+            case .proceed:
+                await performSubmitPay()
+            case .confirm(let title, let message):
+                await MainActor.run {
+                    self.isSubmitting = false
+                    self.paymentDiscountAdvicePrompt = PaymentDiscountAdvicePrompt(
+                        title: title,
+                        message: message
+                    )
+                }
+            case .blocked:
+                await MainActor.run {
+                    self.isSubmitting = false
+                    self.toastMessage = "支付建议异常，请稍后重试"
+                }
+            }
+        } catch {
+            if Task.isCancelled {
+                await MainActor.run { self.isSubmitting = false }
+                return
+            }
+            await MainActor.run {
+                self.isSubmitting = false
+                let text = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+                self.toastMessage = text.isEmpty ? "获取支付建议失败，请稍后重试" : text
+            }
         }
     }
 

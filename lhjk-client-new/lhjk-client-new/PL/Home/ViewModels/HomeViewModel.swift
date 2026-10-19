@@ -8,19 +8,19 @@ final class HomeViewModel: ObservableObject {
     enum HomeSection: Int, CaseIterable {
         case banner
         case quickActions
+        case support
         case membership
         case team
         case tasks
-        case articles
     }
 
     enum HomeItem: Hashable {
         case banner(String)
         case quickActions(String)
+        case support
         case membership(String)
         case teamList
         case taskCard(String)
-        case articlesCard(String)
     }
 
     @Published var banners: [ServiceHubBanner] = []
@@ -72,6 +72,13 @@ final class HomeViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.loadTodayTasks(forceRefresh: true)
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .archiveCompletionDidUpdate)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applySnapshot()
             }
             .store(in: &cancellables)
 
@@ -236,24 +243,17 @@ final class HomeViewModel: ObservableObject {
 
     private func applySnapshot() {
         var snap = NSDiffableDataSourceSnapshot<HomeSection, HomeItem>()
-        var sections = HomeSection.allCases
-        if banners.isEmpty {
-            sections.removeAll { $0 == .banner }
+        var sections: [HomeSection] = [.support]
+        if !tasks.isEmpty { sections.append(.tasks) }
+        if !banners.isEmpty { sections.insert(.banner, at: 0) }
+        if !quickActions.isEmpty {
+            let index = sections.firstIndex(of: .support) ?? sections.count
+            sections.insert(.quickActions, at: index)
         }
-        if quickActions.isEmpty {
-            sections.removeAll { $0 == .quickActions }
-        }
-        if membershipPackages.isEmpty {
-            sections.removeAll { $0 == .membership }
-        }
-        if teamMembers.isEmpty {
-            sections.removeAll { $0 == .team }
-        }
-        if tasks.isEmpty {
-            sections.removeAll { $0 == .tasks }
-        }
-        if articles.isEmpty {
-            sections.removeAll { $0 == .articles }
+        if !membershipPackages.isEmpty { sections.insert(.membership, at: sections.firstIndex(of: .support).map { $0 + 1 } ?? sections.count) }
+        if !teamMembers.isEmpty {
+            let index = sections.firstIndex(of: .tasks) ?? sections.count
+            sections.insert(.team, at: index)
         }
         snap.appendSections(sections)
         if !banners.isEmpty {
@@ -268,6 +268,7 @@ final class HomeViewModel: ObservableObject {
             let membershipSig = membershipPackages.map(\.id).joined(separator: "|")
             snap.appendItems([.membership(membershipSig)], toSection: .membership)
         }
+        snap.appendItems([.support], toSection: .support)
         if !teamMembers.isEmpty {
             snap.appendItems([.teamList], toSection: .team)
         }
@@ -275,10 +276,6 @@ final class HomeViewModel: ObservableObject {
             let taskSig = tasks.map { "\($0.id):\($0.done):\($0.typePointsEarned)" }.joined(separator: "|")
                 + "#\(tasks.count)"
             snap.appendItems([.taskCard(taskSig)], toSection: .tasks)
-        }
-        if !articles.isEmpty {
-            let articlesSig = articles.map(\.id).joined(separator: "|")
-            snap.appendItems([.articlesCard(articlesSig)], toSection: .articles)
         }
         snapshot = snap
     }

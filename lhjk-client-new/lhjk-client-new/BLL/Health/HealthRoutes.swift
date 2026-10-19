@@ -21,6 +21,22 @@ enum HealthRoutes {
         // Hub
         r.register(path: "/health") { _ in HealthViewController() }
 
+        // 康养小屋 — `FundeApp:/wellness-cabins`
+        r.register(path: "/wellness-cabins") { _ in WellnessCabinViewController() }
+        r.register(path: "/wellness-cabins/:id") { _ in WellnessCabinDetailViewController() }
+        r.register(path: "/wellness-cabins/:id/services/:serviceId/book") { _ in
+            WellnessCabinServiceBookViewController()
+        }
+        r.register(path: "/wellness-cabins/:id/services/:serviceId/activity") { _ in
+            WellnessCabinActivityBookViewController()
+        }
+        r.register(path: "/wellness-cabins/appointments") { _ in
+            WellnessCabinAppointmentListViewController()
+        }
+        r.register(path: "/wellness-cabins/appointments/:appointmentId") { _ in
+            WellnessCabinAppointmentDetailViewController()
+        }
+
         // 健康档案 → H5 `#/health/record`（宿主接入文档）
         r.register(path: "/health/record") { _ in
             WebViewController(

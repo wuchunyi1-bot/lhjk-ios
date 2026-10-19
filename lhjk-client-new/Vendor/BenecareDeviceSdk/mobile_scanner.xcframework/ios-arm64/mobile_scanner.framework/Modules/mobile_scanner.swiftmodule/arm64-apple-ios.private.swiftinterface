@@ -1,0 +1,33 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.3.2 effective-5.10 (swiftlang-6.3.2.1.108 clang-2100.1.1.101)
+// swift-module-flags: -target arm64-apple-ios13.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -O -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -module-name mobile_scanner
+// swift-module-flags-ignorable: -no-verify-emitted-module-interface -formal-cxx-interoperability-mode=off -interface-compiler-version 6.3.2
+import AVFoundation
+import CoreImage
+import Flutter
+import Foundation
+import MobileCoreServices
+import Swift
+import UIKit
+import VideoToolbox
+import Vision
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+@_exported import mobile_scanner
+@objc @_hasMissingDesignatedInitializers public class MobileScannerPlugin : ObjectiveC.NSObject, Flutter.FlutterPlugin, Flutter.FlutterStreamHandler, Flutter.FlutterTexture, AVFoundation.AVCaptureVideoDataOutputSampleBufferDelegate {
+  @objc public static func register(with registrar: any Flutter.FlutterPluginRegistrar)
+  @objc public func handle(_ call: Flutter.FlutterMethodCall, result: @escaping Flutter.FlutterResult)
+  @objc public func onListen(withArguments arguments: Any?, eventSink events: @escaping Flutter.FlutterEventSink) -> Flutter.FlutterError?
+  @objc public func onCancel(withArguments arguments: Any?) -> Flutter.FlutterError?
+  @objc public func copyPixelBuffer() -> Swift.Unmanaged<CoreVideo.CVPixelBuffer>?
+  @objc public func captureOutput(_ output: AVFoundation.AVCaptureOutput, didOutput sampleBuffer: CoreMedia.CMSampleBuffer, from connection: AVFoundation.AVCaptureConnection)
+  @objc override dynamic public func observeValue(forKeyPath keyPath: Swift.String?, of object: Any?, change: [Foundation.NSKeyValueChangeKey : Any]?, context: Swift.UnsafeMutableRawPointer?)
+  @objc deinit
+}
+extension CoreGraphics.CGImage {
+  public func jpegData(compressionQuality: CoreFoundation.CGFloat) -> Foundation.Data?
+}
+extension Vision.VNBarcodeObservation {
+  public func toMap(imageWidth: Swift.Int, imageHeight: Swift.Int, scanWindow: CoreFoundation.CGRect?) -> [Swift.String : Any?]
+}

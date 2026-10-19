@@ -4,9 +4,6 @@ import SnapKit
 /// 安全中心 — 对齐 Figma 4449:12093
 final class SecuritySettingsViewController: BaseViewController {
 
-    private let passwordSetKey = "fd_login_password_set"
-    private let wechatNicknameKey = "fd_wechat_nickname"
-
     private let scrollView = UIScrollView()
     private let contentView = UIView()
     private let stackView = UIStackView()
@@ -128,17 +125,10 @@ final class SecuritySettingsViewController: BaseViewController {
     // MARK: - Data
 
     private func refreshValues() {
-        let mobile = UserManager.shared.currentUser?.mobile
-            ?? UserDefaults.standard.string(forKey: "current_user_mobile")
-        phoneRow?.valueText = maskPhone(mobile)
+        phoneRow?.valueText = maskPhone(UserManager.shared.currentUser?.account)
+        passwordRow?.valueText = "去设置"
 
-        let passwordSet = UserDefaults.standard.bool(forKey: passwordSetKey)
-            || !(UserManager.shared.currentUser?.pwd ?? "").isEmpty
-        passwordRow?.valueText = passwordSet ? "已设置" : "去设置"
-
-        if let nick = UserDefaults.standard.string(forKey: wechatNicknameKey), !nick.isEmpty {
-            wechatRow?.valueText = nick
-        } else if let openId = UserManager.shared.currentUser?.openIdWechat, !openId.isEmpty {
+        if let openId = UserManager.shared.currentUser?.openIdWechat, !openId.isEmpty {
             wechatRow?.valueText = "已绑定"
         } else {
             wechatRow?.valueText = "未绑定"

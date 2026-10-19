@@ -562,7 +562,6 @@ final class OnboardingViewController: BaseViewController {
                 _ = await UserManager.shared.refreshUserInfo()
                 _ = await UserManager.shared.refreshDefaultArchive()
                 await MainActor.run {
-                    UserDefaults.standard.set(20, forKey: "fd_archive_progress")
                     UserDefaults.standard.set(nameText, forKey: "fd_profile_name")
                     if let name = selectedHospitalName {
                         UserDefaults.standard.set(name, forKey: "fd_profile_institution")

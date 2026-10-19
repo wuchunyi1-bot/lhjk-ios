@@ -26,12 +26,6 @@ final class NotificationSettingsViewController: BaseViewController {
         static var statusBadge: UIFont { .fdFont(ofSize: 12, weight: .bold) }
     }
 
-    private enum PrefKey: String, CaseIterable {
-        case service, health, appointment, marketing
-    }
-
-    private let prefsStorageKey = "fd_notification_settings"
-
     private let scrollView = UIScrollView()
     private let contentView = UIView()
     private var systemStatusBadgeLabel: UILabel?
@@ -67,15 +61,14 @@ final class NotificationSettingsViewController: BaseViewController {
             $0.leading.trailing.equalToSuperview().inset(Layout.cardInset)
         }
 
-        let prefs = loadPrefs()
-        let rows: [(title: String, subtitle: String, key: PrefKey)] = [
-            ("服务进度提醒", "订单履约、健管师跟进、服务到期提醒", .service),
-            ("健康任务提醒", "测量、评估、饮食记录等健康任务", .health),
-            ("预约提醒", "体检、复诊、线上咨询开始前提醒", .appointment),
-            ("活动与优惠", "权益兑换、商城优惠和服务活动", .marketing),
+        let rows: [(title: String, subtitle: String)] = [
+            ("服务进度提醒", "订单履约、健管师跟进、服务到期提醒"),
+            ("健康任务提醒", "测量、评估、饮食记录等健康任务"),
+            ("预约提醒", "体检、复诊、线上咨询开始前提醒"),
+            ("活动与优惠", "权益兑换、商城优惠和服务活动"),
         ]
 
-        let prefsCard = buildPrefsCard(rows: rows, prefs: prefs)
+        let prefsCard = buildPrefsCard(rows: rows)
         contentView.addSubview(prefsCard)
         prefsCard.snp.makeConstraints {
             $0.top.equalTo(systemCard.snp.bottom).offset(Layout.cardSpacing)
@@ -188,8 +181,7 @@ final class NotificationSettingsViewController: BaseViewController {
     // MARK: - Prefs card
 
     private func buildPrefsCard(
-        rows: [(title: String, subtitle: String, key: PrefKey)],
-        prefs: [PrefKey: Bool]
+        rows: [(title: String, subtitle: String)]
     ) -> UIView {
         let card = makeCard()
 
@@ -221,14 +213,11 @@ final class NotificationSettingsViewController: BaseViewController {
                 model: .init(
                     title: item.title,
                     subtitle: item.subtitle,
-                    isOn: prefs[item.key] ?? defaultOn(item.key)
+                    isOn: false
                 ),
                 showDivider: idx < rows.count - 1,
                 style: .notification
             )
-            cell.onToggle = { [weak self] isOn in
-                self?.updatePref(item.key, isOn: isOn)
-            }
             stack.addArrangedSubview(cell)
         }
 
@@ -310,33 +299,4 @@ final class NotificationSettingsViewController: BaseViewController {
         }
     }
 
-    // MARK: - Prefs storage
-
-    private func defaultOn(_ key: PrefKey) -> Bool {
-        key != .marketing
-    }
-
-    private func loadPrefs() -> [PrefKey: Bool] {
-        var result: [PrefKey: Bool] = [:]
-        for key in PrefKey.allCases {
-            result[key] = defaultOn(key)
-        }
-        guard let data = UserDefaults.standard.data(forKey: prefsStorageKey),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Bool] else {
-            return result
-        }
-        for key in PrefKey.allCases {
-            if let v = json[key.rawValue] { result[key] = v }
-        }
-        return result
-    }
-
-    private func updatePref(_ key: PrefKey, isOn: Bool) {
-        var prefs = loadPrefs()
-        prefs[key] = isOn
-        let dict = Dictionary(uniqueKeysWithValues: prefs.map { ($0.key.rawValue, $0.value) })
-        if let data = try? JSONSerialization.data(withJSONObject: dict) {
-            UserDefaults.standard.set(data, forKey: prefsStorageKey)
-        }
-    }
 }

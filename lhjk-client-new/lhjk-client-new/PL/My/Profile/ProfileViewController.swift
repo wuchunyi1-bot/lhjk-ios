@@ -485,7 +485,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
     private func saveRegionField(_ field: FieldDef) {
         var payload = SUsersOnboardingPayload()
-        payload.mobile = UserDefaults.standard.string(forKey: "current_user_mobile")
+        payload.mobile = UserManager.shared.currentUser?.account
 
         switch field.key {
         case .nativePlace:
@@ -512,7 +512,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
     private func saveField(_ field: FieldDef, value: String) {
         var payload = SUsersOnboardingPayload()
-        payload.mobile = UserDefaults.standard.string(forKey: "current_user_mobile")
+        payload.mobile = UserManager.shared.currentUser?.account
 
         switch field.key {
         case .name:
@@ -601,7 +601,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
                     mimeType: "image/jpeg"
                 )
                 var payload = SUsersOnboardingPayload()
-                payload.mobile = UserDefaults.standard.string(forKey: "current_user_mobile")
+                payload.mobile = UserManager.shared.currentUser?.account
                 payload.imageUrl = url
                 _ = try await UserService.shared.updateCurrentProfile(payload)
                 _ = await UserManager.shared.refreshUserInfo()

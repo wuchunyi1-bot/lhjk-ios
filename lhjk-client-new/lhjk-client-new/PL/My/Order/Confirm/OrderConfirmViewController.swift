@@ -260,6 +260,16 @@ final class OrderConfirmViewController: BaseViewController {
             }
             .store(in: &cancellables)
 
+        viewModel.$paymentDiscountAdvicePrompt
+            .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] prompt in
+                guard let self else { return }
+                self.viewModel.consumePaymentDiscountAdvicePrompt()
+                self.presentPaymentDiscountAdviceAlert(prompt)
+            }
+            .store(in: &cancellables)
+
         viewModel.$navigateBack
             .filter { $0 }
             .receive(on: DispatchQueue.main)
@@ -476,6 +486,24 @@ final class OrderConfirmViewController: BaseViewController {
             hospitalId: nil,
             onSuccess: onSuccess
         )
+    }
+
+    /// FDAPP-1049：支付前券卡确认。返回调整留在当前页；继续支付保留已选券卡。
+    private func presentPaymentDiscountAdviceAlert(_ prompt: PaymentDiscountAdvicePrompt) {
+        guard presentedViewController == nil else { return }
+        let alert = UIAlertController(
+            title: prompt.title,
+            message: prompt.message,
+            preferredStyle: .alert
+        )
+        alert.view.tintColor = .fdPrimary
+        alert.addAction(UIAlertAction(title: "返回调整", style: .default))
+        let proceed = UIAlertAction(title: "继续支付", style: .default) { [weak self] _ in
+            self?.viewModel.continuePayAfterDiscountAdvice()
+        }
+        alert.addAction(proceed)
+        alert.preferredAction = proceed
+        present(alert, animated: true)
     }
 
     /// FDAPP-938：`getOrderSettlement` `M0104` — 套餐价格或内容已变化

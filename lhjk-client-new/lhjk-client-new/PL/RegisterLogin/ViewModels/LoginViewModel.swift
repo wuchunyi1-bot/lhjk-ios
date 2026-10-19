@@ -169,7 +169,7 @@ final class LoginViewModel: ObservableObject {
         Task {
             do {
                 try await loginService.loginByPhone(phone, code: code)
-                await handleLoginSuccess(phone: phone)
+                await handleLoginSuccess()
             } catch {
                 await MainActor.run {
                     isLoggingIn = false
@@ -199,7 +199,7 @@ final class LoginViewModel: ObservableObject {
         Task {
             do {
                 try await loginService.loginByPassword(phone, password: password)
-                await handleLoginSuccess(phone: phone)
+                await handleLoginSuccess()
             } catch {
                 await MainActor.run {
                     isLoggingIn = false
@@ -224,7 +224,7 @@ final class LoginViewModel: ObservableObject {
                 let step = try await loginService.loginByWeChat(code: auth.code)
                 switch step {
                 case .loggedIn:
-                    await handleLoginSuccess(phone: "")
+                    await handleLoginSuccess()
                 case .needBindMobile(let code):
                     await MainActor.run {
                         isLoggingIn = false
@@ -275,7 +275,7 @@ final class LoginViewModel: ObservableObject {
                     smsCode: smsCode
                 )
                 await MainActor.run { pendingWeChatCode = nil }
-                await handleLoginSuccess(phone: phone)
+                await handleLoginSuccess()
             } catch {
                 await MainActor.run {
                     isLoggingIn = false
@@ -315,10 +315,9 @@ final class LoginViewModel: ObservableObject {
 
     // MARK: - Post-Login Orchestration
 
-    private func handleLoginSuccess(phone: String) async {
+    private func handleLoginSuccess() async {
         // Token 已由 LoginService 根据服务端 expires_in 持久化
         await MainActor.run {
-            UserDefaults.standard.set(phone, forKey: "current_user_mobile")
             isLoggingIn = false
         }
 

@@ -55,7 +55,7 @@ Tab 使用 UICollectionView 横向滚动；**恰好 8 个**，顺序同表。选
 - **卡片容器**：白色圆角 16pt，内边距 12pt，卡片间距 12pt
 - **卡片头部**：16×16pt 机构图标（`order_institution_icon`）+ 16pt Medium 机构名称（`#1F2430`）+ 右侧 14pt Medium 状态文案（`#FF7A50`，纯文字无胶囊框）
 - **特色通知条（可选）**：当订单包含退款驳回/清算驳回原因（`refuseReasons`）时展示，背景采用粉红渐变装饰条（`order_notice_bg_single` / `order_notice_bg_double`），搭配 14×14pt 红色叹号图标（`order_notice_alert_icon`）及 10pt 警告文案（`#F93838`）
-- **商品/套餐信息区**：`#FFF9F6` 浅粉色底块，圆角 12pt，包含 84×84pt 商品图（无图时展示 `order_package_placeholder`）、14pt Medium 商品标题、14pt Regular 商品简介，以及右下角 12pt 符号与 16pt Medium 金额（`#1F2942`）。金额取值见下方「列表卡片金额展示」
+- **商品/套餐信息区**：`#FFF9F6` 浅粉色底块，圆角 12pt，包含 84×84pt 商品图（无图时展示 `order_package_placeholder`）、14pt Medium 商品标题、14pt Regular 商品简介（`introduction`，空则隐藏），以及右下角 12pt 符号与 16pt Medium 金额（`#1F2942`）。金额取值见下方「列表卡片金额展示」
 - **操作按钮**：高度 28pt，最小宽度 77pt，圆角 14pt 胶囊状，12pt Medium 字体。主按钮为纯色填充（`#FF7950`），次按钮为 0.5pt 细边框线框（`#FF7950`）
 - **空状态**：展示默认无数据插图 `noData_default`（145pt，`FDEmptyStateView`）及 14pt Regular 文案（`#8591AB` / `fdMuted`）。订单卡片无套餐图时仍用 `order_package_placeholder`，不与空态混用。
 
@@ -75,7 +75,8 @@ Tab 使用 UICollectionView 横向滚动；**恰好 8 个**，顺序同表。选
 | `createTime` | String | 创建时间 |
 | `hospitalName` | String | 医院名称 |
 | `doctorName` | String | 医生姓名 |
-| `packageDescription` | String | 套餐描述 |
+| `introduction` | String | 套餐简介；列表卡片名称下方文案，空则隐藏 |
+| `packageDescription` | String | 套餐描述；列表卡片不使用 |
 | `packageType` | Int | 套餐类型：1=租赁 2=售卖 3=虚拟 4=体验 |
 | `packageImageUrl` | String | 套餐图片 |
 | `beginTime` | String | 服务开始时间 |

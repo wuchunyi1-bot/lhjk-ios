@@ -23,6 +23,8 @@ final class NotificationListViewController: UIViewController, UITableViewDataSou
         tv.dataSource = self
         tv.delegate = self
         tv.register(NotificationCell.self, forCellReuseIdentifier: NotificationCell.reuseIdentifier)
+        tv.rowHeight = UITableView.automaticDimension
+        tv.estimatedRowHeight = NotificationCell.rowHeight
         tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 24, right: 0)
         tv.scrollIndicatorInsets = .zero
         return tv
@@ -125,7 +127,7 @@ final class NotificationListViewController: UIViewController, UITableViewDataSou
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        NotificationCell.rowHeight
+        UITableView.automaticDimension
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

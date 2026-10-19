@@ -1,7 +1,7 @@
 import UIKit
 import Combine
 
-/// 根 TabBar 控制器 — 集成 5 大业务模块入口
+/// 根 TabBar 控制器 — 首页、健康、消息、我的
 final class RootTabBarController: UITabBarController {
 
     private var messageNav: BaseNavigationController?
@@ -58,15 +58,6 @@ final class RootTabBarController: UITabBarController {
             selectedImage: UIImage(named: "tab_health_selected")?.withRenderingMode(.alwaysOriginal)
         )
 
-        // 服务
-        let serviceVC = ServiceViewController()
-        let serviceNav = BaseNavigationController(rootViewController: serviceVC)
-        serviceNav.tabBarItem = UITabBarItem(
-            title: "服务",
-            image: UIImage(named: "tab_service_normal")?.withRenderingMode(.alwaysOriginal),
-            selectedImage: UIImage(named: "tab_service_selected")?.withRenderingMode(.alwaysOriginal)
-        )
-
         // 消息
         let messageVC = MessagesViewController()
         let msgNav = BaseNavigationController(rootViewController: messageVC)
@@ -86,7 +77,7 @@ final class RootTabBarController: UITabBarController {
             selectedImage: UIImage(named: "tab_my_selected")?.withRenderingMode(.alwaysOriginal)
         )
 
-        viewControllers = [homeNav, healthNav, serviceNav, msgNav, myNav]
+        viewControllers = [homeNav, healthNav, msgNav, myNav]
     }
 
     private func configureAppearance() {
@@ -150,29 +141,39 @@ extension RootTabBarController {
     enum Tab {
         static let home = 0
         static let health = 1
-        static let service = 2
-        static let message = 3
-        static let my = 4
+        static let message = 2
+        static let my = 3
     }
 
-    /// 切到服务 Tab 根页，不 push 新栈（聊天过期横幅「前往商城」等入口）
-    static func selectServiceTab() {
+    /// 切到首页并打开指定页签。健康服务、富德优选都在首页里。
+    static func selectHomeShelf(_ shelf: HomeShelf) {
         let switchTab = {
             guard let tabBar = findInKeyWindow() else { return }
             if tabBar.presentedViewController != nil {
                 tabBar.dismiss(animated: false)
             }
-            if let nav = tabBar.viewControllers?[Tab.service] as? UINavigationController,
+            if let nav = tabBar.viewControllers?[Tab.home] as? UINavigationController,
                nav.viewControllers.count > 1 {
                 nav.popToRootViewController(animated: false)
             }
-            tabBar.selectedIndex = Tab.service
+            HomeShelfStore.pending = shelf
+            tabBar.selectedIndex = Tab.home
+            NotificationCenter.default.post(
+                name: HomeShelfStore.didRequestNotification,
+                object: nil,
+                userInfo: ["shelf": shelf.rawValue]
+            )
         }
         if Thread.isMainThread {
             switchTab()
         } else {
             DispatchQueue.main.async(execute: switchTab)
         }
+    }
+
+    /// 兼容旧调用：打开首页里的健康服务页签。
+    static func selectServiceTab() {
+        selectHomeShelf(.service)
     }
 
     /// `/messages`：切到消息 Tab 根页，不 push 新栈（避免 `hidesBottomBarWhenPushed` 藏掉底部栏）

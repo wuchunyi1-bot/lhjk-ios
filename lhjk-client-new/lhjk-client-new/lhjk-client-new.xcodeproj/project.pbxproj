@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -170,6 +170,11 @@
 		A5917D222FDFD7FE00878961 /* LoginServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */; };
 		A5917D242FDFD96D00878961 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5917D232FDFD96D00878961 /* WebViewController.swift */; };
 		A5923B1A30346538007DE182 /* SplashViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5923B1830346538007DE182 /* SplashViewController.swift */; };
+		A592F19930806D500013B2E8 /* HomeShelf.swift in Sources */ = {isa = PBXBuildFile; fileRef = A592F19830806D500013B2E8 /* HomeShelf.swift */; };
+		A592F19D30806D660013B2E8 /* HomeShelfBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A592F19A30806D660013B2E8 /* HomeShelfBar.swift */; };
+		A592F19E30806D660013B2E8 /* HomeTopBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A592F19B30806D660013B2E8 /* HomeTopBarView.swift */; };
+		A592F1A130806D740013B2E8 /* HomeKnowledgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A592F19F30806D740013B2E8 /* HomeKnowledgeViewController.swift */; };
+		A592F1A330806D850013B2E8 /* HomeSupportCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A592F1A230806D850013B2E8 /* HomeSupportCell.swift */; };
 		A599A51A3040370F00D943EA /* OrderBottomSheetKeyboardSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A599A5193040370F00D943EA /* OrderBottomSheetKeyboardSupport.swift */; };
 		A599A51D304039FA00D943EA /* CartItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A599A51B304039FA00D943EA /* CartItemCell.swift */; };
 		A599B60830204B9B0012086A /* MessageSegmentedControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A599B60630204B9B0012086A /* MessageSegmentedControl.swift */; };
@@ -286,6 +291,7 @@
 		A5B56166304951B800B8259D /* AlipaySDKManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B56163304951B800B8259D /* AlipaySDKManager.swift */; };
 		A5B56167304951B800B8259D /* AlipayModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B56162304951B800B8259D /* AlipayModels.swift */; };
 		A5B77A5E302B24F70054B2C4 /* FundePageURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B77A5D302B24F70054B2C4 /* FundePageURL.swift */; };
+		A5BC683A307F77EA00FF8877 /* WellnessCabinViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BC6838307F77EA00FF8877 /* WellnessCabinViewController.swift */; };
 		A5BD9DE430199326008C44FC /* TabHubBrandHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DE230199326008C44FC /* TabHubBrandHeaderView.swift */; };
 		A5BD9DEA3019A316008C44FC /* OKOKV3PacketParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DE73019A316008C44FC /* OKOKV3PacketParser.swift */; };
 		A5BD9DEB3019A316008C44FC /* OKOKBroadcastScaleHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD9DE63019A316008C44FC /* OKOKBroadcastScaleHandler.swift */; };
@@ -572,6 +578,11 @@
 		A5917D1F2FDFD7FE00878961 /* LoginServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginServiceProtocol.swift; sourceTree = "<group>"; };
 		A5917D232FDFD96D00878961 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WebViewController.swift; path = Other/Common/Base/WebViewController.swift; sourceTree = "<group>"; };
 		A5923B1830346538007DE182 /* SplashViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashViewController.swift; sourceTree = "<group>"; };
+		A592F19830806D500013B2E8 /* HomeShelf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeShelf.swift; sourceTree = "<group>"; };
+		A592F19A30806D660013B2E8 /* HomeShelfBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeShelfBar.swift; sourceTree = "<group>"; };
+		A592F19B30806D660013B2E8 /* HomeTopBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTopBarView.swift; sourceTree = "<group>"; };
+		A592F19F30806D740013B2E8 /* HomeKnowledgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeKnowledgeViewController.swift; sourceTree = "<group>"; };
+		A592F1A230806D850013B2E8 /* HomeSupportCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeSupportCell.swift; sourceTree = "<group>"; };
 		A594BE4E301C760600D43046 /* lhjk-client-new.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "lhjk-client-new.entitlements"; sourceTree = "<group>"; };
 		A599A5193040370F00D943EA /* OrderBottomSheetKeyboardSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderBottomSheetKeyboardSupport.swift; sourceTree = "<group>"; };
 		A599A51B304039FA00D943EA /* CartItemCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartItemCell.swift; sourceTree = "<group>"; };
@@ -689,6 +700,15 @@
 		A5B56162304951B800B8259D /* AlipayModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlipayModels.swift; sourceTree = "<group>"; };
 		A5B56163304951B800B8259D /* AlipaySDKManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlipaySDKManager.swift; sourceTree = "<group>"; };
 		A5B77A5D302B24F70054B2C4 /* FundePageURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FundePageURL.swift; path = Other/Common/FundePageURL.swift; sourceTree = "<group>"; };
+		A5BC6838307F77EA00FF8877 /* WellnessCabinViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessCabinViewController.swift; sourceTree = "<group>"; };
+		A5BC683B307F7EB600FF8877 /* mobile_scanner.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = mobile_scanner.xcframework; path = ../Vendor/BenecareDeviceSdk/mobile_scanner.xcframework; sourceTree = "<group>"; };
+		A5BC683C307F7EB600FF8877 /* Flutter.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:S8QB4VV633:FLUTTER.IO LLC"; lastKnownFileType = wrapper.xcframework; name = Flutter.xcframework; path = ../Vendor/BenecareDeviceSdk/Flutter.xcframework; sourceTree = "<group>"; };
+		A5BC683D307F7EB600FF8877 /* App.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = App.xcframework; path = ../Vendor/BenecareDeviceSdk/App.xcframework; sourceTree = "<group>"; };
+		A5BC683E307F7EB600FF8877 /* BenecareDeviceSdk.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BenecareDeviceSdk.xcframework; path = ../Vendor/BenecareDeviceSdk/BenecareDeviceSdk.xcframework; sourceTree = "<group>"; };
+		A5BC683F307F7EB600FF8877 /* shared_preferences_foundation.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = shared_preferences_foundation.xcframework; path = ../Vendor/BenecareDeviceSdk/shared_preferences_foundation.xcframework; sourceTree = "<group>"; };
+		A5BC6840307F7EB600FF8877 /* device_info_plus.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = device_info_plus.xcframework; path = ../Vendor/BenecareDeviceSdk/device_info_plus.xcframework; sourceTree = "<group>"; };
+		A5BC6841307F7EB600FF8877 /* flutter_blue_plus_darwin.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = flutter_blue_plus_darwin.xcframework; path = ../Vendor/BenecareDeviceSdk/flutter_blue_plus_darwin.xcframework; sourceTree = "<group>"; };
+		A5BC6842307F7EB600FF8877 /* objective_c.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = objective_c.xcframework; path = ../Vendor/BenecareDeviceSdk/objective_c.xcframework; sourceTree = "<group>"; };
 		A5BD9DE230199326008C44FC /* TabHubBrandHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabHubBrandHeaderView.swift; sourceTree = "<group>"; };
 		A5BD9DE53019A316008C44FC /* BLEDeviceHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BLEDeviceHandler.swift; path = DAL/Bluetooth/BLEDeviceHandler.swift; sourceTree = "<group>"; };
 		A5BD9DE63019A316008C44FC /* OKOKBroadcastScaleHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OKOKBroadcastScaleHandler.swift; sourceTree = "<group>"; };
@@ -913,6 +933,14 @@
 		94707E2D82559898666399B3 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A5BC683D307F7EB600FF8877 /* App.xcframework */,
+				A5BC683E307F7EB600FF8877 /* BenecareDeviceSdk.xcframework */,
+				A5BC6840307F7EB600FF8877 /* device_info_plus.xcframework */,
+				A5BC683C307F7EB600FF8877 /* Flutter.xcframework */,
+				A5BC6841307F7EB600FF8877 /* flutter_blue_plus_darwin.xcframework */,
+				A5BC683B307F7EB600FF8877 /* mobile_scanner.xcframework */,
+				A5BC6842307F7EB600FF8877 /* objective_c.xcframework */,
+				A5BC683F307F7EB600FF8877 /* shared_preferences_foundation.xcframework */,
 				310B761F90CB750F32FE3703 /* iOS */,
 				E2191AA18B75ED1F24719943 /* Pods_lhjk_client_new.framework */,
 			);
@@ -1197,6 +1225,7 @@
 		A590FC422FEA91170056EF52 /* Health */ = {
 			isa = PBXGroup;
 			children = (
+				A5BC6839307F77EA00FF8877 /* WellnessCabin */,
 				A5BDA3A33035921300E306EB /* ScaleDevice */,
 				A5BDA394303547E300E306EB /* Weight */,
 				A5CB0BCD302193B20076FAFB /* ViewModels */,
@@ -1214,6 +1243,7 @@
 		A590FC492FEA91170056EF52 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
+				A592F1A230806D850013B2E8 /* HomeSupportCell.swift */,
 				A5C71B043018BAFC006EA79C /* HomeBannerCarouselCell.swift */,
 				A5C71B053018BAFC006EA79C /* HomeBrandHeaderCell.swift */,
 				A5C71B063018BAFC006EA79C /* HomeMembershipPackagesCell.swift */,
@@ -1230,6 +1260,9 @@
 		A590FC4B2FEA91170056EF52 /* Home */ = {
 			isa = PBXGroup;
 			children = (
+				A592F1A030806D740013B2E8 /* Knowledge */,
+				A592F19C30806D660013B2E8 /* Components */,
+				A592F19830806D500013B2E8 /* HomeShelf.swift */,
 				A5BD9DFE3019FF6D008C44FC /* DailyTasks */,
 				A5A6F53C2FFF7E340065C921 /* ViewModels */,
 				A590FC492FEA91170056EF52 /* Cells */,
@@ -1724,6 +1757,23 @@
 			path = Other/Splash;
 			sourceTree = "<group>";
 		};
+		A592F19C30806D660013B2E8 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A592F19A30806D660013B2E8 /* HomeShelfBar.swift */,
+				A592F19B30806D660013B2E8 /* HomeTopBarView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A592F1A030806D740013B2E8 /* Knowledge */ = {
+			isa = PBXGroup;
+			children = (
+				A592F19F30806D740013B2E8 /* HomeKnowledgeViewController.swift */,
+			);
+			path = Knowledge;
+			sourceTree = "<group>";
+		};
 		A599A51C304039FA00D943EA /* Cells */ = {
 			isa = PBXGroup;
 			children = (
@@ -2069,6 +2119,14 @@
 			);
 			name = Alipay;
 			path = DAL/Alipay;
+			sourceTree = "<group>";
+		};
+		A5BC6839307F77EA00FF8877 /* WellnessCabin */ = {
+			isa = PBXGroup;
+			children = (
+				A5BC6838307F77EA00FF8877 /* WellnessCabinViewController.swift */,
+			);
+			path = WellnessCabin;
 			sourceTree = "<group>";
 		};
 		A5BD9DE330199326008C44FC /* Components */ = {
@@ -2810,6 +2868,7 @@
 				A5ACE2373000CBE000056C52 /* MallProductDetailViewController.swift in Sources */,
 				0EE2E6B7960C05819866D0E1 /* BluetoothManager.swift in Sources */,
 				5E7531B1805BDFC74CD1F8CB /* BluetoothModels.swift in Sources */,
+				A5BC683A307F77EA00FF8877 /* WellnessCabinViewController.swift in Sources */,
 				1694DDA9C65C92BEE8B3AA7B /* Conversation.swift in Sources */,
 				A590FB1A2FEA2F6E0056EF52 /* UserService.swift in Sources */,
 				A590FB1B2FEA2F6E0056EF52 /* UserServiceProtocol.swift in Sources */,
@@ -2864,6 +2923,7 @@
 				A5CF597C30077C6A0067A4DE /* RetailCategoryService.swift in Sources */,
 				A590FCAF2FEA91170056EF52 /* PaymentViewController.swift in Sources */,
 				A590FCB02FEA91170056EF52 /* PrivacyPromptView.swift in Sources */,
+				A592F19930806D500013B2E8 /* HomeShelf.swift in Sources */,
 				A590FCB22FEA91170056EF52 /* SettingsViewController.swift in Sources */,
 				A5A6F5382FFF7D9B0065C921 /* LoginViewModel.swift in Sources */,
 				A590FCB32FEA91170056EF52 /* HealthViewController.swift in Sources */,
@@ -3069,6 +3129,8 @@
 				A5E08928304551E300D610FF /* GroupMembersViewModel.swift in Sources */,
 				A5E08929304551E300D610FF /* GroupMembersViewController.swift in Sources */,
 				A5E0892A304551E300D610FF /* GroupMemberCell.swift in Sources */,
+				A592F19D30806D660013B2E8 /* HomeShelfBar.swift in Sources */,
+				A592F19E30806D660013B2E8 /* HomeTopBarView.swift in Sources */,
 				A5D28F343046A14A00D5D437 /* CancelAccountComponents.swift in Sources */,
 				A56120C93010A31C00505C32 /* OrderTabCell.swift in Sources */,
 				A5B5615F30491A3200B8259D /* QuestionnaireModels.swift in Sources */,
@@ -3111,6 +3173,7 @@
 				A5C30E56305152A7000554E1 /* ChangeLoginPasswordSetViewController.swift in Sources */,
 				A5C30E57305152A7000554E1 /* ChangeLoginPasswordViewController.swift in Sources */,
 				A5917D092FDFC8EF00878961 /* UIView+Layout.swift in Sources */,
+				A592F1A130806D740013B2E8 /* HomeKnowledgeViewController.swift in Sources */,
 				A5917D0A2FDFC8EF00878961 /* UIColor+Theme.swift in Sources */,
 				A5917D0B2FDFC8EF00878961 /* UIButton+Funde.swift in Sources */,
 				A5BDA3983035490400E306EB /* WeightScaleBleStatusCoordinator.swift in Sources */,
@@ -3119,6 +3182,7 @@
 				A5D28F373046A8EB00D5D437 /* AddressComponents.swift in Sources */,
 				E9F251651FF71AEBC2DF03F3 /* BLLProtocol.swift in Sources */,
 				023299BEDDBAE0D022B08E7B /* DALProtocol.swift in Sources */,
+				A592F1A330806D850013B2E8 /* HomeSupportCell.swift in Sources */,
 				A57D2F242FDC0661002E43BA /* RegisterLoginRoutes.swift in Sources */,
 				59AB481874792A6D2327D4DB /* PLProtocol.swift in Sources */,
 				C8C2F63AA4929D219BE2AE0C /* RootTabBarController.swift in Sources */,
@@ -3305,7 +3369,8 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
@@ -3328,7 +3393,10 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "富德联好健康";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lhjk.client;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3357,7 +3425,10 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "富德联好健康";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lhjk.client;
 				PROVISIONING_PROFILE_SPECIFIER = "";

@@ -1,6 +1,39 @@
 import UIKit
 import SnapKit
 
+/// 右栏类目名。作为 section header，滚动时吸在列表顶部。
+final class PackageSectionHeaderView: UITableViewHeaderFooterView {
+    static let reuseID = "PackageSectionHeaderView"
+    static let height: CGFloat = 34
+
+    private let titleLabel = UILabel()
+
+    override init(reuseIdentifier: String?) {
+        super.init(reuseIdentifier: reuseIdentifier)
+        let background = UIView()
+        background.backgroundColor = .white
+        backgroundView = background
+        contentView.backgroundColor = .white
+        var backgroundConfig = UIBackgroundConfiguration.listPlainHeaderFooter()
+        backgroundConfig.backgroundColor = .white
+        backgroundConfiguration = backgroundConfig
+        titleLabel.font = .fdFont(ofSize: 15, weight: .bold)
+        titleLabel.textColor = .fdText
+        contentView.addSubview(titleLabel)
+        titleLabel.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(12)
+            $0.top.equalToSuperview()
+            $0.bottom.equalToSuperview().inset(8)
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    func configure(title: String) {
+        titleLabel.text = title
+    }
+}
+
 final class PackageHeaderCell: UITableViewCell {
     static let reuseID = "PackageHeaderCell"
     static let rowHeight: CGFloat = 34

@@ -21,9 +21,7 @@ final class ChangeLoginPasswordViewModel: ObservableObject {
         loginService: LoginService = AppContainer.shared.loginService,
         userManager: UserManager = AppContainer.shared.userManager
     ) {
-        let resolved = (phone ?? userManager.currentUser?.mobile
-            ?? UserDefaults.standard.string(forKey: "current_user_mobile")
-            ?? "")
+        let resolved = (phone ?? userManager.currentUser?.account ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         self.phone = resolved
         self.maskedPhone = Self.maskPhone(resolved)

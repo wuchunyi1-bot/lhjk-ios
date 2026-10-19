@@ -62,6 +62,7 @@ App端/
 │   ├── 购物车管理
 │   ├── 商城套餐相关接口
 │   ├── 商城订单相关接口
+│   │   └── GET /v1/order/getPaymentDiscountAdvice
 │   ├── 订单支付服务
 │   │   └── POST /v1/orderPay/orderPay
 │   ├── 商城退款订单相关接口
@@ -153,16 +154,18 @@ App端/
 | 22 | DELETE | `/v1/shoppingCart/deleteShoppingCart` | `App端/商城/购物车管理` | `ShoppingCartService` | [删购物车](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330724e0.md) |
 | 22a | GET | `/v1/shoppingCart/getShoppingCartCount` | `App端/商城/购物车管理` | `ShoppingCartService` / `ShoppingCartBadgeStore` | 文档暂无（Apifox OAS：`getShoppingCartCount`，`ResultLong.data` 为当前用户购物车数量；以代码 path 为准） |
 | 23 | GET | `/v1/hospitalPackage/getEnabledHospitalPackagePage` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | [启用套包分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/484150836e0.md) |
+| 23b | GET | `/v1/hospitalPackage/searchEnabledPackagePage` | `App端/商城/商城套餐相关接口` | `HospitalPackageService`（首页搜索：健康服务 / 富德优选） | Query：`keyword`、`type`（1 健康服务 / 2 富德优选）必填；`hospitalId` 仅健康服务传当前机构；`pageNum`、`pageSize` 可选。健康知识不走此接口 |
 | 24 | GET | `/v1/hospitalPackage/getEnabledRetailHospitalPackagePage` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | [零售套包分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487882770e0.md) |
 | 25 | GET | `/v1/hospitalPackage/getCategoryServiceListByType` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | [业务类别](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487882771e0.md) |
 | 25a | GET | `/v1/hospitalPackage/getEnabledHospitalPackageListByCategory` | `App端/商城/商城套餐相关接口` | `HospitalPackageService`（选择套餐一次性加载） | 文档暂无（Apifox 层级 `商城/商城套餐相关接口`） |
 | 26 | GET | `/v1/hospitalPackage/getHospitalPackageDetail` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | Query：`hospitalId`、`packageId` 必填；续费可选 `orderId`（返回 `commodityIdList`） |
-| 27 | GET | `/v1/order/getAppOrderList` | `App端/商城/商城订单相关接口` | `OrderService` | [订单列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330738e0.md) |
-| 28 | GET | `/v1/order/getAppOrderDetail` | `App端/商城/商城订单相关接口` | `OrderService`；`canApplyAfterSale` 控制「退款/售后」按钮；`refundReasonType` 控制已完成订单退款原因展示类型（0-不显示，1-退款申请原因，2-退款拒绝原因）；`equipmentFlag=false` 隐藏自提信息、自提地址、物流信息与收货地址 | [订单详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330739e0.md) |
+| 27 | GET | `/v1/order/getAppOrderList` | `App端/商城/商城订单相关接口` | `OrderService`；`renewable=true` 才展示「续费订单」 | [订单列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330738e0.md) |
+| 28 | GET | `/v1/order/getAppOrderDetail` | `App端/商城/商城订单相关接口` | `OrderService`；`renewable=true` 才展示「续费订单」；`canApplyAfterSale` 控制「退款/售后」按钮；`refundReasonType` 控制已完成订单退款原因展示类型（0-不显示，1-退款申请原因，2-退款拒绝原因）；`equipmentFlag=false` 隐藏自提信息、自提地址、物流信息与收货地址 | [订单详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330739e0.md) |
 | 29 | GET | `/v1/order/getOrderSettlement` | `App端/商城/商城订单相关接口` | `OrderService`；`code=M0104` 套餐内容变化弹窗（FDAPP-938）；`equipmentFlag=false` 隐藏确认订单/待支付的收货方式与自提地址 | [结算信息](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/490169537e0.md) |
 | 30 | POST | `/v1/order/insertOrEdit` | `App端/商城/商城订单相关接口` | `OrderService` | [新增编辑订单](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330734e0.md) |
 | 31 | POST | `/v1/order/updateOrderDelivery` | `App端/商城/商城订单相关接口` | `OrderService` | [改配送](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/490169536e0.md) |
 | 32 | POST | `/v1/order/updateOrderDescription` | `App端/商城/商城订单相关接口` | `OrderService` | [改备注](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/490169535e0.md) |
+| 32a | GET | `/v1/order/getPaymentDiscountAdvice` | `App端/商城/商城订单相关接口` | `OrderService`；确认订单点击支付后、`orderPay` 前（FDAPP-1049）。Query `orderId`。`adviceType`：0 直接支付，1/2/3 弹窗确认，其它或接口失败拦住支付 | 文档暂无（Apifox OAS：`getPaymentDiscountAdvice`，支付前券卡确认；以代码 path 为准） |
 | 33 | POST | `/v1/orderClearing/submitReturnGoods` | `App端/商城/商城退款订单相关接口` | `OrderService` | [提交退货](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/493050735e0.md) |
 | 33a | POST | `/v1/orderPay/orderPay` | `App端/商城/订单支付服务` | `OrderService` / `PaymentService.payMallOrder`；确认订单立即支付；**JSON body** 带回 `amountVersion`、`expectedPayableAmount` | [支付统一接口](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330716e0.md) |
 | 34 | GET | `/v1/couponTake/getCouponTakeList` | `App端/商城/优惠券领用` | `CouponService` | [领用列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330752e0.md) |
@@ -248,11 +251,11 @@ App端/
 | `BLL/User/UserService.swift` | 9 | users/* ×7、archive/* ×2 |
 | `BLL/My/AddressService.swift` | 3 | address/* |
 | `BLL/My/AppVersionService.swift` | 1 | version/getLatestVersionForApp |
-| `BLL/Service/OrderService.swift` | 8 | order/* ×6、orderClearing/submitReturnGoods、orderPay/orderPay |
+| `BLL/Service/OrderService.swift` | 9 | order/* ×7（含 **getPaymentDiscountAdvice**）、orderClearing/submitReturnGoods、orderPay/orderPay |
 | `BLL/Service/ShoppingCartService.swift` | 4 | shoppingCart/* |
 | `BLL/Service/CouponService.swift` | 2 | couponTake/* |
 | `BLL/My/VoucherService.swift` | 11 | benefitsTake/getCustomerPage、getCustomerStatusCount、getGiftRecordPage、preCheckByKey、bindByKey、giftBenefit、getActivationOverview、getRedeemPageInfo、getRedeemPackagePage、getOrderBenefitsList、updateOrderBenefits |
-| `BLL/Service/HospitalPackageService.swift` | 5 | hospitalPackage/*（含 **getHospitalPackageDetail**、**getEnabledHospitalPackageListByCategory**） |
+| `BLL/Service/HospitalPackageService.swift` | 6 | hospitalPackage/*（含 **getHospitalPackageDetail**、**getEnabledHospitalPackageListByCategory**、**searchEnabledPackagePage**） |
 | `BLL/Service/HospitalService.swift` | 2 | hospital/* |
 | `BLL/Service/DoctorService.swift` | 1 | doctor/getDoctorPage |
 | `BLL/Service/ColumnContentService.swift` | 1 | columnContent/getByCode |

@@ -262,7 +262,7 @@ final class OrderCardCell: UITableViewCell {
 
         // 商品/套餐标题与简介
         nameLabel.text = order.orderName?.nilIfEmpty ?? "未命名订单"
-        let intro = order.packageDescription?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let intro = order.introduction?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         introLabel.text = intro
         introLabel.isHidden = intro.isEmpty
 
@@ -465,15 +465,22 @@ enum OrderListCardAction: Equatable {
         case .pendingReceive:
             actions = [.confirmReceipt]
         case .inProgress:
-            actions = inProgressActions(packageType: packageType, canRenew: canRenew)
+            actions = leaseSettleActions(packageType: packageType)
         case .overdue:
-            actions = overdueActions(packageType: packageType, canRenew: canRenew)
+            actions = leaseSettleActions(packageType: packageType)
         case .completed:
             actions = []
         case .refund:
             actions = canReturnGoods ? [.returnGoods] : []
         case .cancelled, .refundReview:
             actions = []
+        }
+        if canRenew {
+            if let settleIndex = actions.firstIndex(of: .settle) {
+                actions.insert(.renew, at: settleIndex)
+            } else {
+                actions.append(.renew)
+            }
         }
         if canApplyAfterSale {
             if let idx = actions.firstIndex(where: { $0.isPrimary }) {
@@ -485,23 +492,10 @@ enum OrderListCardAction: Equatable {
         return actions
     }
 
-    private static func inProgressActions(packageType: Int?, canRenew: Bool) -> [OrderListCardAction] {
+    /// 租赁套餐在使用中 / 已逾期展示「结算订单」。续费不看套餐类型。
+    private static func leaseSettleActions(packageType: Int?) -> [OrderListCardAction] {
         guard AppPackageType(rawValue: packageType ?? -1) == .lease else { return [] }
-        return leaseRenewSettleActions(canRenew: canRenew)
-    }
-
-    private static func overdueActions(packageType: Int?, canRenew: Bool) -> [OrderListCardAction] {
-        guard AppPackageType(rawValue: packageType ?? -1) == .lease else { return [] }
-        return leaseRenewSettleActions(canRenew: canRenew)
-    }
-
-    private static func leaseRenewSettleActions(canRenew: Bool) -> [OrderListCardAction] {
-        var actions: [OrderListCardAction] = []
-        if canRenew {
-            actions.append(.renew)
-        }
-        actions.append(.settle)
-        return actions
+        return [.settle]
     }
 }
 

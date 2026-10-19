@@ -59,7 +59,6 @@ final class ChangeLoginPasswordSetViewModel: ObservableObject {
                     newPwd: newPassword,
                     checkCode: smsCode
                 )
-                UserDefaults.standard.set(true, forKey: "fd_login_password_set")
                 await userManager.refreshUserInfo()
                 isBusy = false
                 toast.send("密码设置成功")

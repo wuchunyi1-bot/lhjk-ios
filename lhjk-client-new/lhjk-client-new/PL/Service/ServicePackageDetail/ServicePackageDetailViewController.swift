@@ -591,7 +591,6 @@ final class ServicePackageDetailViewController: BaseViewController {
         let selectedItems = buildSelectedComboItems()
 
         guard viewModel.usesRemoteCartAPI else {
-            saveOrderDraft(package: pkg, selectedItems: selectedItems)
             showToast("请使用正式套餐下单")
             return
         }
@@ -656,19 +655,6 @@ final class ServicePackageDetailViewController: BaseViewController {
             }
         }
         return items
-    }
-
-    private func saveOrderDraft(package: ServicePackageDetail, selectedItems: [ServicePackageComboItem]) {
-        let institution = AppContainer.shared.institutionSelectionStore.selected
-        let draft = PackageOrderDraft.fromPackageDetail(
-            package: package,
-            selectedItems: selectedItems,
-            hospitalId: institution?.id ?? AppContainer.shared.institutionSelectionStore.selectedHospitalId,
-            hospitalName: institution?.name,
-            hospitalAddress: institution?.fullAddress,
-            categoryServiceId: package.categoryServiceId
-        )
-        PackageOrderDraftStore.shared.save(draft)
     }
 
     private func buildSelectedSubmitDetails() -> [PackageHospitalDetailSubmitItem] {

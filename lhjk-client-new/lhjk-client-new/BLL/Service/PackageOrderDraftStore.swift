@@ -38,50 +38,6 @@ struct PackageOrderDraft: Codable, Equatable {
     }
 }
 
-/// 确认订单草稿持久化
-final class PackageOrderDraftStore {
-
-    static let shared = PackageOrderDraftStore()
-
-    private let storageKey = "lhjk.packageOrderDraft.v1"
-    private let defaults: UserDefaults
-    private let encoder = JSONEncoder()
-    private let decoder = JSONDecoder()
-
-    private init(defaults: UserDefaults = .standard) {
-        self.defaults = defaults
-    }
-
-    var draft: PackageOrderDraft? {
-        get {
-            guard let data = defaults.data(forKey: storageKey) else { return nil }
-            return try? decoder.decode(PackageOrderDraft.self, from: data)
-        }
-        set {
-            if let newValue, let data = try? encoder.encode(newValue) {
-                defaults.set(data, forKey: storageKey)
-            } else {
-                defaults.removeObject(forKey: storageKey)
-            }
-        }
-    }
-
-    func save(_ draft: PackageOrderDraft) {
-        var copy = draft
-        copy.updatedAt = Date().timeIntervalSince1970
-        self.draft = copy
-    }
-
-    func draft(matchingPackageId packageId: String) -> PackageOrderDraft? {
-        guard let draft, draft.packageId == packageId else { return nil }
-        return draft
-    }
-
-    func clear() {
-        draft = nil
-    }
-}
-
 // MARK: - 草稿组装
 
 extension PackageOrderDraft {

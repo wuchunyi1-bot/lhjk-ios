@@ -48,8 +48,10 @@ struct AppOrderDetailBO: Decodable {
     let packageId: String?
     let hospitalId: String?
     let categoryServiceId: String?
-    /// 1 允许续租，0 不允许（`AppOrderDetailBO.renewed`）
+    /// 1 允许续租，0 不允许（`AppOrderDetailBO.renewed`）。不参与续费按钮展示。
     let renewed: Int?
+    /// 是否展示「续费订单」（`AppOrderDetailBO.renewable`）
+    let renewable: Bool?
     let parentId: Int64?
     /// 是否可去退货（与列表字段对齐；详情可能暂未下发）
     let canReturnGoods: Bool?
@@ -77,7 +79,7 @@ struct AppOrderDetailBO: Decodable {
         case shipmentTime, beginTime, endTime, serviceTime
         case shoppingCartPackageDetailList
         case refundId, refundReasons, refuseReasons, refundApplyTime, applyRefund, refundApplyChannel
-        case packageId, hospitalId, categoryServiceId, renewed
+        case packageId, hospitalId, categoryServiceId, renewed, renewable
         case canReturnGoods, canApplyAfterSale
         case amountVersion, expectedPayableAmount, settlementVersion, settlementAmount
         case refundReasonType, equipmentFlag
@@ -125,6 +127,7 @@ struct AppOrderDetailBO: Decodable {
         hospitalId = HospitalPackageID.decodeOptional(c, key: .hospitalId)
         categoryServiceId = HospitalPackageID.decodeOptional(c, key: .categoryServiceId)
         renewed = Self.decodeFlexibleInt(c, key: .renewed)
+        renewable = Self.decodeFlexibleBool(c, key: .renewable)
         parentId = Self.decodeFlexibleInt64(c, key: .parentId)
         canReturnGoods = Self.decodeFlexibleBool(c, key: .canReturnGoods)
         canApplyAfterSale = Self.decodeFlexibleBool(c, key: .canApplyAfterSale)
@@ -146,14 +149,9 @@ struct AppOrderDetailBO: Decodable {
         return raw
     }
 
-    /// 是否展示「续费订单」
+    /// 是否展示「续费订单」：只认 `renewable`
     var canShowRenewAction: Bool {
-        AppOrderRenewalRules.canShowRenew(
-            packageType: packageType,
-            status: orderStatus,
-            renewed: renewed,
-            endTime: endTime
-        )
+        AppOrderRenewalRules.canShowRenew(renewable: renewable)
     }
 
     /// 是否已发生退款（完成后隐藏再次申请）

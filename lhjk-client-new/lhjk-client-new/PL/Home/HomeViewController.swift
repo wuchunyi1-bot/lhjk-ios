@@ -2,40 +2,45 @@ import UIKit
 import SnapKit
 import Combine
 
-/// 首页 Hub — 对齐 Figma 3021:784
+/// 首页 Hub：顶栏 + 四个页签。底栏不再放「服务」。
 final class HomeViewController: BaseViewController {
 
     private let viewModel = HomeViewModel()
     private var cancellables = Set<AnyCancellable>()
+    private var currentShelf: HomeShelf = HomeShelfStore.saved()
+
+    private let topBar = HomeTopBarView()
+    private let shelfBar = HomeShelfBar()
+    private let contentContainer = UIView()
+
+    private var serviceViewController: ServiceViewController?
+    private var mallViewController: HealthMallViewController?
+    private var knowledgeViewController: HomeKnowledgeViewController?
 
     private let tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
-        tv.backgroundColor = UIColor(hexString: "#FFF9F7")
+        tv.backgroundColor = .fdBg
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
         tv.contentInsetAdjustmentBehavior = .never
-        tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+        tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 12, right: 0)
         tv.sectionHeaderHeight = 0
         tv.sectionFooterHeight = 0
         tv.estimatedSectionHeaderHeight = 0
         tv.estimatedSectionFooterHeight = 0
         tv.estimatedRowHeight = 200
         tv.rowHeight = UITableView.automaticDimension
-        tv.clipsToBounds = false
+        tv.clipsToBounds = true
         return tv
     }()
 
     private var dataSource: UITableViewDiffableDataSource<HomeViewModel.HomeSection, HomeViewModel.HomeItem>!
 
-    override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        updateTableBottomInsetIfNeeded()
-    }
+    override var preferredStatusBarStyle: UIStatusBarStyle { .darkContent }
 
     override func refreshForSeniorMode() {
         super.refreshForSeniorMode()
+        shelfBar.setSelected(currentShelf)
         tableView.reloadData()
     }
 
@@ -43,7 +48,7 @@ final class HomeViewController: BaseViewController {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
         setNeedsStatusBarAppearanceUpdate()
-        updateTableBottomInsetIfNeeded()
+        refreshInstitution()
         viewModel.loadUserProfile()
         viewModel.loadBanners()
         viewModel.loadQuickLinks()
@@ -51,11 +56,16 @@ final class HomeViewController: BaseViewController {
         viewModel.loadNews()
         viewModel.loadTodayTasks(forceRefresh: true)
         viewModel.loadDoctorTeam()
+        Task { await UserManager.shared.fetchArchiveCompletion() }
+        AppContainer.shared.shoppingCartBadgeStore.refresh()
+        if let pending = HomeShelfStore.pending {
+            HomeShelfStore.pending = nil
+            showShelf(pending, persist: true)
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        // 冷启动时 viewDidLoad 可能尚未挂上 window，补一次 apply
         applyHomeSnapshot(viewModel.snapshot)
         AppVersionCheckCoordinator.checkOnHomeAppeared()
     }
@@ -66,14 +76,14 @@ final class HomeViewController: BaseViewController {
     }
 
     override func setupUI() {
-        view.backgroundColor = UIColor(hexString: "#FFF9F7")
+        view.backgroundColor = .fdBg
 
         tableView.register(HomeBannerCarouselCell.self, forCellReuseIdentifier: HomeBannerCarouselCell.reuseID)
         tableView.register(HomeQuickActionsCell.self, forCellReuseIdentifier: HomeQuickActionsCell.reuseID)
+        tableView.register(HomeSupportCell.self, forCellReuseIdentifier: HomeSupportCell.reuseID)
         tableView.register(HomeMembershipPackagesCell.self, forCellReuseIdentifier: HomeMembershipPackagesCell.reuseID)
         tableView.register(HomeTeamCardCell.self, forCellReuseIdentifier: HomeTeamCardCell.reuseID)
         tableView.register(HomeTaskCardCell.self, forCellReuseIdentifier: HomeTaskCardCell.reuseID)
-        tableView.register(HomeArticleCell.self, forCellReuseIdentifier: HomeArticleCell.reuseID)
 
         dataSource = UITableViewDiffableDataSource(tableView: tableView) { [weak self] tv, indexPath, item in
             guard let self else { return UITableViewCell() }
@@ -82,19 +92,60 @@ final class HomeViewController: BaseViewController {
         dataSource.defaultRowAnimation = .none
         tableView.dataSource = dataSource
         tableView.delegate = self
-
-        // 先入层级，再 apply；否则 DiffableDataSource 会触发
-        // UITableViewAlertForLayoutOutsideViewHierarchy
-        view.addSubview(tableView)
-        tableView.snp.makeConstraints {
-            $0.edges.equalToSuperview()
-        }
-
-        // Banner 延伸到状态栏下方
-        tableView.contentInset.top = 0
         if #available(iOS 15.0, *) {
             tableView.sectionHeaderTopPadding = 0
         }
+
+        topBar.onInstitutionTap = { [weak self] in
+            self?.openInstitutionPicker()
+        }
+        topBar.onSearchTap = { [weak self] in
+            self?.openSearch()
+        }
+        topBar.onCartTap = { [weak self] in
+            Router.shared.push("/services/cart", from: self)
+        }
+        shelfBar.onSelect = { [weak self] shelf in
+            self?.showShelf(shelf, persist: true)
+        }
+
+        view.addSubview(contentContainer)
+        view.addSubview(topBar)
+        view.addSubview(shelfBar)
+        contentContainer.clipsToBounds = true
+        contentContainer.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        contentContainer.setContentHuggingPriority(.defaultLow, for: .vertical)
+        contentContainer.addSubview(tableView)
+
+        topBar.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.leading.trailing.equalToSuperview()
+        }
+        shelfBar.snp.makeConstraints {
+            $0.top.equalTo(topBar.snp.bottom)
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(44)
+        }
+        contentContainer.snp.makeConstraints {
+            $0.top.equalTo(shelfBar.snp.bottom)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(view.safeAreaLayoutGuide)
+        }
+        tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(institutionDidChange),
+            name: InstitutionSelectionStore.didChangeNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(shelfRequested(_:)),
+            name: HomeShelfStore.didRequestNotification,
+            object: nil
+        )
+        showShelf(currentShelf, persist: false)
     }
 
     override func bindViewModel() {
@@ -104,23 +155,120 @@ final class HomeViewController: BaseViewController {
                 self?.applyHomeSnapshot(snapshot)
             }
             .store(in: &cancellables)
+
+        viewModel.$articles
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] articles in
+                self?.knowledgeViewController?.update(articles: articles)
+            }
+            .store(in: &cancellables)
+
+        AppContainer.shared.shoppingCartBadgeStore.$count
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] count in
+                self?.topBar.applyCartCount(count)
+            }
+            .store(in: &cancellables)
     }
 
-    /// 按 TabBar 实际高度（含 Home Indicator 安全区）动态留白，避免 iPhone X 等机型底部被遮挡。
-    private func updateTableBottomInsetIfNeeded() {
-        guard let tabBar = tabBarController?.tabBar, !tabBar.isHidden else { return }
-        let bottom = tabBar.frame.height + 12
-        guard abs(tableView.contentInset.bottom - bottom) > 0.5 else { return }
-        tableView.contentInset.bottom = bottom
-        tableView.verticalScrollIndicatorInsets.bottom = bottom
-    }
-
-    /// 仅在 tableView 已挂到 window 时 apply，避免层级外布局告警
     private func applyHomeSnapshot(
         _ snapshot: NSDiffableDataSourceSnapshot<HomeViewModel.HomeSection, HomeViewModel.HomeItem>
     ) {
         guard dataSource != nil, tableView.window != nil else { return }
         dataSource.apply(snapshot, animatingDifferences: false)
+    }
+
+    private func showShelf(_ shelf: HomeShelf, persist: Bool) {
+        currentShelf = shelf
+        if persist { HomeShelfStore.save(shelf) }
+        shelfBar.setSelected(shelf)
+        tableView.isHidden = shelf != .home
+        serviceViewController?.view.isHidden = shelf != .service
+        mallViewController?.view.isHidden = shelf != .mall
+        knowledgeViewController?.view.isHidden = shelf != .articles
+        switch shelf {
+        case .home:
+            break
+        case .service:
+            embedServiceIfNeeded()
+        case .mall:
+            embedMallIfNeeded()
+        case .articles:
+            embedKnowledgeIfNeeded()
+        }
+    }
+
+    private func embedServiceIfNeeded() {
+        if serviceViewController == nil {
+            let child = ServiceViewController(embedsInHomeHub: true)
+            serviceViewController = child
+            embed(child)
+        }
+        serviceViewController?.view.isHidden = false
+    }
+
+    private func embedMallIfNeeded() {
+        if mallViewController == nil {
+            let child = HealthMallViewController(embedsInHomeHub: true)
+            mallViewController = child
+            embed(child)
+        }
+        mallViewController?.view.isHidden = false
+    }
+
+    private func embedKnowledgeIfNeeded() {
+        if knowledgeViewController == nil {
+            let child = HomeKnowledgeViewController()
+            child.onArticleTap = { [weak self] article in
+                self?.handleNewsArticleTap(article)
+            }
+            knowledgeViewController = child
+            embed(child)
+            child.update(articles: viewModel.articles)
+        }
+        knowledgeViewController?.view.isHidden = false
+    }
+
+    private func embed(_ child: UIViewController) {
+        addChild(child)
+        contentContainer.addSubview(child.view)
+        child.view.snp.makeConstraints { $0.edges.equalToSuperview() }
+        child.didMove(toParent: self)
+    }
+
+    private func refreshInstitution() {
+        let selected = InstitutionSelectionStore.shared.selected
+        topBar.apply(
+            name: selected?.name ?? "",
+            address: selected?.fullAddress ?? ""
+        )
+    }
+
+    private func openInstitutionPicker() {
+        var params: [String: Any] = [:]
+        if let id = InstitutionSelectionStore.shared.selected?.id {
+            params["selectedId"] = id
+        }
+        Router.shared.push("/services/institution", params: params, from: self)
+    }
+
+    private func openSearch() {
+        var params: [String: Any] = [:]
+        if let hospitalId = InstitutionSelectionStore.shared.selectedHospitalId {
+            params["hospitalId"] = hospitalId
+        }
+        Router.shared.push("/services/search", params: params, from: self)
+    }
+
+    @objc private func institutionDidChange() {
+        refreshInstitution()
+    }
+
+    @objc private func shelfRequested(_ note: Notification) {
+        guard let raw = note.userInfo?["shelf"] as? String,
+              let shelf = HomeShelf(rawValue: raw) else { return }
+        HomeShelfStore.pending = nil
+        showShelf(shelf, persist: true)
     }
 
     private func handleColumnContentPageUrl(_ pageUrl: String?) {
@@ -147,10 +295,6 @@ final class HomeViewController: BaseViewController {
         let url = H5Config.authenticatedPageURL(path: "package/bridge", extraQuery: extraQuery)
         let webVC = WebViewController(urlString: url.absoluteString)
         navigationController?.pushViewController(webVC, animated: true)
-    }
-
-    private func handleArticlesMoreTapped() {
-        Router.shared.push("/companion", from: self)
     }
 
     private func handleNewsArticleTap(_ article: HomeArticleCell.Article) {
@@ -188,6 +332,12 @@ final class HomeViewController: BaseViewController {
                 self?.handleColumnContentPageUrl(action.pageUrl)
             }
             return cell
+        case .support:
+            let cell = tv.dequeueReusableCell(withIdentifier: HomeSupportCell.reuseID, for: indexPath) as! HomeSupportCell
+            cell.onTap = { [weak self] in
+                self?.present(HomeSupportCallSheet(), animated: true)
+            }
+            return cell
         case .membership:
             let cell = tv.dequeueReusableCell(withIdentifier: HomeMembershipPackagesCell.reuseID, for: indexPath) as! HomeMembershipPackagesCell
             cell.configure(packages: viewModel.membershipPackages)
@@ -200,7 +350,6 @@ final class HomeViewController: BaseViewController {
             cell.configure(members: viewModel.teamMembers, serviceDaysLeft: viewModel.teamServiceDaysLeft)
             cell.onMessageTapped = { member in
                 guard let groupId = member.groupId, !groupId.isEmpty else { return }
-                // 会话 id = groupId，直接进聊天详情（见 home-doctor-team / im spec）
                 Router.shared.push("/conversations/:id", params: ["id": groupId])
             }
             return cell
@@ -219,21 +368,9 @@ final class HomeViewController: BaseViewController {
                 Router.shared.push("/home/tasks")
             }
             return cell
-        case .articlesCard:
-            let cell = tv.dequeueReusableCell(withIdentifier: HomeArticleCell.reuseID, for: indexPath) as! HomeArticleCell
-            cell.configure(articles: viewModel.articles)
-            cell.onTapped = { [weak self] article in
-                self?.handleNewsArticleTap(article)
-            }
-            cell.onMoreTapped = { [weak self] in
-                self?.handleArticlesMoreTapped()
-            }
-            return cell
         }
     }
 }
-
-// MARK: - UITableViewDelegate
 
 extension HomeViewController: UITableViewDelegate {
 
@@ -247,9 +384,5 @@ extension HomeViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
         .leastNormalMagnitude
-    }
-
-    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
-        nil
     }
 }

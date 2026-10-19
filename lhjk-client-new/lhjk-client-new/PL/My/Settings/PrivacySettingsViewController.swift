@@ -9,8 +9,6 @@ final class PrivacySettingsViewController: BaseViewController {
 
     private enum PrefKey {
         static let noticeDismissed = "fd_privacy_notice_dismissed"
-        static let advisor = "priv_advisor"
-        static let personalized = "priv_personalized"
     }
 
     private let scrollView = UIScrollView()
@@ -109,14 +107,11 @@ final class PrivacySettingsViewController: BaseViewController {
     private func buildBusinessCard() -> UIView {
         let card = SettingsDetailSectionCard(sectionTitle: "业务权限", iconImageName: "settings_bussiness_access")
 
-        let advisorOn = UserDefaults.standard.object(forKey: PrefKey.advisor) as? Bool ?? true
-        let personalizedOn = UserDefaults.standard.object(forKey: PrefKey.personalized) as? Bool ?? true
-
         let advisorToggle = SettingsToggleCell(
             model: .init(
                 title: "健管师服务权限",
                 subtitle: "允许服务团队查看履约所需健康信息",
-                isOn: advisorOn
+                isOn: false
             ),
             showDivider: true,
             style: .notification
@@ -126,14 +121,12 @@ final class PrivacySettingsViewController: BaseViewController {
             if !val {
                 self.showAdvisorConfirmDialog { confirmed in
                     if confirmed {
-                        UserDefaults.standard.set(false, forKey: PrefKey.advisor)
                         self.showToast("已关闭健管师服务权限")
                     } else {
                         advisorToggle.isOn = true
                     }
                 }
             } else {
-                UserDefaults.standard.set(true, forKey: PrefKey.advisor)
                 self.showToast("已开启健管师服务权限")
             }
         }
@@ -142,13 +135,12 @@ final class PrivacySettingsViewController: BaseViewController {
             model: .init(
                 title: "个性化内容推荐",
                 subtitle: "关闭后不影响核心服务，仅停止个性化推荐",
-                isOn: personalizedOn
+                isOn: false
             ),
             showDivider: false,
             style: .notification
         )
         personalizedToggle.onToggle = { [weak self] val in
-            UserDefaults.standard.set(val, forKey: PrefKey.personalized)
             self?.showToast(val ? "已开启个性化内容推荐" : "已关闭个性化内容推荐")
         }
 

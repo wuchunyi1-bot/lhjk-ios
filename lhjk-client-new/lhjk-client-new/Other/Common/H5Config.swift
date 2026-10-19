@@ -4,7 +4,7 @@ import Foundation
 
 /// H5 页面路由配置 — 健康体征监测等内嵌页
 ///
-/// 健康模块体征监测由 H5 承载；打开时按宿主文档拼接 `token` + `platform=ios`。
+/// 健康模块体征监测由 H5 承载；打开时按宿主文档拼接 `token` + `platform=ios` + `senior`（1 开启 / 0 关闭）。
 /// 其它 WebView（协议页等）不在此扩展鉴权逻辑。
 enum H5Config {
 
@@ -288,7 +288,8 @@ enum H5Config {
             queryItems.append(("token", token))
         }
         queryItems.append(("platform", "ios"))
-        for (key, value) in extraQuery where !value.isEmpty {
+        queryItems.append(("senior", UserDefaults.standard.bool(forKey: "fd_senior_mode") ? "1" : "0"))
+        for (key, value) in extraQuery where !value.isEmpty && key != "senior" {
             queryItems.append((key, value))
         }
 

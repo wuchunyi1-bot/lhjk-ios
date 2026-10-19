@@ -12,11 +12,7 @@ final class ShoppingCartService {
 
     static let shared = ShoppingCartService()
 
-    private init() {
-        // 清掉旧版本地购物车 mock / 持久化残留
-        UserDefaults.standard.removeObject(forKey: "service.cart.items.v1")
-        UserDefaults.standard.removeObject(forKey: "service.cart.seeded.v1")
-    }
+    private init() {}
 
     /// 添加购物车（flag=2）或立即购买（flag=1）
     /// - Returns: 成功时 `data` 为订单 id（立即购买必用）；加购也可能返回 id，可忽略

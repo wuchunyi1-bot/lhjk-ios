@@ -130,15 +130,15 @@ enum OrderNavigationCoordinator {
         }
     }
 
-    /// FDAPP-938「选择套餐」：切到服务 Tab 根页（服务首页）
+    /// 「选择套餐」：打开首页的健康服务，并把来源 Tab（我的）退回根页面。
     static func leaveToServiceHub(from source: UIViewController) {
         dismissPresentedThen(from: source) {
-            let serviceNav = source.tabBarController?.viewControllers?[RootTabBarController.Tab.service]
+            let homeNav = source.tabBarController?.viewControllers?[RootTabBarController.Tab.home]
                 as? UINavigationController
-            if let nav = source.navigationController, nav !== serviceNav {
-                nav.popViewController(animated: false)
+            if let nav = source.navigationController, nav !== homeNav {
+                nav.popToRootViewController(animated: false)
             }
-            RootTabBarController.selectServiceTab()
+            RootTabBarController.selectHomeShelf(.service)
         }
     }
 
@@ -198,7 +198,7 @@ enum OrderNavigationCoordinator {
         }
 
         let myNav = tabBar.viewControllers?[RootTabBarController.Tab.my] as? UINavigationController
-        let serviceNav = tabBar.viewControllers?[RootTabBarController.Tab.service] as? UINavigationController
+        let homeNav = tabBar.viewControllers?[RootTabBarController.Tab.home] as? UINavigationController
         let sourceNav = source.navigationController
 
         guard let myNav, let myRoot = myNav.viewControllers.first else {
@@ -216,8 +216,8 @@ enum OrderNavigationCoordinator {
         myNav.setViewControllers(stack, animated: animated)
         tabBar.selectedIndex = RootTabBarController.Tab.my
 
-        serviceNav?.popToRootViewController(animated: false)
-        if let sourceNav, sourceNav !== myNav, sourceNav !== serviceNav {
+        homeNav?.popToRootViewController(animated: false)
+        if let sourceNav, sourceNav !== myNav, sourceNav !== homeNav {
             sourceNav.popToRootViewController(animated: false)
         }
     }

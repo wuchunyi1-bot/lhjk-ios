@@ -9,12 +9,13 @@ App 用 `WebViewController` 承载 H5。交互分两层：**打开页面**（URL
 
 ## 1. 打开 H5
 
-形态：`{baseURL}/#/{path}?token={access_token}&platform=ios&{业务参数}`
+形态：`{baseURL}/#/{path}?token={access_token}&platform=ios&senior={0\|1}&{业务参数}`
 
 | 参数 | 必填 | 说明 |
 |------|------|------|
 | `token` | 需登录页 | `auth_access_token`；H5 读取后从地址栏移除 |
 | `platform` | 建议 | 固定 `ios` |
+| `senior` | 是 | 长辈模式：`1` 开启，`0` 关闭。跳转时读本地 `fd_senior_mode`，链接里自带的同名参数不覆盖 |
 
 入口：
 
@@ -27,7 +28,7 @@ App 用 `WebViewController` 承载 H5。交互分两层：**打开页面**（URL
 `FundeH5:/package/bridge?packageId=123&hospitalId=456` 打开后即为：
 
 ```
-{base}/#/package/bridge?packageId=123&hospitalId=456&token=xxx&platform=ios
+{base}/#/package/bridge?packageId=123&hospitalId=456&token=xxx&platform=ios&senior=0
 ```
 
 ---

@@ -234,7 +234,7 @@ final class UserManager {
         return clamped
     }
 
-    /// 登出：用户详情 / 默认档案一并清除
+    /// 登出：用户详情、默认档案、完善资料展示缓存一并清除
     func clear() {
         currentUser = nil
         defaultArchive = nil
@@ -246,6 +246,10 @@ final class UserManager {
         UserDefaults.standard.removeObject(forKey: Self.defaultArchiveKey)
         UserDefaults.standard.removeObject(forKey: Self.archiveCompletionKey)
         UserDefaults.standard.removeObject(forKey: Self.legacyLoginUserInfoKey)
+        UserDefaults.standard.removeObject(forKey: "fd_profile_name")
+        UserDefaults.standard.removeObject(forKey: "fd_profile_institution")
+        UserDefaults.standard.removeObject(forKey: "fd_profile_manager")
+        UserDefaults.standard.removeObject(forKey: "fd_privacy_notice_dismissed")
         HomeService.shared.invalidateTodayTasksCache()
         ShoppingCartBadgeStore.shared.reset()
         print("[UserManager] cleared")

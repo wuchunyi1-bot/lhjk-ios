@@ -2,13 +2,13 @@ import UIKit
 import SnapKit
 
 /// 通知行 Cell — 对齐 Figma 3444:5773（消息首页-通知中心-优化后）
-/// 默认通知图标 40 / 标题 16 Medium / 分类标签 C36E20@8% / 时间右对齐 12 / 摘要单行省略
+/// 默认通知图标 40 / 标题 16 Medium / 分类标签 C36E20@8% / 时间右对齐 12 / 摘要全文换行
 /// 卡片背景置于 Cell 内部，首尾自动切 16pt 圆角，列表滚动时背景随 item 自然移动
 final class NotificationCell: UITableViewCell {
 
     static let reuseIdentifier = "NotificationCell"
 
-    /// 标准 74；长辈模式标题 22 + 正文 18，行高加一档避免裁切。
+    /// 单行摘要时的最低行高。正文多行时由 Auto Layout 继续增高。
     static var rowHeight: CGFloat { UIFont.isSeniorMode ? 86 : 74 }
     /// 分类标签高度。标准 18；长辈模式 14→18 后改为 24。
     static var tagHeight: CGFloat { UIFont.isSeniorMode ? 24 : 18 }
@@ -77,12 +77,15 @@ final class NotificationCell: UITableViewCell {
         let l = UILabel()
         l.font = .fdFont(ofSize: 14, weight: .regular)
         l.textColor = UIColor(hexString: "#6D7381")
-        l.numberOfLines = 1
-        l.lineBreakMode = .byTruncatingTail
+        l.numberOfLines = 0
+        l.lineBreakMode = .byWordWrapping
+        l.setContentCompressionResistancePriority(.required, for: .vertical)
+        l.setContentHuggingPriority(.required, for: .vertical)
         return l
     }()
 
     private var tagHeightConstraint: Constraint?
+    private var cardMinHeightConstraint: Constraint?
 
     private let separatorLine: UIView = {
         let v = UIView()
@@ -102,6 +105,7 @@ final class NotificationCell: UITableViewCell {
         cardContainer.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview()
             make.leading.trailing.equalToSuperview().inset(12)
+            cardMinHeightConstraint = make.height.greaterThanOrEqualTo(Self.rowHeight).constraint
         }
 
         [iconImageView, unreadDot, titleLabel, tagBadge, timeLabel, bodyLabel, separatorLine]
@@ -109,7 +113,8 @@ final class NotificationCell: UITableViewCell {
 
         iconImageView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(12)
-            make.centerY.equalToSuperview()
+            make.top.equalToSuperview().offset(17)
+            make.bottom.lessThanOrEqualToSuperview().offset(-17)
             make.size.equalTo(40)
         }
 
@@ -141,6 +146,7 @@ final class NotificationCell: UITableViewCell {
             make.top.equalTo(titleLabel.snp.bottom).offset(4)
             make.leading.equalTo(titleLabel)
             make.trailing.equalToSuperview().offset(-12)
+            make.bottom.equalToSuperview().offset(-16).priority(999)
         }
 
         separatorLine.snp.makeConstraints { make in
@@ -197,5 +203,6 @@ final class NotificationCell: UITableViewCell {
         timeLabel.font = .fdFont(designSize: 14, weight: .regular)
         bodyLabel.font = .fdFont(designSize: 14, weight: .regular)
         tagHeightConstraint?.update(offset: Self.tagHeight)
+        cardMinHeightConstraint?.update(offset: Self.rowHeight)
     }
 }

@@ -191,27 +191,27 @@ final class PackageCardCell: UITableViewCell {
             make.size.equalTo(Design.coverSize * scale)
         }
 
-        badgeView.snp.remakeConstraints { make in
-            if showsBadge {
+        badgeLabel.isHidden = !showsBadge
+        badgeView.isHidden = !showsBadge
+        if showsBadge {
+            badgeView.snp.remakeConstraints { make in
                 make.top.equalToSuperview().offset(Design.coverInset * scale)
                 make.trailing.equalToSuperview().offset(-8 * scale)
                 make.height.equalTo(15 * scale)
                 make.width.greaterThanOrEqualTo(26 * scale)
-            } else {
-                make.top.trailing.equalToSuperview()
-                make.width.height.equalTo(0)
             }
-        }
-
-        badgeLabel.isHidden = !showsBadge
-        if showsBadge {
             badgeLabel.snp.remakeConstraints {
                 $0.edges.equalToSuperview().inset(
                     UIEdgeInsets(top: 0, left: 3 * scale, bottom: 0, right: 3 * scale)
                 )
             }
         } else {
+            // 先去掉文字内边距，再把外框收成 0，避免左右边距和零宽同时成立。
             badgeLabel.snp.remakeConstraints { $0.edges.equalToSuperview() }
+            badgeView.snp.remakeConstraints { make in
+                make.top.trailing.equalToSuperview()
+                make.width.height.equalTo(0)
+            }
         }
 
         nameLabel.snp.remakeConstraints { make in

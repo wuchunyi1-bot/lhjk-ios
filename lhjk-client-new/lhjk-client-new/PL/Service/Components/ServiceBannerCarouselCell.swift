@@ -336,3 +336,148 @@ private final class BannerSlideCell: UICollectionViewCell {
         }
     }
 }
+
+/// 与健康服务页相同的顶部 Banner。高度仍由轮播按图片比例计算，不把图片裁进固定框。
+final class ServiceHubBannerBar: UIView, UITableViewDataSource, UITableViewDelegate {
+
+    var onBannerTap: ((ServiceHubBanner) -> Void)?
+
+    private var banners: [ServiceHubBanner] = []
+    private var bannerHeight: CGFloat = 0
+    private var heightConstraint: Constraint?
+    private var loadTask: Task<Void, Never>?
+    private var heightUpdateScheduled = false
+
+    private let tableView: UITableView = {
+        let tv = UITableView(frame: .zero, style: .plain)
+        tv.isScrollEnabled = false
+        tv.separatorStyle = .none
+        tv.backgroundColor = .clear
+        tv.rowHeight = UITableView.automaticDimension
+        tv.estimatedRowHeight = 180
+        tv.sectionHeaderHeight = 0
+        tv.sectionFooterHeight = 0
+        tv.contentInsetAdjustmentBehavior = .never
+        if #available(iOS 15.0, *) {
+            tv.sectionHeaderTopPadding = 0
+        }
+        return tv
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .clear
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.register(ServiceBannerCarouselCell.self, forCellReuseIdentifier: ServiceBannerCarouselCell.reuseID)
+        addSubview(tableView)
+        tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        snp.makeConstraints { make in
+            heightConstraint = make.height.equalTo(0).constraint
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func load() {
+        loadTask?.cancel()
+        loadTask = Task { [weak self] in
+            let items = await AppContainer.shared.columnContentCacheService.banners(
+                for: ColumnContentService.hospitalBannerCode
+            )
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                self?.apply(items.filter(\.hasImage))
+            }
+        }
+    }
+
+    func open(_ banner: ServiceHubBanner, from viewController: UIViewController?) {
+        if FundePageURL.open(banner.pageUrl, from: viewController) { return }
+        guard let path = banner.routePath else { return }
+        if let id = banner.routeParamId {
+            Router.shared.push(path, params: ["id": id])
+        } else {
+            Router.shared.push(path)
+        }
+    }
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        banners.isEmpty ? 0 : 1
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(
+            withIdentifier: ServiceBannerCarouselCell.reuseID,
+            for: indexPath
+        ) as! ServiceBannerCarouselCell
+        cell.configure(banners)
+        cell.onBannerTap = { [weak self] banner in
+            self?.onBannerTap?(banner)
+        }
+        cell.onHeightUpdated = { [weak self, weak cell] in
+            guard let self, let cell else { return }
+            let width = self.bounds.width > 1 ? self.bounds.width : UIScreen.main.bounds.width
+            let height = cell.systemLayoutSizeFitting(
+                CGSize(width: width, height: 0),
+                withHorizontalFittingPriority: .required,
+                verticalFittingPriority: .fittingSizeLevel
+            ).height
+            self.applyHeight(height)
+        }
+        return cell
+    }
+
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        bannerHeight > 1 ? bannerHeight : fallbackHeight()
+    }
+
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        .leastNormalMagnitude
+    }
+
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        .leastNormalMagnitude
+    }
+
+    private func apply(_ banners: [ServiceHubBanner]) {
+        self.banners = banners
+        isHidden = banners.isEmpty
+        if banners.isEmpty {
+            bannerHeight = 0
+            heightConstraint?.update(offset: 0)
+        } else if bannerHeight < 1 {
+            bannerHeight = fallbackHeight()
+            heightConstraint?.update(offset: bannerHeight)
+        }
+        tableView.reloadData()
+    }
+
+    /// 只改已有行的高度。行数变化必须走 reloadData，不能 beginUpdates。
+    private func applyHeight(_ height: CGFloat) {
+        let next = max(height, 1)
+        guard abs(next - bannerHeight) > 0.5 else { return }
+        bannerHeight = next
+        heightConstraint?.update(offset: next)
+        guard !heightUpdateScheduled else { return }
+        heightUpdateScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.heightUpdateScheduled = false
+            guard self.tableView.numberOfRows(inSection: 0) == 1 else { return }
+            UIView.performWithoutAnimation {
+                self.tableView.beginUpdates()
+                self.tableView.endUpdates()
+            }
+        }
+    }
+
+    private func fallbackHeight() -> CGFloat {
+        let width = bounds.width > 1 ? bounds.width : UIScreen.main.bounds.width
+        return BannerImageAspectLayout.height(
+            width: max(0, width - ServiceBannerCarouselCell.horizontalInset * 2),
+            imageSize: nil,
+            fallbackRatio: ServiceBannerCarouselCell.fallbackRatio
+        )
+    }
+}

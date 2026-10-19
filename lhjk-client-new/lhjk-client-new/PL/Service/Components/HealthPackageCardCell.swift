@@ -102,22 +102,28 @@ final class HealthPackageCardCell: UITableViewCell {
         footer.snp.makeConstraints { $0.top.equalTo(divider.snp.bottom).offset(12); $0.leading.trailing.bottom.equalToSuperview().inset(12) }
     }
 
-    func configure(_ item: HealthPackageItem, actionTitle: String = "了解详情") {
+    func configure(
+        _ item: HealthPackageItem,
+        actionTitle: String = "了解详情",
+        showsProductCode: Bool = true,
+        showsDetailButton: Bool = true
+    ) {
         coverLabel.text = item.productCode
         coverLabel.textColor = item.accent
 
-        if let badge = item.badge, !badge.isEmpty {
+        if let badge = item.badge, !badge.isEmpty, showsProductCode {
             badgeLabel.isHidden = false
             badgeLabel.text = " \(badge) "
         } else {
             badgeLabel.isHidden = true
         }
 
-        nameLabel.text = item.displayTitle
+        nameLabel.text = showsProductCode ? item.displayTitle : item.name
         descLabel.text = item.subtitle
         priceLabel.text = item.price
 
         actionButton.setTitle(actionTitle, for: .normal)
+        actionButton.isHidden = !showsDetailButton
 
         tagRow.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for tag in item.audienceTags.prefix(4) {

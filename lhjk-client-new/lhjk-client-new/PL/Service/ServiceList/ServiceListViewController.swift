@@ -6,6 +6,8 @@ import Combine
 final class ServiceListViewController: BaseViewController {
 
     private let viewModel: ServiceListViewModel
+    /// 只展示左类目 + 右套餐，不含顶部机构卡。用于健康服务页替换德系矩阵。
+    private let showsPackageBrowserOnly: Bool
     private var cancellables = Set<AnyCancellable>()
     private var lockRightScrollSync = false
     private let rightSafeAreaFill = UIView()
@@ -35,10 +37,14 @@ final class ServiceListViewController: BaseViewController {
         tv.isOpaque = true
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
-        tv.contentInset = UIEdgeInsets(top: 16, left: 0, bottom: 24, right: 0)
+        tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 24, right: 0)
+        tv.sectionHeaderTopPadding = 0
+        let headerSpacer = UIView(frame: CGRect(x: 0, y: 0, width: 1, height: 16))
+        headerSpacer.backgroundColor = .white
+        tv.tableHeaderView = headerSpacer
         tv.backgroundView = UIView()
         tv.backgroundView?.backgroundColor = .white
-        tv.register(PackageHeaderCell.self, forCellReuseIdentifier: PackageHeaderCell.reuseID)
+        tv.register(PackageSectionHeaderView.self, forHeaderFooterViewReuseIdentifier: PackageSectionHeaderView.reuseID)
         tv.register(PackageCardCell.self, forCellReuseIdentifier: PackageCardCell.reuseID)
         tv.dataSource = self
         tv.delegate = self
@@ -59,18 +65,21 @@ final class ServiceListViewController: BaseViewController {
 
     private let cartButton = ServiceCartBadgeButton(style: .nav)
 
-    init(productCode: String) {
+    init(productCode: String, showsPackageBrowserOnly: Bool = false) {
+        self.showsPackageBrowserOnly = showsPackageBrowserOnly
         self.viewModel = ServiceListViewModel(routeCode: productCode)
         super.init(nibName: nil, bundle: nil)
-        hidesBottomBarWhenPushed = true
+        hidesBottomBarWhenPushed = !showsPackageBrowserOnly
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "选择套餐"
-        setupNavigationItems()
+        if !showsPackageBrowserOnly {
+            title = "选择套餐"
+            setupNavigationItems()
+        }
         institutionCard.configure(viewModel.institution)
         viewModel.load()
     }
@@ -180,6 +189,20 @@ final class ServiceListViewController: BaseViewController {
             $0.top.equalTo(view.safeAreaLayoutGuide.snp.bottom)
         }
 
+        if showsPackageBrowserOnly {
+            institutionCard.isHidden = true
+            topDivider.isHidden = true
+            rightSafeAreaFill.isHidden = true
+            institutionCard.snp.remakeConstraints {
+                $0.top.leading.trailing.equalToSuperview()
+                $0.height.equalTo(0)
+            }
+            topDivider.snp.remakeConstraints {
+                $0.top.leading.trailing.equalToSuperview()
+                $0.height.equalTo(0)
+            }
+        }
+
         institutionCard.onSwitchTap = { [weak self] in
             guard let self else { return }
             var params: [String: Any] = ["source": "services"]
@@ -287,13 +310,32 @@ final class ServiceListViewController: BaseViewController {
         )
     }
 
-    private func syncCategoryFromRightScroll() {
-        guard !lockRightScrollSync else { return }
+    private func scrollRightTable(toSectionHeader section: Int) {
+        guard section < rightTable.numberOfSections else { return }
+        let headerY = rightTable.rectForHeader(inSection: section).minY
+        let minY = -rightTable.adjustedContentInset.top
+        let maxY = max(
+            minY,
+            rightTable.contentSize.height - rightTable.bounds.height + rightTable.adjustedContentInset.bottom
+        )
+        let y = min(max(headerY - rightTable.adjustedContentInset.top, minY), maxY)
+        rightTable.setContentOffset(CGPoint(x: 0, y: y), animated: true)
+    }
 
-        let probeY = rightTable.contentOffset.y + rightTable.adjustedContentInset.top + 1
-        let probePoint = CGPoint(x: rightTable.bounds.midX, y: probeY)
-        guard let indexPath = rightTable.indexPathForRow(at: probePoint) else { return }
-        viewModel.syncActiveCategory(fromRightIndexPath: indexPath)
+    private func syncCategoryFromRightScroll() {
+        guard !lockRightScrollSync, !viewModel.packageSections.isEmpty else { return }
+
+        let top = rightTable.contentOffset.y + rightTable.adjustedContentInset.top + 1
+        var section = 0
+        for index in 0..<viewModel.packageSections.count {
+            let headerY = rightTable.rectForHeader(inSection: index).minY
+            if headerY <= top {
+                section = index
+            } else {
+                break
+            }
+        }
+        viewModel.syncActiveCategory(fromRightIndexPath: IndexPath(row: 0, section: section))
     }
 
     private func releaseRightScrollSyncIfNeeded() {
@@ -316,8 +358,7 @@ extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate 
             return viewModel.categories.count
         }
         if viewModel.packageSections.isEmpty { return 1 }
-        // row 0 = 类目头，其余为套餐卡片
-        return 1 + viewModel.packageSections[section].rows.count
+        return viewModel.packageSections[section].rows.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -371,28 +412,38 @@ extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate 
         }
 
         let sectionData = viewModel.packageSections[indexPath.section]
-        if indexPath.row == 0 {
-            let cell = tableView.dequeueReusableCell(
-                withIdentifier: PackageHeaderCell.reuseID,
-                for: indexPath
-            ) as! PackageHeaderCell
-            cell.configure(categoryTitle: sectionData.category.title)
-            return cell
-        }
-
         let cell = tableView.dequeueReusableCell(
             withIdentifier: PackageCardCell.reuseID,
             for: indexPath
         ) as! PackageCardCell
-        let row = sectionData.rows[indexPath.row - 1]
+        let row = sectionData.rows[indexPath.row]
         cell.configure(row.item, categoryServiceId: row.categoryServiceId)
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        guard tableView.tag == 1, !viewModel.packageSections.isEmpty else { return nil }
+        let header = tableView.dequeueReusableHeaderFooterView(
+            withIdentifier: PackageSectionHeaderView.reuseID
+        ) as! PackageSectionHeaderView
+        header.configure(title: viewModel.packageSections[section].category.title)
+        return header
+    }
+
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        guard tableView.tag == 1, !viewModel.packageSections.isEmpty else {
+            return .leastNormalMagnitude
+        }
+        return PackageSectionHeaderView.height
+    }
+
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        .leastNormalMagnitude
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if tableView.tag == 0 { return CategoryNavCell.rowHeight }
         if viewModel.packageSections.isEmpty { return UITableView.automaticDimension }
-        if indexPath.row == 0 { return PackageHeaderCell.rowHeight }
         let cardWidth = max(0, tableView.bounds.width - PackageCardCell.cardHorizontalInsets)
         return PackageCardCell.rowHeight(forCardWidth: cardWidth)
     }
@@ -403,20 +454,16 @@ extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate 
             viewModel.selectCategory(id: category.id)
             lockRightScrollSync = true
             if let target = viewModel.indexPath(forCategoryId: category.id) {
-                rightTable.scrollToRow(
-                    at: target,
-                    at: .top,
-                    animated: true
-                )
-                if target.section == 0, target.row == 0 {
+                scrollRightTable(toSectionHeader: target.section)
+                if target.section == 0 {
                     releaseRightScrollSyncIfNeeded()
                 }
             } else {
                 releaseRightScrollSyncIfNeeded()
             }
-        } else if indexPath.row > 0, !viewModel.packageSections.isEmpty {
+        } else if !viewModel.packageSections.isEmpty {
             let sectionData = viewModel.packageSections[indexPath.section]
-            let row = sectionData.rows[indexPath.row - 1]
+            let row = sectionData.rows[indexPath.row]
             Router.shared.push(
                 "/services/pkg",
                 params: row.item.packageDetailRouteParams(categoryServiceId: row.categoryServiceId)

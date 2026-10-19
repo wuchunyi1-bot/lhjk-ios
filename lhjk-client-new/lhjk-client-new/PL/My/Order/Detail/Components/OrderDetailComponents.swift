@@ -1172,8 +1172,14 @@ final class OrderDetailInfoView: UIView {
            !mergedExpanded.contains(where: { $0.0 == "手机号" }) {
             mergedExpanded.append(("手机号", phone))
         }
+        if let period = packageServicePeriodText(begin: detail.beginTime, end: detail.endTime),
+           !mergedExpanded.contains(where: { $0.0 == "套餐服务期限" }) {
+            mergedExpanded.append(("套餐服务期限", period))
+        }
         mergedExpanded.forEach { title, value in
-            expandedStack.addArrangedSubview(infoRow(title, value))
+            expandedStack.addArrangedSubview(
+                infoRow(title, value, multiline: title == "套餐服务期限")
+            )
         }
 
         let hasExpandedContent = !mergedExpanded.isEmpty
@@ -1190,6 +1196,22 @@ final class OrderDetailInfoView: UIView {
     private func trimmedNonEmpty(_ text: String?) -> String? {
         let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// 套餐服务期：`beginTime - endTime`。缺一端时只展示有值的一端。
+    private func packageServicePeriodText(begin: String?, end: String?) -> String? {
+        let start = trimmedNonEmpty(begin)
+        let finish = trimmedNonEmpty(end)
+        switch (start, finish) {
+        case let (start?, finish?):
+            return "\(start) - \(finish)"
+        case let (start?, nil):
+            return start
+        case let (nil, finish?):
+            return finish
+        default:
+            return nil
+        }
     }
 
     private func orderNumberRow(_ value: String) -> UIView {

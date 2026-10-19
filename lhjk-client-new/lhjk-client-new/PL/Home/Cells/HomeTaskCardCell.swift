@@ -6,8 +6,10 @@ final class HomeTaskCardCell: UITableViewCell {
 
     static let reuseID = "HomeTaskCardCell"
 
-    /// 设计稿 @3x 957×228 → pt 宽高比
-    private static let progressBannerFallbackRatio: CGFloat = 228.0 / 957.0
+    /// 切图 `home_task_progress_banner` @3x 957×198。未读到图片尺寸时用这个比。
+    private static let progressBannerFallbackRatio: CGFloat = 198.0 / 957.0
+    /// 卡片左右 16 + 进度条相对卡片左右 12
+    private static let bannerHorizontalInset: CGFloat = 56
 
     var onTaskAction: ((DailyHealthTask) -> Void)?
     var onViewAll: (() -> Void)?
@@ -25,6 +27,8 @@ final class HomeTaskCardCell: UITableViewCell {
         l.text = "今日健康任务"
         l.font = .fdFont(ofSize: 18, weight: .medium)
         l.textColor = .fdText
+        l.setContentCompressionResistancePriority(.required, for: .vertical)
+        l.setContentHuggingPriority(.required, for: .vertical)
         return l
     }()
 
@@ -81,6 +85,9 @@ final class HomeTaskCardCell: UITableViewCell {
     }()
 
     private var bannerHeightConstraint: Constraint?
+    private var appliedBannerHeight: CGFloat = 66
+    private var appliedImageHeight: CGFloat = 66
+    private var heightRefreshScheduled = false
 
     // MARK: - Task Stack
 
@@ -107,7 +114,27 @@ final class HomeTaskCardCell: UITableViewCell {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        updateBannerImageHeightIfNeeded()
+        if applyBannerHeights(cellWidth: contentView.bounds.width) {
+            scheduleRowHeightRefresh()
+        }
+    }
+
+    /// 量行高时进度条往往还没有宽度，不能等 `layoutSubviews` 再改高度，否则多出来的高度会压扁标题。
+    override func systemLayoutSizeFitting(
+        _ targetSize: CGSize,
+        withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority,
+        verticalFittingPriority: UILayoutPriority
+    ) -> CGSize {
+        var size = targetSize
+        if size.width <= 1, let tableView = enclosingTableView {
+            size.width = tableView.bounds.width
+        }
+        _ = applyBannerHeights(cellWidth: size.width)
+        return super.systemLayoutSizeFitting(
+            size,
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: verticalFittingPriority
+        )
     }
 
     private func setupHierarchy() {
@@ -179,19 +206,50 @@ final class HomeTaskCardCell: UITableViewCell {
         }
     }
 
-    private func updateBannerImageHeightIfNeeded() {
-        let bannerWidth = bannerView.bounds.width
-        guard bannerWidth > 1 else { return }
+    /// 按单元格宽度直接算进度条高度。返回是否改了约束。
+    @discardableResult
+    private func applyBannerHeights(cellWidth: CGFloat) -> Bool {
+        let bannerWidth = max(0, cellWidth - Self.bannerHorizontalInset)
+        guard bannerWidth > 1 else { return false }
 
-        let imageSize = bannerImageView.image?.size
         let imageHeight = BannerImageAspectLayout.height(
             width: bannerWidth,
-            imageSize: imageSize,
+            imageSize: bannerImageView.image?.size,
             fallbackRatio: Self.progressBannerFallbackRatio
         )
         let bannerHeight = max(66, imageHeight)
+        guard abs(bannerHeight - appliedBannerHeight) > 0.5
+            || abs(imageHeight - appliedImageHeight) > 0.5 else {
+            return false
+        }
+        appliedBannerHeight = bannerHeight
+        appliedImageHeight = imageHeight
         bannerHeightConstraint?.update(offset: bannerHeight)
         bannerImageView.snp.updateConstraints { $0.height.equalTo(imageHeight) }
+        return true
+    }
+
+    private func scheduleRowHeightRefresh() {
+        guard !heightRefreshScheduled else { return }
+        heightRefreshScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.heightRefreshScheduled = false
+            guard let tableView = self.enclosingTableView else { return }
+            UIView.performWithoutAnimation {
+                tableView.beginUpdates()
+                tableView.endUpdates()
+            }
+        }
+    }
+
+    private var enclosingTableView: UITableView? {
+        var view: UIView? = superview
+        while let current = view {
+            if let tableView = current as? UITableView { return tableView }
+            view = current.superview
+        }
+        return nil
     }
 
     func configure(
@@ -298,7 +356,7 @@ final class HomeTaskCardCell: UITableViewCell {
         subtitle.text = subtitleText.isEmpty ? task.desc : subtitleText
 
         let action = UIButton(type: .system)
-        action.titleLabel?.font = .fdFont(ofSize: 12, weight: .medium)
+        action.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
         action.clipsToBounds = true
         action.titleLabel?.lineBreakMode = .byClipping
         let buttonSize = Self.actionButtonSize()
@@ -364,7 +422,7 @@ final class HomeTaskCardCell: UITableViewCell {
     /// 普通模式 70×28。长辈模式按「去完成」字号加宽加高。
     private static func actionButtonSize() -> CGSize {
         guard UIFont.isSeniorMode else { return CGSize(width: 70, height: 28) }
-        let font = UIFont.fdFont(ofSize: 12, weight: .medium)
+        let font = UIFont.fdFont(ofSize: 14, weight: .medium)
         let textWidth = ceil(("去完成" as NSString).size(withAttributes: [.font: font]).width)
         return CGSize(width: max(88, textWidth + 32), height: 36)
     }

@@ -152,7 +152,7 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         view.addSubview(tableView)
         tableView.refreshControl = refreshControl
 
-        expiredBanner.onTap = { RootTabBarController.selectServiceTab() }
+        expiredBanner.onTap = { RootTabBarController.selectHomeShelf(.mall) }
 
         view.addSubview(recordingOverlay)
         recordingOverlay.addSubview(recordingBgView)

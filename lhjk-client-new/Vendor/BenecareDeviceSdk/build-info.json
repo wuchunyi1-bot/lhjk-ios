@@ -1,0 +1,9 @@
+{
+  "sdkVersion": "0.1.0",
+  "build": "0.1.0-215",
+  "platform": "ios",
+  "buildDate": "2026-10-14",
+  "flutterVersion": "3.44.6",
+  "dartSdkVersion": "3.12.2",
+  "flutterEngineRevision": "83675ed27633283e7fc296c8bca22e841224c096"
+}

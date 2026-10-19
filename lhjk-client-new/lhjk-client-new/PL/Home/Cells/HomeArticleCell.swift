@@ -88,7 +88,9 @@ final class HomeArticleCell: UITableViewCell {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    func configure(articles: [Article]) {
+    func configure(articles: [Article], title: String = "健康陪伴", showsMore: Bool = true) {
+        titleLabel.text = title
+        moreButton.isHidden = !showsMore
         listStack.arrangedSubviews.forEach {
             listStack.removeArrangedSubview($0)
             $0.removeFromSuperview()

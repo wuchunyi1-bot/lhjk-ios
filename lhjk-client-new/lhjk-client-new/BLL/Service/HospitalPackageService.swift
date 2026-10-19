@@ -4,10 +4,8 @@ import Foundation
 
 /// 商城套包 — `GET /v1/hospitalPackage/getEnabledHospitalPackagePage`
 ///
-/// 同一接口，两种入参场景：
-/// - **推荐服务**：`packageMainCategory` 必传
-/// - **搜索套餐**：`name` 必传（关键字）
-/// - 两种场景若有 `hospitalId` 则一并传递
+/// 推荐服务：`packageMainCategory` 必传；有 `hospitalId` 则一并传递。
+/// 首页搜索：`GET /v1/hospitalPackage/searchEnabledPackagePage`（`type` 1 健康服务 / 2 富德优选）。
 ///
 /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/484150836e0
 final class HospitalPackageService {
@@ -203,46 +201,49 @@ final class HospitalPackageService {
         return mapPackageItems(page.records)
     }
 
-    // MARK: - 搜索套餐（按关键字）
+    // MARK: - 首页搜索（健康服务 / 富德优选）
 
-    func searchPackages(
+    /// `GET /v1/hospitalPackage/searchEnabledPackagePage`
+    /// - `type`：1 健康服务（传当前机构），2 富德优选（不传 `hospitalId`，由服务端使用富德机构）
+    /// - `keyword`：模糊匹配套餐名称、一句话卖点、套餐内商品名称
+    func searchEnabledPackagePage(
         keyword: String,
+        type: Int,
         hospitalId: String? = nil,
         pageNum: Int = 1,
         pageSize: Int = 10
     ) async throws -> PaginatedHospitalPackageData {
-        guard let name = Self.nonEmpty(keyword) else {
+        guard let keyword = Self.nonEmpty(keyword) else {
             throw HospitalPackageServiceError.missingSearchKeyword
         }
 
         var params: [String: Any] = [
-            "name": name,
+            "keyword": keyword,
+            "type": String(type),
             "pageNum": String(pageNum),
             "pageSize": String(pageSize),
         ]
-        if let hospitalId = Self.apiHospitalId(hospitalId) {
-            params["hospitalId"] = hospitalId
-        } else {
-            params["hospitalId"] = Self.temporaryHospitalId
+        if type == HospitalPackageCategoryType.hospitalService {
+            params["hospitalId"] = Self.resolvedHospitalId(hospitalId)
         }
 
-        return try await requestPackages(params: params)
-    }
-
-    /// 搜索关键字 → UI 模型
-    func searchPackageItems(
-        keyword: String,
-        hospitalId: String? = nil,
-        pageNum: Int = 1,
-        pageSize: Int = 10
-    ) async throws -> [HealthPackageItem] {
-        let page = try await searchPackages(
-            keyword: keyword,
-            hospitalId: hospitalId,
-            pageNum: pageNum,
-            pageSize: pageSize
+        let response: APIResponse<PaginatedHospitalPackageData> = try await APIManager.shared.getAsync(
+            path: "/v1/hospitalPackage/searchEnabledPackagePage",
+            parameters: params,
+            responseType: APIResponse<PaginatedHospitalPackageData>.self
         )
-        return mapPackageItems(page.records)
+
+        guard response.isSuccess else {
+            throw HospitalPackageServiceError.requestFailed(response.msg ?? "搜索套餐失败")
+        }
+
+        return response.data ?? PaginatedHospitalPackageData(
+            totalRecords: 0,
+            pageSize: pageSize,
+            totalPages: 0,
+            currentPage: pageNum,
+            records: []
+        )
     }
 
     // MARK: - 套餐详情

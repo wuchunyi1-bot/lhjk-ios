@@ -232,7 +232,6 @@ final class ChangePhoneViewController: BaseViewController {
             do {
                 try await UserService.shared.changeMobile(oldMobile: oldPhone, newMobile: phone, checkCode: code)
                 await MainActor.run {
-                    UserDefaults.standard.set(phone, forKey: "current_user_mobile")
                     showToast("手机号已更换")
                     Task { await UserManager.shared.refreshUserInfo() }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
@@ -252,10 +251,7 @@ final class ChangePhoneViewController: BaseViewController {
     // MARK: - Helpers
 
     private func resolveCurrentPhone() -> String {
-        let fromUser = UserManager.shared.currentUser?.mobile?
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if !fromUser.isEmpty { return fromUser }
-        return UserDefaults.standard.string(forKey: "current_user_mobile")?
+        UserManager.shared.currentUser?.account?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 

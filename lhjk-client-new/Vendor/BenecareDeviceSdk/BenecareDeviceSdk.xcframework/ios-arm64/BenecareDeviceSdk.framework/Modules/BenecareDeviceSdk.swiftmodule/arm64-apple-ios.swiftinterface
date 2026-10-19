@@ -1,0 +1,136 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.3.2 effective-5.10 (swiftlang-6.3.2.1.108 clang-2100.1.1.101)
+// swift-module-flags: -target arm64-apple-ios13.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -O -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -module-name BenecareDeviceSdk
+// swift-module-flags-ignorable: -no-verify-emitted-module-interface -formal-cxx-interoperability-mode=off -interface-compiler-version 6.3.2
+import Foundation
+import Swift
+import UIKit
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+@objc(BNDeviceIdentity) final public class DeviceIdentity : ObjectiveC.NSObject {
+  @objc final public let mac: Swift.String
+  @objc final public let sn: Swift.String?
+  @objc public init(mac: Swift.String, sn: Swift.String? = nil)
+  @objc deinit
+}
+@objc(BNSdkConfig) final public class SdkConfig : ObjectiveC.NSObject {
+  @objc final public let storageNamespace: Swift.String
+  @objc final public let holterUserId: Swift.String?
+  @objc public init(storageNamespace: Swift.String = "default", holterUserId: Swift.String? = nil)
+  @objc convenience public init(storageNamespace: Swift.String)
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(BNHolterStatus) final public class HolterStatus : ObjectiveC.NSObject {
+  @objc final public let known: Swift.Bool
+  @objc final public let starting: Swift.Bool
+  @objc final public let recording: Swift.Bool
+  @objc final public let elapsedSeconds: Foundation.NSNumber?
+  @objc final public let remainingSeconds: Foundation.NSNumber?
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(BNSdkInfo) final public class SdkInfo : ObjectiveC.NSObject {
+  @objc final public let sdkVersion: Swift.String
+  @objc final public let protocolVersion: Swift.Int
+  @objc final public let capabilities: [Swift.String]
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(BNDeviceStatus) final public class DeviceStatus : ObjectiveC.NSObject {
+  @objc final public let linkState: Swift.String
+  @objc final public let battery: Foundation.NSNumber?
+  @objc final public let heartRate: Foundation.NSNumber?
+  @objc final public let charging: Swift.Bool
+  @objc final public let family: Swift.String
+  @objc final public let sampleRate: Swift.Int
+  @objc final public let firmwareVersion: Swift.String
+  @objc final public let deviceId: Swift.String
+  @objc final public let mac: Swift.String
+  @objc final public let leadStates: [Swift.String : Foundation.NSNumber]
+  @objc final public let availableLeads: [Swift.String]
+  @objc final public let holter: BenecareDeviceSdk.HolterStatus
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(BNDiscoveredDevice) final public class DiscoveredDevice : ObjectiveC.NSObject {
+  @objc final public let deviceId: Swift.String
+  @objc final public let mac: Swift.String
+  @objc final public let name: Swift.String
+  @objc final public let rssi: Swift.Int
+  @objc final public let family: Swift.String
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(BNWaveformChunk) final public class WaveformChunk : ObjectiveC.NSObject {
+  @objc final public let sessionId: Swift.Int64
+  @objc final public let sequence: Swift.Int64
+  @objc final public let sampleRate: Swift.Int
+  @objc final public let cleared: Swift.Bool
+  @objc final public let unit: Swift.String
+  @objc final public let processing: Swift.String
+  @objc final public let leads: [Swift.String : [Foundation.NSNumber]]
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc(BNWaveformOptions) final public class WaveformOptions : ObjectiveC.NSObject {
+  @objc final public var lead: Swift.String
+  @objc final public var twelveLead: Swift.Bool
+  @objc final public var speed: Swift.Double
+  @objc final public var gain: Swift.Double
+  @objc override dynamic public init()
+  @objc deinit
+}
+@objc(BNDeviceSdkDelegate) public protocol DeviceSdkDelegate {
+  @objc optional func deviceSdkDidUpdateStatus(_ status: BenecareDeviceSdk.DeviceStatus)
+  @objc optional func deviceSdkDidDiscover(_ devices: [BenecareDeviceSdk.DiscoveredDevice])
+  @objc optional func deviceSdkDidChangeBinding(_ identity: BenecareDeviceSdk.DeviceIdentity?)
+  @objc optional func deviceSdkDidScan(_ identity: BenecareDeviceSdk.DeviceIdentity, viewId: Swift.String)
+  @objc optional func deviceSdkDidCancelScan(viewId: Swift.String)
+  @objc optional func deviceSdkDidReceiveWaveform(_ chunk: BenecareDeviceSdk.WaveformChunk)
+  @objc optional func deviceSdkWaveformReady(sessionId: Swift.Int64)
+  @objc optional func deviceSdkDidFail(_ error: Foundation.NSError)
+}
+@_inheritsConvenienceInitializers @objc(BNDeviceSdk) final public class DeviceSdk : ObjectiveC.NSObject {
+  @objc final public func initialize(_ config: BenecareDeviceSdk.SdkConfig, completion: @escaping (BenecareDeviceSdk.SdkInfo?, Foundation.NSError?) -> Swift.Void)
+  @objc final public func getSdkInfo(_ completion: @escaping (BenecareDeviceSdk.SdkInfo?, Foundation.NSError?) -> Swift.Void)
+  @objc final public func parseDeviceQr(_ raw: Swift.String, completion: @escaping (BenecareDeviceSdk.DeviceIdentity?, Foundation.NSError?) -> Swift.Void)
+  @objc final public func bindLocalDevice(_ identity: BenecareDeviceSdk.DeviceIdentity, autoConnect: Swift.Bool, completion: @escaping (Foundation.NSError?) -> Swift.Void)
+  @objc final public func getBoundDevice(_ completion: @escaping (BenecareDeviceSdk.DeviceIdentity?, Foundation.NSError?) -> Swift.Void)
+  @objc final public func unbindLocalDevice(_ completion: @escaping (Foundation.NSError?) -> Swift.Void)
+  @objc final public func startScan(_ completion: @escaping (Foundation.NSError?) -> Swift.Void)
+  @objc final public func stopScan(_ completion: @escaping (Foundation.NSError?) -> Swift.Void)
+  @objc final public func connectBoundDevice(_ completion: @escaping (Foundation.NSError?) -> Swift.Void)
+  @objc final public func connect(_ deviceId: Swift.String, completion: @escaping (Foundation.NSError?) -> Swift.Void)
+  @objc final public func disconnect(_ completion: @escaping (Foundation.NSError?) -> Swift.Void)
+  @objc final public func startHolter(hours: Swift.Int, completion: @escaping (Foundation.NSError?) -> Swift.Void)
+  @objc final public func getDeviceStatus(_ completion: @escaping (BenecareDeviceSdk.DeviceStatus?, Foundation.NSError?) -> Swift.Void)
+  @objc final public func setDelegate(_ delegate: (any BenecareDeviceSdk.DeviceSdkDelegate)?, waveform: Swift.Bool, completion: @escaping (Foundation.NSError?) -> Swift.Void)
+  @objc final public func createScannerContainer(_ completion: @escaping (BenecareDeviceSdk.DeviceSdkContainer?, Foundation.NSError?) -> Swift.Void)
+  @objc final public func createMonitorContainer(_ completion: @escaping (BenecareDeviceSdk.DeviceSdkContainer?, Foundation.NSError?) -> Swift.Void)
+  @objc final public func createWaveformContainer(_ options: BenecareDeviceSdk.WaveformOptions, completion: @escaping (BenecareDeviceSdk.DeviceSdkContainer?, Foundation.NSError?) -> Swift.Void)
+  @objc final public func dispose(_ completion: @escaping (Foundation.NSError?) -> Swift.Void)
+  @objc override dynamic public init()
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(BNDeviceSdkContainer) @_Concurrency.MainActor @preconcurrency final public class DeviceSdkContainer : UIKit.UIViewController {
+  @_Concurrency.MainActor @preconcurrency @objc override final public var childForStatusBarStyle: UIKit.UIViewController? {
+    @objc get
+  }
+  @_Concurrency.MainActor @preconcurrency @objc override final public var childForStatusBarHidden: UIKit.UIViewController? {
+    @objc get
+  }
+  @_Concurrency.MainActor @preconcurrency @objc override final public func viewDidLoad()
+  @objc @_Concurrency.MainActor @preconcurrency final public func close(_ completion: @escaping (Foundation.NSError?) -> Swift.Void)
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc(BNDeviceMonitorViewController) @_Concurrency.MainActor @preconcurrency final public class DeviceMonitorViewController : UIKit.UIViewController {
+  @_Concurrency.MainActor @preconcurrency @objc convenience dynamic public init()
+  @objc @_Concurrency.MainActor @preconcurrency public init(configuration: BenecareDeviceSdk.SdkConfig)
+  @_Concurrency.MainActor @preconcurrency @objc override final public var childForStatusBarStyle: UIKit.UIViewController? {
+    @objc get
+  }
+  @_Concurrency.MainActor @preconcurrency @objc override final public var childForStatusBarHidden: UIKit.UIViewController? {
+    @objc get
+  }
+  @_Concurrency.MainActor @preconcurrency @objc override final public func viewDidLoad()
+  @_Concurrency.MainActor @preconcurrency @objc override final public func viewDidDisappear(_ animated: Swift.Bool)
+  @_Concurrency.MainActor @preconcurrency @objc override final public func didMove(toParent parent: UIKit.UIViewController?)
+  @objc @_Concurrency.MainActor @preconcurrency final public func close()
+  @objc deinit
+}

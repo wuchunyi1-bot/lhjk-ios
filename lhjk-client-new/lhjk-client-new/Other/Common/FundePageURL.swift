@@ -86,11 +86,12 @@ enum FundePageURL {
         }
     }
 
-    /// 直开 H5：保留业务 query（如 `taskId`），由宿主写入 `token` / `platform=ios`（覆盖链接里自带的同名项）。
+    /// 直开 H5：保留业务 query（如 `taskId`），由宿主写入 `token` / `platform=ios` / `senior`（覆盖链接里自带的同名项）。
     private static func authenticatedH5URL(path: String, originalQuery: [String: String]) -> URL {
         var extra = originalQuery
         extra.removeValue(forKey: "token")
         extra.removeValue(forKey: "platform")
+        extra.removeValue(forKey: "senior")
         return H5Config.authenticatedPageURL(path: path, extraQuery: extra)
     }
 
