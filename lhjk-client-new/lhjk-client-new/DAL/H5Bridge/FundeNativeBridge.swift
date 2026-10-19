@@ -1,11 +1,12 @@
 import Foundation
+import QuickLook
 import UIKit
 import WebKit
 import Combine
 
 /// H5 ↔ App Bridge — 对齐《H5 宿主接入文档》
 ///
-/// - `FundeBridge`：套餐中间页等宿主导航（扁平 `{ action, packageId, hospitalId }`）
+/// - `FundeBridge`：套餐中间页、保存食谱、文档预览（扁平 JSON）
 /// - `FundeNative`：体重 BLE（`{ action, params, callbackId }`）
 /// Native → H5: `window.__fundeBridge.respond|reject|emit`
 final class FundeNativeBridge: NSObject {
@@ -18,6 +19,10 @@ final class FundeNativeBridge: NSObject {
     private weak var hostViewController: UIViewController?
     private let enablesWeightBle: Bool
     private var cancellables = Set<AnyCancellable>()
+    private var documentPreviewGeneration = 0
+    private var documentLoadingAlert: UIAlertController?
+    /// Quick Look 不持有 dataSource，必须由 Bridge 强引用到关闭。
+    private var documentPreviewSession: DocumentPreviewSession?
 
     init(
         webView: WKWebView,
@@ -34,6 +39,10 @@ final class FundeNativeBridge: NSObject {
     }
 
     func detach() {
+        documentPreviewGeneration += 1
+        documentLoadingAlert?.dismiss(animated: false)
+        documentLoadingAlert = nil
+        documentPreviewSession = nil
         cancellables.removeAll()
         webView = nil
         hostViewController = nil
@@ -68,6 +77,8 @@ final class FundeNativeBridge: NSObject {
             handleNavigatePackageDetail(body: body, params: params)
         case "saveImageToAlbum":
             handleSaveImageToAlbum(body: body, params: params, callbackId: callbackId)
+        case "previewDocument":
+            handlePreviewDocument(body: body, params: params)
         case "gotoBuy":
             openServicePackageList()
         case "navigateH5", "openH5", "openH5Page", "openPage":
@@ -154,6 +165,123 @@ final class FundeNativeBridge: NSObject {
                     self.reject(callbackId, message: error.localizedDescription)
                 }
             }
+        }
+    }
+
+    /// 体检报告「查看原件」。无异步回传，失败只在宿主提示。
+    private func handlePreviewDocument(body: [String: Any], params: [String: Any]) {
+        let fileURLString = Self.stringValue(body["fileUrl"])
+            ?? Self.stringValue(params["fileUrl"])
+            ?? ""
+        let fileName = Self.stringValue(body["fileName"])
+            ?? Self.stringValue(params["fileName"])
+            ?? "报告原件"
+        let fileType = (
+            Self.stringValue(body["fileType"])
+            ?? Self.stringValue(params["fileType"])
+            ?? ""
+        ).lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "."))
+
+        guard let remoteURL = URL(string: fileURLString),
+              remoteURL.scheme?.lowercased() == "https" else {
+            showDocumentFailure(.invalidAddress)
+            return
+        }
+        guard DocumentPreviewFile.allowedTypes.contains(fileType) else {
+            showDocumentFailure(.unsupportedType)
+            return
+        }
+
+        documentPreviewGeneration += 1
+        let generation = documentPreviewGeneration
+        showDocumentLoading()
+        Task { [weak self] in
+            do {
+                let localURL = try await DocumentPreviewFile.download(
+                    from: remoteURL,
+                    displayName: fileName,
+                    fileType: fileType
+                )
+                await MainActor.run {
+                    guard let self, generation == self.documentPreviewGeneration else {
+                        try? FileManager.default.removeItem(at: localURL)
+                        return
+                    }
+                    self.presentDocumentPreview(
+                        localURL: localURL,
+                        title: fileName,
+                        generation: generation
+                    )
+                }
+            } catch let error as DocumentPreviewError {
+                await MainActor.run {
+                    guard let self, generation == self.documentPreviewGeneration else { return }
+                    self.hideDocumentLoading {
+                        self.showDocumentFailure(error)
+                    }
+                }
+            } catch let error as URLError {
+                await MainActor.run {
+                    guard let self, generation == self.documentPreviewGeneration else { return }
+                    self.hideDocumentLoading {
+                        self.showDocumentFailure(DocumentPreviewError(urlError: error))
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    guard let self, generation == self.documentPreviewGeneration else { return }
+                    self.hideDocumentLoading {
+                        self.showDocumentFailure(.network)
+                    }
+                }
+            }
+        }
+    }
+
+    private func showDocumentLoading() {
+        guard let host = hostViewController, host.presentedViewController == nil else { return }
+        let alert = UIAlertController(title: nil, message: "正在打开文档…", preferredStyle: .alert)
+        documentLoadingAlert = alert
+        host.present(alert, animated: false)
+    }
+
+    private func hideDocumentLoading(completion: (() -> Void)? = nil) {
+        let alert = documentLoadingAlert
+        documentLoadingAlert = nil
+        if let alert, alert.presentingViewController != nil {
+            alert.dismiss(animated: false, completion: completion)
+        } else {
+            completion?()
+        }
+    }
+
+    private func showDocumentFailure(_ error: DocumentPreviewError) {
+        FDToast.show(error.message, duration: 2)
+    }
+
+    private func presentDocumentPreview(localURL: URL, title: String, generation: Int) {
+        let item = DocumentPreviewItem(fileURL: localURL, title: title)
+        guard QLPreviewController.canPreview(item) else {
+            try? FileManager.default.removeItem(at: localURL)
+            hideDocumentLoading {
+                self.showDocumentFailure(.unreadable)
+            }
+            return
+        }
+        let session = DocumentPreviewSession(item: item)
+        session.onDismiss = { [weak self] in
+            guard let self, self.documentPreviewSession === session else { return }
+            self.documentPreviewSession = nil
+            try? FileManager.default.removeItem(at: localURL)
+        }
+        documentPreviewSession = session
+        let preview = QLPreviewController()
+        preview.dataSource = session
+        preview.delegate = session
+        hideDocumentLoading { [weak self] in
+            guard let self, generation == self.documentPreviewGeneration else { return }
+            guard let host = self.hostViewController else { return }
+            host.present(preview, animated: true)
         }
     }
 
@@ -395,5 +523,127 @@ final class FundeNativeBridge: NSObject {
             }
         }
         return "\"\(escaped)\""
+    }
+}
+
+private enum DocumentPreviewError: Error {
+    case invalidAddress
+    case unsupportedType
+    case expired
+    case http(Int)
+    case timeout
+    case network
+    case empty
+    case unreadable
+
+    init(urlError: URLError) {
+        switch urlError.code {
+        case .timedOut:
+            self = .timeout
+        default:
+            self = .network
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .invalidAddress:
+            return "无法打开文档，请返回报告重新获取"
+        case .unsupportedType:
+            return "暂不支持预览该文件"
+        case .expired:
+            return "链接已过期，请返回报告重新获取"
+        case .http(let code):
+            return "下载失败（\(code)），请稍后重试"
+        case .timeout:
+            return "下载超时，请稍后重试"
+        case .network:
+            return "网络异常，请稍后重试"
+        case .empty, .unreadable:
+            return "文件无法预览"
+        }
+    }
+}
+
+private enum DocumentPreviewFile {
+    static let allowedTypes: Set<String> = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"]
+
+    static func download(from remoteURL: URL, displayName: String, fileType: String) async throws -> URL {
+        var request = URLRequest(url: remoteURL)
+        request.timeoutInterval = 60
+        request.httpShouldHandleCookies = false
+        let (tempURL, response) = try await URLSession.shared.download(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw DocumentPreviewError.network
+        }
+        switch http.statusCode {
+        case 200...299:
+            break
+        case 401, 403:
+            throw DocumentPreviewError.expired
+        default:
+            throw DocumentPreviewError.http(http.statusCode)
+        }
+        let attributes = try FileManager.default.attributesOfItem(atPath: tempURL.path)
+        let size = (attributes[.size] as? NSNumber)?.int64Value ?? 0
+        guard size > 0 else { throw DocumentPreviewError.empty }
+
+        let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("FundeDocumentPreview", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let destination = directory.appendingPathComponent(storageName(displayName: displayName, fileType: fileType))
+        if FileManager.default.fileExists(atPath: destination.path) {
+            try FileManager.default.removeItem(at: destination)
+        }
+        try FileManager.default.moveItem(at: tempURL, to: destination)
+        return destination
+    }
+
+    /// 显示名去掉路径字符后作为落盘名，并带上类型扩展名。
+    private static func storageName(displayName: String, fileType: String) -> String {
+        let forbidden = CharacterSet(charactersIn: "/\\:\u{0}")
+        var base = displayName.components(separatedBy: forbidden).joined(separator: "_")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if base.isEmpty || base == "." || base == ".." {
+            base = "报告原件"
+        }
+        let currentExt = (base as NSString).pathExtension.lowercased()
+        if currentExt != fileType {
+            if !currentExt.isEmpty {
+                base = (base as NSString).deletingPathExtension
+            }
+            base += ".\(fileType)"
+        }
+        return "\(UUID().uuidString)-\(base)"
+    }
+}
+
+private final class DocumentPreviewItem: NSObject, QLPreviewItem {
+    let previewItemURL: URL?
+    let previewItemTitle: String?
+
+    init(fileURL: URL, title: String) {
+        previewItemURL = fileURL
+        previewItemTitle = title
+        super.init()
+    }
+}
+
+private final class DocumentPreviewSession: NSObject, QLPreviewControllerDataSource, QLPreviewControllerDelegate {
+    let item: DocumentPreviewItem
+    var onDismiss: (() -> Void)?
+
+    init(item: DocumentPreviewItem) {
+        self.item = item
+    }
+
+    func numberOfPreviewItems(in controller: QLPreviewController) -> Int { 1 }
+
+    func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
+        item
+    }
+
+    func previewControllerDidDismiss(_ controller: QLPreviewController) {
+        onDismiss?()
     }
 }

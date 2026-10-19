@@ -11,6 +11,7 @@ final class SysNotifyCell: UITableViewCell {
     weak var delegate: ChatCellDelegate?
     private var currentMessage: ChatMessage?
     private var resolved: IMCardResolved?
+    private var appliedBubbleWidth: CGFloat = 0
 
     // MARK: - Chrome
 
@@ -192,6 +193,7 @@ final class SysNotifyCell: UITableViewCell {
         clearStack(commentStack)
         resolved = nil
         currentMessage = nil
+        appliedBubbleWidth = 0
         monitorIconCircle.isHidden = true
         tagButton.isHidden = true
         if var config = tagButton.configuration {
@@ -247,6 +249,18 @@ final class SysNotifyCell: UITableViewCell {
 
         applyCardContent(card)
         layoutForStaff(isStaff, hasCover: card?.showsCover == true, showUser: showUser, card: card)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let width = contentView.bounds.width
+        guard currentMessage != nil, width > 1, abs(width - appliedBubbleWidth) > 0.5 else { return }
+        layoutForStaff(
+            currentMessage?.isStaff == true,
+            hasCover: resolved?.showsCover == true,
+            showUser: resolved?.isShowUser ?? true,
+            card: resolved
+        )
     }
 
     private func applyCardContent(_ card: IMCardResolved?) {
@@ -584,7 +598,7 @@ final class SysNotifyCell: UITableViewCell {
                 wrap.addSubview(line)
                 line.snp.makeConstraints { make in
                     make.leading.trailing.bottom.equalToSuperview()
-                    make.height.equalTo(1 / UIScreen.main.scale)
+                    make.height.equalTo(line.fdHairline)
                 }
             }
             row.addArrangedSubview(wrap)
@@ -649,6 +663,8 @@ final class SysNotifyCell: UITableViewCell {
     // MARK: - Layout
 
     private func layoutForStaff(_ isStaff: Bool, hasCover _: Bool, showUser: Bool, card: IMCardResolved?) {
+        let containerWidth = contentView.bounds.width > 1 ? contentView.bounds.width : contentView.fdContainerWidth
+        appliedBubbleWidth = containerWidth
         let metaOffset: ConstraintOffsetTarget = showUser ? 4 : 8
         let isUnified = card?.isUnifiedSysNotify == true
         let variant = card?.variant
@@ -701,7 +717,7 @@ final class SysNotifyCell: UITableViewCell {
                 make.top.equalToSuperview().offset(8).priority(999)
             }
             make.bottom.equalToSuperview().offset(-8).priority(999)
-            make.width.equalTo(ChatBubbleStyle.cardBubbleWidth())
+            make.width.equalTo(ChatBubbleStyle.cardBubbleWidth(for: containerWidth))
             if isStaff {
                 make.leading.equalToSuperview().offset(showUser ? ChatBubbleStyle.contentStartOffset : ChatBubbleStyle.horizontalInset)
             } else {
@@ -855,7 +871,7 @@ final class SysNotifyCell: UITableViewCell {
             dividerView.snp.remakeConstraints { make in
                 make.top.equalTo(afterDesc).offset(ChatBubbleStyle.Card.bodyToDividerGap)
                 make.leading.trailing.equalToSuperview().inset(pad)
-                make.height.equalTo(1 / UIScreen.main.scale)
+                make.height.equalTo(dividerView.fdHairline)
             }
             rowsStack.snp.remakeConstraints { make in
                 make.top.equalTo(dividerView.snp.bottom).offset(ChatBubbleStyle.Card.dividerToRowsGap)

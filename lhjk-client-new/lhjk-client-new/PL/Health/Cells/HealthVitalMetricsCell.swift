@@ -131,7 +131,7 @@ final class HealthVitalMetricsCell: UITableViewCell {
     private func resolvedContainerWidth() -> CGFloat {
         if bounds.width > 0 { return bounds.width }
         if contentView.bounds.width > 0 { return contentView.bounds.width }
-        return UIScreen.main.bounds.width
+        return fdContainerWidth
     }
 
     private func makeCollectionLayout() -> UICollectionViewCompositionalLayout {

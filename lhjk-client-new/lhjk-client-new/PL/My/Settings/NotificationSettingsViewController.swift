@@ -13,7 +13,7 @@ final class NotificationSettingsViewController: BaseViewController {
         static let innerBoxMinHeight: CGFloat = 64
         static let sectionIconSize: CGFloat = 16
         static let sectionHeaderSpacing: CGFloat = 4
-        static let headerDividerHeight: CGFloat = 1 / UIScreen.main.scale
+        static var headerDividerHeight: CGFloat { FDWindowMetrics.hairline }
         static let statusBadgeHeight: CGFloat = 15
         static let statusBadgeCornerRadius: CGFloat = 4
         static let chevronSize: CGFloat = 12

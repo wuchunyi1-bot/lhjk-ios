@@ -63,7 +63,7 @@ final class OrderTabViewController: BaseViewController {
     }()
 
     private lazy var loadMoreFooter: UIView = {
-        let container = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 44))
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: FDWindowMetrics.layoutWidth, height: 44))
         let spinner = UIActivityIndicatorView(style: .medium)
         spinner.color = .fdPrimary
         spinner.tag = 9001
@@ -209,6 +209,8 @@ final class OrderTabViewController: BaseViewController {
     private func updateLoadMoreFooter(visible: Bool) {
         if visible {
             (loadMoreFooter.viewWithTag(9001) as? UIActivityIndicatorView)?.startAnimating()
+            let width = tableView.bounds.width > 1 ? tableView.bounds.width : FDWindowMetrics.layoutWidth
+            loadMoreFooter.frame.size.width = width
             tableView.tableFooterView = loadMoreFooter
         } else {
             (loadMoreFooter.viewWithTag(9001) as? UIActivityIndicatorView)?.stopAnimating()

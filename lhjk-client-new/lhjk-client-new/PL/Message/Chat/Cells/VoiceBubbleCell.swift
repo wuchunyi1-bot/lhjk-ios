@@ -9,6 +9,7 @@ final class VoiceBubbleCell: UITableViewCell {
 
     weak var delegate: ChatCellDelegate?
     private var currentMessage: ChatMessage?
+    private var appliedBubbleWidth: CGFloat = 0
 
     private let avatarLabel: UILabel = {
         let l = UILabel()
@@ -82,6 +83,7 @@ final class VoiceBubbleCell: UITableViewCell {
         currentAudioPath = nil
         iconView.layer.removeAnimation(forKey: "voicePlayingPulse")
         iconView.alpha = 1.0
+        appliedBubbleWidth = 0
     }
 
     func configure(_ msg: ChatMessage, tone: String, convRole: ConversationRole) {
@@ -119,6 +121,13 @@ final class VoiceBubbleCell: UITableViewCell {
 
         durationLabel.text = "\(seconds)″"
         layoutForStaff(isStaff, seconds: seconds)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let width = contentView.bounds.width
+        guard currentMessage != nil, width > 1, abs(width - appliedBubbleWidth) > 0.5 else { return }
+        layoutForStaff(currentMessage?.isStaff == true, seconds: currentMessage?.thumbHeight ?? 0)
     }
 
     @objc private func togglePlay() {
@@ -317,7 +326,9 @@ final class VoiceBubbleCell: UITableViewCell {
     }
 
     private func layoutForStaff(_ isStaff: Bool, seconds: Int) {
-        let maxBubbleW = ChatBubbleStyle.maxContentBubbleWidth()
+        let containerWidth = contentView.bounds.width > 1 ? contentView.bounds.width : contentView.fdContainerWidth
+        appliedBubbleWidth = containerWidth
+        let maxBubbleW = ChatBubbleStyle.maxContentBubbleWidth(for: containerWidth)
         let bubbleWidth = voiceBubbleWidth(seconds: seconds, maxWidth: maxBubbleW)
 
         avatarLabel.snp.remakeConstraints { make in

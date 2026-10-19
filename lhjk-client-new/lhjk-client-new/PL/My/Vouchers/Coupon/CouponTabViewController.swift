@@ -23,7 +23,7 @@ final class CouponTabViewController: BaseViewController {
         tv.showsVerticalScrollIndicator = false
         tv.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 24, right: 0)
         tv.clipsToBounds = true
-        tv.estimatedRowHeight = CouponCardCell.collapsedRowHeight(for: UIScreen.main.bounds.width)
+        tv.estimatedRowHeight = CouponCardCell.collapsedRowHeight(for: FDWindowMetrics.layoutWidth)
         tv.dataSource = self
         tv.delegate = self
         tv.register(CouponCardCell.self, forCellReuseIdentifier: CouponCardCell.reuseID)

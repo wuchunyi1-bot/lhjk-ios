@@ -214,7 +214,7 @@ final class ECGChartView: UIView {
         guard size.width > 0, size.height > 0 else { return nil }
 
         let format = UIGraphicsImageRendererFormat()
-        format.scale = UIScreen.main.scale
+        format.scale = fdDisplayScale
         format.opaque = false
 
         let renderer = UIGraphicsImageRenderer(size: size, format: format)

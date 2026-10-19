@@ -273,3 +273,35 @@ ModuleName/
 #### Scenario: 排查完成后
 - **WHEN** 根因定位并修复
 - **THEN** 移除排查日志，将根因和修复方案记录进对应 spec 文件的踩坑章节
+
+---
+
+### Requirement: iPhone Duo 窗口布局
+
+根 Tab SHALL 在 iOS 27.1 及以上关闭系统竖向栏（`preferredVerticalBarBehavior = .disabled`），状态栏和 Tab 保持在上下两边，与普通 iPhone 相同。不得把决定权交给当前选中页。首页 Hub 仍按安全区排布，不得用界面方向或 `UIScreen.main` 决定版心。普通 iPhone 竖屏的左右安全区为 0，布局结果须与改前一致。
+
+#### Scenario: 普通 iPhone 竖屏不变
+
+- **WHEN** 在仅支持竖屏的普通 iPhone 上打开首页
+- **THEN** 状态栏在顶部、Tab 在底部
+- **AND** 顶栏、页签、列表的左右边距与改前相同（左右安全区 inset 为 0）
+- **AND** 列表底边仍贴 `safeAreaLayoutGuide`，不伸进 Home Indicator
+
+#### Scenario: 折叠屏不用竖栏
+
+- **WHEN** 在 iPhone Duo 上打开已登录的主界面
+- **THEN** 时间、信号和系统 Tab 回到水平方向，不贴在屏幕右侧
+- **AND** 首页列表铺在顶栏和页签下面的剩余高度里，不留一整屏空白
+- **AND** 页签「首页 / 健康服务 / 富德优选 / 健康知识」仍横排
+
+#### Scenario: 竖向安全区过矮时列表仍可见
+
+- **WHEN** 视图高度大于顶栏加页签再加 80pt，且安全区高度小于顶栏加页签
+- **THEN** 列表底边改贴视图底边，避免列表被压成高度 0
+- **AND** 顶栏尚未完成布局或视图高度尚未确定时，仍保持底边贴安全区
+
+#### Scenario: 折叠或展开后重算
+
+- **WHEN** 窗口尺寸或安全区在同一次会话里变化
+- **THEN** 用当前 `view.bounds` 与安全区重新决定列表底边，并按新的列表宽度重算行高
+- **AND** Banner 仍按当前宽度乘图片比例，不写死高度

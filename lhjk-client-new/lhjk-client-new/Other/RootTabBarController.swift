@@ -8,6 +8,15 @@ final class RootTabBarController: UITabBarController {
     private var cancellables = Set<AnyCancellable>()
     private var didScheduleHubPreload = false
 
+    /// 关掉 iPhone Duo 的竖向系统栏，状态栏和 Tab 回到上下两边。
+    /// 普通 iPhone 本来就没有竖栏，界面与改前相同。
+    @available(iOS 27.1, *)
+    override var preferredVerticalBarBehavior: UIVerticalBarBehavior { .disabled }
+
+    /// 系统默认会把决定权交给当前选中的页面。这里收回来，整棵 Tab 都用上面的设置。
+    @available(iOS 27.1, *)
+    override var childForPreferredVerticalBarBehavior: UIViewController? { nil }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupViewControllers()

@@ -61,7 +61,7 @@ final class ServiceBannerCarouselCell: UITableViewCell {
         contentView.backgroundColor = .clear
         contentView.addSubview(collectionView)
         contentView.addSubview(pageControl)
-        let initialWidth = UIScreen.main.bounds.width - Self.horizontalInset * 2
+        let initialWidth = max(0, FDWindowMetrics.layoutWidth - Self.horizontalInset * 2)
         collectionView.snp.makeConstraints {
             $0.top.bottom.equalToSuperview()
             $0.leading.equalToSuperview().offset(Self.horizontalInset)
@@ -117,15 +117,13 @@ final class ServiceBannerCarouselCell: UITableViewCell {
         withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority,
         verticalFittingPriority: UILayoutPriority
     ) -> CGSize {
-        let width = targetSize.width > 0 ? targetSize.width : UIScreen.main.bounds.width
+        let width = targetSize.width > 1 ? targetSize.width : fdContainerWidth
         let bannerWidth = max(0, width - Self.horizontalInset * 2)
-        let height = lastAppliedHeight > 0
-            ? lastAppliedHeight
-            : BannerImageAspectLayout.height(
-                width: bannerWidth,
-                imageSize: resolvedImageSize,
-                fallbackRatio: Self.fallbackRatio
-            )
+        let height = BannerImageAspectLayout.height(
+            width: bannerWidth,
+            imageSize: resolvedImageSize,
+            fallbackRatio: Self.fallbackRatio
+        )
         return CGSize(width: width, height: height)
     }
 
@@ -158,7 +156,7 @@ final class ServiceBannerCarouselCell: UITableViewCell {
     private func bannerWidth() -> CGFloat {
         let width = collectionView.bounds.width
         if width > 1 { return width }
-        return UIScreen.main.bounds.width - Self.horizontalInset * 2
+        return max(0, fdContainerWidth - Self.horizontalInset * 2)
     }
 
     private func applyBannerHeight(width: CGFloat, notify: Bool) {
@@ -323,7 +321,7 @@ private final class BannerSlideCell: UICollectionViewCell {
                 with: url,
                 options: [
                     .transition(.fade(0.2)),
-                    .scaleFactor(UIScreen.main.scale),
+                    .scaleFactor(fdDisplayScale),
                 ]
             ) { [weak self] result in
                 if case .success(let value) = result {
@@ -417,7 +415,7 @@ final class ServiceHubBannerBar: UIView, UITableViewDataSource, UITableViewDeleg
         }
         cell.onHeightUpdated = { [weak self, weak cell] in
             guard let self, let cell else { return }
-            let width = self.bounds.width > 1 ? self.bounds.width : UIScreen.main.bounds.width
+            let width = self.bounds.width > 1 ? self.bounds.width : self.fdContainerWidth
             let height = cell.systemLayoutSizeFitting(
                 CGSize(width: width, height: 0),
                 withHorizontalFittingPriority: .required,
@@ -473,7 +471,7 @@ final class ServiceHubBannerBar: UIView, UITableViewDataSource, UITableViewDeleg
     }
 
     private func fallbackHeight() -> CGFloat {
-        let width = bounds.width > 1 ? bounds.width : UIScreen.main.bounds.width
+        let width = bounds.width > 1 ? bounds.width : fdContainerWidth
         return BannerImageAspectLayout.height(
             width: max(0, width - ServiceBannerCarouselCell.horizontalInset * 2),
             imageSize: nil,

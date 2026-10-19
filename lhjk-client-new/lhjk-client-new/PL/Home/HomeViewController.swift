@@ -16,6 +16,11 @@ final class HomeViewController: BaseViewController {
     private var serviceViewController: ServiceViewController?
     private var mallViewController: HealthMallViewController?
     private var knowledgeViewController: HomeKnowledgeViewController?
+    /// 列表底边默认贴安全区，与普通 iPhone 竖屏一致。
+    private var contentBottomToSafeArea: Constraint?
+    private var contentBottomToView: Constraint?
+    private var contentPinsToSafeAreaBottom = true
+    private var appliedContentWidth: CGFloat = 0
 
     private let tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
@@ -75,6 +80,69 @@ final class HomeViewController: BaseViewController {
         navigationController?.setNavigationBarHidden(false, animated: animated)
     }
 
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        updateContentBottomPinIfNeeded()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateContentBottomPinIfNeeded()
+        refreshHomeTableForWidthChangeIfNeeded()
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate(alongsideTransition: { _ in
+            self.updateContentBottomPinIfNeeded()
+        }, completion: { _ in
+            let width = self.tableView.bounds.width
+            guard width > 1, self.tableView.window != nil else { return }
+            self.appliedContentWidth = width
+            UIView.performWithoutAnimation {
+                self.tableView.beginUpdates()
+                self.tableView.endUpdates()
+            }
+        })
+    }
+
+    /// 竖向安全区比顶栏还矮、视图本身却更高时，列表改贴视图底边。
+    /// 普通 iPhone 竖屏安全区高度远大于顶栏，不会走到这条分支。
+    private func shouldPinContentBottomToView() -> Bool {
+        let viewHeight = view.bounds.height
+        guard viewHeight > 1 else { return false }
+        let chrome = topBar.bounds.height + shelfBar.bounds.height
+        guard chrome > 1 else { return false }
+        let safeHeight = view.safeAreaLayoutGuide.layoutFrame.height
+        return viewHeight > chrome + 80 && safeHeight + 0.5 < chrome
+    }
+
+    private func updateContentBottomPinIfNeeded() {
+        let pinToSafeArea = !shouldPinContentBottomToView()
+        guard pinToSafeArea != contentPinsToSafeAreaBottom else { return }
+        contentPinsToSafeAreaBottom = pinToSafeArea
+        if pinToSafeArea {
+            contentBottomToView?.deactivate()
+            contentBottomToSafeArea?.activate()
+        } else {
+            contentBottomToSafeArea?.deactivate()
+            contentBottomToView?.activate()
+        }
+        view.setNeedsLayout()
+    }
+
+    private func refreshHomeTableForWidthChangeIfNeeded() {
+        let width = tableView.bounds.width
+        guard width > 1, abs(width - appliedContentWidth) > 0.5 else { return }
+        let hadWidth = appliedContentWidth > 1
+        appliedContentWidth = width
+        guard hadWidth, tableView.window != nil else { return }
+        UIView.performWithoutAnimation {
+            tableView.beginUpdates()
+            tableView.endUpdates()
+        }
+    }
+
     override func setupUI() {
         view.backgroundColor = .fdBg
 
@@ -117,19 +185,24 @@ final class HomeViewController: BaseViewController {
         contentContainer.setContentHuggingPriority(.defaultLow, for: .vertical)
         contentContainer.addSubview(tableView)
 
+        // 左右贴安全区：竖屏 iPhone 左右 inset 为 0，位置与贴 superview 相同。
+        // 折叠屏竖栏占右侧 inset，顶栏和列表让开摄像头与系统 Tab。
         topBar.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide)
-            $0.leading.trailing.equalToSuperview()
+            $0.leading.trailing.equalTo(view.safeAreaLayoutGuide)
         }
         shelfBar.snp.makeConstraints {
             $0.top.equalTo(topBar.snp.bottom)
-            $0.leading.trailing.equalToSuperview()
+            $0.leading.trailing.equalTo(view.safeAreaLayoutGuide)
             $0.height.equalTo(44)
         }
         contentContainer.snp.makeConstraints {
             $0.top.equalTo(shelfBar.snp.bottom)
-            $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(view.safeAreaLayoutGuide)
+            $0.leading.trailing.equalTo(view.safeAreaLayoutGuide)
+            contentBottomToSafeArea = $0.bottom.equalTo(view.safeAreaLayoutGuide).constraint
+        }
+        contentContainer.snp.prepareConstraints {
+            contentBottomToView = $0.bottom.equalToSuperview().constraint
         }
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
 

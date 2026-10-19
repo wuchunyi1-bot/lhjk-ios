@@ -128,7 +128,7 @@ final class SettingsToggleCell: UIView {
         divider.snp.makeConstraints { make in
             make.leading.equalToSuperview().inset(contentInset)
             make.trailing.bottom.equalToSuperview()
-            make.height.equalTo(1 / UIScreen.main.scale)
+            make.height.equalTo(divider.fdHairline)
         }
 
         let minHeight: CGFloat = style == .notification ? 67 : 58

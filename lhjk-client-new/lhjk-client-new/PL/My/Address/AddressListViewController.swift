@@ -128,7 +128,7 @@ final class AddressListViewController: BaseViewController {
             make.bottom.equalToSuperview().offset(-12)
         }
 
-        let width = view.bounds.width > 0 ? view.bounds.width : UIScreen.main.bounds.width
+        let width = view.fdContainerWidth
         container.frame = CGRect(x: 0, y: 0, width: width, height: 58)
         container.layoutIfNeeded()
         let height = tipBanner.systemLayoutSizeFitting(

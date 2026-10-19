@@ -67,7 +67,7 @@ final class MallProductGridCell: UITableViewCell {
     private lazy var collectionView: UICollectionView = {
         let view = UICollectionView(
             frame: .zero,
-            collectionViewLayout: Self.makeGridLayout(outerWidth: UIScreen.main.bounds.width)
+            collectionViewLayout: Self.makeGridLayout(outerWidth: FDWindowMetrics.layoutWidth)
         )
         view.backgroundColor = .clear
         view.isScrollEnabled = false
@@ -163,7 +163,7 @@ final class MallProductGridCell: UITableViewCell {
         if proposedWidth > 0 { return proposedWidth }
         if contentView.bounds.width > 0 { return contentView.bounds.width }
         if bounds.width > 0 { return bounds.width }
-        return UIScreen.main.bounds.width
+        return fdContainerWidth
     }
 
     private func applyLayout(for width: CGFloat, notifyTableView: Bool) {

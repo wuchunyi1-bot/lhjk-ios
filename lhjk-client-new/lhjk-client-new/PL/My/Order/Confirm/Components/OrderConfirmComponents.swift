@@ -1335,7 +1335,7 @@ final class PackageContentChangedAlertController: UIViewController {
         hLine.snp.makeConstraints {
             $0.top.equalTo(messageLabel.snp.bottom).offset(24)
             $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(1 / UIScreen.main.scale)
+            $0.height.equalTo(hLine.fdHairline)
         }
 
         let vLine = UIView()
@@ -1361,7 +1361,7 @@ final class PackageContentChangedAlertController: UIViewController {
             $0.height.equalTo(56)
         }
         cancelButton.snp.makeConstraints { $0.width.equalTo(selectButton) }
-        vLine.snp.makeConstraints { $0.width.equalTo(1 / UIScreen.main.scale) }
+        vLine.snp.makeConstraints { $0.width.equalTo(vLine.fdHairline) }
     }
 
     @objc private func tapCancelOrder() {

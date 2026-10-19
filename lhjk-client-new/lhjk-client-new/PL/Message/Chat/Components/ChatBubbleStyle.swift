@@ -60,18 +60,18 @@ enum ChatBubbleStyle {
     horizontalInset + avatarSize + avatarToContentGap
   }
 
-  /// 自定义卡片固定满宽 = 屏宽 − 左右（边距 + 头像 + 间距）
-  static func cardBubbleWidth(for screenWidth: CGFloat = UIScreen.main.bounds.width) -> CGFloat {
-    screenWidth - contentStartOffset * 2
+  /// 自定义卡片固定满宽 = 容器宽 − 左右（边距 + 头像 + 间距）
+  static func cardBubbleWidth(for containerWidth: CGFloat) -> CGFloat {
+    containerWidth - contentStartOffset * 2
   }
 
   /// 普通气泡（文本/语音/图片/文件）最大宽度，随内容收缩
-  static func maxContentBubbleWidth(for screenWidth: CGFloat = UIScreen.main.bounds.width) -> CGFloat {
-    screenWidth - contentStartOffset - oppositeReserve
+  static func maxContentBubbleWidth(for containerWidth: CGFloat) -> CGFloat {
+    containerWidth - contentStartOffset - oppositeReserve
   }
 
-  static func textPreferredMaxWidth(for screenWidth: CGFloat = UIScreen.main.bounds.width) -> CGFloat {
-    screenWidth - 141
+  static func textPreferredMaxWidth(for containerWidth: CGFloat) -> CGFloat {
+    containerWidth - 141
   }
 
   static var metaFont: UIFont { .fdFont(designSize: 14, weight: .regular) }

@@ -160,7 +160,7 @@ final class CancelAccountImpactListView: UIView {
     private func makeDivider() -> UIView {
         let line = UIView()
         line.backgroundColor = .fdBorder
-        line.snp.makeConstraints { $0.height.equalTo(1.0 / UIScreen.main.scale) }
+        line.snp.makeConstraints { $0.height.equalTo(line.fdHairline) }
         return line
     }
 }

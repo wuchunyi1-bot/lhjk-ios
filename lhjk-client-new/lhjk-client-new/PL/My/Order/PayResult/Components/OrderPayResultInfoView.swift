@@ -85,7 +85,7 @@ final class OrderPayResultInfoView: UIView {
     required init?(coder: NSCoder) { fatalError() }
 
     override var intrinsicContentSize: CGSize {
-        let width = bounds.width > 1 ? bounds.width : UIScreen.main.bounds.width - 32
+        let width = bounds.width > 1 ? bounds.width : max(0, fdContainerWidth - 32)
         let height = BannerImageAspectLayout.height(
             width: width,
             imageSize: backgroundView.image?.size,

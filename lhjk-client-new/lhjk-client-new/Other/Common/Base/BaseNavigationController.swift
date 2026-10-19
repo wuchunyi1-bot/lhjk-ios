@@ -73,7 +73,7 @@ extension UIImage {
         guard let image = UIImage(named: "serice_cart") else { return nil }
         let size = CGSize(width: pointSize, height: pointSize)
         let format = UIGraphicsImageRendererFormat()
-        format.scale = UIScreen.main.scale
+        format.scale = FDWindowMetrics.displayScale
         return UIGraphicsImageRenderer(size: size, format: format).image { _ in
             image.draw(in: CGRect(origin: .zero, size: size))
         }

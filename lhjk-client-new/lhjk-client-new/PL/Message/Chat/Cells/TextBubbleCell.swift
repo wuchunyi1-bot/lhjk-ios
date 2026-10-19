@@ -8,6 +8,7 @@ final class TextBubbleCell: UITableViewCell {
 
     weak var delegate: ChatCellDelegate?
     private var currentMessage: ChatMessage?
+    private var appliedBubbleWidth: CGFloat = 0
 
     private let avatarLabel = UILabel()
     private let avatarImageView: UIImageView = {
@@ -100,6 +101,7 @@ final class TextBubbleCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         currentMessage = nil
+        appliedBubbleWidth = 0
         [avatarLabel, avatarImageView, metaLabel, bubbleBackground, bubbleView, timeLabel, replyView].forEach {
             $0.snp.removeConstraints()
         }
@@ -151,11 +153,28 @@ final class TextBubbleCell: UITableViewCell {
         }
 
         configureReply(msg.reply)
-        msgLabel.preferredMaxLayoutWidth = ChatBubbleStyle.textPreferredMaxWidth()
+        msgLabel.preferredMaxLayoutWidth = ChatBubbleStyle.textPreferredMaxWidth(for: bubbleContainerWidth)
         let text = RongEmoji.symbolToEmoji(msg.text ?? "")
         let textColor = msgLabel.textColor ?? ChatBubbleStyle.primaryText
         msgLabel.attributedText = ChatBubbleStyle.attributedBubbleText(text, color: textColor)
         layoutForStaff(isStaff, hasReply: msg.reply != nil)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let width = contentView.bounds.width
+        guard currentMessage != nil, width > 1, abs(width - appliedBubbleWidth) > 0.5 else { return }
+        appliedBubbleWidth = width
+        msgLabel.preferredMaxLayoutWidth = ChatBubbleStyle.textPreferredMaxWidth(for: width)
+    }
+
+    private var bubbleContainerWidth: CGFloat {
+        let width = contentView.bounds.width
+        if width > 1 {
+            appliedBubbleWidth = width
+            return width
+        }
+        return contentView.fdContainerWidth
     }
 
     private func configureReply(_ reply: ReplyMessage?) {

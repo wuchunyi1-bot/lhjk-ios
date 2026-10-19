@@ -193,7 +193,7 @@ final class OnboardingViewController: BaseViewController {
 
         headerBg.snp.makeConstraints {
             $0.top.leading.trailing.equalToSuperview()
-            headerHeightConstraint = $0.height.equalTo(headerHeight(for: UIScreen.main.bounds.width)).constraint
+            headerHeightConstraint = $0.height.equalTo(headerHeight(for: view.fdContainerWidth)).constraint
         }
         titleImageView.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
