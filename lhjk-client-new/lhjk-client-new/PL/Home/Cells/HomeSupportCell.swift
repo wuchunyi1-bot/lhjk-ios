@@ -1,7 +1,7 @@
 import SnapKit
 import UIKit
 
-/// 首页客服电话条。号码用工程里已有的客服电话，不写假号。
+/// 首页咨询客服条：左侧耳机图标 +「咨询客服」，右侧电话按钮。号码仍用工程里已有的客服电话。
 final class HomeSupportCell: UITableViewCell {
 
     static let reuseID = "HomeSupportCell"
@@ -9,9 +9,11 @@ final class HomeSupportCell: UITableViewCell {
     var onTap: (() -> Void)?
 
     private let card = UIControl()
-    private let iconView = UIImageView(image: UIImage(systemName: "phone.fill"))
+    private let headsetBadge = UIView()
+    private let headsetIcon = UIImageView()
     private let titleLabel = UILabel()
-    private let subtitleLabel = UILabel()
+    private let phoneBadge = UIView()
+    private let phoneIcon = UIImageView()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -24,37 +26,63 @@ final class HomeSupportCell: UITableViewCell {
         card.addTarget(self, action: #selector(tapped), for: .touchUpInside)
         contentView.addSubview(card)
 
-        iconView.tintColor = .fdPrimary
-        iconView.contentMode = .scaleAspectFit
-        titleLabel.text = "客服电话"
+        headsetBadge.backgroundColor = .fdPrimarySoft
+        headsetBadge.layer.cornerRadius = 20
+        headsetBadge.isUserInteractionEnabled = false
+        headsetIcon.image = UIImage(systemName: "headphones")
+        headsetIcon.tintColor = .fdPrimary
+        headsetIcon.contentMode = .scaleAspectFit
+        headsetIcon.isUserInteractionEnabled = false
+
+        titleLabel.text = "咨询客服"
         titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
         titleLabel.textColor = .fdText
-        subtitleLabel.text = OrderReturnGoodsSheet.defaultPhoneNumber
-        subtitleLabel.font = .fdCaption
-        subtitleLabel.textColor = .fdSubtext
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        titleLabel.isUserInteractionEnabled = false
 
-        let copy = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
-        copy.axis = .vertical
-        copy.spacing = 2
-        copy.isUserInteractionEnabled = false
-        iconView.isUserInteractionEnabled = false
-        card.addSubview(iconView)
-        card.addSubview(copy)
+        phoneBadge.backgroundColor = .fdPrimarySoft
+        phoneBadge.layer.cornerRadius = 20
+        phoneBadge.isUserInteractionEnabled = false
+        phoneIcon.image = UIImage(systemName: "phone.fill")
+        phoneIcon.tintColor = .fdPrimary
+        phoneIcon.contentMode = .scaleAspectFit
+        phoneIcon.isUserInteractionEnabled = false
+
+        card.addSubview(headsetBadge)
+        headsetBadge.addSubview(headsetIcon)
+        card.addSubview(titleLabel)
+        card.addSubview(phoneBadge)
+        phoneBadge.addSubview(phoneIcon)
 
         card.snp.makeConstraints {
             $0.top.equalToSuperview().offset(12)
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.bottom.equalToSuperview()
-            $0.height.equalTo(64)
+            $0.height.greaterThanOrEqualTo(64)
         }
-        iconView.snp.makeConstraints {
+        headsetBadge.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(16)
             $0.centerY.equalToSuperview()
+            $0.size.equalTo(40)
+            $0.top.greaterThanOrEqualToSuperview().offset(12)
+            $0.bottom.lessThanOrEqualToSuperview().offset(-12)
+        }
+        headsetIcon.snp.makeConstraints {
+            $0.center.equalToSuperview()
             $0.size.equalTo(22)
         }
-        copy.snp.makeConstraints {
-            $0.leading.equalTo(iconView.snp.trailing).offset(12)
+        phoneBadge.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(16)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(40)
+        }
+        phoneIcon.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.size.equalTo(18)
+        }
+        titleLabel.snp.makeConstraints {
+            $0.leading.equalTo(headsetBadge.snp.trailing).offset(12)
+            $0.trailing.lessThanOrEqualTo(phoneBadge.snp.leading).offset(-12)
             $0.centerY.equalToSuperview()
         }
     }

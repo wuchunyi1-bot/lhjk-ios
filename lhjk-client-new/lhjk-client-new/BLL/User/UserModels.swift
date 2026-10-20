@@ -24,7 +24,8 @@ struct SUsers: Codable {
     let weibo: String?
 
     // MARK: 个人基础信息
-    let sex: String?
+    /// 性别：1 男 / 2 女
+    let sex: Int?
     let birthday: String?
     let age: Int?
     let nationality: String?
@@ -117,8 +118,8 @@ struct SUsers: Codable {
 struct SUsersOnboardingPayload: Encodable {
     var mobile: String? = nil
     var chineseName: String? = nil
-    /// 性别："1"=男, "2"=女
-    var sex: String? = nil
+    /// 性别：1 男 / 2 女
+    var sex: Int? = nil
     var birthday: String? = nil
     var nickname: String? = nil
     var email: String? = nil

@@ -365,7 +365,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         DefaultUserAvatar.apply(urlString: user.imageUrl, to: avatarImageView)
 
         values[.name] = user.chineseName ?? user.surname ?? ""
-        values[.gender] = UserManager.sexDisplayLabel(user.sex)
+        values[.gender] = UserManager.sexDisplayLabel(user.sex.map(String.init))
         values[.birthday] = user.birthday ?? ""
         values[.phone] = maskPhone(user.mobile)
         values[.email] = user.email ?? ""
@@ -518,7 +518,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         case .name:
             payload.chineseName = value
         case .gender:
-            payload.sex = value == "男" ? "1" : (value == "女" ? "2" : nil)
+            payload.sex = value == "男" ? 1 : (value == "女" ? 2 : nil)
         case .birthday:
             payload.birthday = value
             payload.age = Self.age(from: value)

@@ -16,6 +16,9 @@ final class HomeViewController: BaseViewController {
     private var serviceViewController: ServiceViewController?
     private var mallViewController: HealthMallViewController?
     private var knowledgeViewController: HomeKnowledgeViewController?
+    /// 正在补地址的医院 id，避免顶栏刷新时重复打 `getById`。
+    private var institutionDetailRequestedId: String?
+    private var institutionDetailTask: Task<Void, Never>?
 
     private let tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
@@ -141,6 +144,12 @@ final class HomeViewController: BaseViewController {
         )
         NotificationCenter.default.addObserver(
             self,
+            selector: #selector(institutionDidChange),
+            name: .defaultArchiveDidUpdate,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
             selector: #selector(shelfRequested(_:)),
             name: HomeShelfStore.didRequestNotification,
             object: nil
@@ -236,11 +245,76 @@ final class HomeViewController: BaseViewController {
         child.didMove(toParent: self)
     }
 
+    /// 有手动切换的机构就展示切换结果；没有则展示档案里的所属机构。
+    /// 档案没有地址，地址为空时用该机构 id 调 `GET /v1/hospital/getById`（网关前缀 `/mobile`）补上。
     private func refreshInstitution() {
-        let selected = InstitutionSelectionStore.shared.selected
+        if let selected = InstitutionSelectionStore.shared.selected {
+            let name = selected.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !name.isEmpty {
+                let address = selected.fullAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+                topBar.apply(name: name, address: address)
+                if address.isEmpty {
+                    loadInstitutionAddress(hospitalId: selected.id, fallbackName: name)
+                }
+                return
+            }
+        }
+        let archive = UserManager.shared.defaultArchive
+        let ownName = archive?.hospitalName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        topBar.apply(name: ownName, address: "")
+        if let hospitalId = HospitalPackageService.apiHospitalId(archive?.hospitalId) {
+            loadInstitutionAddress(hospitalId: hospitalId, fallbackName: ownName)
+        }
+    }
+
+    /// 本地没有地址时拉医院详情，写回选中态后顶栏展示 `fullAddress`。
+    private func loadInstitutionAddress(hospitalId: String, fallbackName: String) {
+        guard institutionDetailRequestedId != hospitalId else { return }
+        guard let numericId = Int64(hospitalId), numericId > 0 else { return }
+        institutionDetailRequestedId = hospitalId
+        institutionDetailTask?.cancel()
+        institutionDetailTask = Task { [weak self] in
+            do {
+                let hospital = try await HospitalService.shared.getById(id: numericId)
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    self?.applyHospitalDetail(
+                        hospital,
+                        requestedId: hospitalId,
+                        fallbackName: fallbackName
+                    )
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    if self?.institutionDetailRequestedId == hospitalId {
+                        self?.institutionDetailRequestedId = nil
+                    }
+                }
+            }
+        }
+    }
+
+    private func applyHospitalDetail(
+        _ hospital: OHospital,
+        requestedId: String,
+        fallbackName: String
+    ) {
+        let currentId = InstitutionSelectionStore.shared.selected?.id
+            ?? HospitalPackageService.apiHospitalId(UserManager.shared.defaultArchive?.hospitalId)
+        guard currentId == requestedId else { return }
+        guard let detail = SelectedServiceInstitution(hospital: hospital) else {
+            let address = hospital.fullAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !address.isEmpty {
+                topBar.apply(name: fallbackName, address: address)
+            }
+            return
+        }
+        let name = detail.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        InstitutionSelectionStore.shared.select(detail, postingNotification: false)
         topBar.apply(
-            name: selected?.name ?? "",
-            address: selected?.fullAddress ?? ""
+            name: name.isEmpty ? fallbackName : name,
+            address: detail.fullAddress
         )
     }
 

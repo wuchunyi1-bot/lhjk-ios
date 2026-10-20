@@ -130,10 +130,11 @@ final class UserManager {
         return fromUser.isEmpty ? nil : fromUser
     }
 
-    /// 当前用户性别码："1" 男 / "2" 女
+    /// 当前用户性别码："1" 男 / "2" 女。用户资料为 Int，档案仍可能是字符串。
     var resolvedSexCode: String? {
-        let userSex = currentUser?.sex?.trimmingCharacters(in: .whitespacesAndNewlines)
-        if userSex == "1" || userSex == "2" { return userSex }
+        if let userSex = currentUser?.sex, userSex == 1 || userSex == 2 {
+            return String(userSex)
+        }
         let archiveSex = defaultArchive?.sex?.trimmingCharacters(in: .whitespacesAndNewlines)
         if archiveSex == "1" || archiveSex == "2" { return archiveSex }
         return nil

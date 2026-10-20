@@ -58,6 +58,38 @@
 - **AND** 清理顺序与 `ServiceHubCacheService.clear()` 同级（在 IM clear 之后、断融云 / UserManager.clear 之前或紧邻 Hub clear）
 - **AND** 再次登录进入「德系 → 选择套餐」时，不得沿用上一账号选中的医疗机构
 
+### Requirement: 首页顶栏机构名称
+
+首页顶栏 SHALL 优先展示用户手动切换后写入 `InstitutionSelectionStore` 的机构。未切换时 SHALL 展示默认档案 `getOArchiveByUserId` 的 `hospitalName`。两者都没有时才展示「请选择服务机构」。
+
+#### Scenario: 已切换机构
+
+- **WHEN** `InstitutionSelectionStore` 有已选机构且名称非空
+- **THEN** 顶栏展示该机构名称与地址
+
+#### Scenario: 未切换，档案有所属机构
+
+- **WHEN** 本地没有已切换机构，且默认档案 `hospitalName` 非空（如「富德联好健康」）
+- **THEN** 顶栏先展示该档案机构名
+- **AND** 不展示「请选择服务机构」
+- **AND** 档案不含地址时，用档案 `hospitalId` 调用 `GET /v1/hospital/getById`（业务根路径含 `/mobile`）
+- **AND** 将返回的名称与 `fullAddress` 写入 `InstitutionSelectionStore`，顶栏展示该地址
+
+#### Scenario: 已选机构没有地址
+
+- **WHEN** 顶栏要展示的机构名非空，但本地 `fullAddress` 为空
+- **THEN** 用该机构 id 调用 `GET /v1/hospital/getById` 补齐地址后再展示
+
+#### Scenario: 都没有
+
+- **WHEN** 未切换且档案没有机构名
+- **THEN** 顶栏展示「请选择服务机构」
+
+#### Scenario: 档案晚于首页到达
+
+- **WHEN** 首页已经出现，随后默认档案写入或更新
+- **THEN** 顶栏按上述优先级重新刷新
+
 ## ADDED Requirements (location)
 
 ### Requirement: 高德与腾讯经纬度互转

@@ -600,7 +600,7 @@ final class OnboardingViewController: BaseViewController {
         }
 
         if let gender = Self.normalizedGender(
-            firstNonBlank(archive?.sex, user?.sex)
+            firstNonBlank(archive?.sex, user?.sex.map(String.init))
         ) {
             selectedGender = gender
         }

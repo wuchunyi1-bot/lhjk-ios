@@ -29,6 +29,8 @@ final class HomeTaskCardCell: UITableViewCell {
         l.textColor = .fdText
         l.setContentCompressionResistancePriority(.required, for: .vertical)
         l.setContentHuggingPriority(.required, for: .vertical)
+        l.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        l.lineBreakMode = .byTruncatingTail
         return l
     }()
 
@@ -45,6 +47,8 @@ final class HomeTaskCardCell: UITableViewCell {
         b.tintColor = .fdSubtext
         b.semanticContentAttribute = .forceRightToLeft
         b.imageEdgeInsets = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: -2)
+        b.setContentCompressionResistancePriority(.required, for: .horizontal)
+        b.setContentHuggingPriority(.required, for: .horizontal)
         return b
     }()
 
@@ -62,7 +66,9 @@ final class HomeTaskCardCell: UITableViewCell {
         let iv = UIImageView()
         iv.image = UIImage(named: "home_task_progress_banner")
         iv.contentMode = .scaleAspectFit
-        iv.clipsToBounds = false
+        iv.clipsToBounds = true
+        iv.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        iv.setContentHuggingPriority(.defaultLow, for: .horizontal)
         return iv
     }()
 
@@ -159,12 +165,13 @@ final class HomeTaskCardCell: UITableViewCell {
     private func setupConstraints() {
         cardView.snp.makeConstraints {
             $0.top.equalToSuperview().offset(12)
-            $0.leading.trailing.equalToSuperview().inset(16).priority(750)
+            $0.leading.trailing.equalToSuperview().inset(16)
             $0.bottom.equalToSuperview()
         }
 
         titleLabel.snp.makeConstraints {
             $0.top.leading.equalToSuperview().inset(16)
+            $0.trailing.lessThanOrEqualTo(moreButton.snp.leading).offset(-8)
         }
 
         moreButton.snp.makeConstraints {
@@ -352,6 +359,7 @@ final class HomeTaskCardCell: UITableViewCell {
         subtitle.textColor = UIColor(hexString: "#8591AB")
         subtitle.numberOfLines = 1
         subtitle.lineBreakMode = .byTruncatingTail
+        subtitle.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let subtitleText = task.homeSubtitle.trimmingCharacters(in: .whitespacesAndNewlines)
         subtitle.text = subtitleText.isEmpty ? task.desc : subtitleText
 
