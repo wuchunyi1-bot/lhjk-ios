@@ -73,7 +73,7 @@ H5 hash 路径由 `H5Config` 拼接；饮食运动根路径为 `exercise-food`�
 
 | Handler | 方向 | 用途 |
 |---------|------|------|
-| **`FundeBridge`** | H5 → Native | 套餐跳转、饮食方案保存食谱到相册 |
+| **`FundeBridge`** | H5 → Native | 套餐跳转、饮食方案保存食谱到相册、体检报告文档预览 |
 | `FundeNative` | 双向 | 体重 BLE：`ble.getStatus` / `ble.openManager` + emit 事件 |
 
 `FundeBridge` 消息体为扁平 JSON（字段在顶层，**不是** `{ action, params }` 嵌套）：
@@ -101,6 +101,26 @@ H5 调用：`window.webkit.messageHandlers.FundeBridge.postMessage(payload)`。
 ```
 
 `fileName` 缺省「食谱清单.png」，`bizType` 缺省 `dietPoster`。宿主用登录态 `GET /v1/diningScheme/downloadDietPoster` 按二进制取图并写入相册。
+
+体检报告详情「查看原件」同一通道。图片仍由 H5 自己预览；`pdf`、`doc`、`docx`、`xls`、`xlsx`、`ppt`、`pptx` 交给宿主。无异步结果回传。
+
+```json
+{
+  "action": "previewDocument",
+  "fileUrl": "https://image.lianhaojiankang.com/common/example.pdf",
+  "fileName": "体检报告.pdf",
+  "fileType": "pdf"
+}
+```
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `action` | 是 | 固定 `previewDocument` |
+| `fileUrl` | 是 | 完整 HTTPS 地址，保留签名 query，不重复 URL 解码 |
+| `fileName` | 是 | 显示名称；缺省「报告原件」 |
+| `fileType` | 是 | 小写扩展名，无点号，仅上述七种 |
+
+宿主校验地址与类型后下载到缓存目录（不附加业务登录 token），再用 Quick Look 打开。关闭预览回到原 WebView。
 
 ---
 
@@ -170,6 +190,28 @@ App 经 `WebViewController` 打开需登录的 H5 时 SHALL 拼接 `platform=ios
 
 - **WHEN** 添加相册权限被拒绝或受限
 - **THEN** 不写入相册，引导用户在系统设置中开启
+
+### Requirement: FundeBridge 预览报告原件
+
+体检报告详情「查看原件」中的文档 SHALL 经 `FundeBridge` `action=previewDocument` 由宿主下载并预览。图片预览不走该动作。投递成功后无异步回传。
+
+#### Scenario: 打开文档
+
+- **WHEN** H5 postMessage `action=previewDocument`，`fileUrl` 为 HTTPS，`fileType` 为 `pdf`、`doc`、`docx`、`xls`、`xlsx`、`ppt`、`pptx` 之一
+- **THEN** 显示加载提示，将 `fileUrl` 原样下载到缓存目录，不附加业务登录 token，不重复 URL 解码
+- **AND** HTTP 成功后在主线程用 `QLPreviewController` 打开本地文件，`fileName` 作为显示名称，落盘名去掉路径字符并保留扩展名
+- **AND** 关闭预览回到原 WebView，不重建页面
+
+#### Scenario: 地址或类型无效
+
+- **WHEN** `fileUrl` 不是 HTTPS，或 `fileType` 不在上述七种之内
+- **THEN** 不下载，提示无法打开
+
+#### Scenario: 下载或预览失败
+
+- **WHEN** 下载超时、HTTP 失败、响应为空，或 Quick Look 无法预览该文件
+- **THEN** 关闭加载提示并提示原因
+- **AND** 链接过期（HTTP 401/403）时提示返回报告重新获取
 
 ### Requirement: 体重 BLE 仍走 FundeNative
 
