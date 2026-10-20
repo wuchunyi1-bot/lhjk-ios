@@ -133,11 +133,12 @@ enum ChatBubbleStyle {
   }
 
   /// 聊天气泡正文（固定行高 + baseline 微调，避免 UILabel 内文字偏下）
-  static func attributedBubbleText(_ text: String, color: UIColor) -> NSAttributedString {
+  /// `http` / `https` 加下划线，供点击后原样打开。
+  static func attributedBubbleText(_ text: String, color: UIColor, linkColor: UIColor) -> NSAttributedString {
     let font = textFont
     let lineHeight = ceil(font.lineHeight * 1.5)
     let baselineOffset = (lineHeight - font.lineHeight) / 2
-    return NSAttributedString(
+    let result = NSMutableAttributedString(
       string: text,
       attributes: [
         .font: font,
@@ -146,6 +147,31 @@ enum ChatBubbleStyle {
         .baselineOffset: baselineOffset,
       ]
     )
+    for (range, url) in linkRanges(in: text) {
+      result.addAttributes(
+        [
+          .foregroundColor: linkColor,
+          .underlineStyle: NSUnderlineStyle.single.rawValue,
+          .underlineColor: linkColor,
+          .link: url,
+        ],
+        range: range
+      )
+    }
+    return result
+  }
+
+  static func linkRanges(in text: String) -> [(NSRange, URL)] {
+    guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else {
+      return []
+    }
+    let full = NSRange(location: 0, length: (text as NSString).length)
+    return detector.matches(in: text, options: [], range: full).compactMap { match in
+      guard let url = match.url else { return nil }
+      let scheme = url.scheme?.lowercased() ?? ""
+      guard scheme == "http" || scheme == "https" else { return nil }
+      return (match.range, url)
+    }
   }
 
   static var cardParagraphStyle: NSParagraphStyle {

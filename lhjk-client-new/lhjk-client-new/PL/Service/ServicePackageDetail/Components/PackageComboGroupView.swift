@@ -180,13 +180,7 @@ final class PackageComboGroupView: UIView {
         self.currentRadioPick = radioPick
         self.currentCheckPicks = checkPicks
 
-        let modeText: String
-        switch group.selectMode {
-        case .required: modeText = "必选"
-        case .radio: modeText = "单选"
-        case .checkbox: modeText = "多选"
-        }
-        badgeLabel.text = modeText
+        badgeLabel.text = group.selectMode.displayLabel
 
         if group.selectMode == .required {
             backgroundColor = UIColor(hexString: "#FFFCF8")

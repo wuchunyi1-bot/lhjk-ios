@@ -6,6 +6,7 @@ class BaseNavigationController: UINavigationController {
     override func viewDidLoad() {
         super.viewDidLoad()
         configureAppearance()
+        interactivePopGestureRecognizer?.delegate = self
     }
 
     override func pushViewController(_ viewController: UIViewController, animated: Bool) {
@@ -39,6 +40,15 @@ class BaseNavigationController: UINavigationController {
         navigationBar.compactAppearance = appearance
         navigationBar.tintColor = .fdText
         navigationBar.isTranslucent = false
+    }
+}
+
+extension BaseNavigationController: UIGestureRecognizerDelegate {
+
+    /// 自定义返回按钮或隐藏导航栏时，系统右滑会直接拒绝。栈里还有上一页就允许。
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard gestureRecognizer === interactivePopGestureRecognizer else { return true }
+        return viewControllers.count > 1 && transitionCoordinator == nil
     }
 }
 

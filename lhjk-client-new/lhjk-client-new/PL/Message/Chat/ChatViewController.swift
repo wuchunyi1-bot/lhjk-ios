@@ -5,18 +5,21 @@ import Kingfisher
 import AVFoundation
 import RongIMLibCore
 import UniformTypeIdentifiers
+import WebKit
 
 /// 消息 Cell 长按回调协议
 protocol ChatCellDelegate: AnyObject {
     func cellDidLongPress(_ cell: UITableViewCell, message: ChatMessage)
     func cellDidTapReply(_ cell: UITableViewCell, message: ChatMessage)
     func cellDidTapIMCard(_ cell: UITableViewCell, message: ChatMessage)
+    func cellDidTapTextLink(_ cell: UITableViewCell, url: URL)
     func cellVoicePlaybackFailed(_ cell: UITableViewCell, message: String)
 }
 
 extension ChatCellDelegate {
     func cellDidTapReply(_ cell: UITableViewCell, message: ChatMessage) {}
     func cellDidTapIMCard(_ cell: UITableViewCell, message: ChatMessage) {}
+    func cellDidTapTextLink(_ cell: UITableViewCell, url: URL) {}
     func cellVoicePlaybackFailed(_ cell: UITableViewCell, message: String) {}
 }
 
@@ -518,6 +521,11 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
         }
     }
 
+    func cellDidTapTextLink(_ cell: UITableViewCell, url: URL) {
+        let webVC = IMLinkWebViewController(url: url)
+        navigationController?.pushViewController(webVC, animated: true)
+    }
+
     /// 点击消息气泡内的引用区（replyView）
     func cellDidTapReply(_ cell: UITableViewCell, message: ChatMessage) {
         guard let reply = message.reply else { return }
@@ -979,7 +987,7 @@ final class ChatInputBar: UIView {
     private enum Layout {
         static let rowHeight: CGFloat = 66
         static let collapsedHeight: CGFloat = 66
-        static let morePanelHeight: CGFloat = 157
+        static let morePanelHeight: CGFloat = 176
         static let emojiPanelHeight: CGFloat = 232
         static let morePanelContentHeight: CGFloat = morePanelHeight - collapsedHeight
         static let emojiPanelContentHeight: CGFloat = emojiPanelHeight - collapsedHeight
@@ -993,12 +1001,12 @@ final class ChatInputBar: UIView {
         /// 左侧按钮压入输入框约 50pt，占位/文字从 56pt 起（对齐 Figma 35346）
         static let textLeadingInset: CGFloat = leftButtonLeading + leftButtonSize.width - horizontalInset + 6
         static let iconSize: CGFloat = 24
-        static let panelItemWidth: CGFloat = 44
-        static let panelItemIconHeight: CGFloat = 44
-        static let panelItemLeading: CGFloat = 20
-        static let panelItemSpacing: CGFloat = 42
-        static let panelItemTop: CGFloat = 4
-        static let panelItemLabelGap: CGFloat = 6
+        static let panelItemWidth: CGFloat = 60
+        static let panelItemIconHeight: CGFloat = 60
+        static let panelItemLeading: CGFloat = 24
+        static let panelItemSpacing: CGFloat = 72
+        static let panelItemTop: CGFloat = 8
+        static let panelItemLabelGap: CGFloat = 8
     }
 
     private let backgroundView: UIView = {
@@ -1350,7 +1358,7 @@ final class ChatInputBar: UIView {
 
         let label = UILabel()
         label.text = title
-        label.font = .fdFont(designSize: 14, weight: .medium)
+        label.font = .fdFont(designSize: 16, weight: .medium)
         label.textColor = .fdText
         label.textAlignment = .center
 
@@ -1629,5 +1637,28 @@ private final class ImagePreviewViewController: UIViewController, UIScrollViewDe
 
     @objc private func dismissPreview() {
         dismiss(animated: true)
+    }
+}
+
+/// IM 文本里的 http/https 链接。按原地址打开，不拼接 token 或其它参数，也不走 H5 宿主桥。
+final class IMLinkWebViewController: BaseViewController {
+
+    private let pageURL: URL
+    private let webView = WKWebView()
+
+    init(url: URL) {
+        self.pageURL = url
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func setupUI() {
+        title = pageURL.host ?? "网页"
+        view.backgroundColor = .fdBg
+        webView.backgroundColor = .fdBg
+        view.addSubview(webView)
+        webView.snp.makeConstraints { $0.edges.equalTo(view.safeAreaLayoutGuide) }
+        webView.load(URLRequest(url: pageURL))
     }
 }

@@ -27,6 +27,7 @@ final class ServicePackageDetailViewController: BaseViewController {
     private let guaranteeView = PackageDetailGuaranteeView()
 
     private var autoScrollTimer: Timer?
+    private weak var previousPopGestureDelegate: UIGestureRecognizerDelegate?
 
     // 吸顶区：状态栏占位 + 导航标题 + Tab（对齐 Figma 3805:21131 / 3805:21478）
     private let stickyHeaderContainer = UIView()
@@ -87,11 +88,37 @@ final class ServicePackageDetailViewController: BaseViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        installPopGestureDelegateIfNeeded()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        if !isMovingFromParent {
+            restorePopGestureDelegateIfNeeded()
+        }
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        restorePopGestureDelegateIfNeeded()
+    }
+
+    /// 导航栏隐藏后，系统右滑返回的 `gestureRecognizerShouldBegin` 会直接拒绝。
+    private func installPopGestureDelegateIfNeeded() {
+        guard let gesture = navigationController?.interactivePopGestureRecognizer else { return }
+        if previousPopGestureDelegate == nil, gesture.delegate !== self {
+            previousPopGestureDelegate = gesture.delegate
+        }
+        gesture.delegate = self
+        gesture.isEnabled = true
+    }
+
+    private func restorePopGestureDelegateIfNeeded() {
+        guard let gesture = navigationController?.interactivePopGestureRecognizer else { return }
+        guard gesture.delegate === self else { return }
+        gesture.delegate = previousPopGestureDelegate
+        previousPopGestureDelegate = nil
     }
 
     override func setupUI() {
@@ -674,7 +701,15 @@ final class ServicePackageDetailViewController: BaseViewController {
 
 // MARK: - UIScrollViewDelegate
 
-extension ServicePackageDetailViewController: UIScrollViewDelegate {
+extension ServicePackageDetailViewController: UIScrollViewDelegate, UIGestureRecognizerDelegate {
+
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard gestureRecognizer === navigationController?.interactivePopGestureRecognizer else {
+            return true
+        }
+        return (navigationController?.viewControllers.count ?? 0) > 1
+    }
+
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         let tabPos = inPageTabBarView.convert(inPageTabBarView.bounds, to: view)

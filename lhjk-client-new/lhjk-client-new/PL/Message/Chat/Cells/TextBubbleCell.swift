@@ -77,6 +77,9 @@ final class TextBubbleCell: UITableViewCell {
 
         msgLabel.font = ChatBubbleStyle.textFont
         msgLabel.numberOfLines = 0
+        msgLabel.isUserInteractionEnabled = true
+        let textTap = UITapGestureRecognizer(target: self, action: #selector(handleTextTap))
+        msgLabel.addGestureRecognizer(textTap)
 
         metaLabel.font = ChatBubbleStyle.metaFont
         metaLabel.textColor = ChatBubbleStyle.metaColor
@@ -112,6 +115,34 @@ final class TextBubbleCell: UITableViewCell {
     @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
         guard gesture.state == .began, let msg = currentMessage else { return }
         delegate?.cellDidLongPress(self, message: msg)
+    }
+
+    @objc private func handleTextTap(_ gesture: UITapGestureRecognizer) {
+        guard gesture.state == .ended else { return }
+        guard let url = linkURL(at: gesture.location(in: msgLabel)) else { return }
+        delegate?.cellDidTapTextLink(self, url: url)
+    }
+
+    private func linkURL(at point: CGPoint) -> URL? {
+        guard let attributed = msgLabel.attributedText, attributed.length > 0 else { return nil }
+        let textStorage = NSTextStorage(attributedString: attributed)
+        let layoutManager = NSLayoutManager()
+        let textContainer = NSTextContainer(size: msgLabel.bounds.size)
+        textContainer.lineFragmentPadding = 0
+        textContainer.maximumNumberOfLines = msgLabel.numberOfLines
+        textContainer.lineBreakMode = msgLabel.lineBreakMode
+        layoutManager.addTextContainer(textContainer)
+        textStorage.addLayoutManager(layoutManager)
+        let index = layoutManager.characterIndex(
+            for: point,
+            in: textContainer,
+            fractionOfDistanceBetweenInsertionPoints: nil
+        )
+        guard index < attributed.length else { return nil }
+        let glyphRange = layoutManager.glyphRange(forCharacterRange: NSRange(location: index, length: 1), actualCharacterRange: nil)
+        let glyphRect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: textContainer)
+        guard glyphRect.contains(point) else { return nil }
+        return attributed.attribute(.link, at: index, effectiveRange: nil) as? URL
     }
 
     @objc private func handleReplyTap() {
@@ -154,7 +185,9 @@ final class TextBubbleCell: UITableViewCell {
         msgLabel.preferredMaxLayoutWidth = ChatBubbleStyle.textPreferredMaxWidth()
         let text = RongEmoji.symbolToEmoji(msg.text ?? "")
         let textColor = msgLabel.textColor ?? ChatBubbleStyle.primaryText
-        msgLabel.attributedText = ChatBubbleStyle.attributedBubbleText(text, color: textColor)
+        let linkColor: UIColor = isStaff ? .link : .white
+        msgLabel.tintColor = linkColor
+        msgLabel.attributedText = ChatBubbleStyle.attributedBubbleText(text, color: textColor, linkColor: linkColor)
         layoutForStaff(isStaff, hasReply: msg.reply != nil)
     }
 
