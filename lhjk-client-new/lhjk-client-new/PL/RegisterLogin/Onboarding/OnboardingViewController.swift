@@ -764,16 +764,18 @@ final class OnboardingViewController: BaseViewController {
         present(alert, animated: true)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             alert.dismiss(animated: true) {
-                self?.dismissOnboarding()
+                self?.dismissOnboarding {
+                    NewUserGuide.start()
+                }
             }
         }
     }
 
-    private func dismissOnboarding() {
+    private func dismissOnboarding(completion: (() -> Void)? = nil) {
         if let presenting = presentingViewController {
-            presenting.dismiss(animated: true)
+            presenting.dismiss(animated: true, completion: completion)
         } else {
-            dismiss(animated: true)
+            dismiss(animated: true, completion: completion)
         }
     }
 

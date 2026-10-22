@@ -4,20 +4,18 @@ import Combine
 
 /// 健康模块 Hub — 对齐 Figma 3444:4712 / 3021:1121
 ///
-/// 健康评分卡（HealthScoreCardCell）暂时不进入列表，档案完整度顶到顶栏下方。
-/// Section: HealthArchiveCardCell（健康档案完整度）
+/// 健康评分卡（HealthScoreCardCell）和健康档案完整度卡片不进入列表。
 /// Section: HealthQuickEntriesCell（金刚区快捷入口）
 /// Section: HealthVitalMetricsCell（体征监测卡片）
 final class HealthViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate {
 
     private enum SectionType {
-        case archive
         case quickEntries
         case vitalMetrics
     }
 
     private var activeSections: [SectionType] {
-        var list: [SectionType] = [.archive]
+        var list: [SectionType] = []
         if !viewModel.quickEntries.isEmpty {
             list.append(.quickEntries)
         }
@@ -47,7 +45,6 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         tv.showsVerticalScrollIndicator = false
         tv.dataSource = self
         tv.delegate = self
-        tv.register(HealthArchiveCardCell.self, forCellReuseIdentifier: HealthArchiveCardCell.reuseIdentifier)
         tv.register(HealthQuickEntriesCell.self, forCellReuseIdentifier: HealthQuickEntriesCell.reuseIdentifier)
         tv.register(HealthVitalMetricsCell.self, forCellReuseIdentifier: HealthVitalMetricsCell.reuseIdentifier)
         tv.contentInsetAdjustmentBehavior = .never
@@ -154,11 +151,6 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard indexPath.section < activeSections.count else { return UITableViewCell() }
         switch activeSections[indexPath.section] {
-        case .archive:
-            let cell = tableView.dequeueReusableCell(withIdentifier: HealthArchiveCardCell.reuseIdentifier, for: indexPath) as! HealthArchiveCardCell
-            cell.configure(archiveProgress: archiveProgress)
-            cell.onCompleteTap = { [weak self] in self?.goToRecord() }
-            return cell
         case .quickEntries:
             let cell = tableView.dequeueReusableCell(withIdentifier: HealthQuickEntriesCell.reuseIdentifier, for: indexPath) as! HealthQuickEntriesCell
             cell.configure(entries: viewModel.quickEntries)
@@ -221,10 +213,6 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         tableView.reloadData()
     }
 
-    @objc private func goToRecord() {
-        Router.shared.push("/health/record")
-    }
-
     private func refreshArchiveCompletionUI() {
         brandHeader.configure(
             title: "我的健康",
@@ -235,5 +223,54 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         if isViewLoaded {
             tableView.reloadData()
         }
+    }
+
+    func guideScrollToVitals() {
+        guideScroll(to: .vitalMetrics)
+    }
+
+    func guideScrollToArchive() {
+        guideScroll(to: .quickEntries)
+    }
+
+    func guideVitalsFrame(in target: UIView) -> CGRect? {
+        guideSectionFrame(.vitalMetrics, in: target)
+    }
+
+    func guideArchiveItemFrame(in target: UIView) -> CGRect? {
+        guard let section = activeSections.firstIndex(of: .quickEntries) else { return nil }
+        let indexPath = IndexPath(row: 0, section: section)
+        tableView.layoutIfNeeded()
+        guard let cell = tableView.cellForRow(at: indexPath) as? HealthQuickEntriesCell,
+              let local = cell.frameOfEntry(named: "健康档案") else { return nil }
+        return cell.convert(local, to: target)
+    }
+
+    func guideOpenArchiveEntry() {
+        guard let entry = viewModel.quickEntries.first(where: { $0.name == "健康档案" }) else { return }
+        let pageUrl = entry.pageUrl
+        if FundePageURL.canOpen(pageUrl) {
+            FundePageURL.open(pageUrl, title: entry.name, from: self)
+            return
+        }
+        if pageUrl.hasPrefix("/") {
+            Router.shared.push(pageUrl, from: self)
+        }
+    }
+
+    private func guideScroll(to type: SectionType) {
+        guard let section = activeSections.firstIndex(of: type) else { return }
+        let indexPath = IndexPath(row: 0, section: section)
+        tableView.layoutIfNeeded()
+        tableView.scrollToRow(at: indexPath, at: .top, animated: false)
+        tableView.layoutIfNeeded()
+    }
+
+    private func guideSectionFrame(_ type: SectionType, in target: UIView) -> CGRect? {
+        guard let section = activeSections.firstIndex(of: type) else { return nil }
+        tableView.layoutIfNeeded()
+        let rect = tableView.rectForRow(at: IndexPath(row: 0, section: section))
+        guard rect.height > 4 else { return nil }
+        return tableView.convert(rect, to: target)
     }
 }

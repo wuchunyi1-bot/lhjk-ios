@@ -456,6 +456,45 @@ extension HomeViewController: UITableViewDelegate {
         nil
     }
 
+    func guideShow(shelf: HomeShelf) {
+        showShelf(shelf, persist: true)
+        view.layoutIfNeeded()
+    }
+
+    func guideQuickActionsFrame(in target: UIView) -> CGRect? {
+        guideRowFrame(itemPrefix: "quickActions", in: target)
+    }
+
+    func guideShelfButtonFrame(_ shelf: HomeShelf, in target: UIView) -> CGRect? {
+        guard let local = shelfBar.frameOfButton(for: shelf) else { return nil }
+        return shelfBar.convert(local, to: target)
+    }
+
+    func guideContentFrame(in target: UIView) -> CGRect? {
+        contentContainer.layoutIfNeeded()
+        let frame = contentContainer.convert(contentContainer.bounds, to: target)
+        return frame.width > 4 && frame.height > 4 ? frame : nil
+    }
+
+    private func guideRowFrame(itemPrefix: String, in target: UIView) -> CGRect? {
+        tableView.layoutIfNeeded()
+        let snapshot = dataSource.snapshot()
+        for section in snapshot.sectionIdentifiers {
+            for item in snapshot.itemIdentifiers(inSection: section) {
+                let matches: Bool
+                switch item {
+                case .quickActions: matches = itemPrefix == "quickActions"
+                default: matches = false
+                }
+                guard matches, let indexPath = dataSource.indexPath(for: item) else { continue }
+                let rect = tableView.rectForRow(at: indexPath)
+                guard rect.height > 4 else { return nil }
+                return tableView.convert(rect, to: target)
+            }
+        }
+        return nil
+    }
+
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
         .leastNormalMagnitude
     }

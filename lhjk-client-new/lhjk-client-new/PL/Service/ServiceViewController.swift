@@ -41,27 +41,41 @@ final class ServiceViewController: BaseViewController {
         bannerBar.onBannerTap = { [weak self] banner in
             self?.bannerBar.open(banner, from: self)
         }
+
+        if embedsInHomeHub {
+            view.clipsToBounds = true
+            hubHeader.isHidden = true
+            let list = ServiceListViewController(
+                productCode: "",
+                showsPackageBrowserOnly: true,
+                embedsInHomeShelf: true
+            )
+            addChild(list)
+            view.addSubview(list.view)
+            list.view.snp.makeConstraints { $0.edges.equalToSuperview() }
+            list.didMove(toParent: self)
+            bannerBar.onHeightChange = { [weak list] height in
+                list?.updateShelfBannerHeight(height)
+            }
+            list.installShelfBanner(bannerBar)
+            list.updateShelfBannerHeight(bannerBar.displayedHeight)
+            return
+        }
+
         view.addSubview(bannerBar)
         view.addSubview(packageHost)
 
-        if embedsInHomeHub {
-            hubHeader.isHidden = true
-            bannerBar.snp.makeConstraints {
-                $0.top.leading.trailing.equalToSuperview()
-            }
-        } else {
-            hubHeader.onCartTapped = { [weak self] in
-                Router.shared.push("/services/cart", from: self)
-            }
-            view.addSubview(hubHeader)
-            hubHeader.snp.makeConstraints {
-                $0.top.equalTo(view.safeAreaLayoutGuide)
-                $0.leading.trailing.equalToSuperview()
-            }
-            bannerBar.snp.makeConstraints {
-                $0.top.equalTo(hubHeader.snp.bottom)
-                $0.leading.trailing.equalToSuperview()
-            }
+        hubHeader.onCartTapped = { [weak self] in
+            Router.shared.push("/services/cart", from: self)
+        }
+        view.addSubview(hubHeader)
+        hubHeader.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.leading.trailing.equalToSuperview()
+        }
+        bannerBar.snp.makeConstraints {
+            $0.top.equalTo(hubHeader.snp.bottom)
+            $0.leading.trailing.equalToSuperview()
         }
         packageHost.snp.makeConstraints {
             $0.top.equalTo(bannerBar.snp.bottom)

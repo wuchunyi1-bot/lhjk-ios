@@ -104,6 +104,21 @@ final class HealthQuickEntriesCell: UITableViewCell {
         return item
     }
 
+    func frameOfEntry(named name: String) -> CGRect? {
+        guard let item = entryView(named: name, in: contentView) else { return nil }
+        return item.convert(item.bounds, to: self)
+    }
+
+    private func entryView(named name: String, in view: UIView) -> UIView? {
+        if let label = view as? UILabel, label.text == name {
+            return label.superview
+        }
+        for subview in view.subviews {
+            if let found = entryView(named: name, in: subview) { return found }
+        }
+        return nil
+    }
+
     @objc private func entryTapped(_ gesture: UITapGestureRecognizer) {
         guard let route = gesture.view?.accessibilityIdentifier else { return }
         onEntryTap?(route)

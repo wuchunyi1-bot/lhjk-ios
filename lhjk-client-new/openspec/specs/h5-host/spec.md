@@ -59,6 +59,7 @@ H5 hash 路径由 `H5Config` 拼接；饮食运动根路径为 `exercise-food`�
 | 营养补剂 | `#/supplement` | — | `/supplement`（健康 Tab / CMS 列表） |
 | 营养补剂录入 | `#/supplement/add` | `taskId` 可选（今日健康任务） | `/supplement/add?taskId=` |
 | 血氧 | `#/spo2` | — | `/spo2`、`/health/metrics/spo2` |
+| 鹰瞳眼底 | `#/fundus` | — | `/health/metrics/fundus`。页内「扫一扫」走 `FundeBridge` `scanCode`，不由 H5 打开摄像头 |
 | 健康陪伴列表 | `#/companion` | — | 首页「更多 ›」、`/companion`、`FundeH5:/companion` |
 | 资讯详情 | `#/content/detail` | `id` 必填 | 首页健康陪伴条目等 |
 | **套餐中间页** | `#/package/bridge` | `packageId` 必填；`hospitalId` 可选 | CMS `FundeH5:/package/bridge?…` |
@@ -73,7 +74,7 @@ H5 hash 路径由 `H5Config` 拼接；饮食运动根路径为 `exercise-food`�
 
 | Handler | 方向 | 用途 |
 |---------|------|------|
-| **`FundeBridge`** | H5 → Native | 套餐跳转、饮食方案保存食谱到相册、体检报告文档预览 |
+| **`FundeBridge`** | H5 → Native | 套餐跳转、饮食方案保存食谱到相册、体检报告文档预览、原生扫码 |
 | `FundeNative` | 双向 | 体重 BLE：`ble.getStatus` / `ble.openManager` + emit 事件 |
 
 `FundeBridge` 消息体为扁平 JSON（字段在顶层，**不是** `{ action, params }` 嵌套）：
@@ -121,6 +122,50 @@ H5 调用：`window.webkit.messageHandlers.FundeBridge.postMessage(payload)`。
 | `fileType` | 是 | 小写扩展名，无点号，仅上述七种 |
 
 宿主校验地址与类型后下载到缓存目录（不附加业务登录 token），再用 Quick Look 打开。关闭预览回到原 WebView。
+
+鹰瞳眼底 `#/fundus` 点击「扫一扫」走同一通道。二维码内容是设备 SN 原文（如 `FN12416A288AA00205XB`），H5 不访问摄像头。`onlyFromCamera` 为 true 时只打开相机，不提供相册。
+
+```json
+{
+  "action": "scanCode",
+  "callback": "FundeScanCodeCallback",
+  "scanType": ["qrCode"],
+  "onlyFromCamera": true
+}
+```
+
+宿主在主线程打开原生「扫一扫」页。关闭扫码页、回到原 WebView 后，在该 WebView 的 JS 上下文调用 `window.{callback}`。成功、取消、失败都要回传，包括返回键、右滑返回和拒绝相机权限。`callback` 缺省 `FundeScanCodeCallback`，且必须是合法 JS 标识符。
+
+成功：
+
+```javascript
+window.FundeScanCodeCallback({
+  action: 'scanCode',
+  status: 'success',
+  data: { result: 'FN12416A288AA00205XB' }
+})
+```
+
+取消（返回键、右滑返回）：
+
+```javascript
+window.FundeScanCodeCallback({
+  action: 'scanCode',
+  status: 'cancel'
+})
+```
+
+失败（拒绝相机权限、相机不可用、初始化失败）：
+
+```javascript
+window.FundeScanCodeCallback({
+  action: 'scanCode',
+  status: 'fail',
+  message: '相机权限被拒绝'
+})
+```
+
+`result` 为扫码原文，不拼接 token 或其它 query。`scanType` 含 `qrCode` 时只识别二维码。
 
 ---
 
@@ -212,6 +257,28 @@ App 经 `WebViewController` 打开需登录的 H5 时 SHALL 拼接 `platform=ios
 - **WHEN** 下载超时、HTTP 失败、响应为空，或 Quick Look 无法预览该文件
 - **THEN** 关闭加载提示并提示原因
 - **AND** 链接过期（HTTP 401/403）时提示返回报告重新获取
+
+### Requirement: FundeBridge 原生扫码
+
+鹰瞳眼底 H5「扫一扫」SHALL 经 `FundeBridge` `action=scanCode` 打开原生扫码页。H5 MUST NOT 直接访问摄像头。扫码页关闭并回到原 WebView 后，宿主 SHALL 调用 payload 中的 `callback`（缺省 `FundeScanCodeCallback`）。
+
+#### Scenario: 扫到设备 SN
+
+- **WHEN** H5 postMessage `action=scanCode`，`scanType` 含 `qrCode`，`onlyFromCamera` 为 true
+- **THEN** 主线程 push 标题为「扫一扫」的相机扫码页，只识别二维码，不提供相册选图
+- **AND** 识别成功后关闭扫码页，回到原 WebView
+- **AND** 调用 `window.FundeScanCodeCallback({ action:'scanCode', status:'success', data:{ result } })`，`result` 为二维码原文
+
+#### Scenario: 返回或右滑取消
+
+- **WHEN** 用户点击返回或右滑返回，且未识别到码
+- **THEN** 关闭扫码页并调用 `window.FundeScanCodeCallback({ action:'scanCode', status:'cancel' })`
+
+#### Scenario: 拒绝相机权限或相机不可用
+
+- **WHEN** 相机权限被拒绝、权限受限、设备无相机或相机会话初始化失败
+- **THEN** 关闭扫码页并调用 `window.FundeScanCodeCallback({ action:'scanCode', status:'fail', message })`
+- **AND** 拒绝权限时 `message` 为「相机权限被拒绝」
 
 ### Requirement: 体重 BLE 仍走 FundeNative
 

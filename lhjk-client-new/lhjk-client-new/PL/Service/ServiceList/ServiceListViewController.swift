@@ -8,8 +8,29 @@ final class ServiceListViewController: BaseViewController {
     private let viewModel: ServiceListViewModel
     /// 只展示左类目 + 右套餐，不含顶部机构卡。用于健康服务页替换德系矩阵。
     private let showsPackageBrowserOnly: Bool
+    /// 首页健康服务：Banner 和左右栏在同一条滚动里，Banner 离开后左侧分类吸顶。
+    private let embedsInHomeShelf: Bool
     private var cancellables = Set<AnyCancellable>()
     private var lockRightScrollSync = false
+    private var lockLeftScroll = false
+    private let shelfScroll: UIScrollView = {
+        let scroll = UIScrollView()
+        scroll.backgroundColor = .fdBg
+        scroll.alwaysBounceVertical = true
+        scroll.showsVerticalScrollIndicator = false
+        scroll.contentInsetAdjustmentBehavior = .never
+        return scroll
+    }()
+    private let shelfContent = UIView()
+    private let bannerSlot = UIView()
+    private var bannerSlotHeightConstraint: Constraint?
+    private var leftTopConstraint: Constraint?
+    private var leftHeightConstraint: Constraint?
+    private var rightHeightConstraint: Constraint?
+    private var shelfBannerHeight: CGFloat = 0
+    private var appliedRightHeight: CGFloat = -1
+    private var appliedLeftTop: CGFloat = -1
+    private var appliedLeftHeight: CGFloat = -1
     private let rightSafeAreaFill = UIView()
     private let rightTableContentFiller = UIView()
 
@@ -65,11 +86,16 @@ final class ServiceListViewController: BaseViewController {
 
     private let cartButton = ServiceCartBadgeButton(style: .nav)
 
-    init(productCode: String, showsPackageBrowserOnly: Bool = false) {
+    init(
+        productCode: String,
+        showsPackageBrowserOnly: Bool = false,
+        embedsInHomeShelf: Bool = false
+    ) {
         self.showsPackageBrowserOnly = showsPackageBrowserOnly
+        self.embedsInHomeShelf = embedsInHomeShelf
         self.viewModel = ServiceListViewModel(routeCode: productCode)
         super.init(nibName: nil, bundle: nil)
-        hidesBottomBarWhenPushed = !showsPackageBrowserOnly
+        hidesBottomBarWhenPushed = !showsPackageBrowserOnly && !embedsInHomeShelf
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -132,7 +158,84 @@ final class ServiceListViewController: BaseViewController {
         Router.shared.push("/services/cart")
     }
 
+    /// 把首页 Banner 放进这条滚动的最上面。高度由 Banner 自己按图片比例撑开。
+    func installShelfBanner(_ banner: UIView) {
+        guard embedsInHomeShelf else { return }
+        banner.removeFromSuperview()
+        bannerSlot.addSubview(banner)
+        banner.snp.remakeConstraints { $0.edges.equalToSuperview() }
+    }
+
+    func updateShelfBannerHeight(_ height: CGFloat) {
+        guard embedsInHomeShelf else { return }
+        let next = max(0, height)
+        let previous = shelfBannerHeight
+        guard abs(next - previous) > 0.5 else { return }
+        shelfBannerHeight = next
+        bannerSlotHeightConstraint?.update(offset: next)
+        if previous > 1, next > 1, shelfScroll.contentOffset.y > 0 {
+            shelfScroll.contentOffset.y += next - previous
+        }
+        view.layoutIfNeeded()
+        updateStickyLeftColumn()
+    }
+
+    private func setupShelfUI() {
+        view.backgroundColor = .fdBg
+        shelfScroll.delegate = self
+        shelfContent.backgroundColor = .fdBg
+        bannerSlot.backgroundColor = .clear
+        rightPanelBackground.backgroundColor = .white
+        rightTable.isScrollEnabled = false
+        rightTable.bounces = false
+        rightTable.contentInset = .zero
+        rightTable.contentInsetAdjustmentBehavior = .never
+        leftTable.contentInsetAdjustmentBehavior = .never
+        leftTable.bounces = true
+        leftTable.isScrollEnabled = false
+
+        view.addSubview(shelfScroll)
+        shelfScroll.addSubview(shelfContent)
+        shelfContent.addSubview(bannerSlot)
+        shelfContent.addSubview(rightPanelBackground)
+        shelfContent.addSubview(rightTable)
+        shelfContent.addSubview(leftTable)
+        view.addSubview(loadingIndicator)
+
+        shelfScroll.snp.makeConstraints { $0.edges.equalToSuperview() }
+        shelfContent.snp.makeConstraints {
+            $0.edges.equalTo(shelfScroll.contentLayoutGuide)
+            $0.width.equalTo(shelfScroll.frameLayoutGuide)
+        }
+        bannerSlot.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            bannerSlotHeightConstraint = $0.height.equalTo(0).constraint
+        }
+        leftTable.snp.makeConstraints {
+            $0.leading.equalToSuperview()
+            $0.width.equalTo(Layout.sidebarWidth)
+            leftTopConstraint = $0.top.equalToSuperview().constraint
+            leftHeightConstraint = $0.height.equalTo(0).constraint
+        }
+        rightTable.snp.makeConstraints {
+            $0.top.equalTo(bannerSlot.snp.bottom)
+            $0.trailing.bottom.equalToSuperview()
+            $0.leading.equalTo(leftTable.snp.trailing)
+            rightHeightConstraint = $0.height.equalTo(1).constraint
+        }
+        rightPanelBackground.snp.makeConstraints {
+            $0.edges.equalTo(rightTable)
+        }
+        loadingIndicator.snp.makeConstraints {
+            $0.center.equalTo(shelfScroll)
+        }
+    }
+
     override func setupUI() {
+        if embedsInHomeShelf {
+            setupShelfUI()
+            return
+        }
         view.backgroundColor = .fdBg
         topDivider.backgroundColor = .fdBorder
         layoutContainer.backgroundColor = .fdBg
@@ -221,7 +324,68 @@ final class ServiceListViewController: BaseViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        updateRightTableContentFillerIfNeeded()
+        if embedsInHomeShelf {
+            refreshShelfPackageHeight()
+        } else {
+            updateRightTableContentFillerIfNeeded()
+        }
+    }
+
+    /// 右侧套餐不自己滚，高度等于内容高度，整页滚动由 shelfScroll 负责。
+    private func refreshShelfPackageHeight() {
+        guard embedsInHomeShelf, shelfScroll.bounds.width > 1 else { return }
+        if rightTable.tableFooterView == nil {
+            let spacer = UIView(frame: CGRect(x: 0, y: 0, width: 1, height: 24))
+            spacer.backgroundColor = .white
+            rightTable.tableFooterView = spacer
+        }
+        rightTable.layoutIfNeeded()
+        let height = max(rightTable.contentSize.height, 1)
+        guard abs(height - appliedRightHeight) > 0.5 else {
+            updateStickyLeftColumn()
+            return
+        }
+        appliedRightHeight = height
+        rightHeightConstraint?.update(offset: height)
+        updateStickyLeftColumn()
+    }
+
+    /// Banner 还在视口里时，左栏跟在 Banner 下面一起走。Banner 离开后，左栏吸在滚动区域顶部。
+    private func updateStickyLeftColumn() {
+        guard embedsInHomeShelf, shelfScroll.bounds.height > 1 else { return }
+        leftTable.layoutIfNeeded()
+        let leftContent = max(leftTable.contentSize.height, 1)
+        let visible = shelfScroll.bounds.height
+        let leftHeight = min(leftContent, visible)
+        if abs(leftHeight - appliedLeftHeight) > 0.5 {
+            appliedLeftHeight = leftHeight
+            leftHeightConstraint?.update(offset: leftHeight)
+        }
+
+        let offset = shelfScroll.contentOffset.y
+        let contentBottom = shelfBannerHeight + max(appliedRightHeight, leftHeight)
+        let maxTop = max(shelfBannerHeight, contentBottom - leftHeight)
+        let top = min(max(shelfBannerHeight, offset), maxTop)
+        if abs(top - appliedLeftTop) > 0.5 {
+            appliedLeftTop = top
+            leftTopConstraint?.update(offset: top)
+        }
+
+        let bannerHidden = offset >= shelfBannerHeight - 1
+        let overflows = leftContent > visible + 1
+        if leftTable.isScrollEnabled != (bannerHidden && overflows) {
+            leftTable.isScrollEnabled = bannerHidden && overflows
+        }
+    }
+
+    /// 左栏已经滚到自己的顶部后再下拉，把整页拉下来，Banner 跟着出现。
+    private func revealShelfBannerFromLeftPull() {
+        let rest = -leftTable.adjustedContentInset.top
+        let pulled = rest - leftTable.contentOffset.y
+        guard pulled > 0.5, shelfScroll.contentOffset.y > 0 else { return }
+        shelfScroll.contentOffset.y = max(0, shelfScroll.contentOffset.y - pulled)
+        leftTable.contentOffset.y = rest
+        updateStickyLeftColumn()
     }
 
     private func updateRightTableContentFillerIfNeeded() {
@@ -266,7 +430,12 @@ final class ServiceListViewController: BaseViewController {
                 guard let self else { return }
                 self.rightTable.reloadData()
                 self.rightTable.layoutIfNeeded()
-                self.updateRightTableContentFillerIfNeeded()
+                if self.embedsInHomeShelf {
+                    self.appliedRightHeight = -1
+                    self.refreshShelfPackageHeight()
+                } else {
+                    self.updateRightTableContentFillerIfNeeded()
+                }
             }
             .store(in: &cancellables)
 
@@ -303,16 +472,36 @@ final class ServiceListViewController: BaseViewController {
     private func scrollLeftTableToActiveCategory(in categories: [ServiceListCategory], animated: Bool) {
         guard let id = viewModel.activeCategoryId,
               let idx = categories.firstIndex(where: { $0.id == id }) else { return }
+        lockLeftScroll = true
         leftTable.scrollToRow(
             at: IndexPath(row: idx, section: 0),
             at: .middle,
             animated: animated
         )
+        if !animated || (!leftTable.isDragging && !leftTable.isDecelerating) {
+            DispatchQueue.main.async { [weak self] in
+                guard let self, !self.leftTable.isDragging, !self.leftTable.isDecelerating else { return }
+                self.lockLeftScroll = false
+            }
+        }
     }
 
     private func scrollRightTable(toSectionHeader section: Int) {
         guard section < rightTable.numberOfSections else { return }
+        rightTable.layoutIfNeeded()
         let headerY = rightTable.rectForHeader(inSection: section).minY
+        if embedsInHomeShelf {
+            refreshShelfPackageHeight()
+            view.layoutIfNeeded()
+            let maxY = max(0, shelfScroll.contentSize.height - shelfScroll.bounds.height)
+            let y = min(max(shelfBannerHeight + headerY, 0), maxY)
+            let animated = abs(shelfScroll.contentOffset.y - y) > 1
+            shelfScroll.setContentOffset(CGPoint(x: 0, y: y), animated: animated)
+            if !animated {
+                releaseRightScrollSyncIfNeeded()
+            }
+            return
+        }
         let minY = -rightTable.adjustedContentInset.top
         let maxY = max(
             minY,
@@ -324,8 +513,11 @@ final class ServiceListViewController: BaseViewController {
 
     private func syncCategoryFromRightScroll() {
         guard !lockRightScrollSync, !viewModel.packageSections.isEmpty else { return }
+        guard rightTable.contentSize.height > 1 else { return }
 
-        let top = rightTable.contentOffset.y + rightTable.adjustedContentInset.top + 1
+        let top = embedsInHomeShelf
+            ? shelfScroll.contentOffset.y - shelfBannerHeight + 1
+            : rightTable.contentOffset.y + rightTable.adjustedContentInset.top + 1
         var section = 0
         for index in 0..<viewModel.packageSections.count {
             let headerY = rightTable.rectForHeader(inSection: index).minY
@@ -443,7 +635,7 @@ extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate 
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if tableView.tag == 0 { return CategoryNavCell.rowHeight }
-        if viewModel.packageSections.isEmpty { return UITableView.automaticDimension }
+        if viewModel.packageSections.isEmpty { return 240 }
         let cardWidth = max(0, tableView.bounds.width - PackageCardCell.cardHorizontalInsets)
         return PackageCardCell.rowHeight(forCardWidth: cardWidth)
     }
@@ -455,7 +647,7 @@ extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate 
             lockRightScrollSync = true
             if let target = viewModel.indexPath(forCategoryId: category.id) {
                 scrollRightTable(toSectionHeader: target.section)
-                if target.section == 0 {
+                if target.section == 0, !embedsInHomeShelf {
                     releaseRightScrollSyncIfNeeded()
                 }
             } else {
@@ -471,17 +663,52 @@ extension ServiceListViewController: UITableViewDataSource, UITableViewDelegate 
         }
     }
 
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        if scrollView === leftTable {
+            lockLeftScroll = false
+        }
+    }
+
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        if embedsInHomeShelf, scrollView === shelfScroll {
+            updateStickyLeftColumn()
+            syncCategoryFromRightScroll()
+            return
+        }
+        if scrollView === leftTable {
+            if embedsInHomeShelf {
+                guard !lockLeftScroll else { return }
+                revealShelfBannerFromLeftPull()
+                return
+            }
+            return
+        }
         guard scrollView === rightTable else { return }
         syncCategoryFromRightScroll()
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        if embedsInHomeShelf, scrollView === shelfScroll {
+            releaseRightScrollSyncIfNeeded()
+            return
+        }
+        if scrollView === leftTable {
+            lockLeftScroll = false
+            return
+        }
         guard scrollView === rightTable else { return }
         releaseRightScrollSyncIfNeeded()
     }
 
     func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
+        if embedsInHomeShelf, scrollView === shelfScroll {
+            releaseRightScrollSyncIfNeeded()
+            return
+        }
+        if scrollView === leftTable {
+            lockLeftScroll = false
+            return
+        }
         guard scrollView === rightTable else { return }
         releaseRightScrollSyncIfNeeded()
     }

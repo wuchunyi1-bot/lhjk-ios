@@ -24,7 +24,7 @@ final class OrderPayResultDottedLine: UIView {
     }
 }
 
-/// 支付信息卡 — 背景切图 `pay_info_bg`，字段来自 `getAppOrderDetail`，不展示支付时间
+/// 支付信息卡 — 背景切图 `pay_info_bg`，字段来自 `getAppOrderDetail`
 final class OrderPayResultInfoView: UIView {
 
     var onOrderNumberCopied: (() -> Void)?

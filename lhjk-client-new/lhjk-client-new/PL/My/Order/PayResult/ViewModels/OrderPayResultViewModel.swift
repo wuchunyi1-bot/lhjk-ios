@@ -105,7 +105,7 @@ final class OrderPayResultViewModel: ObservableObject {
         return payload.amountYuan
     }
 
-    /// 信息区行：订单号 / 下单时间 / 支付方式 / 订单状态。不展示支付时间。
+    /// 信息区行：订单号 / 下单时间 / 支付方式 / 支付时间 / 订单状态。
     var infoRows: [OrderPayResultInfoRow] {
         guard let detail else { return [] }
         var rows: [OrderPayResultInfoRow] = []
@@ -119,6 +119,9 @@ final class OrderPayResultViewModel: ObservableObject {
         let payMethod = resolvedPayMethodTitle(from: detail)
         if !payMethod.isEmpty {
             rows.append(OrderPayResultInfoRow(title: "支付方式", value: payMethod, isOrderNumber: false))
+        }
+        if let payTime = detail.payTime?.trimmingCharacters(in: .whitespacesAndNewlines), !payTime.isEmpty {
+            rows.append(OrderPayResultInfoRow(title: "支付时间", value: payTime, isOrderNumber: false))
         }
         if let status = detail.orderStatus?.label, !status.isEmpty {
             rows.append(OrderPayResultInfoRow(title: "订单状态", value: status, isOrderNumber: false))

@@ -31,13 +31,14 @@ Figma：[支付结果 `3506:9196`](https://www.figma.com/design/JEIKBLlcPpylp8GJ
 | 信息卡 | `pay_info_bg` 背景；含缺口灰色虚线；`GET /v1/order/getAppOrderDetail` | 同左 |
 | 底栏 | 左「完成」（白底橙框），右「查看订单」（橙底实心） | 同左 |
 
-信息卡字段（**不展示支付时间**）：
+信息卡字段：
 
 | 字段 | 来源 |
 |------|------|
 | 订单号 | `id`，可复制（14x14 复制图标） |
 | 下单时间 | `createTime` |
 | 支付方式 | `paymentType` 字典文案，缺省确认页所选渠道 |
+| 支付时间 | `payTime`，为空则不展示该行 |
 | 订单状态 | `status` → `AppOrderStatus.label` |
 
 - 页面背景 `fdBg`；图标直接铺在底上，不用白底圆

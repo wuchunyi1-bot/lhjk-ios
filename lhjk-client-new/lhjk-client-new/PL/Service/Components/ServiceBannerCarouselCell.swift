@@ -341,6 +341,9 @@ private final class BannerSlideCell: UICollectionViewCell {
 final class ServiceHubBannerBar: UIView, UITableViewDataSource, UITableViewDelegate {
 
     var onBannerTap: ((ServiceHubBanner) -> Void)?
+    /// 高度变化（含无图时的 0）。首页页签用来把 Banner 放进滚动内容。
+    var onHeightChange: ((CGFloat) -> Void)?
+    var displayedHeight: CGFloat { banners.isEmpty ? 0 : bannerHeight }
 
     private var banners: [ServiceHubBanner] = []
     private var bannerHeight: CGFloat = 0
@@ -451,6 +454,7 @@ final class ServiceHubBannerBar: UIView, UITableViewDataSource, UITableViewDeleg
             heightConstraint?.update(offset: bannerHeight)
         }
         tableView.reloadData()
+        onHeightChange?(displayedHeight)
     }
 
     /// 只改已有行的高度。行数变化必须走 reloadData，不能 beginUpdates。
@@ -469,6 +473,7 @@ final class ServiceHubBannerBar: UIView, UITableViewDataSource, UITableViewDeleg
                 self.tableView.beginUpdates()
                 self.tableView.endUpdates()
             }
+            self.onHeightChange?(self.displayedHeight)
         }
     }
 

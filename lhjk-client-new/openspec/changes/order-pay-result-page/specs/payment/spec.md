@@ -12,8 +12,7 @@
 - **THEN** 进入支付结果页成功态
 - **AND** 标题为「支付结果」
 - **AND** 展示切图 `pay_success`、主文案「支付成功」、本次应付金额（¥0.00 亦展示）
-- **AND** 请求 `GET /v1/order/getAppOrderDetail`，在 `pay_info_bg` 信息卡展示订单号、下单时间、支付方式、订单状态
-- **AND** **不**展示支付时间
+- **AND** 请求 `GET /v1/order/getAppOrderDetail`，在 `pay_info_bg` 信息卡展示订单号、下单时间、支付方式、支付时间（`payTime` 非空时）、订单状态
 - **AND** 底栏展示「完成」
 - **AND** 刷新订单列表通知 `.orderListNeedsRefresh`
 - **AND** 不得 Toast「支付成功」后直接进入订单列表
@@ -23,7 +22,7 @@
 - **WHEN** 已发起支付后出现 `PaymentError`（用户取消除外）或其它无法完成支付的错误
 - **THEN** 进入支付结果页失败态
 - **AND** 展示切图 `pay_failed`、主文案「支付失败」与失败原因
-- **AND** 同样请求 `getAppOrderDetail` 展示信息卡（不含支付时间）
+- **AND** 同样请求 `getAppOrderDetail` 展示信息卡；`payTime` 为空时不展示支付时间
 - **AND** 底栏展示「完成」
 - **AND** 不展示应付金额
 

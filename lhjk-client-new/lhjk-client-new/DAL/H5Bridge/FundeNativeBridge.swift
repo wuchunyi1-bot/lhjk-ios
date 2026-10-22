@@ -6,7 +6,7 @@ import Combine
 
 /// H5 ↔ App Bridge — 对齐《H5 宿主接入文档》
 ///
-/// - `FundeBridge`：套餐中间页、保存食谱、文档预览（扁平 JSON）
+/// - `FundeBridge`：套餐中间页、保存食谱、文档预览、原生扫码（扁平 JSON）
 /// - `FundeNative`：体重 BLE（`{ action, params, callbackId }`）
 /// Native → H5: `window.__fundeBridge.respond|reject|emit`
 final class FundeNativeBridge: NSObject {
@@ -21,6 +21,7 @@ final class FundeNativeBridge: NSObject {
     private var cancellables = Set<AnyCancellable>()
     private var documentPreviewGeneration = 0
     private var documentLoadingAlert: UIAlertController?
+    private weak var scanCodeViewController: H5ScanCodeViewController?
     /// Quick Look 不持有 dataSource，必须由 Bridge 强引用到关闭。
     private var documentPreviewSession: DocumentPreviewSession?
 
@@ -43,6 +44,7 @@ final class FundeNativeBridge: NSObject {
         documentLoadingAlert?.dismiss(animated: false)
         documentLoadingAlert = nil
         documentPreviewSession = nil
+        scanCodeViewController = nil
         cancellables.removeAll()
         webView = nil
         hostViewController = nil
@@ -79,6 +81,8 @@ final class FundeNativeBridge: NSObject {
             handleSaveImageToAlbum(body: body, params: params, callbackId: callbackId)
         case "previewDocument":
             handlePreviewDocument(body: body, params: params)
+        case "scanCode":
+            handleScanCode(body: body, params: params)
         case "gotoBuy":
             openServicePackageList()
         case "navigateH5", "openH5", "openH5Page", "openPage":
@@ -236,6 +240,76 @@ final class FundeNativeBridge: NSObject {
                 }
             }
         }
+    }
+
+    /// 鹰瞳眼底 `#/fundus`「扫一扫」。打开原生扫码页，结束后回调 `window.{callback}`。
+    private func handleScanCode(body: [String: Any], params: [String: Any]) {
+        let callbackName = Self.stringValue(body["callback"])
+            ?? Self.stringValue(params["callback"])
+            ?? "FundeScanCodeCallback"
+        guard Self.isSafeCallbackName(callbackName) else { return }
+        guard scanCodeViewController == nil else { return }
+
+        let scanTypes = Self.stringArray(body["scanType"]) ?? Self.stringArray(params["scanType"]) ?? ["qrCode"]
+        let scannerVC = H5ScanCodeViewController()
+        scannerVC.scanTypes = scanTypes
+        scanCodeViewController = scannerVC
+        scannerVC.onFinish = { [weak self] outcome in
+            switch outcome {
+            case .success(let result):
+                print("[H5ScanCode] result=\(result)")
+            case .cancel:
+                print("[H5ScanCode] cancel")
+            case .fail(let message):
+                print("[H5ScanCode] fail \(message)")
+            }
+            guard let self else { return }
+            self.scanCodeViewController = nil
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+                self?.invokeScanCodeCallback(callbackName, outcome: outcome)
+            }
+        }
+
+        guard let host = hostViewController else {
+            scanCodeViewController = nil
+            invokeScanCodeCallback(callbackName, outcome: .fail("无法打开扫码"))
+            return
+        }
+        if let nav = host.navigationController {
+            nav.pushViewController(scannerVC, animated: true)
+        } else {
+            let nav = BaseNavigationController(rootViewController: scannerVC)
+            nav.modalPresentationStyle = .fullScreen
+            host.present(nav, animated: true)
+        }
+    }
+
+    private func invokeScanCodeCallback(_ name: String, outcome: H5ScanCodeOutcome) {
+        guard Self.isSafeCallbackName(name) else { return }
+        let payload: [String: Any]
+        switch outcome {
+        case .success(let result):
+            payload = [
+                "action": "scanCode",
+                "status": "success",
+                "data": ["result": result],
+            ]
+        case .cancel:
+            payload = [
+                "action": "scanCode",
+                "status": "cancel",
+            ]
+        case .fail(let message):
+            payload = [
+                "action": "scanCode",
+                "status": "fail",
+                "message": message,
+            ]
+        }
+        guard let json = Self.jsonLiteral(payload) else { return }
+        evaluate(
+            "(function(){try{var cb=window.\(name);if(typeof cb==='function'){cb(\(json));}}catch(e){}})();"
+        )
     }
 
     private func showDocumentLoading() {
@@ -458,6 +532,24 @@ final class FundeNativeBridge: NSObject {
            let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             return obj
         }
+        return nil
+    }
+
+    static func isSafeCallbackName(_ name: String) -> Bool {
+        guard let first = name.first, first.isLetter || first == "_" || first == "$" else { return false }
+        return name.allSatisfy { $0.isLetter || $0.isNumber || $0 == "_" || $0 == "$" }
+    }
+
+    static func stringArray(_ value: Any?) -> [String]? {
+        if let array = value as? [String] {
+            let trimmed = array.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        if let array = value as? [Any] {
+            let strings = array.compactMap { stringValue($0) }
+            return strings.isEmpty ? nil : strings
+        }
+        if let one = stringValue(value) { return [one] }
         return nil
     }
 

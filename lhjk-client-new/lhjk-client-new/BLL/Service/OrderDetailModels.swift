@@ -14,6 +14,8 @@ struct AppOrderDetailBO: Decodable {
     let paymentType: Int?
     let paymentNo: String?
     let createTime: String?
+    /// 支付时间
+    let payTime: String?
     let hospitalName: String?
     let doctorName: String?
     let packageDescription: String?
@@ -72,7 +74,7 @@ struct AppOrderDetailBO: Decodable {
     let refundReasonType: Int?
 
     private enum CodingKeys: String, CodingKey {
-        case id, parentId, orderName, status, payable, price, paymentType, paymentNo, createTime
+        case id, parentId, orderName, status, payable, price, paymentType, paymentNo, createTime, payTime
         case hospitalName, doctorName, packageDescription, introduction, packageType, packageImageUrl
         case typeOrder, address, receiver, phone, expressAmount, couponAmount, benefitsAmount
         case description, logisticsNumber, logisticsVendor, logisticsChineseName
@@ -95,6 +97,7 @@ struct AppOrderDetailBO: Decodable {
         paymentType = Self.decodeFlexibleInt(c, key: .paymentType)
         paymentNo = try c.decodeIfPresent(String.self, forKey: .paymentNo)
         createTime = try c.decodeIfPresent(String.self, forKey: .createTime)
+        payTime = try c.decodeIfPresent(String.self, forKey: .payTime)
         hospitalName = try c.decodeIfPresent(String.self, forKey: .hospitalName)
         doctorName = try c.decodeIfPresent(String.self, forKey: .doctorName)
         packageDescription = try c.decodeIfPresent(String.self, forKey: .packageDescription)

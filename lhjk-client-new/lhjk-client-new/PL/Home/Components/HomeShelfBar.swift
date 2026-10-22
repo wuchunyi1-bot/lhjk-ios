@@ -39,6 +39,12 @@ final class HomeShelfBar: UIView {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    func frameOfButton(for shelf: HomeShelf) -> CGRect? {
+        guard let button = buttons[shelf] else { return nil }
+        layoutIfNeeded()
+        return button.convert(button.bounds, to: self)
+    }
+
     func setSelected(_ shelf: HomeShelf) {
         for (item, button) in buttons {
             let selected = item == shelf
