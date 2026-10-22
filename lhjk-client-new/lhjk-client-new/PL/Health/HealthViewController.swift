@@ -38,6 +38,17 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
 
     private let brandHeader = TabHubBrandHeaderView()
 
+    private lazy var hardwareTestButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("测试硬件设备", for: .normal)
+        button.titleLabel?.font = .fdBody
+        button.setTitleColor(.fdPrimary, for: .normal)
+        button.backgroundColor = .fdBg2
+        button.layer.cornerRadius = 8
+        button.addTarget(self, action: #selector(openHardwareTest), for: .touchUpInside)
+        return button
+    }()
+
     private lazy var tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
         tv.backgroundColor = .fdBg
@@ -96,15 +107,25 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         view.backgroundColor = .fdBg
         refreshArchiveCompletionUI()
         view.addSubview(brandHeader)
+        view.addSubview(hardwareTestButton)
         view.addSubview(tableView)
         brandHeader.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide)
             $0.leading.trailing.equalToSuperview()
         }
+        hardwareTestButton.snp.makeConstraints {
+            $0.top.equalTo(brandHeader.snp.bottom).offset(4)
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(40)
+        }
         tableView.snp.makeConstraints {
-            $0.top.equalTo(brandHeader.snp.bottom)
+            $0.top.equalTo(hardwareTestButton.snp.bottom).offset(8)
             $0.leading.trailing.bottom.equalToSuperview()
         }
+    }
+
+    @objc private func openHardwareTest() {
+        navigationController?.pushViewController(HardwareDeviceTestViewController(), animated: true)
     }
 
     override func bindViewModel() {
