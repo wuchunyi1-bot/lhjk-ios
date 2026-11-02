@@ -51,6 +51,8 @@ final class PackageCardCell: UITableViewCell {
     private var lastLayoutScale: CGFloat = 0
     private var lastAppliedShowsBadge = false
     private var lastAppliedShowsSubtitle = false
+    /// 正在把刚改的约束铺到当前这一帧，避免 layoutSubviews 重入。
+    private var isApplyingProportionalLayout = false
 
     private let cardView: UIView = {
         let view = UIView()
@@ -152,9 +154,16 @@ final class PackageCardCell: UITableViewCell {
             make.bottom.equalToSuperview().offset(-Design.priceBottom)
             make.trailing.lessThanOrEqualToSuperview().offset(-8)
         }
+
+        nameLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(Design.nameTop)
+            make.leading.equalTo(coverImageView.snp.trailing).offset(Design.textLeadingFromCover)
+            make.trailing.lessThanOrEqualToSuperview().offset(-8)
+        }
     }
 
     private func applyProportionalLayoutIfNeeded() {
+        guard !isApplyingProportionalLayout else { return }
         let cardWidth = contentView.bounds.width - Self.cardHorizontalInsets
         guard cardWidth > 0 else { return }
         let scale = cardWidth / Design.cardWidth
@@ -177,11 +186,15 @@ final class PackageCardCell: UITableViewCell {
 
         let showsBadge = !badgeView.isHidden
         let showsSubtitle = !subtitleLabel.isHidden
-        if scaleChanged || showsBadge != lastAppliedShowsBadge || showsSubtitle != lastAppliedShowsSubtitle {
-            lastAppliedShowsBadge = showsBadge
-            lastAppliedShowsSubtitle = showsSubtitle
-            applyContentConstraints(scale: scale, showsBadge: showsBadge, showsSubtitle: showsSubtitle)
+        guard scaleChanged || showsBadge != lastAppliedShowsBadge || showsSubtitle != lastAppliedShowsSubtitle else {
+            return
         }
+        lastAppliedShowsBadge = showsBadge
+        lastAppliedShowsSubtitle = showsSubtitle
+        isApplyingProportionalLayout = true
+        applyContentConstraints(scale: scale, showsBadge: showsBadge, showsSubtitle: showsSubtitle)
+        contentView.layoutIfNeeded()
+        isApplyingProportionalLayout = false
     }
 
     private func applyContentConstraints(scale: CGFloat, showsBadge: Bool, showsSubtitle: Bool) {

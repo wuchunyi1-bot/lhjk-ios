@@ -150,6 +150,11 @@ final class HealthArchiveCardCell: UITableViewCell {
         }
     }
 
+    func guideCardRect() -> CGRect {
+        layoutIfNeeded()
+        return card.convert(card.bounds, to: self)
+    }
+
     func configure(archiveProgress: Int) {
         currentProgress = archiveProgress
         pctLabel.text = "\(archiveProgress)"

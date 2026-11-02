@@ -173,7 +173,7 @@
 
 #### Scenario: 用户主动退出登录
 - **WHEN** 用户在设置页面点击"退出登录"
-- **THEN** 系统调用 `LoginService.logout()` 发送 `DELETE /oauth2/logout` 请求（Header `Authorization: Bearer <token>`），然后依次清除 IM 状态、断开融云连接、清除本地登录态和用户缓存，最后跳转至登录页
+- **THEN** 系统调用 `LoginService.logout()` 发送 `DELETE /oauth2/logout` 请求（Header `Authorization: Bearer <token>`），然后依次清除 IM 状态、断开融云连接、清除本地登录态和用户缓存、删除首页顶栏页签记录 `fd_home_shelf`，最后跳转至登录页
 
 #### Scenario: 账号注销
 - **WHEN** 用户完成账号注销流程

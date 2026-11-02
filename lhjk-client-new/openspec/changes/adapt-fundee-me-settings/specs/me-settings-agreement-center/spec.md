@@ -19,9 +19,21 @@
 
 ### Requirement: 协议详情只读
 
-协议详情页 SHALL 展示标题、更新日期与分节正文；无编辑或同意操作。
+协议详情 SHALL 打开当前 H5 环境的静态页 `{base}/agreements/user-app/{file}.html`，不拼接登录 token。无编辑或同意操作。
+
+| docType | 文件 | 标题 |
+|---|---|---|
+| user | `user.html` | 用户协议 |
+| privacy | `privacy.html` | 隐私政策 |
+| consent | `consent.html` | 健康管理服务知情同意书 |
+| personal-info | `personal-info-collection.html` | 个人信息收集清单 |
+| third-party-sharing | `third-party-sharing.html` | 第三方信息共享清单 |
+| member-service | `member-service.html` | 会员服务协议 |
+| benefit-card | `benefit-card.html` | 权益卡使用规则 |
+
+开发环境 base 为 `https://h5-dev.lianhaojiankang.com`。
 
 #### Scenario: 未知类型兜底
 
 - **WHEN** docType 无法识别
-- **THEN** 展示用户协议内容作为兜底
+- **THEN** 打开 `user.html` 作为兜底

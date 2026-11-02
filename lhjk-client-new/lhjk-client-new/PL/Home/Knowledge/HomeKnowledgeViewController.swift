@@ -44,6 +44,17 @@ final class HomeKnowledgeViewController: BaseViewController {
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
     }
 
+    func guideBannerFrame(in target: UIView) -> CGRect? {
+        guard showsBanner, isViewLoaded, tableView.numberOfSections > 0, tableView.numberOfRows(inSection: 0) > 0 else {
+            return nil
+        }
+        tableView.layoutIfNeeded()
+        let rect = tableView.rectForRow(at: IndexPath(row: 0, section: 0))
+        guard rect.height > 1 else { return nil }
+        let frame = tableView.convert(rect, to: target)
+        return frame.height > 1 ? frame : nil
+    }
+
     func update(articles: [HomeArticleCell.Article]) {
         self.articles = articles
         guard isViewLoaded else { return }
@@ -112,7 +123,7 @@ final class HomeKnowledgeViewController: BaseViewController {
         return BannerImageAspectLayout.height(
             width: max(0, width - ServiceBannerCarouselCell.horizontalInset * 2),
             imageSize: nil,
-            fallbackRatio: ServiceBannerCarouselCell.fallbackRatio
+            fallbackRatio: ServiceBannerCarouselCell.homeShelfRatio
         )
     }
 
@@ -150,6 +161,7 @@ extension HomeKnowledgeViewController: UITableViewDataSource, UITableViewDelegat
                 withIdentifier: ServiceBannerCarouselCell.reuseID,
                 for: indexPath
             ) as! ServiceBannerCarouselCell
+            cell.usesHomeShelfRatio = true
             cell.configure(banners)
             cell.onBannerTap = { [weak self] banner in
                 self?.open(banner)

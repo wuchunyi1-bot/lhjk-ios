@@ -23,11 +23,12 @@ MUST NOT 展示：常用功能宫格、Hub 底部退出登录、「个人信息�
 
 Hero SHALL 使用暖色渐变背景（`#FFF7F1` → `#FFE9DC`）。
 
-#### Scenario: 头像与姓名
+#### Scenario: 头像与昵称
 
 - **WHEN** 渲染 Hero
-- **THEN** 左侧 64×64 圆形头像（有 `imageUrl` 用 Kingfisher，否则默认头像 `chat_im_avatar`，不得用姓名字）
-- **AND** 点击头像或姓名 push `/me/profile`
+- **THEN** 左侧圆形头像（有 `imageUrl` 用 Kingfisher，否则默认头像 `chat_im_avatar`，不得用姓名字）
+- **AND** 头像右侧展示昵称；昵称为空时回退 `chineseName`，再没有则展示「用户」
+- **AND** 点击头像或昵称 push `/me/profile`
 
 #### Scenario: 设置与健康档案
 
@@ -54,7 +55,7 @@ Hero 内 SHALL 展示暖橙浅色会员卡，含标题与四格资产。
 |-------|-------|------|
 | 会员等级 | `/me/member-level` | accent 样式，默认 V1 |
 | 健康积分 | `/me/points` | 默认 mock 892，待会员 API |
-| 富德币 | `/me/member-level` | `GET /v1/users/getUserCenterOverview` 的 `fundeCoin` **原值**；缺省展示 `0`，**不得** mock，**不得**用 K/w 缩写 |
+| 健康币 | `/me/member-level` | `GET /v1/users/getUserCenterOverview` 的 `fundeCoin` **原值**；缺省展示 `0`，**不得** mock，**不得**用 K/w 缩写 |
 | 权益卡券 | `/me/vouchers` | 走 `VoucherService` 实时计数 |
 
 ---

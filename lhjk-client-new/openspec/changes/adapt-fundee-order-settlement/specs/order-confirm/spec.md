@@ -27,11 +27,11 @@
 - **AND** Query 必传 `orderId`（int64）
 - **AND** 若路由/购物车有 `serialNumber` 则一并传入
 - **AND** **禁止**用 mock / 假 orderId；**禁止**用上一页 package 草稿顶替结算结果
-- **WHEN** 缺少 `orderId` 或结算请求失败（**不含** `code = M0104`）
+- **WHEN** 缺少 `orderId` 或结算请求失败（**不含** `code = M0104` / `M0105`）
 - **THEN** Toast 提示并返回上一页
-- **WHEN** `GET /v1/order/getOrderSettlement` 返回 `code = M0104`（套餐价格或内容已变化，FDAPP-938）
+- **WHEN** `GET /v1/order/getOrderSettlement` 返回 `code = M0104`（套餐价格或内容已变化，FDAPP-938）或 `code = M0105`（套餐已下架，当前订单无法继续支付）
 - **THEN** **不** Toast、**不**自动返回
-- **AND** 弹出「提示」Alert，文案优先用接口 `msg`，缺省为「套餐价格或内容已发生变化，请重新选择套餐后下单。」
+- **AND** 弹出「提示」Alert，文案优先用接口 `msg`；`M0104` 缺省为「套餐价格或内容已发生变化，请重新选择套餐后下单。」，`M0105` 缺省为「该套餐已下架，当前订单无法继续支付，系统将自动取消订单。」
 - **AND** 左侧「取消订单」直接取消该待支付订单（`insertOrEdit` status=8），成功后落到「我的订单 · 全部」
 - **AND** 右侧「选择套餐」切到服务 Tab 根页（服务首页），并 pop 当前确认/待支付页
 
@@ -40,8 +40,8 @@
 - **WHEN** 接口成功返回 `ShoppingCartPackageDetailMobileBO`
 - **THEN** 用于展示：`packageName`、`details`、`commodityPrice`/`totalPrice`、`expressAmount`、`orderExpress`、`wechat`/`alipay`、`description`、`amount`（优惠券抵扣，缺省 `appOrderDetailBO.couponAmount`）、`benefitsAmount`（权益卡抵扣，缺省 `appOrderDetailBO.benefitsAmount`）、`couponTakeId` 等
 - **AND** 解码 `amountVersion`、`expectedPayableAmount`，支付时原样带回 `orderPay`；页面应付优先 `expectedPayableAmount`
-- **AND** 结算根级 `address` 字段**已废弃**（恒为空），**禁止**用于快递地址展示；快递地址**仅**读 `appOrderDetailBO.receiver`/`phone`/`address`
-- **AND** `orderExpress`：`1` = 支持快递；其它 = 仅医院自提
+- **AND** 结算根级 `address` 字段**已废弃**（恒为空），**禁止**用于快递地址展示；快递地址**仅**读 `appOrderDetailBO.receiver`/`phone`/`address`；`addressId`（根级或 `appOrderDetailBO`）记在本地地址上，切换快递地址时传给 `updateOrderDelivery`
+- **AND** 是否展示收货方式**不**读 `orderExpress`，只由 `equipmentFlag` 决定
 - **AND** 自提用的 `hospitalId` 优先取 `appOrderDetailBO.hospitalId`（缺省再回退本地已选机构）
 
 ### Requirement: 收货方式（按 typeOrder 初始化）
@@ -54,10 +54,7 @@
 - **THEN** 收货方式初始值由 `appOrderDetailBO.typeOrder` 决定：`1` = 快递配送，`0` = 机构自提
 - **AND** **禁止**写死默认「机构自提」
 - **AND** 收货方式按钮顺序自左向右为「机构自提」「快递配送」
-- **WHEN** 结算 `orderExpress == 1`
-- **THEN** 展示「机构自提」「快递配送」可切换
-- **WHEN** `orderExpress != 1`
-- **THEN** **仅**可选「机构自提」（隐藏快递按钮）
+- **AND** `equipmentFlag != false` 时两个选项同时展示、可切换；`equipmentFlag == false` 时两个都不展示
 
 #### Scenario: 切换收货方式
 
@@ -201,7 +198,7 @@
 
 - **WHEN** `getOrderSettlement.data.equipmentFlag == false`
 - **THEN** 确认订单页与待支付页**不展示**收货方式、自提地址、快递收货地址
-- **AND** 是否可选快递仅在 `equipmentFlag != false` 时由 `orderExpress` 决定
+- **AND** `equipmentFlag != false` 时同时展示机构自提与快递配送，不再用 `orderExpress` 隐藏其中一项
 
 ### Requirement: 订单草稿（降级）
 

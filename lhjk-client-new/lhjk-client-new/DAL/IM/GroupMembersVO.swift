@@ -16,6 +16,8 @@ struct ImSessionDetails: Decodable {
     let modifyTime: String?
     let modifyId: Int64?
     let userName: String?
+    /// 昵称。仅当前用户在群成员列表展示；空则回退 `userName`。
+    let nickname: String?
     let userImg: String?
     let imageUrl: String?
     let roleName: String?
@@ -37,6 +39,13 @@ struct ImSessionDetails: Decodable {
         return name.isEmpty ? "群成员" : name
     }
 
+    /// 自己展示昵称；没有昵称时用姓名。其他成员始终用姓名。
+    func listDisplayName(isSelf: Bool) -> String {
+        guard isSelf else { return displayName }
+        let nick = nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return nick.isEmpty ? displayName : nick
+    }
+
     var displayRole: String {
         let role = roleName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !role.isEmpty { return role }
@@ -52,7 +61,7 @@ struct ImSessionDetails: Decodable {
     private enum CodingKeys: String, CodingKey {
         case id, sessionId, groupId, identity, userId, mute
         case createTime, createId, modifyTime, modifyId
-        case userName, userImg, imageUrl, roleName, repeatMark
+        case userName, nickname, nickName, userImg, imageUrl, roleName, repeatMark
         case departmentName, doctorType, healthId
     }
 
@@ -69,6 +78,10 @@ struct ImSessionDetails: Decodable {
         modifyTime = try c.decodeIfPresent(String.self, forKey: .modifyTime)
         modifyId = c.decodeFlexibleInt64(.modifyId)
         userName = try c.decodeIfPresent(String.self, forKey: .userName)
+        nickname = Self.firstNonEmpty(
+            try c.decodeIfPresent(String.self, forKey: .nickname),
+            try c.decodeIfPresent(String.self, forKey: .nickName)
+        )
         userImg = try c.decodeIfPresent(String.self, forKey: .userImg)
         imageUrl = try c.decodeIfPresent(String.self, forKey: .imageUrl)
         roleName = try c.decodeIfPresent(String.self, forKey: .roleName)
@@ -76,6 +89,14 @@ struct ImSessionDetails: Decodable {
         departmentName = try c.decodeIfPresent(String.self, forKey: .departmentName)
         doctorType = c.decodeFlexibleInt(.doctorType)
         healthId = c.decodeFlexibleInt64(.healthId)
+    }
+
+    private static func firstNonEmpty(_ values: String?...) -> String? {
+        for value in values {
+            let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if !trimmed.isEmpty { return trimmed }
+        }
+        return nil
     }
 }
 

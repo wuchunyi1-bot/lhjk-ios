@@ -1,7 +1,7 @@
 import UIKit
 import SnapKit
 
-/// 富德优选商城顶部分类 Tab — 对齐 Figma 4054:2991
+/// 富德优选分类：选中橙色胶囊白字，未选中浅灰胶囊。
 final class MallCategoryTabBar: UIView {
 
     var onTabSelected: ((Int) -> Void)?
@@ -17,7 +17,7 @@ final class MallCategoryTabBar: UIView {
     private let stackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
-        stack.spacing = 24
+        stack.spacing = 8
         stack.alignment = .center
         return stack
     }()
@@ -41,8 +41,8 @@ final class MallCategoryTabBar: UIView {
             $0.edges.equalToSuperview()
         }
         stackView.snp.makeConstraints {
-            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 24, bottom: 8, right: 24))
-            $0.height.equalTo(36)
+            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16))
+            $0.height.equalTo(32)
         }
     }
 
@@ -106,25 +106,19 @@ private final class TabItemView: UIView {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.font = .fdFont(ofSize: 16, weight: .regular)
-        l.textColor = UIColor(hexString: "#535D72")
+        l.font = .fdFont(ofSize: 14, weight: .regular)
+        l.textColor = UIColor(hexString: "#1F2942")
         l.textAlignment = .center
         return l
-    }()
-
-    private let indicatorView: UIView = {
-        let v = UIView()
-        v.backgroundColor = UIColor(hexString: "#FF7A50")
-        v.layer.cornerRadius = 2
-        v.clipsToBounds = true
-        v.alpha = 0
-        return v
     }()
 
     init(title: String, index: Int) {
         self.index = index
         super.init(frame: .zero)
         titleLabel.text = title
+        layer.cornerRadius = 16
+        clipsToBounds = true
+        backgroundColor = UIColor(hexString: "#F2F3F5")
         setupUI()
     }
 
@@ -132,18 +126,11 @@ private final class TabItemView: UIView {
 
     private func setupUI() {
         addSubview(titleLabel)
-        addSubview(indicatorView)
 
         titleLabel.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-            $0.height.equalTo(24)
-        }
-        indicatorView.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(4)
-            $0.centerX.equalToSuperview()
-            $0.width.equalTo(18)
-            $0.height.equalTo(4)
-            $0.bottom.equalToSuperview()
+            $0.top.bottom.equalToSuperview()
+            $0.leading.trailing.equalToSuperview().inset(14)
+            $0.height.equalTo(32)
         }
 
         isUserInteractionEnabled = true
@@ -153,9 +140,9 @@ private final class TabItemView: UIView {
 
     func setSelected(_ isSelected: Bool, animated: Bool) {
         let updates = {
-            self.titleLabel.font = .fdFont(ofSize: 16, weight: isSelected ? .medium : .regular)
-            self.titleLabel.textColor = isSelected ? UIColor(hexString: "#1F2942") : UIColor(hexString: "#535D72")
-            self.indicatorView.alpha = isSelected ? 1 : 0
+            self.titleLabel.font = .fdFont(ofSize: 14, weight: isSelected ? .medium : .regular)
+            self.titleLabel.textColor = isSelected ? .white : UIColor(hexString: "#1F2942")
+            self.backgroundColor = isSelected ? .fdPrimary : UIColor(hexString: "#F2F3F5")
         }
         if animated {
             UIView.animate(withDuration: 0.15, animations: updates)

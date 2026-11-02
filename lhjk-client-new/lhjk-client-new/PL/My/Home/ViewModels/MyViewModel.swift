@@ -66,7 +66,8 @@ final class MyViewModel: ObservableObject {
 
     func loadUserProfile() {
         guard let user = userManager.currentUser else { return }
-        let name = user.chineseName ?? user.surname ?? user.nickname ?? "用户"
+        let nickname = user.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let name = nickname.isEmpty ? (user.chineseName ?? user.surname ?? "用户") : nickname
         userName = name
         avatarURL = user.imageUrl
     }
@@ -116,7 +117,7 @@ final class MyViewModel: ObservableObject {
                 copy.value = overview.memberLevelText
             case "健康积分":
                 copy.value = overview.healthPointsText
-            case "富德币":
+            case "健康币":
                 copy.value = overview.fundeCoinText
             case "权益卡券":
                 copy.value = overview.benefitsCountText
@@ -168,7 +169,7 @@ extension MyViewModel {
         [
             MemberAsset(label: "会员等级", value: "0", route: "/me/member-level", accent: false),
             MemberAsset(label: "健康积分", value: "0", route: "/me/points"),
-            MemberAsset(label: "富德币", value: "0", route: "/me/member-level"),
+            MemberAsset(label: "健康币", value: "0", route: "/me/member-level"),
             MemberAsset(label: "权益卡券", value: "0", route: "/me/vouchers"),
         ]
     }

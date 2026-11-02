@@ -32,9 +32,19 @@ final class OrderConfirmViewController: BaseViewController {
 
     private var showsOrderListPayPresentation: Bool { entry == .orderListPay }
 
-    init(orderId: Int64, serialNumber: Int? = nil, entry: OrderConfirmEntry = .default) {
+    init(
+        orderId: Int64,
+        serialNumber: Int? = nil,
+        entry: OrderConfirmEntry = .default,
+        cabinFollowUp: CabinPaidBookContext? = nil
+    ) {
         self.entry = entry
-        self.viewModel = OrderConfirmViewModel(orderId: orderId, serialNumber: serialNumber, entry: entry)
+        self.viewModel = OrderConfirmViewModel(
+            orderId: orderId,
+            serialNumber: serialNumber,
+            entry: entry,
+            cabinFollowUp: cabinFollowUp
+        )
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -200,11 +210,6 @@ final class OrderConfirmViewController: BaseViewController {
             .sink { [weak self] _ in self?.render() }
             .store(in: &cancellables)
 
-        viewModel.$supportsExpress
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.render() }
-            .store(in: &cancellables)
-
         viewModel.$hospitalDetail
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.render() }
@@ -315,10 +320,7 @@ final class OrderConfirmViewController: BaseViewController {
 
         fulfillmentCard.isHidden = !viewModel.showsFulfillment
         if viewModel.showsFulfillment {
-            fulfillmentView.configure(
-                selected: viewModel.fulfillment,
-                supportsExpress: viewModel.supportsExpress
-            )
+            fulfillmentView.configure(selected: viewModel.fulfillment)
         }
 
         let showExpress = viewModel.needsExpressAddress
@@ -389,12 +391,7 @@ final class OrderConfirmViewController: BaseViewController {
             )
             infoCard.isHidden = viewModel.orderDetail == nil
             if let detail = viewModel.orderDetail {
-                infoView.configure(
-                    detail: detail,
-                    remarkOverride: viewModel.remark,
-                    expandedRows: [("支付状态", "待支付")],
-                    showsExpandToggle: true
-                )
+                infoView.configure(detail: detail)
             }
         }
     }
@@ -506,7 +503,7 @@ final class OrderConfirmViewController: BaseViewController {
         present(alert, animated: true)
     }
 
-    /// FDAPP-938：`getOrderSettlement` `M0104` — 套餐价格或内容已变化
+    /// FDAPP-938：`getOrderSettlement` `M0104` / `M0105` — 套餐变化或已下架
     private func presentPackageContentChangedAlert(message: String) {
         guard presentedViewController == nil else { return }
         let alert = UIAlertController(title: "提示", message: message, preferredStyle: .alert)

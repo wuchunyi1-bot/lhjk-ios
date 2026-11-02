@@ -76,7 +76,8 @@ Apifox：`IM/群组会话` · `operationId: getGroupMembers`。分享站文档�
 | Field | Type | 说明 |
 |-------|------|------|
 | `userId` | String | 用户 Id（雪花字符串） |
-| `userName` | String | 显示名 |
+| `userName` | String | 显示名。其他成员展示此字段 |
+| `nickname` | String | 昵称。当前用户（自己）优先展示；空则回退 `userName`。兼容 `nickName` |
 | `imageUrl` | String | 头像 URL（现网字段名） |
 | `roleName` | String | 角色文案，如「营养师」「医院管理员」「我」「机器人」 |
 
@@ -88,6 +89,7 @@ OAS `ImSessionDetails` 其它字段（`identity` / `userImg` 等）若下发则�
 |-------|------|------|
 | `userId` | String? | 用户 id（现网为字符串） |
 | `userName` | String? | 用户名字 |
+| `nickname` | String? | 昵称。自己展示此字段，空则回退 `userName` |
 | `imageUrl` | String? | 现网头像 URL |
 | `roleName` | String? | 角色名称（列表优先展示） |
 | `userImg` | String? | OAS 头像字段，现网通常不下发 |
@@ -101,7 +103,7 @@ OAS `ImSessionDetails` 其它字段（`identity` / `userImg` 等）若下发则�
 | `id` | String | 消息唯一 ID |
 | `type` | Enum | `text` / `system` / `metric-card` / `report-card` / `diet-card` / `appointment-card` / `case-card` / `plan-card` / `meal-analysis` / `ai-weekly-report` |
 | `role` | Enum | 发送方：`user`（用户） / `staff`（健管团队） |
-| `senderName` | String? | 发送者姓名（staff 侧显示） |
+| `senderName` | String? | 消息里的发送者显示名。本端新发出的消息写入当时的昵称，没有昵称再用姓名；已发出的消息不回写 |
 | `senderRole` | String? | 发送者角色（群消息中区分多人） |
 | `avatar` | String? | 发送者头像文字 |
 | `text` | String | 文本内容（type=text 或 system 时使用） |
@@ -629,6 +631,12 @@ App 冷启动
 - **AND** 过滤 `conversationId` 匹配的消息，去重后追加到 `messages` 末尾并插入行、滚动至底
 - **AND** `IMService` 同步将实时消息缓存到 `messagesStore`
 
+- **WHEN** 融云 `onReceived` 收到别人的新消息，且 `sdkRunningMode` 为前台或后台（进程仍在），消息发送时间在 30 秒内
+- **THEN** 按「消息通知设置」里的声音、振动开关提醒；两者默认开启，可单独关闭
+- **AND** 前台且用户正在看该会话时不响、不震；前台其他情况只播系统提示音和振动，不弹系统横幅
+- **AND** 后台且声音开启时发一条本地通知并带默认提示音；只开振动时仅振动
+- **AND** 自己发出的消息、以及离线补拉的旧消息不提醒；进程被杀掉后的 APNs 不读这两个开关
+
 #### Scenario: 融云 Emoji 码（RongEmoji-2.2.11）
 文本表情对齐官方 Web SDK [`RongEmoji-2.2.11`](https://cdn.ronghub.com/RongEmoji-2.2.11.min.js)（`RongIMLib.RongIMEmoji`），lang = `zh`。不引入 IMKit / 官方 sprite。
 
@@ -701,8 +709,9 @@ App 冷启动
 #### Scenario: 成功解析并展示
 
 - **WHEN** 响应 `isSuccess` 且 `data` 为非空成员数组
-- **THEN** 按数组顺序渲染独立白卡（对齐 Figma `4565:9708`）：页底 `#FDF6F3`；卡高 72、圆角 12、左右 16、卡间距 12；头像 48 圆形（`imageUrl`，空则 `userImg`，失败回落 `chat_im_avatar`，底 `#FFE2D6`→`#FFEFE8`）；姓名 16 Medium `#1F2430`
-- **AND** 当前登录用户（`userId` 与 `UserManager.currentUser.id` 一致，或 `roleName` 为「我」）副文案为灰色「我」（12 Regular `#535D72`），不展示角色胶囊
+- **THEN** 按数组顺序渲染独立白卡（对齐 Figma `4565:9708`）：页底 `#FDF6F3`；卡高 72、圆角 12、左右 16、卡间距 12；头像 48 圆形（`imageUrl`，空则 `userImg`，失败回落 `chat_im_avatar`，底 `#FFE2D6`→`#FFEFE8`）；名称 16 Medium `#1F2430`
+- **AND** 当前登录用户（`userId` 与 `UserManager.currentUser.id` 一致，或 `roleName` 为「我」）主文案优先展示 `nickname`（空则回退 `userName`），副文案为灰色「我」（12 Regular `#535D72`），不展示角色胶囊
+- **AND** 其他成员主文案展示 `userName`
 - **AND** 其它成员展示角色胶囊：文案 `roleName`（空则按 `identity` 映射：1 健康管理师负责人 / 2 医生 / 3 用户 / 4 队员）；奶油渐变底 `#FFECC9`→`#FFF7E3`、字 `#862804` 12 Medium、票券圆角
 - **AND** 导航标题展示「群成员(N)」，N 为本次返回的成员数量
 - **AND** 不得用本地假成员顶替

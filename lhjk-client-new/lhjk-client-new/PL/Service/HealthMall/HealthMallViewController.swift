@@ -9,9 +9,7 @@ final class HealthMallViewController: BaseViewController {
     private var cancellables = Set<AnyCancellable>()
     /// 嵌在首页页签里时不改导航栏。
     private let embedsInHomeHub: Bool
-    private var banners: [ServiceHubBanner] = []
     private var bannerHeight: CGFloat = 0
-    private var bannerLoadTask: Task<Void, Never>?
     /// 首页嵌入时 Banner 和分类栏在列表外面。这里记着 Banner 已经收起了多少，和列表滚动位置无关，
     /// 所以换分类、列表变短都不会让它弹回来。
     private var bannerCollapsed: CGFloat = 0
@@ -20,7 +18,6 @@ final class HealthMallViewController: BaseViewController {
     private var renderedProducts: [HealthPackageItem] = []
     private let headerBlock = UIView()
     private var headerTopConstraint: Constraint?
-    private var bannerHeightConstraint: Constraint?
     private lazy var bannerPan: UIPanGestureRecognizer = {
         let pan = UIPanGestureRecognizer(target: self, action: #selector(bannerPanned(_:)))
         pan.delegate = self
@@ -69,17 +66,17 @@ final class HealthMallViewController: BaseViewController {
         return cv
     }()
 
-    private lazy var shelfBannerCarousel: ServiceBannerCarouselCell = {
-        let cell = ServiceBannerCarouselCell(style: .default, reuseIdentifier: nil)
-        cell.backgroundColor = .clear
-        cell.contentView.backgroundColor = .clear
-        cell.onBannerTap = { [weak self] banner in
+    /// 与健康服务、健康知识相同：首页页签里轮播固定 344×138。
+    private lazy var shelfBannerBar: ServiceHubBannerBar = {
+        let bar = ServiceHubBannerBar()
+        bar.usesHomeShelfRatio = embedsInHomeHub
+        bar.onBannerTap = { [weak self] banner in
             self?.openShelfBanner(banner)
         }
-        cell.onHeightUpdated = { [weak self, weak cell] in
-            self?.adoptShelfBannerHeight(from: cell)
+        bar.onHeightChange = { [weak self] height in
+            self?.applyEmbeddedBannerHeight(height)
         }
-        return cell
+        return bar
     }()
 
     private let emptyStateView = FDEmptyStateView(style: .page, message: "该分类暂无商品，敬请期待")
@@ -147,22 +144,20 @@ final class HealthMallViewController: BaseViewController {
             categoryTabBar.backgroundColor = UIColor(hexString: "#FDF6F3")
             headerBlock.backgroundColor = UIColor(hexString: "#FDF6F3")
             view.addSubview(headerBlock)
-            headerBlock.addSubview(shelfBannerCarousel)
+            headerBlock.addSubview(shelfBannerBar)
             headerBlock.addSubview(categoryTabBar)
-            shelfBannerCarousel.isHidden = true
-            shelfBannerCarousel.addGestureRecognizer(bannerPan)
+            shelfBannerBar.addGestureRecognizer(bannerPan)
             headerBlock.snp.makeConstraints {
                 headerTopConstraint = $0.top.equalToSuperview().constraint
                 $0.leading.trailing.equalToSuperview()
             }
-            shelfBannerCarousel.snp.makeConstraints {
+            shelfBannerBar.snp.makeConstraints {
                 $0.top.leading.trailing.equalToSuperview()
-                bannerHeightConstraint = $0.height.equalTo(0).constraint
             }
             categoryTabBar.snp.makeConstraints {
-                $0.top.equalTo(shelfBannerCarousel.snp.bottom)
+                $0.top.equalTo(shelfBannerBar.snp.bottom)
                 $0.leading.trailing.bottom.equalToSuperview()
-                $0.height.equalTo(52)
+                $0.height.equalTo(48)
             }
             collectionView.snp.makeConstraints {
                 $0.top.equalTo(headerBlock.snp.bottom)
@@ -189,51 +184,15 @@ final class HealthMallViewController: BaseViewController {
         }
     }
 
+    func guideBannerFrame(in target: UIView) -> CGRect? {
+        guard embedsInHomeHub, shelfBannerBar.displayedHeight > 1 else { return nil }
+        shelfBannerBar.layoutIfNeeded()
+        let frame = shelfBannerBar.convert(shelfBannerBar.bounds, to: target)
+        return frame.height > 1 ? frame : nil
+    }
+
     private func loadShelfBanners() {
-        bannerLoadTask?.cancel()
-        bannerLoadTask = Task { [weak self] in
-            let items = await AppContainer.shared.columnContentCacheService.banners(
-                for: ColumnContentService.hospitalBannerCode
-            )
-            guard !Task.isCancelled else { return }
-            await MainActor.run {
-                self?.applyShelfBanners(items.filter(\.hasImage))
-            }
-        }
-    }
-
-    private func applyShelfBanners(_ items: [ServiceHubBanner]) {
-        let same = banners.map(\.id) == items.map(\.id)
-        banners = items
-        guard !items.isEmpty else {
-            shelfBannerCarousel.isHidden = true
-            applyEmbeddedBannerHeight(0)
-            return
-        }
-        shelfBannerCarousel.isHidden = false
-        if !same {
-            shelfBannerCarousel.configure(items)
-        }
-        guard !same || bannerHeight < 1 else { return }
-        let width = view.bounds.width > 1 ? view.bounds.width : UIScreen.main.bounds.width
-        applyEmbeddedBannerHeight(
-            BannerImageAspectLayout.height(
-                width: max(0, width - ServiceBannerCarouselCell.horizontalInset * 2),
-                imageSize: nil,
-                fallbackRatio: ServiceBannerCarouselCell.fallbackRatio
-            )
-        )
-    }
-
-    private func adoptShelfBannerHeight(from cell: ServiceBannerCarouselCell?) {
-        guard let cell else { return }
-        let width = view.bounds.width > 1 ? view.bounds.width : UIScreen.main.bounds.width
-        let height = cell.systemLayoutSizeFitting(
-            CGSize(width: width, height: 0),
-            withHorizontalFittingPriority: .required,
-            verticalFittingPriority: .fittingSizeLevel
-        ).height
-        applyEmbeddedBannerHeight(height)
+        shelfBannerBar.load()
     }
 
     private func openShelfBanner(_ banner: ServiceHubBanner) {
@@ -257,7 +216,6 @@ final class HealthMallViewController: BaseViewController {
         } else {
             bannerCollapsed = min(bannerCollapsed, next)
         }
-        bannerHeightConstraint?.update(offset: next)
         applyBannerCollapse()
     }
 

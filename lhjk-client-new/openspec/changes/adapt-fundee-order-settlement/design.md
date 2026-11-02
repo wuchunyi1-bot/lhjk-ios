@@ -12,7 +12,7 @@
 
 - 解析购买接口返回的订单 id，路由只带 `orderId`（可选 `serialNumber`）
 - 确认页进入后必调 `getOrderSettlement`，UI 全部来自该响应
-- 默认自提；`orderExpress==1` 才可选快递
+- 有实物时机构自提与快递同时展示；选中态由 `typeOrder` 决定，不读 `orderExpress`
 
 **Non-Goals**
 

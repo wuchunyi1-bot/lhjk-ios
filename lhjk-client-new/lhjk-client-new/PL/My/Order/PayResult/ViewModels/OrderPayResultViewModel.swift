@@ -14,6 +14,8 @@ struct OrderPayResultPayload: Equatable {
     let payMethodTitle: String
     let failureMessage: String?
     let entry: OrderConfirmEntry
+    /// 支付已成功，但后续预约没写成时展示在成功说明里。
+    let successDetail: String?
 
     var titleText: String {
         switch outcome {
@@ -25,7 +27,8 @@ struct OrderPayResultPayload: Equatable {
     var descriptionText: String {
         switch outcome {
         case .success:
-            return "订单已提交，我们将尽快为您处理"
+            let note = successDetail?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return note.isEmpty ? "订单已提交，我们将尽快为您处理" : note
         case .failure:
             let trimmed = failureMessage?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             return trimmed.isEmpty ? "支付失败，请稍后重试" : trimmed
@@ -93,7 +96,8 @@ final class OrderPayResultViewModel: ObservableObject {
                 amountYuan: amount,
                 payMethodTitle: payMethod,
                 failureMessage: message,
-                entry: entry
+                entry: entry,
+                successDetail: nil
             )
         )
     }

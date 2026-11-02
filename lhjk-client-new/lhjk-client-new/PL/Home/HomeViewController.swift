@@ -375,7 +375,11 @@ final class HomeViewController: BaseViewController {
         let contentId = article.contentId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard !contentId.isEmpty else { return }
         let url = H5Config.contentDetailPageURL(contentId: contentId)
-        let webVC = WebViewController(urlString: url.absoluteString, title: article.title)
+        let webVC = WebViewController(
+            urlString: url.absoluteString,
+            title: article.title,
+            knowledgeShare: article.shareContext
+        )
         navigationController?.pushViewController(webVC, animated: true)
     }
 
@@ -472,8 +476,29 @@ extension HomeViewController: UITableViewDelegate {
 
     func guideContentFrame(in target: UIView) -> CGRect? {
         contentContainer.layoutIfNeeded()
-        let frame = contentContainer.convert(contentContainer.bounds, to: target)
+        var frame = contentContainer.convert(contentContainer.bounds, to: target)
+        if let banner = guideBannerFrame(in: target), banner.height > 1, banner.maxY > frame.minY {
+            let cutY = min(frame.maxY, banner.maxY)
+            if banner.minY < frame.minY + banner.height, cutY > frame.minY {
+                frame.size.height -= cutY - frame.minY
+                frame.origin.y = cutY
+            }
+        }
         return frame.width > 4 && frame.height > 4 ? frame : nil
+    }
+
+    /// 页签内容顶部的轮播。引导中间孔从它下沿开始，不把图圈进去。
+    private func guideBannerFrame(in target: UIView) -> CGRect? {
+        switch currentShelf {
+        case .service:
+            return serviceViewController?.guideBannerFrame(in: target)
+        case .mall:
+            return mallViewController?.guideBannerFrame(in: target)
+        case .articles:
+            return knowledgeViewController?.guideBannerFrame(in: target)
+        case .home:
+            return nil
+        }
     }
 
     private func guideRowFrame(itemPrefix: String, in target: UIView) -> CGRect? {

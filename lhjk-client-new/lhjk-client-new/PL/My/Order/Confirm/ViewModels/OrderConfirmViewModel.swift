@@ -62,7 +62,6 @@ final class OrderConfirmViewModel: ObservableObject {
     @Published var payMethod: OrderPayMethod = .wechat
     @Published var remark = ""
     @Published private(set) var deliveryAddress: MAddress?
-    @Published private(set) var supportsExpress = false
     /// `equipmentFlag == false` 时为 false，确认订单与待支付都不展示收货方式 / 自提地址 / 快递地址
     @Published private(set) var containsPhysicalGoods = true
     @Published private(set) var supportsWechat = true
@@ -76,7 +75,7 @@ final class OrderConfirmViewModel: ObservableObject {
     @Published private(set) var selectedCouponName = ""
     @Published private(set) var hospitalDetail: OHospital?
     @Published var navigateBack = false
-    /// `getOrderSettlement` 返回 `M0104`：套餐价格/内容已变化
+    /// `getOrderSettlement` 返回 `M0104` / `M0105`：套餐变化或已下架，无法继续支付
     @Published var packageContentChangedMessage: String?
     /// FDAPP-1049：`adviceType` 1/2/3 时弹出券卡确认，用户点「继续支付」后才拉起支付
     @Published var paymentDiscountAdvicePrompt: PaymentDiscountAdvicePrompt?
@@ -109,6 +108,8 @@ final class OrderConfirmViewModel: ObservableObject {
     private var userDidSelectDeliveryAddress = false
     /// 收货方式切换请求未结束前忽略下一次点击，避免后返回的失败把选项滚回错误一侧
     private var isSwitchingFulfillment = false
+    private let cabinFollowUp: CabinPaidBookContext?
+    private let cabinService: CabinService
 
     init(
         orderId: Int64,
@@ -120,11 +121,15 @@ final class OrderConfirmViewModel: ObservableObject {
         voucherService: VoucherService = AppContainer.shared.voucherService,
         paymentService: PaymentService = AppContainer.shared.paymentService,
         addressService: AddressService = AppContainer.shared.addressService,
-        institutionStore: InstitutionSelectionStore = AppContainer.shared.institutionSelectionStore
+        institutionStore: InstitutionSelectionStore = AppContainer.shared.institutionSelectionStore,
+        cabinFollowUp: CabinPaidBookContext? = nil,
+        cabinService: CabinService = AppContainer.shared.cabinService
     ) {
         self.orderId = orderId
         self.serialNumber = serialNumber
         self.entry = entry
+        self.cabinFollowUp = cabinFollowUp
+        self.cabinService = cabinService
         self.hospitalService = hospitalService
         self.orderService = orderService
         self.couponService = couponService
@@ -146,8 +151,8 @@ final class OrderConfirmViewModel: ObservableObject {
 
     var selectedPaymentMethodLabel: String { payMethod.title }
 
-    /// 含实物且支持快递时才展示「收货方式」；仅自提时不展示选择卡。
-    var showsFulfillment: Bool { containsPhysicalGoods && supportsExpress }
+    /// 含实物时展示「收货方式」（机构自提与快递配送都展示）；不含实物时整块履约区都不展示。
+    var showsFulfillment: Bool { containsPhysicalGoods }
 
     var needsExpressAddress: Bool {
         containsPhysicalGoods && fulfillment == .express
@@ -286,7 +291,6 @@ final class OrderConfirmViewModel: ObservableObject {
 
     func selectFulfillment(_ method: OrderFulfillmentMethod) {
         guard containsPhysicalGoods else { return }
-        if method == .express, !supportsExpress { return }
         guard method != fulfillment else { return }
         guard !isSwitchingFulfillment else { return }
 
@@ -423,10 +427,11 @@ final class OrderConfirmViewModel: ObservableObject {
                 expectedPayableAmount: expectedPayable,
                 description: remarkText.isEmpty ? nil : remarkText
             )
+            let bookNote = await bookCabinAfterPaymentIfNeeded()
             await MainActor.run {
                 isSubmitting = false
                 NotificationCenter.default.post(name: .orderListNeedsRefresh, object: nil)
-                payResult = makePayResult(outcome: .success, failureMessage: nil)
+                payResult = makePayResult(outcome: .success, failureMessage: nil, successDetail: bookNote)
             }
         } catch let error as PaymentError {
             await MainActor.run {
@@ -492,7 +497,8 @@ final class OrderConfirmViewModel: ObservableObject {
 
     private func makePayResult(
         outcome: OrderPayResultPayload.Outcome,
-        failureMessage: String?
+        failureMessage: String?,
+        successDetail: String? = nil
     ) -> OrderPayResultPayload {
         OrderPayResultPayload(
             outcome: outcome,
@@ -500,8 +506,29 @@ final class OrderConfirmViewModel: ObservableObject {
             amountYuan: payableAmount,
             payMethodTitle: payMethod.title,
             failureMessage: failureMessage,
-            entry: entry
+            entry: entry,
+            successDetail: successDetail
         )
+    }
+
+    /// 康养小屋付费预约：支付成功后带订单 id 提交。失败不回滚支付。
+    private func bookCabinAfterPaymentIfNeeded() async -> String? {
+        guard let follow = cabinFollowUp else { return nil }
+        do {
+            try await cabinService.book(
+                configId: follow.configId,
+                reserveDate: follow.reserveDate,
+                sourceType: 3,
+                startTime: follow.startTime,
+                endTime: follow.endTime,
+                quantity: 1,
+                orderId: orderId
+            )
+            return nil
+        } catch {
+            let text = (error as? LocalizedError)?.errorDescription ?? "预约提交失败，请重试"
+            return "支付已完成，预约未成功：\(text)"
+        }
     }
 
     private func paymentFailureMessage(for error: PaymentError, channel: PaymentChannel) -> String {
@@ -616,7 +643,6 @@ final class OrderConfirmViewModel: ObservableObject {
         await MainActor.run {
             isLoading = true
             errorMessage = nil
-            supportsExpress = false
             settlementExpressFee = 0
             hospitalDetail = nil
             fallbackHospitalName = nil
@@ -750,7 +776,7 @@ final class OrderConfirmViewModel: ObservableObject {
                 try await orderService.updateOrderDelivery(
                     orderId: orderId,
                     typeOrder: 1,
-                    addressId: addr.id,
+                    addressId: addr.id ?? latestSettlement?.resolvedAddressId,
                     receiver: addr.name,
                     phone: addr.mobile,
                     address: addr.fullAddress
@@ -788,7 +814,6 @@ final class OrderConfirmViewModel: ObservableObject {
             orderId: orderId,
             serialNumber: serialNumber
         )
-        supportsExpress = settlement.supportsExpress
         containsPhysicalGoods = settlement.containsPhysicalGoods
         settlementExpressFee = settlement.expressAmountYuan
         settlementPackageAmount = settlement.packageAmountYuan
@@ -806,9 +831,7 @@ final class OrderConfirmViewModel: ObservableObject {
         }
 
         applyPayFlags(wechat: settlement.wechat, alipay: settlement.alipay)
-        fulfillment = settlement.supportsExpress
-            ? Self.fulfillment(from: settlement)
-            : .selfPickup
+        fulfillment = Self.fulfillment(from: settlement)
         let fromSettlement = Self.deliveryAddress(from: settlement)
         if fromSettlement != nil {
             deliveryAddress = fromSettlement
@@ -967,10 +990,7 @@ final class OrderConfirmViewModel: ObservableObject {
     }
 
     private static func fulfillment(from settlement: OrderSettlementBO) -> OrderFulfillmentMethod {
-        guard settlement.supportsExpress, settlement.resolvedTypeOrder == 1 else {
-            return .selfPickup
-        }
-        return .express
+        settlement.resolvedTypeOrder == 1 ? .express : .selfPickup
     }
 
     private static func deliveryAddress(from settlement: OrderSettlementBO) -> MAddress? {
@@ -978,7 +998,7 @@ final class OrderConfirmViewModel: ObservableObject {
             return nil
         }
         return MAddress(
-            id: nil,
+            id: settlement.resolvedAddressId,
             name: order.receiver,
             mobile: order.phone,
             address: order.address

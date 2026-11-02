@@ -205,3 +205,126 @@ enum ColumnContentMapper {
         return nil
     }
 }
+
+// MARK: - 资讯检索
+
+/// `GET /v1/content/search` 分页。Apifox 把分页字段写成中文标题，实际 JSON 与地址列表相同：`list` / `totalCount` / `currPage` / `totalPage` / `pageSize`。
+struct PaginatedContentSearchData: Decodable {
+    let totalRecords: Int?
+    let pageSize: Int?
+    let totalPages: Int?
+    let currentPage: Int?
+    let records: [ContentSearchRecord]?
+
+    enum CodingKeys: String, CodingKey {
+        case totalRecords = "totalCount"
+        case pageSize
+        case totalPages = "totalPage"
+        case currentPage = "currPage"
+        case records = "list"
+    }
+}
+
+/// 资讯检索单条。`id` 用于打开 `#/content/detail?id=`。
+struct ContentSearchRecord: Decodable {
+    let id: String
+    let name: String?
+    let imageUrl: String?
+    let contentImg: String?
+    let labelName: String?
+    let authorName: String?
+    let clickCount: Int?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, imageUrl, contentImg, labelName, authorName, clickCount
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = Self.flexibleString(c, .id)
+        name = try c.decodeIfPresent(String.self, forKey: .name)
+        imageUrl = try c.decodeIfPresent(String.self, forKey: .imageUrl)
+        contentImg = try c.decodeIfPresent(String.self, forKey: .contentImg)
+        labelName = try c.decodeIfPresent(String.self, forKey: .labelName)
+        authorName = try c.decodeIfPresent(String.self, forKey: .authorName)
+        clickCount = Self.flexibleInt(c, .clickCount)
+    }
+
+    func toItem() -> ContentSearchItem? {
+        let title = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let cover = Self.firstFilled(imageUrl, contentImg)
+        guard !id.isEmpty, !title.isEmpty || cover != nil else { return nil }
+        let tag = labelName?
+            .components(separatedBy: CharacterSet(charactersIn: ",，、"))
+            .first?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let author = (authorName ?? "")
+            .replacingOccurrences(of: "｜", with: " ")
+            .replacingOccurrences(of: "|", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return ContentSearchItem(
+            id: id,
+            title: title,
+            tag: tag,
+            author: author,
+            reads: ColumnContentMapper.formatReadCount(clickCount),
+            imageUrl: cover
+        )
+    }
+
+    private static func firstFilled(_ values: String?...) -> String? {
+        for value in values {
+            let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if !trimmed.isEmpty { return trimmed }
+        }
+        return nil
+    }
+
+    private static func flexibleString(
+        _ container: KeyedDecodingContainer<CodingKeys>,
+        _ key: CodingKeys
+    ) -> String {
+        if let value = try? container.decode(String.self, forKey: key) {
+            return value.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if let value = try? container.decode(Int64.self, forKey: key) { return String(value) }
+        if let value = try? container.decode(Int.self, forKey: key) { return String(value) }
+        return ""
+    }
+
+    private static func flexibleInt(
+        _ container: KeyedDecodingContainer<CodingKeys>,
+        _ key: CodingKeys
+    ) -> Int? {
+        if let value = try? container.decode(Int.self, forKey: key) { return value }
+        if let value = try? container.decode(String.self, forKey: key) { return Int(value) }
+        return nil
+    }
+}
+
+struct ContentSearchItem: Hashable {
+    let id: String
+    let title: String
+    let tag: String
+    let author: String
+    let reads: String
+    let imageUrl: String?
+
+    var shareContext: KnowledgeShareContext {
+        KnowledgeShareContext(contentId: id, title: title, imageUrl: imageUrl)
+    }
+}
+
+/// 健康知识详情分享。标题和封面来自打开详情的那条列表 item。
+struct KnowledgeShareContext {
+    let contentId: String
+    let title: String
+    let imageUrl: String?
+
+    /// 小程序页，不带开头的 `/`，也不带 shareId。
+    var miniProgramPath: String {
+        let id = contentId.trimmingCharacters(in: .whitespacesAndNewlines)
+        let encoded = id.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? id
+        return "pkg-common/webview/index?articleId=\(encoded)"
+    }
+}

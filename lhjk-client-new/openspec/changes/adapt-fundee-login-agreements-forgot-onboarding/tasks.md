@@ -10,7 +10,7 @@
 - [x] 2.2 `PrivacyPromptView` 补知情同意书（仍为三项，不含会员服务协议）
 - [x] 2.3 新增 `AgreementConsentSheet`；`LoginViewController` 最终提交未勾选时弹出并重放动作
 - [x] 2.4 获取验证码不再强制协议勾选
-- [x] 2.5 勾选 / 知情同意弹窗 / 改绑手机号打开 `AgreementDetailViewController`（含 `member-service`）
+- [x] 2.5 登录勾选、知情同意弹窗、前置隐私弹窗、改绑手机号打开 `{base}/agreements/user-app/*.html`（含 `member-service`），与协议中心同源，不拼 token
 
 ## 3. 忘记密码页内步骤
 

@@ -18,7 +18,7 @@
 | 头像/姓名 | `/me/profile` |
 | 设置齿轮 | `/me/settings` |
 | 健康档案 | `/me/health-profile` |
-| 健康大会员 / 会员等级 / 富德币 | `/me/member-level` |
+| 健康大会员 / 会员等级 / 健康币 | `/me/member-level` |
 | 会员兑换 | `/me/redemptions` |
 | 健康积分 | `/me/points` |
 | 权益卡券 | `/me/vouchers` |
@@ -35,6 +35,6 @@
 
 ## 数据
 
-- 会员资产：`GET /v1/users/getUserCenterOverview`。富德币取 `fundeCoin` 原值展示，禁止 mock / K/w 缩写；权益卡券数走接口计数
+- 会员资产：`GET /v1/users/getUserCenterOverview`。健康币取 `fundeCoin` 原值展示，禁止 mock / K/w 缩写；权益卡券数走接口计数
 - 履约四格：同接口订单计数字段
 - 健康管理六行右侧文案：`GET /v1/users/getUserCenterHealthManage`，按 label 映射 `healthReport` / `accountPoint` / `monitor` / `dietary` / `healthAssessment` / `schoolExam`。不再请求 `getMedicalReportStatistics`、`getSchoolExamUserListCount`。空值留空，禁止 mock。

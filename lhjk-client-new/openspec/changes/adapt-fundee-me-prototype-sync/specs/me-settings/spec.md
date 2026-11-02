@@ -10,6 +10,7 @@
 - **THEN** 依次展示：
   - 账号与安全 → 安全中心 → `/me/settings/security`
   - 地址与设备 → 我的地址 → `/me/settings/addresses`
+  - 地址与设备 → 我的设备 → `/me/devices`（`GET /v1/users/getMyHeaderList?type=2`；已绑定卡片与体脂秤「我的设备」一致，点击或「解除绑定」确认后 `DELETE /v1/equipmentUser/deleteEquipmentUserById`。添加设备的栏目来自字典 `1354970762909454336`，型号走 `POST /v1/equipment/getEquipmenByApp`，卡片与体脂秤「选择设备」一致，点击提示「暂不支持该设备」）
   - 消息提醒 → 通知设置 → `/me/settings/notifications`
   - 隐私与协议 → 隐私设置 → `/me/settings/privacy`
   - 隐私与协议 → 协议与说明 → `/me/settings/agreement-center`

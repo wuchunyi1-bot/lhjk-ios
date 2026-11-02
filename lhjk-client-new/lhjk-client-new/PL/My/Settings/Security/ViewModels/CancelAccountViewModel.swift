@@ -80,6 +80,7 @@ final class CancelAccountViewModel: ObservableObject {
                     userManager.clear()
                     imService.clear()
                     AppContainer.shared.institutionSelectionStore.clear()
+                    HomeShelfStore.clear()
                     isSubmitting = false
                     isSuccess = true
                 }

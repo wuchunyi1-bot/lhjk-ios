@@ -40,19 +40,38 @@ enum PackageSearchHistoryStore {
     }
 }
 
-/// 首页搜索结果分组。健康知识暂不接入。
+/// 首页搜索结果分组。套餐走 `searchEnabledPackagePage`，健康知识走 `content/search`。
 enum PackageSearchTab: Int, CaseIterable {
     case service = 1
     case mall = 2
+    case knowledge = 3
 
     var title: String {
         switch self {
         case .service: return "健康服务"
         case .mall: return "富德优选"
+        case .knowledge: return "健康知识"
         }
     }
 
-    var apiType: Int { rawValue }
+    /// 套餐检索的 `type`。健康知识不走套餐接口。
+    var apiType: Int? {
+        switch self {
+        case .service: return 1
+        case .mall: return 2
+        case .knowledge: return nil
+        }
+    }
+}
+
+struct KnowledgeSearchPage: Equatable {
+    var items: [ContentSearchItem] = []
+    var total: Int = 0
+    var currentPage: Int = 0
+    var totalPages: Int = 0
+    var errorMessage: String?
+
+    var hasMore: Bool { currentPage > 0 && currentPage < totalPages }
 }
 
 struct PackageSearchPage: Equatable {
@@ -74,12 +93,14 @@ final class ServicePackageSearchViewModel: ObservableObject {
     @Published private(set) var activeTab: PackageSearchTab = .service
     @Published private(set) var servicePage = PackageSearchPage()
     @Published private(set) var mallPage = PackageSearchPage()
+    @Published private(set) var knowledgePage = KnowledgeSearchPage()
     @Published private(set) var history: [String] = []
     @Published private(set) var isLoading = false
     @Published private(set) var isLoadingMore = false
     @Published private(set) var hasSearched = false
 
     private let hospitalPackageService: HospitalPackageService
+    private let columnContentService: ColumnContentService
     private let hospitalId: String?
     private var searchTask: Task<Void, Never>?
     private var loadMoreTask: Task<Void, Never>?
@@ -88,10 +109,12 @@ final class ServicePackageSearchViewModel: ObservableObject {
 
     init(
         hospitalId: String? = nil,
-        hospitalPackageService: HospitalPackageService = AppContainer.shared.hospitalPackageService
+        hospitalPackageService: HospitalPackageService = AppContainer.shared.hospitalPackageService,
+        columnContentService: ColumnContentService = AppContainer.shared.columnContentService
     ) {
         self.hospitalId = hospitalId
         self.hospitalPackageService = hospitalPackageService
+        self.columnContentService = columnContentService
         reloadHistory()
     }
 
@@ -142,6 +165,7 @@ final class ServicePackageSearchViewModel: ObservableObject {
         loadMoreTask?.cancel()
         servicePage = PackageSearchPage()
         mallPage = PackageSearchPage()
+        knowledgePage = KnowledgeSearchPage()
         activeTab = .service
         hasSearched = false
         isLoading = false
@@ -161,11 +185,22 @@ final class ServicePackageSearchViewModel: ObservableObject {
 
     func loadMoreIfNeeded() {
         let tab = activeTab
+        let text = keyword
+        let generation = searchGeneration
+        if tab == .knowledge {
+            guard hasSearched, !isLoading, !isLoadingMore,
+                  knowledgePage.errorMessage == nil, knowledgePage.hasMore else { return }
+            let nextPage = knowledgePage.currentPage + 1
+            isLoadingMore = true
+            loadMoreTask?.cancel()
+            loadMoreTask = Task { [weak self] in
+                await self?.appendKnowledge(keyword: text, pageNum: nextPage, generation: generation)
+            }
+            return
+        }
         let current = page(for: tab)
         guard hasSearched, !isLoading, !isLoadingMore, current.errorMessage == nil, current.hasMore else { return }
         let nextPage = current.currentPage + 1
-        let text = keyword
-        let generation = searchGeneration
         isLoadingMore = true
         loadMoreTask?.cancel()
         loadMoreTask = Task { [weak self] in
@@ -176,7 +211,11 @@ final class ServicePackageSearchViewModel: ObservableObject {
     // MARK: - Private
 
     private func page(for tab: PackageSearchTab) -> PackageSearchPage {
-        tab == .service ? servicePage : mallPage
+        switch tab {
+        case .service: return servicePage
+        case .mall: return mallPage
+        case .knowledge: return PackageSearchPage()
+        }
     }
 
     private func performSearch(_ text: String) {
@@ -196,21 +235,49 @@ final class ServicePackageSearchViewModel: ObservableObject {
         isLoadingMore = false
         servicePage = PackageSearchPage()
         mallPage = PackageSearchPage()
+        knowledgePage = KnowledgeSearchPage()
         activeTab = .service
 
         async let service = fetchPage(tab: .service, keyword: keyword, pageNum: 1)
         async let mall = fetchPage(tab: .mall, keyword: keyword, pageNum: 1)
+        async let knowledge = fetchKnowledge(keyword: keyword, pageNum: 1)
         let serviceResult = await service
         let mallResult = await mall
+        let knowledgeResult = await knowledge
         guard !Task.isCancelled, generation == searchGeneration else { return }
 
         servicePage = serviceResult
         mallPage = mallResult
+        knowledgePage = knowledgeResult
         if !userPickedTab {
-            activeTab = serviceResult.items.isEmpty && !mallResult.items.isEmpty ? .mall : .service
+            if !serviceResult.items.isEmpty {
+                activeTab = .service
+            } else if !mallResult.items.isEmpty {
+                activeTab = .mall
+            } else if !knowledgeResult.items.isEmpty {
+                activeTab = .knowledge
+            } else {
+                activeTab = .service
+            }
         }
         isLoading = false
         hasSearched = true
+    }
+
+    @MainActor
+    private func appendKnowledge(keyword: String, pageNum: Int, generation: Int) async {
+        let result = await fetchKnowledge(keyword: keyword, pageNum: pageNum)
+        guard !Task.isCancelled, generation == searchGeneration, self.keyword == keyword else {
+            if generation == searchGeneration { isLoadingMore = false }
+            return
+        }
+        if result.errorMessage == nil {
+            knowledgePage.items.append(contentsOf: result.items)
+            knowledgePage.currentPage = result.currentPage
+            knowledgePage.totalPages = result.totalPages
+            knowledgePage.total = result.total
+        }
+        isLoadingMore = false
     }
 
     @MainActor
@@ -232,10 +299,11 @@ final class ServicePackageSearchViewModel: ObservableObject {
     }
 
     private func fetchPage(tab: PackageSearchTab, keyword: String, pageNum: Int) async -> PackageSearchPage {
+        guard let type = tab.apiType else { return PackageSearchPage() }
         do {
             let page = try await hospitalPackageService.searchEnabledPackagePage(
                 keyword: keyword,
-                type: tab.apiType,
+                type: type,
                 hospitalId: tab == .service ? hospitalId : nil,
                 pageNum: pageNum,
                 pageSize: Self.pageSize
@@ -262,6 +330,30 @@ final class ServicePackageSearchViewModel: ObservableObject {
         switch tab {
         case .service: servicePage = page
         case .mall: mallPage = page
+        case .knowledge: break
+        }
+    }
+
+    private func fetchKnowledge(keyword: String, pageNum: Int) async -> KnowledgeSearchPage {
+        do {
+            let page = try await columnContentService.searchContents(
+                keyword: keyword,
+                pageNum: pageNum,
+                pageSize: Self.pageSize
+            )
+            guard !Task.isCancelled else { return KnowledgeSearchPage() }
+            let items = (page.records ?? []).compactMap { $0.toItem() }
+            let total = page.totalRecords ?? items.count
+            let totalPages = page.totalPages ?? Self.pageCount(total: total, pageSize: Self.pageSize)
+            return KnowledgeSearchPage(
+                items: items,
+                total: total,
+                currentPage: page.currentPage ?? pageNum,
+                totalPages: total == 0 ? 0 : totalPages
+            )
+        } catch {
+            guard !Task.isCancelled else { return KnowledgeSearchPage() }
+            return KnowledgeSearchPage(errorMessage: error.localizedDescription)
         }
     }
 

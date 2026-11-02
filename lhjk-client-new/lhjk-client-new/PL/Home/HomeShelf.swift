@@ -9,7 +9,7 @@ enum HomeShelf: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .home: return "首页"
+        case .home: return "推荐"
         case .service: return "健康服务"
         case .mall: return "富德优选"
         case .articles: return "健康知识"
@@ -34,5 +34,10 @@ enum HomeShelfStore {
 
     static func save(_ shelf: HomeShelf) {
         UserDefaults.standard.set(shelf.rawValue, forKey: storageKey)
+    }
+
+    static func clear() {
+        pending = nil
+        UserDefaults.standard.removeObject(forKey: storageKey)
     }
 }

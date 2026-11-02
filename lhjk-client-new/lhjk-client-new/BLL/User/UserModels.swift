@@ -467,7 +467,7 @@ struct UserCenterOverviewVO: Decodable, Equatable {
     let gradeName: Int?
     /// 健康积分
     let accountPoint: Int?
-    /// 富德币
+    /// 健康币
     let fundeCoin: Int?
     /// 使用中权益卡数量
     let availableBenefitsCount: Int64?
@@ -507,7 +507,7 @@ struct UserCenterOverviewVO: Decodable, Equatable {
         return "\(n)"
     }
 
-    /// 富德币展示接口原值，不用 K / w 缩写
+    /// 健康币展示接口原值，不用 K / w 缩写
     private static func plainCountText(_ value: Int?) -> String {
         "\(max(0, value ?? 0))"
     }

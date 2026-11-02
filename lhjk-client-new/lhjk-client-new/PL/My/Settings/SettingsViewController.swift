@@ -79,6 +79,11 @@ final class SettingsViewController: BaseViewController {
                     subtitle: "收货地址管理",
                     action: { Router.shared.push("/me/settings/addresses") }
                 ),
+                .init(
+                    title: "我的设备",
+                    subtitle: "已绑定设备与添加设备",
+                    action: { Router.shared.push("/me/devices") }
+                ),
             ]
         ))
 
@@ -210,6 +215,7 @@ final class SettingsViewController: BaseViewController {
                 await ColumnContentCacheService.shared.clear()
                 await HealthPageCacheService.shared.clear()
                 InstitutionSelectionStore.shared.clear()
+                HomeShelfStore.clear()
                 RongCloudManager.shared.disconnect()
                 UserManager.shared.clear()
                 await MainActor.run {

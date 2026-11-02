@@ -20,7 +20,7 @@ struct PackageOrderDraft: Codable, Equatable {
     var hospitalName: String?
     var hospitalAddress: String?
     var categoryServiceId: String?
-    /// `express` | `self_pickup`；历史字段，确认页履约以结算 `orderExpress` 为准
+    /// `express` | `self_pickup`；历史字段，确认页履约以结算 `equipmentFlag` 与 `typeOrder` 为准
     var contractedFulfillmentMethod: String?
     var hasPhysicalGoods: Bool
     /// 购物车 / 待支付订单 ID，有值时拉 `getOrderSettlement`

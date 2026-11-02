@@ -3,6 +3,7 @@ import Foundation
 /// 蓝牙设备绑定与监测上报 — BLL 封装
 ///
 /// 对齐后端蓝牙连接流程图；**当前 Apifox 已发布 path** 如下（`App端/监测/设备绑定`、`监测/设备`、`监测/设备固件`、`监护/监测记录`）：
+/// - `GET  /v1/users/getMyHeaderList`（`type=2` 我的设备）
 /// - `GET  /v1/equipmentUser/getEquipmentUserByParam`
 /// - `GET  /v1/equipmentUser/getEquipmentByOne`
 /// - `GET  /v1/equipment/getCompatibleBluetoothList`
@@ -73,6 +74,37 @@ final class EquipmentBindService {
 
     // MARK: - 型号与白名单
 
+    /// `GET /v1/users/getMyHeaderList?type=2` — 我的设备，按绑定时间倒序，不分组。
+    func fetchMyDevices(pageSize: Int = 100) async throws -> [MyBoundDevice] {
+        var page = 1
+        var all: [MyBoundDevice] = []
+        var total = Int.max
+        while all.count < total && page <= 10 {
+            let payload = try await fetchMyDevicePage(pageNum: page, pageSize: pageSize)
+            if payload.items.isEmpty { break }
+            all.append(contentsOf: payload.items)
+            total = payload.totalCount ?? all.count
+            if payload.items.count < pageSize { break }
+            page += 1
+        }
+        return MyBoundDevice.sortedByBindTimeDesc(all)
+    }
+
+    private func fetchMyDevicePage(pageNum: Int, pageSize: Int) async throws -> MyDeviceListPayload {
+        print("[EquipmentBind] getMyHeaderList → type=2 page=\(pageNum)")
+        let response: APIResponse<MyDeviceListPayload> = try await api.getAsync(
+            path: "/v1/users/getMyHeaderList",
+            parameters: [
+                "type": "2",
+                "pageNum": String(pageNum),
+                "pageSize": String(pageSize),
+            ],
+            responseType: APIResponse<MyDeviceListPayload>.self
+        )
+        try throwIfFailed(response, defaultMessage: "获取我的设备失败")
+        return response.data ?? MyDeviceListPayload(items: [], totalCount: 0)
+    }
+
     /// `POST /v1/equipment/getEquipmenByApp` — 可连接设备型号列表（流程图「设备型号 / getEquipmentType」对齐此接口）
     func fetchEquipmentCatalog(
         category: EquipmentCategoryType,
@@ -80,8 +112,23 @@ final class EquipmentBindService {
         pageSize: Int = 50,
         userId: Int64? = nil
     ) async throws -> PaginatedEquipmentCatalogData {
+        try await fetchEquipmentCatalog(
+            type: category.rawValue,
+            pageNum: pageNum,
+            pageSize: pageSize,
+            userId: userId
+        )
+    }
+
+    /// `type` 来自设备栏目字典的 `value`。
+    func fetchEquipmentCatalog(
+        type: Int,
+        pageNum: Int = 1,
+        pageSize: Int = 50,
+        userId: Int64? = nil
+    ) async throws -> PaginatedEquipmentCatalogData {
         var body: [String: Any] = [
-            "type": category.rawValue,
+            "type": type,
             "pageNum": pageNum,
             "pageSize": pageSize,
         ]

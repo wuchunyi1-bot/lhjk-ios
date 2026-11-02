@@ -93,6 +93,7 @@ final class SessionExpiryCoordinator {
             await HealthPageCacheService.shared.clear()
         }
         InstitutionSelectionStore.shared.clear()
+        HomeShelfStore.clear()
         RongCloudManager.shared.disconnect()
         UserManager.shared.clear()
     }

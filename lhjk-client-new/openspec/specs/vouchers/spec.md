@@ -42,7 +42,7 @@
 
 ### 权益卡使用规则
 
-规则全文：`/auth/agreement/benefit-card`（设置「协议与说明」、绑定页勾选链接同源，正文对齐 Vue `agreementMap['benefit-card']`）。
+规则全文：`/auth/agreement/benefit-card`（设置「协议与说明」、绑定页勾选链接同源，打开 `{base}/agreements/user-app/benefit-card.html`）。
 
 - **绑定页**（`/activate/bind` / `BenefitBindViewController`）：须勾选「我已阅读并同意《权益卡使用规则》」；未勾选点立即绑定不提交，抖动勾选区并 Toast「请先阅读并同意《权益卡使用规则》」。
 - **领取落地**：好友转赠 / 代理人发放的领取页本期在微信小程序完成（`WeChatConfig.benefitClaimPathTemplate`）。日后若做 App 内领取页，可领取态须展示同一勾选项（默认未勾选），未勾选拦截领取（抖动 + 同上 Toast）；赠送人本人查看、已领取、已退回、已失效不展示勾选。

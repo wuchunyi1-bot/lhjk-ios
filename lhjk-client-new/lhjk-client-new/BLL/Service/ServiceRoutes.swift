@@ -20,9 +20,12 @@ enum ServiceRoutes {
             ServiceRoutes.makePackageDetailViewController(params: params)
         }
 
-        // 就医协助
+        // 就医协助 — `FundeApp:/services/medical-assist`
         r.register(path: "/services/medical-assist") { _ in
-            PlaceholderViewController(title: "就医协助服务")
+            MedicalAssistViewController()
+        }
+        r.register(path: "/services/medical-assist/usage-records") { _ in
+            MedicalAssistUsageRecordsViewController()
         }
 
         // 会员专区（首页「查看更多」）
@@ -88,7 +91,8 @@ enum ServiceRoutes {
             packageId: id,
             hospitalId: hospitalId,
             categoryServiceId: categoryServiceId,
-            renewalParentOrderId: renewalParentOrderId
+            renewalParentOrderId: renewalParentOrderId,
+            cabinFollowUp: CabinPaidBookContext(routeParams: params)
         )
     }
 

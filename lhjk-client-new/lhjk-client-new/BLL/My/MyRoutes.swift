@@ -141,13 +141,13 @@ enum MyRoutes {
         r.register(path: "/me/settings/security/cancel-account") { _ in CancelAccountViewController() }
 
         // 协议详情（协议与说明 / 登录链路共用）
-        r.register(path: "/auth/agreement/user") { _ in AgreementDetailViewController(docType: "user") }
-        r.register(path: "/auth/agreement/privacy") { _ in AgreementDetailViewController(docType: "privacy") }
-        r.register(path: "/auth/agreement/consent") { _ in AgreementDetailViewController(docType: "consent") }
-        r.register(path: "/auth/agreement/personal-info") { _ in AgreementDetailViewController(docType: "personal-info") }
-        r.register(path: "/auth/agreement/third-party-sharing") { _ in AgreementDetailViewController(docType: "third-party-sharing") }
-        r.register(path: "/auth/agreement/member-service") { _ in AgreementDetailViewController(docType: "member-service") }
-        r.register(path: "/auth/agreement/benefit-card") { _ in AgreementDetailViewController(docType: "benefit-card") }
+        r.register(path: "/auth/agreement/user") { _ in AgreementDetailViewController.make(docType: "user") }
+        r.register(path: "/auth/agreement/privacy") { _ in AgreementDetailViewController.make(docType: "privacy") }
+        r.register(path: "/auth/agreement/consent") { _ in AgreementDetailViewController.make(docType: "consent") }
+        r.register(path: "/auth/agreement/personal-info") { _ in AgreementDetailViewController.make(docType: "personal-info") }
+        r.register(path: "/auth/agreement/third-party-sharing") { _ in AgreementDetailViewController.make(docType: "third-party-sharing") }
+        r.register(path: "/auth/agreement/member-service") { _ in AgreementDetailViewController.make(docType: "member-service") }
+        r.register(path: "/auth/agreement/benefit-card") { _ in AgreementDetailViewController.make(docType: "benefit-card") }
 
         // 卡券（params: 可选 tab=coupon|benefit）
         r.register(path: "/me/vouchers") { params in
@@ -214,7 +214,12 @@ enum MyRoutes {
                 return nil
             }()
             let entry = OrderConfirmEntry(routeValue: params["entry"] as? String)
-            return OrderConfirmViewController(orderId: orderId, serialNumber: serial, entry: entry)
+            return OrderConfirmViewController(
+                orderId: orderId,
+                serialNumber: serial,
+                entry: entry,
+                cabinFollowUp: CabinPaidBookContext(routeParams: params)
+            )
         }
         r.register(path: "/orders/pay-result") { params in
             OrderPayResultViewController(viewModel: OrderPayResultViewModel(params: params))

@@ -1,6 +1,29 @@
 import Foundation
 import Combine
+import AudioToolbox
+import UserNotifications
 import RongIMLibCore
+
+/// 非离线 IM 提醒。未写入时声音、振动都视为开启。
+enum MessageAlertSettings {
+    private static let soundKey = "fd_im_alert_sound"
+    private static let vibrationKey = "fd_im_alert_vibration"
+
+    static var soundEnabled: Bool {
+        get { stored(soundKey) }
+        set { UserDefaults.standard.set(newValue, forKey: soundKey) }
+    }
+
+    static var vibrationEnabled: Bool {
+        get { stored(vibrationKey) }
+        set { UserDefaults.standard.set(newValue, forKey: vibrationKey) }
+    }
+
+    private static func stored(_ key: String) -> Bool {
+        guard UserDefaults.standard.object(forKey: key) != nil else { return true }
+        return UserDefaults.standard.bool(forKey: key)
+    }
+}
 
 /// IM 业务服务 — 会话 / 消息 / 通知管理
 ///
@@ -25,6 +48,8 @@ final class IMService {
 
     /// 通知中心拉取代数：较新的 load 完成后，丢弃过期结果，避免覆盖实时插入
     private var notificationsLoadGeneration = 0
+    /// 当前正在看的会话。只在融云前台运行时用来压掉提示音和振动。
+    private var foregroundConversationId: String?
 
     /// 是否已完成过会话列表加载，用于避免重复 HTTP 请求
     private var _hasLoadedConversations = false
@@ -92,6 +117,7 @@ final class IMService {
             messagesStore[convId, default: []].append(msg)
         }
         print("[IMService] real-time message received for conv=\(convId) type=\(msg.conversationTypeRaw) isNotification=\(msg.isNotificationConversation)")
+        alertIncomingMessage(msg)
 
         if msg.isNotificationConversation {
             ingestIncomingNotification(msg)
@@ -128,6 +154,75 @@ final class IMService {
         }
         print("[通知中心-BLL] ingest inserted id=\(noti.id) title=\(noti.title)")
         publishNotificationsDidChange()
+    }
+
+    func setForegroundConversation(_ id: String?) {
+        let trimmed = id?.trimmingCharacters(in: .whitespacesAndNewlines)
+        withState {
+            foregroundConversationId = (trimmed?.isEmpty == false) ? trimmed : nil
+        }
+    }
+
+    /// 融云长连接还在时的新消息提醒。进程被杀掉后的 APNs 不走这里。
+    private func alertIncomingMessage(_ msg: ChatMessage) {
+        guard msg.role != .user, msg.type != .timeMarker else { return }
+        if let sent = msg.sentTime, sent > 0 {
+            let ageMs = Date().timeIntervalSince1970 * 1000 - Double(sent)
+            if ageMs > 30_000 { return }
+        }
+        let soundOn = MessageAlertSettings.soundEnabled
+        let vibrationOn = MessageAlertSettings.vibrationEnabled
+        guard soundOn || vibrationOn else { return }
+
+        // RCSDKRunningMode_Foreground = 1。融云用它区分前台和退到后台但仍在跑。
+        let inForeground = RCCoreClient.shared().sdkRunningMode.rawValue == 1
+        if inForeground {
+            let viewingThisChat = withState { foregroundConversationId == msg.conversationId }
+            if viewingThisChat { return }
+            if soundOn {
+                AudioServicesPlaySystemSound(1007)
+            }
+            if vibrationOn {
+                AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+            }
+            return
+        }
+
+        if soundOn {
+            postBackgroundAlert(msg, vibrateIfBlocked: vibrationOn)
+            return
+        }
+        if vibrationOn {
+            AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+        }
+    }
+
+    private func postBackgroundAlert(_ msg: ChatMessage, vibrateIfBlocked: Bool) {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            let status = settings.authorizationStatus
+            let allowed = status == .authorized || status == .provisional || status == .ephemeral
+            guard allowed else {
+                if vibrateIfBlocked {
+                    AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+                }
+                return
+            }
+            let content = UNMutableNotificationContent()
+            let name = msg.senderName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            content.title = name.isEmpty ? "新消息" : name
+            let body = msg.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            content.body = body.isEmpty ? "你收到一条新消息" : body
+            content.sound = .default
+            if let conversationId = msg.conversationId, !conversationId.isEmpty {
+                content.threadIdentifier = conversationId
+            }
+            let request = UNNotificationRequest(
+                identifier: "im-alert-\(msg.id)",
+                content: content,
+                trigger: nil
+            )
+            UNUserNotificationCenter.current().add(request)
+        }
     }
 
     private func publishNotificationsDidChange() {
@@ -823,12 +918,14 @@ final class IMService {
 
     // MARK: - Helpers
 
-    /// 构建融云发送者信息，数据来源于 UserManager 当前用户缓存
+    /// 构建融云发送者信息。新消息写入当时的昵称，没有昵称再用姓名。已发出的消息不回写。
     private func makeSenderUserInfo() -> RCUserInfo {
         let user = UserManager.shared.currentUser
+        let nickname = user?.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let name = nickname.isEmpty ? (user?.chineseName ?? user?.surname ?? "") : nickname
         return RCUserInfo(
             userId: user?.id ?? "",
-            name: user?.chineseName ?? user?.nickname ?? "",
+            name: name,
             portrait: user?.imageUrl ?? ""
         )
     }

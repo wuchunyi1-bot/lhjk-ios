@@ -1,9 +1,9 @@
 import UIKit
 import SnapKit
 import Combine
+import Kingfisher
 
-/// 搜索页 — `GET /v1/hospitalPackage/searchEnabledPackagePage`
-/// 分组：健康服务（当前机构）、富德优选。健康知识后续再接。
+/// 搜索页。健康服务 / 富德优选走套餐检索，健康知识走 `GET /v1/content/search`。
 final class ServicePackageSearchViewController: BaseViewController {
 
     private let viewModel: ServicePackageSearchViewModel
@@ -68,6 +68,7 @@ final class ServicePackageSearchViewController: BaseViewController {
     private let resultTabBar = UIView()
     private let serviceTabButton = UIButton(type: .system)
     private let mallTabButton = UIButton(type: .system)
+    private let knowledgeTabButton = UIButton(type: .system)
     private let tabIndicator = UIView()
     private var tabBarHeight: Constraint?
 
@@ -77,6 +78,7 @@ final class ServicePackageSearchViewController: BaseViewController {
         tv.separatorStyle = .none
         tv.keyboardDismissMode = .onDrag
         tv.register(HealthPackageCardCell.self, forCellReuseIdentifier: HealthPackageCardCell.reuseID)
+        tv.register(PackageSearchArticleCell.self, forCellReuseIdentifier: PackageSearchArticleCell.reuseID)
         tv.dataSource = self
         tv.delegate = self
         return tv
@@ -110,6 +112,7 @@ final class ServicePackageSearchViewController: BaseViewController {
         tabIndicator.layer.cornerRadius = 1
         resultTabBar.addSubview(serviceTabButton)
         resultTabBar.addSubview(mallTabButton)
+        resultTabBar.addSubview(knowledgeTabButton)
         resultTabBar.addSubview(tabIndicator)
         resultTabBar.clipsToBounds = true
         view.addSubview(searchContainer)
@@ -150,6 +153,10 @@ final class ServicePackageSearchViewController: BaseViewController {
         mallTabButton.snp.makeConstraints {
             $0.leading.equalTo(serviceTabButton.snp.trailing).offset(22)
             $0.top.bottom.equalToSuperview()
+        }
+        knowledgeTabButton.snp.makeConstraints {
+            $0.leading.equalTo(mallTabButton.snp.trailing).offset(22)
+            $0.top.bottom.equalToSuperview()
             $0.trailing.lessThanOrEqualToSuperview().inset(16)
         }
         resultTabBar.snp.makeConstraints {
@@ -184,6 +191,7 @@ final class ServicePackageSearchViewController: BaseViewController {
         searchButton.addTarget(self, action: #selector(searchTapped), for: .touchUpInside)
         serviceTabButton.addTarget(self, action: #selector(serviceTabTapped), for: .touchUpInside)
         mallTabButton.addTarget(self, action: #selector(mallTabTapped), for: .touchUpInside)
+        knowledgeTabButton.addTarget(self, action: #selector(knowledgeTabTapped), for: .touchUpInside)
         clearHistoryButton.addTarget(self, action: #selector(clearHistoryTapped), for: .touchUpInside)
         historyWrap.onSelect = { [weak self] keyword in
             self?.searchField.text = keyword
@@ -198,9 +206,14 @@ final class ServicePackageSearchViewController: BaseViewController {
     }
 
     override func bindViewModel() {
-        Publishers.CombineLatest3(viewModel.$servicePage, viewModel.$mallPage, viewModel.$activeTab)
+        Publishers.CombineLatest4(
+            viewModel.$servicePage,
+            viewModel.$mallPage,
+            viewModel.$knowledgePage,
+            viewModel.$activeTab
+        )
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _, _, tab in
+            .sink { [weak self] _, _, _, tab in
                 guard let self else { return }
                 let tabChanged = tab != self.renderedTab
                 self.renderedTab = tab
@@ -282,6 +295,10 @@ final class ServicePackageSearchViewController: BaseViewController {
         viewModel.selectTab(.mall)
     }
 
+    @objc private func knowledgeTabTapped() {
+        viewModel.selectTab(.knowledge)
+    }
+
     @objc private func searchTapped() {
         submitSearch()
     }
@@ -323,14 +340,15 @@ final class ServicePackageSearchViewController: BaseViewController {
             return
         }
 
-        let page = viewModel.visiblePage
-        if let error = page.errorMessage, !error.isEmpty, page.items.isEmpty {
+        let error = currentErrorMessage
+        let isEmpty = currentItemsEmpty
+        if let error, !error.isEmpty, isEmpty {
             emptyView.configure(message: error)
             emptyView.isHidden = false
             return
         }
 
-        if page.items.isEmpty {
+        if isEmpty {
             emptyView.configure(message: "没有找到相关内容")
             emptyView.isHidden = false
             return
@@ -339,10 +357,36 @@ final class ServicePackageSearchViewController: BaseViewController {
         emptyView.isHidden = true
     }
 
+    private var currentItemsEmpty: Bool {
+        if viewModel.activeTab == .knowledge {
+            return viewModel.knowledgePage.items.isEmpty
+        }
+        return viewModel.visiblePage.items.isEmpty
+    }
+
+    private var currentErrorMessage: String? {
+        if viewModel.activeTab == .knowledge {
+            return viewModel.knowledgePage.errorMessage
+        }
+        return viewModel.visiblePage.errorMessage
+    }
+
+    private var currentRowCount: Int {
+        viewModel.activeTab == .knowledge
+            ? viewModel.knowledgePage.items.count
+            : viewModel.visiblePage.items.count
+    }
+
     private func updateTabButtons() {
-        applyTab(serviceTabButton, tab: .service, page: viewModel.servicePage)
-        applyTab(mallTabButton, tab: .mall, page: viewModel.mallPage)
-        let selected = viewModel.activeTab == .service ? serviceTabButton : mallTabButton
+        applyTab(serviceTabButton, tab: .service, total: viewModel.servicePage.total)
+        applyTab(mallTabButton, tab: .mall, total: viewModel.mallPage.total)
+        applyTab(knowledgeTabButton, tab: .knowledge, total: viewModel.knowledgePage.total)
+        let selected: UIButton
+        switch viewModel.activeTab {
+        case .service: selected = serviceTabButton
+        case .mall: selected = mallTabButton
+        case .knowledge: selected = knowledgeTabButton
+        }
         tabIndicator.snp.remakeConstraints { make in
             make.bottom.equalToSuperview()
             make.width.equalTo(24)
@@ -351,14 +395,26 @@ final class ServicePackageSearchViewController: BaseViewController {
         }
     }
 
-    private func applyTab(_ button: UIButton, tab: PackageSearchTab, page: PackageSearchPage) {
+    private func applyTab(_ button: UIButton, tab: PackageSearchTab, total: Int) {
         let selected = viewModel.activeTab == tab
-        let count = page.total > 0 ? " \(page.total)" : ""
+        let count = total > 0 ? " \(total)" : ""
         button.setTitle(tab.title + count, for: .normal)
         button.setTitleColor(selected ? .fdPrimary : .fdSubtext, for: .normal)
         button.titleLabel?.font = selected
             ? .fdFont(ofSize: 16, weight: .bold)
             : .fdFont(ofSize: 15, weight: .semibold)
+    }
+
+    private func openArticle(_ item: ContentSearchItem) {
+        let contentId = item.id.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !contentId.isEmpty else { return }
+        let url = H5Config.contentDetailPageURL(contentId: contentId)
+        let webVC = WebViewController(
+            urlString: url.absoluteString,
+            title: item.title,
+            knowledgeShare: item.shareContext
+        )
+        navigationController?.pushViewController(webVC, animated: true)
     }
 }
 
@@ -367,10 +423,18 @@ final class ServicePackageSearchViewController: BaseViewController {
 extension ServicePackageSearchViewController: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        viewModel.visiblePage.items.count
+        currentRowCount
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if viewModel.activeTab == .knowledge {
+            let cell = tableView.dequeueReusableCell(
+                withIdentifier: PackageSearchArticleCell.reuseID,
+                for: indexPath
+            ) as! PackageSearchArticleCell
+            cell.configure(viewModel.knowledgePage.items[indexPath.row])
+            return cell
+        }
         let cell = tableView.dequeueReusableCell(
             withIdentifier: HealthPackageCardCell.reuseID,
             for: indexPath
@@ -385,12 +449,16 @@ extension ServicePackageSearchViewController: UITableViewDataSource, UITableView
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if viewModel.activeTab == .knowledge {
+            openArticle(viewModel.knowledgePage.items[indexPath.row])
+            return
+        }
         let pkg = viewModel.visiblePage.items[indexPath.row]
         Router.shared.push("/services/detail", params: pkg.packageDetailRouteParams())
     }
 
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        guard indexPath.row == viewModel.visiblePage.items.count - 1 else { return }
+        guard indexPath.row == currentRowCount - 1 else { return }
         viewModel.loadMoreIfNeeded()
     }
 
@@ -529,4 +597,130 @@ private final class PackageSearchHistoryChip: UIView {
 
     @objc private func tapped() { onSelect?() }
     @objc private func deleteTapped() { onDelete?() }
+}
+
+/// 健康知识搜索结果。点击后打开与首页健康知识相同的 H5 详情。
+private final class PackageSearchArticleCell: UITableViewCell {
+
+    static let reuseID = "PackageSearchArticleCell"
+
+    private let card = UIView()
+    private let coverView = UIImageView()
+    private let coverPlaceholder = UILabel()
+    private let titleLabel = UILabel()
+    private let tagWrap = UIView()
+    private let tagLabel = UILabel()
+    private let authorLabel = UILabel()
+    private let readsLabel = UILabel()
+    private var imageURL: String?
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        selectionStyle = .none
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
+
+        card.backgroundColor = .fdSurface
+        card.layer.cornerRadius = 16
+        contentView.addSubview(card)
+
+        coverView.backgroundColor = .fdBg2
+        coverView.layer.cornerRadius = 8
+        coverView.clipsToBounds = true
+        coverView.contentMode = .scaleAspectFill
+        coverPlaceholder.text = "文章封面"
+        coverPlaceholder.font = .fdCaption
+        coverPlaceholder.textColor = .fdMuted
+        coverPlaceholder.textAlignment = .center
+        coverView.addSubview(coverPlaceholder)
+
+        titleLabel.font = .fdFont(ofSize: 16, weight: .medium)
+        titleLabel.textColor = .fdText
+        titleLabel.numberOfLines = 2
+
+        tagWrap.backgroundColor = UIColor(hexString: "#FAF5EE")
+        tagWrap.layer.cornerRadius = 4
+        tagWrap.clipsToBounds = true
+        tagLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        tagLabel.textColor = UIColor(hexString: "#A1733E")
+        tagWrap.addSubview(tagLabel)
+
+        authorLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        authorLabel.textColor = .fdSubtext
+        readsLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        readsLabel.textColor = .fdSubtext
+        readsLabel.setContentHuggingPriority(.required, for: .horizontal)
+        readsLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        card.addSubview(coverView)
+        card.addSubview(titleLabel)
+        card.addSubview(tagWrap)
+        card.addSubview(authorLabel)
+        card.addSubview(readsLabel)
+
+        card.snp.makeConstraints {
+            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 16, bottom: 12, right: 16))
+        }
+        coverView.snp.makeConstraints {
+            $0.leading.top.equalToSuperview().inset(12)
+            $0.bottom.lessThanOrEqualToSuperview().inset(12)
+            $0.size.equalTo(88)
+        }
+        coverPlaceholder.snp.makeConstraints { $0.center.equalToSuperview() }
+        titleLabel.snp.makeConstraints {
+            $0.top.equalTo(coverView)
+            $0.leading.equalTo(coverView.snp.trailing).offset(12)
+            $0.trailing.equalToSuperview().inset(12)
+        }
+        tagLabel.snp.makeConstraints {
+            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6))
+        }
+        tagWrap.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(8)
+            $0.leading.equalTo(titleLabel)
+            $0.trailing.lessThanOrEqualTo(titleLabel)
+        }
+        authorLabel.snp.makeConstraints {
+            $0.leading.equalTo(titleLabel)
+            $0.bottom.equalToSuperview().inset(12)
+            $0.top.greaterThanOrEqualTo(tagWrap.snp.bottom).offset(8)
+        }
+        readsLabel.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(12)
+            $0.centerY.equalTo(authorLabel)
+            $0.leading.greaterThanOrEqualTo(authorLabel.snp.trailing).offset(8)
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        coverView.kf.cancelDownloadTask()
+        coverView.image = nil
+        coverPlaceholder.isHidden = false
+        imageURL = nil
+    }
+
+    func configure(_ item: ContentSearchItem) {
+        titleLabel.text = item.title
+        let tag = item.tag.trimmingCharacters(in: .whitespacesAndNewlines)
+        tagWrap.isHidden = tag.isEmpty
+        tagLabel.text = tag
+        authorLabel.text = item.author
+        readsLabel.text = item.reads
+        readsLabel.isHidden = item.reads.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
+        coverPlaceholder.isHidden = false
+        coverView.image = nil
+        let raw = item.imageUrl?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        imageURL = raw.isEmpty ? nil : raw
+        guard let url = URL(string: raw), !raw.isEmpty else { return }
+        coverView.kf.setImage(with: url) { [weak self] result in
+            guard let self, self.imageURL == raw else { return }
+            if case .success = result {
+                self.coverPlaceholder.isHidden = true
+            }
+        }
+    }
 }

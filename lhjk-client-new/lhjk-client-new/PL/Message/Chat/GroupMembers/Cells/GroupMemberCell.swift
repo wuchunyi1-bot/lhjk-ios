@@ -117,7 +117,7 @@ final class GroupMemberCell: UITableViewCell {
     func configure(_ member: ImSessionDetails, isSelf: Bool) {
         nameLabel.font = .fdFont(designSize: 16, weight: .medium)
         selfRoleLabel.font = .fdFont(designSize: 12, weight: .regular)
-        nameLabel.text = member.displayName
+        nameLabel.text = member.listDisplayName(isSelf: isSelf)
         ChatBubbleStyle.applyAvatar(
             portraitUrl: member.portraitURL,
             label: UILabel(),

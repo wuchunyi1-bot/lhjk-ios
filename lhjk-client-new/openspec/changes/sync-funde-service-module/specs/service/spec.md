@@ -34,7 +34,7 @@
 
 #### Scenario: 自动轮播单向循环
 - **WHEN** Banner 数量 > 1
-- **THEN** 每 3.6s 向下一张滚动
+- **THEN** 每 4s 向下一张滚动
 - **AND** 从最后一张切到第一张时 MUST 继续向前滚动（无限循环），MUST NOT 反向回滚整段
 
 #### Scenario: 指示器

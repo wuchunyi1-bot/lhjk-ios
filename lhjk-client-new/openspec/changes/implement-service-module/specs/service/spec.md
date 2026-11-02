@@ -28,7 +28,7 @@
 > **PRD 参考**: `docs/page-specs/services-hub.page.yaml` + `docs/v0.1/pages/services/index.md`
 > **Mock（仅推荐区/机构）**: `prototype/src/mock/services.json` — **轮播与 9 宫格已接 API，不再使用 Mock**
 >
-> **iOS 对齐决策（2026-07 修订）**: Hub 以用户指定的 **Vue 原型** 为准实现轮播 Banner、9 宫格、推荐区等；PRD 中标注「暂不做」的限时活动 Banner 在 Vue 已落地，iOS 同步实现 `van-swipe` 轮播（3.6s 自动播放）。
+> **iOS 对齐决策（2026-07 修订）**: Hub 以用户指定的 **Vue 原型** 为准实现轮播 Banner、9 宫格、推荐区等；PRD 中标注「暂不做」的限时活动 Banner 在 Vue 已落地，iOS 同步实现 `van-swipe` 轮播（4s 自动播放）。
 
 ### Intent
 
@@ -56,7 +56,7 @@
 │  S0: ActivateBannerCell (条件显示)        │
 ├──────────────────────────────────────────┤
 │  S1: ServiceBannerCarouselCell            │
-│  van-swipe 3 张 Banner，高 172pt，3.6s 自动播放 │
+│  van-swipe 3 张 Banner，高 172pt，4s 自动播放 │
 ├──────────────────────────────────────────┤
 │  S2: FeaturedCardCell × N (弱化高度)    │
 │  德好 [进行中] 查看进度 → /orders         │
@@ -89,7 +89,7 @@ Section index 随 `showActivateBanner` 动态偏移；`numberOfSections` 固定 
 ### Business Rules
 
 1. **三好卡提示条**: 与 `VoucherService.isCardActivated` 联动（对应 funde `stores/demo.ts cardActivated`）；已激活时隐藏整段 S0
-2. **运营 Banner 画幅**: 宽度 = 屏宽 − 32（左右各 16）；高度 = 宽度 × 图片高/宽。未加载前用 Figma `180/344` 兜底，禁止写死 180pt。同一轮播以第一张成功加载的图为准。
+2. **运营 Banner 画幅**: 宽度 = 屏宽 − 32（左右各 16）；高度 = 宽度 × 图片高/宽。未加载前用 Figma `180/344` 兜底，禁止写死 180pt。同一轮播以第一张成功加载的图为准。嵌在首页内容页签时改为固定 `138/344`，不采用图片原始比例。
 3. **精选卡已购** (`current == true`): badge 展示 `status`（如「进行中 · 剩 45 天」）；按钮「查看进度」→ `Router.push("/orders")`
 4. **精选卡未购**: badge「为您推荐」；按钮「了解详情」→ `Router.push("/services/detail", params: ["id": id])`
 5. **弱化视觉**: 卡片内边距 12pt（原 16pt）、code 方块 40pt（原 48pt）、去掉 highlight 装饰 blob；高亮卡仍用 `fdPrimarySoft` 浅底
@@ -552,7 +552,7 @@ struct ServiceReview {
 | `/services` | `ServiceViewController` (Hub) | 1 | — |
 | `/services/list` | `ServiceListViewController` | 1 | `code: String` |
 | `/services/detail` | `ServiceDetailViewController` | 2 | `id: String` |
-| `/services/medical-assist` | `MedicalAssistViewController` (Placeholder) | 1 | — |
+| `/services/medical-assist` | `MedicalAssistViewController` | 1 | — |
 | `/activate` | `VoucherListViewController` | 1 | — |
 | `/mall` | `HealthMallViewController` | 2 | — |
 | `/mall/detail` | Placeholder | 2 | `id: String` |

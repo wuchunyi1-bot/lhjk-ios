@@ -6,6 +6,7 @@ import Combine
 final class ServicePackageDetailViewController: BaseViewController {
 
     private let viewModel: ServicePackageDetailViewModel
+    private let cabinFollowUp: CabinPaidBookContext?
     private var cancellables = Set<AnyCancellable>()
 
     private let scrollView = UIScrollView()
@@ -70,8 +71,10 @@ final class ServicePackageDetailViewController: BaseViewController {
         packageId: String,
         hospitalId: String? = nil,
         categoryServiceId: String? = nil,
-        renewalParentOrderId: Int64? = nil
+        renewalParentOrderId: Int64? = nil,
+        cabinFollowUp: CabinPaidBookContext? = nil
     ) {
+        self.cabinFollowUp = cabinFollowUp
         self.viewModel = ServicePackageDetailViewModel(
             packageId: packageId,
             hospitalId: hospitalId,
@@ -574,7 +577,7 @@ final class ServicePackageDetailViewController: BaseViewController {
     private func startAutoScroll() {
         stopAutoScroll()
         guard let carousel = carouselView, carousel.pageCount > 1 else { return }
-        autoScrollTimer = Timer.scheduledTimer(withTimeInterval: 2.8, repeats: true) { [weak self] _ in
+        autoScrollTimer = Timer.scheduledTimer(withTimeInterval: 4, repeats: true) { [weak self] _ in
             self?.carouselView?.advancePage()
         }
     }
@@ -633,7 +636,9 @@ final class ServicePackageDetailViewController: BaseViewController {
             do {
                 let orderId = try await self.viewModel.purchaseNow(selectedDetails: details)
                 await MainActor.run {
-                    Router.shared.push("/orders/confirm", params: ["orderId": String(orderId)])
+                    var params: [String: Any] = ["orderId": String(orderId)]
+                    self.cabinFollowUp?.routeParams().forEach { params[$0.key] = $0.value }
+                    Router.shared.push("/orders/confirm", params: params)
                 }
             } catch {
                 await MainActor.run {

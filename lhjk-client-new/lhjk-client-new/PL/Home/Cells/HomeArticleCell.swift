@@ -16,6 +16,13 @@ final class HomeArticleCell: UITableViewCell {
         let imageUrl: String?
         /// 内容 ID → H5 `#/content/detail?id=`
         let contentId: String?
+
+        var shareContext: KnowledgeShareContext? {
+            let id = (contentId ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let fallback = id.isEmpty ? self.id.trimmingCharacters(in: .whitespacesAndNewlines) : id
+            guard !fallback.isEmpty else { return nil }
+            return KnowledgeShareContext(contentId: fallback, title: title, imageUrl: imageUrl)
+        }
     }
 
     var onTapped: ((Article) -> Void)?

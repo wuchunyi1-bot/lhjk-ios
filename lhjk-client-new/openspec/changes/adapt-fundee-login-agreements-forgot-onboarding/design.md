@@ -30,8 +30,8 @@
 |------|------------|
 | 机构列表接口参数不明 | 复用现有 `HospitalService` / 机构切换已用接口 |
 | 资料 API 无 hospitalId 字段 | 先写 loginUserInfo 满足门禁；API 字段以文档为准 |
-| 协议正式 URL 未定 | 登录勾选与知情同意弹窗走 `AgreementDetailViewController`（docType 含 `member-service`），与设置协议中心同源 |
+| 协议正式 URL | 登录勾选与知情同意弹窗走 `AgreementDetailViewController`（docType 含 `member-service`），打开 `{base}/agreements/user-app/*.html`，与设置协议中心同源 |
 
 ## Open Questions
 
-- 协议 CMS / 正式版本号未定时，详情继续用 Vue `agreementMap` 静态正文（含 `member-service`、`benefit-card`）
+- 协议详情打开 `{base}/agreements/user-app/*.html`（含 `member-service`、`benefit-card`），不拼 token

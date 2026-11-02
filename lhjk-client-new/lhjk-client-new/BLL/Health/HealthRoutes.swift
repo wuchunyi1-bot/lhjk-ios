@@ -23,7 +23,34 @@ enum HealthRoutes {
 
         // 康养小屋 — `FundeApp:/wellness-cabins`
         r.register(path: "/wellness-cabins") { _ in WellnessCabinViewController() }
-        r.register(path: "/wellness-cabins/:id") { _ in WellnessCabinDetailViewController() }
+        r.register(path: "/wellness-cabins/detail") { params in
+            WellnessCabinDetailViewController(
+                hospitalId: stringParam(params["hospitalId"]) ?? stringParam(params["id"]) ?? "",
+                distanceLabel: stringParam(params["distanceLabel"])
+            )
+        }
+        r.register(path: "/wellness-cabins/:id") { params in
+            WellnessCabinDetailViewController(
+                hospitalId: stringParam(params["hospitalId"]) ?? stringParam(params["id"]) ?? ""
+            )
+        }
+        r.register(path: "/wellness-cabins/book") { params in
+            let internalFlag = stringParam(params["internalOnly"])
+            let internalOnly: Bool? = internalFlag == "1" ? true : (internalFlag == "0" ? false : nil)
+            return WellnessCabinServiceBookViewController(
+                hospitalId: stringParam(params["hospitalId"]) ?? "",
+                configId: stringParam(params["configId"]) ?? "",
+                priceText: stringParam(params["price"]),
+                unitName: stringParam(params["unitName"]),
+                internalOnly: internalOnly
+            )
+        }
+        r.register(path: "/wellness-cabins/activity") { params in
+            WellnessCabinActivityBookViewController(
+                hospitalId: stringParam(params["hospitalId"]) ?? "",
+                configId: stringParam(params["configId"]) ?? ""
+            )
+        }
         r.register(path: "/wellness-cabins/:id/services/:serviceId/book") { _ in
             WellnessCabinServiceBookViewController()
         }

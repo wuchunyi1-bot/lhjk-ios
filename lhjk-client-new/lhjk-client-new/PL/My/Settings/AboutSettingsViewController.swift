@@ -119,13 +119,14 @@ final class AboutSettingsViewController: BaseViewController {
 
     private func buildFooter() -> UIView {
         let copyright = UILabel()
-        copyright.text = "Copyright © 2026 富德健康"
+        copyright.text = "Copyright © 2026 深圳市富德联好健康服务有限公司"
+        copyright.numberOfLines = 0
         copyright.font = SettingsStyle.footerFont
         copyright.textColor = SettingsStyle.valueColor
         copyright.textAlignment = .center
 
         let icp = UILabel()
-        icp.text = "粤ICP备2023016723号-1"
+        icp.text = "粤ICP备2023016723号-10A"
         icp.font = SettingsStyle.footerFont
         icp.textColor = SettingsStyle.valueColor
         icp.textAlignment = .center

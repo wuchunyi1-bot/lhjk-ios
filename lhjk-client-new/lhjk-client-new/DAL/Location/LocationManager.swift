@@ -26,6 +26,7 @@ enum LocationServiceError: Error, LocalizedError {
     case denied
     case restricted
     case servicesDisabled
+    case timeout
     case locationFailed(Error?)
     case geocodeFailed(Error?)
     case emptyPlacemark
@@ -71,8 +72,9 @@ final class LocationManager: NSObject {
     }
 
     /// 单次定位（不逆地理）。按需请求 WhenInUse 授权。
+    /// - Parameter timeout: 等待定位结果的秒数；超时后结束本次请求，迟到回调不再投递。
     @MainActor
-    func locateOnce() async throws -> CLLocation {
+    func locateOnce(timeout: TimeInterval? = nil) async throws -> CLLocation {
         guard CLLocationManager.locationServicesEnabled() else {
             throw LocationServiceError.servicesDisabled
         }
@@ -103,7 +105,7 @@ final class LocationManager: NSObject {
             throw LocationServiceError.denied
         }
 
-        return try await requestOneShotLocation(manager: manager)
+        return try await requestOneShotLocation(manager: manager, timeout: timeout)
     }
 
     /// 单次定位并将坐标转为腾讯坐标系（供 searchPage 等接口上报）
@@ -151,10 +153,17 @@ final class LocationManager: NSObject {
     }
 
     @MainActor
-    private func requestOneShotLocation(manager: CLLocationManager) async throws -> CLLocation {
+    private func requestOneShotLocation(
+        manager: CLLocationManager,
+        timeout: TimeInterval?
+    ) async throws -> CLLocation {
         try await withCheckedThrowingContinuation { continuation in
             self.locationContinuation = continuation
             manager.requestLocation()
+            guard let timeout, timeout > 0 else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + timeout) { [weak self] in
+                self?.resumeLocation(.failure(LocationServiceError.timeout))
+            }
         }
     }
 

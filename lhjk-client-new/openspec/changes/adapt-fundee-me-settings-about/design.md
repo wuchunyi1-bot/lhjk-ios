@@ -24,13 +24,13 @@
 2. **版本号**：展示 `Bundle.main` 的 `CFBundleShortVersionString`（`v{version}`）；点击调用 `getLatestVersionForApp`，无更新 toast「当前已经是最新版本」，有更新弹窗并可打开 `addressUrl`。启动/回前台静默检查，强制更新不可跳过。
 3. **评分**：点击 toast「暂无法打开应用市场」，不调 StoreKit / 外链。
 4. **联系我们**：右侧 `0755-61909838`，无箭头；点击拨号。
-5. **页脚**：`Copyright © 2026 富德联好健康` + `粤ICP备2023016723号-1`。
+5. **页脚**：`Copyright © 2026 深圳市富德联好健康服务有限公司` + `粤ICP备2023016723号-10A`。
 6. **视觉**：顶区浅橙到 `fdBg` 渐变；Logo 68×68、圆角 18、`fdPrimary`→浅橙渐变、「富」白字；卡用 `fdSurface` + 圆角/轻阴影，行高 ≥52。
 7. **实现范围**：仅重写 `AboutSettingsViewController`；路由已注册。
 
 ## Risks / Trade-offs
 
-- [备案号] → `粤ICP备2023016723号-1`
+- [备案号] → `粤ICP备2023016723号-10A`
 - [评分未接商店] → 产品确认后接 `itms-apps` / `SKStoreReviewController`
 
 ## Open Questions

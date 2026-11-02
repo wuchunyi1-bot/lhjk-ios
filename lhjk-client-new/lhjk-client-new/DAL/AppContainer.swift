@@ -62,6 +62,7 @@ final class AppContainer {
     private(set) lazy var dictionaryCacheService: DictionaryCacheService = .shared
     private(set) lazy var hospitalPackageService: HospitalPackageService = .shared
     private(set) lazy var hospitalService: HospitalService = .shared
+    private(set) lazy var cabinService: CabinService = .shared
     private(set) lazy var doctorService: DoctorService = .shared
     private(set) lazy var institutionSelectionStore: InstitutionSelectionStore = .shared
     private(set) lazy var serviceHubCacheService: ServiceHubCacheService = .shared

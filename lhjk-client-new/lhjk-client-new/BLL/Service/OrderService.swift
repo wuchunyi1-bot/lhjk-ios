@@ -391,12 +391,15 @@ final class OrderService {
 enum OrderServiceError: Error, LocalizedError {
     /// `GET /v1/order/getOrderSettlement` 业务码：套餐价格或内容已变化
     static let packageContentChangedCode = "M0104"
+    /// `GET /v1/order/getOrderSettlement` 业务码：套餐已下架，订单无法继续支付
+    static let packageOffShelfCode = "M0105"
     static let packageContentChangedFallbackMessage = "套餐价格或内容已发生变化，请重新选择套餐后下单。"
+    static let packageOffShelfFallbackMessage = "该套餐已下架，当前订单无法继续支付，系统将自动取消订单。"
 
     case queryFailed(String)
     /// 支付统一接口业务失败（含金额/版本变化）
     case payRejected(String)
-    /// `code == M0104`：待支付订单对应套餐已变更，需取消或重选
+    /// `code == M0104` 或 `M0105`：待支付订单无法继续支付，需取消或重选套餐
     case packageContentChanged(String)
 
     var errorDescription: String? {
@@ -411,10 +414,11 @@ enum OrderServiceError: Error, LocalizedError {
     static func fromSettlementFailure(code: String, msg: String?) -> OrderServiceError {
         let trimmedCode = code.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedMsg = (msg ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedCode == packageContentChangedCode {
-            return .packageContentChanged(
-                trimmedMsg.isEmpty ? packageContentChangedFallbackMessage : trimmedMsg
-            )
+        if trimmedCode == packageContentChangedCode || trimmedCode == packageOffShelfCode {
+            let fallback = trimmedCode == packageOffShelfCode
+                ? packageOffShelfFallbackMessage
+                : packageContentChangedFallbackMessage
+            return .packageContentChanged(trimmedMsg.isEmpty ? fallback : trimmedMsg)
         }
         return .queryFailed(trimmedMsg.isEmpty ? "获取结算信息失败" : trimmedMsg)
     }

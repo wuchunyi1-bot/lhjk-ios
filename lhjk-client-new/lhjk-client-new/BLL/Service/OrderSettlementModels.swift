@@ -25,7 +25,7 @@ struct OrderSettlementBO: Decodable {
     let wechat: Bool?
     let alipay: Bool?
     let fundeChannelFlag: Bool?
-    /// 1 支持快递发货；0 医院自提
+    /// 结算原样带回。确认页是否展示收货方式不再读此字段，只看 `equipmentFlag`。
     let orderExpress: Int?
     /// 是否包含设备类或零售类实物。`false` 时确认订单/待支付隐藏收货方式与自提地址
     let equipmentFlag: Bool?
@@ -33,13 +33,15 @@ struct OrderSettlementBO: Decodable {
     let amountVersion: Int?
     /// 期望应付金额，支付时原样带回 `orderPay.expectedPayableAmount`
     let expectedPayableAmount: Double?
+    /// 当前订单绑定的收货地址 ID。切换快递地址时原样带回 `updateOrderDelivery.addressId`。
+    let addressId: Int64?
 
     private enum CodingKeys: String, CodingKey {
         case packageName, img, totalPrice, details, address, appOrderDetailBO
         case categoryServiceId, couponTakeId, amount, discountRatio
         case commodityPrice, expressAmount, description, benefitsAmount
         case wechat, alipay, fundeChannelFlag, orderExpress, equipmentFlag
-        case amountVersion, expectedPayableAmount
+        case amountVersion, expectedPayableAmount, addressId
     }
 
     init(from decoder: Decoder) throws {
@@ -65,10 +67,8 @@ struct OrderSettlementBO: Decodable {
         equipmentFlag = Self.decodeFlexibleBool(c, key: .equipmentFlag)
         amountVersion = HospitalPackageInt.decodeIfPresent(c, key: .amountVersion)
         expectedPayableAmount = Self.decodeFlexibleDouble(c, key: .expectedPayableAmount)
+        addressId = Self.decodeFlexibleInt64(c, key: .addressId)
     }
-
-    /// 是否支持快递发货
-    var supportsExpress: Bool { orderExpress == 1 }
 
     /// 套餐含设备类或零售类实物。字段缺省时按含实物处理，避免旧响应误隐藏履约区。
     var containsPhysicalGoods: Bool { equipmentFlag != false }
@@ -160,6 +160,13 @@ struct OrderSettlementBO: Decodable {
         appOrderDetailBO?.packageDescription?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 
+    /// 切换快递地址时传给 `updateOrderDelivery` 的地址 ID。根级优先，缺省读订单摘要。
+    var resolvedAddressId: Int64? {
+        if let addressId, addressId > 0 { return addressId }
+        if let addressId = appOrderDetailBO?.addressId, addressId > 0 { return addressId }
+        return nil
+    }
+
     private static func decodeFlexibleDouble<K: CodingKey>(
         _ container: KeyedDecodingContainer<K>,
         key: K
@@ -185,6 +192,18 @@ struct OrderSettlementBO: Decodable {
             case "false", "0": return false
             default: return nil
             }
+        }
+        return nil
+    }
+
+    private static func decodeFlexibleInt64<K: CodingKey>(
+        _ container: KeyedDecodingContainer<K>,
+        key: K
+    ) -> Int64? {
+        if let v = try? container.decodeIfPresent(Int64.self, forKey: key) { return v }
+        if let v = try? container.decodeIfPresent(Int.self, forKey: key) { return Int64(v) }
+        if let s = try? container.decodeIfPresent(String.self, forKey: key) {
+            return Int64(s.trimmingCharacters(in: .whitespacesAndNewlines))
         }
         return nil
     }
@@ -215,10 +234,12 @@ struct OrderSettlementAppOrderBO: Decodable {
     let phone: String?
     /// 收货 / 提货地址
     let address: String?
+    /// 当前绑定的收货地址 ID
+    let addressId: Int64?
 
     private enum CodingKeys: String, CodingKey {
         case id, packageId, hospitalId, hospitalName, packageDescription
-        case payable, price, typeOrder, couponAmount, benefitsAmount, couponTakeList, receiver, phone, address
+        case payable, price, typeOrder, couponAmount, benefitsAmount, couponTakeList, receiver, phone, address, addressId
     }
 
     init(from decoder: Decoder) throws {
@@ -237,6 +258,7 @@ struct OrderSettlementAppOrderBO: Decodable {
         receiver = try c.decodeIfPresent(String.self, forKey: .receiver)
         phone = try c.decodeIfPresent(String.self, forKey: .phone)
         address = try c.decodeIfPresent(String.self, forKey: .address)
+        addressId = Self.decodeFlexibleInt64(c, key: .addressId)
     }
 
     /// 是否已带配送地址信息
@@ -259,9 +281,19 @@ struct OrderSettlementAppOrderBO: Decodable {
         }
         return nil
     }
-}
 
-/// 结算内嵌优惠券领用摘要
+    private static func decodeFlexibleInt64<K: CodingKey>(
+        _ container: KeyedDecodingContainer<K>,
+        key: K
+    ) -> Int64? {
+        if let v = try? container.decodeIfPresent(Int64.self, forKey: key) { return v }
+        if let v = try? container.decodeIfPresent(Int.self, forKey: key) { return Int64(v) }
+        if let s = try? container.decodeIfPresent(String.self, forKey: key) {
+            return Int64(s.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        return nil
+    }
+}
 struct OrderSettlementCouponTakeBO: Decodable {
     let id: Int64?
     let name: String?

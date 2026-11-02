@@ -24,6 +24,7 @@ App 用 `WebViewController` 承载 H5。交互分两层：**打开页面**（URL
 | CMS `pageUrl`（`FundeH5:`） | `FundePageURL.open` → `H5Config.authenticatedPageURL` |
 | 本地路由 `/health/metrics/{key}` 等 | `HealthRoutes` / `H5Config.authenticatedMetricURL` |
 | 资讯详情 | `H5Config.contentDetailPageURL`（本页可不传 token） |
+| 协议页 | `{base}/agreements/user-app/{file}.html`，不传 token。登录勾选、登录知情同意弹窗、前置隐私弹窗、改绑手机号、协议与说明、权益卡《权益卡使用规则》都走这里 |
 
 `FundeH5:/package/bridge?packageId=123&hospitalId=456` 打开后即为：
 
@@ -61,7 +62,7 @@ H5 hash 路径由 `H5Config` 拼接；饮食运动根路径为 `exercise-food`�
 | 血氧 | `#/spo2` | — | `/spo2`、`/health/metrics/spo2` |
 | 鹰瞳眼底 | `#/fundus` | — | `/health/metrics/fundus`。页内「扫一扫」走 `FundeBridge` `scanCode`，不由 H5 打开摄像头 |
 | 健康陪伴列表 | `#/companion` | — | 首页「更多 ›」、`/companion`、`FundeH5:/companion` |
-| 资讯详情 | `#/content/detail` | `id` 必填 | 首页健康陪伴条目等 |
+| 资讯详情 | `#/content/detail` | `id` 必填 | 首页健康陪伴、搜索健康知识。导航栏右侧功能按钮弹出「分享」和「复制链接」。分享发给微信好友，小程序 `pkg-common/webview/index?articleId=`；点击「分享」立刻 `POST /v1/content/share`。复制链接写入不含 token 的详情地址 |
 | **套餐中间页** | `#/package/bridge` | `packageId` 必填；`hospitalId` 可选 | CMS `FundeH5:/package/bridge?…` |
 
 `meal`：`breakfast` / `lunch` / `dinner` / `snack`。
@@ -257,6 +258,26 @@ App 经 `WebViewController` 打开需登录的 H5 时 SHALL 拼接 `platform=ios
 - **WHEN** 下载超时、HTTP 失败、响应为空，或 Quick Look 无法预览该文件
 - **THEN** 关闭加载提示并提示原因
 - **AND** 链接过期（HTTP 401/403）时提示返回报告重新获取
+
+### Requirement: FundeBridge 单次定位
+
+H5 `action=getLocation` SHALL 由宿主取一次当前位置，并固定调用 `window.FundeLocationCallback`。回调 MUST 原样带回 `requestId`。坐标 SHALL 为 GCJ-02 数值，`coordinateType` 固定 `gcj02`。不使用缓存坐标，不持续监听。
+
+首次尚未询问定位权限时，SHALL 先弹出「开启定位」（暂不开启 / 开启）；用户点开启后再出系统授权框。权限已拒绝时 SHALL 弹出另一套「定位未开启」（取消 / 去设置）。系统定位服务关闭时 SHALL 弹出「定位服务未开启」（取消 / 去设置）。用户取消回调 `LOCATION_CANCELLED`；拒绝权限回调 `LOCATION_PERMISSION_DENIED`；服务仍关闭回调 `LOCATION_SERVICE_DISABLED`。
+
+#### Scenario: 首次请求定位
+
+- **WHEN** H5 postMessage `action=getLocation`，且 App 定位权限为未询问
+- **THEN** 弹出「开启定位」，按钮为「暂不开启」和「开启」
+- **AND** 点「开启」后出现系统定位授权框；授权成功后回调 `status=success`，`data.coordinateType` 为 `gcj02`
+- **AND** 点「暂不开启」回调 `status=error`、`code=LOCATION_CANCELLED`
+
+#### Scenario: 定位权限已关闭
+
+- **WHEN** 定位权限已被拒绝或受限
+- **THEN** 弹出「定位未开启」，按钮为「取消」和「去设置」
+- **AND** 点「去设置」打开系统设置；返回后仍未授权则回调 `LOCATION_PERMISSION_DENIED`
+- **AND** 点「取消」回调 `LOCATION_CANCELLED`
 
 ### Requirement: FundeBridge 原生扫码
 

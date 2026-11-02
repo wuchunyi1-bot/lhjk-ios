@@ -175,6 +175,7 @@
 		A592F19E30806D660013B2E8 /* HomeTopBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A592F19B30806D660013B2E8 /* HomeTopBarView.swift */; };
 		A592F1A130806D740013B2E8 /* HomeKnowledgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A592F19F30806D740013B2E8 /* HomeKnowledgeViewController.swift */; };
 		A592F1A330806D850013B2E8 /* HomeSupportCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A592F1A230806D850013B2E8 /* HomeSupportCell.swift */; };
+		A5999C93308B2F8C001D6E00 /* MedicalAssistViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5999C91308B2F8C001D6E00 /* MedicalAssistViewController.swift */; };
 		A599A51A3040370F00D943EA /* OrderBottomSheetKeyboardSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A599A5193040370F00D943EA /* OrderBottomSheetKeyboardSupport.swift */; };
 		A599A51D304039FA00D943EA /* CartItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A599A51B304039FA00D943EA /* CartItemCell.swift */; };
 		A599B60830204B9B0012086A /* MessageSegmentedControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A599B60630204B9B0012086A /* MessageSegmentedControl.swift */; };
@@ -271,8 +272,24 @@
 		A5ACE2413000D5C200056C52 /* ServicePackageDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE23E3000D5C200056C52 /* ServicePackageDetailViewController.swift */; };
 		A5ACE2433000F56200056C52 /* HospitalPackageDetailModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2423000F56200056C52 /* HospitalPackageDetailModels.swift */; };
 		A5ACE2463000F57B00056C52 /* ServicePackageDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACE2443000F57B00056C52 /* ServicePackageDetailViewModel.swift */; };
+		A5ADA8F13094491000843CD1 /* WellnessCabinServiceBookViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADA8EF3094491000843CD1 /* WellnessCabinServiceBookViewController.swift */; };
+		A5ADA8F23094491000843CD1 /* WellnessCabinBookViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADA8ED3094491000843CD1 /* WellnessCabinBookViewModel.swift */; };
+		A5ADA8F93094827600843CD1 /* WellnessCabinAppointmentListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADA8F53094827600843CD1 /* WellnessCabinAppointmentListViewModel.swift */; };
+		A5ADA8FA3094827600843CD1 /* WellnessCabinAppointmentCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADA8F33094827600843CD1 /* WellnessCabinAppointmentCell.swift */; };
+		A5ADA8FB3094827600843CD1 /* WellnessCabinAppointmentListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADA8F73094827600843CD1 /* WellnessCabinAppointmentListViewController.swift */; };
+		A5ADA9023094911D00843CD1 /* DeviceEmptyIllustrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADA8FF3094911D00843CD1 /* DeviceEmptyIllustrationView.swift */; };
+		A5ADA9033094911D00843CD1 /* DeviceCatalogCells.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADA8FC3094911D00843CD1 /* DeviceCatalogCells.swift */; };
+		A5ADA9043094911D00843CD1 /* DeviceUnbindDialogViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADA9003094911D00843CD1 /* DeviceUnbindDialogViewController.swift */; };
+		A5ADA9053094911D00843CD1 /* MyDeviceSwipeCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADA8FD3094911D00843CD1 /* MyDeviceSwipeCell.swift */; };
 		A5ADE05C300F572800CA598F /* OrderSettlementModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADE05B300F572800CA598F /* OrderSettlementModels.swift */; };
 		A5ADE05D300F572800CA598F /* OHospitalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ADE05A300F572800CA598F /* OHospitalModels.swift */; };
+		A5AF90FF3092EB73001C28AF /* CabinModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5AF90FD3092EB73001C28AF /* CabinModels.swift */; };
+		A5AF91003092EB73001C28AF /* CabinService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5AF90FE3092EB73001C28AF /* CabinService.swift */; };
+		A5AF91053092EB95001C28AF /* WellnessCabinListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5AF91033092EB95001C28AF /* WellnessCabinListViewModel.swift */; };
+		A5AF91063092EB95001C28AF /* WellnessCabinListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5AF91013092EB95001C28AF /* WellnessCabinListCell.swift */; };
+		A5AF910D3092F7EC001C28AF /* WellnessCabinDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5AF910B3092F7EC001C28AF /* WellnessCabinDetailViewController.swift */; };
+		A5AF910E3092F7EC001C28AF /* WellnessCabinDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5AF91093092F7EC001C28AF /* WellnessCabinDetailViewModel.swift */; };
+		A5AF910F3092F7EC001C28AF /* WellnessCabinServiceItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5AF91073092F7EC001C28AF /* WellnessCabinServiceItemCell.swift */; };
 		A5B1FB223009E2F80039B16C /* HospitalService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB203009E2F80039B16C /* HospitalService.swift */; };
 		A5B1FB233009E2F80039B16C /* HospitalSearchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB1F3009E2F80039B16C /* HospitalSearchModels.swift */; };
 		A5B1FB243009E2F80039B16C /* InstitutionSelectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B1FB213009E2F80039B16C /* InstitutionSelectionStore.swift */; };
@@ -584,6 +601,7 @@
 		A592F19F30806D740013B2E8 /* HomeKnowledgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeKnowledgeViewController.swift; sourceTree = "<group>"; };
 		A592F1A230806D850013B2E8 /* HomeSupportCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeSupportCell.swift; sourceTree = "<group>"; };
 		A594BE4E301C760600D43046 /* lhjk-client-new.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "lhjk-client-new.entitlements"; sourceTree = "<group>"; };
+		A5999C91308B2F8C001D6E00 /* MedicalAssistViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicalAssistViewController.swift; sourceTree = "<group>"; };
 		A599A5193040370F00D943EA /* OrderBottomSheetKeyboardSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderBottomSheetKeyboardSupport.swift; sourceTree = "<group>"; };
 		A599A51B304039FA00D943EA /* CartItemCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartItemCell.swift; sourceTree = "<group>"; };
 		A599B60630204B9B0012086A /* MessageSegmentedControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageSegmentedControl.swift; sourceTree = "<group>"; };
@@ -680,8 +698,24 @@
 		A5ACE23E3000D5C200056C52 /* ServicePackageDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicePackageDetailViewController.swift; sourceTree = "<group>"; };
 		A5ACE2423000F56200056C52 /* HospitalPackageDetailModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HospitalPackageDetailModels.swift; path = BLL/Service/HospitalPackageDetailModels.swift; sourceTree = "<group>"; };
 		A5ACE2443000F57B00056C52 /* ServicePackageDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicePackageDetailViewModel.swift; sourceTree = "<group>"; };
+		A5ADA8ED3094491000843CD1 /* WellnessCabinBookViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessCabinBookViewModel.swift; sourceTree = "<group>"; };
+		A5ADA8EF3094491000843CD1 /* WellnessCabinServiceBookViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessCabinServiceBookViewController.swift; sourceTree = "<group>"; };
+		A5ADA8F33094827600843CD1 /* WellnessCabinAppointmentCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessCabinAppointmentCell.swift; sourceTree = "<group>"; };
+		A5ADA8F53094827600843CD1 /* WellnessCabinAppointmentListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessCabinAppointmentListViewModel.swift; sourceTree = "<group>"; };
+		A5ADA8F73094827600843CD1 /* WellnessCabinAppointmentListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessCabinAppointmentListViewController.swift; sourceTree = "<group>"; };
+		A5ADA8FC3094911D00843CD1 /* DeviceCatalogCells.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceCatalogCells.swift; sourceTree = "<group>"; };
+		A5ADA8FD3094911D00843CD1 /* MyDeviceSwipeCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyDeviceSwipeCell.swift; sourceTree = "<group>"; };
+		A5ADA8FF3094911D00843CD1 /* DeviceEmptyIllustrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceEmptyIllustrationView.swift; sourceTree = "<group>"; };
+		A5ADA9003094911D00843CD1 /* DeviceUnbindDialogViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceUnbindDialogViewController.swift; sourceTree = "<group>"; };
 		A5ADE05A300F572800CA598F /* OHospitalModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OHospitalModels.swift; path = BLL/Service/OHospitalModels.swift; sourceTree = "<group>"; };
 		A5ADE05B300F572800CA598F /* OrderSettlementModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OrderSettlementModels.swift; path = BLL/Service/OrderSettlementModels.swift; sourceTree = "<group>"; };
+		A5AF90FD3092EB73001C28AF /* CabinModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CabinModels.swift; path = BLL/Health/CabinModels.swift; sourceTree = "<group>"; };
+		A5AF90FE3092EB73001C28AF /* CabinService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CabinService.swift; path = BLL/Health/CabinService.swift; sourceTree = "<group>"; };
+		A5AF91013092EB95001C28AF /* WellnessCabinListCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessCabinListCell.swift; sourceTree = "<group>"; };
+		A5AF91033092EB95001C28AF /* WellnessCabinListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessCabinListViewModel.swift; sourceTree = "<group>"; };
+		A5AF91073092F7EC001C28AF /* WellnessCabinServiceItemCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessCabinServiceItemCell.swift; sourceTree = "<group>"; };
+		A5AF91093092F7EC001C28AF /* WellnessCabinDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessCabinDetailViewModel.swift; sourceTree = "<group>"; };
+		A5AF910B3092F7EC001C28AF /* WellnessCabinDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessCabinDetailViewController.swift; sourceTree = "<group>"; };
 		A5B1FB1F3009E2F80039B16C /* HospitalSearchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HospitalSearchModels.swift; path = BLL/Service/HospitalSearchModels.swift; sourceTree = "<group>"; };
 		A5B1FB203009E2F80039B16C /* HospitalService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HospitalService.swift; path = BLL/Service/HospitalService.swift; sourceTree = "<group>"; };
 		A5B1FB213009E2F80039B16C /* InstitutionSelectionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = InstitutionSelectionStore.swift; path = BLL/Service/InstitutionSelectionStore.swift; sourceTree = "<group>"; };
@@ -1322,6 +1356,8 @@
 		A590FC5C2FEA91170056EF52 /* Devices */ = {
 			isa = PBXGroup;
 			children = (
+				A5ADA8FE3094911D00843CD1 /* Cells */,
+				A5ADA9013094911D00843CD1 /* Components */,
 				A590FC5B2FEA91170056EF52 /* DevicesViewController.swift */,
 			);
 			path = Devices;
@@ -1665,6 +1701,7 @@
 		A590FCAC2FEA91170056EF52 /* Service */ = {
 			isa = PBXGroup;
 			children = (
+				A5999C92308B2F8C001D6E00 /* MedicalAssist */,
 				A5B1FB2B3009E3240039B16C /* InstitutionSelect */,
 				A54CBD4430049CD600D581AE /* Cart */,
 				A5ACE23F3000D5C200056C52 /* ServicePackageDetail */,
@@ -1772,6 +1809,14 @@
 				A592F19F30806D740013B2E8 /* HomeKnowledgeViewController.swift */,
 			);
 			path = Knowledge;
+			sourceTree = "<group>";
+		};
+		A5999C92308B2F8C001D6E00 /* MedicalAssist */ = {
+			isa = PBXGroup;
+			children = (
+				A5999C91308B2F8C001D6E00 /* MedicalAssistViewController.swift */,
+			);
+			path = MedicalAssist;
 			sourceTree = "<group>";
 		};
 		A599A51C304039FA00D943EA /* Cells */ = {
@@ -2076,6 +2121,109 @@
 			path = ViewModels;
 			sourceTree = "<group>";
 		};
+		A5ADA8EE3094491000843CD1 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A5ADA8ED3094491000843CD1 /* WellnessCabinBookViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A5ADA8F03094491000843CD1 /* WellnessCabinBook */ = {
+			isa = PBXGroup;
+			children = (
+				A5ADA8EE3094491000843CD1 /* ViewModels */,
+				A5ADA8EF3094491000843CD1 /* WellnessCabinServiceBookViewController.swift */,
+			);
+			path = WellnessCabinBook;
+			sourceTree = "<group>";
+		};
+		A5ADA8F43094827600843CD1 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A5ADA8F33094827600843CD1 /* WellnessCabinAppointmentCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A5ADA8F63094827600843CD1 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A5ADA8F53094827600843CD1 /* WellnessCabinAppointmentListViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A5ADA8F83094827600843CD1 /* WellnessCabinAppointments */ = {
+			isa = PBXGroup;
+			children = (
+				A5ADA8F43094827600843CD1 /* Cells */,
+				A5ADA8F63094827600843CD1 /* ViewModels */,
+				A5ADA8F73094827600843CD1 /* WellnessCabinAppointmentListViewController.swift */,
+			);
+			path = WellnessCabinAppointments;
+			sourceTree = "<group>";
+		};
+		A5ADA8FE3094911D00843CD1 /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A5ADA8FC3094911D00843CD1 /* DeviceCatalogCells.swift */,
+				A5ADA8FD3094911D00843CD1 /* MyDeviceSwipeCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A5ADA9013094911D00843CD1 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A5ADA8FF3094911D00843CD1 /* DeviceEmptyIllustrationView.swift */,
+				A5ADA9003094911D00843CD1 /* DeviceUnbindDialogViewController.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A5AF91023092EB95001C28AF /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A5AF91013092EB95001C28AF /* WellnessCabinListCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A5AF91043092EB95001C28AF /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A5AF91033092EB95001C28AF /* WellnessCabinListViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A5AF91083092F7EC001C28AF /* Cells */ = {
+			isa = PBXGroup;
+			children = (
+				A5AF91073092F7EC001C28AF /* WellnessCabinServiceItemCell.swift */,
+			);
+			path = Cells;
+			sourceTree = "<group>";
+		};
+		A5AF910A3092F7EC001C28AF /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A5AF91093092F7EC001C28AF /* WellnessCabinDetailViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A5AF910C3092F7EC001C28AF /* WellnessCabinDetail */ = {
+			isa = PBXGroup;
+			children = (
+				A5AF91083092F7EC001C28AF /* Cells */,
+				A5AF910A3092F7EC001C28AF /* ViewModels */,
+				A5AF910B3092F7EC001C28AF /* WellnessCabinDetailViewController.swift */,
+			);
+			path = WellnessCabinDetail;
+			sourceTree = "<group>";
+		};
 		A5B1FB263009E3240039B16C /* Cells */ = {
 			isa = PBXGroup;
 			children = (
@@ -2124,6 +2272,11 @@
 		A5BC6839307F77EA00FF8877 /* WellnessCabin */ = {
 			isa = PBXGroup;
 			children = (
+				A5ADA8F83094827600843CD1 /* WellnessCabinAppointments */,
+				A5ADA8F03094491000843CD1 /* WellnessCabinBook */,
+				A5AF910C3092F7EC001C28AF /* WellnessCabinDetail */,
+				A5AF91023092EB95001C28AF /* Cells */,
+				A5AF91043092EB95001C28AF /* ViewModels */,
 				A5BC6838307F77EA00FF8877 /* WellnessCabinViewController.swift */,
 			);
 			path = WellnessCabin;
@@ -2516,6 +2669,8 @@
 		B64D5D28AFB9110FDD54A8D6 /* Health */ = {
 			isa = PBXGroup;
 			children = (
+				A5AF90FD3092EB73001C28AF /* CabinModels.swift */,
+				A5AF90FE3092EB73001C28AF /* CabinService.swift */,
 				A5B56159304916A600B8259D /* MedicalReportModels.swift */,
 				A5B5615A304916A600B8259D /* MedicalReportService.swift */,
 				A5BDA39930357D3C00E306EB /* EquipmentBindModels.swift */,
@@ -3044,6 +3199,7 @@
 				A590FCE72FEA91170056EF52 /* AppointmentsViewController.swift in Sources */,
 				A590FCE92FEA91170056EF52 /* HomeTaskCardCell.swift in Sources */,
 				A5A6F5142FFF7BFE0065C921 /* AddressListViewModel.swift in Sources */,
+				A5999C93308B2F8C001D6E00 /* MedicalAssistViewController.swift in Sources */,
 				A5A6F57A2FFF8EE80065C921 /* SelfSizingCollectionView.swift in Sources */,
 				A580F4013004D8650014B443 /* PackageDetailCarouselView.swift in Sources */,
 				A580F4023004D8650014B443 /* PackageComboGroupView.swift in Sources */,
@@ -3064,6 +3220,13 @@
 				A5C71B0030188F8E006EA79C /* AgreementCenterViewController.swift in Sources */,
 				A5F6AF2130296CED00D1BF74 /* SessionInvalidation.swift in Sources */,
 				A5C71B0130188F8E006EA79C /* SettingsHubItemRow.swift in Sources */,
+				A5ADA9023094911D00843CD1 /* DeviceEmptyIllustrationView.swift in Sources */,
+				A5ADA9033094911D00843CD1 /* DeviceCatalogCells.swift in Sources */,
+				A5ADA9043094911D00843CD1 /* DeviceUnbindDialogViewController.swift in Sources */,
+				A5ADA9053094911D00843CD1 /* MyDeviceSwipeCell.swift in Sources */,
+				A5ADA8F93094827600843CD1 /* WellnessCabinAppointmentListViewModel.swift in Sources */,
+				A5ADA8FA3094827600843CD1 /* WellnessCabinAppointmentCell.swift in Sources */,
+				A5ADA8FB3094827600843CD1 /* WellnessCabinAppointmentListViewController.swift in Sources */,
 				A599B60830204B9B0012086A /* MessageSegmentedControl.swift in Sources */,
 				A5BDA39B30357D3C00E306EB /* EquipmentBindModels.swift in Sources */,
 				A5BDA39C30357D3C00E306EB /* EquipmentBindService.swift in Sources */,
@@ -3113,6 +3276,8 @@
 				A5BDA3A73035921300E306EB /* ScaleDeviceCardCell.swift in Sources */,
 				A56DDEBB30174BAB000E03A0 /* ManagerSelectCell.swift in Sources */,
 				A56DDEBC30174BAB000E03A0 /* ManagerSelectViewModel.swift in Sources */,
+				A5AF91053092EB95001C28AF /* WellnessCabinListViewModel.swift in Sources */,
+				A5AF91063092EB95001C28AF /* WellnessCabinListCell.swift in Sources */,
 				A56DDEBD30174BAB000E03A0 /* ManagerSelectViewController.swift in Sources */,
 				A590FD032FEA91170056EF52 /* ProfileViewController.swift in Sources */,
 				D97D86F91B5A3A4D1C22DDC3 /* PaymentOrder.swift in Sources */,
@@ -3128,6 +3293,9 @@
 				A56120C83010A31C00505C32 /* OrderConfirmViewModel.swift in Sources */,
 				A5E08928304551E300D610FF /* GroupMembersViewModel.swift in Sources */,
 				A5E08929304551E300D610FF /* GroupMembersViewController.swift in Sources */,
+				A5AF910D3092F7EC001C28AF /* WellnessCabinDetailViewController.swift in Sources */,
+				A5AF910E3092F7EC001C28AF /* WellnessCabinDetailViewModel.swift in Sources */,
+				A5AF910F3092F7EC001C28AF /* WellnessCabinServiceItemCell.swift in Sources */,
 				A5E0892A304551E300D610FF /* GroupMemberCell.swift in Sources */,
 				A592F19D30806D660013B2E8 /* HomeShelfBar.swift in Sources */,
 				A592F19E30806D660013B2E8 /* HomeTopBarView.swift in Sources */,
@@ -3212,9 +3380,13 @@
 				A5A6F5352FFF7D5F0065C921 /* FileManager.swift in Sources */,
 				A5A6F5432FFF7E720065C921 /* ConversationListViewModel.swift in Sources */,
 				A5A6F5002FFF7BBD0065C921 /* ImageBubbleCell.swift in Sources */,
+				A5ADA8F13094491000843CD1 /* WellnessCabinServiceBookViewController.swift in Sources */,
+				A5ADA8F23094491000843CD1 /* WellnessCabinBookViewModel.swift in Sources */,
 				A5A6F5012FFF7BBD0065C921 /* TextBubbleCell.swift in Sources */,
 				A5A6F5402FFF7E510065C921 /* MyViewModel.swift in Sources */,
 				A5ADE05C300F572800CA598F /* OrderSettlementModels.swift in Sources */,
+				A5AF90FF3092EB73001C28AF /* CabinModels.swift in Sources */,
+				A5AF91003092EB73001C28AF /* CabinService.swift in Sources */,
 				A5ADE05D300F572800CA598F /* OHospitalModels.swift in Sources */,
 				A5A6F5022FFF7BBD0065C921 /* ServiceCardCell.swift in Sources */,
 				A5A6F5032FFF7BBD0065C921 /* CenteredTipCell.swift in Sources */,

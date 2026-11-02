@@ -61,6 +61,13 @@ final class NotificationSettingsViewController: BaseViewController {
             $0.leading.trailing.equalToSuperview().inset(Layout.cardInset)
         }
 
+        let soundCard = buildSoundCard()
+        contentView.addSubview(soundCard)
+        soundCard.snp.makeConstraints {
+            $0.top.equalTo(systemCard.snp.bottom).offset(Layout.cardSpacing)
+            $0.leading.trailing.equalToSuperview().inset(Layout.cardInset)
+        }
+
         let rows: [(title: String, subtitle: String)] = [
             ("服务进度提醒", "订单履约、健管师跟进、服务到期提醒"),
             ("健康任务提醒", "测量、评估、饮食记录等健康任务"),
@@ -71,7 +78,7 @@ final class NotificationSettingsViewController: BaseViewController {
         let prefsCard = buildPrefsCard(rows: rows)
         contentView.addSubview(prefsCard)
         prefsCard.snp.makeConstraints {
-            $0.top.equalTo(systemCard.snp.bottom).offset(Layout.cardSpacing)
+            $0.top.equalTo(soundCard.snp.bottom).offset(Layout.cardSpacing)
             $0.leading.trailing.equalToSuperview().inset(Layout.cardInset)
             $0.bottom.equalToSuperview().offset(-24)
         }
@@ -175,6 +182,49 @@ final class NotificationSettingsViewController: BaseViewController {
             $0.bottom.equalToSuperview().offset(-Layout.cardPadding)
         }
 
+        return card
+    }
+
+    // MARK: - Sound card
+
+    private func buildSoundCard() -> UIView {
+        let card = makeCard()
+        let header = makeSectionHeader(iconName: "settings_section_message", title: "消息声音设置")
+        card.addSubview(header)
+        header.snp.makeConstraints {
+            $0.top.leading.equalToSuperview().offset(Layout.cardPadding)
+        }
+
+        let headerDivider = UIView()
+        headerDivider.backgroundColor = .fdBorder
+        card.addSubview(headerDivider)
+        headerDivider.snp.makeConstraints {
+            $0.top.equalTo(header.snp.bottom).offset(9)
+            $0.leading.trailing.equalToSuperview().inset(Layout.cardPadding)
+            $0.height.equalTo(Layout.headerDividerHeight)
+        }
+
+        let soundCell = SettingsToggleCell(
+            model: .init(title: "声音", subtitle: "收到消息时播放提示音", isOn: MessageAlertSettings.soundEnabled),
+            showDivider: true,
+            style: .notification
+        )
+        soundCell.onToggle = { MessageAlertSettings.soundEnabled = $0 }
+
+        let vibrationCell = SettingsToggleCell(
+            model: .init(title: "振动", subtitle: "收到消息时振动提醒", isOn: MessageAlertSettings.vibrationEnabled),
+            showDivider: false,
+            style: .notification
+        )
+        vibrationCell.onToggle = { MessageAlertSettings.vibrationEnabled = $0 }
+
+        let stack = UIStackView(arrangedSubviews: [soundCell, vibrationCell])
+        stack.axis = .vertical
+        card.addSubview(stack)
+        stack.snp.makeConstraints {
+            $0.top.equalTo(headerDivider.snp.bottom)
+            $0.leading.trailing.bottom.equalToSuperview()
+        }
         return card
     }
 

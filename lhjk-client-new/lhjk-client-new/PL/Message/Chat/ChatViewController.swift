@@ -132,6 +132,11 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
 
     // MARK: - Lifecycle
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        IMService.shared.setForegroundConversation(viewModel.conversationId)
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
@@ -140,6 +145,9 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         viewModel.markAsRead()
+        if isMovingFromParent || isBeingDismissed {
+            IMService.shared.setForegroundConversation(nil)
+        }
     }
 
     override func refreshForSeniorMode() {

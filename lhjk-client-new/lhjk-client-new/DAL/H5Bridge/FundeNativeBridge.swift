@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 import QuickLook
 import UIKit
@@ -6,7 +7,7 @@ import Combine
 
 /// H5 ↔ App Bridge — 对齐《H5 宿主接入文档》
 ///
-/// - `FundeBridge`：套餐中间页、保存食谱、文档预览、原生扫码（扁平 JSON）
+/// - `FundeBridge`：套餐中间页、保存食谱、文档预览、单次定位、原生扫码（扁平 JSON）
 /// - `FundeNative`：体重 BLE（`{ action, params, callbackId }`）
 /// Native → H5: `window.__fundeBridge.respond|reject|emit`
 final class FundeNativeBridge: NSObject {
@@ -22,6 +23,9 @@ final class FundeNativeBridge: NSObject {
     private var documentPreviewGeneration = 0
     private var documentLoadingAlert: UIAlertController?
     private weak var scanCodeViewController: H5ScanCodeViewController?
+    private var locationRequestInFlight = false
+    private var locationSettingsObserver: NSObjectProtocol?
+    private var locationForegroundContinuation: CheckedContinuation<Void, Never>?
     /// Quick Look 不持有 dataSource，必须由 Bridge 强引用到关闭。
     private var documentPreviewSession: DocumentPreviewSession?
 
@@ -45,6 +49,8 @@ final class FundeNativeBridge: NSObject {
         documentLoadingAlert = nil
         documentPreviewSession = nil
         scanCodeViewController = nil
+        locationRequestInFlight = false
+        finishLocationSettingsWait()
         cancellables.removeAll()
         webView = nil
         hostViewController = nil
@@ -81,6 +87,8 @@ final class FundeNativeBridge: NSObject {
             handleSaveImageToAlbum(body: body, params: params, callbackId: callbackId)
         case "previewDocument":
             handlePreviewDocument(body: body, params: params)
+        case "getLocation":
+            handleGetLocation(body: body, params: params)
         case "scanCode":
             handleScanCode(body: body, params: params)
         case "gotoBuy":
@@ -240,6 +248,271 @@ final class FundeNativeBridge: NSObject {
                 }
             }
         }
+    }
+
+    /// H5 单次定位。固定回调 `window.FundeLocationCallback`，原样带回 `requestId`。
+    /// 首次弹「开启定位」再出系统授权框；已拒绝或系统定位关闭弹另一套去设置引导。
+    private func handleGetLocation(body: [String: Any], params: [String: Any]) {
+        let requestId = Self.stringValue(body["requestId"])
+            ?? Self.stringValue(params["requestId"])
+            ?? ""
+        guard !locationRequestInFlight else {
+            deliverLocation(
+                requestId: requestId,
+                status: "error",
+                code: "LOCATION_UNAVAILABLE",
+                message: "正在定位，请稍后重试"
+            )
+            return
+        }
+        locationRequestInFlight = true
+        Task { @MainActor [weak self] in
+            await self?.performGetLocation(requestId: requestId)
+            self?.locationRequestInFlight = false
+        }
+    }
+
+    @MainActor
+    private func performGetLocation(requestId: String) async {
+        guard webView != nil else { return }
+
+        if !CLLocationManager.locationServicesEnabled() {
+            let opened = await promptEnableLocation(kind: .serviceDisabled)
+            guard opened else {
+                deliverLocation(
+                    requestId: requestId,
+                    status: "error",
+                    code: "LOCATION_CANCELLED",
+                    message: "已取消定位"
+                )
+                return
+            }
+            openLocationSettings()
+            await waitUntilReturnFromSettings()
+            guard webView != nil else { return }
+            if !CLLocationManager.locationServicesEnabled() {
+                deliverLocation(
+                    requestId: requestId,
+                    status: "error",
+                    code: "LOCATION_SERVICE_DISABLED",
+                    message: "系统定位服务未开启"
+                )
+                return
+            }
+        }
+
+        switch LocationManager.shared.authorizationStatus() {
+        case .notDetermined:
+            let allowed = await promptEnableLocation(kind: .firstTime)
+            guard allowed else {
+                deliverLocation(
+                    requestId: requestId,
+                    status: "error",
+                    code: "LOCATION_CANCELLED",
+                    message: "已取消定位"
+                )
+                return
+            }
+        case .authorized:
+            break
+        case .denied, .restricted:
+            let opened = await promptEnableLocation(kind: .permissionDenied)
+            guard opened else {
+                deliverLocation(
+                    requestId: requestId,
+                    status: "error",
+                    code: "LOCATION_CANCELLED",
+                    message: "已取消定位"
+                )
+                return
+            }
+            openLocationSettings()
+            await waitUntilReturnFromSettings()
+            guard webView != nil else { return }
+        }
+
+        do {
+            let location = try await LocationManager.shared.locateOnce(timeout: 20)
+            deliverLocationSuccess(requestId: requestId, location: location)
+        } catch let error as LocationServiceError {
+            deliverLocationFailure(requestId: requestId, error: error)
+        } catch {
+            deliverLocation(
+                requestId: requestId,
+                status: "error",
+                code: "LOCATION_UNAVAILABLE",
+                message: "暂时无法确定位置"
+            )
+        }
+    }
+
+    private enum LocationEnablePrompt {
+        /// 从未询问：应用内说明，确认后再出系统授权框
+        case firstTime
+        /// 权限已被拒绝：引导去系统设置
+        case permissionDenied
+        /// 系统定位服务关闭
+        case serviceDisabled
+
+        var title: String {
+            switch self {
+            case .firstTime: return "开启定位"
+            case .permissionDenied: return "定位未开启"
+            case .serviceDisabled: return "定位服务未开启"
+            }
+        }
+
+        var message: String {
+            switch self {
+            case .firstTime:
+                return "需要获取您的当前位置，请开启定位权限"
+            case .permissionDenied:
+                return "未获得位置权限，请允许 App 使用位置后重试"
+            case .serviceDisabled:
+                return "手机定位服务已关闭，请先在系统设置中打开"
+            }
+        }
+
+        var cancelTitle: String {
+            switch self {
+            case .firstTime: return "暂不开启"
+            case .permissionDenied, .serviceDisabled: return "取消"
+            }
+        }
+
+        var confirmTitle: String {
+            switch self {
+            case .firstTime: return "开启"
+            case .permissionDenied, .serviceDisabled: return "去设置"
+            }
+        }
+    }
+
+    /// 返回 true 表示用户选择去开启。
+    @MainActor
+    private func promptEnableLocation(kind: LocationEnablePrompt) async -> Bool {
+        guard let host = topPresenter() else { return false }
+        return await withCheckedContinuation { continuation in
+            let alert = UIAlertController(
+                title: kind.title,
+                message: kind.message,
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: kind.cancelTitle, style: .cancel) { _ in
+                continuation.resume(returning: false)
+            })
+            alert.addAction(UIAlertAction(title: kind.confirmTitle, style: .default) { _ in
+                continuation.resume(returning: true)
+            })
+            host.present(alert, animated: true)
+        }
+    }
+
+    private func openLocationSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+    }
+
+    @MainActor
+    private func waitUntilReturnFromSettings() async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            locationForegroundContinuation = continuation
+            locationSettingsObserver = NotificationCenter.default.addObserver(
+                forName: UIApplication.willEnterForegroundNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.finishLocationSettingsWait()
+            }
+        }
+    }
+
+    private func finishLocationSettingsWait() {
+        if let locationSettingsObserver {
+            NotificationCenter.default.removeObserver(locationSettingsObserver)
+            self.locationSettingsObserver = nil
+        }
+        let continuation = locationForegroundContinuation
+        locationForegroundContinuation = nil
+        continuation?.resume()
+    }
+
+    private func topPresenter() -> UIViewController? {
+        var current = hostViewController
+        while let presented = current?.presentedViewController {
+            current = presented
+        }
+        return current
+    }
+
+    private func deliverLocationSuccess(requestId: String, location: CLLocation) {
+        let gcj = MapCoordinateConverter.wgs84ToGcj02(location.coordinate)
+        guard gcj.latitude >= -90, gcj.latitude <= 90,
+              gcj.longitude >= -180, gcj.longitude <= 180 else {
+            deliverLocation(
+                requestId: requestId,
+                status: "error",
+                code: "LOCATION_UNAVAILABLE",
+                message: "暂时无法确定位置"
+            )
+            return
+        }
+        let accuracy: Any = location.horizontalAccuracy >= 0
+            ? NSNumber(value: location.horizontalAccuracy)
+            : NSNull()
+        let timestamp = NSNumber(value: location.timestamp.timeIntervalSince1970 * 1000)
+        deliverLocation(
+            requestId: requestId,
+            status: "success",
+            data: [
+                "latitude": NSNumber(value: gcj.latitude),
+                "longitude": NSNumber(value: gcj.longitude),
+                "coordinateType": "gcj02",
+                "accuracy": accuracy,
+                "timestamp": timestamp,
+            ]
+        )
+    }
+
+    private func deliverLocationFailure(requestId: String, error: LocationServiceError) {
+        let code: String
+        let message: String
+        switch error {
+        case .denied, .restricted:
+            code = "LOCATION_PERMISSION_DENIED"
+            message = "未获得位置权限，请允许 App 使用位置后重试"
+        case .servicesDisabled:
+            code = "LOCATION_SERVICE_DISABLED"
+            message = "系统定位服务未开启"
+        case .timeout:
+            code = "LOCATION_TIMEOUT"
+            message = "获取位置超时"
+        case .locationFailed, .geocodeFailed, .emptyPlacemark:
+            code = "LOCATION_UNAVAILABLE"
+            message = "暂时无法确定位置"
+        }
+        deliverLocation(requestId: requestId, status: "error", code: code, message: message)
+    }
+
+    private func deliverLocation(
+        requestId: String,
+        status: String,
+        code: String? = nil,
+        message: String? = nil,
+        data: [String: Any]? = nil
+    ) {
+        var payload: [String: Any] = [
+            "action": "getLocation",
+            "requestId": requestId,
+            "status": status,
+        ]
+        if let code { payload["code"] = code }
+        if let message { payload["message"] = message }
+        if let data { payload["data"] = data }
+        guard let json = Self.jsonLiteral(payload) else { return }
+        evaluate(
+            "(function(){try{var cb=window.FundeLocationCallback;if(typeof cb==='function'){cb(\(json));}}catch(e){}})();"
+        )
     }
 
     /// 鹰瞳眼底 `#/fundus`「扫一扫」。打开原生扫码页，结束后回调 `window.{callback}`。

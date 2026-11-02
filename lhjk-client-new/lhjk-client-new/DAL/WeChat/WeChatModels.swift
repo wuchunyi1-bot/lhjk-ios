@@ -50,8 +50,11 @@ enum WeChatShareScene: Int {
 }
 
 enum WeChatMiniProgramType: Int {
+    /// 正式版
     case release = 0
+    /// 开发版
     case test = 1
+    /// 体验版
     case preview = 2
 }
 

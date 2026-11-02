@@ -1,219 +1,414 @@
 import UIKit
 import SnapKit
 
-/// 我的设备
-/// 参考 funde-client: DevicesView.vue
+/// 我的设备。列表来自 `getMyHeaderList?type=2`。左滑删除解绑，卡片不可点。
 final class DevicesViewController: BaseViewController {
 
-    private let scrollView = UIScrollView()
+    private let equipmentBindService: EquipmentBindService
+    private let tableView = UITableView(frame: .zero, style: .plain)
+    private let emptyView = DeviceEmptyIllustrationView(text: "暂无设备\n快来添加你的第一个设备吧！")
+    private let addButton = UIButton(type: .custom)
+    private let loadingIndicator = UIActivityIndicatorView(style: .medium)
+    private var devices: [MyBoundDevice] = []
+    private var didLoad = false
+    private weak var swipedCell: MyDeviceSwipeCell?
 
-    private let pairedDevices: [(emoji: String, name: String, brand: String, model: String, lastSync: String, battery: Int, connected: Bool)] = [
-        ("🩺", "上臂式血压计", "欧姆龙", "HEM-7124", "今天 07:30", 82, true),
-        ("⌚", "健康手环", "华为", "Band 8", "今天 08:15", 45, false),
-    ]
+    init(equipmentBindService: EquipmentBindService = .shared) {
+        self.equipmentBindService = equipmentBindService
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+        loadDevices()
+    }
 
     override func setupUI() {
         title = "我的设备"
         view.backgroundColor = .fdBg
 
-        view.addSubview(scrollView)
-        scrollView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        tableView.backgroundColor = .clear
+        tableView.separatorStyle = .none
+        tableView.showsVerticalScrollIndicator = false
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.rowHeight = MyDeviceSwipeCell.cardHeight + MyDeviceSwipeCell.rowSpacing
+        tableView.contentInset = UIEdgeInsets(top: 10, left: 0, bottom: 12, right: 0)
+        tableView.register(MyDeviceSwipeCell.self, forCellReuseIdentifier: MyDeviceSwipeCell.reuseID)
+        view.addSubview(tableView)
 
-        let stack = UIStackView()
-        stack.axis = .vertical
-        stack.spacing = 16
-        stack.layoutMargins = UIEdgeInsets(top: 16, left: 16, bottom: 20, right: 16)
-        stack.isLayoutMarginsRelativeArrangement = true
-        scrollView.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.width.equalToSuperview() }
+        emptyView.isHidden = true
+        view.addSubview(emptyView)
 
-        // Section title
-        let titleRow = UIStackView()
-        titleRow.axis = .horizontal
-        titleRow.alignment = .lastBaseline
-        titleRow.distribution = .equalSpacing
-        let titleLbl = UILabel()
-        titleLbl.text = "已配对设备"
-        titleLbl.font = .fdBodySemibold
-        titleLbl.textColor = .fdSubtext
-        let countLbl = UILabel()
-        let online = pairedDevices.filter(\.connected).count
-        countLbl.text = "\(online) 台在线"
-        countLbl.font = .fdCaption
-        countLbl.textColor = .fdSubtext
-        titleRow.addArrangedSubview(titleLbl)
-        titleRow.addArrangedSubview(countLbl)
-        stack.addArrangedSubview(titleRow)
+        addButton.setTitle("添加设备", for: .normal)
+        addButton.setTitleColor(.white, for: .normal)
+        addButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
+        addButton.backgroundColor = .fdPrimary
+        addButton.layer.cornerRadius = 21.5
+        addButton.addTarget(self, action: #selector(openCatalog), for: .touchUpInside)
+        view.addSubview(addButton)
 
-        // Device cards
-        for d in pairedDevices {
-            stack.addArrangedSubview(buildDeviceCard(d))
+        loadingIndicator.hidesWhenStopped = true
+        view.addSubview(loadingIndicator)
+
+        addButton.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide)
+            $0.height.equalTo(43)
         }
-
-        // Add device button → OKOK 广播体脂秤测量页
-        let addBtn = UIButton(type: .system)
-        addBtn.setTitle("添加新设备", for: .normal)
-        addBtn.titleLabel?.font = .fdBodySemibold
-        addBtn.setTitleColor(.white, for: .normal)
-        addBtn.backgroundColor = .fdPrimary
-        addBtn.layer.cornerRadius = 14
-        addBtn.snp.makeConstraints { $0.height.equalTo(50) }
-        addBtn.addTarget(self, action: #selector(handleAddDeviceTap), for: .touchUpInside)
-        stack.addArrangedSubview(addBtn)
-
-        // Tip card
-        let tipCard = buildTipCard()
-        stack.addArrangedSubview(tipCard)
+        tableView.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(addButton.snp.top).offset(-12)
+        }
+        emptyView.snp.makeConstraints {
+            $0.centerX.equalToSuperview()
+            $0.centerY.equalTo(tableView).offset(-24)
+        }
+        loadingIndicator.snp.makeConstraints { $0.center.equalTo(tableView) }
     }
 
-    private func buildDeviceCard(_ d: (emoji: String, name: String, brand: String, model: String, lastSync: String, battery: Int, connected: Bool)) -> UIView {
-        let card = UIView()
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 18
-        card.layer.borderWidth = 1
-        card.layer.borderColor = UIColor.fdBorder.cgColor
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 6
-        card.layer.shadowOpacity = 0.03
-
-        let emojiBg = UIView()
-        emojiBg.backgroundColor = .fdBg2
-        emojiBg.layer.cornerRadius = 12
-        let emojiLbl = UILabel()
-        emojiLbl.text = d.emoji
-        emojiLbl.font = .fdH1
-        emojiBg.addSubview(emojiLbl)
-        emojiLbl.snp.makeConstraints { $0.center.equalToSuperview() }
-
-        let nameLbl = UILabel()
-        nameLbl.text = d.name
-        nameLbl.font = .fdBodyBold
-        nameLbl.textColor = .fdText
-
-        let modelLbl = UILabel()
-        modelLbl.text = "\(d.brand) · \(d.model)"
-        modelLbl.font = .fdCaption
-        modelLbl.textColor = .fdSubtext
-
-        let syncLbl = UILabel()
-        syncLbl.text = "上次同步：\(d.lastSync)"
-        syncLbl.font = .fdMicro
-        syncLbl.textColor = .fdSubtext
-
-        let batteryLbl = UILabel()
-        batteryLbl.text = "🔋 \(d.battery)%"
-        batteryLbl.font = .fdMicroSemibold
-        batteryLbl.textColor = d.battery > 50 ? .fdSuccess : d.battery > 20 ? .fdWarning : .fdDanger
-
-        // Status dot
-        let dot = UIView()
-        dot.layer.cornerRadius = 5
-        dot.backgroundColor = d.connected ? .fdSuccess : UIColor(hexString: "#CCCCCC")
-
-        let statusLbl = UILabel()
-        statusLbl.text = d.connected ? "已连接" : "未连接"
-        statusLbl.font = .fdMicro
-        statusLbl.textColor = .fdSubtext
-
-        let unpairBtn = UIButton(type: .system)
-        unpairBtn.setTitle("解绑", for: .normal)
-        unpairBtn.titleLabel?.font = .fdMicro
-        unpairBtn.setTitleColor(.fdSubtext, for: .normal)
-        unpairBtn.layer.borderWidth = 1
-        unpairBtn.layer.borderColor = UIColor.fdBorder.cgColor
-        unpairBtn.layer.cornerRadius = 6
-        unpairBtn.contentEdgeInsets = UIEdgeInsets(top: 2, left: 8, bottom: 2, right: 8)
-
-        let statusCol = UIStackView()
-        statusCol.axis = .vertical
-        statusCol.alignment = .center
-        statusCol.spacing = 2
-        statusCol.addArrangedSubview(dot)
-        statusCol.addArrangedSubview(statusLbl)
-        statusCol.addArrangedSubview(unpairBtn)
-
-        card.addSubview(emojiBg)
-        card.addSubview(nameLbl)
-        card.addSubview(modelLbl)
-        card.addSubview(syncLbl)
-        card.addSubview(batteryLbl)
-        card.addSubview(statusCol)
-
-        emojiBg.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.centerY.equalToSuperview()
-            make.size.equalTo(44)
+    private func loadDevices() {
+        if !didLoad { loadingIndicator.startAnimating() }
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let list = try await self.equipmentBindService.fetchMyDevices()
+                await MainActor.run {
+                    self.didLoad = true
+                    self.loadingIndicator.stopAnimating()
+                    self.swipedCell = nil
+                    self.devices = list
+                    self.emptyView.isHidden = !list.isEmpty
+                    self.tableView.isHidden = list.isEmpty
+                    self.tableView.reloadData()
+                }
+            } catch {
+                await MainActor.run {
+                    self.didLoad = true
+                    self.loadingIndicator.stopAnimating()
+                    self.showToastAlert(error.localizedDescription)
+                }
+            }
         }
-        nameLbl.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(14)
-            make.leading.equalTo(emojiBg.snp.trailing).offset(12)
-        }
-        modelLbl.snp.makeConstraints { make in
-            make.top.equalTo(nameLbl.snp.bottom).offset(2)
-            make.leading.equalTo(nameLbl)
-        }
-        syncLbl.snp.makeConstraints { make in
-            make.top.equalTo(modelLbl.snp.bottom).offset(4)
-            make.leading.equalTo(nameLbl)
-        }
-        batteryLbl.snp.makeConstraints { make in
-            make.leading.equalTo(syncLbl.snp.trailing).offset(10)
-            make.centerY.equalTo(syncLbl)
-            make.bottom.equalToSuperview().offset(-14)
-        }
-        statusCol.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-16)
-            make.centerY.equalToSuperview()
-            make.width.equalTo(52)
-        }
-        dot.snp.makeConstraints { $0.size.equalTo(10) }
-
-        return card
     }
 
-    @objc private func handleAddDeviceTap() {
-        Router.shared.push("/health/scale/measure")
-    }
-
-    private func buildTipCard() -> UIView {
-        let card = UIView()
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 18
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 6
-        card.layer.shadowOpacity = 0.03
-
-        let title = UILabel()
-        title.text = "连接说明"
-        title.font = .fdCaptionSemibold
-        title.textColor = .fdSubtext
-
-        let steps = ["① 确保设备已开机并开启蓝牙", "② 手机蓝牙保持开启状态", "③ 将设备靠近手机 30cm 以内", "④ 点击「添加新设备」完成配对"]
-        let stack = UIStackView()
-        stack.axis = .vertical
-        stack.spacing = 4
-
-        card.addSubview(title)
-        card.addSubview(stack)
-        title.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview().inset(16)
-        }
-        stack.snp.makeConstraints { make in
-            make.top.equalTo(title.snp.bottom).offset(10)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-16)
-        }
-
-        for step in steps {
-            let l = UILabel()
-            l.text = step
-            l.font = .fdCaption
-            l.textColor = .fdText2
-            stack.addArrangedSubview(l)
-        }
-
-        return card
+    @objc private func openCatalog() {
+        navigationController?.pushViewController(DeviceCatalogViewController(), animated: true)
     }
 }
+
+extension DevicesViewController: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        devices.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(
+            withIdentifier: MyDeviceSwipeCell.reuseID,
+            for: indexPath
+        ) as! MyDeviceSwipeCell
+        let item = ScaleDeviceCardItem.bound(from: devices[indexPath.row])
+        cell.configure(item)
+        cell.onWillSwipe = { [weak self, weak cell] in
+            guard let self, let cell else { return }
+            if self.swipedCell !== cell {
+                self.swipedCell?.close(animated: true)
+            }
+            self.swipedCell = cell
+        }
+        cell.onDelete = { [weak self] in
+            self?.confirmUnbind(item)
+        }
+        return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        swipedCell?.close(animated: true)
+        swipedCell = nil
+    }
+
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        swipedCell?.close(animated: true)
+        swipedCell = nil
+    }
+}
+
+private extension DevicesViewController {
+    func confirmUnbind(_ item: ScaleDeviceCardItem) {
+        guard presentedViewController == nil else { return }
+        let dialog = DeviceUnbindDialogViewController()
+        dialog.onConfirm = { [weak self] in
+            self?.unbind(item)
+        }
+        present(dialog, animated: true)
+    }
+
+    func unbind(_ item: ScaleDeviceCardItem) {
+        guard let equipmentUserId = item.equipmentUserId, equipmentUserId > 0 else {
+            showToastAlert("无法解绑该设备")
+            return
+        }
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await self.equipmentBindService.unbindEquipment(equipmentUserId: equipmentUserId)
+                await MainActor.run {
+                    self.showToastAlert("已解除绑定")
+                    self.loadDevices()
+                }
+            } catch {
+                await MainActor.run {
+                    self.showToastAlert(error.localizedDescription)
+                }
+            }
+        }
+    }
+}
+
+/// 添加设备。左侧栏目来自字典 `deviceCategory`，右侧型号来自 `getEquipmenByApp`。
+final class DeviceCatalogViewController: BaseViewController {
+
+    /// 左侧分类栏宽度。设计稿 74pt 放不下四字以上栏目名。
+    private static let categoryColumnWidth: CGFloat = 108
+
+    private struct Tab {
+        let name: String
+        let type: Int
+    }
+
+    private let equipmentBindService: EquipmentBindService
+    private let dictionaryService: DictionaryService
+    private let categoryTable = UITableView(frame: .zero, style: .plain)
+    private var categoryWidth: Constraint?
+    private let tableView = UITableView(frame: .zero, style: .plain)
+    private let contentPanel = UIView()
+    private let emptyView = DeviceEmptyIllustrationView(text: "暂无设备")
+    private let loadingIndicator = UIActivityIndicatorView(style: .medium)
+    private var tabs: [Tab] = []
+    private var selectedIndex = 0
+    private var models: [EquipmentCatalogItemVO] = []
+
+    init(
+        equipmentBindService: EquipmentBindService = .shared,
+        dictionaryService: DictionaryService = .shared
+    ) {
+        self.equipmentBindService = equipmentBindService
+        self.dictionaryService = dictionaryService
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func setupUI() {
+        title = "添加设备"
+        view.backgroundColor = .fdBg
+
+        categoryTable.backgroundColor = .fdSurface
+        categoryTable.separatorStyle = .none
+        categoryTable.showsVerticalScrollIndicator = false
+        categoryTable.dataSource = self
+        categoryTable.delegate = self
+        categoryTable.rowHeight = DeviceCatalogCategoryCell.rowHeight
+        categoryTable.register(
+            DeviceCatalogCategoryCell.self,
+            forCellReuseIdentifier: DeviceCatalogCategoryCell.reuseID
+        )
+        view.addSubview(categoryTable)
+
+        contentPanel.backgroundColor = .fdSurface
+        view.addSubview(contentPanel)
+
+        tableView.backgroundColor = .fdSurface
+        tableView.separatorStyle = .none
+        tableView.showsVerticalScrollIndicator = false
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.rowHeight = DeviceCatalogRowCell.rowHeight
+        tableView.register(DeviceCatalogRowCell.self, forCellReuseIdentifier: DeviceCatalogRowCell.reuseID)
+        contentPanel.addSubview(tableView)
+
+        emptyView.isHidden = true
+        contentPanel.addSubview(emptyView)
+        loadingIndicator.hidesWhenStopped = true
+        contentPanel.addSubview(loadingIndicator)
+
+        categoryTable.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.leading.bottom.equalToSuperview()
+            categoryWidth = $0.width.equalTo(Self.categoryColumnWidth).constraint
+        }
+        contentPanel.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.leading.equalTo(categoryTable.snp.trailing)
+            $0.trailing.bottom.equalToSuperview()
+        }
+        tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        emptyView.snp.makeConstraints {
+            $0.centerX.equalToSuperview()
+            $0.centerY.equalToSuperview().offset(-40)
+        }
+        loadingIndicator.snp.makeConstraints { $0.center.equalToSuperview() }
+        loadTabs()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        let rowsHeight = CGFloat(tabs.count) * DeviceCatalogCategoryCell.rowHeight
+        let extra = max(0, categoryTable.bounds.height - rowsHeight)
+        let current = categoryTable.tableFooterView?.bounds.height ?? -1
+        guard abs(current - extra) > 0.5 else { return }
+        let footer = UIView(frame: CGRect(x: 0, y: 0, width: categoryTable.bounds.width, height: extra))
+        footer.backgroundColor = .fdLoginBackground
+        categoryTable.tableFooterView = footer
+    }
+
+    private func loadTabs() {
+        loadingIndicator.startAnimating()
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let nodes = try await self.dictionaryService.fetchNodes(
+                    parentId: DictionaryParent.deviceCategory.rawValue
+                )
+                let tabs = Self.tabs(from: nodes)
+                await MainActor.run {
+                    self.tabs = tabs
+                    self.categoryTable.reloadData()
+                    if tabs.isEmpty {
+                        self.loadingIndicator.stopAnimating()
+                        self.models = []
+                        self.tableView.reloadData()
+                        self.tableView.isHidden = true
+                        self.emptyView.isHidden = false
+                        self.categoryTable.isHidden = true
+                        self.categoryWidth?.update(offset: 0)
+                    } else {
+                        self.categoryTable.isHidden = false
+                        self.categoryWidth?.update(offset: Self.categoryColumnWidth)
+                        self.selectTab(0)
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self.loadingIndicator.stopAnimating()
+                    self.showToastAlert(error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    private static func tabs(from nodes: [SDictionary]) -> [Tab] {
+        let children = nodes.compactMap(\.children).flatMap { $0 }
+        let source = children.isEmpty
+            ? nodes.filter { $0.id != DictionaryParent.deviceCategory.rawValueString }
+            : children
+        return source
+            .filter { $0.status == nil || $0.status == 1 }
+            .sorted { ($0.sortId ?? Int.max) < ($1.sortId ?? Int.max) }
+            .compactMap { node in
+                let name = node.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                let raw = node.value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                guard !name.isEmpty, let type = Int(raw) else { return nil }
+                return Tab(name: name, type: type)
+            }
+    }
+
+    private func selectTab(_ index: Int) {
+        guard tabs.indices.contains(index) else { return }
+        selectedIndex = index
+        categoryTable.reloadData()
+        loadModels(type: tabs[index].type)
+    }
+
+    private func loadModels(type: Int) {
+        loadingIndicator.startAnimating()
+        emptyView.isHidden = true
+        let userId = UserManager.shared.resolvedUserId.flatMap { Int64($0) }
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let page = try await self.equipmentBindService.fetchEquipmentCatalog(
+                    type: type,
+                    userId: userId
+                )
+                let items = (page.records ?? []).filter(\.isBindable)
+                await MainActor.run {
+                    guard self.tabs.indices.contains(self.selectedIndex),
+                          self.tabs[self.selectedIndex].type == type else { return }
+                    self.loadingIndicator.stopAnimating()
+                    self.models = items
+                    self.tableView.reloadData()
+                    self.tableView.isHidden = items.isEmpty
+                    self.emptyView.isHidden = !items.isEmpty
+                }
+            } catch {
+                await MainActor.run {
+                    guard self.tabs.indices.contains(self.selectedIndex),
+                          self.tabs[self.selectedIndex].type == type else { return }
+                    self.loadingIndicator.stopAnimating()
+                    self.models = []
+                    self.tableView.reloadData()
+                    self.tableView.isHidden = true
+                    self.emptyView.isHidden = false
+                    self.showToastAlert(error.localizedDescription)
+                }
+            }
+        }
+    }
+}
+
+extension DeviceCatalogViewController: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        tableView === categoryTable ? tabs.count : models.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if tableView === categoryTable {
+            let cell = tableView.dequeueReusableCell(
+                withIdentifier: DeviceCatalogCategoryCell.reuseID,
+                for: indexPath
+            ) as! DeviceCatalogCategoryCell
+            let corner: DeviceCatalogCategoryCell.InnerCorner
+            if indexPath.row == selectedIndex + 1 {
+                corner = .topRight
+            } else if indexPath.row == selectedIndex - 1 {
+                corner = .bottomRight
+            } else {
+                corner = .none
+            }
+            cell.configure(
+                title: tabs[indexPath.row].name,
+                selected: indexPath.row == selectedIndex,
+                corner: corner
+            )
+            return cell
+        }
+        let cell = tableView.dequeueReusableCell(
+            withIdentifier: DeviceCatalogRowCell.reuseID,
+            for: indexPath
+        ) as! DeviceCatalogRowCell
+        cell.configure(ScaleDeviceCardItem.catalog(from: models[indexPath.row], nameFallback: "设备"))
+        return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if tableView === categoryTable {
+            selectTab(indexPath.row)
+            return
+        }
+        showUnsupportedToast()
+    }
+
+    private func showUnsupportedToast() {
+        guard presentedViewController == nil else { return }
+        let alert = UIAlertController(title: nil, message: "暂不支持该设备", preferredStyle: .alert)
+        present(alert, animated: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak alert] in
+            alert?.dismiss(animated: true)
+        }
+    }
+}
+

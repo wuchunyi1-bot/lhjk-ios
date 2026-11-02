@@ -337,16 +337,9 @@ final class OrderDetailViewController: BaseViewController {
 
         feeView.configure(detail: detail)
 
-        var expandedRows: [(String, String)] = []
-        let service = detail.serviceTime?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if !service.isEmpty {
-            expandedRows.append(("服务时间", service))
-        }
         infoView.configure(
             detail: detail,
-            paymentMethodOverride: detail.paymentTypeLabel,
-            expandedRows: expandedRows,
-            showsExpandToggle: true
+            paymentMethodOverride: detail.paymentTypeLabel
         )
 
         let fixedActions = viewModel.fixedBottomActions

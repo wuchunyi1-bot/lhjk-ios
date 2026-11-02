@@ -21,11 +21,19 @@ enum WeChatConfig {
     /// 低版本微信兜底网页（分享小程序必填）
     static var benefitClaimWebpageURL: String = "https://gateway-dev.lianhaojiankang.com/h5/benefit-claim"
 
-    /// 分享小程序版本：开发环境体验版，生产正式版
+    /// 权益卡分享：非生产走开发版，生产走正式版
     static var benefitClaimMiniProgramType: WeChatMiniProgramType {
         switch APIManager.shared.environment {
         case .production: return .release
         case .staging, .development: return .test
+        }
+    }
+
+    /// 健康知识分享：非生产走体验版，生产走正式版
+    static var knowledgeShareMiniProgramType: WeChatMiniProgramType {
+        switch APIManager.shared.environment {
+        case .production: return .release
+        case .staging, .development: return .preview
         }
     }
 

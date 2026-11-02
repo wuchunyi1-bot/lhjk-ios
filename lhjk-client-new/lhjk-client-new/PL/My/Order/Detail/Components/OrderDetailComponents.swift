@@ -1126,9 +1126,7 @@ final class OrderDetailInfoView: UIView {
     func configure(
         detail: AppOrderDetailBO,
         paymentMethodOverride: String? = nil,
-        remarkOverride: String? = nil,
-        expandedRows: [(String, String)] = [],
-        showsExpandToggle: Bool = true
+        remarkOverride: String? = nil
     ) {
         stack.arrangedSubviews.forEach {
             stack.removeArrangedSubview($0)
@@ -1138,58 +1136,58 @@ final class OrderDetailInfoView: UIView {
             expandedStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
+        expandedStack.isHidden = true
+        toggleControl.isHidden = true
+
+        let fields = Self.infoFields(for: detail.orderStatus)
 
         if let id = detail.id {
             orderNumberText = String(id)
             stack.addArrangedSubview(orderNumberRow(String(id)))
         }
-        if let createTime = detail.createTime?.nilIfEmpty {
+        if let createTime = trimmedNonEmpty(detail.createTime) {
             stack.addArrangedSubview(infoRow("下单时间", createTime))
         }
-        if let refundInfo = detail.resolvedRefundReasonInfo {
-            stack.addArrangedSubview(infoRow(refundInfo.title, refundInfo.content, multiline: true))
+        if fields.showsPayTime, let payTime = trimmedNonEmpty(detail.payTime) {
+            stack.addArrangedSubview(infoRow("支付时间", payTime))
         }
-        let remark = remarkOverride?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
-            ?? detail.remarkText
-        if let remark {
-            remarkText = remark
-            stack.addArrangedSubview(remarkRow(remark))
+        if fields.showsPayMethod,
+           let payment = trimmedNonEmpty(paymentMethodOverride) ?? trimmedNonEmpty(detail.paymentTypeLabel),
+           payment != "—" {
+            stack.addArrangedSubview(infoRow("支付方式", payment))
+        }
+        if fields.showsServicePeriod,
+           let period = servicePeriodText(begin: detail.beginTime, end: detail.endTime) {
+            stack.addArrangedSubview(infoRow("服务周期", period))
+        }
+        if fields.showsRemark {
+            let remark = remarkOverride?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+                ?? detail.remarkText
+            if let remark {
+                remarkText = remark
+                stack.addArrangedSubview(remarkRow(remark))
+            } else {
+                remarkText = nil
+                stack.addArrangedSubview(infoRow("订单备注", "无", mutedValue: true))
+            }
         } else {
             remarkText = nil
-            stack.addArrangedSubview(infoRow("订单备注", "无", mutedValue: true))
         }
+    }
 
-        var mergedExpanded = expandedRows
-        if !mergedExpanded.contains(where: { $0.0 == "支付状态" }) {
-            mergedExpanded.append(("支付状态", detail.paymentStatusText))
-        }
-        if let payment = paymentMethodOverride?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
-           payment != "—",
-           !mergedExpanded.contains(where: { $0.0 == "支付方式" }) {
-            mergedExpanded.append(("支付方式", payment))
-        }
-        if let phone = trimmedNonEmpty(detail.phone),
-           !mergedExpanded.contains(where: { $0.0 == "手机号" }) {
-            mergedExpanded.append(("手机号", phone))
-        }
-        if let period = packageServicePeriodText(begin: detail.beginTime, end: detail.endTime),
-           !mergedExpanded.contains(where: { $0.0 == "套餐服务期限" }) {
-            mergedExpanded.append(("套餐服务期限", period))
-        }
-        mergedExpanded.forEach { title, value in
-            expandedStack.addArrangedSubview(
-                infoRow(title, value, multiline: title == "套餐服务期限")
-            )
-        }
-
-        let hasExpandedContent = !mergedExpanded.isEmpty
-        toggleControl.isHidden = !showsExpandToggle || !hasExpandedContent
-        if toggleControl.isHidden {
-            isExpanded = false
-            expandedStack.isHidden = true
-        } else {
-            expandedStack.isHidden = !isExpanded
-            updateToggleTitle()
+    /// FDAPP-1064：订单信息按状态展示，不再放进展开区。
+    private static func infoFields(for status: AppOrderStatus?) -> (showsPayTime: Bool, showsPayMethod: Bool, showsServicePeriod: Bool, showsRemark: Bool) {
+        switch status {
+        case .pendingPayment:
+            return (false, false, false, false)
+        case .cancelled:
+            return (false, false, false, true)
+        case .inProgress, .overdue, .completed:
+            return (true, true, true, true)
+        case .pendingShip, .pendingReceive, .refund, .refundReview:
+            return (true, true, false, true)
+        case nil:
+            return (false, false, false, true)
         }
     }
 
@@ -1198,20 +1196,24 @@ final class OrderDetailInfoView: UIView {
         return trimmed.isEmpty ? nil : trimmed
     }
 
-    /// 套餐服务期：`beginTime - endTime`。缺一端时只展示有值的一端。
-    private func packageServicePeriodText(begin: String?, end: String?) -> String? {
-        let start = trimmedNonEmpty(begin)
-        let finish = trimmedNonEmpty(end)
-        switch (start, finish) {
-        case let (start?, finish?):
-            return "\(start) - \(finish)"
-        case let (start?, nil):
-            return start
-        case let (nil, finish?):
-            return finish
-        default:
-            return nil
-        }
+    /// 服务周期：`beginTime` 至 `endTime`，只保留日期。起止任一为空则整行不展示。
+    private func servicePeriodText(begin: String?, end: String?) -> String? {
+        guard let start = servicePeriodDay(begin), let finish = servicePeriodDay(end) else { return nil }
+        return "\(start) 至 \(finish)"
+    }
+
+    private func servicePeriodDay(_ raw: String?) -> String? {
+        let text = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !text.isEmpty else { return nil }
+        let head = text.split(whereSeparator: { $0 == " " || $0 == "T" }).first.map(String.init) ?? text
+        let normalized = head.replacingOccurrences(of: "/", with: "-")
+        let parts = normalized.split(separator: "-")
+        guard parts.count == 3,
+              parts[0].count == 4,
+              parts[1].count == 2,
+              parts[2].count == 2,
+              parts.allSatisfy({ $0.allSatisfy(\.isNumber) }) else { return nil }
+        return normalized
     }
 
     private func orderNumberRow(_ value: String) -> UIView {

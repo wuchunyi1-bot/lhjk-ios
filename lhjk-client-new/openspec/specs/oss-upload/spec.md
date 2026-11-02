@@ -13,7 +13,7 @@
 └────┬─────┘                              └──────────┘
      │
      │  ② PUT {fileData} to signUrl
-     │     (Content-Type: image/jpeg / ...)
+     │     （不带 Content-Type，与 signUrl 的空 Content-Type 签名一致）
      ▼
 ┌──────────┐
 │ Aliyun   │
@@ -30,7 +30,7 @@ Final URL = fundeUrl (CDN) ?? signUrl（去参）
 
 #### Scenario: 正常获取
 - **WHEN** 需要上传文件
-- **THEN** 调用 `GET /v1/cos/getCosSign?folderName={folder}&ext={ext}`（需 Bearer Token）
+- **THEN** 调用 `GET /v1/cos/getCosSign?folderName={folder}&ext={ext}&mimeType={mimeType}`（需 Bearer Token）
 - **AND** 返回 `CosSignVo`：`signUrl`（签名上传 URL）+ `fundeUrl`（CDN 域名 URL）
 
 #### Scenario: 签名获取失败
@@ -44,7 +44,7 @@ Final URL = fundeUrl (CDN) ?? signUrl（去参）
 
 #### Scenario: 上传文件
 - **WHEN** 获取到签名 URL 后
-- **THEN** 构建 `URLRequest`：`httpMethod = "PUT"`，`httpBody = fileData`，`Content-Type = mimeType`
+- **THEN** 构建 `URLRequest`：`httpMethod = "PUT"`，`httpBody = fileData`，不设置 `Content-Type`
 - **AND** 使用 `URLSession.shared.data(for:)` 发送请求（不使用 APIManager，避免携带 Bearer Token 干扰 OSS 签名校验）
 
 #### Scenario: 上传成功
@@ -66,7 +66,7 @@ Final URL = fundeUrl (CDN) ?? signUrl（去参）
 > **Synced**: 2026-06-25
 
 ```
-GET {Base URL}/v1/cos/getCosSign?folderName={folderName}&ext={ext}
+GET {Base URL}/v1/cos/getCosSign?folderName={folderName}&ext={ext}&mimeType={mimeType}
 Authorization: Bearer {access_token}
 ```
 
@@ -76,6 +76,7 @@ Authorization: Bearer {access_token}
 |------|------|------|------|
 | `folderName` | string | 是 | 文件夹名称：`common`（公共）、`school`（学习平台）、`im`（聊天文件） |
 | `ext` | string | 是 | 文件扩展名（如 `jpg`, `png`, `mp4`） |
+| `mimeType` | string | 是 | 文件类型（如 `image/jpeg`、`audio/wav`）。当前返回的 `signUrl` 仍按空 `Content-Type` 签名，PUT 不得再带 `Content-Type` |
 
 **成功响应** (`200 OK`, `ResultCosSignVo`):
 

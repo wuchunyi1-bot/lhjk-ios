@@ -92,6 +92,12 @@ final class HealthVitalMetricsCell: UITableViewCell {
         clearSeniorList()
     }
 
+    /// 卡片顶沿。「体征监测」标题算在引导孔里。
+    func guideBodyTop() -> CGFloat {
+        layoutIfNeeded()
+        return cardView.convert(cardView.bounds, to: self).minY
+    }
+
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func layoutSubviews() {

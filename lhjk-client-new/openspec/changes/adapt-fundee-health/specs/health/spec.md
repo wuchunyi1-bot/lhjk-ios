@@ -132,7 +132,11 @@ SHALL 渲染自定义顶栏替代系统导航栏。
 ---
 
 ### Requirement: Archive Completeness Card
-SHALL 展示健康档案完整度卡片。
+标准模式 SHALL 在健康 Hub 列表顶部展示健康档案完整度卡片。长辈模式 MUST NOT 展示该卡片。
+
+#### Scenario: 长辈模式隐藏
+- **WHEN** 长辈模式开启
+- **THEN** 健康 Hub 不展示健康档案完整度卡片
 
 #### Scenario: 进度展示
 - **WHEN** 卡片渲染

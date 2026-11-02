@@ -22,10 +22,11 @@ final class HomeQuickActionsCell: UITableViewCell {
         return v
     }()
 
-    private let stackView: UIStackView = {
+    private let rowsStack: UIStackView = {
         let s = UIStackView()
-        s.distribution = .fillEqually
-        s.spacing = 0
+        s.axis = .vertical
+        s.spacing = 12
+        s.alignment = .fill
         return s
     }()
 
@@ -40,14 +41,13 @@ final class HomeQuickActionsCell: UITableViewCell {
         clipsToBounds = false
         contentView.clipsToBounds = false
         contentView.addSubview(cardView)
-        cardView.addSubview(stackView)
+        cardView.addSubview(rowsStack)
         cardView.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(12)
             make.leading.trailing.equalToSuperview().inset(16).priority(750)
             make.bottom.equalToSuperview()
-            make.height.equalTo(104)
         }
-        stackView.snp.makeConstraints { make in
+        rowsStack.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(16)
             make.leading.trailing.equalToSuperview().inset(8)
             make.bottom.equalToSuperview().offset(-16)
@@ -57,12 +57,29 @@ final class HomeQuickActionsCell: UITableViewCell {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     func configure(actions: [Action]) {
-        stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        rowsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         actionsByTag.removeAll()
-        for (index, act) in actions.enumerated() {
-            let item = makeActionItem(act, tag: index)
-            actionsByTag[index] = act
-            stackView.addArrangedSubview(item)
+        let columns = 3
+        var start = 0
+        while start < actions.count {
+            let end = min(start + columns, actions.count)
+            let row = UIStackView()
+            row.axis = .horizontal
+            row.distribution = .fillEqually
+            row.alignment = .top
+            row.spacing = 0
+            for index in start..<end {
+                let item = makeActionItem(actions[index], tag: index)
+                actionsByTag[index] = actions[index]
+                row.addArrangedSubview(item)
+            }
+            if end - start < columns {
+                for _ in 0..<(columns - (end - start)) {
+                    row.addArrangedSubview(UIView())
+                }
+            }
+            rowsStack.addArrangedSubview(row)
+            start = end
         }
     }
 
@@ -109,7 +126,7 @@ final class HomeQuickActionsCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        rowsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         actionsByTag.removeAll()
         onActionTapped = nil
     }

@@ -4,18 +4,23 @@ import Combine
 
 /// 健康模块 Hub — 对齐 Figma 3444:4712 / 3021:1121
 ///
-/// 健康评分卡（HealthScoreCardCell）和健康档案完整度卡片不进入列表。
+/// 健康评分卡不进入列表。标准模式在列表顶部展示健康档案完整度卡片，长辈模式不展示。
+/// Section: HealthArchiveCardCell（仅标准模式）
 /// Section: HealthQuickEntriesCell（金刚区快捷入口）
 /// Section: HealthVitalMetricsCell（体征监测卡片）
 final class HealthViewController: BaseViewController, UITableViewDataSource, UITableViewDelegate {
 
     private enum SectionType {
+        case archiveCard
         case quickEntries
         case vitalMetrics
     }
 
     private var activeSections: [SectionType] {
         var list: [SectionType] = []
+        if !UIFont.isSeniorMode {
+            list.append(.archiveCard)
+        }
         if !viewModel.quickEntries.isEmpty {
             list.append(.quickEntries)
         }
@@ -45,6 +50,7 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         tv.showsVerticalScrollIndicator = false
         tv.dataSource = self
         tv.delegate = self
+        tv.register(HealthArchiveCardCell.self, forCellReuseIdentifier: HealthArchiveCardCell.reuseIdentifier)
         tv.register(HealthQuickEntriesCell.self, forCellReuseIdentifier: HealthQuickEntriesCell.reuseIdentifier)
         tv.register(HealthVitalMetricsCell.self, forCellReuseIdentifier: HealthVitalMetricsCell.reuseIdentifier)
         tv.contentInsetAdjustmentBehavior = .never
@@ -55,6 +61,14 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         tv.sectionHeaderTopPadding = 0
         return tv
     }()
+
+    /// 长辈模式会拿掉档案完整度这一段。行高刷新走 `beginUpdates`，分区数不能在那次更新里变化，所以先整表重载。
+    override func refreshForSeniorMode() {
+        guard isViewLoaded else { return }
+        tableView.reloadData()
+        lastVitalMetricsLayoutWidth = tableView.bounds.width
+        super.refreshForSeniorMode()
+    }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -151,6 +165,13 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard indexPath.section < activeSections.count else { return UITableViewCell() }
         switch activeSections[indexPath.section] {
+        case .archiveCard:
+            let cell = tableView.dequeueReusableCell(withIdentifier: HealthArchiveCardCell.reuseIdentifier, for: indexPath) as! HealthArchiveCardCell
+            cell.configure(archiveProgress: archiveProgress)
+            cell.onCompleteTap = { [weak self] in
+                self?.openHealthArchive()
+            }
+            return cell
         case .quickEntries:
             let cell = tableView.dequeueReusableCell(withIdentifier: HealthQuickEntriesCell.reuseIdentifier, for: indexPath) as! HealthQuickEntriesCell
             cell.configure(entries: viewModel.quickEntries)
@@ -208,11 +229,6 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
 
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? { nil }
 
-    override func refreshForSeniorMode() {
-        super.refreshForSeniorMode()
-        tableView.reloadData()
-    }
-
     private func refreshArchiveCompletionUI() {
         brandHeader.configure(
             title: "我的健康",
@@ -233,6 +249,22 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         guideScroll(to: .quickEntries)
     }
 
+    func guideScrollToArchiveCard() {
+        guideScroll(to: .archiveCard)
+    }
+
+    func guideVitalsBodyTop(in target: UIView) -> CGFloat? {
+        guard let section = activeSections.firstIndex(of: .vitalMetrics) else { return nil }
+        tableView.layoutIfNeeded()
+        let indexPath = IndexPath(row: 0, section: section)
+        if let cell = tableView.cellForRow(at: indexPath) as? HealthVitalMetricsCell {
+            return cell.convert(CGPoint(x: 0, y: cell.guideBodyTop()), to: target).y
+        }
+        let rect = tableView.rectForRow(at: indexPath)
+        guard rect.height > 4 else { return nil }
+        return tableView.convert(CGPoint(x: 0, y: rect.minY + 12), to: target).y
+    }
+
     func guideVitalsFrame(in target: UIView) -> CGRect? {
         guideSectionFrame(.vitalMetrics, in: target)
     }
@@ -246,8 +278,27 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         return cell.convert(local, to: target)
     }
 
+    func guideArchiveCardFrame(in target: UIView) -> CGRect? {
+        guard !UIFont.isSeniorMode, let section = activeSections.firstIndex(of: .archiveCard) else { return nil }
+        let indexPath = IndexPath(row: 0, section: section)
+        tableView.layoutIfNeeded()
+        if let cell = tableView.cellForRow(at: indexPath) as? HealthArchiveCardCell {
+            return cell.convert(cell.guideCardRect(), to: target)
+        }
+        let rect = tableView.rectForRow(at: indexPath)
+        guard rect.height > 4 else { return nil }
+        return tableView.convert(rect.insetBy(dx: 16, dy: 6), to: target)
+    }
+
     func guideOpenArchiveEntry() {
-        guard let entry = viewModel.quickEntries.first(where: { $0.name == "健康档案" }) else { return }
+        openHealthArchive()
+    }
+
+    private func openHealthArchive() {
+        guard let entry = viewModel.quickEntries.first(where: { $0.name == "健康档案" }) else {
+            Router.shared.push("/health/record", from: self)
+            return
+        }
         let pageUrl = entry.pageUrl
         if FundePageURL.canOpen(pageUrl) {
             FundePageURL.open(pageUrl, title: entry.name, from: self)
@@ -255,7 +306,9 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         }
         if pageUrl.hasPrefix("/") {
             Router.shared.push(pageUrl, from: self)
+            return
         }
+        Router.shared.push("/health/record", from: self)
     }
 
     private func guideScroll(to type: SectionType) {

@@ -9,7 +9,7 @@
 - `saveShoppingCartOrPurchase` 解析 `data` 为订单 id（Int64）
 - 立即下单 / 购物车去结算 → `/orders/confirm?orderId=`
 - 确认页进入必调 `getOrderSettlement`，展示不依赖上一页草稿
-- 收货方式默认自提；`orderExpress==1` 才支持快递；自提地址 `hospital/getById`
+- 有实物时机构自提与快递同时展示，选中态由 `typeOrder` 决定；自提地址 `hospital/getById`
 
 ## Impact
 

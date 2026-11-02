@@ -36,6 +36,8 @@ enum DictionaryParent: Int64, CaseIterable {
     case packageUnit = 1_368_753_516_243_456_000
     /// 风险等级
     case riskLevel = 1_405_690_692_059_140_096
+    /// 我的设备 — 选择设备顶部栏目
+    case deviceCategory = 1_354_970_762_909_454_336
 
     var rawValueString: String {
         String(rawValue)
@@ -59,6 +61,7 @@ enum DictionaryParent: Int64, CaseIterable {
         case .paymentMethod: return "支付方式"
         case .packageUnit: return "商品套餐单位"
         case .riskLevel: return "风险等级"
+        case .deviceCategory: return "设备类型"
         }
     }
 }

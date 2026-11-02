@@ -101,14 +101,11 @@
 
 ### Requirement: 订单信息卡退款原因展示
 
-#### Scenario: 根据 refundReasonType 展示退款原因
+#### Scenario: 退款原因不进入订单信息
 
-- **WHEN** 渲染订单信息卡且 `refundReasonType` 有值
-- **THEN** 按照以下规则在「下单时间」下方展示退款原因：
-  - `refundReasonType == 1`：当存在 `refundReasons` 时，展示「申请退款原因」及对应内容
-  - `refundReasonType == 2`：当存在 `refuseReasons` 时，展示「拒绝退款原因」及对应内容
-  - `refundReasonType == 0` 或其他：不展示退款原因行
-- **AND** 若 `refundReasonType` 为空/未下发，兼容降级为：若存在 `refuseReasons` 且订单非售后流程中，展示「拒绝退款原因」
+- **WHEN** 渲染订单信息卡（FDAPP-1064）
+- **THEN** 不在订单信息中展示「申请退款原因」或「拒绝退款原因」
+- **AND** 退款/售后信息卡仍展示申请原因；拒绝退款通知条仍展示 `refuseReasons`
 
 ### Requirement: 特色通知条
 

@@ -32,7 +32,11 @@ final class OSSManager {
         let response: APIResponse<CosSignVo> = try await APIManager.shared
             .getAsync(
                 path: "/v1/cos/getCosSign",
-                parameters: ["folderName": folderName, "ext": ext],
+                parameters: [
+                    "folderName": folderName,
+                    "ext": ext,
+                    "mimeType": mimeType,
+                ],
                 responseType: APIResponse<CosSignVo>.self
             )
 
@@ -56,8 +60,8 @@ final class OSSManager {
         request.httpMethod = "PUT"
         request.httpBody = data
         request.timeoutInterval = 60
-        // 不设置 Content-Type：后端签名时未指定，客户端带任何 Content-Type
-        // 都会导致签名不匹配 → HTTP 403 SignatureDoesNotMatch
+        // getCosSign 虽接收 mimeType，返回的 signUrl 仍按空 Content-Type 签名。
+        // PUT 再带 Content-Type 会得到 SignatureDoesNotMatch。
 
         let (respData, httpResponse) = try await URLSession.shared.data(for: request)
 

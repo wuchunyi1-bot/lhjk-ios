@@ -79,8 +79,7 @@ final class OrderConfirmFulfillmentView: UIView {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    func configure(selected: OrderFulfillmentMethod, supportsExpress: Bool) {
-        expressOption.isHidden = !supportsExpress
+    func configure(selected: OrderFulfillmentMethod) {
         pickupOption.configure(selected: selected == .selfPickup)
         expressOption.configure(selected: selected == .express)
     }

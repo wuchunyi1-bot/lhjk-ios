@@ -57,6 +57,15 @@ App端/
 │   └── 档案管理
 │       ├── GET  /v1/archive/getOArchiveByUserId
 │       └── POST /v1/archive/saveArchiveHospital
+├── 线下履约/
+│   └── 康养小屋相关接口
+│       ├── GET /v1/cabin/list
+│       ├── GET /v1/cabin/detail
+│       ├── GET /v1/cabin/categoryList
+│       ├── GET /v1/cabin/configList
+│       ├── GET /v1/cabin/bookDetail
+│       ├── POST /v1/cabin/book
+│       └── GET /v1/cabin/appointments
 ├── 商城/
 │   ├── 收货地址管理
 │   ├── 购物车管理
@@ -70,6 +79,9 @@ App端/
 ├── 内容/
 │   ├── 展示位内容设置管理
 │   │   └── GET /v1/columnContent/getByCode
+│   ├── 知识库内容控制层
+│   │   ├── GET /v1/content/search
+│   │   └── POST /v1/content/share
 │   └── 版本管理
 │       └── GET /v1/version/getLatestVersionForApp
 ├── IM/
@@ -126,8 +138,9 @@ App端/
 | 9a | GET | `/v1/users/getWechatBindStatus` | `App端/系统/用户管理` | `UserService` / `SecuritySettingsViewController` / `WechatAuthorizationViewController` | 查询当前用户微信绑定状态（Apifox OAS: `getWechatBindStatus`，响应 `bound: Bool`） |
 | 9b | POST | `/v1/users/bindWechat` | `App端/系统/用户管理` | `UserService` / `WechatAuthorizationViewController` | 为当前用户绑定微信账号（Apifox OAS: `bindWechat`，Query `code`） |
 | 9c | POST | `/v1/users/unbindWechat` | `App端/系统/用户管理` | `UserService` / `WechatAuthorizationViewController` | 解除当前用户的微信账号绑定（Apifox OAS: `unbindWechat`） |
+| 9d | GET | `/v1/users/getMyHeaderList` | `App端/系统/用户管理` | `EquipmentBindService`（设置 / 我的设备） | [我的列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785604e0.md)。Query `type=2` 为我的设备，按绑定时间倒序，不分组 |
 | 10 | POST | `/v1/dictionary/getDictionaryByParentId2` | `App端/系统/字典管理` | `DictionaryService` | [字典](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330853e0.md) |
-| 11 | GET | `/v1/cos/getCosSign` | `App端/系统/阿里云OSS` | `OSSManager` | [OSS 签名](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330939e0.md) |
+| 11 | GET | `/v1/cos/getCosSign` | `App端/系统/阿里云OSS` | `OSSManager` | Query：`folderName`、`ext`、`mimeType`。返回的 `signUrl` 按空 `Content-Type` 签名，PUT 不带 `Content-Type`。[OSS 签名](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330939e0.md) |
 
 ### 2.3 App端 / 机构
 
@@ -141,6 +154,13 @@ App端/
 > `#15` 客户端使用 `data.archiveComplete` 作为 `/onboarding` 唯一门禁；另解码 `sex` / `birthday` 等回填字段。Apifox 分享站 `OArchiveVO` 可能尚未同步这些字段（以联调 JSON 为准）。
 | 15b | GET | `/v1/archive/calculateArchiveCompletion` | `App端/机构/档案管理` | `UserService` | 文档暂无（Apifox OAS：`calculateArchiveCompletion`，Query `userId`；响应 `completionPercentage` 0–100） |
 | 16 | POST | `/v1/archive/saveArchiveHospital` | `App端/机构/档案管理` | `UserService` | [保存档案机构](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/491046480e0.md) |
+| 16b | GET | `/v1/cabin/list` | `App端/线下履约/康养小屋相关接口` | `CabinService`（康养小屋列表） | [机构分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266269e0.md)。Query：`keyword`、`longitude`、`latitude`（GCJ-02）、`pageNum`、`pageSize` |
+| 16c | GET | `/v1/cabin/detail` | `App端/线下履约/康养小屋相关接口` | `CabinService`（门店详情） | [门店详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266267e0.md)。Query：`hospitalId` |
+| 16d | GET | `/v1/cabin/categoryList` | `App端/线下履约/康养小屋相关接口` | `CabinService`（服务分类） | [服务分类](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785605e0.md)。Query：`hospitalId` |
+| 16e | GET | `/v1/cabin/configList` | `App端/线下履约/康养小屋相关接口` | `CabinService`（分类下项目） | [项目列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266270e0.md)。Query：`hospitalId`、`parentId` |
+| 16f | GET | `/v1/cabin/bookDetail` | `App端/线下履约/康养小屋相关接口` | `CabinService`（项目预约页） | [预约页详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785607e0.md)。Query：`configId`，可选 `date`（`yyyy-MM-dd`） |
+| 16g | POST | `/v1/cabin/book` | `App端/线下履约/康养小屋相关接口` | `CabinService`（提交预约） | [小屋项目预约](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/530062590e0.md)。JSON：`configId`、`reserveDate`、`sourceType`、`startTime`、`endTime`、`quantity`；`sourceType=3` 时另传 `orderId` |
+| 16h | GET | `/v1/cabin/appointments` | `App端/线下履约/康养小屋相关接口` | `CabinService`（预约记录） | [当前登录人的预约记录分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785606e0.md)。Query：可选 `status`（3 待服务 / 4 服务中 / 5 已完成 / 6 已取消 / 7 已过期，空为全部）、`pageNum`、`pageSize` |
 
 ### 2.4 App端 / 商城
 
@@ -154,14 +174,14 @@ App端/
 | 22 | DELETE | `/v1/shoppingCart/deleteShoppingCart` | `App端/商城/购物车管理` | `ShoppingCartService` | [删购物车](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330724e0.md) |
 | 22a | GET | `/v1/shoppingCart/getShoppingCartCount` | `App端/商城/购物车管理` | `ShoppingCartService` / `ShoppingCartBadgeStore` | 文档暂无（Apifox OAS：`getShoppingCartCount`，`ResultLong.data` 为当前用户购物车数量；以代码 path 为准） |
 | 23 | GET | `/v1/hospitalPackage/getEnabledHospitalPackagePage` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | [启用套包分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/484150836e0.md) |
-| 23b | GET | `/v1/hospitalPackage/searchEnabledPackagePage` | `App端/商城/商城套餐相关接口` | `HospitalPackageService`（首页搜索：健康服务 / 富德优选） | Query：`keyword`、`type`（1 健康服务 / 2 富德优选）必填；`hospitalId` 仅健康服务传当前机构；`pageNum`、`pageSize` 可选。健康知识不走此接口 |
+| 23b | GET | `/v1/hospitalPackage/searchEnabledPackagePage` | `App端/商城/商城套餐相关接口` | `HospitalPackageService`（首页搜索：健康服务 / 富德优选） | Query：`keyword`、`type`（1 健康服务 / 2 富德优选）必填；`hospitalId` 仅健康服务传当前机构；`pageNum`、`pageSize` 可选 |
 | 24 | GET | `/v1/hospitalPackage/getEnabledRetailHospitalPackagePage` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | [零售套包分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487882770e0.md) |
 | 25 | GET | `/v1/hospitalPackage/getCategoryServiceListByType` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | [业务类别](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487882771e0.md) |
 | 25a | GET | `/v1/hospitalPackage/getEnabledHospitalPackageListByCategory` | `App端/商城/商城套餐相关接口` | `HospitalPackageService`（选择套餐一次性加载） | 文档暂无（Apifox 层级 `商城/商城套餐相关接口`） |
 | 26 | GET | `/v1/hospitalPackage/getHospitalPackageDetail` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | Query：`hospitalId`、`packageId` 必填；续费可选 `orderId`（返回 `commodityIdList`） |
 | 27 | GET | `/v1/order/getAppOrderList` | `App端/商城/商城订单相关接口` | `OrderService`；`renewable=true` 才展示「续费订单」 | [订单列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330738e0.md) |
 | 28 | GET | `/v1/order/getAppOrderDetail` | `App端/商城/商城订单相关接口` | `OrderService`；`renewable=true` 才展示「续费订单」；`canApplyAfterSale` 控制「退款/售后」按钮；`refundReasonType` 控制已完成订单退款原因展示类型（0-不显示，1-退款申请原因，2-退款拒绝原因）；`equipmentFlag=false` 隐藏自提信息、自提地址、物流信息与收货地址 | [订单详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330739e0.md) |
-| 29 | GET | `/v1/order/getOrderSettlement` | `App端/商城/商城订单相关接口` | `OrderService`；`code=M0104` 套餐内容变化弹窗（FDAPP-938）；`equipmentFlag=false` 隐藏确认订单/待支付的收货方式与自提地址 | [结算信息](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/490169537e0.md) |
+| 29 | GET | `/v1/order/getOrderSettlement` | `App端/商城/商城订单相关接口` | `OrderService`；`code=M0104` 套餐内容变化、`code=M0105` 套餐已下架，均走同一提示弹窗（FDAPP-938）；`addressId` 供切换快递地址时回传 `updateOrderDelivery`；`equipmentFlag=false` 隐藏确认订单/待支付的收货方式与自提地址 | [结算信息](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/490169537e0.md) |
 | 30 | POST | `/v1/order/insertOrEdit` | `App端/商城/商城订单相关接口` | `OrderService` | [新增编辑订单](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330734e0.md) |
 | 31 | POST | `/v1/order/updateOrderDelivery` | `App端/商城/商城订单相关接口` | `OrderService` | [改配送](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/490169536e0.md) |
 | 32 | POST | `/v1/order/updateOrderDescription` | `App端/商城/商城订单相关接口` | `OrderService` | [改备注](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/490169535e0.md) |
@@ -187,6 +207,8 @@ App端/
 | # | Method | Path | Apifox 层级 | 调用位置 | Apifox（只读） |
 |---|--------|------|-------------|----------|----------------|
 | 36 | GET | `/v1/columnContent/getByCode` | `App端/内容/展示位内容设置管理` | `ColumnContentService` | [栏位内容](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/484052032e0.md) |
+| 36a | GET | `/v1/content/search` | `内容/知识库内容控制层` | `ColumnContentService`（首页搜索：健康知识） | Query：`keyword`、`pageNum`、`pageSize`。分页 `list` / `totalCount` / `currPage` / `totalPage`。点击走 `#/content/detail?id=` |
+| 36b | POST | `/v1/content/share` | `内容/知识库内容控制层` | `ColumnContentService`（健康知识详情点击分享时立刻调用） | [分享内容](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529721042e0.md)。Query：`contentId`。不传 Header `payload`。不等微信回调、不等回到 App |
 | 36v | GET | `/v1/version/getLatestVersionForApp` | `App端/内容/版本管理` | `AppVersionService` | 文档暂无 / 以代码 path 为准（Apifox OAS `getLatestVersionForApp`） |
 | 36a | GET | `/v1/questionnaire/getSchoolExamUserListCount` | `App端/内容/测评问卷` | `QuestionnaireService`（Hub 已改走 `#5b`） | [测评记录数](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/500500978e0.md) |
 
@@ -200,7 +222,7 @@ App端/
 > `#37` 响应 `GroupVO.status`：**仅 `1` 允许用户发送消息**；其它值进入聊天只读。详见 `openspec/specs/im/spec.md`。
 | 37a | GET | `/v1/session/getGroupMembers` | `App端/IM/群组会话` | `IMService` | 文档暂无 / 以代码 path 为准（Apifox OAS `getGroupMembers`） |
 
-> `#37a` Query：`groupId`（string，**必填**）；`targetUserId`（int64，可选；全量列表不传）。Header `payload` 不传。**现网 `data` 为成员数组**（`userId` / `userName` / `imageUrl` / `roleName`），不是 OAS 的 `GroupMembersVO` 对象。详见 `openspec/specs/im/spec.md`。
+> `#37a` Query：`groupId`（string，**必填**）；`targetUserId`（int64，可选；全量列表不传）。Header `payload` 不传。**现网 `data` 为成员数组**（`userId` / `userName` / `nickname` / `imageUrl` / `roleName`），不是 OAS 的 `GroupMembersVO` 对象。自己展示 `nickname`，空则回退 `userName`。详见 `openspec/specs/im/spec.md`。
 | 38 | GET | `/v1/session/getUserParticipateAllTeam` | `App端/IM/群组会话` | `HomeService` | [参与团队](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/495580451e0.md) |
 | 39 | POST | `/v1/account/addRongImAccount` | `App端/IM/IM账户管理` | `RongCloudManager` | [融云账号](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/478384048e0.md) |
 | 40 | GET | `/v1/scheme/getUserToDayMonitorTask` | `App端/居家健康/监测方案定义` | `HomeService` | [今日监测任务](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330787e0.md) |
@@ -258,12 +280,12 @@ App端/
 | `BLL/Service/HospitalPackageService.swift` | 6 | hospitalPackage/*（含 **getHospitalPackageDetail**、**getEnabledHospitalPackageListByCategory**、**searchEnabledPackagePage**） |
 | `BLL/Service/HospitalService.swift` | 2 | hospital/* |
 | `BLL/Service/DoctorService.swift` | 1 | doctor/getDoctorPage |
-| `BLL/Service/ColumnContentService.swift` | 1 | columnContent/getByCode |
+| `BLL/Service/ColumnContentService.swift` | 3 | columnContent/getByCode、content/search、content/share |
 | `BLL/Service/DictionaryService.swift` | 1 | dictionary/getDictionaryByParentId2 |
 | `BLL/Home/HomeService.swift` | 3 | scheme/getUserToDayMonitorTask、session/getUserParticipateAllTeam、schemeArchive/getRemainServiceTime |
 | `BLL/My/DiningSchemeService.swift` | 1 | diningScheme/downloadDietPoster |
 | `BLL/Health/HealthPageService.swift` | 4 | healthPage/getCmsConfig、monitorHealth/getMonitorCardList、userMonitorCardConfig/* ×2 |
-| `BLL/Health/EquipmentBindService.swift` | 12 | equipmentUser/* ×6、equipment/getEquipmenByApp、equipment/getCompatibleBluetoothList、firmware/getFirmwareUrlByParam、monitor/saveOrUpdateMonitorData、monitor/getWeightHomePageData、monitor/delMonitorDataByMonitorId |
+| `BLL/Health/EquipmentBindService.swift` | 13 | users/getMyHeaderList、equipmentUser/* ×6、equipment/getEquipmenByApp、equipment/getCompatibleBluetoothList、firmware/getFirmwareUrlByParam、monitor/saveOrUpdateMonitorData、monitor/getWeightHomePageData、monitor/delMonitorDataByMonitorId |
 | `BLL/Message/IMService.swift` | 2 | session/getGroup、session/getGroupMembers |
 | `DAL/IM/RongCloudManager.swift` | 1 | account/addRongImAccount |
 | `DAL/OSS/OSSManager.swift` | 1 | cos/getCosSign |

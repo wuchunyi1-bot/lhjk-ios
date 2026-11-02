@@ -188,7 +188,7 @@ enum H5Config {
         authenticatedPageURL(path: "todoTask")
     }
 
-    /// 会员等级 / 富德币 H5：`#/myVip`
+    /// 会员等级 / 健康币 H5：`#/myVip`
     static var myVipPageURL: URL {
         authenticatedPageURL(path: "myVip")
     }
@@ -208,6 +208,37 @@ enum H5Config {
     static func normalizedH5URLString(_ raw: String) -> String {
         raw
     }
+
+    /// 协议静态页：`{base}/agreements/user-app/{file}.html`。不拼 token。
+    static func agreementPageURL(docType: String) -> URL {
+        let file = agreementFiles[docType] ?? agreementFiles["user"]!
+        let urlString = "\(h5OriginBaseURLString())/agreements/user-app/\(file)"
+        return URL(string: urlString) ?? environment.baseURL
+    }
+
+    static func agreementTitle(docType: String) -> String {
+        agreementTitles[docType] ?? agreementTitles["user"]!
+    }
+
+    private static let agreementFiles: [String: String] = [
+        "user": "user.html",
+        "privacy": "privacy.html",
+        "consent": "consent.html",
+        "personal-info": "personal-info-collection.html",
+        "third-party-sharing": "third-party-sharing.html",
+        "member-service": "member-service.html",
+        "benefit-card": "benefit-card.html",
+    ]
+
+    private static let agreementTitles: [String: String] = [
+        "user": "用户协议",
+        "privacy": "隐私政策",
+        "consent": "健康管理服务知情同意书",
+        "personal-info": "个人信息收集清单",
+        "third-party-sharing": "第三方信息共享清单",
+        "member-service": "会员服务协议",
+        "benefit-card": "权益卡使用规则",
+    ]
 
     /// 资讯详情 H5：`#/content/detail?id={内容ID}&platform=ios`（本页接口无需登录，token 可选）
     static func contentDetailPageURL(contentId: String) -> URL {

@@ -631,6 +631,203 @@ private enum JSONFlexible {
     }
 }
 
+// MARK: - 我的设备（getMyHeaderList type=2）
+
+struct MyDeviceListPayload: Decodable {
+    let items: [MyBoundDevice]
+    let totalCount: Int?
+
+    init(items: [MyBoundDevice], totalCount: Int?) {
+        self.items = items
+        self.totalCount = totalCount
+    }
+
+    init(from decoder: Decoder) throws {
+        if var array = try? decoder.unkeyedContainer() {
+            var items: [MyBoundDevice] = []
+            while !array.isAtEnd {
+                if let item = try? array.decode(MyBoundDevice.self), item.hasContent {
+                    items.append(item)
+                } else {
+                    _ = try? array.decode(JSONValueSkip.self)
+                }
+            }
+            self.items = items
+            self.totalCount = nil
+            return
+        }
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let items = Self.decodeItems(container).filter(\.hasContent)
+        self.items = items
+        self.totalCount = Self.int(container, .totalCount) ?? Self.int(container, .total)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case list, records, rows, data
+        case recordsCN = "数据集合"
+        case totalCount
+        case total
+    }
+
+    private static func decodeItems(_ container: KeyedDecodingContainer<CodingKeys>) -> [MyBoundDevice] {
+        if let items = try? container.decode([MyBoundDevice].self, forKey: .list) { return items }
+        if let items = try? container.decode([MyBoundDevice].self, forKey: .records) { return items }
+        if let items = try? container.decode([MyBoundDevice].self, forKey: .recordsCN) { return items }
+        if let items = try? container.decode([MyBoundDevice].self, forKey: .rows) { return items }
+        if let items = try? container.decode([MyBoundDevice].self, forKey: .data) { return items }
+        return []
+    }
+
+    private static func int(_ container: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
+        if let value = try? container.decode(Int.self, forKey: key) { return value }
+        if let value = try? container.decode(String.self, forKey: key) { return Int(value) }
+        return nil
+    }
+}
+
+struct MyBoundDevice: Decodable, Equatable {
+    let id: String
+    let equipmentUserId: Int64?
+    let title: String
+    let subtitle: String
+    let imageURL: String?
+    let bindingTime: String?
+
+    var hasContent: Bool { !title.isEmpty }
+
+    var bindDate: Date? { Self.parseDate(bindingTime) }
+
+    static func sortedByBindTimeDesc(_ items: [MyBoundDevice]) -> [MyBoundDevice] {
+        items.enumerated().sorted { lhs, rhs in
+            switch (lhs.element.bindDate, rhs.element.bindDate) {
+            case let (left?, right?):
+                return left == right ? lhs.offset < rhs.offset : left > right
+            case (.some, .none):
+                return true
+            case (.none, .some):
+                return false
+            case (.none, .none):
+                return lhs.offset < rhs.offset
+            }
+        }.map(\.element)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, equipmentUserId, name, deviceName, equipmentName, commodityName
+        case model, bluetoothName, deviceId, mac, serialNumber
+        case imgUrl, imageUrl, img, image
+        case bindingTime, bindTime, createTime
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let title = Self.first(
+            Self.string(container, .name),
+            Self.string(container, .commodityName),
+            Self.string(container, .deviceName),
+            Self.string(container, .equipmentName)
+        )
+        let model = Self.string(container, .model)
+        let bluetooth = Self.string(container, .bluetoothName)
+        let serial = Self.first(
+            Self.string(container, .serialNumber),
+            Self.string(container, .deviceId),
+            Self.string(container, .mac)
+        )
+        let resolvedTitle = title ?? model ?? bluetooth ?? serial ?? ""
+        let subtitle = [model, bluetooth, serial].compactMap { $0 }.first { $0 != resolvedTitle } ?? ""
+        self.title = resolvedTitle
+        self.subtitle = subtitle
+        self.imageURL = Self.first(
+            Self.string(container, .imgUrl),
+            Self.string(container, .imageUrl),
+            Self.string(container, .img),
+            Self.string(container, .image)
+        )
+        self.bindingTime = Self.first(
+            Self.string(container, .bindingTime),
+            Self.string(container, .bindTime),
+            Self.string(container, .createTime)
+        )
+        self.equipmentUserId = Self.int64(container, .equipmentUserId) ?? Self.int64(container, .id)
+        self.id = Self.first(
+            Self.string(container, .id),
+            Self.string(container, .equipmentUserId),
+            serial,
+            resolvedTitle
+        ) ?? UUID().uuidString
+    }
+
+    private static func int64<K: CodingKey>(_ container: KeyedDecodingContainer<K>, _ key: K) -> Int64? {
+        if let value = try? container.decode(Int64.self, forKey: key), value > 0 { return value }
+        if let value = try? container.decode(Int.self, forKey: key), value > 0 { return Int64(value) }
+        if let value = try? container.decode(String.self, forKey: key) {
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let number = Int64(trimmed), number > 0 { return number }
+        }
+        return nil
+    }
+
+    private static func string<K: CodingKey>(_ container: KeyedDecodingContainer<K>, _ key: K) -> String? {
+        if let value = try? container.decode(String.self, forKey: key) {
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        if let value = try? container.decode(Int64.self, forKey: key) { return String(value) }
+        if let value = try? container.decode(Int.self, forKey: key) { return String(value) }
+        return nil
+    }
+
+    private static func first(_ values: String?...) -> String? {
+        values.compactMap { $0 }.first { !$0.isEmpty }
+    }
+
+    private static func parseDate(_ raw: String?) -> Date? {
+        guard let raw = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else { return nil }
+        if let number = Double(raw) {
+            let seconds = number > 10_000_000_000 ? number / 1000 : number
+            return Date(timeIntervalSince1970: seconds)
+        }
+        let formats = [
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm:ss.SSS",
+            "yyyy/MM/dd HH:mm:ss",
+        ]
+        let parser = DateFormatter()
+        parser.locale = Locale(identifier: "en_US_POSIX")
+        parser.timeZone = TimeZone(identifier: "Asia/Shanghai")
+        for format in formats {
+            parser.dateFormat = format
+            if let date = parser.date(from: raw) { return date }
+        }
+        return nil
+    }
+}
+
+private struct JSONValueSkip: Decodable {
+    init(from decoder: Decoder) throws {
+        if var unkeyed = try? decoder.unkeyedContainer() {
+            while !unkeyed.isAtEnd {
+                _ = try? unkeyed.decode(JSONValueSkip.self)
+            }
+            return
+        }
+        _ = try? decoder.singleValueContainer()
+        _ = try? decoder.container(keyedBy: JSONSkipKey.self)
+    }
+}
+
+private struct JSONSkipKey: CodingKey {
+    var stringValue: String
+    var intValue: Int?
+    init?(stringValue: String) { self.stringValue = stringValue }
+    init?(intValue: Int) {
+        self.intValue = intValue
+        self.stringValue = "\(intValue)"
+    }
+}
+
 enum SaveMonitorJSONValue: Encodable {
     case string(String)
     case int(Int)

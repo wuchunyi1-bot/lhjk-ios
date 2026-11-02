@@ -30,9 +30,9 @@
 
 ### Requirement: Banner 画幅按图片比例
 
-首页 Banner 宽度 MUST 为屏幕宽度；高度 MUST 为 `width × (imageHeight / imageWidth)`。图片未返回前可用 375 稿 `288/375` 作兜底，MUST NOT 把 288pt 写成所有机型的最终高度。同一轮播以第一张成功加载的图为准。
+首页「推荐」Banner 宽度 MUST 为屏幕宽度；高宽比 MUST 与健康服务 / 富德优选 / 健康知识一致，为 `138/344`。MUST NOT 按图片原始像素把这一条轮播拉高，也 MUST NOT 把高度写成固定 pt。
 
 #### Scenario: 宽屏机型
 
 - **WHEN** 在宽于 375pt 的设备（如 17 Pro Max 440pt）展示首页 Banner
-- **THEN** 高度随宽度按图片（或兜底）比例放大，MUST NOT 保持 288pt 导致画幅被拉扁
+- **THEN** 高度随宽度按 `138/344` 放大，MUST NOT 按图片原始比例或固定 288pt 计算

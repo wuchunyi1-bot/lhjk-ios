@@ -39,11 +39,28 @@ struct ScaleDeviceCardItem: Equatable {
         )
     }
 
+    static func bound(from device: MyBoundDevice) -> ScaleDeviceCardItem {
+        ScaleDeviceCardItem(
+            id: "bound-\(device.id)",
+            kind: .bound,
+            name: device.title,
+            code: device.subtitle,
+            imageURL: device.imageURL,
+            equipmentUserId: device.equipmentUserId,
+            equipmentTypeId: nil,
+            bluetoothName: nil
+        )
+    }
+
     static func catalog(from item: EquipmentCatalogItemVO) -> ScaleDeviceCardItem {
+        catalog(from: item, nameFallback: "体脂秤")
+    }
+
+    static func catalog(from item: EquipmentCatalogItemVO, nameFallback: String) -> ScaleDeviceCardItem {
         ScaleDeviceCardItem(
             id: "catalog-\(item.id)",
             kind: .catalog,
-            name: firstNonEmpty(item.name, item.bluetoothName, item.model) ?? "体脂秤",
+            name: firstNonEmpty(item.name, item.bluetoothName, item.model) ?? nameFallback,
             code: firstNonEmpty(item.model, item.bluetoothName) ?? "",
             imageURL: item.imgUrl,
             equipmentUserId: nil,

@@ -60,6 +60,9 @@ final class ServiceListViewController: BaseViewController {
         tv.showsVerticalScrollIndicator = false
         tv.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 24, right: 0)
         tv.sectionHeaderTopPadding = 0
+        tv.estimatedRowHeight = 0
+        tv.estimatedSectionHeaderHeight = 0
+        tv.estimatedSectionFooterHeight = 0
         let headerSpacer = UIView(frame: CGRect(x: 0, y: 0, width: 1, height: 16))
         headerSpacer.backgroundColor = .white
         tv.tableHeaderView = headerSpacer
@@ -164,6 +167,13 @@ final class ServiceListViewController: BaseViewController {
         banner.removeFromSuperview()
         bannerSlot.addSubview(banner)
         banner.snp.remakeConstraints { $0.edges.equalToSuperview() }
+    }
+
+    func guideShelfBannerFrame(in target: UIView) -> CGRect? {
+        guard embedsInHomeShelf, shelfBannerHeight > 1 else { return nil }
+        bannerSlot.layoutIfNeeded()
+        let frame = bannerSlot.convert(bannerSlot.bounds, to: target)
+        return frame.height > 1 ? frame : nil
     }
 
     func updateShelfBannerHeight(_ height: CGFloat) {
@@ -331,7 +341,8 @@ final class ServiceListViewController: BaseViewController {
         }
     }
 
-    /// 右侧套餐不自己滚，高度等于内容高度，整页滚动由 shelfScroll 负责。
+    /// 右侧套餐不自己滚，高度必须按全部数据算。
+    /// 表高一开始只有 1pt，系统会把 `contentSize` 估成已露出的那一屏，外层就滚不出后面的套餐。
     private func refreshShelfPackageHeight() {
         guard embedsInHomeShelf, shelfScroll.bounds.width > 1 else { return }
         if rightTable.tableFooterView == nil {
@@ -339,8 +350,7 @@ final class ServiceListViewController: BaseViewController {
             spacer.backgroundColor = .white
             rightTable.tableFooterView = spacer
         }
-        rightTable.layoutIfNeeded()
-        let height = max(rightTable.contentSize.height, 1)
+        let height = fullRightContentHeight()
         guard abs(height - appliedRightHeight) > 0.5 else {
             updateStickyLeftColumn()
             return
@@ -348,6 +358,22 @@ final class ServiceListViewController: BaseViewController {
         appliedRightHeight = height
         rightHeightConstraint?.update(offset: height)
         updateStickyLeftColumn()
+    }
+
+    private func fullRightContentHeight() -> CGFloat {
+        let header = rightTable.tableHeaderView?.bounds.height ?? 0
+        let footer = rightTable.tableFooterView?.bounds.height ?? 0
+        if viewModel.packageSections.isEmpty {
+            return max(header + 240 + footer, 1)
+        }
+        let cardWidth = max(0, rightTable.bounds.width - PackageCardCell.cardHorizontalInsets)
+        let rowHeight = PackageCardCell.rowHeight(forCardWidth: cardWidth)
+        var height = header + footer
+        for section in viewModel.packageSections {
+            height += PackageSectionHeaderView.height
+            height += rowHeight * CGFloat(section.rows.count)
+        }
+        return max(height, 1)
     }
 
     /// Banner 还在视口里时，左栏跟在 Banner 下面一起走。Banner 离开后，左栏吸在滚动区域顶部。

@@ -10,7 +10,7 @@
 
 - **WHEN** 展示登录页协议区
 - **THEN** 文案为「我已阅读并同意《用户协议》《隐私政策》《会员服务协议》与《健康管理服务知情同意书》」
-- **AND** 四项名称均可点击打开协议详情（`AgreementDetailViewController`，docType 为 user / privacy / member-service / consent，与设置协议中心同源）
+- **AND** 四项名称均可点击，打开与设置协议中心相同的 H5 静态页，不拼登录 token：`user.html`、`privacy.html`、`member-service.html`、`consent.html`（`{base}/agreements/user-app/`，开发环境 base 为 `https://h5-dev.lianhaojiankang.com`）
 - **AND** 默认未勾选
 
 #### Scenario: 未勾选最终提交
@@ -18,7 +18,7 @@
 - **WHEN** 用户点击登录/注册、密码登录或微信登录且未勾选协议
 - **THEN** 弹出知情同意确认弹窗（标题「登录前请先确认协议」）
 - **AND** Toast「请先阅读并同意用户协议、隐私政策、会员服务协议与健康管理服务知情同意书」
-- **AND** 提供《用户协议》《隐私政策》《会员服务协议》《健康管理服务知情同意书》四个入口
+- **AND** 提供《用户协议》《隐私政策》《会员服务协议》《健康管理服务知情同意书》四个入口，点击分别打开 `user.html`、`privacy.html`、`member-service.html`、`consent.html`
 - **AND** 「同意并继续」自动勾选四协议并继续原提交动作
 - **AND** 「稍后再看」关闭弹窗且不提交
 
@@ -31,12 +31,13 @@
 
 - **WHEN** 首次启动或协议版本更新展示隐私保护提示
 - **THEN** 链接区含《用户协议》《隐私政策》《健康管理服务知情同意书》三项（不含会员服务协议）
+- **AND** 三项点击分别打开 `user.html`、`privacy.html`、`consent.html`
 - **AND** 说明文案可提及上述三协议
 
 #### Scenario: 改绑手机号
 
 - **WHEN** 安全中心改绑手机号页展示协议勾选
-- **THEN** 与登录页相同的四协议文案与详情入口
+- **THEN** 与登录页相同的四协议文案，点击同样打开 `user.html`、`privacy.html`、`member-service.html`、`consent.html`
 - **AND** 未勾选提交时 Toast 同上四协议提示且不提交
 
 ---

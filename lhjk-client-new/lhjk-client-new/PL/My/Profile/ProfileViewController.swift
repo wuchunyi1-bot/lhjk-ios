@@ -9,7 +9,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     // MARK: - Field Keys
 
     private enum FieldKey: String {
-        case name, gender, birthday, phone, email
+        case name, nickname, gender, birthday, phone, email
         case occupation, education, idType, idNumber
         case nationality, ethnic, nativePlace, residence, address
     }
@@ -57,6 +57,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
         let basicFields: [FieldDef] = [
             FieldDef(key: .name, label: "姓名", kind: .text(keyboard: .default, maxLength: 20), placeholder: "请输入姓名", required: true),
+            FieldDef(key: .nickname, label: "昵称", kind: .text(keyboard: .default, maxLength: 20), placeholder: "请输入昵称"),
             FieldDef(key: .gender, label: "性别", kind: .select(options: Self.genderOptions), placeholder: "请选择"),
             FieldDef(key: .birthday, label: "出生日期", kind: .date, placeholder: "请选择日期"),
             FieldDef(key: .phone, label: "手机号", kind: .readonly, placeholder: "未设置"),
@@ -107,8 +108,15 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
     private var values: [FieldKey: String] = [:]
     private var valueLabels: [FieldKey: UILabel] = [:]
+    private var titleLabels: [FieldKey: UILabel] = [:]
     private var nativePlaceRegion = RegionSelection()
     private var residenceRegion = RegionSelection()
+    /// 顶栏开关打开 = 档案加密，左右文案为 `****`。每次进入页面重置为加密，不记住上次选择。
+    private var isArchiveEncrypted = true
+    /// 编辑弹层或相册盖住本页时，返回不要重新加密。
+    private var suppressNextEncryptionReset = false
+    private let encryptionSwitch = UISwitch()
+    private static let archiveMask = "****"
 
     // MARK: - UI
 
@@ -118,6 +126,9 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     private let infoStack = UIStackView()
     private let avatarSection = UIControl()
     private let avatarImageView = UIImageView()
+    private let avatarHintLabel = UILabel()
+    private var editableRows: [FieldKey: UIControl] = [:]
+    private var rowArrows: [FieldKey: UIView] = [:]
     private var avatarLoading: UIActivityIndicatorView?
 
     // MARK: - Lifecycle
@@ -141,12 +152,23 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        if suppressNextEncryptionReset {
+            suppressNextEncryptionReset = false
+        } else {
+            isArchiveEncrypted = true
+            encryptionSwitch.isOn = true
+        }
         loadUserProfile()
     }
 
     override func setupUI() {
         title = "个人信息"
         view.backgroundColor = .fdBg
+        encryptionSwitch.onTintColor = .fdPrimary
+        encryptionSwitch.isOn = true
+        encryptionSwitch.accessibilityLabel = "档案加密"
+        encryptionSwitch.addTarget(self, action: #selector(encryptionSwitchChanged), for: .valueChanged)
+        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: encryptionSwitch)
         sections = buildProfileSections()
 
         scrollView.showsVerticalScrollIndicator = false
@@ -175,19 +197,18 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         avatarImageView.isUserInteractionEnabled = false
         avatarImageView.image = DefaultUserAvatar.image
 
-        let hint = UILabel()
-        hint.text = "点击更换头像"
-        hint.font = .fdMyCaption
-        hint.textColor = .fdSubtext
+        avatarHintLabel.text = "点击更换头像"
+        avatarHintLabel.font = .fdMyCaption
+        avatarHintLabel.textColor = .fdSubtext
 
         avatarSection.addSubview(avatarImageView)
-        avatarSection.addSubview(hint)
+        avatarSection.addSubview(avatarHintLabel)
         avatarImageView.snp.makeConstraints {
             $0.top.equalToSuperview().offset(16)
             $0.centerX.equalToSuperview()
             $0.size.equalTo(80)
         }
-        hint.snp.makeConstraints {
+        avatarHintLabel.snp.makeConstraints {
             $0.top.equalTo(avatarImageView.snp.bottom).offset(8)
             $0.centerX.equalToSuperview()
             $0.bottom.equalToSuperview().offset(-4)
@@ -221,6 +242,9 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             view.removeFromSuperview()
         }
         valueLabels.removeAll()
+        titleLabels.removeAll()
+        editableRows.removeAll()
+        rowArrows.removeAll()
 
         for (idx, section) in sections.enumerated() {
             let group = UIView()
@@ -269,6 +293,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         if case .readonly = field.kind {
             // 只读：不响应
         } else {
+            editableRows[field.key] = row
             row.addAction(UIAction { [weak self] _ in
                 self?.openEditor(for: field)
             }, for: .touchUpInside)
@@ -281,25 +306,8 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         label.textAlignment = .left
         label.setContentHuggingPriority(.required, for: .horizontal)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
-        if field.required {
-            let attr = NSMutableAttributedString(
-                string: "*",
-                attributes: [
-                    .font: UIFont.fdMyBody,
-                    .foregroundColor: UIColor(hexString: "#E54D2E")
-                ]
-            )
-            attr.append(NSAttributedString(
-                string: field.label,
-                attributes: [
-                    .font: UIFont.fdMyBody,
-                    .foregroundColor: UIColor.fdSubtext
-                ]
-            ))
-            label.attributedText = attr
-        } else {
-            label.text = field.label
-        }
+        titleLabels[field.key] = label
+        applyTitleLabel(field)
 
         // value 右对齐并占满剩余空间 — 对齐 .info-row__value
         let value = UILabel()
@@ -333,6 +341,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             arrow.textColor = .fdMuted
             arrow.setContentHuggingPriority(.required, for: .horizontal)
             arrow.setContentCompressionResistancePriority(.required, for: .horizontal)
+            rowArrows[field.key] = arrow
             row.addSubview(arrow)
             arrow.snp.makeConstraints {
                 $0.trailing.equalToSuperview()
@@ -365,6 +374,7 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         DefaultUserAvatar.apply(urlString: user.imageUrl, to: avatarImageView)
 
         values[.name] = user.chineseName ?? user.surname ?? ""
+        values[.nickname] = user.nickname ?? ""
         values[.gender] = UserManager.sexDisplayLabel(user.sex.map(String.init))
         values[.birthday] = user.birthday ?? ""
         values[.phone] = maskPhone(user.mobile)
@@ -390,15 +400,68 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     }
 
     private func refreshAllValueLabels() {
+        applyFieldDisplay()
+    }
+
+    @objc private func encryptionSwitchChanged() {
+        isArchiveEncrypted = encryptionSwitch.isOn
+        applyFieldDisplay()
+    }
+
+    private func applyFieldDisplay() {
+        let locked = isArchiveEncrypted
+        avatarSection.isUserInteractionEnabled = !locked
+        avatarHintLabel.isHidden = locked
+        for (key, row) in editableRows {
+            row.isUserInteractionEnabled = !locked
+            rowArrows[key]?.isHidden = locked
+        }
         for section in sections {
             for field in section.fields {
+                applyTitleLabel(field)
                 applyValueLabel(field)
             }
         }
     }
 
+    private func applyTitleLabel(_ field: FieldDef) {
+        guard let label = titleLabels[field.key] else { return }
+        if isArchiveEncrypted {
+            label.attributedText = nil
+            label.text = Self.archiveMask
+            label.textColor = .fdSubtext
+            return
+        }
+        if field.required {
+            let attr = NSMutableAttributedString(
+                string: "*",
+                attributes: [
+                    .font: UIFont.fdMyBody,
+                    .foregroundColor: UIColor(hexString: "#E54D2E")
+                ]
+            )
+            attr.append(NSAttributedString(
+                string: field.label,
+                attributes: [
+                    .font: UIFont.fdMyBody,
+                    .foregroundColor: UIColor.fdSubtext
+                ]
+            ))
+            label.attributedText = attr
+        } else {
+            label.attributedText = nil
+            label.text = field.label
+            label.textColor = .fdSubtext
+        }
+    }
+
     private func applyValueLabel(_ field: FieldDef) {
         guard let label = valueLabels[field.key] else { return }
+        if isArchiveEncrypted {
+            label.text = Self.archiveMask
+            label.textColor = .fdText
+            return
+        }
         let raw: String
         switch field.key {
         case .nativePlace:
@@ -424,6 +487,8 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     // MARK: - Editor
 
     private func openEditor(for field: FieldDef) {
+        guard !isArchiveEncrypted else { return }
+        suppressNextEncryptionReset = true
         if case .region(let mode) = field.kind {
             let current: RegionSelection
             switch field.key {
@@ -517,6 +582,8 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         switch field.key {
         case .name:
             payload.chineseName = value
+        case .nickname:
+            payload.nickname = value
         case .gender:
             payload.sex = value == "男" ? 1 : (value == "女" ? 2 : nil)
         case .birthday:
@@ -556,6 +623,8 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     // MARK: - Avatar
 
     @objc private func handleAvatarTap() {
+        guard !isArchiveEncrypted else { return }
+        suppressNextEncryptionReset = true
         let picker = UIImagePickerController()
         picker.delegate = self
         picker.sourceType = .photoLibrary

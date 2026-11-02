@@ -42,6 +42,7 @@ final class ServiceViewController: BaseViewController {
             self?.bannerBar.open(banner, from: self)
         }
 
+        bannerBar.usesHomeShelfRatio = embedsInHomeHub
         if embedsInHomeHub {
             view.clipsToBounds = true
             hubHeader.isHidden = true
@@ -87,6 +88,10 @@ final class ServiceViewController: BaseViewController {
         packageHost.addSubview(list.view)
         list.view.snp.makeConstraints { $0.edges.equalToSuperview() }
         list.didMove(toParent: self)
+    }
+
+    func guideBannerFrame(in target: UIView) -> CGRect? {
+        children.compactMap { $0 as? ServiceListViewController }.first?.guideShelfBannerFrame(in: target)
     }
 
     override func bindViewModel() {

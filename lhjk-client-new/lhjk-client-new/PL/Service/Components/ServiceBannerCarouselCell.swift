@@ -3,13 +3,15 @@ import SnapKit
 import Kingfisher
 
 /// 服务首页 Banner 轮播 — 宽度为屏宽减左右 16pt，高度按图片比例计算
-/// 数据来自 `GET /v1/columnContent/getByCode`；间隔 3.6s 对齐 funde `van-swipe :autoplay="3600"`
+/// 数据来自 `GET /v1/columnContent/getByCode`；自动翻页间隔 4s
 final class ServiceBannerCarouselCell: UITableViewCell {
 
     static let reuseID = "ServiceBannerCarouselCell"
 
     /// Figma 3042:1521 344×180，仅作图片未加载时的兜底比例
     static let fallbackRatio: CGFloat = 180.0 / 344.0
+    /// 首页内容页签固定画幅。不跟图片原始比例，避免轮播被压得太矮、引导说明卡没处放。
+    static let homeShelfRatio: CGFloat = 138.0 / 344.0
     /// Figma 左右边距（375 稿宽 → 内容约 343~344）
     static let horizontalInset: CGFloat = 16
     static let cornerRadius: CGFloat = 16
@@ -19,6 +21,8 @@ final class ServiceBannerCarouselCell: UITableViewCell {
 
     var onBannerTap: ((ServiceHubBanner) -> Void)?
     var onHeightUpdated: (() -> Void)?
+    /// 首页「健康服务 / 富德优选 / 健康知识」为 true 时，高度固定为宽 × 138/344。
+    var usesHomeShelfRatio = false
 
     private var banners: [ServiceHubBanner] = []
     private var heightConstraint: Constraint?
@@ -123,8 +127,8 @@ final class ServiceBannerCarouselCell: UITableViewCell {
             ? lastAppliedHeight
             : BannerImageAspectLayout.height(
                 width: bannerWidth,
-                imageSize: resolvedImageSize,
-                fallbackRatio: Self.fallbackRatio
+                imageSize: layoutImageSize(),
+                fallbackRatio: layoutRatio()
             )
         return CGSize(width: width, height: height)
     }
@@ -165,8 +169,8 @@ final class ServiceBannerCarouselCell: UITableViewCell {
         guard width > 0 else { return }
         let height = BannerImageAspectLayout.height(
             width: width,
-            imageSize: resolvedImageSize,
-            fallbackRatio: Self.fallbackRatio
+            imageSize: layoutImageSize(),
+            fallbackRatio: layoutRatio()
         )
         let heightChanged = abs(height - lastAppliedHeight) > 0.5
         guard heightChanged else { return }
@@ -177,7 +181,17 @@ final class ServiceBannerCarouselCell: UITableViewCell {
         }
     }
 
+    private func layoutRatio() -> CGFloat {
+        usesHomeShelfRatio ? Self.homeShelfRatio : Self.fallbackRatio
+    }
+
+    /// 首页页签锁定 344×138，不再用第一张图的像素比把高度压矮。
+    private func layoutImageSize() -> CGSize? {
+        usesHomeShelfRatio ? nil : resolvedImageSize
+    }
+
     private func adoptImageSize(_ size: CGSize) {
+        guard !usesHomeShelfRatio else { return }
         guard size.width > 1, size.height > 1, resolvedImageSize == nil else { return }
         resolvedImageSize = size
         applyBannerHeight(width: bannerWidth(), notify: true)
@@ -219,7 +233,7 @@ final class ServiceBannerCarouselCell: UITableViewCell {
     private func startAutoScroll() {
         stopAutoScroll()
         guard banners.count > 1 else { return }
-        let timer = Timer(timeInterval: 3.6, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 4, repeats: true) { [weak self] _ in
             self?.advancePage()
         }
         RunLoop.main.add(timer, forMode: .common)
@@ -343,6 +357,8 @@ final class ServiceHubBannerBar: UIView, UITableViewDataSource, UITableViewDeleg
     var onBannerTap: ((ServiceHubBanner) -> Void)?
     /// 高度变化（含无图时的 0）。首页页签用来把 Banner 放进滚动内容。
     var onHeightChange: ((CGFloat) -> Void)?
+    /// 嵌在首页内容页签时锁定 344×138。
+    var usesHomeShelfRatio = false
     var displayedHeight: CGFloat { banners.isEmpty ? 0 : bannerHeight }
 
     private var banners: [ServiceHubBanner] = []
@@ -414,6 +430,7 @@ final class ServiceHubBannerBar: UIView, UITableViewDataSource, UITableViewDeleg
             withIdentifier: ServiceBannerCarouselCell.reuseID,
             for: indexPath
         ) as! ServiceBannerCarouselCell
+        cell.usesHomeShelfRatio = usesHomeShelfRatio
         cell.configure(banners)
         cell.onBannerTap = { [weak self] banner in
             self?.onBannerTap?(banner)
@@ -482,7 +499,9 @@ final class ServiceHubBannerBar: UIView, UITableViewDataSource, UITableViewDeleg
         return BannerImageAspectLayout.height(
             width: max(0, width - ServiceBannerCarouselCell.horizontalInset * 2),
             imageSize: nil,
-            fallbackRatio: ServiceBannerCarouselCell.fallbackRatio
+            fallbackRatio: usesHomeShelfRatio
+                ? ServiceBannerCarouselCell.homeShelfRatio
+                : ServiceBannerCarouselCell.fallbackRatio
         )
     }
 }

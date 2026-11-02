@@ -7,6 +7,11 @@ final class WebViewController: BaseViewController {
     private let urlString: String
     private let pageTitle: String?
     private let enablesWeightBle: Bool
+    /// 健康知识详情。有值时导航栏右侧展示功能按钮（分享 / 复制链接）。
+    private let knowledgeShare: KnowledgeShareContext?
+    private var isSharingKnowledge = false
+    private weak var knowledgeMoreButton: UIButton?
+    private var knowledgeShareReturnObserver: NSObjectProtocol?
     /// WebView 顶部预留高度（如体重蓝牙横条），不含 safe area
     var topContentInset: CGFloat = 0
     private weak var previousPopGestureDelegate: UIGestureRecognizerDelegate?
@@ -105,9 +110,15 @@ final class WebViewController: BaseViewController {
 
     // MARK: - Init
 
-    init(urlString: String, title: String? = nil, enablesWeightBle: Bool = false) {
+    init(
+        urlString: String,
+        title: String? = nil,
+        enablesWeightBle: Bool = false,
+        knowledgeShare: KnowledgeShareContext? = nil
+    ) {
         self.urlString = H5Config.normalizedH5URLString(urlString)
         self.pageTitle = title
+        self.knowledgeShare = knowledgeShare
         let impliesWeight = Self.urlImpliesWeightMetric(self.urlString)
         self.enablesWeightBle = enablesWeightBle || impliesWeight
         super.init(nibName: nil, bundle: nil)
@@ -130,6 +141,7 @@ final class WebViewController: BaseViewController {
         super.viewDidLoad()
         title = pageTitle
         setupBackNavigation()
+        setupKnowledgeShareButton()
         bridge = FundeNativeBridge(
             webView: webView,
             hostViewController: self,
@@ -259,6 +271,9 @@ final class WebViewController: BaseViewController {
     }
 
     deinit {
+        if let knowledgeShareReturnObserver {
+            NotificationCenter.default.removeObserver(knowledgeShareReturnObserver)
+        }
         chromeLocalizationTokens.forEach { NotificationCenter.default.removeObserver($0) }
         bridge?.detach()
         let controller = webView.configuration.userContentController
@@ -318,6 +333,148 @@ final class WebViewController: BaseViewController {
     }
 
     // MARK: - Back Navigation
+
+    private func setupKnowledgeShareButton() {
+        guard knowledgeShare != nil else { return }
+        let button = UIButton(type: .system)
+        let image = UIImage(systemName: "ellipsis")?
+            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold))
+        button.setImage(image, for: .normal)
+        button.tintColor = .fdText
+        button.accessibilityLabel = "更多"
+        button.frame = CGRect(x: 0, y: 0, width: 44, height: 44)
+        button.addTarget(self, action: #selector(handleKnowledgeMoreTapped), for: .touchUpInside)
+        knowledgeMoreButton = button
+        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: button)
+        guard knowledgeShareReturnObserver == nil else { return }
+        knowledgeShareReturnObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.finishKnowledgeShareIfNeeded()
+            }
+        }
+    }
+
+    @objc private func handleKnowledgeMoreTapped() {
+        guard knowledgeShare != nil, !isSharingKnowledge else { return }
+        let sheet = KnowledgeArticleActionSheet()
+        sheet.onShare = { [weak self] in
+            self?.handleKnowledgeShareTapped()
+        }
+        sheet.onCopyLink = { [weak self] in
+            self?.copyKnowledgeLink()
+        }
+        present(sheet, animated: true)
+    }
+
+    private func copyKnowledgeLink() {
+        guard let share = knowledgeShare else { return }
+        let link = Self.shareWebpageURL(contentId: share.contentId)
+        guard !link.isEmpty else { return }
+        UIPasteboard.general.string = link
+        showToastAlert("链接已复制")
+    }
+
+    @objc private func handleKnowledgeShareTapped() {
+        guard let share = knowledgeShare, !isSharingKnowledge else { return }
+        guard WeChatSDKManager.shared.isWeChatInstalled else {
+            showToastAlert("请先安装微信")
+            return
+        }
+        isSharingKnowledge = true
+        knowledgeMoreButton?.isEnabled = false
+        let contentId = share.contentId
+        Task { await self.recordKnowledgeShare(contentId: contentId) }
+        let imageUrl = share.imageUrl
+        Task { [weak self] in
+            let thumb = await Self.loadShareThumb(from: imageUrl)
+            await MainActor.run {
+                self?.sendKnowledgeShare(share, thumb: thumb)
+            }
+        }
+    }
+
+    private func sendKnowledgeShare(_ share: KnowledgeShareContext, thumb: UIImage?) {
+        let title = share.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let payload = WeChatMiniProgramSharePayload(
+            webpageURL: Self.shareWebpageURL(contentId: share.contentId),
+            path: share.miniProgramPath,
+            title: title.isEmpty ? "健康知识" : title,
+            hdImage: thumb,
+            miniProgramType: WeChatConfig.knowledgeShareMiniProgramType
+        )
+        WeChatSDKManager.shared.shareMiniProgram(payload) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success:
+                Task { @MainActor in self.finishKnowledgeShare() }
+            case .failure(let error):
+                Task { @MainActor in
+                    self.finishKnowledgeShare()
+                    if error != .userCancelled {
+                        self.showToastAlert(error.localizedDescription)
+                    }
+                }
+            }
+        }
+    }
+
+    /// 点击「分享」立刻累计次数，不等微信回调，也不等回到 App。
+    private func recordKnowledgeShare(contentId: String) async {
+        do {
+            try await ColumnContentService.shared.recordShare(contentId: contentId)
+        } catch {
+            let message = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+            await MainActor.run {
+                self.showToastAlert(message.isEmpty ? "记录分享失败" : message)
+            }
+        }
+    }
+
+    /// 微信 `onResp` 有时在回到 App 后不会再到。回到前台即恢复按钮，避免一直点不动。
+    @MainActor
+    private func finishKnowledgeShareIfNeeded() {
+        guard isSharingKnowledge else { return }
+        finishKnowledgeShare()
+    }
+
+    @MainActor
+    private func finishKnowledgeShare() {
+        isSharingKnowledge = false
+        knowledgeMoreButton?.isEnabled = true
+        knowledgeMoreButton?.isUserInteractionEnabled = true
+    }
+
+    /// 低版本微信打开的网页不带登录 token。
+    private static func shareWebpageURL(contentId: String) -> String {
+        let raw = H5Config.contentDetailPageURL(contentId: contentId).absoluteString
+        guard var components = URLComponents(string: raw) else { return raw }
+        let fragment = components.fragment ?? ""
+        let parts = fragment.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false)
+        let path = String(parts.first ?? "")
+        let query = parts.count > 1 ? String(parts[1]) : ""
+        let kept = query
+            .split(separator: "&")
+            .filter { !$0.hasPrefix("token=") }
+            .joined(separator: "&")
+        components.fragment = kept.isEmpty ? path : "\(path)?\(kept)"
+        return components.string ?? raw
+    }
+
+    private static func loadShareThumb(from rawURL: String?) async -> UIImage? {
+        guard let raw = rawURL?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !raw.isEmpty,
+              let url = URL(string: raw) else { return nil }
+        return await withCheckedContinuation { continuation in
+            URLSession.shared.dataTask(with: url) { data, _, _ in
+                let image = data.flatMap { UIImage(data: $0) }
+                continuation.resume(returning: image)
+            }.resume()
+        }
+    }
 
     private func setupBackNavigation() {
         navigationItem.hidesBackButton = true
@@ -679,5 +836,103 @@ private extension WebViewController {
             }
         }
         return components.string ?? "\(url.scheme ?? "unknown")://\(url.host ?? "unknown")"
+    }
+}
+
+/// 健康知识详情功能菜单：分享、复制链接。
+private final class KnowledgeArticleActionSheet: UIViewController {
+
+    var onShare: (() -> Void)?
+    var onCopyLink: (() -> Void)?
+
+    private let dimView = UIView()
+    private let panel = UIView()
+
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        modalPresentationStyle = .overFullScreen
+        modalTransitionStyle = .crossDissolve
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .clear
+
+        dimView.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        dimView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(dismissSheet)))
+        view.addSubview(dimView)
+        dimView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        panel.backgroundColor = .fdSurface
+        panel.layer.cornerRadius = 16
+        panel.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        panel.clipsToBounds = true
+        view.addSubview(panel)
+
+        let actions = UIStackView()
+        actions.axis = .vertical
+        actions.backgroundColor = .fdSurface
+        actions.addArrangedSubview(makeActionButton(title: "分享", action: #selector(tapShare)))
+        actions.addArrangedSubview(makeSeparator())
+        actions.addArrangedSubview(makeActionButton(title: "复制链接", action: #selector(tapCopy)))
+
+        let spacer = UIView()
+        spacer.backgroundColor = .fdBg
+
+        let cancel = makeActionButton(title: "取消", action: #selector(dismissSheet))
+
+        panel.addSubview(actions)
+        panel.addSubview(spacer)
+        panel.addSubview(cancel)
+        panel.snp.makeConstraints { make in
+            make.leading.trailing.bottom.equalToSuperview()
+        }
+        actions.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+        }
+        spacer.snp.makeConstraints { make in
+            make.top.equalTo(actions.snp.bottom)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(8)
+        }
+        cancel.snp.makeConstraints { make in
+            make.top.equalTo(spacer.snp.bottom)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(view.safeAreaLayoutGuide)
+        }
+    }
+
+    private func makeActionButton(title: String, action: Selector) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setTitle(title, for: .normal)
+        button.setTitleColor(.fdText, for: .normal)
+        button.titleLabel?.font = .fdFont(ofSize: 16, weight: .regular)
+        button.backgroundColor = .fdSurface
+        button.addTarget(self, action: action, for: .touchUpInside)
+        button.snp.makeConstraints { $0.height.equalTo(56) }
+        return button
+    }
+
+    private func makeSeparator() -> UIView {
+        let line = UIView()
+        line.backgroundColor = .fdBorder
+        line.snp.makeConstraints { $0.height.equalTo(0.5) }
+        return line
+    }
+
+    @objc private func tapShare() {
+        let callback = onShare
+        dismiss(animated: true) { callback?() }
+    }
+
+    @objc private func tapCopy() {
+        let callback = onCopyLink
+        dismiss(animated: true) { callback?() }
+    }
+
+    @objc private func dismissSheet() {
+        dismiss(animated: true)
     }
 }

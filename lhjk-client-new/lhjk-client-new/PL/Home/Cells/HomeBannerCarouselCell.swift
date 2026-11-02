@@ -2,20 +2,19 @@ import UIKit
 import SnapKit
 import Kingfisher
 
-/// 首页 Banner 轮播 — 全宽图；高度按图片比例计算（宽度固定为屏幕宽）
+/// 首页「推荐」Banner 轮播 — 全宽；高宽比与健康服务 / 富德优选 / 健康知识一致（138/344）
 /// 数据来自 `getByCode` + `home_banner_code`
 final class HomeBannerCarouselCell: UITableViewCell {
 
     static let reuseID = "HomeBannerCarouselCell"
-    /// 375 稿 288 高，仅作图片未加载时的兜底比例
-    static let fallbackRatio: CGFloat = 288.0 / 375.0
+    /// 与内容页签轮播同一比例，不跟图片原始像素把「推荐」轮播拉得过高。
+    static let fallbackRatio: CGFloat = ServiceBannerCarouselCell.homeShelfRatio
 
     var onBannerTap: ((ServiceHubBanner) -> Void)?
     var onHeightUpdated: (() -> Void)?
 
     private var banners: [ServiceHubBanner] = []
     private var heightConstraint: Constraint?
-    private var resolvedImageSize: CGSize?
     private var lastAppliedHeight: CGFloat = 0
     private var pageWidth: CGFloat = 0
 
@@ -99,7 +98,6 @@ final class HomeBannerCarouselCell: UITableViewCell {
 
         if !sameIds {
             pageWidth = 0
-            resolvedImageSize = nil
             lastAppliedHeight = 0
             buildSlides()
             applyBannerHeight(width: bannerWidth(), notify: false)
@@ -128,7 +126,7 @@ final class HomeBannerCarouselCell: UITableViewCell {
         guard width > 0 else { return }
         let height = BannerImageAspectLayout.height(
             width: width,
-            imageSize: resolvedImageSize,
+            imageSize: nil,
             fallbackRatio: Self.fallbackRatio
         )
         let heightChanged = abs(height - lastAppliedHeight) > 0.5
@@ -139,12 +137,6 @@ final class HomeBannerCarouselCell: UITableViewCell {
         if notify {
             onHeightUpdated?()
         }
-    }
-
-    private func adoptImageSize(_ size: CGSize) {
-        guard size.width > 1, size.height > 1, resolvedImageSize == nil else { return }
-        resolvedImageSize = size
-        applyBannerHeight(width: bannerWidth(), notify: true)
     }
 
     private func layoutSlides(width: CGFloat, height: CGFloat) {
@@ -174,11 +166,7 @@ final class HomeBannerCarouselCell: UITableViewCell {
             if let urlString = banner.imageUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
                !urlString.isEmpty,
                let url = URL(string: urlString) {
-                imageView.kf.setImage(with: url, options: [.transition(.fade(0.2))]) { [weak self] result in
-                    if case .success(let value) = result {
-                        self?.adoptImageSize(value.image.size)
-                    }
-                }
+                imageView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
             }
             container.addSubview(imageView)
 
@@ -200,7 +188,7 @@ final class HomeBannerCarouselCell: UITableViewCell {
     private func startTimer() {
         timer?.invalidate()
         guard banners.count > 1 else { return }
-        timer = Timer.scheduledTimer(withTimeInterval: 4.2, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 4, repeats: true) { [weak self] _ in
             self?.advancePage()
         }
         if let timer { RunLoop.main.add(timer, forMode: .common) }
