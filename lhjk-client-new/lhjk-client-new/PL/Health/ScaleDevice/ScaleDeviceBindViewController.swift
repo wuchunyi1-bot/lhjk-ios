@@ -6,17 +6,23 @@ import UIKit
 final class ScaleDeviceBindViewController: BaseViewController {
 
     private let viewModel: ScaleDeviceBindViewModel
+    private let deviceName: String
+    private let returnsToMyDevices: Bool
     private var cancellables = Set<AnyCancellable>()
 
     init(
         equipmentTypeId: String,
         bluetoothName: String,
-        displayName: String
+        displayName: String,
+        returnsToMyDevices: Bool = false
     ) {
+        self.deviceName = displayName
+        self.returnsToMyDevices = returnsToMyDevices
         self.viewModel = ScaleDeviceBindViewModel(
             equipmentTypeId: equipmentTypeId,
             bluetoothName: bluetoothName,
-            displayName: displayName
+            displayName: displayName,
+            returnsToMyDevices: returnsToMyDevices
         )
         super.init(nibName: nil, bundle: nil)
     }
@@ -176,9 +182,22 @@ final class ScaleDeviceBindViewController: BaseViewController {
 
         viewModel.finishedPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                    self?.popToWeightHost()
+            .sink { [weak self] finish in
+                guard let self else { return }
+                if self.returnsToMyDevices, finish == .success {
+                    self.showMyDevicesSuccess()
+                    return
+                }
+                switch finish {
+                case .success:
+                    self.showToast("设备绑定成功")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        self.popToWeightHost()
+                    }
+                case .alreadyBound:
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        self.popToWeightHost()
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -224,6 +243,19 @@ final class ScaleDeviceBindViewController: BaseViewController {
 
     @objc private func handleRetry() {
         viewModel.retry()
+    }
+
+    /// 我的设备绑定成功：用成功页替换搜索页和添加设备页，返回直接落到我的设备列表。
+    private func showMyDevicesSuccess() {
+        let page = DeviceBindSuccessViewController(deviceName: deviceName)
+        guard let nav = navigationController else { return }
+        if let devicesIndex = nav.viewControllers.lastIndex(where: { $0 is DevicesViewController }) {
+            var stack = Array(nav.viewControllers.prefix(devicesIndex + 1))
+            stack.append(page)
+            nav.setViewControllers(stack, animated: true)
+        } else {
+            nav.pushViewController(page, animated: true)
+        }
     }
 
     private func popToWeightHost() {

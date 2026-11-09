@@ -620,6 +620,22 @@ final class OrderConfirmPackageView: UIView {
         name.textColor = UIColor(hexString: "#1F2942")
         name.text = item.name
         name.lineBreakMode = .byTruncatingTail
+        name.setContentHuggingPriority(.required, for: .horizontal)
+        name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        let rentBadge = UIImageView(image: UIImage(named: PackageSaleFlag.rentBadgeAssetName))
+        rentBadge.contentMode = .scaleAspectFit
+        rentBadge.isHidden = !item.showsRentBadge
+        rentBadge.setContentHuggingPriority(.required, for: .horizontal)
+        rentBadge.setContentCompressionResistancePriority(.required, for: .horizontal)
+        rentBadge.snp.makeConstraints { $0.size.equalTo(CGSize(width: 40, height: 16)) }
+
+        let nameSpacer = UIView()
+        nameSpacer.setContentHuggingPriority(.fittingSizeLevel, for: .horizontal)
+        let nameRow = UIStackView(arrangedSubviews: [name, rentBadge, nameSpacer])
+        nameRow.axis = .horizontal
+        nameRow.alignment = .center
+        nameRow.spacing = 4
 
         let meta = UILabel()
         meta.font = .fdFont(ofSize: 14, weight: .regular)
@@ -635,7 +651,7 @@ final class OrderConfirmPackageView: UIView {
         price.textAlignment = .right
         price.setContentHuggingPriority(.required, for: .horizontal)
 
-        let row = UIStackView(arrangedSubviews: [name, meta, price])
+        let row = UIStackView(arrangedSubviews: [nameRow, meta, price])
         row.axis = .horizontal
         row.spacing = 8
         row.alignment = .center

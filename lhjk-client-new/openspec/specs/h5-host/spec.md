@@ -60,7 +60,9 @@ H5 hash 路径由 `H5Config` 拼接；饮食运动根路径为 `exercise-food`�
 | 营养补剂 | `#/supplement` | — | `/supplement`（健康 Tab / CMS 列表） |
 | 营养补剂录入 | `#/supplement/add` | `taskId` 可选（今日健康任务） | `/supplement/add?taskId=` |
 | 血氧 | `#/spo2` | — | `/spo2`、`/health/metrics/spo2` |
-| 鹰瞳眼底 | `#/fundus` | — | `/health/metrics/fundus`。页内「扫一扫」走 `FundeBridge` `scanCode`，不由 H5 打开摄像头 |
+| 鹰瞳眼底 | `#/fundus` | 从我的活动进入时带 `activityId` | `/health/metrics/fundus`。页内「扫一扫」走 `FundeBridge` `scanCode`，不由 H5 打开摄像头。带 `activityId` 时检测页展示扫一扫和选择设备 SN |
+| 呼吸道炎症仪 | `#/respiratory-inflammation` | 从我的活动进入时带 `activityId` | `/health/metrics/respiratory-inflammation` |
+| 消化道菌群 | `#/gut-flora` | 从我的活动进入时带 `activityId` | `/health/metrics/gut-flora` |
 | 健康陪伴列表 | `#/companion` | — | 首页「更多 ›」、`/companion`、`FundeH5:/companion` |
 | 资讯详情 | `#/content/detail` | `id` 必填 | 首页健康陪伴、搜索健康知识。导航栏右侧功能按钮弹出「分享」和「复制链接」。分享发给微信好友，小程序 `pkg-common/webview/index?articleId=`；点击「分享」立刻 `POST /v1/content/share`。复制链接写入不含 token 的详情地址 |
 | **套餐中间页** | `#/package/bridge` | `packageId` 必填；`hospitalId` 可选 | CMS `FundeH5:/package/bridge?…` |

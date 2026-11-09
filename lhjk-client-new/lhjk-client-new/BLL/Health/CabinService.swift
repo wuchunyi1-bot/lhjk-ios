@@ -108,6 +108,24 @@ final class CabinService {
         return detail
     }
 
+    /// 创建预约订单。`POST /v1/cabin/createReservationOrder`
+    ///
+    /// 只传 `configId`。`data` 为订单 id，日期和时段留到支付成功后再提交预约。
+    func createReservationOrder(configId: String) async throws -> Int64 {
+        guard let config = Int64(configId) else {
+            throw CabinServiceError.requestFailed("未找到该项目")
+        }
+        let response: APIResponse<CabinBookID> = try await APIManager.shared.postAsync(
+            path: "/v1/cabin/createReservationOrder",
+            parameters: ["configId": NSNumber(value: config)],
+            responseType: APIResponse<CabinBookID>.self
+        )
+        guard response.isSuccess, let orderId = response.data?.value, orderId > 0 else {
+            throw CabinServiceError.requestFailed(response.msg ?? "创建订单失败，请重试")
+        }
+        return orderId
+    }
+
     /// 提交预约。`POST /v1/cabin/book`
     ///
     /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/530062590e0
@@ -178,6 +196,46 @@ final class CabinService {
             currentPage: pageNum,
             records: []
         )
+    }
+
+    /// 当前登录人的预约详情。`GET /v1/cabin/reservationDetail`
+    ///
+    /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/531651137e0
+    func reservationDetail(id: String) async throws -> CabinReservationDetailVO {
+        guard let reservationId = Int64(id) else {
+            throw CabinServiceError.requestFailed("未找到该预约")
+        }
+        let response: APIResponse<CabinReservationDetailVO> = try await APIManager.shared.getAsync(
+            path: "/v1/cabin/reservationDetail",
+            parameters: ["id": String(reservationId)],
+            responseType: APIResponse<CabinReservationDetailVO>.self
+        )
+        guard response.isSuccess, let detail = response.data, !detail.id.isEmpty else {
+            throw CabinServiceError.requestFailed(response.msg ?? "未找到该预约")
+        }
+        return detail
+    }
+
+    /// 用户取消预约。`POST /v1/cabin/cancel`
+    ///
+    /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/531651134e0
+    func cancelReservation(id: String, reason: String? = nil) async throws {
+        guard let reservationId = Int64(id) else {
+            throw CabinServiceError.requestFailed("未找到该预约")
+        }
+        var body: [String: Any] = ["id": NSNumber(value: reservationId)]
+        let note = reason?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !note.isEmpty {
+            body["reason"] = note
+        }
+        let response: APIResponse<EmptyResponse> = try await APIManager.shared.postAsync(
+            path: "/v1/cabin/cancel",
+            parameters: body,
+            responseType: APIResponse<EmptyResponse>.self
+        )
+        guard response.isSuccess else {
+            throw CabinServiceError.requestFailed(response.msg ?? "取消失败，请重试")
+        }
     }
 }
 

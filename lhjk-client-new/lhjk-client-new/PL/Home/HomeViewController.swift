@@ -59,6 +59,7 @@ final class HomeViewController: BaseViewController {
         viewModel.loadNews()
         viewModel.loadTodayTasks(forceRefresh: true)
         viewModel.loadDoctorTeam()
+        viewModel.loadPendingAppointments()
         Task { await UserManager.shared.fetchArchiveCompletion() }
         AppContainer.shared.shoppingCartBadgeStore.refresh()
         if let pending = HomeShelfStore.pending {
@@ -84,6 +85,7 @@ final class HomeViewController: BaseViewController {
         tableView.register(HomeBannerCarouselCell.self, forCellReuseIdentifier: HomeBannerCarouselCell.reuseID)
         tableView.register(HomeQuickActionsCell.self, forCellReuseIdentifier: HomeQuickActionsCell.reuseID)
         tableView.register(HomeSupportCell.self, forCellReuseIdentifier: HomeSupportCell.reuseID)
+        tableView.register(HomeAppointmentsCell.self, forCellReuseIdentifier: HomeAppointmentsCell.reuseID)
         tableView.register(HomeMembershipPackagesCell.self, forCellReuseIdentifier: HomeMembershipPackagesCell.reuseID)
         tableView.register(HomeTeamCardCell.self, forCellReuseIdentifier: HomeTeamCardCell.reuseID)
         tableView.register(HomeTaskCardCell.self, forCellReuseIdentifier: HomeTaskCardCell.reuseID)
@@ -414,6 +416,15 @@ final class HomeViewController: BaseViewController {
             let cell = tv.dequeueReusableCell(withIdentifier: HomeSupportCell.reuseID, for: indexPath) as! HomeSupportCell
             cell.onTap = { [weak self] in
                 self?.present(HomeSupportCallSheet(), animated: true)
+            }
+            return cell
+        case .appointments:
+            let cell = tv.dequeueReusableCell(withIdentifier: HomeAppointmentsCell.reuseID, for: indexPath) as! HomeAppointmentsCell
+            cell.configure(viewModel.pendingAppointments)
+            cell.onUse = { item in
+                var params: [String: Any] = ["id": item.id]
+                if !item.configId.isEmpty { params["configId"] = item.configId }
+                Router.shared.push("/wellness-cabins/appointments/detail", params: params)
             }
             return cell
         case .membership:

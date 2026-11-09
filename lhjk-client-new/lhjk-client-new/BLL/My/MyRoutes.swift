@@ -19,6 +19,9 @@ enum MyRoutes {
             healthReportDetailWebView(params: params)
         }
         r.register(path: "/me/appointments")     { _ in AppointmentsViewController() }
+        r.register(path: "/me/appointments/detail") { params in
+            MyAppointmentDetailViewController(routeParams: params)
+        }
         r.register(path: "/me/devices")          { _ in DevicesViewController() }
 
         // 监测方案 / 健康评估 / 健康测评 / 饮食方案 → H5

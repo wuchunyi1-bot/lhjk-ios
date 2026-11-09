@@ -157,16 +157,13 @@ final class ScaleDeviceSelectViewController: BaseViewController {
     }
 
     private func handleCatalogTap(_ item: ScaleDeviceCardItem) {
-        guard item.isOKOKCatalog else {
-            showToast("暂不支持该设备")
-            return
-        }
-        var params: [String: Any] = [:]
+        var params: [String: Any] = [
+            "bluetoothName": item.bluetoothName ?? "OKOK",
+            "equipmentName": item.name,
+        ]
         if let typeId = item.equipmentTypeId, !typeId.isEmpty {
             params["equipmentType"] = typeId
         }
-        params["bluetoothName"] = item.bluetoothName ?? "OKOK"
-        params["equipmentName"] = item.name
         Router.shared.push("/health/scale/bind", params: params, from: self)
     }
 

@@ -27,9 +27,18 @@ enum RouteSetup {
         Router.shared.register(path: "/web/appointments") { _ in
             WebViewController(urlString: "https://www.funde-life.com/appointments/exams", title: "预约体检")
         }
-        // 对齐 funde-client `/appointments/exams`
+        // 首页金刚区 `FundeApp:/appointments/exams`
         Router.shared.register(path: "/appointments/exams") { _ in
-            WebViewController(urlString: "https://www.funde-life.com/appointments/exams", title: "预约体检")
+            ExamAppointmentViewController()
+        }
+        Router.shared.register(path: "/appointments/exams/usage-records") { _ in
+            ExamUsageRecordsViewController()
+        }
+        Router.shared.register(path: "/appointments/exams/detail") { params in
+            ExamPackageDetailViewController(
+                configId: ServiceRoutes.stringParam(params["configId"]),
+                listPriceText: ServiceRoutes.stringParam(params["price"])
+            )
         }
         Router.shared.register(path: "/web/membership") { _ in
             WebViewController(urlString: "https://www.funde-life.com/me/membership", title: "查看权益")

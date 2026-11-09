@@ -451,6 +451,9 @@ final class ChatViewController: BaseViewController, UITableViewDataSource, UITab
             let cell = tableView.dequeueReusableCell(withIdentifier: SysNotifyCell.reuseID, for: indexPath) as! SysNotifyCell
             cell.delegate = self
             cell.configure(msg, tone: tone, convRole: convRole)
+            cell.onTapMealPhoto = { [weak self] url in
+                self?.showImagePreview(path: url)
+            }
             return cell
         case .timeMarker, .recall:
             let cell = tableView.dequeueReusableCell(withIdentifier: CenteredTipCell.reuseID, for: indexPath) as! CenteredTipCell

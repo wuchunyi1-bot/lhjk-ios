@@ -80,15 +80,16 @@ final class WellnessCabinAppointmentListViewController: BaseViewController {
 
     private func setupTabs() {
         tabScroll.showsHorizontalScrollIndicator = false
-        tabScroll.backgroundColor = .fdSurface
+        tabScroll.backgroundColor = UIColor(hexString: "#FDF6F3")
         tabStack.axis = .horizontal
-        tabStack.spacing = 8
+        tabStack.spacing = 16
         tabStack.alignment = .center
         view.addSubview(tabScroll)
         tabScroll.addSubview(tabStack)
         tabScroll.snp.makeConstraints {
-            $0.top.leading.trailing.equalTo(view.safeAreaLayoutGuide)
-            $0.height.equalTo(48)
+            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.leading.trailing.equalToSuperview()
+            makeTabScrollHeight($0)
         }
         tabStack.snp.makeConstraints {
             $0.edges.equalTo(tabScroll.contentLayoutGuide).inset(UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16))
@@ -97,16 +98,38 @@ final class WellnessCabinAppointmentListViewController: BaseViewController {
         renderTabs()
     }
 
+    private func makeTabScrollHeight(_ maker: ConstraintMaker) {
+        maker.height.equalTo(44)
+    }
+
     private func renderTabs() {
         tabStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for tab in CabinAppointmentTab.allCases {
+            let selected = tab == viewModel.tab
             let button = UIButton(type: .system)
             button.setTitle(tab.title, for: .normal)
-            button.titleLabel?.font = .fdFont(ofSize: 14, weight: tab == viewModel.tab ? .semibold : .regular)
-            button.setTitleColor(tab == viewModel.tab ? .fdPrimary : .fdSubtext, for: .normal)
+            button.titleLabel?.font = .fdFont(ofSize: 15, weight: selected ? .medium : .regular)
+            button.setTitleColor(selected ? UIColor(hexString: "#FF7A50") : UIColor(hexString: "#535D72"), for: .normal)
             button.tag = tab.rawValue
             button.addTarget(self, action: #selector(tabTapped(_:)), for: .touchUpInside)
-            tabStack.addArrangedSubview(button)
+
+            let mark = UIView()
+            mark.backgroundColor = selected ? UIColor(hexString: "#FF7A50") : .clear
+            mark.layer.cornerRadius = 1.5
+            let column = UIView()
+            column.addSubview(button)
+            column.addSubview(mark)
+            column.snp.makeConstraints { $0.height.equalTo(44) }
+            button.snp.makeConstraints {
+                $0.center.equalToSuperview()
+                $0.leading.trailing.equalToSuperview()
+            }
+            mark.snp.makeConstraints {
+                $0.bottom.centerX.equalToSuperview()
+                $0.height.equalTo(3)
+                $0.width.equalTo(18)
+            }
+            tabStack.addArrangedSubview(column)
         }
     }
 
@@ -117,6 +140,7 @@ final class WellnessCabinAppointmentListViewController: BaseViewController {
         tableView.delegate = self
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 180
+        tableView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 24, right: 0)
         tableView.register(WellnessCabinAppointmentCell.self, forCellReuseIdentifier: WellnessCabinAppointmentCell.reuseID)
         refresh.addTarget(self, action: #selector(refreshPulled), for: .valueChanged)
         tableView.refreshControl = refresh
@@ -140,7 +164,53 @@ final class WellnessCabinAppointmentListViewController: BaseViewController {
         viewModel.reload()
     }
 
+    private func openDetail(_ item: CabinAppointmentVO) {
+        guard !item.id.isEmpty else {
+            showToastAlert("未找到该预约")
+            return
+        }
+        var params: [String: Any] = ["id": item.id]
+        if !item.configId.isEmpty { params["configId"] = item.configId }
+        Router.shared.push("/wellness-cabins/appointments/detail", params: params, from: self)
+    }
+
+    private func confirmCancel(_ item: CabinAppointmentVO) {
+        let alert = UIAlertController(
+            title: "确认取消本次预约？",
+            message: "取消仅作废本次预约时段，您下次可直接重新选择服务项目预约。\n\n注：此处不会办理退款；如需退款，请前往「订单」办理退单/售后。",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "再想想", style: .cancel))
+        alert.addAction(UIAlertAction(title: "确认取消", style: .destructive) { [weak self] _ in
+            self?.submitCancel(item)
+        })
+        present(alert, animated: true)
+    }
+
+    private func submitCancel(_ item: CabinAppointmentVO) {
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let cancelled = try await self.viewModel.cancel(item)
+                await MainActor.run {
+                    guard cancelled else { return }
+                    self.showToastAlert("已取消本次预约")
+                    self.viewModel.reload()
+                }
+            } catch {
+                let message = (error as? LocalizedError)?.errorDescription ?? "取消失败，请重试"
+                await MainActor.run { self.showToastAlert(message) }
+            }
+        }
+    }
+
     private func bookAgain(_ item: CabinAppointmentVO) {
+        if !item.configId.isEmpty {
+            var params: [String: Any] = ["configId": item.configId]
+            if !item.hospitalId.isEmpty { params["hospitalId"] = item.hospitalId }
+            Router.shared.push("/wellness-cabins/book", params: params, from: self)
+            return
+        }
         guard !item.hospitalId.isEmpty else {
             showToastAlert("暂无门店信息")
             return
@@ -165,8 +235,14 @@ extension WellnessCabinAppointmentListViewController: UITableViewDataSource, UIT
         ) as! WellnessCabinAppointmentCell
         let item = viewModel.items[indexPath.row]
         cell.configure(item)
+        cell.onDetail = { [weak self] in
+            self?.openDetail(item)
+        }
         cell.onBookAgain = { [weak self] in
             self?.bookAgain(item)
+        }
+        cell.onCancel = { [weak self] in
+            self?.confirmCancel(item)
         }
         return cell
     }

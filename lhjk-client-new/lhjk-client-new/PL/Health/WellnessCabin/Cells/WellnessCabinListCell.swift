@@ -7,6 +7,7 @@ final class WellnessCabinListCell: UITableViewCell {
 
     private let card = UIView()
     private let nameLabel = UILabel()
+    private let recommendTag = UILabel()
     private let staffTag = UILabel()
     private let distanceLabel = UILabel()
     private let statusPill = UILabel()
@@ -33,6 +34,7 @@ final class WellnessCabinListCell: UITableViewCell {
 
     func configure(_ item: CabinStoreVO) {
         nameLabel.text = item.name
+        recommendTag.isHidden = !item.recommended
         staffTag.isHidden = item.internalOnly != 1
 
         if item.isEnterable {
@@ -106,6 +108,14 @@ final class WellnessCabinListCell: UITableViewCell {
         nameLabel.textColor = .fdText
         nameLabel.numberOfLines = 2
 
+        recommendTag.text = "推荐"
+        recommendTag.font = .fdFont(ofSize: 11, weight: .medium)
+        recommendTag.textColor = .fdPrimary
+        recommendTag.backgroundColor = .fdPrimarySoft
+        recommendTag.textAlignment = .center
+        recommendTag.layer.cornerRadius = 4
+        recommendTag.clipsToBounds = true
+
         staffTag.text = "仅限内部员工"
         staffTag.font = .fdFont(ofSize: 11, weight: .medium)
         staffTag.textColor = .fdSuccess
@@ -145,7 +155,7 @@ final class WellnessCabinListCell: UITableViewCell {
         goButton.layer.cornerRadius = 16
         goButton.isUserInteractionEnabled = false
 
-        let titleRow = UIStackView(arrangedSubviews: [nameLabel, staffTag])
+        let titleRow = UIStackView(arrangedSubviews: [nameLabel, recommendTag, staffTag])
         titleRow.axis = .horizontal
         titleRow.spacing = 8
         titleRow.alignment = .center
@@ -175,6 +185,10 @@ final class WellnessCabinListCell: UITableViewCell {
             $0.top.equalToSuperview()
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.bottom.equalToSuperview().offset(-12)
+        }
+        recommendTag.snp.makeConstraints {
+            $0.height.equalTo(20)
+            $0.width.greaterThanOrEqualTo(36)
         }
         staffTag.snp.makeConstraints {
             $0.height.equalTo(20)

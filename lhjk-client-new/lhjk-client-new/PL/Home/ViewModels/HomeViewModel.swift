@@ -9,6 +9,7 @@ final class HomeViewModel: ObservableObject {
         case banner
         case quickActions
         case support
+        case appointments
         case membership
         case team
         case tasks
@@ -18,6 +19,7 @@ final class HomeViewModel: ObservableObject {
         case banner(String)
         case quickActions(String)
         case support
+        case appointments(String)
         case membership(String)
         case teamList
         case taskCard(String)
@@ -26,6 +28,7 @@ final class HomeViewModel: ObservableObject {
     @Published var banners: [ServiceHubBanner] = []
     @Published var quickActions: [HomeQuickActionsCell.Action] = []
     @Published var membershipPackages: [HomeMembershipPackagesCell.Package] = []
+    @Published var pendingAppointments: [HomePendingAppointment] = []
     @Published var teamMembers: [HomeTeamCardCell.Member] = []
     /// 管家团队服务剩余天数；`nil` 或 `<= 0` 时不展示标题右侧文案
     @Published var teamServiceDaysLeft: Int?
@@ -41,10 +44,12 @@ final class HomeViewModel: ObservableObject {
 
     private let userManager: UserManager
     private let homeService: HomeService
+    private let cabinService: CabinService
     private let columnContentCache: ColumnContentCacheService
     private var cancellables = Set<AnyCancellable>()
     private var tasksLoadTask: Task<Void, Never>?
     private var teamLoadTask: Task<Void, Never>?
+    private var appointmentsLoadTask: Task<Void, Never>?
     private var bannersLoadTask: Task<Void, Never>?
     private var quickLinksLoadTask: Task<Void, Never>?
     private var healthServicesLoadTask: Task<Void, Never>?
@@ -53,10 +58,12 @@ final class HomeViewModel: ObservableObject {
     init(
         userManager: UserManager = AppContainer.shared.userManager,
         homeService: HomeService = .shared,
+        cabinService: CabinService = AppContainer.shared.cabinService,
         columnContentCache: ColumnContentCacheService = AppContainer.shared.columnContentCacheService
     ) {
         self.userManager = userManager
         self.homeService = homeService
+        self.cabinService = cabinService
         self.columnContentCache = columnContentCache
 
         NotificationCenter.default.publisher(for: .userDidUpdate)
@@ -65,6 +72,7 @@ final class HomeViewModel: ObservableObject {
                 self?.applySnapshot()
                 self?.loadTodayTasks()
                 self?.loadDoctorTeam()
+                self?.loadPendingAppointments()
             }
             .store(in: &cancellables)
 
@@ -128,6 +136,13 @@ final class HomeViewModel: ObservableObject {
         teamLoadTask?.cancel()
         teamLoadTask = Task { [weak self] in
             await self?.fetchDoctorTeam()
+        }
+    }
+
+    func loadPendingAppointments() {
+        appointmentsLoadTask?.cancel()
+        appointmentsLoadTask = Task { [weak self] in
+            await self?.fetchPendingAppointments()
         }
     }
 
@@ -232,6 +247,44 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
+    @MainActor
+    private func fetchPendingAppointments() async {
+        guard resolveUserId() != nil else {
+            pendingAppointments = []
+            applySnapshot()
+            return
+        }
+        do {
+            let page = try await cabinService.appointments(status: "3", pageNum: 1, pageSize: 20)
+            guard !Task.isCancelled else { return }
+            let records = (page.records ?? []).sorted {
+                ($0.reserveDate, $0.startTime) < ($1.reserveDate, $1.startTime)
+            }
+            pendingAppointments = records.compactMap(Self.mapPendingAppointment)
+            applySnapshot()
+        } catch {
+            guard !Task.isCancelled else { return }
+            pendingAppointments = []
+            applySnapshot()
+        }
+    }
+
+    private static func mapPendingAppointment(_ item: CabinAppointmentVO) -> HomePendingAppointment? {
+        let title = item.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !item.id.isEmpty, !title.isEmpty else { return nil }
+        let time = [item.reserveDate, item.timeText].filter { !$0.isEmpty }.joined(separator: " ")
+        return HomePendingAppointment(
+            id: item.id,
+            configId: item.configId,
+            hospitalId: item.hospitalId,
+            title: title,
+            timeText: time,
+            storeName: item.hospitalName,
+            address: item.address,
+            hint: item.overdueNotice ?? "请提前15分钟到店"
+        )
+    }
+
     private static func normalizedServiceDaysLeft(_ raw: Int?) -> Int? {
         guard let raw, raw > 0 else { return nil }
         return raw
@@ -250,7 +303,15 @@ final class HomeViewModel: ObservableObject {
             let index = sections.firstIndex(of: .support) ?? sections.count
             sections.insert(.quickActions, at: index)
         }
-        if !membershipPackages.isEmpty { sections.insert(.membership, at: sections.firstIndex(of: .support).map { $0 + 1 } ?? sections.count) }
+        if !pendingAppointments.isEmpty {
+            let index = sections.firstIndex(of: .support).map { $0 + 1 } ?? sections.count
+            sections.insert(.appointments, at: index)
+        }
+        if !membershipPackages.isEmpty {
+            let anchor = sections.firstIndex(of: .appointments) ?? sections.firstIndex(of: .support)
+            let index = anchor.map { $0 + 1 } ?? sections.count
+            sections.insert(.membership, at: index)
+        }
         if !teamMembers.isEmpty {
             let index = sections.firstIndex(of: .tasks) ?? sections.count
             sections.insert(.team, at: index)
@@ -269,6 +330,10 @@ final class HomeViewModel: ObservableObject {
             snap.appendItems([.membership(membershipSig)], toSection: .membership)
         }
         snap.appendItems([.support], toSection: .support)
+        if !pendingAppointments.isEmpty {
+            let signature = pendingAppointments.map { "\($0.id):\($0.hint)" }.joined(separator: "|")
+            snap.appendItems([.appointments(signature)], toSection: .appointments)
+        }
         if !teamMembers.isEmpty {
             snap.appendItems([.teamList], toSection: .team)
         }
@@ -362,4 +427,15 @@ final class HomeViewModel: ObservableObject {
             contentId: banner.contentId
         )
     }
+}
+
+struct HomePendingAppointment: Hashable {
+    let id: String
+    let configId: String
+    let hospitalId: String
+    let title: String
+    let timeText: String
+    let storeName: String
+    let address: String
+    let hint: String
 }

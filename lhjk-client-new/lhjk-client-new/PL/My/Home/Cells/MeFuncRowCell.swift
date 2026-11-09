@@ -77,7 +77,8 @@ final class MeHealthManagementCardView: UIView {
         button.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         let iconView = UIImageView()
-        iconView.image = UIImage(named: row.iconName)
+        iconView.image = UIImage(named: row.iconName) ?? UIImage(systemName: row.iconName)
+        iconView.tintColor = UIColor(hexString: "#1F2942")
         iconView.contentMode = .scaleAspectFit
         button.addSubview(iconView)
         iconView.snp.makeConstraints {

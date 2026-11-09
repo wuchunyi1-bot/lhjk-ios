@@ -65,7 +65,12 @@ App端/
 │       ├── GET /v1/cabin/configList
 │       ├── GET /v1/cabin/bookDetail
 │       ├── POST /v1/cabin/book
-│       └── GET /v1/cabin/appointments
+│       ├── GET /v1/cabin/appointments
+│       ├── GET /v1/cabin/reservationDetail
+│       └── POST /v1/cabin/cancel
+│   └── 服务项目相关接口
+│       ├── GET /v1/serviceItem/list
+│       └── GET /v1/serviceItem/detail
 ├── 商城/
 │   ├── 收货地址管理
 │   ├── 购物车管理
@@ -104,6 +109,10 @@ App端/
     └── 用户监测卡片配置
         ├── GET  /v1/userMonitorCardConfig/getUserMonitorCardConfig
         └── POST /v1/userMonitorCardConfig/saveUserMonitorCardConfig
+会员活动/
+└── 用户端
+    ├── GET /v1/memberActivity/client/listMyActivitiesForClient
+    └── GET /v1/memberActivity/client/getDetailForClient
 ```
 
 ---
@@ -158,9 +167,14 @@ App端/
 | 16c | GET | `/v1/cabin/detail` | `App端/线下履约/康养小屋相关接口` | `CabinService`（门店详情） | [门店详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266267e0.md)。Query：`hospitalId` |
 | 16d | GET | `/v1/cabin/categoryList` | `App端/线下履约/康养小屋相关接口` | `CabinService`（服务分类） | [服务分类](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785605e0.md)。Query：`hospitalId` |
 | 16e | GET | `/v1/cabin/configList` | `App端/线下履约/康养小屋相关接口` | `CabinService`（分类下项目） | [项目列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266270e0.md)。Query：`hospitalId`、`parentId` |
-| 16f | GET | `/v1/cabin/bookDetail` | `App端/线下履约/康养小屋相关接口` | `CabinService`（项目预约页） | [预约页详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785607e0.md)。Query：`configId`，可选 `date`（`yyyy-MM-dd`） |
+| 16f | GET | `/v1/cabin/bookDetail` | `App端/线下履约/康养小屋相关接口` | `CabinService`（项目预约页） | [预约页详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785607e0.md)。Query：`configId`，可选 `date`（`yyyy-MM-dd`）。付费项目返回 `price` |
 | 16g | POST | `/v1/cabin/book` | `App端/线下履约/康养小屋相关接口` | `CabinService`（提交预约） | [小屋项目预约](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/530062590e0.md)。JSON：`configId`、`reserveDate`、`sourceType`、`startTime`、`endTime`、`quantity`；`sourceType=3` 时另传 `orderId` |
-| 16h | GET | `/v1/cabin/appointments` | `App端/线下履约/康养小屋相关接口` | `CabinService`（预约记录） | [当前登录人的预约记录分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785606e0.md)。Query：可选 `status`（3 待服务 / 4 服务中 / 5 已完成 / 6 已取消 / 7 已过期，空为全部）、`pageNum`、`pageSize` |
+| 16m | POST | `/v1/cabin/createReservationOrder` | `App端/线下履约/康养小屋相关接口` | `CabinService`（付费预约创建订单） | Apifox OAS：`createReservationOrder`。JSON 只有 `configId`。`data` 为订单 id。日期和时段不传，支付成功后再调用 `POST /v1/cabin/book` |
+| 16h | GET | `/v1/cabin/appointments` | `App端/线下履约/康养小屋相关接口` | `CabinService`（预约记录、首页我的预约） | [当前登录人的预约记录分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785606e0.md)。Query：可选 `status`（3 待服务 / 4 服务中 / 5 已完成 / 6 已取消 / 7 已过期，空为全部）、`pageNum`、`pageSize`。记录含 `configId`，用于再次预约。首页「我的预约」固定传 `status=3` |
+| 16k | GET | `/v1/cabin/reservationDetail` | `App端/线下履约/康养小屋相关接口` | `CabinService`（预约详情） | [预约详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/531651137e0.md)。Query：`id`。分类 `parentName`，介绍为富文本 `description`，二维码 `qrCode`，时间字段 `verifyTime` / `finishTime` / `expireTime` / `cancelTime` / `createTime` |
+| 16l | POST | `/v1/cabin/cancel` | `App端/线下履约/康养小屋相关接口` | `CabinService`（取消预约） | [取消预约](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/531651134e0.md)。JSON：`id`，可选 `reason` |
+| 16i | GET | `/v1/serviceItem/list` | `App端/线下履约/服务项目相关接口` | `ServiceItemService`（预约体检列表） | [服务项目分页列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/530062592e0.md)。Query：`businessType`（2 体检 / 3 就医协助）、`pageNum`、`pageSize` |
+| 16j | GET | `/v1/serviceItem/detail` | `App端/线下履约/服务项目相关接口` | `ServiceItemService`（体检项目预约详情） | [服务项目详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/530062591e0.md)。Query：`configId`。不含时段；价格沿用列表 |
 
 ### 2.4 App端 / 商城
 
@@ -262,6 +276,15 @@ App端/
 
 > Query / Body 共用：`hospitalId`（数字串）、`code=column_health`（APP）。保存 Body：`addCardVOList[{cardType, cardName?, sortId}]`，不传 `hiddenCardVOList`。规格见 `openspec/changes/health-page-vitals-cms-api/`。
 
+### 2.8 会员活动 / 用户端
+
+| # | Method | Path | Apifox 层级 | 调用位置 | Apifox（只读） |
+|---|--------|------|-------------|----------|----------------|
+| 58 | GET | `/v1/memberActivity/client/listMyActivitiesForClient` | `会员活动-用户端` | `MemberActivityService` | 文档暂无分享链接 / 以代码 path 为准。已签到且当天可见，无 query。`detailAccessible` 表示能否进入详情，结束满 2 小时为 false |
+| 59 | GET | `/v1/memberActivity/client/getDetailForClient` | `会员活动-用户端` | `MemberActivityService` | 文档暂无分享链接 / 以代码 path 为准。Query `activityId`。检测入口读 `clientDetectionItems`（`description`、`clientDetectionTypeCode` 15/16/17、`pageUrl`） |
+
+规格：`openspec/specs/my-activities/`。
+
 ---
 
 ## 3. 按 iOS 模块（BLL/DAL）索引
@@ -283,6 +306,7 @@ App端/
 | `BLL/Service/ColumnContentService.swift` | 3 | columnContent/getByCode、content/search、content/share |
 | `BLL/Service/DictionaryService.swift` | 1 | dictionary/getDictionaryByParentId2 |
 | `BLL/Home/HomeService.swift` | 3 | scheme/getUserToDayMonitorTask、session/getUserParticipateAllTeam、schemeArchive/getRemainServiceTime |
+| `BLL/Home/MemberActivityService.swift` | 2 | memberActivity/client/listMyActivitiesForClient、memberActivity/client/getDetailForClient |
 | `BLL/My/DiningSchemeService.swift` | 1 | diningScheme/downloadDietPoster |
 | `BLL/Health/HealthPageService.swift` | 4 | healthPage/getCmsConfig、monitorHealth/getMonitorCardList、userMonitorCardConfig/* ×2 |
 | `BLL/Health/EquipmentBindService.swift` | 13 | users/getMyHeaderList、equipmentUser/* ×6、equipment/getEquipmenByApp、equipment/getCompatibleBluetoothList、firmware/getFirmwareUrlByParam、monitor/saveOrUpdateMonitorData、monitor/getWeightHomePageData、monitor/delMonitorDataByMonitorId |

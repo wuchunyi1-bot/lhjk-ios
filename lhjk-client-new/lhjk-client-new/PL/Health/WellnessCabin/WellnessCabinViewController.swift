@@ -336,39 +336,3 @@ extension WellnessCabinViewController: UITextFieldDelegate {
         return true
     }
 }
-
-/// 活动详情。场次和名额下一步再接。
-final class WellnessCabinActivityBookViewController: BaseViewController {
-
-    private let hospitalId: String
-    private let configId: String
-
-    init(hospitalId: String = "", configId: String = "") {
-        self.hospitalId = hospitalId
-        self.configId = configId
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    required init?(coder: NSCoder) { fatalError() }
-
-    override func setupUI() {
-        title = "活动详情"
-        view.backgroundColor = .fdBg
-        let empty = FDEmptyStateView(style: .page, message: "暂无活动信息")
-        empty.accessibilityLabel = "活动 \(configId) 门店 \(hospitalId)"
-        view.addSubview(empty)
-        empty.snp.makeConstraints { $0.edges.equalToSuperview() }
-    }
-}
-
-/// 预约详情。
-final class WellnessCabinAppointmentDetailViewController: BaseViewController {
-
-    override func setupUI() {
-        title = "预约详情"
-        view.backgroundColor = .fdBg
-        let empty = FDEmptyStateView(style: .page, message: "暂无预约详情")
-        view.addSubview(empty)
-        empty.snp.makeConstraints { $0.edges.equalToSuperview() }
-    }
-}

@@ -111,12 +111,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     private var titleLabels: [FieldKey: UILabel] = [:]
     private var nativePlaceRegion = RegionSelection()
     private var residenceRegion = RegionSelection()
-    /// 顶栏开关打开 = 档案加密，左右文案为 `****`。每次进入页面重置为加密，不记住上次选择。
-    private var isArchiveEncrypted = true
-    /// 编辑弹层或相册盖住本页时，返回不要重新加密。
-    private var suppressNextEncryptionReset = false
-    private let encryptionSwitch = UISwitch()
-    private static let archiveMask = "****"
 
     // MARK: - UI
 
@@ -127,8 +121,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     private let avatarSection = UIControl()
     private let avatarImageView = UIImageView()
     private let avatarHintLabel = UILabel()
-    private var editableRows: [FieldKey: UIControl] = [:]
-    private var rowArrows: [FieldKey: UIView] = [:]
     private var avatarLoading: UIActivityIndicatorView?
 
     // MARK: - Lifecycle
@@ -152,23 +144,12 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
-        if suppressNextEncryptionReset {
-            suppressNextEncryptionReset = false
-        } else {
-            isArchiveEncrypted = true
-            encryptionSwitch.isOn = true
-        }
         loadUserProfile()
     }
 
     override func setupUI() {
         title = "个人信息"
         view.backgroundColor = .fdBg
-        encryptionSwitch.onTintColor = .fdPrimary
-        encryptionSwitch.isOn = true
-        encryptionSwitch.accessibilityLabel = "档案加密"
-        encryptionSwitch.addTarget(self, action: #selector(encryptionSwitchChanged), for: .valueChanged)
-        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: encryptionSwitch)
         sections = buildProfileSections()
 
         scrollView.showsVerticalScrollIndicator = false
@@ -243,8 +224,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         }
         valueLabels.removeAll()
         titleLabels.removeAll()
-        editableRows.removeAll()
-        rowArrows.removeAll()
 
         for (idx, section) in sections.enumerated() {
             let group = UIView()
@@ -293,7 +272,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         if case .readonly = field.kind {
             // 只读：不响应
         } else {
-            editableRows[field.key] = row
             row.addAction(UIAction { [weak self] _ in
                 self?.openEditor(for: field)
             }, for: .touchUpInside)
@@ -341,7 +319,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
             arrow.textColor = .fdMuted
             arrow.setContentHuggingPriority(.required, for: .horizontal)
             arrow.setContentCompressionResistancePriority(.required, for: .horizontal)
-            rowArrows[field.key] = arrow
             row.addSubview(arrow)
             arrow.snp.makeConstraints {
                 $0.trailing.equalToSuperview()
@@ -400,22 +377,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     }
 
     private func refreshAllValueLabels() {
-        applyFieldDisplay()
-    }
-
-    @objc private func encryptionSwitchChanged() {
-        isArchiveEncrypted = encryptionSwitch.isOn
-        applyFieldDisplay()
-    }
-
-    private func applyFieldDisplay() {
-        let locked = isArchiveEncrypted
-        avatarSection.isUserInteractionEnabled = !locked
-        avatarHintLabel.isHidden = locked
-        for (key, row) in editableRows {
-            row.isUserInteractionEnabled = !locked
-            rowArrows[key]?.isHidden = locked
-        }
         for section in sections {
             for field in section.fields {
                 applyTitleLabel(field)
@@ -426,12 +387,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
     private func applyTitleLabel(_ field: FieldDef) {
         guard let label = titleLabels[field.key] else { return }
-        if isArchiveEncrypted {
-            label.attributedText = nil
-            label.text = Self.archiveMask
-            label.textColor = .fdSubtext
-            return
-        }
         if field.required {
             let attr = NSMutableAttributedString(
                 string: "*",
@@ -457,11 +412,6 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
 
     private func applyValueLabel(_ field: FieldDef) {
         guard let label = valueLabels[field.key] else { return }
-        if isArchiveEncrypted {
-            label.text = Self.archiveMask
-            label.textColor = .fdText
-            return
-        }
         let raw: String
         switch field.key {
         case .nativePlace:
@@ -479,16 +429,30 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
                 label.textColor = .fdMuted
             }
         } else {
-            label.text = raw
+            label.text = displayText(for: field.key, raw: raw)
             label.textColor = .fdText
+        }
+    }
+
+    /// 列表只展示脱敏文案。`values` 里仍是原文，编辑弹层读取原文。
+    private func displayText(for key: FieldKey, raw: String) -> String {
+        switch key {
+        case .birthday:
+            return maskedBirthday(raw)
+        case .phone:
+            return maskPhone(raw)
+        case .email:
+            return maskedEmail(raw)
+        case .idNumber:
+            return maskedIdNumber(raw)
+        default:
+            return raw
         }
     }
 
     // MARK: - Editor
 
     private func openEditor(for field: FieldDef) {
-        guard !isArchiveEncrypted else { return }
-        suppressNextEncryptionReset = true
         if case .region(let mode) = field.kind {
             let current: RegionSelection
             switch field.key {
@@ -623,11 +587,27 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     // MARK: - Avatar
 
     @objc private func handleAvatarTap() {
-        guard !isArchiveEncrypted else { return }
-        suppressNextEncryptionReset = true
+        let sheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        sheet.addAction(UIAlertAction(title: "拍照", style: .default) { [weak self] _ in
+            self?.presentAvatarPicker(source: .camera)
+        })
+        sheet.addAction(UIAlertAction(title: "从相册选择", style: .default) { [weak self] _ in
+            self?.presentAvatarPicker(source: .photoLibrary)
+        })
+        sheet.addAction(UIAlertAction(title: "取消", style: .cancel))
+        present(sheet, animated: true)
+    }
+
+    private func presentAvatarPicker(source: UIImagePickerController.SourceType) {
+        guard UIImagePickerController.isSourceTypeAvailable(source) else {
+            if source == .camera {
+                showToast("当前设备无法使用相机")
+            }
+            return
+        }
         let picker = UIImagePickerController()
         picker.delegate = self
-        picker.sourceType = .photoLibrary
+        picker.sourceType = source
         picker.allowsEditing = true
         present(picker, animated: true) {
             WebViewSystemChromeLocalizer.scheduleLocalizationAfterPresentingPicker()
@@ -696,6 +676,42 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
     private func maskPhone(_ phone: String?) -> String {
         guard let phone, phone.count == 11 else { return phone ?? "" }
         return "\(phone.prefix(3))****\(phone.suffix(4))"
+    }
+
+    /// `1990-08-12` → `****-08-12`
+    private func maskedBirthday(_ raw: String) -> String {
+        let pattern = #"^(\d{4})-(\d{2}-\d{2})$"#
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: raw, range: NSRange(raw.startIndex..., in: raw)),
+              let monthDay = Range(match.range(at: 2), in: raw) else {
+            return raw
+        }
+        return "****-\(raw[monthDay])"
+    }
+
+    /// 账号保留首尾各一位，域名整段保留。1 位账号整段隐藏，2 位账号隐藏第二位。
+    private func maskedEmail(_ raw: String) -> String {
+        guard let at = raw.firstIndex(of: "@"), at != raw.startIndex else { return raw }
+        let local = String(raw[..<at])
+        let domain = String(raw[at...])
+        switch local.count {
+        case 1:
+            return "*\(domain)"
+        case 2:
+            return "\(local.prefix(1))*\(domain)"
+        default:
+            let stars = String(repeating: "*", count: local.count - 2)
+            return "\(local.prefix(1))\(stars)\(local.suffix(1))\(domain)"
+        }
+    }
+
+    /// 保留前四位、后三位。18 位隐藏中间 11 位。不足 7 位整段替换，避免首尾重叠。
+    private func maskedIdNumber(_ raw: String) -> String {
+        if raw.count < 7 {
+            return String(repeating: "*", count: raw.count)
+        }
+        let middle = raw.count - 7
+        return "\(raw.prefix(4))\(String(repeating: "*", count: middle))\(raw.suffix(3))"
     }
 
     private func idTypeDisplay(_ type: Int?) -> String {

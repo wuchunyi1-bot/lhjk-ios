@@ -46,22 +46,32 @@ enum HealthRoutes {
             )
         }
         r.register(path: "/wellness-cabins/activity") { params in
-            WellnessCabinActivityBookViewController(
+            WellnessCabinServiceBookViewController(
                 hospitalId: stringParam(params["hospitalId"]) ?? "",
-                configId: stringParam(params["configId"]) ?? ""
+                configId: stringParam(params["configId"]) ?? "",
+                presentsCommerce: false
             )
         }
         r.register(path: "/wellness-cabins/:id/services/:serviceId/book") { _ in
             WellnessCabinServiceBookViewController()
         }
         r.register(path: "/wellness-cabins/:id/services/:serviceId/activity") { _ in
-            WellnessCabinActivityBookViewController()
+            WellnessCabinServiceBookViewController(presentsCommerce: false)
         }
         r.register(path: "/wellness-cabins/appointments") { _ in
             WellnessCabinAppointmentListViewController()
         }
-        r.register(path: "/wellness-cabins/appointments/:appointmentId") { _ in
-            WellnessCabinAppointmentDetailViewController()
+        r.register(path: "/wellness-cabins/appointments/detail") { params in
+            WellnessCabinAppointmentDetailViewController(
+                reservationId: stringParam(params["id"]) ?? "",
+                configId: stringParam(params["configId"]) ?? ""
+            )
+        }
+        r.register(path: "/wellness-cabins/appointments/:appointmentId") { params in
+            WellnessCabinAppointmentDetailViewController(
+                reservationId: stringParam(params["appointmentId"]) ?? "",
+                configId: stringParam(params["configId"]) ?? ""
+            )
         }
 
         // 健康档案 → H5 `#/health/record`（宿主接入文档）
@@ -132,7 +142,8 @@ enum HealthRoutes {
             ScaleDeviceBindViewController(
                 equipmentTypeId: stringParam(params["equipmentType"]) ?? "",
                 bluetoothName: stringParam(params["bluetoothName"]) ?? "OKOK",
-                displayName: stringParam(params["equipmentName"]) ?? "OKOK 体脂秤"
+                displayName: stringParam(params["equipmentName"]) ?? "OKOK 体脂秤",
+                returnsToMyDevices: stringParam(params["returnTo"]) == "myDevices"
             )
         }
         r.register(path: "/health/metrics/weight/scale/result") { params in

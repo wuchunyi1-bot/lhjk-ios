@@ -327,10 +327,12 @@ struct OrderSettlementDetailBO: Decodable {
     let serialNumber: Int?
     let orderId: String?
     let categoryServiceId: String?
+    /// 租售标识：1 租 / 2 售
+    let saleFlag: Int?
 
     private enum CodingKeys: String, CodingKey {
         case id, packageId, packageName, quantity, billingType, price
-        case commodityName, serialNumber, orderId, categoryServiceId
+        case commodityName, serialNumber, orderId, categoryServiceId, saleFlag
     }
 
     init(from decoder: Decoder) throws {
@@ -353,6 +355,7 @@ struct OrderSettlementDetailBO: Decodable {
         serialNumber = HospitalPackageInt.decodeIfPresent(c, key: .serialNumber)
         orderId = HospitalPackageID.decodeOptional(c, key: .orderId)
         categoryServiceId = HospitalPackageID.decodeOptional(c, key: .categoryServiceId)
+        saleFlag = HospitalPackageInt.decodeIfPresent(c, key: .saleFlag)
     }
 
     func toDraftItem() -> PackageOrderDraftItem {
@@ -362,7 +365,8 @@ struct OrderSettlementDetailBO: Decodable {
             name: name,
             qty: "\(qty)",
             unit: Self.billingUnit(billingType),
-            price: max(0, price ?? 0)
+            price: max(0, price ?? 0),
+            saleFlag: saleFlag
         )
     }
 

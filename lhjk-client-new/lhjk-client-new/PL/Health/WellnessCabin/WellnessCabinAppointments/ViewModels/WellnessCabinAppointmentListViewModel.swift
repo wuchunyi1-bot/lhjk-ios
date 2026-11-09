@@ -43,6 +43,7 @@ final class WellnessCabinAppointmentListViewModel: ObservableObject {
     private let pageSize = 20
     private var currentPage = 1
     private var requestID = 0
+    private var isCancelling = false
     private let cabinService: CabinService
 
     init(cabinService: CabinService = AppContainer.shared.cabinService) {
@@ -99,6 +100,15 @@ final class WellnessCabinAppointmentListViewModel: ObservableObject {
 
     func clearError() {
         errorMessage = nil
+    }
+
+    /// 只作废本次时段，不在这里退款。正在取消时返回 false。
+    func cancel(_ item: CabinAppointmentVO) async throws -> Bool {
+        guard !isCancelling else { return false }
+        isCancelling = true
+        defer { isCancelling = false }
+        try await cabinService.cancelReservation(id: item.id)
+        return true
     }
 
     private func apply(_ page: PaginatedCabinAppointmentData, pageNum: Int, append: Bool, token: Int) {

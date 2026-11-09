@@ -95,6 +95,34 @@ final class DictionaryCacheService {
         label(parent: .packageBadge, intValue: recommend)
     }
 
+    /// 接口人群字段是字典 `value`，可能多个并用逗号或顿号分隔。命中后拼成展示文案，未命中的片段原样保留。
+    func joinedLabels(parent: DictionaryParent, raw: String?, separator: String = "、") -> String? {
+        let tokens = dictionaryTokens(raw)
+        guard !tokens.isEmpty else { return nil }
+        let names = tokens.map { label(parent: parent, value: $0) ?? $0 }
+        let joined = names.joined(separator: separator)
+        return joined.isEmpty ? nil : joined
+    }
+
+    /// 人群字段仍是数字，且当前缓存对不上字典项时需要再同步一次。
+    func hasUnresolvedValue(parent: DictionaryParent, raw: String?) -> Bool {
+        let tokens = dictionaryTokens(raw)
+        guard !tokens.isEmpty else { return false }
+        if enabledChildren(for: parent).isEmpty { return true }
+        return tokens.contains { token in
+            token.allSatisfy(\.isNumber) && label(parent: parent, value: token) == nil
+        }
+    }
+
+    private func dictionaryTokens(_ raw: String?) -> [String] {
+        let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else { return [] }
+        return trimmed
+            .split { "，,；;、| ".contains($0) }
+            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
     /// 德系 9 宫格产品线（字典 `packageSeries`）
     func productMatrix() -> [ProductMatrixItem] {
         ProductMatrixMapper.toMatrixItems(rootNodes(for: .packageSeries))

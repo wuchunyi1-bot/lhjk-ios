@@ -153,7 +153,7 @@ final class MyViewModel: ObservableObject {
                     icon: row.icon,
                     color: row.color,
                     label: row.label,
-                    detail: vo.hubDetail(forLabel: row.label),
+                    detail: vo.hubDetail(forLabel: row.label) ?? row.detail,
                     route: row.route
                 )
             }
@@ -187,6 +187,7 @@ extension MyViewModel {
     /// 对齐 Figma 3594:8653 与 me.json `healthManagementActions`
     static var defaultHealthManagement: FuncGroup {
         FuncGroup(title: "健康管理", rows: [
+            FuncRow(icon: "calendar", color: UIColor(hexString: "#1F2942"), label: "我的预约", detail: "康养小屋 / 体检 / 就医协助", route: "/me/appointments"),
             FuncRow(icon: "me_health_report_icon", color: UIColor(hexString: "#1F2942"), label: "健康报告", detail: nil, route: "/me/health-report"),
             FuncRow(icon: "me_medical_report_icon", color: UIColor(hexString: "#1F2942"), label: "体检报告单", detail: nil, route: "/me/medical-reports"),
             FuncRow(icon: "me_monitoring_plan_icon", color: UIColor(hexString: "#1F2942"), label: "监测方案", detail: nil, route: "/me/monitoring-plan"),

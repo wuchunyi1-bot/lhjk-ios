@@ -70,6 +70,7 @@
 - 跳转：`FundePageURL.open(urlKey)`
 - type 2/3 展示 `extra.dataSourceTag`（空则隐藏）
 - 不画封面；`businessData` 不参与绘制
+- `extra.monitorType == diet` 为饮食卡：无圆标、无底部按钮；说明 / `extra.image` / 明细 / `extra.analysis` 按块展示，空块不占位。照片只预览
 
 详见 [`message-cards.md`](./message-cards.md)。
 

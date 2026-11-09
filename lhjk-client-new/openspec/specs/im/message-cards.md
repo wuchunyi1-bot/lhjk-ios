@@ -35,6 +35,7 @@
 | extra 行 | type 2/3 解析 `extra.rows`（KV / 结果胶囊 / 表）；`cells` 兼容 `[[String]]` 与多包一层 `[[[String]]]` |
 | 来源 tag | type 2/3 读 `extra.dataSourceTag`（空则隐藏；灰底胶囊贴标题行右侧） |
 | 封面 | **不展示**封面大图 |
+| 饮食卡 | `extra.monitorType == diet` 时改走下方饮食卡，不用本表的圆标和底部按钮 |
 | `businessData` | **不参与绘制** |
 | 头像 | `isShowUser` + `user.portraitUri` 不变 |
 | 会话摘要 | `lastMsgDisplayContent` |
@@ -51,6 +52,24 @@
 `title=19.9体验会员`，`content` 空，`imageUrl` 有值，`urlKey=FundeApp:/services/pkg?id=…`，`skipTxt=去查看`：
 
 `[圆标] 19.9体验会员` + 底部「去查看」。
+
+---
+
+## 饮食卡（`extra.monitorType == diet`）
+
+仍是 `AD:SysNotify`，不新开消息类型。`monitorType` 去空白、忽略大小写后为 `diet` 即饮食卡。其它监测卡保持上面的统一卡。
+
+`messageType` 缺省按 1。空块不占位，顺序从上到下：
+
+| 块 | 条件 |
+|----|------|
+| 标题 | `content.title` 非空。左侧固定 22pt 饮食图标（`#FFF2E6` 圆底），不用 `content.imageUrl`。右侧 `extra.dataSourceTag` 仅 type 2/3 且非空，10pt `#FF7A50` 描边 |
+| 说明 | type 1/3 的 `content.content`，以及 type 2/3 的 `extra.rows` 里 `kind: text`（餐次等）。都在照片上面，按行拆成「标签 + 数值」：优先用第一个 `：` / `:`，没有则用第一处空白；标签 12 regular `#8591AB`，数值 12 medium `#1F2942`，间距 8，不画冒号。`color` 只给数值上色 |
+| 餐食照片 | `extra.image` 非空。放在说明 / 文字明细下面、表格上面。内容宽、高 80、圆角 12，点击只预览大图 |
+| 表格 | type 2/3 且 `extra.rows` 含 `kind: table`。白底、`#FDF6F3` 表头与描边、表头字 `#FF7A50`、单元格 12 regular |
+| 专业团队分析 | `extra.analysis.content` 非空才显示整块（底 `#F4F7FC`、描边 `#E3F0FB`、圆角 12）。`title` 有值才显示标题。正文保留换行；行首「表扬：」「建议：」为 `#3664B1` medium |
+
+饮食卡不展示底部「去查看」。`dataSourceTag` 跟着明细，type 1 不显示。
 
 ---
 

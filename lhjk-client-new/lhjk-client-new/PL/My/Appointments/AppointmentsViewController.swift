@@ -1,242 +1,167 @@
-import UIKit
+import Combine
 import SnapKit
+import UIKit
 
-/// 我的预约
-/// 参考 funde-client: AppointmentsView.vue
+/// 我的预约。汇总入口，当前只接得到康养小屋预约记录。
+///
+/// 体检预约、就医协助没有使用记录接口。待安排、待确认因此为空。
 final class AppointmentsViewController: BaseViewController {
 
-    private var activeTab = 0
-    private let scrollView = UIScrollView()
+    private let viewModel = MyAppointmentsViewModel()
+    private var cancellables = Set<AnyCancellable>()
 
-    private let upcoming: [(title: String, type: String, time: String, place: String, status: String, daysLeft: Int)] = [
-        ("慈铭高端体检", "线下体检", "2026-05-28 08:30", "上海陆家嘴中心", "待到店", 2),
-        ("营养师线上复诊", "视频问诊", "2026-06-02 19:00", "视频咨询", "已确认", 7),
-        ("王顾问健管随访", "电话随访", "2026-06-10 14:30", "电话", "待确认", 15),
-    ]
+    private let tabScroll = UIScrollView()
+    private let tabStack = UIStackView()
+    private let tableView = UITableView(frame: .zero, style: .plain)
+    private let emptyView = FDEmptyStateView(style: .page, message: "暂无预约")
+    private let spinner = UIActivityIndicatorView(style: .medium)
+    private let refresh = UIRefreshControl()
 
-    private let history: [(title: String, type: String, time: String, place: String, status: String, rating: String)] = [
-        ("首次健康评估", "线下评估", "2026-03-05 09:00", "上海徐汇服务中心", "已完成", "满意"),
-        ("体检报告解读", "视频咨询", "2026-04-18 16:00", "视频咨询", "已完成", "非常满意"),
-    ]
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+        viewModel.reload()
+    }
 
     override func setupUI() {
         title = "我的预约"
         view.backgroundColor = .fdBg
-
-        let seg = UISegmentedControl(items: ["即将到来", "历史记录"])
-        seg.selectedSegmentIndex = 0
-        seg.selectedSegmentTintColor = .fdPrimary
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.fdCaptionSemibold], for: .selected)
-        seg.setTitleTextAttributes([.foregroundColor: UIColor.fdSubtext, .font: UIFont.fdCaption], for: .normal)
-        seg.backgroundColor = .fdBg2
-        seg.addTarget(self, action: #selector(segmentChanged(_:)), for: .valueChanged)
-        view.addSubview(seg)
-        seg.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.height.equalTo(36)
-        }
-
-        view.addSubview(scrollView)
-        scrollView.snp.makeConstraints { make in
-            make.top.equalTo(seg.snp.bottom).offset(12)
-            make.leading.trailing.bottom.equalToSuperview()
-        }
-
-        renderContent()
+        setupTabs()
+        setupTable()
+        spinner.color = .fdPrimary
+        spinner.hidesWhenStopped = true
+        view.addSubview(spinner)
+        spinner.snp.makeConstraints { $0.center.equalTo(tableView) }
     }
 
-    @objc private func segmentChanged(_ seg: UISegmentedControl) {
-        activeTab = seg.selectedSegmentIndex
-        renderContent()
-    }
-
-    private func renderContent() {
-        scrollView.subviews.forEach { $0.removeFromSuperview() }
-
-        let stack = UIStackView()
-        stack.axis = .vertical
-        stack.spacing = 12
-        stack.layoutMargins = UIEdgeInsets(top: 0, left: 16, bottom: 20, right: 16)
-        stack.isLayoutMarginsRelativeArrangement = true
-        scrollView.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.width.equalToSuperview() }
-
-        if activeTab == 0 {
-            for item in upcoming {
-                stack.addArrangedSubview(buildUpcomingCard(item))
+    override func bindViewModel() {
+        viewModel.$items
+            .combineLatest(viewModel.$isLoading, viewModel.$tab)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _, _, _ in
+                self?.render()
+                self?.renderTabs()
             }
+            .store(in: &cancellables)
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] message in
+                guard let message, !message.isEmpty else { return }
+                self?.showToastAlert(message)
+                self?.viewModel.clearError()
+            }
+            .store(in: &cancellables)
+    }
+
+    override func refreshForSeniorMode() {
+        super.refreshForSeniorMode()
+        renderTabs()
+        tableView.reloadData()
+    }
+
+    private func setupTabs() {
+        tabScroll.showsHorizontalScrollIndicator = false
+        tabScroll.backgroundColor = .fdSurface
+        tabStack.axis = .horizontal
+        tabStack.spacing = 4
+        tabStack.alignment = .center
+        view.addSubview(tabScroll)
+        tabScroll.addSubview(tabStack)
+        tabScroll.snp.makeConstraints {
+            $0.top.leading.trailing.equalTo(view.safeAreaLayoutGuide)
+            $0.height.equalTo(48)
+        }
+        tabStack.snp.makeConstraints {
+            $0.edges.equalTo(tabScroll.contentLayoutGuide).inset(UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8))
+            $0.height.equalTo(tabScroll.frameLayoutGuide)
+        }
+        renderTabs()
+    }
+
+    private func renderTabs() {
+        tabStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        for tab in MyAppointmentTab.allCases {
+            let button = UIButton(type: .system)
+            button.setTitle(tab.title, for: .normal)
+            let selected = tab == viewModel.tab
+            button.titleLabel?.font = .fdFont(ofSize: 14, weight: selected ? .semibold : .regular)
+            button.setTitleColor(selected ? .fdPrimary : .fdSubtext, for: .normal)
+            button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)
+            button.tag = tab.rawValue
+            button.addTarget(self, action: #selector(tabTapped(_:)), for: .touchUpInside)
+            tabStack.addArrangedSubview(button)
+        }
+    }
+
+    private func setupTable() {
+        tableView.backgroundColor = .clear
+        tableView.separatorStyle = .none
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 160
+        tableView.register(MyAppointmentCell.self, forCellReuseIdentifier: MyAppointmentCell.reuseID)
+        refresh.addTarget(self, action: #selector(pullToRefresh), for: .valueChanged)
+        tableView.refreshControl = refresh
+        view.addSubview(tableView)
+        view.addSubview(emptyView)
+        tableView.snp.makeConstraints {
+            $0.top.equalTo(tabScroll.snp.bottom)
+            $0.leading.trailing.bottom.equalToSuperview()
+        }
+        emptyView.snp.makeConstraints { $0.edges.equalTo(tableView) }
+    }
+
+    private func render() {
+        emptyView.configure(message: viewModel.emptyText)
+        let showEmpty = viewModel.items.isEmpty && !viewModel.isLoading
+        emptyView.isHidden = !showEmpty
+        tableView.isHidden = viewModel.items.isEmpty
+        if viewModel.isLoading, viewModel.items.isEmpty {
+            spinner.startAnimating()
         } else {
-            for item in history {
-                stack.addArrangedSubview(buildHistoryCard(item))
-            }
+            spinner.stopAnimating()
         }
+        if !viewModel.isLoading {
+            refresh.endRefreshing()
+        }
+        tableView.reloadData()
     }
 
-    private func buildUpcomingCard(_ item: (title: String, type: String, time: String, place: String, status: String, daysLeft: Int)) -> UIView {
-        let card = UIView()
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 24
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 6
-        card.layer.shadowOpacity = 0.03
-
-        // Time row
-        let timeRow = UIStackView()
-        timeRow.axis = .horizontal
-        timeRow.alignment = .center
-        timeRow.distribution = .equalSpacing
-
-        let daysLabel = UILabel()
-        daysLabel.text = "距今还有 \(item.daysLeft) 天"
-        daysLabel.font = .fdCaptionSemibold
-        daysLabel.textColor = .fdPrimary
-
-        let timeLabel = UILabel()
-        timeLabel.text = item.time
-        timeLabel.font = .fdCaption
-        timeLabel.textColor = .fdSubtext
-
-        timeRow.addArrangedSubview(daysLabel)
-        timeRow.addArrangedSubview(timeLabel)
-
-        // Title
-        let titleLbl = UILabel()
-        titleLbl.text = item.title
-        titleLbl.font = .fdH2
-        titleLbl.textColor = .fdText
-
-        // Type + place
-        let metaLbl = UILabel()
-        metaLbl.text = "\(item.type) · \(item.place)"
-        metaLbl.font = .fdCaption
-        metaLbl.textColor = .fdSubtext
-
-        // Footer
-        let footer = UIStackView()
-        footer.axis = .horizontal
-        footer.alignment = .center
-        footer.distribution = .equalSpacing
-
-        let tagBg = item.status == "待到店" ? UIColor.fdPrimarySoft :
-                     item.status == "已确认" ? UIColor.fdSuccessSoft : UIColor(hexString: "#F5F5F5")
-        let tagFg = item.status == "待到店" ? UIColor.fdPrimary :
-                     item.status == "已确认" ? UIColor.fdSuccess : UIColor(hexString: "#999999")
-        footer.addArrangedSubview(buildTag(item.status, bg: tagBg, fg: tagFg))
-
-        let actions = UIStackView()
-        actions.axis = .horizontal
-        actions.spacing = 8
-
-        let rescheduleBtn = buildActionBtn("改期", color: .fdPrimary)
-        let cancelBtn = buildActionBtn("取消", color: .fdDanger)
-        actions.addArrangedSubview(rescheduleBtn)
-        actions.addArrangedSubview(cancelBtn)
-        footer.addArrangedSubview(actions)
-
-        card.addSubview(timeRow)
-        card.addSubview(titleLbl)
-        card.addSubview(metaLbl)
-        card.addSubview(footer)
-
-        timeRow.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview().inset(16)
-        }
-        titleLbl.snp.makeConstraints { make in
-            make.top.equalTo(timeRow.snp.bottom).offset(8)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-        metaLbl.snp.makeConstraints { make in
-            make.top.equalTo(titleLbl.snp.bottom).offset(4)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-        footer.snp.makeConstraints { make in
-            make.top.equalTo(metaLbl.snp.bottom).offset(14)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-16)
-        }
-
-        return card
+    @objc private func tabTapped(_ sender: UIButton) {
+        guard let tab = MyAppointmentTab(rawValue: sender.tag) else { return }
+        viewModel.select(tab)
     }
 
-    private func buildHistoryCard(_ item: (title: String, type: String, time: String, place: String, status: String, rating: String)) -> UIView {
-        let card = UIView()
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 24
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 6
-        card.layer.shadowOpacity = 0.03
-        card.alpha = 0.85
+    @objc private func pullToRefresh() {
+        viewModel.reload()
+    }
+}
 
-        let titleLbl = UILabel()
-        titleLbl.text = item.title
-        titleLbl.font = .fdBodyBold
-        titleLbl.textColor = .fdText
+extension AppointmentsViewController: UITableViewDataSource, UITableViewDelegate {
 
-        let metaLbl = UILabel()
-        metaLbl.text = "\(item.type) · \(item.time)"
-        metaLbl.font = .fdCaption
-        metaLbl.textColor = .fdSubtext
-
-        let placeLbl = UILabel()
-        placeLbl.text = item.place
-        placeLbl.font = .fdCaption
-        placeLbl.textColor = .fdSubtext
-
-        let footer = UIStackView()
-        footer.axis = .horizontal
-        footer.spacing = 8
-        footer.addArrangedSubview(buildTag(item.status, bg: .fdSuccessSoft, fg: .fdSuccess))
-        footer.addArrangedSubview(buildTag(item.rating, bg: .fdSuccessSoft, fg: .fdSuccess))
-        footer.addArrangedSubview(UIView())
-
-        card.addSubview(titleLbl)
-        card.addSubview(metaLbl)
-        card.addSubview(placeLbl)
-        card.addSubview(footer)
-
-        titleLbl.snp.makeConstraints { make in make.top.leading.trailing.equalToSuperview().inset(16) }
-        metaLbl.snp.makeConstraints { make in
-            make.top.equalTo(titleLbl.snp.bottom).offset(6)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-        placeLbl.snp.makeConstraints { make in
-            make.top.equalTo(metaLbl.snp.bottom).offset(4)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-        footer.snp.makeConstraints { make in
-            make.top.equalTo(placeLbl.snp.bottom).offset(12)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-16)
-        }
-
-        return card
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        viewModel.items.count
     }
 
-    private func buildTag(_ text: String, bg: UIColor, fg: UIColor) -> UIView {
-        let v = UIView()
-        v.backgroundColor = bg
-        v.layer.cornerRadius = 999
-        let l = UILabel()
-        l.text = text
-        l.font = .fdMicroSemibold
-        l.textColor = fg
-        v.addSubview(l)
-        l.snp.makeConstraints { $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)) }
-        return v
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: MyAppointmentCell.reuseID, for: indexPath) as! MyAppointmentCell
+        let item = viewModel.items[indexPath.row]
+        cell.configure(item)
+        cell.onDetail = { [weak self] in
+            guard let self else { return }
+            var params: [String: Any] = ["id": item.id]
+            if !item.configId.isEmpty { params["configId"] = item.configId }
+            Router.shared.push("/wellness-cabins/appointments/detail", params: params, from: self)
+        }
+        return cell
     }
 
-    private func buildActionBtn(_ title: String, color: UIColor) -> UIButton {
-        let btn = UIButton(type: .system)
-        btn.setTitle(title, for: .normal)
-        btn.titleLabel?.font = .fdCaption
-        btn.setTitleColor(color, for: .normal)
-        btn.layer.borderColor = color.cgColor
-        btn.layer.borderWidth = 1
-        btn.layer.cornerRadius = 8
-        btn.contentEdgeInsets = UIEdgeInsets(top: 4, left: 10, bottom: 4, right: 10)
-        return btn
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let offset = scrollView.contentOffset.y
+        let height = scrollView.contentSize.height
+        let frame = scrollView.bounds.height
+        guard height > frame, offset > height - frame - 80 else { return }
+        viewModel.loadMore()
     }
 }

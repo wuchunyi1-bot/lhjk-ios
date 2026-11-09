@@ -23,6 +23,7 @@ openspec/
 │   ├── shipping-address/
 │   ├── vouchers/
 │   ├── activate/
+│   ├── my-activities/
 └── changes/        # 进行中的变更提案（proposal / design / tasks / delta specs）
 ```
 

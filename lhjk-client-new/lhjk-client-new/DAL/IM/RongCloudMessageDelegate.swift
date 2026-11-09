@@ -414,10 +414,37 @@ struct IMCardResolved {
         variant == .sysNotify && objectName == "AD:SysNotify"
     }
 
+    /// `content.extra.monitorType == diet`。饮食卡不用标题圆标，照片走 `extra.image`。
+    var isDietCard: Bool {
+        isUnifiedSysNotify && IMMonitorReminderRoute.normalizeMonitorType(monitorType) == "diet"
+    }
+
     var showsLeadingIcon: Bool {
-        guard isUnifiedSysNotify else { return false }
+        guard isUnifiedSysNotify, !isDietCard else { return false }
         let url = imageUrl?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return !url.isEmpty
+    }
+
+    var dietPhotoURL: String? {
+        guard isDietCard else { return nil }
+        let raw = IMCardJSON.stringValue(extra?["image"])?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return raw.isEmpty ? nil : raw
+    }
+
+    /// `extra.analysis`。`content` 为空则整块不展示；`title` 可空。
+    var dietAnalysis: (title: String, content: String)? {
+        guard isDietCard, let object = IMCardJSON.parseObject(extra?["analysis"]) else { return nil }
+        let content = IMCardJSON.stringValue(object["content"])?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !content.isEmpty else { return nil }
+        let title = IMCardJSON.stringValue(object["title"])?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return (title, content)
+    }
+
+    var showsDietTitle: Bool {
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var showsBodyContent: Bool {
@@ -442,7 +469,7 @@ struct IMCardResolved {
     }
 
     var showsJumpButton: Bool {
-        guard isUnifiedSysNotify else { return false }
+        guard isUnifiedSysNotify, !isDietCard else { return false }
         return !urlKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 

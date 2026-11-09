@@ -399,16 +399,18 @@ extension DeviceCatalogViewController: UITableViewDataSource, UITableViewDelegat
             selectTab(indexPath.row)
             return
         }
-        showUnsupportedToast()
+        guard models.indices.contains(indexPath.row) else { return }
+        openCatalogItem(ScaleDeviceCardItem.catalog(from: models[indexPath.row], nameFallback: "设备"))
     }
 
-    private func showUnsupportedToast() {
-        guard presentedViewController == nil else { return }
-        let alert = UIAlertController(title: nil, message: "暂不支持该设备", preferredStyle: .alert)
-        present(alert, animated: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak alert] in
-            alert?.dismiss(animated: true)
-        }
+    private func openCatalogItem(_ item: ScaleDeviceCardItem) {
+        let page = ScaleDeviceBindViewController(
+            equipmentTypeId: item.equipmentTypeId ?? "",
+            bluetoothName: item.bluetoothName ?? "OKOK",
+            displayName: item.name,
+            returnsToMyDevices: true
+        )
+        navigationController?.pushViewController(page, animated: true)
     }
 }
 

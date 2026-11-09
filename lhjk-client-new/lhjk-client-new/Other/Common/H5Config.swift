@@ -21,6 +21,8 @@ enum H5Config {
         ("sleep", "睡眠"),
         ("ecg", "心电"),
         ("fundus", "鹰瞳眼底"),
+        ("respiratory-inflammation", "呼吸道炎症仪检测"),
+        ("gut-flora", "消化道菌群失衡检测"),
         ("exercise", "饮食运动"),
         ("spo2", "血氧"),
         ("digestive", "消化道"),
@@ -308,6 +310,10 @@ enum H5Config {
                     query[key] = value
                 }
             }
+        }
+
+        if let activityId = stringParam(routeParams["activityId"]) {
+            query["activityId"] = activityId
         }
 
         return query

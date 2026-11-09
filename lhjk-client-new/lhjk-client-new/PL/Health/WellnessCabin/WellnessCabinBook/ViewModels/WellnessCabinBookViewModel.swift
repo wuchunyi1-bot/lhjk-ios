@@ -4,7 +4,7 @@ import Foundation
 enum CabinBookProceed {
     case ignored
     case booked
-    case purchase(packageId: String, hospitalId: String, context: CabinPaidBookContext)
+    case confirmOrder(orderId: Int64, context: CabinPaidBookContext)
 }
 
 @MainActor
@@ -12,9 +12,11 @@ final class WellnessCabinBookViewModel: ObservableObject {
 
     let hospitalId: String
     let configId: String
-    /// 项目列表带入的金额。预约详情不返回价格。
+    /// 项目列表带入的金额。预约详情没返回价格时兜底。
     let priceText: String?
     let unitName: String?
+    /// 活动页不展示金额、单位和次卡说明。
+    let presentsCommerce: Bool
 
     @Published private(set) var detail: CabinBookDetailVO?
     @Published private(set) var days: [CabinBookDay] = []
@@ -39,6 +41,7 @@ final class WellnessCabinBookViewModel: ObservableObject {
         priceText: String? = nil,
         unitName: String? = nil,
         internalOnly: Bool? = nil,
+        presentsCommerce: Bool = true,
         cabinService: CabinService = AppContainer.shared.cabinService
     ) {
         self.hospitalId = hospitalId.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -47,6 +50,7 @@ final class WellnessCabinBookViewModel: ObservableObject {
         self.priceText = price.isEmpty ? nil : price
         let unit = unitName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         self.unitName = unit.isEmpty ? nil : unit
+        self.presentsCommerce = presentsCommerce
         self.knownInternalOnly = internalOnly
         self.isInternalStation = internalOnly == true
         self.cabinService = cabinService
@@ -58,14 +62,16 @@ final class WellnessCabinBookViewModel: ObservableObject {
         return slots.first { $0.key == selectedSlotKey && $0.isBookable }
     }
 
-    /// 1 免费：页内按钮，不展示金额。2 次卡。3 付费。
+    /// 1 免费。2 次卡。3 付费。免费和付费都走底栏。
     var billingSource: Int { detail?.billingSource ?? 1 }
 
-    var showsBottomBar: Bool { billingSource != 1 }
+    var showsBottomBar: Bool { presentsCommerce }
 
     var feeAmountText: String? {
-        guard billingSource == 3, let priceText else { return nil }
-        return "¥\(priceText)"
+        guard presentsCommerce, billingSource == 3 else { return nil }
+        if let plain = detail?.plainPrice { return "¥\(plain)" }
+        if let priceText { return "¥\(priceText)" }
+        return nil
     }
 
     var feeUnitText: String {
@@ -73,16 +79,24 @@ final class WellnessCabinBookViewModel: ObservableObject {
     }
 
     var timesCardText: String? {
-        guard billingSource == 2 else { return nil }
+        guard presentsCommerce, billingSource == 2 else { return nil }
         if let count = detail?.availableQuantity {
             return "可用次卡：\(count) 次"
         }
         return "可用次卡"
     }
 
+    /// 原型固定文案，不是接口字段。有可用次数时展示。
+    var timesCardHint: String? {
+        guard presentsCommerce, billingSource == 2 else { return nil }
+        if let count = detail?.availableQuantity, count <= 0 { return nil }
+        return "优先使用次卡，本次预约将扣减 1 次"
+    }
+
     var barText: String? {
         if let timesCardText { return timesCardText }
         if let feeAmountText { return "\(feeAmountText)/\(feeUnitText)" }
+        if presentsCommerce, billingSource == 1 { return "免费" }
         return nil
     }
 
@@ -137,27 +151,23 @@ final class WellnessCabinBookViewModel: ObservableObject {
         selectedSlotKey = slot.key
     }
 
-    /// 免费、次卡直接预约。付费或没有可用次数时去购买，支付成功后再预约。
+    /// 免费、次卡直接预约。付费或没有可用次数时创建预约订单，确认页支付成功后再预约。
     func proceed() async throws -> CabinBookProceed {
         guard !isSubmitting else { return .ignored }
         guard let slot = selectedSlot, let date = selectedDateId else {
             throw CabinServiceError.requestFailed("请选择可预约时段")
         }
         if needsPurchase {
-            guard let packageId = detail?.packageId, !packageId.isEmpty else {
-                throw CabinServiceError.requestFailed("费用信息异常，请稍后重试")
-            }
-            if let priceText, let amount = Double(priceText), amount <= 0 {
-                throw CabinServiceError.requestFailed("费用信息异常，请稍后重试")
-            }
+            isSubmitting = true
+            defer { isSubmitting = false }
+            let orderId = try await cabinService.createReservationOrder(configId: configId)
             let context = CabinPaidBookContext(
                 configId: configId,
                 reserveDate: date,
                 startTime: slot.startTime,
                 endTime: slot.endTime
             )
-            let hospital = detail?.hospitalId ?? hospitalId
-            return .purchase(packageId: packageId, hospitalId: hospital, context: context)
+            return .confirmOrder(orderId: orderId, context: context)
         }
         isSubmitting = true
         defer { isSubmitting = false }

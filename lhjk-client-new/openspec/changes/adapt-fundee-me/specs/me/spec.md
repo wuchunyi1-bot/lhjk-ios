@@ -264,8 +264,10 @@ Hero 区下方 SHALL 在 tableHeaderView 内展示会员卡入口卡片。
 编辑资料页（`ProfileViewController`）SHALL 支持头像选择后上传到阿里云 OSS 并保存至后端。
 
 #### Scenario: 选择头像
-- **WHEN** 用户点击头像行
-- **THEN** 弹出系统相册选择器（`UIImagePickerController`，`allowsEditing = true`）
+- **WHEN** 用户点击头像
+- **THEN** 弹出操作菜单，包含「拍照」和「从相册选择」
+- **AND** 两者都使用 `UIImagePickerController`，`allowsEditing = true`
+- **AND** 设备没有相机时，点「拍照」toast「当前设备无法使用相机」
 
 #### Scenario: 上传流程
 - **WHEN** 用户选择图片后

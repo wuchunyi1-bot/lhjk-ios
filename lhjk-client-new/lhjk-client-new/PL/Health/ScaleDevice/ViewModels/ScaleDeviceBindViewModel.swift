@@ -10,16 +10,22 @@ final class ScaleDeviceBindViewModel: ObservableObject {
         case failed
     }
 
+    enum Finish: Equatable {
+        case success
+        case alreadyBound
+    }
+
     @Published private(set) var phase: Phase = .searching
     @Published private(set) var statusText: String = "蓝牙搜索中，请耐心等待"
     @Published private(set) var hintText: String = "请尽量将手机靠近设备，轻踩唤醒体脂秤"
 
     let toastPublisher = PassthroughSubject<String, Never>()
-    let finishedPublisher = PassthroughSubject<Void, Never>()
+    let finishedPublisher = PassthroughSubject<Finish, Never>()
 
     private let equipmentTypeId: String
     private let bluetoothName: String
     private let displayName: String
+    private let returnsToMyDevices: Bool
 
     private let session: ScaleBleSessionService
     private let equipmentBindService: EquipmentBindService
@@ -32,6 +38,7 @@ final class ScaleDeviceBindViewModel: ObservableObject {
         equipmentTypeId: String,
         bluetoothName: String,
         displayName: String,
+        returnsToMyDevices: Bool = false,
         session: ScaleBleSessionService = AppContainer.shared.scaleBleSessionService,
         equipmentBindService: EquipmentBindService = AppContainer.shared.equipmentBindService,
         userManager: UserManager = AppContainer.shared.userManager
@@ -39,6 +46,7 @@ final class ScaleDeviceBindViewModel: ObservableObject {
         self.equipmentTypeId = equipmentTypeId
         self.bluetoothName = bluetoothName
         self.displayName = displayName
+        self.returnsToMyDevices = returnsToMyDevices
         self.session = session
         self.equipmentBindService = equipmentBindService
         self.userManager = userManager
@@ -139,9 +147,13 @@ final class ScaleDeviceBindViewModel: ObservableObject {
         }
 
         if check.isAlreadyBound {
-            toastPublisher.send(nonEmptyMessage(check.message, fallback: "该设备已绑定"))
             _ = await session.refreshBindingState()
-            finishedPublisher.send(())
+            if returnsToMyDevices {
+                finishedPublisher.send(.success)
+            } else {
+                toastPublisher.send(nonEmptyMessage(check.message, fallback: "该设备已绑定"))
+                finishedPublisher.send(.alreadyBound)
+            }
             return
         }
 
@@ -157,9 +169,8 @@ final class ScaleDeviceBindViewModel: ObservableObject {
                     mac: mac
                 )
             )
-            toastPublisher.send("设备绑定成功")
             _ = await session.refreshBindingState()
-            finishedPublisher.send(())
+            finishedPublisher.send(.success)
         } catch {
             fail(error.localizedDescription)
         }

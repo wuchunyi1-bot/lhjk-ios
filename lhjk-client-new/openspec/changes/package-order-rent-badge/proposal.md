@@ -6,12 +6,12 @@
 
 ## What Changes
 
-- 套餐详情权益行、订单详情套餐内容行：`saleFlag == 1` 时在名称后展示 `package_detail_ rent`（40×16pt）
+- 套餐详情权益行、确认订单套餐内容行、订单详情套餐内容行：`saleFlag == 1` 时在名称后展示 `package_detail_ rent`（40×16pt）
 - `saleFlag == 2`、空值或其它值不展示
 - 订单详情解码 `shoppingCartPackageDetailList[].saleFlag`（兼容数字/字符串）
-- 确认订单页不在本期范围
+- 确认订单以 `getOrderSettlement.details[].saleFlag` 为准
 
 ## Non-goals
 
 - 不展示「出售」文案或图标
-- 不改确认订单、购物车、订单列表
+- 不改购物车、订单列表

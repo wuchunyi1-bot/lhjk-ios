@@ -8,6 +8,7 @@ Apifox `saleFlag`（int32）：**1 租 / 2 售**。
 |------|------|----------|------|
 | 套餐详情 | `GET /v1/hospitalPackage/getHospitalPackageDetail` | `packageHospitalDetailList[].saleFlag`（含子行 `children`） | 已解码并映射到 `ServicePackageComboItem.saleFlag` |
 | 订单详情 | `GET /v1/order/getAppOrderDetail` | `shoppingCartPackageDetailList[].saleFlag`（[文档](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330739e0.md)） | 明细模型原先未解该字段 |
+| 确认订单 | `GET /v1/order/getOrderSettlement` | `details[].saleFlag`（`ShoppingCartPackageDetailBO`） | 确认页展示以结算明细为准 |
 
 展示规则：`PackageSaleFlag.showsRentBadge` 仅在值为 `1` 时为真。
 
@@ -17,6 +18,7 @@ Apifox `saleFlag`（int32）：**1 租 / 2 售**。
 
 - 切图：`Assets.xcassets/订单详情/package_detail_ rent`（imageset 名含空格；@2x 为 80×32，展示 40×16pt）
 - 套餐详情：`ComboBenefitRowView`（必选、单选、多选及子行共用）
+- 确认订单：`OrderConfirmPackageView.makeContentRow`
 - 订单详情：`OrderDetailPackageView.makeContentRow`
 
 名称过长时先压缩名称，标记保持可见。

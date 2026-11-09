@@ -15,6 +15,7 @@ final class WellnessCabinDetailViewController: BaseViewController {
     private let gallery = CabinGalleryView()
     private let card = UIView()
     private let nameLabel = UILabel()
+    private let recommendTag = UILabel()
     private let switchButton = UIButton(type: .system)
     private let distanceRow = UIStackView()
     private let distanceLabel = UILabel()
@@ -126,6 +127,7 @@ final class WellnessCabinDetailViewController: BaseViewController {
 
         guard let store = viewModel.store else { return }
         nameLabel.text = store.name
+        recommendTag.isHidden = !store.recommended
         gallery.setURLs(store.galleryURLs)
 
         if let distance = viewModel.distanceText {
@@ -219,15 +221,28 @@ final class WellnessCabinDetailViewController: BaseViewController {
         nameLabel.textColor = .fdText
         nameLabel.numberOfLines = 0
 
+        recommendTag.text = "推荐"
+        recommendTag.font = .fdFont(ofSize: 11, weight: .medium)
+        recommendTag.textColor = .fdPrimary
+        recommendTag.backgroundColor = .fdPrimarySoft
+        recommendTag.textAlignment = .center
+        recommendTag.layer.cornerRadius = 4
+        recommendTag.clipsToBounds = true
+        recommendTag.isHidden = true
+
         let iconConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
         switchButton.setImage(UIImage(systemName: "storefront", withConfiguration: iconConfig), for: .normal)
         switchButton.tintColor = .fdSuccess
         switchButton.backgroundColor = .fdSuccessSoft
         switchButton.layer.cornerRadius = 14
+        recommendTag.snp.makeConstraints {
+            $0.height.equalTo(20)
+            $0.width.greaterThanOrEqualTo(36)
+        }
         switchButton.accessibilityLabel = "切换门店"
         switchButton.addTarget(self, action: #selector(switchStoreTapped), for: .touchUpInside)
 
-        let titleRow = UIStackView(arrangedSubviews: [nameLabel, switchButton])
+        let titleRow = UIStackView(arrangedSubviews: [nameLabel, recommendTag, switchButton])
         titleRow.axis = .horizontal
         titleRow.alignment = .center
         titleRow.spacing = 10
@@ -298,7 +313,7 @@ final class WellnessCabinDetailViewController: BaseViewController {
         tableView.register(WellnessCabinServiceItemCell.self, forCellReuseIdentifier: WellnessCabinServiceItemCell.reuseID)
         view.addSubview(tableView)
         tableView.snp.makeConstraints { $0.edges.equalTo(view.safeAreaLayoutGuide) }
-        tableView.tableHeaderView = headerHost
+        headerHost.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 1)
 
         footerLabel.font = .fdFont(ofSize: 14, weight: .regular)
         footerLabel.textColor = .fdMuted
@@ -397,8 +412,8 @@ final class WellnessCabinDetailViewController: BaseViewController {
     }
 
     private func updateHeaderFrame() {
-        let width = tableView.bounds.width
-        guard width > 0, viewModel.store != nil else { return }
+        let width = tableView.bounds.width > 0 ? tableView.bounds.width : headerHost.bounds.width
+        guard width > 0 else { return }
         headerHost.bounds.size.width = width
         headerHost.setNeedsLayout()
         headerHost.layoutIfNeeded()
@@ -407,9 +422,10 @@ final class WellnessCabinDetailViewController: BaseViewController {
             withHorizontalFittingPriority: .required,
             verticalFittingPriority: .fittingSizeLevel
         ).height
-        guard height > 0, abs(height - lastHeaderHeight) > 0.5 else { return }
-        lastHeaderHeight = height
-        headerHost.frame = CGRect(x: 0, y: 0, width: width, height: height)
+        let resolved = max(height, 1)
+        guard abs(resolved - lastHeaderHeight) > 0.5 || abs(headerHost.frame.width - width) > 0.5 else { return }
+        lastHeaderHeight = resolved
+        headerHost.frame = CGRect(x: 0, y: 0, width: width, height: resolved)
         tableView.tableHeaderView = headerHost
     }
 
@@ -480,10 +496,19 @@ final class WellnessCabinDetailViewController: BaseViewController {
             showToastAlert("暂无门店位置")
             return
         }
-        let name = store.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? store.name
-        let raw = "https://uri.amap.com/navigation?to=\(coordinate.longitude),\(coordinate.latitude),\(name)&mode=car&coordinate=gaode&callnative=1&src=lhjk"
-        guard let url = URL(string: raw) else {
-            showToastAlert("暂无门店位置")
+        guard AmapNavigation.isInstalled,
+              let url = AmapNavigation.driveURL(
+                longitude: coordinate.longitude,
+                latitude: coordinate.latitude,
+                name: store.name
+              ) else {
+            let alert = UIAlertController(
+                title: "未安装高德地图",
+                message: "请先安装高德地图后再导航到门店",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "知道了", style: .default))
+            present(alert, animated: true)
             return
         }
         UIApplication.shared.open(url)
@@ -543,15 +568,24 @@ extension WellnessCabinDetailViewController: UITableViewDataSource, UITableViewD
     }
 }
 
+/// 门店图集：高度固定 160，多于一张时每 4 秒向前循环。
 private final class CabinGalleryView: UIView, UIScrollViewDelegate {
+
+    private static let galleryHeight: CGFloat = 160
+    private static let loopMultiplier = 40
 
     private let scroll = UIScrollView()
     private let pageControl = UIPageControl()
+    private var urls: [URL] = []
     private var imageViews: [UIImageView] = []
     private var heightConstraint: Constraint?
+    private var logicalIndex = 0
+    private var placedInitialPage = false
+    private var timer: Timer?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+        clipsToBounds = true
         backgroundColor = .fdProductImageBg
         scroll.isPagingEnabled = true
         scroll.showsHorizontalScrollIndicator = false
@@ -560,6 +594,7 @@ private final class CabinGalleryView: UIView, UIScrollViewDelegate {
         pageControl.currentPageIndicatorTintColor = .fdPrimary
         pageControl.pageIndicatorTintColor = .fdBorderStrong
         pageControl.isUserInteractionEnabled = false
+        pageControl.hidesForSinglePage = true
         addSubview(scroll)
         addSubview(pageControl)
         scroll.snp.makeConstraints { $0.edges.equalToSuperview() }
@@ -567,29 +602,36 @@ private final class CabinGalleryView: UIView, UIScrollViewDelegate {
             $0.centerX.equalToSuperview()
             $0.bottom.equalToSuperview().offset(-6)
         }
-        snp.makeConstraints { heightConstraint = $0.height.equalTo(160).constraint }
+        snp.makeConstraints { heightConstraint = $0.height.equalTo(Self.galleryHeight).constraint }
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
-    func setURLs(_ urls: [URL]) {
-        imageViews.forEach { $0.removeFromSuperview() }
-        imageViews = urls.map { url in
-            let image = UIImageView()
-            image.contentMode = .scaleAspectFill
-            image.clipsToBounds = true
-            image.backgroundColor = .fdProductImageBg
-            image.kf.setImage(with: url)
-            scroll.addSubview(image)
-            return image
+    deinit { timer?.invalidate() }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if window != nil {
+            startTimer()
+        } else {
+            stopTimer()
         }
+    }
+
+    func setURLs(_ urls: [URL]) {
+        guard self.urls != urls else { return }
+        self.urls = urls
+        placedInitialPage = false
+        logicalIndex = urls.count > 1 ? urls.count * (Self.loopMultiplier / 2) : 0
         pageControl.numberOfPages = urls.count
         pageControl.currentPage = 0
-        pageControl.isHidden = urls.count <= 1
         isHidden = urls.isEmpty
-        heightConstraint?.update(offset: urls.isEmpty ? 0 : 160)
-        scroll.contentOffset = .zero
+        heightConstraint?.update(offset: urls.isEmpty ? 0 : Self.galleryHeight)
+        rebuildSlides()
         setNeedsLayout()
+        if window != nil {
+            startTimer()
+        }
     }
 
     override func layoutSubviews() {
@@ -601,11 +643,109 @@ private final class CabinGalleryView: UIView, UIScrollViewDelegate {
         for (index, image) in imageViews.enumerated() {
             image.frame = CGRect(x: width * CGFloat(index), y: 0, width: width, height: height)
         }
+        guard !placedInitialPage else { return }
+        placedInitialPage = true
+        scroll.contentOffset = CGPoint(x: width * CGFloat(logicalIndex), y: 0)
+        pageControl.currentPage = realIndex(for: logicalIndex)
+    }
+
+    private var slideCount: Int {
+        guard urls.count > 1 else { return urls.count }
+        return urls.count * Self.loopMultiplier
+    }
+
+    private func realIndex(for logical: Int) -> Int {
+        guard !urls.isEmpty else { return 0 }
+        let count = urls.count
+        let mod = logical % count
+        return mod >= 0 ? mod : mod + count
+    }
+
+    private func rebuildSlides() {
+        imageViews.forEach { $0.removeFromSuperview() }
+        imageViews = (0..<slideCount).map { index in
+            let image = UIImageView()
+            image.contentMode = .scaleAspectFill
+            image.clipsToBounds = true
+            image.backgroundColor = .fdProductImageBg
+            image.kf.setImage(with: urls[realIndex(for: index)])
+            scroll.addSubview(image)
+            return image
+        }
+    }
+
+    /// 靠近复制区两端时无动画跳回中间同一张，避免最后一张滚回第一张时整段倒退。
+    private func normalizePositionIfNeeded() {
+        guard urls.count > 1 else { return }
+        let width = scroll.bounds.width
+        guard width > 0 else { return }
+        let count = urls.count
+        let middle = count * (Self.loopMultiplier / 2)
+        let real = realIndex(for: logicalIndex)
+        if logicalIndex < count || logicalIndex >= slideCount - count {
+            logicalIndex = middle + real
+            scroll.contentOffset = CGPoint(x: width * CGFloat(logicalIndex), y: 0)
+        }
+    }
+
+    private func syncPageFromOffset() {
+        let width = scroll.bounds.width
+        guard width > 0, !urls.isEmpty else { return }
+        logicalIndex = Int(round(scroll.contentOffset.x / width))
+        pageControl.currentPage = realIndex(for: logicalIndex)
+    }
+
+    private func startTimer() {
+        stopTimer()
+        guard window != nil, urls.count > 1 else { return }
+        let timer = Timer(timeInterval: 4, repeats: true) { [weak self] _ in
+            self?.advancePage()
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
+    }
+
+    private func stopTimer() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    private func advancePage() {
+        let width = scroll.bounds.width
+        guard urls.count > 1, width > 0 else { return }
+        normalizePositionIfNeeded()
+        logicalIndex += 1
+        pageControl.currentPage = realIndex(for: logicalIndex)
+        scroll.setContentOffset(CGPoint(x: width * CGFloat(logicalIndex), y: 0), animated: true)
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         let width = scrollView.bounds.width
-        guard width > 0 else { return }
-        pageControl.currentPage = Int(round(scrollView.contentOffset.x / width))
+        guard width > 0, !urls.isEmpty else { return }
+        let index = Int(round(scrollView.contentOffset.x / width))
+        pageControl.currentPage = realIndex(for: index)
+    }
+
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        stopTimer()
+    }
+
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if !decelerate {
+            syncPageFromOffset()
+            normalizePositionIfNeeded()
+            startTimer()
+        }
+    }
+
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        syncPageFromOffset()
+        normalizePositionIfNeeded()
+        startTimer()
+    }
+
+    func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
+        syncPageFromOffset()
+        normalizePositionIfNeeded()
     }
 }

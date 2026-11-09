@@ -63,6 +63,7 @@ final class AppContainer {
     private(set) lazy var hospitalPackageService: HospitalPackageService = .shared
     private(set) lazy var hospitalService: HospitalService = .shared
     private(set) lazy var cabinService: CabinService = .shared
+    private(set) lazy var serviceItemService: ServiceItemService = .shared
     private(set) lazy var doctorService: DoctorService = .shared
     private(set) lazy var institutionSelectionStore: InstitutionSelectionStore = .shared
     private(set) lazy var serviceHubCacheService: ServiceHubCacheService = .shared
@@ -72,6 +73,7 @@ final class AppContainer {
     private(set) lazy var couponService: CouponService = .shared
     private(set) lazy var paymentService: PaymentService = .shared
     private(set) lazy var homeService: HomeService = .shared
+    private(set) lazy var memberActivityService: MemberActivityService = .shared
     private(set) lazy var cacheCleanupService: CacheCleanupService = .shared
     private(set) lazy var healthPageService: HealthPageService = .shared
     private(set) lazy var medicalReportService: MedicalReportService = .shared

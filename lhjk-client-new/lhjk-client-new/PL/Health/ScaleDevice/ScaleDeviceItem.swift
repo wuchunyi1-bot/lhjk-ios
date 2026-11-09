@@ -16,7 +16,7 @@ struct ScaleDeviceCardItem: Equatable {
     let equipmentUserId: Int64?
     /// 型号主键，跳转测量页
     let equipmentTypeId: String?
-    /// `getEquipmenByApp.bluetoothName`，用于识别 OKOK
+    /// `getEquipmenByApp.bluetoothName`，进入绑定页时原样带上
     let bluetoothName: String?
 
     var showsUnbind: Bool { kind == .bound }
@@ -67,10 +67,6 @@ struct ScaleDeviceCardItem: Equatable {
             equipmentTypeId: item.id,
             bluetoothName: item.bluetoothName
         )
-    }
-
-    var isOKOKCatalog: Bool {
-        bluetoothName?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "OKOK"
     }
 
     private static func firstNonEmpty(_ values: String?...) -> String? {

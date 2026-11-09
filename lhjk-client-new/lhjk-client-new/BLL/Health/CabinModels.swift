@@ -54,6 +54,8 @@ struct CabinStoreVO: Decodable, Equatable {
     let serviceTags: [String]
     /// 1 仅限内部员工，0 否
     let internalOnly: Int
+    /// 1 / true 时名称旁展示推荐标。当前公开文档未列出该字段，缺省不展示。
+    let recommended: Bool
     /// 1 启用，0 禁用。禁用不可进门店
     let status: Int?
     let todayAvailableCount: Int?
@@ -62,6 +64,8 @@ struct CabinStoreVO: Decodable, Equatable {
     let openTime: String?
     let mobile: String?
     let imgUrl: String?
+    /// 门店轮播图，逗号分隔的图片地址
+    let banner: String?
     let longitude: String?
     let latitude: String?
 
@@ -84,7 +88,9 @@ struct CabinStoreVO: Decodable, Equatable {
     }
 
     var galleryURLs: [URL] {
-        CabinMedia.urls(from: imgUrl)
+        let banners = CabinMedia.urls(from: banner)
+        if !banners.isEmpty { return banners }
+        return CabinMedia.urls(from: imgUrl)
     }
 
     var coordinate: (longitude: String, latitude: String)? {
@@ -94,7 +100,8 @@ struct CabinStoreVO: Decodable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case id, name, province, city, area, address, serviceTags, internalOnly, status
-        case todayAvailableCount, distanceMeters, openTime, mobile, imgUrl, longitude, latitude
+        case todayAvailableCount, distanceMeters, openTime, mobile, imgUrl, banner, longitude, latitude
+        case recommended
     }
 
     init(from decoder: Decoder) throws {
@@ -107,12 +114,14 @@ struct CabinStoreVO: Decodable, Equatable {
         address = Self.string(c, .address) ?? ""
         serviceTags = (try? c.decodeIfPresent([String].self, forKey: .serviceTags)) ?? []
         internalOnly = Self.int(c, .internalOnly) ?? 0
+        recommended = Self.flag(c, .recommended)
         status = Self.int(c, .status)
         todayAvailableCount = Self.int(c, .todayAvailableCount)
         distanceMeters = Self.int64(c, .distanceMeters)
         openTime = Self.string(c, .openTime)
         mobile = Self.string(c, .mobile)
         imgUrl = Self.string(c, .imgUrl)
+        banner = Self.string(c, .banner)
         longitude = Self.string(c, .longitude)
         latitude = Self.string(c, .latitude)
     }
@@ -153,6 +162,12 @@ struct CabinStoreVO: Decodable, Equatable {
             return Int(value.trimmingCharacters(in: .whitespacesAndNewlines))
         }
         return nil
+    }
+
+    private static func flag(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Bool {
+        if let value = int(c, key) { return value == 1 }
+        if let value = try? c.decode(Bool.self, forKey: key) { return value }
+        return false
     }
 
     private static func int64(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int64? {
@@ -337,8 +352,10 @@ struct CabinBookDetailVO: Decodable, Equatable {
     let date: String?
     let bookDaysAhead: Int?
     let hospitalId: String?
-    /// 付费预约关联套餐。预约详情不返回价格。
+    /// 付费预约关联套餐。
     let packageId: String?
+    /// 付费项目金额。免费项目为空。
+    let price: Double?
     private let imgUrls: String?
     let slots: [CabinSlotVO]
 
@@ -357,10 +374,16 @@ struct CabinBookDetailVO: Decodable, Equatable {
         return "单次时长：\(duration) 分钟"
     }
 
+    var plainPrice: String? {
+        guard let price, price > 0 else { return nil }
+        if price == floor(price) { return String(Int(price)) }
+        return String(format: "%.2f", price)
+    }
+
     private enum CodingKeys: String, CodingKey {
         case id, name, sourceType, availableQuantity, payType, duration
         case applicablePeople, restrictedPeople, description, notice, date
-        case bookDaysAhead, hospitalId, packageId, imgUrls, slots
+        case bookDaysAhead, hospitalId, packageId, price, imgUrls, slots
     }
 
     init(from decoder: Decoder) throws {
@@ -379,6 +402,7 @@ struct CabinBookDetailVO: Decodable, Equatable {
         bookDaysAhead = CabinJSON.int(c, .bookDaysAhead)
         hospitalId = CabinJSON.string(c, .hospitalId)
         packageId = CabinJSON.string(c, .packageId)
+        price = CabinJSON.double(c, .price)
         imgUrls = CabinJSON.string(c, .imgUrls)
         slots = (try? c.decodeIfPresent([CabinSlotVO].self, forKey: .slots)) ?? []
     }
@@ -433,7 +457,7 @@ struct CabinSlotVO: Decodable, Equatable {
     }
 }
 
-/// 付费预约带到套餐购买和确认订单。支付成功后用订单 id 再提交预约。
+/// 付费预约带到确认订单。页面不展示这些字段。支付成功后用订单 id 再提交预约。
 struct CabinPaidBookContext: Equatable {
     let configId: String
     let reserveDate: String
@@ -557,6 +581,8 @@ struct CabinAppointmentVO: Decodable, Equatable {
     let address: String
     /// 服务项目 id，不是项目配置 id
     let projectId: String
+    /// 项目配置 id。再次预约用它打开原项目预约页。
+    let configId: String
     let duration: Int?
     let reserveDate: String
     let startTime: String
@@ -586,10 +612,10 @@ struct CabinAppointmentVO: Decodable, Equatable {
         return "\(startTime)-\(endTime)"
     }
 
-    /// 已完成、已取消、已过期可以回到门店再约。记录没有项目配置 id。
+    /// 已完成、已取消、已过期可以再次预约。
     var canBookAgain: Bool {
-        guard !hospitalId.isEmpty else { return false }
-        return status == 5 || status == 6 || status == 7
+        guard status == 5 || status == 6 || status == 7 else { return false }
+        return !configId.isEmpty || !hospitalId.isEmpty
     }
 
     /// 待服务且已过当天时段。接口不返回说明文案。
@@ -609,7 +635,7 @@ struct CabinAppointmentVO: Decodable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, hospitalId, hospitalName, address, projectId
+        case id, name, hospitalId, hospitalName, address, projectId, configId
         case duration, reserveDate, startTime, endTime, status
     }
 
@@ -621,10 +647,153 @@ struct CabinAppointmentVO: Decodable, Equatable {
         hospitalName = CabinJSON.string(c, .hospitalName) ?? ""
         address = CabinJSON.string(c, .address) ?? ""
         projectId = CabinJSON.string(c, .projectId) ?? ""
+        configId = CabinJSON.string(c, .configId) ?? ""
         duration = CabinJSON.int(c, .duration)
         reserveDate = CabinJSON.string(c, .reserveDate) ?? ""
         startTime = CabinJSON.string(c, .startTime) ?? ""
         endTime = CabinJSON.string(c, .endTime) ?? ""
         status = CabinJSON.int(c, .status)
+    }
+}
+
+/// 用户侧预约详情。GET /v1/cabin/reservationDetail
+struct CabinReservationDetailVO: Decodable, Equatable {
+    let id: String
+    let name: String
+    let status: Int?
+    let hospitalId: String
+    let hospitalName: String
+    let address: String
+    let mobile: String?
+    let openTime: String?
+    let duration: Int?
+    let reserveDate: String
+    let startTime: String
+    let endTime: String
+    let quantity: Int?
+    let reservationNumber: String?
+    /// 核销码。待服务时展示。
+    let cancellationCode: String?
+    /// 服务端生成的核销二维码，png 的 base64。
+    let qrCode: String?
+    /// 项目介绍，富文本，介绍图写在正文里。
+    let description: String?
+    /// 服务分类，项目父级名称。
+    let parentName: String?
+    let notice: String?
+    let applicablePeople: String?
+    let restrictedPeople: String?
+    let cancelReason: String?
+    let cancelTime: String?
+    /// 核销时间。服务中、已完成返回。
+    let verifyTime: String?
+    /// 完成时间。已完成返回。
+    let finishTime: String?
+    /// 过期时间。已过期返回。
+    let expireTime: String?
+    let createTime: String?
+    /// 再次预约用。详情文档即将补上，缺省为空。
+    let configId: String
+    let longitude: String?
+    let latitude: String?
+    let contactName: String?
+    let contactPhone: String?
+
+    var statusTitle: String {
+        switch status {
+        case 1: return "待安排"
+        case 2: return "待确认"
+        case 3: return "待服务"
+        case 4: return "服务中"
+        case 5: return "已完成"
+        case 6: return "已取消"
+        case 7: return "已过期"
+        default: return ""
+        }
+    }
+
+    var durationText: String? {
+        guard let duration, duration > 0 else { return nil }
+        return "\(duration) 分钟"
+    }
+
+    var timeText: String {
+        if startTime.isEmpty { return endTime }
+        if endTime.isEmpty { return startTime }
+        return "\(startTime)-\(endTime)"
+    }
+
+    var showsVerifyCode: Bool {
+        guard status == 3 else { return false }
+        if let cancellationCode, !cancellationCode.isEmpty { return true }
+        if let qrCode, !qrCode.isEmpty { return true }
+        return false
+    }
+
+    var coordinate: (longitude: String, latitude: String)? {
+        guard let longitude, let latitude, !longitude.isEmpty, !latitude.isEmpty else { return nil }
+        return (longitude, latitude)
+    }
+
+    var canCancel: Bool { status == 3 }
+
+    var overdueNotice: String? {
+        guard status == 3, !reserveDate.isEmpty, !endTime.isEmpty else { return nil }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let formatter = DateFormatter()
+        formatter.calendar = calendar
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = calendar.timeZone
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        guard let end = formatter.date(from: "\(reserveDate) \(endTime)"),
+              calendar.isDateInToday(end),
+              end < Date() else { return nil }
+        return "超时未使用，当天可以根据门店情况沟通核销，超过当天订单失效"
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, status, hospitalId, hospitalName, address, mobile, openTime
+        case duration, reserveDate, startTime, endTime, quantity, reservationNumber
+        case cancellationCode, qrCode, description, parentName, notice, applicablePeople, restrictedPeople
+        case cancelReason, cancelTime, verifyTime, finishTime, expireTime, createTime
+        case configId, longitude, latitude, contactName, contactPhone
+        case lng, lat
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = CabinJSON.string(c, .id) ?? ""
+        name = CabinJSON.string(c, .name) ?? ""
+        status = CabinJSON.int(c, .status)
+        hospitalId = CabinJSON.string(c, .hospitalId) ?? ""
+        hospitalName = CabinJSON.string(c, .hospitalName) ?? ""
+        address = CabinJSON.string(c, .address) ?? ""
+        mobile = CabinJSON.string(c, .mobile)
+        openTime = CabinJSON.string(c, .openTime)
+        duration = CabinJSON.int(c, .duration)
+        reserveDate = CabinJSON.string(c, .reserveDate) ?? ""
+        startTime = CabinJSON.string(c, .startTime) ?? ""
+        endTime = CabinJSON.string(c, .endTime) ?? ""
+        quantity = CabinJSON.int(c, .quantity)
+        reservationNumber = CabinJSON.string(c, .reservationNumber)
+        cancellationCode = CabinJSON.string(c, .cancellationCode)
+        qrCode = CabinJSON.string(c, .qrCode)
+        description = CabinJSON.string(c, .description)
+        parentName = CabinJSON.string(c, .parentName)
+        notice = CabinJSON.string(c, .notice)
+        applicablePeople = CabinJSON.string(c, .applicablePeople)
+        restrictedPeople = CabinJSON.string(c, .restrictedPeople)
+        cancelReason = CabinJSON.string(c, .cancelReason)
+        cancelTime = CabinJSON.string(c, .cancelTime)
+        verifyTime = CabinJSON.string(c, .verifyTime)
+        finishTime = CabinJSON.string(c, .finishTime)
+        expireTime = CabinJSON.string(c, .expireTime)
+        createTime = CabinJSON.string(c, .createTime)
+        configId = CabinJSON.string(c, .configId) ?? ""
+        longitude = CabinJSON.string(c, .longitude) ?? CabinJSON.string(c, .lng)
+        latitude = CabinJSON.string(c, .latitude) ?? CabinJSON.string(c, .lat)
+        contactName = CabinJSON.string(c, .contactName)
+        contactPhone = CabinJSON.string(c, .contactPhone)
     }
 }

@@ -8,6 +8,10 @@ struct PackageOrderDraftItem: Codable, Equatable {
     var qty: String
     var unit: String
     var price: Double
+    /// 1 租 / 2 售。仅出租展示标记。
+    var saleFlag: Int? = nil
+
+    var showsRentBadge: Bool { PackageSaleFlag.showsRentBadge(saleFlag) }
 }
 
 struct PackageOrderDraft: Codable, Equatable {
@@ -53,7 +57,13 @@ extension PackageOrderDraft {
         orderId: String? = nil
     ) -> PackageOrderDraft {
         let items = selectedItems.map {
-            PackageOrderDraftItem(name: $0.name, qty: $0.qty, unit: $0.unit, price: $0.priceValue)
+            PackageOrderDraftItem(
+                name: $0.name,
+                qty: $0.qty,
+                unit: $0.unit,
+                price: $0.priceValue,
+                saleFlag: $0.saleFlag
+            )
         }
         let amount = items.map(\.price).reduce(0, +)
         let fallback = Double(package.tiers.first?.price ?? 0)

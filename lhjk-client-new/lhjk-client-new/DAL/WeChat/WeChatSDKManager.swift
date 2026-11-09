@@ -18,6 +18,7 @@ final class WeChatSDKManager: NSObject {
     private(set) var isRegistered = false
 
     private var shareCompletion: ((Result<Void, WeChatSDKError>) -> Void)?
+    private var launchCompletion: ((Result<Void, WeChatSDKError>) -> Void)?
     private var authCompletion: ((Result<WeChatAuthResult, WeChatSDKError>) -> Void)?
     private var payCompletion: ((Result<WeChatPayResult, WeChatSDKError>) -> Void)?
     /// 当前授权请求的 state，回调时须一致
@@ -201,6 +202,45 @@ final class WeChatSDKManager: NSObject {
         #endif
     }
 
+    /// 打开关联小程序的指定页面（我的活动「立即领取」进入同场次详情）。
+    func launchMiniProgram(
+        userName: String = "",
+        path: String,
+        miniProgramType: WeChatMiniProgramType = .release,
+        completion: @escaping (Result<Void, WeChatSDKError>) -> Void
+    ) {
+        guard ensureReady(completion: completion) else { return }
+        let resolvedName = userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? WeChatConfig.miniProgramUserName.trimmingCharacters(in: .whitespacesAndNewlines)
+            : userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !resolvedName.isEmpty else {
+            completion(.failure(.underlying("未配置小程序原始 id（WeChatConfig.miniProgramUserName）")))
+            return
+        }
+
+        #if canImport(WechatOpenSDK)
+        let req = WXLaunchMiniProgramReq()
+        req.userName = resolvedName
+        req.path = path
+        switch miniProgramType {
+        case .release: req.miniProgramType = .release
+        case .test: req.miniProgramType = .test
+        case .preview: req.miniProgramType = .preview
+        }
+        print("[WeChatSDK] launchMiniProgram userName=\(resolvedName) path=\(path) type=\(miniProgramType.rawValue)")
+        launchCompletion = completion
+        WXApi.send(req) { [weak self] success in
+            if success {
+                self?.finishLaunch(.success(()))
+            } else {
+                self?.finishLaunch(.failure(.sendFailed))
+            }
+        }
+        #else
+        completion(.failure(.sdkNotLinked))
+        #endif
+    }
+
     // MARK: - Login
 
     func sendAuth(
@@ -327,6 +367,12 @@ final class WeChatSDKManager: NSObject {
         return nil
     }
 
+    private func finishLaunch(_ result: Result<Void, WeChatSDKError>) {
+        let cb = launchCompletion
+        launchCompletion = nil
+        DispatchQueue.main.async { cb?(result) }
+    }
+
     private func finishShare(_ result: Result<Void, WeChatSDKError>) {
         let cb = shareCompletion
         shareCompletion = nil
@@ -371,6 +417,17 @@ extension WeChatSDKManager: WXApiDelegate {
             handleAuthResp(r)
         case let r as PayResp:
             handlePayResp(r)
+        case let r as WXLaunchMiniProgramResp:
+            print("[WeChatSDK] launchMiniProgram onResp errCode=\(r.errCode)")
+            switch r.errCode {
+            case RespCode.success:
+                finishLaunch(.success(()))
+            case RespCode.userCancel:
+                finishLaunch(.failure(.userCancelled))
+            default:
+                let msg = r.errStr
+                finishLaunch(.failure(.underlying(msg.isEmpty ? "打开小程序失败(\(r.errCode))" : msg)))
+            }
         default:
             print("[WeChatSDK] onResp unhandled errCode=\(resp.errCode) type=\(resp.type)")
         }

@@ -9,6 +9,8 @@ final class SysNotifyCell: UITableViewCell {
     static let reuseID = "SysNotifyCell"
 
     weak var delegate: ChatCellDelegate?
+    /// 饮食卡餐食图点击，只预览大图
+    var onTapMealPhoto: ((String) -> Void)?
     private var currentMessage: ChatMessage?
     private var resolved: IMCardResolved?
 
@@ -128,12 +130,60 @@ final class SysNotifyCell: UITableViewCell {
         return l
     }()
 
+    private let summaryStack: UIStackView = {
+        let s = UIStackView()
+        s.axis = .vertical
+        s.spacing = 10
+        s.isHidden = true
+        return s
+    }()
+
+    private let analysisCard: UIView = {
+        let v = UIView()
+        v.backgroundColor = UIColor(hexString: "#F4F7FC")
+        v.layer.cornerRadius = 12
+        v.layer.borderWidth = 0.5
+        v.layer.borderColor = UIColor(hexString: "#E3F0FB").cgColor
+        v.clipsToBounds = true
+        v.isHidden = true
+        return v
+    }()
+
     private let rowsStack: UIStackView = {
         let s = UIStackView()
         s.axis = .vertical
         s.spacing = 0
         s.isHidden = true
         return s
+    }()
+
+    private let mealPhotoView: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFill
+        iv.clipsToBounds = true
+        iv.layer.cornerRadius = 8
+        iv.backgroundColor = UIColor(hexString: "#FFF8F5")
+        iv.isHidden = true
+        iv.isUserInteractionEnabled = true
+        return iv
+    }()
+
+    private let analysisTitleLabel: UILabel = {
+        let l = UILabel()
+        l.font = ChatBubbleStyle.Card.titleFont
+        l.textColor = ChatBubbleStyle.primaryText
+        l.numberOfLines = 0
+        l.isHidden = true
+        return l
+    }()
+
+    private let analysisBodyLabel: UILabel = {
+        let l = UILabel()
+        l.font = ChatBubbleStyle.Card.bodyFont
+        l.textColor = ChatBubbleStyle.secondaryText
+        l.numberOfLines = 0
+        l.isHidden = true
+        return l
     }()
 
     private let commentStack: UIStackView = {
@@ -171,9 +221,12 @@ final class SysNotifyCell: UITableViewCell {
 
         titleRow.addArrangedSubview(monitorIconCircle)
         titleRow.addArrangedSubview(titleLabel)
-        [coverImageView, titleRow, tagButton, dividerView, descLabel, rowsStack, commentStack, actionButton]
+        [coverImageView, titleRow, tagButton, dividerView, descLabel, summaryStack, mealPhotoView, rowsStack, analysisCard, analysisTitleLabel, analysisBodyLabel, commentStack, actionButton]
             .forEach(cardView.addSubview)
 
+        mealPhotoView.addGestureRecognizer(
+            UITapGestureRecognizer(target: self, action: #selector(mealPhotoTapped))
+        )
         actionButton.addTarget(self, action: #selector(actionTapped), for: .touchUpInside)
 
         let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
@@ -186,6 +239,18 @@ final class SysNotifyCell: UITableViewCell {
         super.prepareForReuse()
         coverImageView.kf.cancelDownloadTask()
         coverImageView.image = nil
+        mealPhotoView.kf.cancelDownloadTask()
+        mealPhotoView.image = nil
+        mealPhotoView.isHidden = true
+        clearStack(summaryStack)
+        summaryStack.isHidden = true
+        analysisCard.isHidden = true
+        analysisTitleLabel.text = nil
+        analysisTitleLabel.isHidden = true
+        analysisBodyLabel.text = nil
+        analysisBodyLabel.attributedText = nil
+        analysisBodyLabel.isHidden = true
+        onTapMealPhoto = nil
         monitorIconView.kf.cancelDownloadTask()
         monitorIconView.image = nil
         clearStack(rowsStack)
@@ -281,6 +346,9 @@ final class SysNotifyCell: UITableViewCell {
         }
         clearStack(rowsStack)
         clearStack(commentStack)
+        clearStack(summaryStack)
+        summaryStack.isHidden = true
+        analysisCard.isHidden = true
 
         switch card.variant {
         case .sysNotify:
@@ -312,11 +380,23 @@ final class SysNotifyCell: UITableViewCell {
     }
 
     private func applyUnifiedSysNotify(_ card: IMCardResolved) {
-        applyLeadingIcon(card)
+        if card.isDietCard {
+            applyDietIcon()
+            titleLabel.font = .fdFont(designSize: 14, weight: .medium)
+        } else {
+            applyLeadingIcon(card)
+            titleLabel.font = ChatBubbleStyle.Card.titleFont
+        }
         applyDataSourceTag(card)
 
         let body = card.bodyText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if card.showsBodyContent && !body.isEmpty {
+        if card.isDietCard {
+            descLabel.text = nil
+            descLabel.isHidden = true
+            populateDietSummary(body)
+            dividerView.backgroundColor = UIColor(hexString: "#EEEEEE")
+        } else if card.showsBodyContent && !body.isEmpty {
+            summaryStack.isHidden = true
             descLabel.attributedText = NSAttributedString(
                 string: body,
                 attributes: [
@@ -326,20 +406,184 @@ final class SysNotifyCell: UITableViewCell {
                 ]
             )
             descLabel.isHidden = false
+            dividerView.backgroundColor = ChatBubbleStyle.dividerColor
         } else {
+            summaryStack.isHidden = true
             descLabel.text = nil
             descLabel.isHidden = true
+            dividerView.backgroundColor = ChatBubbleStyle.dividerColor
         }
 
         let rows = card.displayRows
-        if !rows.isEmpty {
+        if card.isDietCard {
+            appendDietTextRows(rows)
+            let tables = rows.filter { if case .table = $0 { return true }; return false }
+            if !tables.isEmpty {
+                dividerView.isHidden = false
+                rowsStack.isHidden = false
+                rowsStack.spacing = 10
+                populateMonitorRows(tables, accent: card.monitorAccentColor, dietStyle: true)
+            } else if !summaryStack.isHidden || card.dietPhotoURL != nil || card.dietAnalysis != nil {
+                dividerView.isHidden = summaryStack.isHidden
+            }
+        } else if !rows.isEmpty {
             dividerView.isHidden = false
             rowsStack.isHidden = false
             rowsStack.spacing = 0
-            populateMonitorRows(rows, accent: card.monitorAccentColor)
+            populateMonitorRows(rows, accent: card.monitorAccentColor, dietStyle: false)
         }
 
+        applyMealPhoto(card)
+        applyDietAnalysis(card)
         applyJumpAction(card)
+    }
+
+    private func applyDietIcon() {
+        monitorIconView.kf.cancelDownloadTask()
+        monitorIconCircle.isHidden = false
+        monitorIconCircle.backgroundColor = UIColor(hexString: "#FFF2E6")
+        monitorIconView.image = UIImage(named: "im_diet_card_icon")
+        monitorIconView.contentMode = .scaleAspectFit
+        monitorIconView.tintColor = nil
+        monitorIconView.snp.remakeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.equalTo(16)
+            make.height.equalTo(15)
+        }
+    }
+
+    private func applyMealPhoto(_ card: IMCardResolved) {
+        mealPhotoView.kf.cancelDownloadTask()
+        mealPhotoView.image = nil
+        guard let urlStr = card.dietPhotoURL, let url = URL(string: urlStr) else {
+            mealPhotoView.isHidden = true
+            return
+        }
+        mealPhotoView.isHidden = false
+        mealPhotoView.layer.cornerRadius = 12
+        mealPhotoView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
+    }
+
+    private func applyDietAnalysis(_ card: IMCardResolved) {
+        guard let analysis = card.dietAnalysis else {
+            analysisTitleLabel.text = nil
+            analysisTitleLabel.isHidden = true
+            analysisBodyLabel.attributedText = nil
+            analysisBodyLabel.isHidden = true
+            analysisCard.isHidden = true
+            return
+        }
+        if analysis.title.isEmpty {
+            analysisTitleLabel.text = nil
+            analysisTitleLabel.isHidden = true
+        } else {
+            analysisTitleLabel.font = .fdFont(designSize: 14, weight: .bold)
+            analysisTitleLabel.textColor = UIColor(hexString: "#181D3D")
+            analysisTitleLabel.text = analysis.title
+            analysisTitleLabel.isHidden = false
+        }
+        analysisBodyLabel.attributedText = dietAnalysisBody(analysis.content)
+        analysisBodyLabel.isHidden = false
+        analysisCard.isHidden = false
+    }
+
+    private func appendDietTextRows(_ rows: [IMMonitorRow]) {
+        for row in rows {
+            guard case .text(let label, let value, let colorHex) = row else { continue }
+            summaryStack.isHidden = false
+            summaryStack.addArrangedSubview(
+                makeDietSummaryRow(
+                    label: dietPlainLabel(label),
+                    value: value,
+                    valueColor: resolvedColor(colorHex)
+                )
+            )
+        }
+    }
+
+    private func dietAnalysisBody(_ text: String) -> NSAttributedString {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineHeightMultiple = 1.5
+        let body = NSMutableAttributedString(
+            string: text,
+            attributes: [
+                .font: UIFont.fdFont(designSize: 12, weight: .regular),
+                .foregroundColor: UIColor(hexString: "#8591AB"),
+                .paragraphStyle: paragraph,
+            ]
+        )
+        let ns = text as NSString
+        for token in ["表扬：", "表扬:", "建议：", "建议:"] {
+            var search = NSRange(location: 0, length: ns.length)
+            while search.location < ns.length {
+                let found = ns.range(of: token, options: [], range: search)
+                if found.location == NSNotFound { break }
+                body.addAttributes(
+                    [
+                        .font: UIFont.fdFont(designSize: 12, weight: .medium),
+                        .foregroundColor: UIColor(hexString: "#3664B1"),
+                    ],
+                    range: found
+                )
+                let next = found.location + found.length
+                if next >= ns.length { break }
+                search = NSRange(location: next, length: ns.length - next)
+            }
+        }
+        return body
+    }
+
+    private func populateDietSummary(_ text: String) {
+        clearStack(summaryStack)
+        let lines = dietSummaryLines(text)
+        guard !lines.isEmpty else {
+            summaryStack.isHidden = true
+            return
+        }
+        summaryStack.isHidden = false
+        for line in lines {
+            summaryStack.addArrangedSubview(makeDietSummaryRow(label: line.label, value: line.value))
+        }
+    }
+
+    private func dietSummaryLines(_ text: String) -> [(label: String, value: String)] {
+        text.components(separatedBy: .newlines).compactMap { raw in
+            let line = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !line.isEmpty else { return nil }
+            for separator in ["：", ":"] {
+                guard let range = line.range(of: separator) else { continue }
+                let label = String(line[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
+                let value = String(line[range.upperBound...]).trimmingCharacters(in: .whitespaces)
+                if !label.isEmpty { return (label, value) }
+            }
+            let parts = line.split(whereSeparator: { $0 == " " || $0 == "\u{3000}" }).map(String.init)
+            if parts.count >= 2 {
+                return (parts[0], parts.dropFirst().joined(separator: " "))
+            }
+            return ("", line)
+        }
+    }
+
+    private func makeDietSummaryRow(label: String, value: String, valueColor: UIColor? = nil) -> UIView {
+        let row = UIStackView()
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = 8
+        if !label.isEmpty {
+            let name = UILabel()
+            name.font = .fdFont(designSize: 12, weight: .regular)
+            name.textColor = ChatBubbleStyle.secondaryText
+            name.text = label
+            name.setContentHuggingPriority(.required, for: .horizontal)
+            row.addArrangedSubview(name)
+        }
+        let detail = UILabel()
+        detail.font = .fdFont(designSize: 12, weight: label.isEmpty ? .regular : .medium)
+        detail.textColor = valueColor ?? (label.isEmpty ? ChatBubbleStyle.secondaryText : ChatBubbleStyle.primaryText)
+        detail.text = value
+        detail.numberOfLines = 0
+        row.addArrangedSubview(detail)
+        return row
     }
 
     private func applyLeadingIcon(_ card: IMCardResolved) {
@@ -356,6 +600,10 @@ final class SysNotifyCell: UITableViewCell {
         monitorIconView.contentMode = .scaleAspectFit
         monitorIconView.clipsToBounds = false
         monitorIconView.layer.cornerRadius = 0
+        monitorIconView.snp.remakeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.height.equalTo(ChatBubbleStyle.Card.iconGlyphSize)
+        }
         monitorIconView.kf.setImage(with: url, options: [.transition(.fade(0.2))])
     }
 
@@ -363,6 +611,31 @@ final class SysNotifyCell: UITableViewCell {
         var config = tagButton.configuration ?? .plain()
         if card.showsDataSourceTag, let tag = card.dataSourceTag {
             config.title = tag
+            if card.isDietCard {
+                config.contentInsets = NSDirectionalEdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8)
+                config.baseForegroundColor = UIColor(hexString: "#FF7A50")
+                config.background.backgroundColor = .clear
+                config.background.strokeColor = UIColor(hexString: "#FF7A50").withAlphaComponent(0.5)
+                config.background.strokeWidth = 0.5
+                config.background.cornerRadius = 29
+                config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+                    var outgoing = incoming
+                    outgoing.font = .fdFont(designSize: 10, weight: .regular)
+                    return outgoing
+                }
+            } else {
+                config.contentInsets = NSDirectionalEdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8)
+                config.baseForegroundColor = ChatBubbleStyle.userFill
+                config.background.backgroundColor = .clear
+                config.background.strokeColor = ChatBubbleStyle.userFill.withAlphaComponent(0.5)
+                config.background.strokeWidth = 0.5
+                config.background.cornerRadius = 29
+                config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+                    var outgoing = incoming
+                    outgoing.font = ChatBubbleStyle.Card.tagFont
+                    return outgoing
+                }
+            }
             tagButton.configuration = config
             tagButton.isHidden = false
         } else {
@@ -387,31 +660,54 @@ final class SysNotifyCell: UITableViewCell {
 
     // MARK: - Monitor rows（对齐 funde-client chat-card__rows）
 
-    private func populateMonitorRows(_ rows: [IMMonitorRow], accent: UIColor) {
+    private func populateMonitorRows(_ rows: [IMMonitorRow], accent: UIColor, dietStyle: Bool = false) {
         for row in rows {
             switch row {
             case .text(let label, let value, let colorHex):
-                let isStatus = shouldRenderStatusPill(label: label, colorHex: colorHex)
-                rowsStack.addArrangedSubview(
-                    makeMonitorTextRow(
-                        label: label,
-                        value: value,
-                        colorHex: colorHex,
-                        asStatusPill: isStatus,
-                        fallbackAccent: accent
+                if dietStyle {
+                    rowsStack.addArrangedSubview(
+                        makeDietSummaryRow(
+                            label: dietPlainLabel(label),
+                            value: value,
+                            valueColor: resolvedColor(colorHex)
+                        )
                     )
-                )
-            case .table(let headers, let cells):
-                let wrap = UIView()
-                let table = makeTableView(headers: headers, cells: cells)
-                wrap.addSubview(table)
-                table.snp.makeConstraints { make in
-                    make.top.equalToSuperview().offset(4)
-                    make.leading.trailing.bottom.equalToSuperview()
+                } else {
+                    rowsStack.addArrangedSubview(
+                        makeMonitorTextRow(
+                            label: label,
+                            value: value,
+                            colorHex: colorHex,
+                            asStatusPill: shouldRenderStatusPill(label: label, colorHex: colorHex),
+                            fallbackAccent: accent
+                        )
+                    )
                 }
-                rowsStack.addArrangedSubview(wrap)
+            case .table(let headers, let cells):
+                let table = makeTableView(headers: headers, cells: cells, dietStyle: dietStyle)
+                if dietStyle {
+                    rowsStack.addArrangedSubview(table)
+                } else {
+                    let wrap = UIView()
+                    wrap.addSubview(table)
+                    table.snp.makeConstraints { make in
+                        make.top.equalToSuperview().offset(4)
+                        make.leading.trailing.bottom.equalToSuperview()
+                    }
+                    rowsStack.addArrangedSubview(wrap)
+                }
             }
         }
+    }
+
+    /// 饮食卡标签不展示冒号
+    private func dietPlainLabel(_ label: String) -> String {
+        var trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.hasSuffix("：") || trimmed.hasSuffix(":") {
+            trimmed.removeLast()
+            trimmed = trimmed.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return trimmed
     }
 
     private func shouldRenderStatusPill(label: String, colorHex: String?) -> Bool {
@@ -429,6 +725,7 @@ final class SysNotifyCell: UITableViewCell {
         value: String,
         colorHex: String?,
         asStatusPill: Bool,
+        emphasizeValue: Bool = false,
         fallbackAccent: UIColor
     ) -> UIView {
         let row = UIStackView()
@@ -454,7 +751,9 @@ final class SysNotifyCell: UITableViewCell {
             row.addArrangedSubview(spacer)
         } else {
             let right = UILabel()
-            right.font = ChatBubbleStyle.Card.rowValueFont
+            right.font = emphasizeValue
+                ? .fdFont(designSize: 14, weight: .semibold)
+                : ChatBubbleStyle.Card.rowValueFont
             right.textColor = resolvedColor(colorHex) ?? ChatBubbleStyle.primaryText
             right.text = value
             right.numberOfLines = 0
@@ -530,7 +829,10 @@ final class SysNotifyCell: UITableViewCell {
         }
     }
 
-    private func makeTableView(headers: [String], cells: [[String]]) -> UIView {
+    private func makeTableView(headers: [String], cells: [[String]], dietStyle: Bool = false) -> UIView {
+        if dietStyle {
+            return makeDietTableView(headers: headers, cells: cells)
+        }
         let stack = UIStackView()
         stack.axis = .vertical
         stack.spacing = 0
@@ -545,6 +847,64 @@ final class SysNotifyCell: UITableViewCell {
             stack.addArrangedSubview(makeTableRow(padded, isHeader: false))
         }
         return stack
+    }
+
+    private func makeDietTableView(headers: [String], cells: [[String]]) -> UIView {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 0
+        stack.layer.cornerRadius = 12
+        stack.layer.borderWidth = 1
+        stack.layer.borderColor = UIColor(hexString: "#FDF6F3").cgColor
+        stack.clipsToBounds = true
+        stack.backgroundColor = .white
+
+        stack.addArrangedSubview(makeDietTableRow(headers, isHeader: true))
+        for cellRow in cells {
+            let padded = headers.indices.map { i in i < cellRow.count ? cellRow[i] : "" }
+            stack.addArrangedSubview(makeDietTableRow(padded, isHeader: false))
+        }
+        return stack
+    }
+
+    private func makeDietTableRow(_ cols: [String], isHeader: Bool) -> UIView {
+        let row = UIStackView()
+        row.axis = .horizontal
+        row.distribution = .fillEqually
+        row.spacing = 0
+        row.backgroundColor = isHeader ? UIColor(hexString: "#FDF6F3") : .white
+        for (index, text) in cols.enumerated() {
+            let wrap = UIView()
+            let label = UILabel()
+            label.text = text
+            label.font = .fdFont(designSize: 12, weight: .regular)
+            label.textColor = isHeader ? ChatBubbleStyle.userFill : ChatBubbleStyle.primaryText
+            label.numberOfLines = 2
+            wrap.addSubview(label)
+            label.snp.makeConstraints { make in
+                make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8))
+            }
+            if index < cols.count - 1 {
+                let line = UIView()
+                line.backgroundColor = UIColor(hexString: "#F6EDE6")
+                wrap.addSubview(line)
+                line.snp.makeConstraints { make in
+                    make.top.bottom.trailing.equalToSuperview()
+                    make.width.equalTo(1 / UIScreen.main.scale)
+                }
+            }
+            if !isHeader {
+                let line = UIView()
+                line.backgroundColor = UIColor(hexString: "#F6EDE6")
+                wrap.addSubview(line)
+                line.snp.makeConstraints { make in
+                    make.leading.trailing.top.equalToSuperview()
+                    make.height.equalTo(1 / UIScreen.main.scale)
+                }
+            }
+            row.addArrangedSubview(wrap)
+        }
+        return row
     }
 
     private func makeTableRow(_ cols: [String], isHeader: Bool) -> UIView {
@@ -716,6 +1076,28 @@ final class SysNotifyCell: UITableViewCell {
             make.top.leading.equalToSuperview()
             make.width.height.equalTo(0)
         }
+        if card?.isDietCard != true {
+            mealPhotoView.snp.remakeConstraints { make in
+                make.top.leading.equalToSuperview()
+                make.width.height.equalTo(0)
+            }
+            summaryStack.snp.remakeConstraints { make in
+                make.top.leading.equalToSuperview()
+                make.width.height.equalTo(0)
+            }
+            analysisCard.snp.remakeConstraints { make in
+                make.top.leading.equalToSuperview()
+                make.width.height.equalTo(0)
+            }
+            analysisTitleLabel.snp.remakeConstraints { make in
+                make.top.leading.equalToSuperview()
+                make.width.height.equalTo(0)
+            }
+            analysisBodyLabel.snp.remakeConstraints { make in
+                make.top.leading.equalToSuperview()
+                make.width.height.equalTo(0)
+            }
+        }
         titleRow.snp.remakeConstraints { make in
             make.top.equalToSuperview().offset(pad)
             make.leading.equalToSuperview().inset(pad)
@@ -739,12 +1121,16 @@ final class SysNotifyCell: UITableViewCell {
         }
 
         if isUnified {
-            layoutUnifiedSysNotify(
-                pad: pad,
-                showDesc: showDesc,
-                showRows: showRows,
-                showAction: showAction
-            )
+            if card?.isDietCard == true {
+                layoutDietCard(pad: pad, showTag: showTag, card: card)
+            } else {
+                layoutUnifiedSysNotify(
+                    pad: pad,
+                    showDesc: showDesc,
+                    showRows: showRows,
+                    showAction: showAction
+                )
+            }
             return
         }
 
@@ -830,6 +1216,7 @@ final class SysNotifyCell: UITableViewCell {
         showRows: Bool,
         showAction: Bool
     ) {
+        titleRow.spacing = 8
         commentStack.snp.remakeConstraints { make in
             make.top.equalTo(titleRow.snp.bottom)
             make.leading.equalToSuperview().offset(pad)
@@ -909,6 +1296,211 @@ final class SysNotifyCell: UITableViewCell {
                 }
             }
         }
+    }
+
+    /// 饮食卡：图标标题 → 摘要 → 餐食图 → 明细 → 分析。空块不占位，无底部跳转按钮。
+    private func layoutDietCard(pad: CGFloat, showTag: Bool, card: IMCardResolved?) {
+        titleRow.spacing = 7
+        let showTitle = card?.showsDietTitle == true
+        let showHeader = showTitle || showTag
+        let showBody = card?.showsBodyContent == true
+            && !(card?.bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+        let hasTextRows = card?.displayRows.contains { if case .text = $0 { return true }; return false } ?? false
+        let showSummary = showBody || hasTextRows
+        let showPhoto = card?.dietPhotoURL != nil
+        let showTable = card?.displayRows.contains { if case .table = $0 { return true }; return false } ?? false
+        let analysis = card?.dietAnalysis
+        let showAnalysisTitle = !(analysis?.title.isEmpty ?? true)
+        let showAnalysis = analysis != nil
+        let showDivider = showSummary && (showPhoto || showTable || showAnalysis)
+        dividerView.isHidden = !showDivider
+
+        commentStack.snp.remakeConstraints { make in
+            make.top.equalTo(titleRow.snp.bottom)
+            make.leading.equalToSuperview().offset(pad)
+            make.height.equalTo(0)
+        }
+        actionButton.snp.remakeConstraints { make in
+            make.top.equalTo(titleRow.snp.bottom)
+            make.leading.equalToSuperview().offset(pad)
+            make.height.equalTo(0)
+        }
+        descLabel.snp.remakeConstraints { make in
+            make.top.leading.equalToSuperview()
+            make.width.height.equalTo(0)
+        }
+
+        if showHeader {
+            titleRow.snp.remakeConstraints { make in
+                make.top.equalToSuperview().offset(pad)
+                make.leading.equalToSuperview().inset(pad)
+                if showTag {
+                    make.trailing.equalTo(tagButton.snp.leading).offset(-8)
+                } else {
+                    make.trailing.equalToSuperview().inset(pad)
+                }
+            }
+            tagButton.snp.remakeConstraints { make in
+                make.centerY.equalTo(titleRow)
+                make.trailing.equalToSuperview().inset(pad)
+                if !showTag {
+                    make.width.height.equalTo(0)
+                }
+            }
+        } else {
+            titleRow.snp.remakeConstraints { make in
+                make.top.equalToSuperview().offset(pad)
+                make.leading.equalToSuperview().inset(pad)
+                make.height.equalTo(0)
+            }
+            tagButton.snp.remakeConstraints { make in
+                make.centerY.equalTo(titleRow)
+                make.trailing.equalToSuperview().inset(pad)
+                make.width.height.equalTo(0)
+            }
+        }
+
+        let headerBottom = showHeader ? titleRow.snp.bottom : titleRow.snp.top
+
+        if showSummary {
+            summaryStack.snp.remakeConstraints { make in
+                make.top.equalTo(headerBottom).offset(showHeader ? 12 : 0)
+                make.leading.trailing.equalToSuperview().inset(pad)
+            }
+        } else {
+            summaryStack.snp.remakeConstraints { make in
+                make.top.equalTo(headerBottom)
+                make.leading.equalToSuperview().offset(pad)
+                make.height.equalTo(0)
+            }
+        }
+        let afterSummary = showSummary ? summaryStack.snp.bottom : headerBottom
+
+        if showDivider {
+            dividerView.snp.remakeConstraints { make in
+                make.top.equalTo(afterSummary).offset(12)
+                make.leading.trailing.equalToSuperview().inset(pad)
+                make.height.equalTo(0.5)
+            }
+        } else {
+            dividerView.snp.remakeConstraints { make in
+                make.top.equalTo(afterSummary)
+                make.leading.equalToSuperview().offset(pad)
+                make.height.equalTo(0)
+            }
+        }
+        let afterDivider = showDivider ? dividerView.snp.bottom : afterSummary
+
+        if showPhoto {
+            mealPhotoView.snp.remakeConstraints { make in
+                let gap: CGFloat = (showDivider || showSummary || showHeader) ? 12 : 0
+                make.top.equalTo(afterDivider).offset(gap)
+                make.leading.trailing.equalToSuperview().inset(pad)
+                make.height.equalTo(80)
+            }
+        } else {
+            mealPhotoView.snp.remakeConstraints { make in
+                make.top.equalTo(afterDivider)
+                make.leading.equalToSuperview().offset(pad)
+                make.height.equalTo(0)
+            }
+        }
+        let afterPhoto = showPhoto ? mealPhotoView.snp.bottom : afterDivider
+
+        if showTable {
+            rowsStack.snp.remakeConstraints { make in
+                let gap: CGFloat = showPhoto ? 10 : ((showDivider || showSummary || showHeader) ? 12 : 0)
+                make.top.equalTo(afterPhoto).offset(gap)
+                make.leading.trailing.equalToSuperview().inset(pad)
+            }
+        } else {
+            rowsStack.snp.remakeConstraints { make in
+                make.top.equalTo(afterPhoto)
+                make.leading.equalToSuperview().offset(pad)
+                make.height.equalTo(0)
+            }
+        }
+        let afterRows = showTable ? rowsStack.snp.bottom : afterPhoto
+
+        if showAnalysis {
+            analysisCard.snp.remakeConstraints { make in
+                make.top.equalTo(afterRows).offset(12)
+                make.leading.trailing.equalToSuperview().inset(pad)
+                make.bottom.equalToSuperview().offset(-pad)
+            }
+            if showAnalysisTitle {
+                analysisTitleLabel.snp.remakeConstraints { make in
+                    make.top.equalTo(analysisCard).offset(12)
+                    make.leading.trailing.equalTo(analysisCard).inset(12)
+                }
+            } else {
+                analysisTitleLabel.snp.remakeConstraints { make in
+                    make.top.equalTo(analysisCard).offset(12)
+                    make.leading.equalTo(analysisCard).offset(12)
+                    make.height.equalTo(0)
+                }
+            }
+            analysisBodyLabel.snp.remakeConstraints { make in
+                make.top.equalTo(showAnalysisTitle ? analysisTitleLabel.snp.bottom : analysisCard.snp.top)
+                    .offset(showAnalysisTitle ? 6 : 12)
+                make.leading.trailing.equalTo(analysisCard).inset(12)
+                make.bottom.equalTo(analysisCard).offset(-12)
+            }
+        } else {
+            analysisCard.snp.remakeConstraints { make in
+                make.top.equalTo(afterRows)
+                make.leading.equalToSuperview().offset(pad)
+                make.height.equalTo(0)
+            }
+            analysisTitleLabel.snp.remakeConstraints { make in
+                make.top.equalTo(afterRows)
+                make.leading.equalToSuperview().offset(pad)
+                make.height.equalTo(0)
+            }
+            analysisBodyLabel.snp.remakeConstraints { make in
+                make.top.equalTo(afterRows)
+                make.leading.equalToSuperview().offset(pad)
+                make.height.equalTo(0)
+            }
+            pinDietBottom(
+                showRows: showTable,
+                showPhoto: showPhoto,
+                showDesc: showSummary,
+                showHeader: showHeader,
+                pad: pad
+            )
+        }
+    }
+
+    private func pinDietBottom(
+        showRows: Bool,
+        showPhoto: Bool,
+        showDesc: Bool,
+        showHeader: Bool,
+        pad: CGFloat
+    ) {
+        if showRows {
+            rowsStack.snp.makeConstraints { make in
+                make.bottom.equalToSuperview().offset(-pad)
+            }
+        } else if showPhoto {
+            mealPhotoView.snp.makeConstraints { make in
+                make.bottom.equalToSuperview().offset(-pad)
+            }
+        } else if showDesc {
+            summaryStack.snp.makeConstraints { make in
+                make.bottom.equalToSuperview().offset(-pad)
+            }
+        } else if showHeader {
+            titleRow.snp.makeConstraints { make in
+                make.bottom.equalToSuperview().offset(-pad)
+            }
+        }
+    }
+
+    @objc private func mealPhotoTapped() {
+        guard let url = resolved?.dietPhotoURL else { return }
+        onTapMealPhoto?(url)
     }
 
     @objc private func actionTapped() {

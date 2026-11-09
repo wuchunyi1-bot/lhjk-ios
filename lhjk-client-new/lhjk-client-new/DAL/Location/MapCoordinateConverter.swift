@@ -1,5 +1,6 @@
 import CoreLocation
 import Foundation
+import UIKit
 
 // MARK: - MapCoordinateConverter
 
@@ -84,5 +85,29 @@ enum MapCoordinateConverter {
         result += (20.0 * sin(x * Double.pi) + 40.0 * sin(x / 3.0 * Double.pi)) * 2.0 / 3.0
         result += (150.0 * sin(x / 12.0 * Double.pi) + 300.0 * sin(x / 30.0 * Double.pi)) * 2.0 / 3.0
         return result
+    }
+}
+
+/// 用高德 App 打开驾车导航。坐标为高德 GCJ-02。
+enum AmapNavigation {
+
+    static var isInstalled: Bool {
+        guard let url = URL(string: "iosamap://") else { return false }
+        return UIApplication.shared.canOpenURL(url)
+    }
+
+    static func driveURL(longitude: String, latitude: String, name: String) -> URL? {
+        var components = URLComponents()
+        components.scheme = "iosamap"
+        components.host = "navi"
+        components.queryItems = [
+            URLQueryItem(name: "sourceApplication", value: "lhjk"),
+            URLQueryItem(name: "poiname", value: name),
+            URLQueryItem(name: "lat", value: latitude),
+            URLQueryItem(name: "lon", value: longitude),
+            URLQueryItem(name: "dev", value: "0"),
+            URLQueryItem(name: "style", value: "0"),
+        ]
+        return components.url
     }
 }
