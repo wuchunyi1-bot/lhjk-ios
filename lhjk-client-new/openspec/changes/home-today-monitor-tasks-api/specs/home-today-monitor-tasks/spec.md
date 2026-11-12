@@ -46,6 +46,7 @@
   - 名称含「用药 / 药物」→ `/medication`
   - 名称含「运动」→ `/exercise-food/check-in?taskId={taskId}`（优先接口 `taskId`，否则实例 `id`）
   - 血压 / 血糖 / 体重 / 体温 / 血氧 / 心率 / 血脂 / 饮食 → 对应体征 H5
+  - 名称含「饮水」→ `FundeH5:/water-intake/add`
   - 名称含「睡眠」→ 不跳转
 - **AND** 字典未同步时，再按常见 value 编号兜底：`2` 血压、`3` 运动、`4` 体重、`5` 血糖、`6` 体温、`7` 血氧
 - **AND** 若 `skipUrl` 以 `/` 开头且 type 可跳转：优先使用；若其为指标首页路径（`/health/metrics/{key}` 无子路径），SHALL 改写为同指标的 `/add` 路径后再跳转

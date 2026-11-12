@@ -66,22 +66,22 @@ final class WellnessCabinServiceItemCell: UITableViewCell {
         cover.clipsToBounds = true
         cover.layer.cornerRadius = 8
 
-        nameLabel.font = .fdFont(ofSize: 15, weight: .semibold)
+        nameLabel.font = .fdFont(ofSize: 16, weight: .semibold)
         nameLabel.textColor = .fdText
         nameLabel.numberOfLines = 1
 
-        priceLabel.font = .fdFont(ofSize: 13, weight: .semibold)
+        priceLabel.font = .fdFont(ofSize: 15, weight: .semibold)
         priceLabel.textColor = .fdPrimary
 
-        durationLabel.font = .fdFont(ofSize: 11, weight: .regular)
-        durationLabel.textColor = .fdMuted
+        durationLabel.font = .fdFont(ofSize: 13, weight: .regular)
+        durationLabel.textColor = .fdSubtext
 
         bookButton.setTitle("立即预约", for: .normal)
         bookButton.setTitleColor(.white, for: .normal)
-        bookButton.titleLabel?.font = .fdFont(ofSize: 12, weight: .medium)
+        bookButton.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
         bookButton.backgroundColor = .fdPrimary
-        bookButton.layer.cornerRadius = 15
-        bookButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 11, bottom: 0, right: 11)
+        bookButton.layer.cornerRadius = 16
+        bookButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
         bookButton.addTarget(self, action: #selector(bookTapped), for: .touchUpInside)
 
         separator.backgroundColor = .fdBorder
@@ -110,7 +110,7 @@ final class WellnessCabinServiceItemCell: UITableViewCell {
         bookButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(14)
             $0.centerY.equalTo(cover)
-            $0.height.equalTo(30)
+            $0.height.equalTo(32)
         }
         body.snp.makeConstraints {
             $0.leading.equalTo(cover.snp.trailing).offset(12)

@@ -2,26 +2,25 @@ import Combine
 import SnapKit
 import UIKit
 
-/// 康养小屋列表。结构对齐选择服务机构：定位条 + 搜索列表。卡片文案按驿站原型。
+/// 康养小屋列表。未选省市区或 GPS 前不展示驿站，空态引导选择地区。
 final class WellnessCabinViewController: BaseViewController {
 
     private let viewModel = WellnessCabinListViewModel()
     private var cancellables = Set<AnyCancellable>()
 
-    private let locationCard = UIView()
-    private let cityLabel = UILabel()
-    private let districtLabel = UILabel()
-    private let relocateButton = UIButton(type: .system)
-    private let sheetView = UIView()
+    private let regionTitle = UILabel()
+    private let regionField = UIControl()
+    private let regionValueLabel = UILabel()
+    private let gpsButton = UIButton(type: .system)
+    private let searchBox = UIView()
     private let searchField = UITextField()
     private let clearButton = UIButton(type: .system)
     private let hintLabel = UILabel()
     private let tableView = UITableView(frame: .zero, style: .plain)
-    private let emptyView = FDEmptyStateView(
-        style: .compact,
-        message: "未找到匹配驿站",
-        subtitle: "请尝试其他关键词，或重新定位"
-    )
+    private let emptyStack = UIStackView()
+    private let emptyTitle = UILabel()
+    private let emptySubtitle = UILabel()
+    private let chooseRegionButton = UIButton(type: .system)
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -38,43 +37,50 @@ final class WellnessCabinViewController: BaseViewController {
             action: #selector(backTapped)
         )
         navigationItem.leftBarButtonItem?.tintColor = .fdText
-        setupLocationCard()
-        setupSheet()
+        setupRegion()
+        setupSearch()
+        setupList()
     }
 
     override func bindViewModel() {
-        Publishers.CombineLatest(viewModel.$cityText, viewModel.$districtText)
+        viewModel.$anchor
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] city, district in
-                self?.cityLabel.text = city
-                self?.districtLabel.text = district
-                self?.districtLabel.isHidden = district.isEmpty
-            }
+            .sink { [weak self] _ in self?.render() }
             .store(in: &cancellables)
 
         viewModel.$isLocating
             .receive(on: DispatchQueue.main)
             .sink { [weak self] locating in
-                self?.relocateButton.isEnabled = !locating
-                self?.relocateButton.setTitle(locating ? "定位中…" : "重新定位", for: .normal)
+                self?.gpsButton.isEnabled = !locating
+                self?.gpsButton.setTitle(locating ? "定位中…" : "使用当前 GPS 定位", for: .normal)
             }
             .store(in: &cancellables)
 
         viewModel.$items
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.renderList() }
+            .sink { [weak self] _ in self?.render() }
             .store(in: &cancellables)
 
         viewModel.$isLoadingList
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.renderList() }
+            .sink { [weak self] _ in self?.render() }
             .store(in: &cancellables)
 
-        viewModel.$errorMessage
+        viewModel.$notice
             .receive(on: DispatchQueue.main)
             .sink { [weak self] message in
                 guard let message, !message.isEmpty else { return }
                 self?.showToastAlert(message)
+                self?.viewModel.clearNotice()
+            }
+            .store(in: &cancellables)
+
+        viewModel.$asksForRegionPicker
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] asks in
+                guard asks else { return }
+                self?.viewModel.consumeRegionPickerRequest()
+                self?.openRegionPicker()
             }
             .store(in: &cancellables)
 
@@ -90,94 +96,100 @@ final class WellnessCabinViewController: BaseViewController {
         }
     }
 
-    private func renderList() {
+    private func render() {
+        let ready = viewModel.locationReady
+        let text = viewModel.anchor?.fieldText ?? ""
+        regionValueLabel.text = text.isEmpty ? "请选择省、市、区" : text
+        regionValueLabel.textColor = text.isEmpty ? .fdTabInactive : .fdText
         hintLabel.text = viewModel.hintText
         tableView.reloadData()
-        emptyView.isHidden = !viewModel.items.isEmpty || viewModel.isLoadingList
+
+        let showStores = ready && !viewModel.items.isEmpty
+        tableView.isHidden = !showStores
+        emptyStack.isHidden = showStores || viewModel.isLoadingList
+        if !ready {
+            emptyTitle.text = "请选择所在地区"
+            emptySubtitle.text = "支持分步选择省份、城市、区县，选完自动按距离排序"
+            chooseRegionButton.isHidden = false
+        } else {
+            emptyTitle.text = "未找到匹配驿站"
+            emptySubtitle.text = "请尝试其他关键词，或更换所在地区"
+            chooseRegionButton.isHidden = true
+        }
     }
 
-    private func setupLocationCard() {
-        locationCard.backgroundColor = .fdSurface
-        locationCard.layer.cornerRadius = 16
-        locationCard.clipsToBounds = true
+    private func setupRegion() {
+        regionTitle.text = "定位区域"
+        regionTitle.font = .fdFont(ofSize: 14, weight: .regular)
+        regionTitle.textColor = .fdSubtext
 
-        let deco = UIImageView(image: UIImage(named: "onboarding_address_bg"))
-        deco.contentMode = .scaleToFill
-        deco.clipsToBounds = true
+        regionField.backgroundColor = .fdSurface
+        regionField.layer.cornerRadius = 12
+        regionField.addTarget(self, action: #selector(regionTapped), for: .touchUpInside)
 
-        let iconCircle = UIView()
-        iconCircle.backgroundColor = .fdPrimarySoft
-        iconCircle.layer.cornerRadius = 22
-        let pin = UIImageView(image: UIImage(named: "onboarding_address_icon"))
-        pin.contentMode = .scaleAspectFit
+        let star = UILabel()
+        star.text = "*"
+        star.font = .fdFont(ofSize: 16, weight: .medium)
+        star.textColor = .fdDanger
 
-        let locateTitle = UILabel()
-        locateTitle.text = "当前定位"
-        locateTitle.font = .fdFont(ofSize: 16, weight: .regular)
-        locateTitle.textColor = .fdTabInactive
+        let regionName = UILabel()
+        regionName.text = "所在地区"
+        regionName.font = .fdFont(ofSize: 16, weight: .regular)
+        regionName.textColor = .fdText
+        regionName.setContentHuggingPriority(.required, for: .horizontal)
 
-        cityLabel.font = .fdFont(ofSize: 18, weight: .medium)
-        cityLabel.textColor = .fdText
-        districtLabel.font = .fdFont(ofSize: 18, weight: .medium)
-        districtLabel.textColor = .fdText
+        regionValueLabel.font = .fdFont(ofSize: 16, weight: .regular)
+        regionValueLabel.textColor = .fdTabInactive
+        regionValueLabel.textAlignment = .right
+        regionValueLabel.text = "请选择省、市、区"
 
-        let placeRow = UIStackView(arrangedSubviews: [cityLabel, districtLabel])
-        placeRow.axis = .horizontal
-        placeRow.spacing = 8
-        placeRow.alignment = .center
+        let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
+        chevron.tintColor = .fdTabInactive
+        chevron.contentMode = .scaleAspectFit
+        chevron.setContentHuggingPriority(.required, for: .horizontal)
 
-        relocateButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .regular)
-        relocateButton.setTitleColor(.fdPrimary, for: .normal)
-        relocateButton.setTitle("重新定位", for: .normal)
-        relocateButton.addTarget(self, action: #selector(relocateTapped), for: .touchUpInside)
+        let row = UIStackView(arrangedSubviews: [star, regionName, regionValueLabel, chevron])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = 4
+        row.isUserInteractionEnabled = false
+        regionField.addSubview(row)
 
-        locationCard.addSubview(deco)
-        iconCircle.addSubview(pin)
-        locationCard.addSubview(iconCircle)
-        locationCard.addSubview(locateTitle)
-        locationCard.addSubview(placeRow)
-        locationCard.addSubview(relocateButton)
-        view.addSubview(locationCard)
+        gpsButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .regular)
+        gpsButton.setTitleColor(.fdPrimary, for: .normal)
+        gpsButton.setTitle("使用当前 GPS 定位", for: .normal)
+        gpsButton.setImage(UIImage(systemName: "location"), for: .normal)
+        gpsButton.tintColor = .fdPrimary
+        gpsButton.semanticContentAttribute = .forceLeftToRight
+        gpsButton.imageEdgeInsets = UIEdgeInsets(top: 0, left: -4, bottom: 0, right: 4)
+        gpsButton.addTarget(self, action: #selector(gpsTapped), for: .touchUpInside)
 
-        locationCard.snp.makeConstraints {
+        view.addSubview(regionTitle)
+        view.addSubview(regionField)
+        view.addSubview(gpsButton)
+
+        regionTitle.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide).offset(12)
+            $0.leading.equalToSuperview().inset(20)
+        }
+        regionField.snp.makeConstraints {
+            $0.top.equalTo(regionTitle.snp.bottom).offset(8)
             $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(locationCard.snp.width).multipliedBy(80.0 / 343.0)
+            $0.height.equalTo(48)
         }
-        deco.snp.makeConstraints { $0.edges.equalToSuperview() }
-        iconCircle.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(12)
+        row.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(12)
             $0.centerY.equalToSuperview()
-            $0.size.equalTo(44)
         }
-        pin.snp.makeConstraints {
-            $0.center.equalToSuperview()
-            $0.size.equalTo(32)
+        chevron.snp.makeConstraints { $0.size.equalTo(14) }
+        gpsButton.snp.makeConstraints {
+            $0.top.equalTo(regionField.snp.bottom).offset(12)
+            $0.leading.equalToSuperview().inset(16)
+            $0.height.equalTo(32)
         }
-        locateTitle.snp.makeConstraints {
-            $0.leading.equalTo(iconCircle.snp.trailing).offset(12)
-            $0.top.equalToSuperview().offset(14)
-        }
-        relocateButton.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(12)
-            $0.centerY.equalTo(locateTitle)
-        }
-        placeRow.snp.makeConstraints {
-            $0.leading.equalTo(locateTitle)
-            $0.top.equalTo(locateTitle.snp.bottom).offset(4)
-            $0.trailing.lessThanOrEqualTo(relocateButton.snp.leading).offset(-8)
-        }
-        locationCard.sendSubviewToBack(deco)
     }
 
-    private func setupSheet() {
-        sheetView.backgroundColor = .fdSurface
-        sheetView.layer.cornerRadius = 16
-        sheetView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        sheetView.clipsToBounds = true
-        view.addSubview(sheetView)
-
-        let searchBox = UIView()
+    private func setupSearch() {
         searchBox.backgroundColor = .fdProductImageBg
         searchBox.layer.cornerRadius = 12
 
@@ -203,42 +215,19 @@ final class WellnessCabinViewController: BaseViewController {
         clearButton.isHidden = true
         clearButton.addTarget(self, action: #selector(clearSearch), for: .touchUpInside)
 
-        let bell = UIImageView(image: UIImage(named: "change_phone_hint_bell"))
-        bell.contentMode = .scaleAspectFit
         hintLabel.font = .fdFont(ofSize: 14, weight: .regular)
         hintLabel.textColor = .fdSubtext
+        hintLabel.numberOfLines = 0
         hintLabel.text = viewModel.hintText
-
-        let hintRow = UIStackView(arrangedSubviews: [bell, hintLabel])
-        hintRow.axis = .horizontal
-        hintRow.alignment = .center
-        hintRow.spacing = 4
-
-        tableView.backgroundColor = .clear
-        tableView.separatorStyle = .none
-        tableView.dataSource = self
-        tableView.delegate = self
-        tableView.keyboardDismissMode = .onDrag
-        tableView.contentInsetAdjustmentBehavior = .never
-        tableView.register(WellnessCabinListCell.self, forCellReuseIdentifier: WellnessCabinListCell.reuseID)
-        tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 168
-        emptyView.isHidden = true
 
         searchBox.addSubview(searchIcon)
         searchBox.addSubview(searchField)
         searchBox.addSubview(clearButton)
-        sheetView.addSubview(searchBox)
-        sheetView.addSubview(hintRow)
-        sheetView.addSubview(tableView)
-        sheetView.addSubview(emptyView)
+        view.addSubview(searchBox)
+        view.addSubview(hintLabel)
 
-        sheetView.snp.makeConstraints {
-            $0.top.equalTo(locationCard.snp.bottom).offset(12)
-            $0.leading.trailing.bottom.equalToSuperview()
-        }
         searchBox.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(16)
+            $0.top.equalTo(gpsButton.snp.bottom).offset(12)
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.height.equalTo(47)
         }
@@ -257,23 +246,80 @@ final class WellnessCabinViewController: BaseViewController {
             $0.trailing.equalTo(clearButton.snp.leading).offset(-4)
             $0.top.bottom.equalToSuperview()
         }
-        bell.snp.makeConstraints { $0.size.equalTo(14) }
-        hintRow.snp.makeConstraints {
-            $0.top.equalTo(searchBox.snp.bottom).offset(16)
+        hintLabel.snp.makeConstraints {
+            $0.top.equalTo(searchBox.snp.bottom).offset(12)
             $0.leading.trailing.equalToSuperview().inset(16)
-        }
-        tableView.snp.makeConstraints {
-            $0.top.equalTo(hintRow.snp.bottom).offset(12)
-            $0.leading.trailing.bottom.equalToSuperview()
-        }
-        emptyView.snp.makeConstraints {
-            $0.center.equalTo(tableView)
-            $0.leading.trailing.equalTo(tableView).inset(24)
         }
     }
 
-    @objc private func relocateTapped() {
-        viewModel.refreshLocation()
+    private func setupList() {
+        tableView.backgroundColor = .clear
+        tableView.separatorStyle = .none
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.keyboardDismissMode = .onDrag
+        tableView.register(WellnessCabinListCell.self, forCellReuseIdentifier: WellnessCabinListCell.reuseID)
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 168
+
+        emptyTitle.font = .fdFont(ofSize: 16, weight: .medium)
+        emptyTitle.textColor = .fdText
+        emptyTitle.textAlignment = .center
+        emptySubtitle.font = .fdFont(ofSize: 14, weight: .regular)
+        emptySubtitle.textColor = .fdSubtext
+        emptySubtitle.textAlignment = .center
+        emptySubtitle.numberOfLines = 0
+        chooseRegionButton.setTitle("选择省市区", for: .normal)
+        chooseRegionButton.setTitleColor(.white, for: .normal)
+        chooseRegionButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
+        chooseRegionButton.backgroundColor = .fdPrimary
+        chooseRegionButton.layer.cornerRadius = 20
+        chooseRegionButton.addTarget(self, action: #selector(regionTapped), for: .touchUpInside)
+
+        emptyStack.axis = .vertical
+        emptyStack.alignment = .center
+        emptyStack.spacing = 8
+        emptyStack.addArrangedSubview(emptyTitle)
+        emptyStack.addArrangedSubview(emptySubtitle)
+        emptyStack.addArrangedSubview(chooseRegionButton)
+        emptyStack.setCustomSpacing(16, after: emptySubtitle)
+
+        view.addSubview(tableView)
+        view.addSubview(emptyStack)
+        tableView.snp.makeConstraints {
+            $0.top.equalTo(hintLabel.snp.bottom).offset(12)
+            $0.leading.trailing.bottom.equalToSuperview()
+        }
+        emptyStack.snp.makeConstraints {
+            $0.top.equalTo(hintLabel.snp.bottom).offset(48)
+            $0.leading.trailing.equalToSuperview().inset(32)
+        }
+        chooseRegionButton.snp.makeConstraints {
+            $0.width.equalTo(160)
+            $0.height.equalTo(40)
+        }
+    }
+
+    @objc private func regionTapped() {
+        openRegionPicker()
+    }
+
+    @objc private func gpsTapped() {
+        viewModel.useCurrentGPS()
+    }
+
+    private func openRegionPicker() {
+        let current = viewModel.anchor?.region ?? RegionSelection()
+        let sheet = RegionPickerSheet(
+            title: "所在地区",
+            mode: .provinceCityArea,
+            current: current,
+            sheetTitle: "选择所在地区"
+        )
+        sheet.onSave = { [weak self] selection in
+            self?.viewModel.applyManualRegion(selection)
+        }
+        present(sheet, animated: true)
     }
 
     @objc private func searchChanged() {
@@ -289,6 +335,10 @@ final class WellnessCabinViewController: BaseViewController {
     }
 
     private func openStore(_ item: CabinStoreVO) {
+        if item.restFlag {
+            showToastAlert("当前休息中，暂不可预约")
+            return
+        }
         guard item.isEnterable else {
             showToastAlert("当前暂不可预约")
             return
@@ -303,7 +353,7 @@ final class WellnessCabinViewController: BaseViewController {
 
 extension WellnessCabinViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        viewModel.items.count
+        viewModel.locationReady ? viewModel.items.count : 0
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {

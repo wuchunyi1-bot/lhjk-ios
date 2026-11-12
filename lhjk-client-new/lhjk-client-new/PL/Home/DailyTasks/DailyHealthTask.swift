@@ -106,6 +106,7 @@ struct DailyHealthTask: Equatable {
         "supplement": .init(systemName: "cross.vial", background: UIColor(hexString: "#FFF3EE"), tint: UIColor(hexString: "#E55A2E")),
         "oxygen": .init(systemName: "lungs", background: UIColor(hexString: "#EAF3FF"), tint: UIColor(hexString: "#3D6FB8")),
         "sleep": .init(systemName: "moon.zzz.fill", background: UIColor(hexString: "#EEF0FF"), tint: UIColor(hexString: "#5B6FD8")),
+        "water": .init(systemName: "drop.fill", background: UIColor(hexString: "#EAF3FF"), tint: UIColor(hexString: "#3D6FB8")),
         "temperature": .init(systemName: "thermometer", background: UIColor(hexString: "#E6F7EF"), tint: UIColor(hexString: "#2DB983")),
         "heart-rate": .init(systemName: "waveform.path.ecg", background: UIColor(hexString: "#FCE9E6"), tint: UIColor(hexString: "#E5564B")),
     ]
@@ -128,7 +129,32 @@ extension DailyHealthTask {
             print("\(tag) skip: empty actionRoute — check dict monitorType match for type=\(monitorType.map(String.init) ?? "nil")")
             return
         }
+        if FundePageURL.canOpen(route) {
+            print("\(tag) FundePageURL.open \(route)")
+            Task { @MainActor in
+                FundePageURL.open(route, from: Self.topViewController())
+            }
+            return
+        }
         print("\(tag) Router.push \(route)")
         Router.shared.push(route)
+    }
+
+    private static func topViewController(base: UIViewController? = nil) -> UIViewController? {
+        let root = base ?? UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first(where: \.isKeyWindow)?
+            .rootViewController
+        if let nav = root as? UINavigationController {
+            return topViewController(base: nav.visibleViewController)
+        }
+        if let tab = root as? UITabBarController, let selected = tab.selectedViewController {
+            return topViewController(base: selected)
+        }
+        if let presented = root?.presentedViewController {
+            return topViewController(base: presented)
+        }
+        return root
     }
 }

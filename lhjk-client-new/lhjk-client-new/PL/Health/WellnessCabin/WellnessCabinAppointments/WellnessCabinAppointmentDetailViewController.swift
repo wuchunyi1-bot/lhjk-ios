@@ -90,6 +90,10 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
     private let missingView = FDEmptyStateView(style: .page, message: "未找到该预约")
     private var barHeight: Constraint?
 
+    private static let titleColor = UIColor(hexString: "#1F2942")
+    private static let subtitleColor = UIColor(hexString: "#8591AB")
+    private static let orange = UIColor(hexString: "#FF7A50")
+
     init(reservationId: String = "", configId: String = "") {
         viewModel = WellnessCabinAppointmentDetailViewModel(
             reservationId: reservationId,
@@ -109,6 +113,7 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
         contentStack.spacing = 12
         contentStack.isLayoutMarginsRelativeArrangement = true
         contentStack.layoutMargins = UIEdgeInsets(top: 12, left: 16, bottom: 24, right: 16)
+        scrollView.backgroundColor = .fdBg
 
         view.addSubview(scrollView)
         scrollView.addSubview(contentStack)
@@ -121,10 +126,16 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
             $0.width.equalTo(scrollView.frameLayoutGuide)
         }
 
-        bottomBar.backgroundColor = .fdSurface
-        actionButton.setTitleColor(.white, for: .normal)
-        actionButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .semibold)
-        actionButton.layer.cornerRadius = 22
+        bottomBar.backgroundColor = .white
+        bottomBar.layer.cornerRadius = 16
+        bottomBar.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        bottomBar.layer.shadowColor = UIColor.black.cgColor
+        bottomBar.layer.shadowOpacity = 0.04
+        bottomBar.layer.shadowOffset = CGSize(width: 0, height: -2)
+        bottomBar.layer.shadowRadius = 8
+        actionButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
+        actionButton.layer.cornerRadius = 20
+        actionButton.clipsToBounds = true
         actionButton.addTarget(self, action: #selector(actionTapped), for: .touchUpInside)
         bottomBar.addSubview(actionButton)
         view.addSubview(bottomBar)
@@ -133,9 +144,9 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
             barHeight = $0.height.equalTo(0).constraint
         }
         actionButton.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(10)
+            $0.top.equalToSuperview().offset(16).priority(999)
             $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(44)
+            $0.height.equalTo(40).priority(999)
         }
 
         pageSpinner.color = .fdPrimary
@@ -211,11 +222,11 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
 
         if detail.canCancel {
             actionButton.setTitle("取消预约", for: .normal)
-            actionButton.backgroundColor = .fdDanger
+            applyOutlineAction()
             setBar(visible: true)
         } else if viewModel.canBookAgain {
             actionButton.setTitle("再次预约", for: .normal)
-            actionButton.backgroundColor = .fdPrimary
+            applyFilledAction()
             setBar(visible: true)
         } else {
             setBar(visible: false)
@@ -223,51 +234,50 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
     }
 
     private func headerBlock(_ detail: CabinReservationDetailVO) -> UIView {
-        let status = badge(detail.statusTitle, status: detail.status)
         let name = UILabel()
-        name.font = .fdFont(ofSize: 20, weight: .semibold)
-        name.textColor = .fdText
+        name.font = .fdFont(ofSize: 18, weight: .medium)
+        name.textColor = Self.titleColor
         name.numberOfLines = 0
         name.text = detail.name.isEmpty ? "预约项目" : detail.name
+
+        let status = UILabel()
+        status.font = .fdFont(ofSize: 16, weight: .medium)
+        status.textColor = Self.orange
+        status.textAlignment = .right
+        status.text = detail.statusTitle
+        status.isHidden = detail.statusTitle.isEmpty
+        status.setContentHuggingPriority(.required, for: .horizontal)
+        status.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let nameRow = UIStackView(arrangedSubviews: [name, status])
+        nameRow.axis = .horizontal
+        nameRow.alignment = .top
+        nameRow.spacing = 8
 
         var summary = [String]()
         if let duration = detail.durationText { summary.append(duration) }
         if let parent = detail.parentName, !parent.isEmpty { summary.append(parent) }
         let meta = UILabel()
-        meta.font = .fdFont(ofSize: 13, weight: .regular)
-        meta.textColor = .fdSubtext
+        meta.font = .fdFont(ofSize: 16, weight: .regular)
+        meta.textColor = Self.subtitleColor
         meta.numberOfLines = 0
         meta.text = summary.joined(separator: " · ")
         meta.isHidden = summary.isEmpty
 
-        let timeTitle = UILabel()
-        timeTitle.text = "预约时间"
-        timeTitle.font = .fdFont(ofSize: 12, weight: .regular)
-        timeTitle.textColor = .fdMuted
-        let timeValue = UILabel()
-        timeValue.font = .fdFont(ofSize: 15, weight: .semibold)
-        timeValue.textColor = .fdText
-        timeValue.textAlignment = .right
-        timeValue.numberOfLines = 0
         let time = [detail.reserveDate, detail.timeText].filter { !$0.isEmpty }.joined(separator: " ")
-        timeValue.text = time
-        let timeRow = UIStackView(arrangedSubviews: [timeTitle, timeValue])
-        timeRow.axis = .horizontal
-        timeRow.alignment = .center
-        timeRow.spacing = 12
+        let timeRow = infoRow("预约时间", time)
         timeRow.isHidden = time.isEmpty
 
-        let badgeRow = UIStackView(arrangedSubviews: [status, UIView()])
-        badgeRow.axis = .horizontal
-        let stack = UIStackView(arrangedSubviews: [badgeRow, name, meta, timeRow])
+        let stack = UIStackView(arrangedSubviews: [nameRow, meta, timeRow])
         stack.axis = .vertical
         stack.alignment = .fill
-        stack.spacing = 8
-        status.snp.makeConstraints {
-            $0.height.equalTo(22)
-            $0.width.greaterThanOrEqualTo(52)
-        }
-        return stack
+        stack.spacing = 12
+        stack.setCustomSpacing(4, after: nameRow)
+
+        let card = makeCard()
+        card.addSubview(stack)
+        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
+        return card
     }
 
     private func statusBlock(_ detail: CabinReservationDetailVO) -> UIView? {
@@ -307,34 +317,34 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
         let card = makeCard()
         let body = UIStackView()
         body.axis = .vertical
-        body.alignment = .center
+        body.alignment = .fill
         body.spacing = 12
         if let notice = detail.overdueNotice {
-            let text = UILabel()
-            text.text = "预约已超时，当日仍可核销\n\(notice)"
-            text.font = .fdFont(ofSize: 13, weight: .regular)
-            text.textColor = .fdWarning
-            text.numberOfLines = 0
-            body.addArrangedSubview(text)
+            body.addArrangedSubview(noticeBanner("预约已超时，当日仍可核销\n\(notice)"))
         }
         body.addArrangedSubview(sectionTitle("到店核销"))
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
         imageView.image = Self.qrImage(base64: detail.qrCode) ?? Self.qrImage(from: detail.cancellationCode ?? "")
-        body.addArrangedSubview(imageView)
-        imageView.snp.makeConstraints { $0.width.height.equalTo(160) }
+        let qrWrap = UIView()
+        qrWrap.addSubview(imageView)
+        imageView.snp.makeConstraints {
+            $0.top.bottom.centerX.equalToSuperview()
+            $0.width.height.equalTo(160)
+        }
+        body.addArrangedSubview(qrWrap)
         if let code = detail.cancellationCode, !code.isEmpty {
             let codeButton = UIButton(type: .system)
             codeButton.setTitle(code, for: .normal)
-            codeButton.setTitleColor(.fdText, for: .normal)
+            codeButton.setTitleColor(Self.titleColor, for: .normal)
             codeButton.titleLabel?.font = .fdFont(ofSize: 22, weight: .semibold)
             codeButton.addTarget(self, action: #selector(copyCode), for: .touchUpInside)
             body.addArrangedSubview(codeButton)
         }
         let hint = UILabel()
         hint.text = "向工作人员出示二维码，或报上方核销码"
-        hint.font = .fdFont(ofSize: 12, weight: .regular)
-        hint.textColor = .fdSubtext
+        hint.font = .fdFont(ofSize: 16, weight: .regular)
+        hint.textColor = Self.subtitleColor
         hint.numberOfLines = 0
         hint.textAlignment = .center
         body.addArrangedSubview(hint)
@@ -350,16 +360,16 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
         let card = makeCard()
         let body = UIStackView()
         body.axis = .vertical
-        body.spacing = 10
+        body.spacing = 12
         body.addArrangedSubview(sectionTitle(title))
         for row in visible {
-            body.addArrangedSubview(infoRow(row.0, row.1, tappable: false))
+            body.addArrangedSubview(infoRow(row.0, row.1))
         }
         if !noteText.isEmpty {
             let label = UILabel()
             label.text = noteText
-            label.font = .fdFont(ofSize: 13, weight: .regular)
-            label.textColor = .fdSubtext
+            label.font = .fdFont(ofSize: 16, weight: .regular)
+            label.textColor = Self.subtitleColor
             label.numberOfLines = 0
             body.addArrangedSubview(label)
         }
@@ -369,11 +379,27 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
     }
 
     private func infoBlock(_ detail: CabinReservationDetailVO) -> UIView? {
-        var rows: [(String, String)] = []
-        if let number = detail.reservationNumber, !number.isEmpty { rows.append(("预约编号", number)) }
-        if let created = detail.createTime, !created.isEmpty { rows.append(("创建时间", created)) }
-        guard !rows.isEmpty else { return nil }
-        return card(title: "预约信息", rows: rows)
+        let number = detail.reservationNumber?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let created = detail.createTime?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let reminder = Self.appointmentReminder(for: detail.status)
+        guard !number.isEmpty || !created.isEmpty || reminder != nil else { return nil }
+        let card = makeCard()
+        let body = UIStackView()
+        body.axis = .vertical
+        body.spacing = 12
+        body.addArrangedSubview(sectionTitle("预约信息"))
+        if !number.isEmpty {
+            body.addArrangedSubview(infoRow("预约编号", number, copyable: true))
+        }
+        if !created.isEmpty {
+            body.addArrangedSubview(infoRow("创建时间", created))
+        }
+        if let reminder {
+            body.addArrangedSubview(reminderBar(reminder))
+        }
+        card.addSubview(body)
+        body.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
+        return card
     }
 
     private func serviceBlock(_ detail: CabinReservationDetailVO) -> UIView? {
@@ -384,14 +410,14 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
         body.addArrangedSubview(sectionTitle("服务信息"))
         var hasContent = false
         if !detail.name.isEmpty {
-            body.addArrangedSubview(infoRow("名称", detail.name, tappable: false))
+            body.addArrangedSubview(infoRow("名称", detail.name))
             hasContent = true
         }
         if let description = detail.description, !description.isEmpty {
             let title = UILabel()
             title.text = "项目介绍"
-            title.font = .fdFont(ofSize: 13, weight: .regular)
-            title.textColor = .fdMuted
+            title.font = .fdFont(ofSize: 16, weight: .regular)
+            title.textColor = Self.subtitleColor
             body.addArrangedSubview(title)
             if description.contains("<") {
                 let html = CabinHTMLBlockView()
@@ -400,28 +426,28 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
             } else {
                 let label = UILabel()
                 label.text = description
-                label.font = .fdFont(ofSize: 14, weight: .regular)
-                label.textColor = .fdText
+                label.font = .fdFont(ofSize: 16, weight: .regular)
+                label.textColor = Self.titleColor
                 label.numberOfLines = 0
                 body.addArrangedSubview(label)
             }
             hasContent = true
         }
         if let duration = detail.durationText {
-            body.addArrangedSubview(infoRow("时长", duration, tappable: false))
+            body.addArrangedSubview(infoRow("时长", duration))
             hasContent = true
         }
         let dict = DictionaryCacheService.shared
         if let text = dict.joinedLabels(parent: .serviceRestrictedPeople, raw: detail.restrictedPeople) {
-            body.addArrangedSubview(infoRow("禁止人群", text, tappable: false))
+            body.addArrangedSubview(infoRow("禁止人群", text))
             hasContent = true
         }
         if let text = dict.joinedLabels(parent: .serviceApplicablePeople, raw: detail.applicablePeople) {
-            body.addArrangedSubview(infoRow("适用人群", text, tappable: false))
+            body.addArrangedSubview(infoRow("适用人群", text))
             hasContent = true
         }
         if let notice = detail.notice, !notice.isEmpty {
-            body.addArrangedSubview(infoRow("预约须知", notice, tappable: false))
+            body.addArrangedSubview(infoRow("预约须知", notice))
             hasContent = true
         }
         guard hasContent else { return nil }
@@ -431,44 +457,65 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
     }
 
     private func storeBlock(_ detail: CabinReservationDetailVO) -> UIView? {
-        var rows: [(String, String, Bool)] = []
-        if !detail.hospitalName.isEmpty { rows.append(("门店", detail.hospitalName, false)) }
-        if !detail.address.isEmpty { rows.append(("地址", detail.address, false)) }
-        if let openTime = detail.openTime, !openTime.isEmpty { rows.append(("营业时间", openTime, false)) }
-        if let mobile = detail.mobile, !mobile.isEmpty { rows.append(("电话", mobile, true)) }
-        guard !rows.isEmpty || detail.coordinate != nil else { return nil }
+        let hours = detail.businessHours?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let mobile = detail.mobile?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !detail.hospitalName.isEmpty || !detail.address.isEmpty || !hours.isEmpty || !mobile.isEmpty || detail.coordinate != nil else {
+            return nil
+        }
         let card = makeCard()
         let body = UIStackView()
         body.axis = .vertical
-        body.spacing = 10
+        body.spacing = 12
         body.addArrangedSubview(sectionTitle("门店信息"))
-        for row in rows {
-            body.addArrangedSubview(infoRow(row.0, row.1, tappable: row.2))
+
+        if !detail.hospitalName.isEmpty {
+            let iconContainer = UIView()
+            iconContainer.backgroundColor = UIColor(hexString: "#FFF2E6")
+            iconContainer.layer.cornerRadius = 6
+            iconContainer.clipsToBounds = true
+            let icon = UIImageView(image: UIImage(named: "order_detail_address_pin"))
+            icon.contentMode = .scaleAspectFit
+            iconContainer.addSubview(icon)
+            icon.snp.makeConstraints { $0.center.equalToSuperview(); $0.size.equalTo(14) }
+            iconContainer.snp.makeConstraints { $0.size.equalTo(24) }
+
+            let name = UILabel()
+            name.text = detail.hospitalName
+            name.font = .fdFont(ofSize: 18, weight: .medium)
+            name.textColor = Self.titleColor
+            name.numberOfLines = 0
+            let nameRow = UIStackView(arrangedSubviews: [iconContainer, name])
+            nameRow.axis = .horizontal
+            nameRow.spacing = 8
+            nameRow.alignment = .top
+            body.addArrangedSubview(nameRow)
+        }
+        if !detail.address.isEmpty {
+            let address = UILabel()
+            address.text = detail.address
+            address.font = .fdFont(ofSize: 16, weight: .regular)
+            address.textColor = Self.subtitleColor
+            address.numberOfLines = 0
+            body.addArrangedSubview(address)
+        }
+        if !hours.isEmpty {
+            body.addArrangedSubview(infoRow("营业时间", hours))
+        }
+        if !mobile.isEmpty {
+            body.addArrangedSubview(infoRow("电话", mobile, tappable: true))
         }
         if detail.coordinate != nil {
             let button = UIButton(type: .system)
             button.setTitle("导航到门店", for: .normal)
-            button.setTitleColor(.fdPrimary, for: .normal)
-            button.titleLabel?.font = .fdFont(ofSize: 14, weight: .semibold)
-            button.backgroundColor = .fdPrimarySoft
-            button.layer.cornerRadius = 18
+            button.setTitleColor(Self.orange, for: .normal)
+            button.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
+            button.backgroundColor = .white
+            button.layer.cornerRadius = 20
+            button.layer.borderWidth = 0.5
+            button.layer.borderColor = Self.orange.cgColor
             button.addTarget(self, action: #selector(navigateTapped), for: .touchUpInside)
             body.addArrangedSubview(button)
-            button.snp.makeConstraints { $0.height.equalTo(36) }
-        }
-        card.addSubview(body)
-        body.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
-        return card
-    }
-
-    private func card(title: String, rows: [(String, String)]) -> UIView {
-        let card = makeCard()
-        let body = UIStackView()
-        body.axis = .vertical
-        body.spacing = 10
-        body.addArrangedSubview(sectionTitle(title))
-        for row in rows {
-            body.addArrangedSubview(infoRow(row.0, row.1, tappable: false))
+            button.snp.makeConstraints { $0.height.equalTo(40) }
         }
         card.addSubview(body)
         body.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
@@ -574,40 +621,77 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
     }
 
     private func setBar(visible: Bool) {
-        barHeight?.update(offset: visible ? 64 + view.safeAreaInsets.bottom : 0)
+        barHeight?.update(offset: visible ? 66 + view.safeAreaInsets.bottom : 0)
         bottomBar.isHidden = !visible
-        let inset = visible ? 80.0 : 0
+        let inset = visible ? 76.0 : 0
         scrollView.contentInset.bottom = inset
         scrollView.verticalScrollIndicatorInsets.bottom = inset
     }
 
+    private func applyFilledAction() {
+        actionButton.backgroundColor = Self.orange
+        actionButton.setTitleColor(.white, for: .normal)
+        actionButton.layer.borderWidth = 0
+    }
+
+    private func applyOutlineAction() {
+        actionButton.backgroundColor = .white
+        actionButton.setTitleColor(Self.orange, for: .normal)
+        actionButton.layer.borderWidth = 0.5
+        actionButton.layer.borderColor = Self.orange.cgColor
+    }
+
     private func style(_ card: UIView) {
-        card.backgroundColor = .fdSurface
+        card.backgroundColor = .white
         card.layer.cornerRadius = 16
-        card.layer.borderWidth = 1
-        card.layer.borderColor = UIColor.fdBorder.cgColor
+        card.layer.shadowColor = UIColor.black.cgColor
+        card.layer.shadowOffset = CGSize(width: 0, height: 1)
+        card.layer.shadowRadius = 6
+        card.layer.shadowOpacity = 0.03
+        card.clipsToBounds = true
     }
 
     private func sectionTitle(_ text: String) -> UILabel {
         let label = UILabel()
         label.text = text
-        label.font = .fdFont(ofSize: 15, weight: .semibold)
-        label.textColor = .fdText
+        label.font = .fdFont(ofSize: 18, weight: .medium)
+        label.textColor = Self.titleColor
         return label
     }
 
-    private func infoRow(_ title: String, _ value: String, tappable: Bool) -> UIView {
+    private func infoRow(_ title: String, _ value: String, tappable: Bool = false, copyable: Bool = false) -> UIView {
         let name = UILabel()
         name.text = title
-        name.font = .fdFont(ofSize: 13, weight: .regular)
-        name.textColor = .fdMuted
+        name.font = .fdFont(ofSize: 16, weight: .regular)
+        name.textColor = Self.subtitleColor
         name.setContentHuggingPriority(.required, for: .horizontal)
+        name.setContentCompressionResistancePriority(.required, for: .horizontal)
+
         let body = UILabel()
         body.text = value
-        body.font = .fdFont(ofSize: 14, weight: .regular)
-        body.textColor = tappable ? .fdPrimary : .fdText
+        body.font = .fdFont(ofSize: 16, weight: .regular)
+        body.textColor = tappable ? Self.orange : Self.titleColor
         body.numberOfLines = 0
-        let row = UIStackView(arrangedSubviews: [name, body])
+        body.textAlignment = .right
+        body.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        let right: UIView
+        if copyable {
+            let copyButton = UIButton(type: .custom)
+            copyButton.setImage(UIImage(named: "order_detail_copy")?.withRenderingMode(.alwaysOriginal), for: .normal)
+            copyButton.accessibilityLabel = value
+            copyButton.addTarget(self, action: #selector(copyReservationNumber(_:)), for: .touchUpInside)
+            copyButton.snp.makeConstraints { $0.size.equalTo(14) }
+            let pair = UIStackView(arrangedSubviews: [body, copyButton])
+            pair.axis = .horizontal
+            pair.spacing = 6
+            pair.alignment = .center
+            right = pair
+        } else {
+            right = body
+        }
+
+        let row = UIStackView(arrangedSubviews: [name, right])
         row.axis = .horizontal
         row.alignment = .top
         row.spacing = 12
@@ -618,32 +702,71 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
         return row
     }
 
-    private func badge(_ text: String, status: Int?) -> UILabel {
-        let label = UILabel()
-        label.text = "  \(text)  "
-        label.font = .fdFont(ofSize: 13, weight: .medium)
-        label.textAlignment = .center
-        label.layer.cornerRadius = 11
-        label.clipsToBounds = true
-        label.isHidden = text.isEmpty
+    /// 预约信息底部的固定提醒。只覆盖待服务到已过期。
+    private static func appointmentReminder(for status: Int?) -> String? {
         switch status {
-        case 3:
-            label.textColor = .fdInfo
-            label.backgroundColor = .fdInfoSoft
-        case 4:
-            label.textColor = .fdPrimary
-            label.backgroundColor = .fdPrimarySoft
-        case 5:
-            label.textColor = .fdSuccess
-            label.backgroundColor = .fdSuccessSoft
-        case 7:
-            label.textColor = .fdWarning
-            label.backgroundColor = .fdWarningSoft
-        default:
-            label.textColor = .fdMuted
-            label.backgroundColor = .fdBg2
+        case 3: return "请提前15分钟到店"
+        case 4: return "服务进行中，请留意设备使用时长"
+        case 5: return "已完成核销"
+        case 6: return "已按规则取消"
+        case 7: return "订单已过期，如需使用请重新预约。"
+        default: return nil
         }
-        return label
+    }
+
+    private func reminderBar(_ text: String) -> UIView {
+        let box = UIView()
+        box.backgroundColor = .fdPrimarySoft
+        box.layer.cornerRadius = 8
+        box.clipsToBounds = true
+
+        let label = UILabel()
+        label.text = text
+        label.font = .fdFont(ofSize: 16, weight: .regular)
+        label.textColor = .fdPrimary
+        label.numberOfLines = 0
+        box.addSubview(label)
+        label.snp.makeConstraints {
+            $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12))
+        }
+        return box
+    }
+
+    private func noticeBanner(_ text: String) -> UIView {
+        let box = UIView()
+        box.backgroundColor = UIColor(hexString: "#F93838").withAlphaComponent(0.05)
+        box.layer.cornerRadius = 8
+        box.clipsToBounds = true
+
+        let icon = UIImageView(image: UIImage(named: "order_notice_alert_icon"))
+        icon.contentMode = .scaleAspectFit
+        box.addSubview(icon)
+        icon.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(12)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(14)
+        }
+
+        let label = UILabel()
+        label.text = text
+        label.font = .fdFont(ofSize: 12, weight: .regular)
+        label.textColor = UIColor(hexString: "#F93838")
+        label.numberOfLines = 0
+        box.addSubview(label)
+        label.snp.makeConstraints {
+            $0.leading.equalTo(icon.snp.trailing).offset(6)
+            $0.trailing.equalToSuperview().offset(-12)
+            $0.top.equalToSuperview().offset(8)
+            $0.bottom.equalToSuperview().offset(-8)
+        }
+        return box
+    }
+
+    @objc private func copyReservationNumber(_ sender: UIButton) {
+        let text = sender.accessibilityLabel ?? ""
+        guard !text.isEmpty else { return }
+        UIPasteboard.general.string = text
+        showToastAlert("预约编号已复制")
     }
 
     private func makeCard() -> UIView {
@@ -674,11 +797,12 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
     }
 }
 
-/// 项目介绍富文本。介绍图写在 `description` 的 HTML 里。
-private final class CabinHTMLBlockView: UIView, WKNavigationDelegate {
+/// 项目介绍富文本。介绍图写在 `description` 的 HTML 里。Quill 的有序列表按数字展示。
+final class CabinHTMLBlockView: UIView, WKNavigationDelegate {
 
     private let webView = WKWebView()
     private var heightConstraint: Constraint?
+    private var measuredWidth: CGFloat = 0
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -695,25 +819,68 @@ private final class CabinHTMLBlockView: UIView, WKNavigationDelegate {
     required init?(coder: NSCoder) { fatalError() }
 
     func setHTML(_ html: String) {
+        let body = Self.prepare(html)
+        let bodySize = UIFont.isSeniorMode ? 20 : 16
         let page = """
         <!doctype html><html><head>
         <meta name="viewport" content="width=device-width,initial-scale=1">
         <style>
-        body{margin:0;font:14px -apple-system,PingFang SC;color:#1F2942;line-height:1.5;}
+        body{margin:0;font:\(Int(bodySize))px -apple-system,PingFang SC;color:#1F2942;line-height:1.6;}
+        ol,ul{margin:0 0 8px;padding-left:1.4em;}
+        li{margin:0 0 6px;}
+        li[data-list="ordered"]{list-style-type:decimal;}
+        li[data-list="bullet"]{list-style-type:disc;}
+        .ql-ui{display:none;}
+        strong{font-weight:600;}
+        em{font-style:italic;}
         img{max-width:100%;height:auto;border-radius:8px;}
         p{margin:0 0 8px;}
-        </style></head><body>\(html)</body></html>
+        </style></head><body>\(body)</body></html>
         """
+        measuredWidth = 0
         webView.loadHTMLString(page, baseURL: nil)
     }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let width = webView.bounds.width
+        guard width > 1, abs(width - measuredWidth) > 1 else { return }
+        measuredWidth = width
+        measureHeight()
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        measureHeight()
+    }
+
+    private func measureHeight() {
         webView.evaluateJavaScript("document.body.scrollHeight") { [weak self] value, _ in
             let height = (value as? CGFloat) ?? (value as? Double).map { CGFloat($0) } ?? 0
-            guard height > 0 else { return }
-            self?.heightConstraint?.update(offset: height)
-            self?.superview?.layoutIfNeeded()
+            guard let self, height > 0 else { return }
+            self.heightConstraint?.update(offset: height)
+            var root: UIView = self
+            while let parent = root.superview { root = parent }
+            root.layoutIfNeeded()
         }
+    }
+
+    /// Quill 片段里的空 `ql-ui` 不参与排版。实体转义过的标签先还原。
+    private static func prepare(_ html: String) -> String {
+        var text = html
+        if !text.contains("<"), text.contains("&lt;") {
+            text = text
+                .replacingOccurrences(of: "&lt;", with: "<")
+                .replacingOccurrences(of: "&gt;", with: ">")
+                .replacingOccurrences(of: "&quot;", with: "\"")
+                .replacingOccurrences(of: "&#39;", with: "'")
+                .replacingOccurrences(of: "&amp;", with: "&")
+        }
+        guard let regex = try? NSRegularExpression(
+            pattern: "<span\\b[^>]*class=\"ql-ui\"[^>]*>\\s*</span>",
+            options: .caseInsensitive
+        ) else { return text }
+        let range = NSRange(text.startIndex..., in: text)
+        return regex.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: "")
     }
 
     func webView(

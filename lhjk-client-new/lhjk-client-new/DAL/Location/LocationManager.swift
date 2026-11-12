@@ -169,7 +169,7 @@ final class LocationManager: NSObject {
 
     private func reverseGeocode(_ location: CLLocation) async throws -> ReverseGeocodedAddress {
         try await withCheckedThrowingContinuation { continuation in
-            geocoder.reverseGeocodeLocation(location) { placemarks, error in
+            geocoder.reverseGeocodeLocation(location, preferredLocale: Locale(identifier: "zh_CN")) { placemarks, error in
                 if let error {
                     continuation.resume(throwing: LocationServiceError.geocodeFailed(error))
                     return
@@ -183,18 +183,27 @@ final class LocationManager: NSObject {
         }
     }
 
+    private static func trimmed(_ value: String?) -> String {
+        value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
     private static func mapPlacemark(
         _ placemark: CLPlacemark,
         coordinate: CLLocationCoordinate2D
     ) -> ReverseGeocodedAddress {
-        let province = placemark.administrativeArea?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        var city = placemark.locality?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let province = Self.trimmed(placemark.administrativeArea)
+        var city = Self.trimmed(placemark.locality)
+        var area = Self.trimmed(placemark.subLocality)
+        let subAdmin = Self.trimmed(placemark.subAdministrativeArea)
+        if city.isEmpty, !subAdmin.isEmpty, subAdmin != province {
+            city = subAdmin
+        }
+        if area.isEmpty, !subAdmin.isEmpty, subAdmin != city, subAdmin != province {
+            area = subAdmin
+        }
         if city.isEmpty {
             city = province
         }
-        let area = placemark.subLocality?.trimmingCharacters(in: .whitespacesAndNewlines)
-            ?? placemark.subAdministrativeArea?.trimmingCharacters(in: .whitespacesAndNewlines)
-            ?? ""
 
         var detailParts: [String] = []
         if let thoroughfare = placemark.thoroughfare, !thoroughfare.isEmpty {
@@ -204,10 +213,10 @@ final class LocationManager: NSObject {
             detailParts.append(subThoroughfare)
         }
         var detail = detailParts.joined()
-        if detail.isEmpty, let name = placemark.name, !name.isEmpty {
-            // 避免把「省市区」整段重复塞进详址
+        if let name = placemark.name, !name.isEmpty {
             let regionBlob = [province, city, area].filter { !$0.isEmpty }.joined()
-            if !name.contains(regionBlob) || regionBlob.isEmpty {
+            let missingLevel = city.isEmpty || area.isEmpty
+            if missingLevel || detail.isEmpty && (!name.contains(regionBlob) || regionBlob.isEmpty) {
                 detail = name
             }
         }

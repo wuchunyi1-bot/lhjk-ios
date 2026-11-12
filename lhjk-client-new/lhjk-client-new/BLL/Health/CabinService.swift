@@ -3,7 +3,7 @@ import Foundation
 /// 康养小屋列表。`GET /v1/cabin/list`
 ///
 /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266269e0
-/// 经纬度按文档传高德 GCJ-02。有坐标时服务端按距离由近到远排序。
+/// 开启定位时传高德 GCJ-02，服务端按距离排序。未开启定位时只传省市区，不传经纬度。
 final class CabinService {
 
     static let shared = CabinService()
@@ -12,6 +12,9 @@ final class CabinService {
 
     func listStores(
         keyword: String? = nil,
+        province: String? = nil,
+        city: String? = nil,
+        area: String? = nil,
         longitude: String? = nil,
         latitude: String? = nil,
         pageNum: Int = 1,
@@ -24,6 +27,9 @@ final class CabinService {
         if let keyword = keyword?.trimmingCharacters(in: .whitespacesAndNewlines), !keyword.isEmpty {
             params["keyword"] = keyword
         }
+        Self.put(province, for: "province", into: &params)
+        Self.put(city, for: "city", into: &params)
+        Self.put(area, for: "area", into: &params)
         if let longitude, !longitude.isEmpty, let latitude, !latitude.isEmpty {
             params["longitude"] = longitude
             params["latitude"] = latitude
@@ -38,6 +44,11 @@ final class CabinService {
             throw CabinServiceError.requestFailed(response.msg ?? "获取康养小屋失败")
         }
         return response.data ?? PaginatedCabinListData.empty(pageNum: pageNum, pageSize: pageSize)
+    }
+
+    private static func put(_ value: String?, for key: String, into params: inout [String: Any]) {
+        guard let text = value?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return }
+        params[key] = text
     }
 
     /// 门店详情。`GET /v1/cabin/detail`
@@ -106,6 +117,22 @@ final class CabinService {
             throw CabinServiceError.requestFailed(response.msg ?? "未找到该项目")
         }
         return detail
+    }
+
+    /// 提交预约前的限流校验。`GET /v1/cabin/bookLimitCheck`
+    ///
+    /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/534863042e0
+    /// `limitType`：0 可预约，1 当日名额已满，2 超每人每日，3 超每人每月。
+    func bookLimitCheck(configId: String, reserveDate: String) async throws -> CabinBookLimitCheckVO {
+        let response: APIResponse<CabinBookLimitCheckVO> = try await APIManager.shared.getAsync(
+            path: "/v1/cabin/bookLimitCheck",
+            parameters: ["configId": configId, "reserveDate": reserveDate],
+            responseType: APIResponse<CabinBookLimitCheckVO>.self
+        )
+        guard response.isSuccess, let result = response.data else {
+            throw CabinServiceError.requestFailed(response.msg ?? "预约校验失败，请重试")
+        }
+        return result
     }
 
     /// 创建预约订单。`POST /v1/cabin/createReservationOrder`

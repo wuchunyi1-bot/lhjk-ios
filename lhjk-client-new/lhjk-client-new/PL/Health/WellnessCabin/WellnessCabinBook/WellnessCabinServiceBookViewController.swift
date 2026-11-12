@@ -25,6 +25,8 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
     private let slotSpinner = UIActivityIndicatorView(style: .medium)
     private let aboutCard = UIView()
     private let aboutLabel = UILabel()
+    private let aboutHTML = CabinHTMLBlockView()
+    private var aboutTextKey: String?
     private let noticeCard = UIView()
     private let noticeLabel = UILabel()
     private let feeCard = UIView()
@@ -44,6 +46,7 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
     private var galleryKey = ""
     private var dateRenderKey = ""
     private var didProceed = false
+    private var didAppear = false
 
     init(
         hospitalId: String = "",
@@ -70,6 +73,11 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        if didAppear {
+            didProceed = false
+            viewModel.reloadSelectedDate()
+        }
+        didAppear = true
     }
 
     override func setupUI() {
@@ -135,7 +143,7 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
     private func updateBarLayout() {
         let show = viewModel.showsBottomBar && viewModel.detail != nil && !viewModel.isMissing
         let hintExtra: CGFloat = show && viewModel.timesCardHint != nil ? 18 : 0
-        let height = show ? 64 + hintExtra + view.safeAreaInsets.bottom : 0
+        let height = show ? 66 + hintExtra + view.safeAreaInsets.bottom : 0
         barHeight?.update(offset: height)
         guard show != barVisible else { return }
         barVisible = show
@@ -174,9 +182,13 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
         refillSlots()
         if let text = detail.description, !text.isEmpty {
             aboutCard.isHidden = false
-            setAboutText(text)
+            if text != aboutTextKey {
+                aboutTextKey = text
+                setAboutText(text)
+            }
         } else {
             aboutCard.isHidden = true
+            aboutTextKey = nil
         }
         if let noticeText = detail.notice, !noticeText.isEmpty {
             noticeCard.isHidden = false
@@ -190,6 +202,14 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
         updateConfirmStyle(barButton)
         barInfoLabel.text = viewModel.barText
         barInfoLabel.isHidden = viewModel.barText == nil
+        switch viewModel.billingSource {
+        case 2:
+            barInfoLabel.textColor = .fdPrimary
+        case 3:
+            barInfoLabel.textColor = .fdPrimary
+        default:
+            barInfoLabel.textColor = .fdText
+        }
         barHintLabel.text = viewModel.timesCardHint
         barHintLabel.isHidden = viewModel.timesCardHint == nil
         updateBarLayout()
@@ -198,6 +218,7 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
     private func setupScroll() {
         scrollView.alwaysBounceVertical = true
         scrollView.showsVerticalScrollIndicator = false
+        scrollView.backgroundColor = .fdBg
         view.addSubview(scrollView)
         contentStack.axis = .vertical
         contentStack.spacing = 0
@@ -221,7 +242,7 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
         contentStack.addArrangedSubview(cardsStack)
 
         styleCard(introCard)
-        titleLabel.font = .fdFont(ofSize: 20, weight: .semibold)
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
         titleLabel.textColor = .fdText
         titleLabel.numberOfLines = 0
         metaStack.axis = .vertical
@@ -254,8 +275,8 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
         let slotTitle = sectionTitle("选择预约时段")
         slotStack.axis = .vertical
         slotStack.spacing = 10
-        slotEmptyLabel.font = .fdFont(ofSize: 13, weight: .regular)
-        slotEmptyLabel.textColor = .fdMuted
+        slotEmptyLabel.font = .fdFont(ofSize: 16, weight: .regular)
+        slotEmptyLabel.textColor = .fdTabInactive
         slotEmptyLabel.textAlignment = .center
         slotEmptyLabel.text = "暂无可预约时段"
         slotSpinner.color = .fdPrimary
@@ -268,10 +289,11 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
 
         styleCard(aboutCard)
         let aboutTitle = sectionTitle("项目介绍")
-        aboutLabel.font = .fdFont(ofSize: 14, weight: .regular)
-        aboutLabel.textColor = .fdSubtext
+        aboutLabel.font = .fdFont(ofSize: 16, weight: .regular)
+        aboutLabel.textColor = .fdTabInactive
         aboutLabel.numberOfLines = 0
-        let aboutBody = UIStackView(arrangedSubviews: [aboutTitle, aboutLabel])
+        aboutHTML.isHidden = true
+        let aboutBody = UIStackView(arrangedSubviews: [aboutTitle, aboutLabel, aboutHTML])
         aboutBody.axis = .vertical
         aboutBody.spacing = 12
         pin(aboutBody, in: aboutCard)
@@ -279,8 +301,8 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
 
         styleCard(noticeCard)
         let noticeTitle = sectionTitle("预约须知")
-        noticeLabel.font = .fdFont(ofSize: 13, weight: .regular)
-        noticeLabel.textColor = .fdSubtext
+        noticeLabel.font = .fdFont(ofSize: 16, weight: .regular)
+        noticeLabel.textColor = .fdTabInactive
         noticeLabel.numberOfLines = 0
         let noticeBody = UIStackView(arrangedSubviews: [noticeTitle, noticeLabel])
         noticeBody.axis = .vertical
@@ -290,17 +312,17 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
 
         styleCard(feeCard)
         let feeHeading = sectionTitle("费用信息")
-        feeTitleLabel.font = .fdFont(ofSize: 14, weight: .regular)
-        feeTitleLabel.textColor = .fdText
+        feeTitleLabel.font = .fdFont(ofSize: 16, weight: .regular)
+        feeTitleLabel.textColor = .fdTabInactive
         feeTitleLabel.numberOfLines = 2
-        feeValueLabel.font = .fdFont(ofSize: 14, weight: .semibold)
+        feeValueLabel.font = .fdFont(ofSize: 16, weight: .medium)
         feeValueLabel.textAlignment = .right
         feeValueLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         let feeRow = UIStackView(arrangedSubviews: [feeTitleLabel, feeValueLabel])
         feeRow.axis = .horizontal
         feeRow.alignment = .center
         feeRow.spacing = 12
-        feeHintLabel.font = .fdFont(ofSize: 12, weight: .regular)
+        feeHintLabel.font = .fdFont(ofSize: 14, weight: .regular)
         feeHintLabel.textColor = .fdDanger
         feeHintLabel.numberOfLines = 0
         feeHintLabel.isHidden = true
@@ -310,45 +332,44 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
         pin(feeBody, in: feeCard)
         cardsStack.addArrangedSubview(feeCard)
 
-        configureConfirm(inlineButton, cornerRadius: 18)
+        configureConfirm(inlineButton)
         cardsStack.addArrangedSubview(inlineButton)
-        inlineButton.snp.makeConstraints { $0.height.equalTo(44) }
+        inlineButton.snp.makeConstraints { $0.height.equalTo(40) }
     }
 
     private func setupBottomBar() {
-        bottomBar.backgroundColor = .fdSurface
-        let line = UIView()
-        line.backgroundColor = .fdBorder
-        barInfoLabel.font = .fdFont(ofSize: 16, weight: .semibold)
+        bottomBar.backgroundColor = .white
+        bottomBar.layer.cornerRadius = 16
+        bottomBar.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        bottomBar.layer.shadowColor = UIColor.black.cgColor
+        bottomBar.layer.shadowOpacity = 0.04
+        bottomBar.layer.shadowOffset = CGSize(width: 0, height: -2)
+        bottomBar.layer.shadowRadius = 8
+        barInfoLabel.font = .fdFont(ofSize: 16, weight: .medium)
         barInfoLabel.textColor = .fdPrimary
         barInfoLabel.numberOfLines = 1
-        barHintLabel.font = .fdFont(ofSize: 11, weight: .regular)
+        barHintLabel.font = .fdFont(ofSize: 12, weight: .regular)
         barHintLabel.textColor = .fdDanger
         barHintLabel.numberOfLines = 2
         barHintLabel.isHidden = true
         let infoStack = UIStackView(arrangedSubviews: [barInfoLabel, barHintLabel])
         infoStack.axis = .vertical
         infoStack.spacing = 2
-        configureConfirm(barButton, cornerRadius: 12)
+        configureConfirm(barButton)
         let row = UIStackView(arrangedSubviews: [infoStack, barButton])
         row.axis = .horizontal
         row.alignment = .center
         row.spacing = 12
-        bottomBar.addSubview(line)
         bottomBar.addSubview(row)
         view.addSubview(bottomBar)
-        line.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-            $0.height.equalTo(1)
-        }
         row.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(10)
+            $0.top.equalToSuperview().offset(16)
             $0.leading.equalToSuperview().offset(16)
             $0.trailing.equalToSuperview().offset(-16)
         }
         barButton.snp.makeConstraints {
             $0.width.equalTo(120)
-            $0.height.equalTo(44)
+            $0.height.equalTo(40)
         }
         bottomBar.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
@@ -365,7 +386,7 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
     private func refillMeta(_ detail: CabinBookDetailVO) {
         metaStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         if let text = detail.durationText {
-            metaStack.addArrangedSubview(metaRow(symbol: "clock", text: text, tint: .fdText))
+            metaStack.addArrangedSubview(metaRow(symbol: "clock", text: text, tint: .fdTabInactive))
         }
         let dict = DictionaryCacheService.shared
         if let people = dict.joinedLabels(parent: .serviceApplicablePeople, raw: detail.applicablePeople) {
@@ -451,14 +472,13 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
             feeCard.isHidden = false
             feeTitleLabel.text = detail.name
             feeValueLabel.text = viewModel.timesCardText
-            feeValueLabel.textColor = .fdSuccess
+            feeValueLabel.textColor = .fdPrimary
             feeHintLabel.isHidden = viewModel.timesCardHint == nil
             feeHintLabel.text = viewModel.timesCardHint
         case 3 where viewModel.feeAmountText != nil:
             feeCard.isHidden = false
             feeTitleLabel.text = detail.name
-            let unit = viewModel.feeUnitText
-            feeValueLabel.text = "\(viewModel.feeAmountText ?? "")/\(unit)"
+            feeValueLabel.text = viewModel.feeAmountText
             feeValueLabel.textColor = .fdPrimary
             feeHintLabel.isHidden = true
         default:
@@ -500,12 +520,62 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
         }
     }
 
+    private var isCheckingLimit = false
+
     private func confirmTapped() {
         guard viewModel.selectedSlot != nil else {
             showToastAlert("请选择可预约时段")
             return
         }
-        proceedBook()
+        guard !isCheckingLimit, !didProceed, !viewModel.isSubmitting else { return }
+        isCheckingLimit = true
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let result = try await self.viewModel.checkBookLimit()
+                await MainActor.run {
+                    self.isCheckingLimit = false
+                    if result.blocksBooking {
+                        self.presentBookLimit(result)
+                        return
+                    }
+                    self.continueAfterLimitCheck()
+                }
+            } catch {
+                let message = (error as? LocalizedError)?.errorDescription ?? "预约校验失败，请重试"
+                await MainActor.run {
+                    self.isCheckingLimit = false
+                    self.showToastAlert(message)
+                }
+            }
+        }
+    }
+
+    /// 限流通过后，项目预约和活动预约都先弹温馨提示。
+    private func continueAfterLimitCheck() {
+        presentHealthNotice()
+    }
+
+    private func presentBookLimit(_ result: CabinBookLimitCheckVO) {
+        let alert = CabinBookLimitAlertView()
+        alert.configure(title: result.alertTitle, message: result.alertMessage)
+        alert.onConfirm = { [weak alert] in
+            alert?.dismiss()
+        }
+        alert.show(in: view)
+    }
+
+    private func presentHealthNotice() {
+        let notice = CabinHealthNoticeView()
+        notice.configure(isInternalStation: viewModel.isInternalStation)
+        notice.onClose = { [weak notice] in
+            notice?.dismiss()
+        }
+        notice.onContinue = { [weak self, weak notice] in
+            notice?.dismiss()
+            self?.proceedBook()
+        }
+        notice.show(in: view)
     }
 
     @objc private func dateTapped(_ sender: CabinBookDateChip) {
@@ -519,14 +589,12 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
     private func styleCard(_ card: UIView) {
         card.backgroundColor = .fdSurface
         card.layer.cornerRadius = 16
-        card.layer.borderWidth = 1
-        card.layer.borderColor = UIColor.fdBorder.cgColor
     }
 
     private func sectionTitle(_ text: String) -> UILabel {
         let label = UILabel()
         label.text = text
-        label.font = .fdFont(ofSize: 16, weight: .semibold)
+        label.font = .fdFont(ofSize: 18, weight: .medium)
         label.textColor = .fdText
         return label
     }
@@ -566,14 +634,14 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
         let text = NSMutableAttributedString(
             string: "\(title)：",
             attributes: [
-                .font: UIFont.fdFont(ofSize: 13, weight: .regular),
+                .font: UIFont.fdFont(ofSize: 16, weight: .regular),
                 .foregroundColor: UIColor.fdSubtext,
             ]
         )
         text.append(NSAttributedString(
             string: value,
             attributes: [
-                .font: UIFont.fdFont(ofSize: 13, weight: .medium),
+                .font: UIFont.fdFont(ofSize: 16, weight: .medium),
                 .foregroundColor: valueColor,
             ]
         ))
@@ -595,7 +663,7 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
         icon.snp.makeConstraints { $0.width.height.equalTo(16) }
         let label = UILabel()
         label.text = text
-        label.font = .fdFont(ofSize: 13, weight: .regular)
+        label.font = .fdFont(ofSize: 16, weight: .regular)
         label.textColor = tint
         label.numberOfLines = 0
         let row = UIStackView(arrangedSubviews: [icon, label])
@@ -605,48 +673,32 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
         return row
     }
 
-    private func configureConfirm(_ button: UIButton, cornerRadius: CGFloat) {
+    private func configureConfirm(_ button: UIButton) {
         button.setTitle("确定预约", for: .normal)
         button.setTitleColor(.white, for: .normal)
-        button.titleLabel?.font = .fdFont(ofSize: 16, weight: .semibold)
+        button.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
         button.backgroundColor = .fdPrimary
-        button.layer.cornerRadius = cornerRadius
+        button.layer.cornerRadius = 20
         button.clipsToBounds = true
         button.addTarget(self, action: #selector(confirmButtonTapped), for: .touchUpInside)
     }
 
     private func setAboutText(_ text: String) {
-        guard text.contains("<"),
-              let data = text.data(using: .utf8),
-              let parsed = try? NSAttributedString(
-                data: data,
-                options: [
-                    .documentType: NSAttributedString.DocumentType.html,
-                    .characterEncoding: String.Encoding.utf8.rawValue,
-                ],
-                documentAttributes: nil
-              ) else {
-            aboutLabel.attributedText = nil
-            aboutLabel.text = text
+        let markup = text.contains("<") || text.contains("&lt;")
+        aboutLabel.isHidden = markup
+        aboutHTML.isHidden = !markup
+        if markup {
+            aboutLabel.text = nil
+            aboutHTML.setHTML(text)
             return
         }
-        let styled = NSMutableAttributedString(attributedString: parsed)
-        let range = NSRange(location: 0, length: styled.length)
-        if range.length > 0 {
-            styled.addAttributes(
-                [
-                    .font: UIFont.fdFont(ofSize: 14, weight: .regular),
-                    .foregroundColor: UIColor.fdSubtext,
-                ],
-                range: range
-            )
-        }
-        aboutLabel.attributedText = styled
+        aboutLabel.attributedText = nil
+        aboutLabel.text = text
     }
 
     private func updateConfirmStyle(_ button: UIButton) {
         let enabled = viewModel.selectedSlot != nil
-        button.backgroundColor = enabled ? .fdPrimary : .fdPrimary.withAlphaComponent(0.4)
+        button.backgroundColor = enabled ? .fdPrimary : UIColor.fdPrimary.withAlphaComponent(0.45)
     }
 
     @objc private func confirmButtonTapped() {
@@ -664,10 +716,10 @@ private final class CabinBookDateChip: UIControl {
         dayId = day.id
         super.init(frame: .zero)
         titleLabel.text = day.title
-        titleLabel.font = .fdFont(ofSize: 13, weight: .regular)
+        titleLabel.font = .fdFont(ofSize: 14, weight: .regular)
         titleLabel.textAlignment = .center
         subtitleLabel.text = day.subtitle
-        subtitleLabel.font = .fdFont(ofSize: 15, weight: .semibold)
+        subtitleLabel.font = .fdFont(ofSize: 16, weight: .semibold)
         subtitleLabel.textAlignment = .center
         let stack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
         stack.axis = .vertical
@@ -680,7 +732,7 @@ private final class CabinBookDateChip: UIControl {
         }
         snp.makeConstraints { $0.width.greaterThanOrEqualTo(72) }
         setContentHuggingPriority(.required, for: .horizontal)
-        layer.cornerRadius = 8
+        layer.cornerRadius = 12
         layer.borderWidth = 1
         apply(selected: selected)
     }
@@ -716,10 +768,10 @@ private final class CabinBookSlotChip: UIControl {
         self.slot = slot
         super.init(frame: .zero)
         timeLabel.text = slot.timeText
-        timeLabel.font = .fdFont(ofSize: 13, weight: .semibold)
+        timeLabel.font = .fdFont(ofSize: 14, weight: .semibold)
         timeLabel.textAlignment = .center
         statusLabel.text = slot.statusText
-        statusLabel.font = .fdFont(ofSize: 11, weight: .regular)
+        statusLabel.font = .fdFont(ofSize: 12, weight: .regular)
         statusLabel.textAlignment = .center
         statusLabel.numberOfLines = 2
         let stack = UIStackView(arrangedSubviews: [timeLabel, statusLabel])
@@ -732,7 +784,7 @@ private final class CabinBookSlotChip: UIControl {
             $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 4, bottom: 8, right: 4))
         }
         snp.makeConstraints { $0.height.greaterThanOrEqualTo(56) }
-        layer.cornerRadius = 8
+        layer.cornerRadius = 12
         layer.borderWidth = 1
         isUserInteractionEnabled = slot.isBookable
         apply(selected: selected, bookable: slot.isBookable)
@@ -789,7 +841,7 @@ private final class CabinBookGalleryView: UIView, UIScrollViewDelegate {
         scroll.bounces = false
         scroll.delegate = self
         pageControl.currentPageIndicatorTintColor = .fdPrimary
-        pageControl.pageIndicatorTintColor = .fdBorderStrong
+        pageControl.pageIndicatorTintColor = UIColor.fdPrimary.withAlphaComponent(0.25)
         pageControl.isUserInteractionEnabled = false
         pageControl.hidesForSinglePage = true
         addSubview(scroll)
@@ -944,5 +996,334 @@ private final class CabinBookGalleryView: UIView, UIScrollViewDelegate {
         syncPageFromOffset()
         normalizePositionIfNeeded()
     }
+}
+
+/// 预约次数或名额已满。只有「我知道了」，关闭后不继续预约。
+private final class CabinBookLimitAlertView: UIView {
+
+    var onConfirm: (() -> Void)?
+
+    private let card = UIView()
+    private let iconHost = UIView()
+    private let iconView = UIImageView()
+    private let titleLabel = UILabel()
+    private let messageLabel = UILabel()
+    private let confirmButton = UIButton(type: .system)
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    func configure(title: String, message: String) {
+        titleLabel.text = title
+        messageLabel.text = message
+    }
+
+    func show(in host: UIView) {
+        host.addSubview(self)
+        snp.makeConstraints { $0.edges.equalToSuperview() }
+        alpha = 0
+        card.transform = CGAffineTransform(scaleX: 0.96, y: 0.96)
+        UIView.animate(withDuration: 0.2) {
+            self.alpha = 1
+            self.card.transform = .identity
+        }
+    }
+
+    func dismiss() {
+        UIView.animate(withDuration: 0.18, animations: {
+            self.alpha = 0
+            self.card.transform = CGAffineTransform(scaleX: 0.96, y: 0.96)
+        }, completion: { _ in
+            self.removeFromSuperview()
+        })
+    }
+
+    private func setup() {
+        backgroundColor = UIColor.black.withAlphaComponent(0.45)
+
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 16
+        card.clipsToBounds = true
+
+        iconHost.backgroundColor = .fdWarningSoft
+        iconHost.layer.cornerRadius = 28
+        iconView.image = UIImage(systemName: "exclamationmark.triangle.fill")
+        iconView.tintColor = .fdWarning
+        iconView.contentMode = .scaleAspectFit
+
+        titleLabel.font = .fdFont(ofSize: 18, weight: .semibold)
+        titleLabel.textColor = .fdText
+        titleLabel.textAlignment = .center
+        titleLabel.numberOfLines = 0
+
+        messageLabel.font = .fdFont(ofSize: 14, weight: .regular)
+        messageLabel.textColor = .fdSubtext
+        messageLabel.textAlignment = .center
+        messageLabel.numberOfLines = 0
+
+        confirmButton.setTitle("我知道了", for: .normal)
+        confirmButton.setTitleColor(.white, for: .normal)
+        confirmButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
+        confirmButton.backgroundColor = .fdPrimary
+        confirmButton.layer.cornerRadius = 22
+        confirmButton.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
+
+        addSubview(card)
+        card.addSubview(iconHost)
+        iconHost.addSubview(iconView)
+        card.addSubview(titleLabel)
+        card.addSubview(messageLabel)
+        card.addSubview(confirmButton)
+
+        card.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.leading.trailing.equalToSuperview().inset(40)
+            $0.width.lessThanOrEqualTo(300)
+        }
+        iconHost.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(28)
+            $0.centerX.equalToSuperview()
+            $0.size.equalTo(56)
+        }
+        iconView.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.size.equalTo(26)
+        }
+        titleLabel.snp.makeConstraints {
+            $0.top.equalTo(iconHost.snp.bottom).offset(16)
+            $0.leading.trailing.equalToSuperview().inset(20)
+        }
+        messageLabel.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(8)
+            $0.leading.trailing.equalToSuperview().inset(20)
+        }
+        confirmButton.snp.makeConstraints {
+            $0.top.equalTo(messageLabel.snp.bottom).offset(20)
+            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.bottom.equalToSuperview().inset(20)
+            $0.height.equalTo(44)
+        }
+    }
+
+    @objc private func confirmTapped() {
+        onConfirm?()
+    }
+}
+
+/// 项目预约温馨提示。关闭不提交；「仍要预约」才继续。
+private final class CabinHealthNoticeView: UIView {
+
+    var onClose: (() -> Void)?
+    var onContinue: (() -> Void)?
+
+    private let card = UIView()
+    private let closeButton = UIButton(type: .system)
+    private let iconHost = UIView()
+    private let iconView = UIImageView()
+    private let titleLabel = UILabel()
+    private let listStack = UIStackView()
+    private let standardCard = UIView()
+    private let standardTitle = UILabel()
+    private let standardText = UILabel()
+    private let continueButton = UIButton(type: .system)
+    private let internalItem = CabinHealthNoticeBullet(
+        text: "此健康驿站服务仅限【红色工牌员工】预约；",
+        emphasized: true
+    )
+    private let feverItem = CabinHealthNoticeBullet(
+        text: "为确保筛查结果准确，并保障您和他人的健康安全，如有发热（≥37.3℃）、感冒、咳嗽、咽痛等急性感染症状，请暂缓预约任何服务。",
+        emphasized: false
+    )
+    private let recoverItem = CabinHealthNoticeBullet(
+        text: "建议待症状消失、体温正常满24小时后再进行预约，感谢您的理解与配合。",
+        emphasized: false
+    )
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    func configure(isInternalStation: Bool) {
+        internalItem.isHidden = !isInternalStation
+    }
+
+    func show(in host: UIView) {
+        host.addSubview(self)
+        snp.makeConstraints { $0.edges.equalToSuperview() }
+        alpha = 0
+        card.transform = CGAffineTransform(scaleX: 0.96, y: 0.96)
+        UIView.animate(withDuration: 0.2) {
+            self.alpha = 1
+            self.card.transform = .identity
+        }
+    }
+
+    func dismiss() {
+        UIView.animate(withDuration: 0.18, animations: {
+            self.alpha = 0
+            self.card.transform = CGAffineTransform(scaleX: 0.96, y: 0.96)
+        }, completion: { _ in
+            self.removeFromSuperview()
+        })
+    }
+
+    private func setup() {
+        backgroundColor = UIColor.black.withAlphaComponent(0.45)
+
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 16
+        card.clipsToBounds = true
+
+        closeButton.setImage(UIImage(systemName: "xmark"), for: .normal)
+        closeButton.tintColor = .fdMuted
+        closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
+
+        iconHost.backgroundColor = .fdWarningSoft
+        iconHost.layer.cornerRadius = 32
+        iconView.image = UIImage(systemName: "exclamationmark.triangle.fill")
+        iconView.tintColor = .fdWarning
+        iconView.contentMode = .scaleAspectFit
+
+        titleLabel.text = "温馨提示"
+        titleLabel.font = .fdFont(ofSize: 18, weight: .medium)
+        titleLabel.textColor = .fdText
+        titleLabel.textAlignment = .center
+
+        listStack.axis = .vertical
+        listStack.spacing = 12
+        listStack.addArrangedSubview(internalItem)
+        listStack.addArrangedSubview(feverItem)
+        listStack.addArrangedSubview(recoverItem)
+
+        standardCard.backgroundColor = .fdWarningSoft
+        standardCard.layer.cornerRadius = 12
+        standardCard.layer.borderWidth = 0
+        standardCard.layer.borderColor = UIColor.clear.cgColor
+
+        let infoIcon = UIImageView(image: UIImage(systemName: "info.circle.fill"))
+        infoIcon.tintColor = .fdWarning
+        infoIcon.contentMode = .scaleAspectFit
+        standardTitle.text = "健康筛查标准"
+        standardTitle.font = .fdFont(ofSize: 14, weight: .medium)
+        standardTitle.textColor = .fdWarning
+        let standardTitleRow = UIStackView(arrangedSubviews: [infoIcon, standardTitle])
+        standardTitleRow.axis = .horizontal
+        standardTitleRow.spacing = 6
+        standardTitleRow.alignment = .center
+
+        standardText.text = "体温 ≥ 37.3℃ 或存在急性呼吸道感染症状者，请勿预约"
+        standardText.font = .fdFont(ofSize: 14, weight: .regular)
+        standardText.textColor = .fdText
+        standardText.numberOfLines = 0
+
+        continueButton.setTitle("仍要预约", for: .normal)
+        continueButton.setTitleColor(.white, for: .normal)
+        continueButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
+        continueButton.backgroundColor = .fdPrimary
+        continueButton.layer.cornerRadius = 20
+        continueButton.addTarget(self, action: #selector(continueTapped), for: .touchUpInside)
+
+        addSubview(card)
+        card.addSubview(closeButton)
+        card.addSubview(iconHost)
+        iconHost.addSubview(iconView)
+        card.addSubview(titleLabel)
+        card.addSubview(listStack)
+        card.addSubview(standardCard)
+        standardCard.addSubview(standardTitleRow)
+        standardCard.addSubview(standardText)
+        card.addSubview(continueButton)
+
+        card.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.width.lessThanOrEqualTo(340)
+        }
+        closeButton.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(12)
+            $0.trailing.equalToSuperview().offset(-12)
+            $0.size.equalTo(32)
+        }
+        iconHost.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(22)
+            $0.centerX.equalToSuperview()
+            $0.size.equalTo(64)
+        }
+        iconView.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.size.equalTo(28)
+        }
+        titleLabel.snp.makeConstraints {
+            $0.top.equalTo(iconHost.snp.bottom).offset(12)
+            $0.leading.trailing.equalToSuperview().inset(16)
+        }
+        listStack.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(14)
+            $0.leading.trailing.equalToSuperview().inset(16)
+        }
+        standardCard.snp.makeConstraints {
+            $0.top.equalTo(listStack.snp.bottom).offset(4)
+            $0.leading.trailing.equalToSuperview().inset(16)
+        }
+        infoIcon.snp.makeConstraints { $0.size.equalTo(16) }
+        standardTitleRow.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview().inset(12)
+        }
+        standardText.snp.makeConstraints {
+            $0.top.equalTo(standardTitleRow.snp.bottom).offset(6)
+            $0.leading.equalToSuperview().offset(34)
+            $0.trailing.bottom.equalToSuperview().inset(12)
+        }
+        continueButton.snp.makeConstraints {
+            $0.top.equalTo(standardCard.snp.bottom).offset(16)
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalToSuperview().inset(16)
+            $0.height.equalTo(40)
+        }
+    }
+
+    @objc private func closeTapped() {
+        onClose?()
+    }
+
+    @objc private func continueTapped() {
+        onContinue?()
+    }
+}
+
+private final class CabinHealthNoticeBullet: UIView {
+
+    private let dot = UIView()
+    private let label = UILabel()
+
+    init(text: String, emphasized: Bool) {
+        super.init(frame: .zero)
+        dot.backgroundColor = .fdWarning
+        dot.layer.cornerRadius = 3
+        label.text = text
+        label.font = .fdFont(ofSize: 14, weight: emphasized ? .bold : .regular)
+        label.textColor = .fdText
+        label.numberOfLines = 0
+        addSubview(dot)
+        addSubview(label)
+        dot.snp.makeConstraints {
+            $0.leading.equalToSuperview()
+            $0.top.equalToSuperview().offset(8)
+            $0.size.equalTo(6)
+        }
+        label.snp.makeConstraints {
+            $0.leading.equalTo(dot.snp.trailing).offset(8)
+            $0.top.trailing.bottom.equalToSuperview()
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
 }
 

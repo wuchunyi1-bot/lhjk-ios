@@ -12,8 +12,8 @@ final class HomeShelfBar: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = .fdBg
-        indicator.backgroundColor = .fdPrimary
+        backgroundColor = .fdPrimary
+        indicator.backgroundColor = .white
         indicator.layer.cornerRadius = 1
         addSubview(indicator)
 
@@ -62,7 +62,7 @@ final class HomeShelfBar: UIView {
     private func applyTabFonts() {
         for (item, button) in buttons {
             let selected = item == selectedShelf
-            button.setTitleColor(selected ? .fdPrimary : .fdSubtext, for: .normal)
+            button.setTitleColor(selected ? .white : UIColor.white.withAlphaComponent(0.72), for: .normal)
             button.usesSelectedStyle = selected
         }
     }

@@ -108,7 +108,7 @@ CMS 空壳路径（仅 `monitorCardMeta`）无 `backgroundUrl`，MUST 走本地�
 
 ### Requirement: cardType 映射
 
-系统 SHALL 按天使枚举识别卡片类型：`2` 血压、`3` 血糖、`4` 体温、`5` 体重、`10` 饮食运动、`14` 血脂。
+系统 SHALL 按天使枚举识别卡片类型：`2` 血压、`3` 血糖、`4` 体温、`5` 体重、`10` 饮食运动、`14` 血脂、`15` 鹰瞳眼底、`16` 呼吸道炎症仪、`17` 炎菌仪、`18` 饮水。`15`–`18` 的主内容、标签和日期见对应 Requirement。
 
 #### Scenario: 未知 cardType
 
@@ -182,7 +182,7 @@ progress = 1 - ratio
 - `abnormalCount > 0` → 「N项异常」（warning）
 - 否则有数据时展示 `result`，缺省「正常」（success）
 
-图标优先 `iconUrl`；背景优先 `backgroundUrl`。点击合法 `pageUrl`（如 `FundeH5:/blood-lipid`）经 `FundePageURL.open` 打开。
+图标优先 `iconUrl`；背景优先 `backgroundUrl`。点击合法 `pageUrl`（如 `FundeH5:/blood-lipid`）经 `FundePageURL.open` 打开。结果标签有 `monitorData.color` 时按该色上色，见「结果标签颜色」。
 
 #### Scenario: 四项齐全且无异常
 
@@ -193,6 +193,94 @@ progress = 1 - ratio
 
 - **WHEN** `abnormalCount=2`
 - **THEN** 徽标展示「2项异常」（warning）
+
+### Requirement: 饮水卡（cardType = 18）
+
+主内容读取 `monitorData.waterAmount`。单位优先用 `monitorData.unit`，缺省 `mL`。`0` 也展示。缺值主内容为 `--`，且不展示单位、标签和日期。
+
+有饮水量时：标签只用接口 `result`，空则不展示，不得补「正常」。日期优先 `monitorData.recordDay`，没有则把 `monitorTime` 格式化为 `yyyy-MM-dd`。
+
+#### Scenario: 有饮水量且带 recordDay
+
+- **WHEN** `waterAmount=203`、`unit=ml`、`recordDay=2026-11-10`、`result` 为空
+- **THEN** 主内容为 `203`，单位 `ml`，无标签，日期 `2026-11-10`
+
+#### Scenario: 饮水量为 0
+
+- **WHEN** `waterAmount=0`，`unit` 缺失
+- **THEN** 主内容为 `0`，单位 `mL`
+
+#### Scenario: 没有饮水量
+
+- **WHEN** `monitorData` 缺失或没有 `waterAmount`
+- **THEN** 主内容为 `--`，不展示单位、标签和日期
+
+### Requirement: 呼吸道炎症仪卡（cardType = 16）
+
+`monitorData.status` 为数字 `3` 时主内容为「已完成检测」，其它情况（含缺失、非数字）为「暂无检测记录」。
+
+不展示右上角「设备检测」标签。仅检测成功且 `monitorTime` 有效时展示日期（`yyyy-MM-dd`）。不使用 `result` 作为主内容或标签。
+
+#### Scenario: 检测完成
+
+- **WHEN** `monitorData.status=3` 且 `monitorTime` 为有效时间戳
+- **THEN** 主内容「已完成检测」，不展示「设备检测」标签，并展示日期
+
+#### Scenario: 无检测记录
+
+- **WHEN** `monitorData` 为空或 `status` 不是数字 `3`
+- **THEN** 主内容「暂无检测记录」，不展示「设备检测」标签，不展示日期
+
+### Requirement: 炎菌仪卡（cardType = 17）
+
+主内容和日期与呼吸道炎症仪相同：仅数字 `status == 3` 显示「已完成检测」，否则「暂无检测记录」。不展示右上角「设备检测」标签。仅检测成功且 `monitorTime` 有效时展示日期。
+
+#### Scenario: 检测完成
+
+- **WHEN** `monitorData.status=3` 且 `monitorTime` 有效
+- **THEN** 主内容「已完成检测」，不展示「设备检测」标签，并展示日期
+
+#### Scenario: 无检测记录
+
+- **WHEN** `monitorData` 为空或 `status` 不是数字 `3`
+- **THEN** 主内容「暂无检测记录」，不展示「设备检测」标签，不展示日期
+
+### Requirement: 鹰瞳眼底卡（cardType = 15）
+
+主内容只看 `monitorData.status`：`1`「报告生成中」，`2`「已完成检测」。`3`、缺失或无法识别为「暂无检测记录」。不使用 `result`（例如「超时已关闭」「检测失败」不得替代上述文案）。
+
+「报告生成中」「已完成检测」且 `monitorTime` 有效时展示日期；「暂无检测记录」不展示日期，也不展示标签。
+
+#### Scenario: 报告已出
+
+- **WHEN** `monitorData.status=2` 且 `monitorTime` 有效
+- **THEN** 主内容「已完成检测」，并展示日期
+
+#### Scenario: 报告未出
+
+- **WHEN** `monitorData.status=1` 且 `monitorTime` 有效
+- **THEN** 主内容「报告生成中」，并展示日期
+
+#### Scenario: 空状态或异常未完成
+
+- **WHEN** `monitorData` 为空，`status=3`，或 `status` 不是 `1`、`2`
+- **THEN** 主内容「暂无检测记录」，不展示日期。即使 `result` 为其它文案也不改主内容
+
+### Requirement: 结果标签颜色
+
+除「去记录」外，结果标签 SHALL 使用 `monitorData.color` 上色：文字为该色，底为同色 10% 透明（`#RRGGBB1A`）。「去记录」保持固定橙底和主色文字，不读 `color`。
+
+`color` 缺失或不是 6 位十六进制时，标签仍用原有分色（正常绿、异常红、提示橙、炎菌仪设备标签橙）。数值本身不上这个色。
+
+#### Scenario: 体重偏胖
+
+- **WHEN** `result=偏胖`，`monitorData.color=#FFB32C`
+- **THEN** 「偏胖」文字为 `#FFB32C`，底为该色 10% 透明
+
+#### Scenario: 去记录
+
+- **WHEN** 卡片无监测数据，展示「去记录」
+- **THEN** 「去记录」颜色保持固定，即使同卡带有 `monitorData.color`
 
 ### Requirement: 柔性字段解码
 
@@ -212,6 +300,9 @@ progress = 1 - ratio
 - 无监测数据：徽标位置展示「去记录」，点击仍进记录页
 - 饮食运动：数值展示还可摄入，不展示三列热量和圆环
 - 血脂：不展示 TC / TG / HDL / LDL，徽标仍为「N项异常」或「正常」
+- 饮水：有饮水量时展示数值和单位；缺值仍走「去记录」
+- 炎症仪 / 炎菌仪：展示「已完成检测」或「暂无检测记录」，不展示「设备检测」标签；不把这句话换成「去记录」
+- 鹰瞳：展示「报告生成中 / 已完成检测 / 暂无检测记录」，不把这句话换成「去记录」
 - 异常数值（`warning` / `info`）用强调色，正常数值用正文色
 
 #### Scenario: 长辈模式打开首页

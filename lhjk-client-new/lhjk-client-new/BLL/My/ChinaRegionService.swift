@@ -133,6 +133,54 @@ final class ChinaRegionService {
         return RegionSelection(province: province.name, city: cityName, district: district)
     }
 
+    /// 把定位返回的省市区对齐到 `map.json` 的名称，用来回填「所在地区」。
+    func matchedSelection(province: String, city: String, district: String, addressText: String) -> RegionSelection? {
+        loadIfNeeded()
+        guard !provinces.isEmpty else { return nil }
+        guard let provinceDTO = best(provinces, name: \.name, hint: province, blob: addressText) else { return nil }
+        let cityDTO = best(provinceDTO.city, name: \.name, hint: city, blob: addressText)
+            ?? best(provinceDTO.city, name: \.name, hint: district, blob: "")
+        let districtName = cityDTO.flatMap { best($0.area, name: { $0 }, hint: district, blob: addressText) } ?? ""
+        let selection = RegionSelection(
+            province: provinceDTO.name,
+            city: cityDTO?.name ?? "",
+            district: districtName
+        )
+        guard !selection.province.isEmpty else { return nil }
+        return selection
+    }
+
+    private func best<T>(_ items: [T], name: (T) -> String, hint: String, blob: String) -> T? {
+        let hintKey = regionKey(hint)
+        if !hintKey.isEmpty {
+            if let exact = items.first(where: { regionKey(name($0)) == hintKey }) { return exact }
+            if let contained = items.first(where: { item in
+                let key = regionKey(name(item))
+                return key.count >= 2 && (hintKey.contains(key) || key.contains(hintKey))
+            }) { return contained }
+        }
+        let text = blob.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return nil }
+        return items
+            .sorted { name($0).count > name($1).count }
+            .first { item in
+                let official = name(item)
+                let key = regionKey(official)
+                return text.contains(official) || (key.count >= 2 && text.contains(key))
+            }
+    }
+
+    /// 去掉「省 / 市 / 区」等后缀后再比较，兼容定位文案和本地数据。
+    private func regionKey(_ value: String) -> String {
+        var text = normalized(value)
+        let suffixes = ["特别行政区", "维吾尔自治区", "回族自治区", "壮族自治区", "自治区", "自治州", "地区", "省", "市", "区", "县"]
+        for suffix in suffixes where text.hasSuffix(suffix) && text.count > suffix.count {
+            text.removeLast(suffix.count)
+            break
+        }
+        return text
+    }
+
     private func normalized(_ value: String?) -> String {
         value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }

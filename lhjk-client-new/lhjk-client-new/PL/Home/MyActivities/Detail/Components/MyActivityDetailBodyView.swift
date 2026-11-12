@@ -1,3 +1,4 @@
+import Kingfisher
 import SnapKit
 import UIKit
 
@@ -9,99 +10,50 @@ final class MyActivityDetailBodyView: UIView {
 
     private let infoCard: UIView = {
         let view = UIView()
-        view.backgroundColor = .fdSurface
+        view.backgroundColor = .white
         view.layer.cornerRadius = 16
+        view.clipsToBounds = true
         return view
     }()
+
+    private let watermark = UIImageView(image: UIImage(named: "event_detail_icon"))
 
     private let themeLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdH3
-        label.textColor = .fdText
+        label.font = .fdFont(ofSize: 18, weight: .medium)
+        label.textColor = UIColor(hexString: "#522B0F")
         label.numberOfLines = 0
         return label
     }()
 
-    private let timeTitle = fieldTitle("活动时间")
-    private let timeValue = fieldValue()
-    private let ownerTitle = fieldTitle("活动负责人")
-    private let ownerValue = fieldValue()
+    private let timeIcon = UIImageView(image: UIImage(named: "event_live_time"))
+    private let ownerIcon = UIImageView(image: UIImage(named: "event_live_leader"))
+    private let timeLabel = metaLabel()
+    private let ownerLabel = metaLabel()
 
-    private let divider: UIView = {
+    private let welfareCard = WelfareCardView()
+
+    private let deviceCard: UIView = {
         let view = UIView()
-        view.backgroundColor = .fdBorder
+        view.backgroundColor = .white
+        view.layer.cornerRadius = 16
+        view.clipsToBounds = true
         return view
-    }()
-
-    private let welfareCard: UIView = {
-        let view = UIView()
-        view.backgroundColor = .fdPrimarySoft
-        view.layer.cornerRadius = 12
-        view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor.fdPrimaryEdge.cgColor
-        return view
-    }()
-
-    private let giftBadge: UIView = {
-        let view = UIView()
-        view.backgroundColor = .fdSurface
-        view.layer.cornerRadius = 8
-        return view
-    }()
-
-    private let giftIcon: UIImageView = {
-        let image = UIImageView(image: UIImage(systemName: "gift.fill"))
-        image.tintColor = .fdPrimary
-        image.contentMode = .scaleAspectFit
-        return image
-    }()
-
-    private let welfareTitle: UILabel = {
-        let label = UILabel()
-        label.font = .fdBodyBold
-        label.textColor = .fdText
-        label.text = "添加健康福利官"
-        label.numberOfLines = 0
-        return label
-    }()
-
-    private let welfareSubtitle: UILabel = {
-        let label = UILabel()
-        label.font = .fdBody
-        label.textColor = .fdText2
-        label.numberOfLines = 0
-        label.text = "一键领取现场健康福利，享报告解读、健康咨询等专属权益。"
-        return label
-    }()
-
-    private let claimButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("立即领取", for: .normal)
-        button.setTitleColor(.white, for: .normal)
-        button.titleLabel?.font = .fdBodyBold
-        button.backgroundColor = .fdPrimary
-        button.layer.cornerRadius = 24
-        return button
     }()
 
     private let deviceTitle: UILabel = {
         let label = UILabel()
-        label.font = .fdBodyBold
-        label.textColor = .fdText
+        label.font = .fdFont(ofSize: 18, weight: .medium)
+        label.textColor = UIColor(hexString: "#1F2430")
         label.text = "设备检测"
         return label
     }()
 
-    private let deviceStack: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .vertical
-        stack.spacing = 8
-        return stack
-    }()
+    private let deviceGrid = UIStackView()
 
     private var devices: [MyActivityDeviceEntry] = []
     private var infoCardBottom: Constraint?
-    private var deviceSectionBottom: Constraint?
+    private var deviceCardBottom: Constraint?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -114,38 +66,35 @@ final class MyActivityDetailBodyView: UIView {
 
     func configure(_ content: MyActivityDetailContent) {
         themeLabel.text = content.theme
-        timeValue.text = content.timeText
-        ownerValue.text = content.owner
+        timeLabel.text = "活动时间：\(content.timeText)"
+        ownerLabel.text = "活动负责人：\(content.owner)"
         devices = content.devices
         let showsDevices = !devices.isEmpty
-        deviceTitle.isHidden = !showsDevices
-        deviceStack.isHidden = !showsDevices
+        deviceCard.isHidden = !showsDevices
         infoCardBottom?.isActive = !showsDevices
-        deviceSectionBottom?.isActive = showsDevices
-        deviceStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for (index, device) in devices.enumerated() {
-            deviceStack.addArrangedSubview(deviceRow(device, tag: index))
-        }
+        deviceCardBottom?.isActive = showsDevices
+        rebuildDevices()
     }
 
     private func setup() {
-        addSubview(infoCard)
-        infoCard.addSubview(themeLabel)
-        infoCard.addSubview(timeTitle)
-        infoCard.addSubview(timeValue)
-        infoCard.addSubview(ownerTitle)
-        infoCard.addSubview(ownerValue)
-        infoCard.addSubview(divider)
-        infoCard.addSubview(welfareCard)
-        welfareCard.addSubview(giftBadge)
-        giftBadge.addSubview(giftIcon)
-        welfareCard.addSubview(welfareTitle)
-        welfareCard.addSubview(welfareSubtitle)
-        welfareCard.addSubview(claimButton)
-        addSubview(deviceTitle)
-        addSubview(deviceStack)
+        watermark.contentMode = .scaleAspectFit
+        timeIcon.contentMode = .scaleAspectFit
+        ownerIcon.contentMode = .scaleAspectFit
+        deviceGrid.axis = .vertical
+        deviceGrid.spacing = 12
 
-        claimButton.addTarget(self, action: #selector(claimTapped), for: .touchUpInside)
+        addSubview(infoCard)
+        infoCard.addSubview(watermark)
+        infoCard.addSubview(themeLabel)
+        infoCard.addSubview(timeIcon)
+        infoCard.addSubview(timeLabel)
+        infoCard.addSubview(ownerIcon)
+        infoCard.addSubview(ownerLabel)
+        infoCard.addSubview(welfareCard)
+        addSubview(deviceCard)
+        deviceCard.addSubview(deviceTitle)
+        deviceCard.addSubview(deviceGrid)
+        welfareCard.claimButton.addTarget(self, action: #selector(claimTapped), for: .touchUpInside)
 
         infoCard.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(12)
@@ -153,119 +102,138 @@ final class MyActivityDetailBodyView: UIView {
             infoCardBottom = make.bottom.equalToSuperview().offset(-24).constraint
         }
         infoCardBottom?.isActive = false
+        watermark.snp.makeConstraints { make in
+            make.top.trailing.equalToSuperview()
+            make.width.equalTo(160)
+            make.height.equalTo(120)
+        }
         themeLabel.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview().inset(16)
+            make.top.leading.equalToSuperview().offset(20)
+            make.trailing.lessThanOrEqualTo(watermark.snp.leading).offset(24)
         }
-        timeTitle.snp.makeConstraints { make in
-            make.top.equalTo(themeLabel.snp.bottom).offset(12)
-            make.leading.equalToSuperview().offset(16)
-            make.width.equalTo(88)
+        timeIcon.snp.makeConstraints { make in
+            make.leading.equalTo(themeLabel)
+            make.top.equalTo(themeLabel.snp.bottom).offset(8)
+            make.size.equalTo(16)
         }
-        timeValue.snp.makeConstraints { make in
-            make.top.equalTo(timeTitle)
-            make.leading.equalTo(timeTitle.snp.trailing).offset(12)
-            make.trailing.equalToSuperview().offset(-16)
+        timeLabel.snp.makeConstraints { make in
+            make.leading.equalTo(timeIcon.snp.trailing).offset(3)
+            make.centerY.equalTo(timeIcon)
+            make.trailing.lessThanOrEqualToSuperview().offset(-16)
         }
-        ownerTitle.snp.makeConstraints { make in
-            make.top.equalTo(timeValue.snp.bottom).offset(12)
-            make.leading.width.equalTo(timeTitle)
+        ownerIcon.snp.makeConstraints { make in
+            make.leading.size.equalTo(timeIcon)
+            make.top.equalTo(timeIcon.snp.bottom).offset(10)
         }
-        ownerValue.snp.makeConstraints { make in
-            make.top.equalTo(ownerTitle)
-            make.leading.equalTo(ownerTitle.snp.trailing).offset(12)
-            make.trailing.equalToSuperview().offset(-16)
-        }
-        divider.snp.makeConstraints { make in
-            make.top.equalTo(ownerValue.snp.bottom).offset(16)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.height.equalTo(1)
+        ownerLabel.snp.makeConstraints { make in
+            make.leading.equalTo(ownerIcon.snp.trailing).offset(3)
+            make.centerY.equalTo(ownerIcon)
+            make.trailing.lessThanOrEqualToSuperview().offset(-16)
         }
         welfareCard.snp.makeConstraints { make in
-            make.top.equalTo(divider.snp.bottom).offset(16)
-            make.leading.trailing.equalToSuperview().inset(16)
+            make.top.equalTo(ownerIcon.snp.bottom).offset(16)
+            make.leading.trailing.equalToSuperview().inset(12)
             make.bottom.equalToSuperview().offset(-16)
         }
-        giftBadge.snp.makeConstraints { make in
-            make.top.leading.equalToSuperview().offset(16)
-            make.size.equalTo(48)
-        }
-        giftIcon.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.size.equalTo(26)
-        }
-        welfareTitle.snp.makeConstraints { make in
-            make.top.equalTo(giftBadge)
-            make.leading.equalTo(giftBadge.snp.trailing).offset(12)
-            make.trailing.equalToSuperview().offset(-16)
-        }
-        welfareSubtitle.snp.makeConstraints { make in
-            make.top.equalTo(welfareTitle.snp.bottom).offset(8)
-            make.leading.trailing.equalTo(welfareTitle)
-        }
-        claimButton.snp.makeConstraints { make in
-            make.top.equalTo(welfareSubtitle.snp.bottom).offset(16)
+        deviceCard.snp.makeConstraints { make in
+            make.top.equalTo(infoCard.snp.bottom).offset(12)
             make.leading.trailing.equalToSuperview().inset(16)
-            make.height.equalTo(48)
-            make.bottom.equalToSuperview().offset(-16)
+            deviceCardBottom = make.bottom.equalToSuperview().offset(-24).constraint
         }
         deviceTitle.snp.makeConstraints { make in
-            make.top.equalTo(infoCard.snp.bottom).offset(20)
-            make.leading.trailing.equalToSuperview().inset(16)
+            make.top.leading.equalToSuperview().offset(15)
+            make.trailing.equalToSuperview().offset(-15)
         }
-        deviceStack.snp.makeConstraints { make in
-            make.top.equalTo(deviceTitle.snp.bottom).offset(8)
-            make.leading.trailing.equalToSuperview().inset(16)
-            deviceSectionBottom = make.bottom.equalToSuperview().offset(-24).constraint
+        deviceGrid.snp.makeConstraints { make in
+            make.top.equalTo(deviceTitle.snp.bottom).offset(12)
+            make.leading.trailing.equalToSuperview().inset(11)
+            make.bottom.equalToSuperview().offset(-15)
         }
     }
 
-    private func deviceRow(_ device: MyActivityDeviceEntry, tag: Int) -> UIControl {
-        let row = UIControl()
-        row.tag = tag
-        row.backgroundColor = .fdSurface
-        row.layer.cornerRadius = 16
-        row.addTarget(self, action: #selector(deviceTapped(_:)), for: .touchUpInside)
+    private func rebuildDevices() {
+        deviceGrid.arrangedSubviews.forEach {
+            deviceGrid.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+        var index = 0
+        while index < devices.count {
+            let row = UIStackView()
+            row.axis = .horizontal
+            row.spacing = 9
+            row.distribution = .fillEqually
+            row.addArrangedSubview(deviceTile(devices[index], tag: index))
+            if index + 1 < devices.count {
+                row.addArrangedSubview(deviceTile(devices[index + 1], tag: index + 1))
+            } else {
+                let spacer = UIView()
+                spacer.isUserInteractionEnabled = false
+                row.addArrangedSubview(spacer)
+            }
+            deviceGrid.addArrangedSubview(row)
+            index += 2
+        }
+    }
 
-        let iconWrap = UIView()
-        iconWrap.backgroundColor = .fdInfoSoft
-        iconWrap.layer.cornerRadius = 12
-        iconWrap.isUserInteractionEnabled = false
-        let icon = UIImageView(image: UIImage(systemName: device.symbolName))
-        icon.tintColor = .fdInfo
-        icon.contentMode = .scaleAspectFit
+    private func deviceTile(_ device: MyActivityDeviceEntry, tag: Int) -> UIControl {
+        let tile = UIControl()
+        tile.tag = tag
+        tile.backgroundColor = UIColor(hexString: "#FDF6F3")
+        tile.layer.cornerRadius = 12
+        tile.clipsToBounds = true
+        tile.addTarget(self, action: #selector(deviceTapped(_:)), for: .touchUpInside)
+
         let name = UILabel()
-        name.font = .fdBodyBold
-        name.textColor = .fdText
+        name.font = .fdFont(ofSize: 16, weight: .medium)
+        name.textColor = UIColor(hexString: "#1F2942")
+        name.numberOfLines = 2
         name.text = device.name
-        let arrow = UIImageView(image: UIImage(systemName: "chevron.right"))
-        arrow.tintColor = .fdSubtext
-        arrow.contentMode = .scaleAspectFit
+        name.isUserInteractionEnabled = false
 
-        row.addSubview(iconWrap)
-        iconWrap.addSubview(icon)
-        row.addSubview(name)
-        row.addSubview(arrow)
-        row.snp.makeConstraints { $0.height.greaterThanOrEqualTo(64) }
-        iconWrap.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.centerY.equalToSuperview()
-            make.size.equalTo(44)
+        let action = UILabel()
+        action.font = .fdFont(ofSize: 14, weight: .regular)
+        action.textColor = UIColor(hexString: "#FF7A50")
+        action.text = "去检测"
+        action.isUserInteractionEnabled = false
+
+        let chevron = UIImageView(image: UIImage(named: "event_arrow"))
+        chevron.contentMode = .scaleAspectFit
+
+        let photo = UIImageView()
+        photo.contentMode = .scaleAspectFit
+        photo.clipsToBounds = true
+        photo.isUserInteractionEnabled = false
+        if let imageUrl = device.imageUrl, let url = URL(string: imageUrl) {
+            photo.kf.setImage(with: url)
         }
-        icon.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.size.equalTo(22)
-        }
-        arrow.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-16)
-            make.centerY.equalToSuperview()
-            make.size.equalTo(18)
-        }
+
+        tile.addSubview(name)
+        tile.addSubview(action)
+        tile.addSubview(chevron)
+        tile.addSubview(photo)
+        tile.snp.makeConstraints { $0.height.greaterThanOrEqualTo(81) }
         name.snp.makeConstraints { make in
-            make.leading.equalTo(iconWrap.snp.trailing).offset(12)
-            make.trailing.lessThanOrEqualTo(arrow.snp.leading).offset(-8)
-            make.centerY.equalToSuperview()
+            make.top.equalToSuperview().offset(16)
+            make.leading.equalToSuperview().offset(12)
+            make.trailing.equalToSuperview().offset(-12)
         }
-        return row
+        action.snp.makeConstraints { make in
+            make.top.greaterThanOrEqualTo(name.snp.bottom).offset(8)
+            make.leading.equalToSuperview().offset(12)
+            make.bottom.equalToSuperview().offset(-14)
+        }
+        chevron.snp.makeConstraints { make in
+            make.leading.equalTo(action.snp.trailing)
+            make.centerY.equalTo(action)
+            make.size.equalTo(12)
+        }
+        photo.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-4)
+            make.bottom.equalToSuperview().offset(-4)
+            make.width.equalTo(72)
+            make.height.equalTo(52)
+        }
+        return tile
     }
 
     @objc private func claimTapped() {
@@ -277,19 +245,89 @@ final class MyActivityDetailBodyView: UIView {
         onDevice?(devices[sender.tag])
     }
 
-    private static func fieldTitle(_ text: String) -> UILabel {
+    private static func metaLabel() -> UILabel {
         let label = UILabel()
-        label.font = .fdBody
-        label.textColor = .fdSubtext
-        label.text = text
+        label.font = .fdFont(ofSize: 16, weight: .regular)
+        label.textColor = UIColor(hexString: "#8C714F")
+        label.numberOfLines = 1
         return label
     }
+}
 
-    private static func fieldValue() -> UILabel {
-        let label = UILabel()
-        label.font = .fdBodyBold
-        label.textColor = .fdText
-        label.numberOfLines = 0
-        return label
+private final class WelfareCardView: UIView {
+
+    let claimButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("立即领取", for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
+        button.backgroundColor = UIColor(hexString: "#FF7950")
+        button.layer.cornerRadius = 14
+        return button
+    }()
+
+    private let gift = UIImageView(image: UIImage(named: "event_detail_gift"))
+
+    override class var layerClass: AnyClass { CAGradientLayer.self }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        layer.cornerRadius = 16
+        layer.borderWidth = 0.5
+        layer.borderColor = UIColor(hexString: "#FFECD2").cgColor
+        clipsToBounds = true
+        if let gradient = layer as? CAGradientLayer {
+            gradient.colors = [
+                UIColor(hexString: "#FFF7EB").cgColor,
+                UIColor(hexString: "#FFFAF3").cgColor,
+            ]
+            gradient.startPoint = CGPoint(x: 0, y: 0)
+            gradient.endPoint = CGPoint(x: 1, y: 1)
+        }
+
+        let title = UILabel()
+        title.font = .fdFont(ofSize: 18, weight: .medium)
+        title.textColor = UIColor(hexString: "#522B0F")
+        title.text = "添加健康福利官"
+        title.numberOfLines = 1
+
+        let subtitle = UILabel()
+        subtitle.font = .fdFont(ofSize: 14, weight: .regular)
+        subtitle.textColor = UIColor(hexString: "#8C714F")
+        subtitle.numberOfLines = 0
+        subtitle.text = "一键领取现场健康福利，享报告解读、健康咨询等专属权益"
+
+        gift.contentMode = .scaleAspectFit
+        addSubview(gift)
+        addSubview(title)
+        addSubview(subtitle)
+        addSubview(claimButton)
+
+        gift.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(8)
+            make.top.equalToSuperview().offset(8)
+            make.size.equalTo(89)
+        }
+        title.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(22)
+            make.leading.equalTo(gift.snp.trailing).offset(8)
+            make.trailing.equalToSuperview().offset(-12)
+        }
+        subtitle.snp.makeConstraints { make in
+            make.top.equalTo(title.snp.bottom).offset(6)
+            make.leading.equalTo(title)
+            make.trailing.equalToSuperview().offset(-12)
+        }
+        claimButton.snp.makeConstraints { make in
+            make.top.greaterThanOrEqualTo(subtitle.snp.bottom).offset(12)
+            make.top.greaterThanOrEqualTo(gift.snp.bottom).offset(6)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.height.greaterThanOrEqualTo(28)
+            make.bottom.equalToSuperview().offset(-16)
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 }

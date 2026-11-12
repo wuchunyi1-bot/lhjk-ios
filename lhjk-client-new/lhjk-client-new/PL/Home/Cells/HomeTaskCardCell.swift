@@ -56,8 +56,10 @@ final class HomeTaskCardCell: UITableViewCell {
 
     private let bannerView: UIView = {
         let v = UIView()
-        v.backgroundColor = UIColor(hexString: "#FDF6F3")
+        v.backgroundColor = UIColor(hexString: "#FFFBF7")
         v.layer.cornerRadius = 12
+        v.layer.borderWidth = 0.5
+        v.layer.borderColor = UIColor(hexString: "#FFEFE6").cgColor
         v.clipsToBounds = true
         return v
     }()
@@ -334,7 +336,7 @@ final class HomeTaskCardCell: UITableViewCell {
         row.clipsToBounds = true
 
         let iconImageView = UIImageView()
-        iconImageView.image = UIImage(named: "home_task_icon_high")
+        iconImageView.image = UIImage(named: task.done ? "home_task_icon_gray" : "home_task_icon_high")
         iconImageView.contentMode = .scaleAspectFit
         iconImageView.clipsToBounds = true
 
@@ -374,7 +376,7 @@ final class HomeTaskCardCell: UITableViewCell {
             action.setTitle("已完成", for: .normal)
             action.setTitleColor(UIColor(hexString: "#FF7950"), for: .normal)
             action.backgroundColor = .clear
-            action.layer.borderWidth = 0.5
+            action.layer.borderWidth = 1
             action.layer.borderColor = UIColor(hexString: "#FF7950").cgColor
             action.isEnabled = false
         } else {

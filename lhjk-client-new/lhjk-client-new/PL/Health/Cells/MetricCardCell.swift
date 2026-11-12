@@ -159,6 +159,7 @@ final class MetricCardCell: UICollectionViewCell {
         backgroundUrl: String? = nil,
         status: String,
         statusType: String,
+        resultColor: String? = nil,
         label: String,
         value: String,
         unit: String,
@@ -185,16 +186,21 @@ final class MetricCardCell: UICollectionViewCell {
         recordButton.isHidden = !showsRecordButton
         badgeLabel.isHidden = trimmedStatus.isEmpty || showsRecordButton
         badgeLabel.text = trimmedStatus
-        switch statusType {
-        case "warning":
-            badgeLabel.backgroundColor = UIColor(hexString: "#FFEDED")
-            badgeLabel.textColor = UIColor(hexString: "#DF0340")
-        case "info":
-            badgeLabel.backgroundColor = UIColor(hexString: "#FFF0E0")
-            badgeLabel.textColor = UIColor(hexString: "#FF6637")
-        default:
-            badgeLabel.backgroundColor = UIColor(hexString: "#E9F6F2")
-            badgeLabel.textColor = UIColor(hexString: "#2EBA83")
+        if !showsRecordButton, let color = UIColor.fdMonitorBadgeColor(hexString: resultColor) {
+            badgeLabel.textColor = color
+            badgeLabel.backgroundColor = color.withAlphaComponent(CGFloat(0x1A) / 255)
+        } else {
+            switch statusType {
+            case "warning":
+                badgeLabel.backgroundColor = UIColor(hexString: "#FFEDED")
+                badgeLabel.textColor = UIColor(hexString: "#DF0340")
+            case "info", "device":
+                badgeLabel.backgroundColor = UIColor(hexString: "#FFF0E0")
+                badgeLabel.textColor = UIColor(hexString: "#FF6637")
+            default:
+                badgeLabel.backgroundColor = UIColor(hexString: "#E9F6F2")
+                badgeLabel.textColor = UIColor(hexString: "#2EBA83")
+            }
         }
 
         isDietLayout = dietSport != nil

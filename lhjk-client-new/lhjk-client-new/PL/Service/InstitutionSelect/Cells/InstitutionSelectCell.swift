@@ -27,7 +27,9 @@ final class InstitutionSelectCell: UITableViewCell {
         let label = UILabel()
         label.font = .fdFont(ofSize: 16, weight: .medium)
         label.textColor = .fdText
-        label.numberOfLines = 1
+        label.numberOfLines = 2
+        label.lineBreakMode = .byTruncatingTail
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return label
     }()
 
@@ -43,8 +45,17 @@ final class InstitutionSelectCell: UITableViewCell {
         let label = UILabel()
         label.font = .fdFont(ofSize: 14, weight: .regular)
         label.textColor = .fdPrimary
+        label.numberOfLines = 1
+        label.lineBreakMode = .byClipping
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
         return label
     }()
+
+    private var badgeWidth: Constraint?
+    private var badgeHeight: Constraint?
+    private var lockedBadgeWidth: CGFloat = 0
+    private var lockedBadgeHeight: CGFloat = 0
 
     private let addressLabel: UILabel = {
         let label = UILabel()
@@ -69,6 +80,7 @@ final class InstitutionSelectCell: UITableViewCell {
         super.layoutSubviews()
         gradientLayer.frame = card.bounds
         gradientLayer.cornerRadius = card.layer.cornerRadius
+        lockBadgeSize()
     }
 
     func configure(item: HospitalSearchVO, isSelected: Bool) {
@@ -77,6 +89,21 @@ final class InstitutionSelectCell: UITableViewCell {
         addressLabel.text = item.fullAddress?.nilIfEmpty ?? "地址待补充"
         card.layer.borderWidth = isSelected ? 0.5 : 0
         card.layer.borderColor = UIColor.fdPrimary.withAlphaComponent(0.5).cgColor
+        lockBadgeSize()
+    }
+
+    /// 类型标签宽高只跟当前字号走，名字再长也不压缩它。
+    private func lockBadgeSize() {
+        let font = typeBadge.font ?? .fdFont(ofSize: 14, weight: .regular)
+        let text = typeBadge.text ?? ""
+        let textWidth = ceil((text as NSString).size(withAttributes: [.font: font]).width)
+        let width = textWidth + 8
+        let height = ceil(font.lineHeight) + 4
+        guard abs(width - lockedBadgeWidth) > 0.5 || abs(height - lockedBadgeHeight) > 0.5 else { return }
+        lockedBadgeWidth = width
+        lockedBadgeHeight = height
+        badgeWidth?.update(offset: width)
+        badgeHeight?.update(offset: height)
     }
 
     private func setupUI() {
@@ -109,12 +136,14 @@ final class InstitutionSelectCell: UITableViewCell {
         }
         typeBadgeWrap.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(12)
-            $0.top.equalToSuperview().offset(12)
+            $0.top.equalTo(nameLabel)
+            badgeWidth = $0.width.equalTo(0).constraint
+            badgeHeight = $0.height.equalTo(0).constraint
         }
         nameLabel.snp.makeConstraints {
             $0.leading.equalTo(iconView.snp.trailing).offset(12)
             $0.top.equalToSuperview().offset(13)
-            $0.trailing.lessThanOrEqualTo(typeBadgeWrap.snp.leading).offset(-8)
+            $0.trailing.equalTo(typeBadgeWrap.snp.leading).offset(-8)
         }
         addressLabel.snp.makeConstraints {
             $0.leading.equalTo(nameLabel)

@@ -39,9 +39,11 @@ final class HomeViewController: BaseViewController {
 
     private var dataSource: UITableViewDiffableDataSource<HomeViewModel.HomeSection, HomeViewModel.HomeItem>!
 
-    override var preferredStatusBarStyle: UIStatusBarStyle { .darkContent }
+    override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
 
     override func refreshForSeniorMode() {
+        viewModel.refreshSections()
+        applyHomeSnapshot(viewModel.snapshot)
         super.refreshForSeniorMode()
         shelfBar.setSelected(currentShelf)
         tableView.reloadData()
@@ -114,9 +116,17 @@ final class HomeViewController: BaseViewController {
             self?.showShelf(shelf, persist: true)
         }
 
+        let headerBackdrop = UIView()
+        headerBackdrop.backgroundColor = .fdPrimary
+        headerBackdrop.isUserInteractionEnabled = false
+        view.addSubview(headerBackdrop)
         view.addSubview(contentContainer)
         view.addSubview(topBar)
         view.addSubview(shelfBar)
+        headerBackdrop.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(shelfBar)
+        }
         contentContainer.clipsToBounds = true
         contentContainer.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         contentContainer.setContentHuggingPriority(.defaultLow, for: .vertical)
@@ -414,8 +424,12 @@ final class HomeViewController: BaseViewController {
             return cell
         case .support:
             let cell = tv.dequeueReusableCell(withIdentifier: HomeSupportCell.reuseID, for: indexPath) as! HomeSupportCell
+            cell.applyMode()
             cell.onTap = { [weak self] in
                 self?.present(HomeSupportCallSheet(), animated: true)
+            }
+            cell.onAppointments = {
+                Router.shared.push("/me/appointments")
             }
             return cell
         case .appointments:
@@ -432,6 +446,9 @@ final class HomeViewController: BaseViewController {
             cell.configure(packages: viewModel.membershipPackages)
             cell.onPackageTapped = { [weak self] package in
                 self?.handleHealthServicePackageTap(package)
+            }
+            cell.onViewMore = { [weak self] in
+                self?.showShelf(.service, persist: true)
             }
             return cell
         case .teamList:

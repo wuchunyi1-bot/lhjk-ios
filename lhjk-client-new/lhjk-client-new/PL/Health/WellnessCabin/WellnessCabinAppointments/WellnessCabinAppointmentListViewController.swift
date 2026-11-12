@@ -83,13 +83,13 @@ final class WellnessCabinAppointmentListViewController: BaseViewController {
         tabScroll.backgroundColor = UIColor(hexString: "#FDF6F3")
         tabStack.axis = .horizontal
         tabStack.spacing = 16
-        tabStack.alignment = .center
+        tabStack.alignment = .fill
         view.addSubview(tabScroll)
         tabScroll.addSubview(tabStack)
         tabScroll.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(6)
             $0.leading.trailing.equalToSuperview()
-            makeTabScrollHeight($0)
+            $0.height.equalTo(34)
         }
         tabStack.snp.makeConstraints {
             $0.edges.equalTo(tabScroll.contentLayoutGuide).inset(UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16))
@@ -98,56 +98,57 @@ final class WellnessCabinAppointmentListViewController: BaseViewController {
         renderTabs()
     }
 
-    private func makeTabScrollHeight(_ maker: ConstraintMaker) {
-        maker.height.equalTo(44)
-    }
-
     private func renderTabs() {
         tabStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for tab in CabinAppointmentTab.allCases {
             let selected = tab == viewModel.tab
-            let button = UIButton(type: .system)
-            button.setTitle(tab.title, for: .normal)
-            button.titleLabel?.font = .fdFont(ofSize: 15, weight: selected ? .medium : .regular)
-            button.setTitleColor(selected ? UIColor(hexString: "#FF7A50") : UIColor(hexString: "#535D72"), for: .normal)
-            button.tag = tab.rawValue
-            button.addTarget(self, action: #selector(tabTapped(_:)), for: .touchUpInside)
+            let title = UILabel()
+            title.text = tab.title
+            title.font = .fdFont(ofSize: 16, weight: selected ? .medium : .regular)
+            title.textColor = UIColor(hexString: selected ? "#1F2942" : "#535D72")
+            title.textAlignment = .center
 
             let mark = UIView()
-            mark.backgroundColor = selected ? UIColor(hexString: "#FF7A50") : .clear
-            mark.layer.cornerRadius = 1.5
-            let column = UIView()
-            column.addSubview(button)
+            mark.backgroundColor = UIColor(hexString: "#FF7A50")
+            mark.layer.cornerRadius = 2
+            mark.clipsToBounds = true
+            mark.isHidden = !selected
+
+            let column = UIControl()
+            column.tag = tab.rawValue
+            column.addTarget(self, action: #selector(tabTapped(_:)), for: .touchUpInside)
+            column.addSubview(title)
             column.addSubview(mark)
-            column.snp.makeConstraints { $0.height.equalTo(44) }
-            button.snp.makeConstraints {
-                $0.center.equalToSuperview()
+            column.snp.makeConstraints { $0.height.equalTo(34) }
+            title.snp.makeConstraints {
+                $0.top.equalToSuperview().offset(2)
                 $0.leading.trailing.equalToSuperview()
             }
             mark.snp.makeConstraints {
-                $0.bottom.centerX.equalToSuperview()
-                $0.height.equalTo(3)
+                $0.top.equalTo(title.snp.bottom).offset(4)
+                $0.centerX.equalToSuperview()
                 $0.width.equalTo(18)
+                $0.height.equalTo(4)
             }
             tabStack.addArrangedSubview(column)
         }
     }
 
     private func setupTable() {
-        tableView.backgroundColor = .clear
+        tableView.backgroundColor = UIColor(hexString: "#FDF6F3")
         tableView.separatorStyle = .none
         tableView.dataSource = self
         tableView.delegate = self
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 180
-        tableView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 24, right: 0)
+        tableView.contentInset = UIEdgeInsets(top: 6, left: 0, bottom: 24, right: 0)
         tableView.register(WellnessCabinAppointmentCell.self, forCellReuseIdentifier: WellnessCabinAppointmentCell.reuseID)
         refresh.addTarget(self, action: #selector(refreshPulled), for: .valueChanged)
         tableView.refreshControl = refresh
         view.addSubview(tableView)
         view.addSubview(emptyView)
         tableView.snp.makeConstraints {
-            $0.top.equalTo(tabScroll.snp.bottom)
+            $0.top.equalTo(tabScroll.snp.bottom).offset(6)
             $0.leading.trailing.bottom.equalToSuperview()
         }
         emptyView.snp.makeConstraints {
@@ -155,7 +156,7 @@ final class WellnessCabinAppointmentListViewController: BaseViewController {
         }
     }
 
-    @objc private func tabTapped(_ sender: UIButton) {
+    @objc private func tabTapped(_ sender: UIControl) {
         guard let tab = CabinAppointmentTab(rawValue: sender.tag) else { return }
         viewModel.select(tab)
     }

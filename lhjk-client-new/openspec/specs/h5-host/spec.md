@@ -77,7 +77,7 @@ H5 hash 路径由 `H5Config` 拼接；饮食运动根路径为 `exercise-food`�
 
 | Handler | 方向 | 用途 |
 |---------|------|------|
-| **`FundeBridge`** | H5 → Native | 套餐跳转、饮食方案保存食谱到相册、体检报告文档预览、原生扫码 |
+| **`FundeBridge`** | H5 → Native | 套餐跳转、饮食方案保存食谱到相册、体检报告文档预览、原生扫码、相机权限 |
 | `FundeNative` | 双向 | 体重 BLE：`ble.getStatus` / `ble.openManager` + emit 事件 |
 
 `FundeBridge` 消息体为扁平 JSON（字段在顶层，**不是** `{ action, params }` 嵌套）：
@@ -169,6 +169,25 @@ window.FundeScanCodeCallback({
 ```
 
 `result` 为扫码原文，不拼接 token 或其它 query。`scanType` 含 `qrCode` 时只识别二维码。
+
+体检报告和 AI 饮食点「拍照」走同一通道申请相机权限。选图仍由 H5 文件输入完成，App 不回传图片。
+
+```json
+{
+  "action": "requestCameraPermission",
+  "requestId": "camera_permission_123_1"
+}
+```
+
+宿主在主线程读取相机授权。已授权回 `granted`；未决定时弹出系统授权，允许为 `granted`、拒绝为 `denied`；已拒绝时回 `denied` 并提示去设置；设备限制回 `restricted`。每次请求只回传一次，`requestId` 原样带回。
+
+```javascript
+window.FundeCameraPermissionCallback({
+  action: 'requestCameraPermission',
+  requestId: 'camera_permission_123_1',
+  status: 'granted'
+})
+```
 
 ---
 
@@ -302,6 +321,19 @@ H5 `action=getLocation` SHALL 由宿主取一次当前位置，并固定调用 `
 - **WHEN** 相机权限被拒绝、权限受限、设备无相机或相机会话初始化失败
 - **THEN** 关闭扫码页并调用 `window.FundeScanCodeCallback({ action:'scanCode', status:'fail', message })`
 - **AND** 拒绝权限时 `message` 为「相机权限被拒绝」
+
+### Requirement: FundeBridge 相机权限
+
+体检报告和 AI 饮食 H5 点「拍照」时，SHALL 经 `FundeBridge` `action=requestCameraPermission` 由宿主处理相机权限。选图仍由 H5 文件输入完成，宿主不回传图片。
+
+#### Scenario: 回传授权结果
+
+- **WHEN** H5 postMessage `action=requestCameraPermission`，并带 `requestId`
+- **THEN** 主线程读取 `AVCaptureDevice.authorizationStatus(for: .video)`
+- **AND** 已授权回 `granted`；未决定时请求系统授权，允许为 `granted`、拒绝为 `denied`
+- **AND** 已拒绝回 `denied`，并提示「取消 / 去设置」；点「去设置」打开本 App 的系统设置
+- **AND** 设备限制回 `restricted`，并提示设备限制相机访问
+- **AND** 在发起请求的 WebView 调用 `window.FundeCameraPermissionCallback`，原样带回 `requestId`，每次请求只回传一次
 
 ### Requirement: 体重 BLE 仍走 FundeNative
 

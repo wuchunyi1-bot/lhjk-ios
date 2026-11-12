@@ -289,6 +289,7 @@ extension HealthVitalMetricsCell: UICollectionViewDataSource, UICollectionViewDe
             backgroundUrl: m.backgroundUrl,
             status: m.status,
             statusType: m.statusType,
+            resultColor: m.resultColor,
             label: m.label,
             value: m.value,
             unit: m.unit,
@@ -414,18 +415,18 @@ final class HealthVitalMetricListRow: UIView {
         if item.bloodLipid != nil {
             valueLabel.isHidden = true
             unitLabel.isHidden = true
-            applyBadge(text: item.status, kind: badgeKind(item.statusType))
+            applyBadge(text: item.status, kind: badgeKind(item.statusType), resultColor: item.resultColor)
             return
         }
 
         if let diet = item.dietSport {
             showValue(diet.remainingText, unit: "", statusType: item.statusType)
-            applyBadge(text: item.status, kind: badgeKind(item.statusType))
+            applyBadge(text: item.status, kind: badgeKind(item.statusType), resultColor: item.resultColor)
             return
         }
 
         showValue(item.value, unit: item.unit, statusType: item.statusType)
-        applyBadge(text: item.status, kind: badgeKind(item.statusType))
+        applyBadge(text: item.status, kind: badgeKind(item.statusType), resultColor: item.resultColor)
     }
 
     private func showValue(_ value: String, unit: String, statusType: String) {
@@ -456,15 +457,20 @@ final class HealthVitalMetricListRow: UIView {
     private func badgeKind(_ statusType: String) -> BadgeKind {
         switch statusType {
         case "warning": return .warning
-        case "info": return .info
+        case "info", "device": return .info
         default: return .success
         }
     }
 
-    private func applyBadge(text: String, kind: BadgeKind) {
+    private func applyBadge(text: String, kind: BadgeKind, resultColor: String? = nil) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         badgeWrap.isHidden = trimmed.isEmpty
         badgeLabel.text = trimmed
+        if kind != .record, let color = UIColor.fdMonitorBadgeColor(hexString: resultColor) {
+            badgeLabel.textColor = color
+            badgeWrap.backgroundColor = color.withAlphaComponent(CGFloat(0x1A) / 255)
+            return
+        }
         switch kind {
         case .warning:
             badgeWrap.backgroundColor = UIColor(hexString: "#FFEDED")

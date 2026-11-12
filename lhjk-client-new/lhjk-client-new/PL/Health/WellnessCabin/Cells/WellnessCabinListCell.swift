@@ -9,7 +9,6 @@ final class WellnessCabinListCell: UITableViewCell {
     private let nameLabel = UILabel()
     private let recommendTag = UILabel()
     private let staffTag = UILabel()
-    private let distanceLabel = UILabel()
     private let statusPill = UILabel()
     private let addressLabel = UILabel()
     private let hoursLabel = UILabel()
@@ -37,27 +36,22 @@ final class WellnessCabinListCell: UITableViewCell {
         recommendTag.isHidden = !item.recommended
         staffTag.isHidden = item.internalOnly != 1
 
-        if item.isEnterable {
+        if item.restFlag {
+            showClosed(title: "休息中")
+        } else if item.isEnterable {
             statusPill.isHidden = true
-            distanceLabel.isHidden = item.distanceLabel == nil
-            distanceLabel.text = item.distanceLabel
             goButton.isEnabled = true
             goButton.backgroundColor = .fdPrimary
             goButton.setTitleColor(.white, for: .normal)
         } else {
-            distanceLabel.isHidden = true
-            statusPill.isHidden = false
-            statusPill.text = "暂不可预约"
-            goButton.isEnabled = false
-            goButton.backgroundColor = .fdBg2
-            goButton.setTitleColor(.fdMuted, for: .normal)
+            showClosed(title: "暂不可预约")
         }
 
         addressLabel.text = item.addressLine
         addressLabel.isHidden = item.addressLine.isEmpty
-        if let openTime = item.openTime, !openTime.isEmpty {
+        if let hours = item.businessHours, !hours.isEmpty {
             hoursLabel.isHidden = false
-            hoursLabel.text = "营业时间：\(openTime)"
+            hoursLabel.text = "营业时间：\(hours)"
         } else {
             hoursLabel.isHidden = true
             hoursLabel.text = nil
@@ -69,21 +63,21 @@ final class WellnessCabinListCell: UITableViewCell {
             let text = NSMutableAttributedString(
                 string: "今日可约：",
                 attributes: [
-                    .font: UIFont.fdFont(ofSize: 13, weight: .regular),
+                    .font: UIFont.fdFont(ofSize: 14, weight: .regular),
                     .foregroundColor: UIColor.fdSubtext,
                 ]
             )
             text.append(NSAttributedString(
                 string: "\(count)",
                 attributes: [
-                    .font: UIFont.fdFont(ofSize: 13, weight: .semibold),
+                    .font: UIFont.fdFont(ofSize: 14, weight: .semibold),
                     .foregroundColor: UIColor.fdText,
                 ]
             ))
             text.append(NSAttributedString(
                 string: " 人",
                 attributes: [
-                    .font: UIFont.fdFont(ofSize: 13, weight: .regular),
+                    .font: UIFont.fdFont(ofSize: 14, weight: .regular),
                     .foregroundColor: UIColor.fdSubtext,
                 ]
             ))
@@ -101,47 +95,46 @@ final class WellnessCabinListCell: UITableViewCell {
 
         card.backgroundColor = .fdSurface
         card.layer.cornerRadius = 16
-        card.layer.borderWidth = 1
-        card.layer.borderColor = UIColor.fdBorder.cgColor
+        card.clipsToBounds = true
 
-        nameLabel.font = .fdFont(ofSize: 17, weight: .semibold)
+        nameLabel.font = .fdFont(ofSize: 16, weight: .medium)
         nameLabel.textColor = .fdText
         nameLabel.numberOfLines = 2
 
         recommendTag.text = "推荐"
-        recommendTag.font = .fdFont(ofSize: 11, weight: .medium)
+        recommendTag.font = .fdFont(ofSize: 12, weight: .medium)
         recommendTag.textColor = .fdPrimary
         recommendTag.backgroundColor = .fdPrimarySoft
         recommendTag.textAlignment = .center
         recommendTag.layer.cornerRadius = 4
         recommendTag.clipsToBounds = true
 
-        staffTag.text = "仅限内部员工"
-        staffTag.font = .fdFont(ofSize: 11, weight: .medium)
-        staffTag.textColor = .fdSuccess
-        staffTag.backgroundColor = .fdSuccessSoft
+        staffTag.text = "  仅限内部员工  "
+        staffTag.font = .fdFont(ofSize: 12, weight: .medium)
+        staffTag.textColor = .fdWarning
+        staffTag.backgroundColor = .fdWarningSoft
         staffTag.textAlignment = .center
         staffTag.layer.cornerRadius = 4
         staffTag.clipsToBounds = true
+        staffTag.setContentCompressionResistancePriority(.required, for: .horizontal)
+        staffTag.setContentHuggingPriority(.required, for: .horizontal)
 
-        distanceLabel.font = .fdFont(ofSize: 15, weight: .semibold)
-        distanceLabel.textColor = .fdSuccess
-        distanceLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
-
-        statusPill.font = .fdFont(ofSize: 12, weight: .medium)
+        statusPill.font = .fdFont(ofSize: 12, weight: .semibold)
         statusPill.textColor = .fdWarning
         statusPill.backgroundColor = .fdWarningSoft
         statusPill.textAlignment = .center
         statusPill.layer.cornerRadius = 11
         statusPill.clipsToBounds = true
         statusPill.isHidden = true
+        statusPill.setContentCompressionResistancePriority(.required, for: .horizontal)
+        statusPill.setContentHuggingPriority(.required, for: .horizontal)
 
-        addressLabel.font = .fdFont(ofSize: 13, weight: .regular)
-        addressLabel.textColor = .fdSubtext
-        addressLabel.numberOfLines = 2
+        addressLabel.font = .fdFont(ofSize: 16, weight: .regular)
+        addressLabel.textColor = .fdTabInactive
+        addressLabel.numberOfLines = 0
 
-        hoursLabel.font = .fdFont(ofSize: 13, weight: .regular)
-        hoursLabel.textColor = .fdSubtext
+        hoursLabel.font = .fdFont(ofSize: 16, weight: .regular)
+        hoursLabel.textColor = .fdTabInactive
         hoursLabel.numberOfLines = 1
 
         tagRow.axis = .horizontal
@@ -160,7 +153,7 @@ final class WellnessCabinListCell: UITableViewCell {
         titleRow.spacing = 8
         titleRow.alignment = .center
 
-        let head = UIStackView(arrangedSubviews: [titleRow, distanceLabel, statusPill])
+        let head = UIStackView(arrangedSubviews: [titleRow, statusPill])
         head.axis = .horizontal
         head.spacing = 8
         head.alignment = .center
@@ -192,11 +185,9 @@ final class WellnessCabinListCell: UITableViewCell {
         }
         staffTag.snp.makeConstraints {
             $0.height.equalTo(20)
-            $0.width.greaterThanOrEqualTo(76)
         }
         statusPill.snp.makeConstraints {
             $0.height.equalTo(22)
-            $0.width.greaterThanOrEqualTo(76)
         }
         goButton.snp.makeConstraints {
             $0.width.equalTo(76)
@@ -219,6 +210,14 @@ final class WellnessCabinListCell: UITableViewCell {
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.bottom.equalToSuperview().inset(16)
         }
+    }
+
+    private func showClosed(title: String) {
+        statusPill.isHidden = false
+        statusPill.text = "  \(title)  "
+        goButton.isEnabled = false
+        goButton.backgroundColor = .fdBg2
+        goButton.setTitleColor(.fdMuted, for: .normal)
     }
 
     private func rebuildTags(_ tags: [String]) {

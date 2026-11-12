@@ -623,6 +623,8 @@ struct HealthMetricDisplayItem: Equatable {
     let unit: String
     let status: String
     let statusType: String
+    /// `monitorData.color`，给结果标签上色。`去记录` 不使用。
+    let resultColor: String?
     let iconSF: String
     let iconUrl: String?
     /// 卡片背景图 URL（网络获取）
@@ -645,6 +647,7 @@ struct HealthMetricDisplayItem: Equatable {
             unit: unit,
             status: status,
             statusType: statusType,
+            resultColor: resultColor,
             iconSF: iconSF,
             iconUrl: iconUrl,
             backgroundUrl: url,
@@ -681,7 +684,7 @@ struct HealthQuickEntryDisplayItem: Equatable {
 
 enum MonitorCardDisplayMapper {
 
-    /// cardType：2血压 / 3血糖 / 4体温 / 5体重 / 10饮食运动 / 11用药 / 12营养补剂 / 13血氧 / 14血脂
+    /// cardType：2血压 / 3血糖 / 4体温 / 5体重 / 10饮食运动 / 11用药 / 12营养补剂 / 13血氧 / 14血脂 / 15鹰瞳 / 16炎症仪 / 17炎菌仪 / 18饮水
     static func metricKey(for cardType: Int?) -> String {
         switch cardType {
         case 2: return "blood-pressure"
@@ -693,6 +696,10 @@ enum MonitorCardDisplayMapper {
         case 12: return "supplement"
         case 13: return "spo2"
         case 14: return "blood-lipid"
+        case 15: return "fundus"
+        case 16: return "respiratory-inflammation"
+        case 17: return "gut-flora"
+        case 18: return "water-intake"
         default: return "blood-pressure"
         }
     }
@@ -736,6 +743,9 @@ enum MonitorCardDisplayMapper {
         case "sleep": return "moon.fill"
         case "ecg": return "waveform.path.ecg"
         case "fundus": return "eye.fill"
+        case "respiratory-inflammation": return "waveform.path.ecg"
+        case "gut-flora": return "circle.hexagongrid"
+        case "water-intake": return "drop.fill"
         case "exercise": return "figure.walk"
         case "spo2": return "lungs.fill"
         case "digestive": return "cross.case.fill"
@@ -769,17 +779,21 @@ enum MonitorCardDisplayMapper {
         cards.compactMap { card in
             guard let type = card.cardType else { return nil }
             let key = metricKey(for: type)
-            let mapped = extractValueUnit(from: card)
-            let time = formatTime(card.monitorTime)
             let rawStatus = (card.result ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let name = (card.cardName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let dietSport = type == 10 ? extractDietSportDisplay(card.dietSportData ?? [:]) : nil
             let bloodLipid = type == 14 ? extractBloodLipidDisplay(card.monitorData ?? [:]) : nil
+            let special = specialFields(for: card)
+            let mapped = special.map { (value: $0.value, unit: $0.unit) } ?? extractValueUnit(from: card)
+            let time = special?.time ?? formatTime(card.monitorTime)
             let hasValue = bloodLipid.map(\.hasData) ?? (mapped.value != "--")
-            let status = lipidStatus(raw: rawStatus, bloodLipid: bloodLipid)
+            let status = special?.status
+                ?? lipidStatus(raw: rawStatus, bloodLipid: bloodLipid)
                 ?? displayStatus(raw: rawStatus, value: mapped.value, cardType: type)
             let resolvedStatusType: String
-            if let bloodLipid, bloodLipid.hasData, bloodLipid.abnormalCount > 0 {
+            if let special {
+                resolvedStatusType = special.statusType
+            } else if let bloodLipid, bloodLipid.hasData, bloodLipid.abnormalCount > 0 {
                 resolvedStatusType = "warning"
             } else {
                 resolvedStatusType = statusType(for: card.resultType, result: status, hasValue: hasValue)
@@ -792,6 +806,7 @@ enum MonitorCardDisplayMapper {
                 unit: mapped.unit,
                 status: status,
                 statusType: resolvedStatusType,
+                resultColor: resultColorHex(in: card.monitorData),
                 iconSF: iconSF(for: key),
                 iconUrl: nonempty(card.iconUrl),
                 backgroundUrl: nonempty(card.backgroundUrl),
@@ -819,6 +834,7 @@ enum MonitorCardDisplayMapper {
                     unit: "",
                     status: "",
                     statusType: "success",
+                    resultColor: nil,
                     iconSF: iconSF(for: key),
                     iconUrl: nonempty(item.iconUrl),
                     backgroundUrl: nonempty(item.backgroundUrl),
@@ -873,6 +889,7 @@ enum MonitorCardDisplayMapper {
         case "medication": return "用药"
         case "supplement": return "营养补剂"
         case "blood-lipid": return "血脂"
+        case "water-intake": return "饮水"
         default: return H5Config.metricTitle(for: key)
         }
     }
@@ -880,6 +897,14 @@ enum MonitorCardDisplayMapper {
     private static func nonempty(_ s: String?) -> String? {
         let t = (s ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         return t.isEmpty ? nil : t
+    }
+
+    /// `monitorData.color`，如 `#FFB32C`。非法色值忽略。
+    private static func resultColorHex(in data: [String: HealthJSONValue]?) -> String? {
+        guard let data, let raw = string(in: data, keys: ["color"]) else { return nil }
+        let hex = raw.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        guard hex.count == 6, UInt64(hex, radix: 16) != nil else { return nil }
+        return "#\(hex.uppercased())"
     }
 
     /// 用药 / 营养补剂无 result 时不伪造「正常」
@@ -912,6 +937,84 @@ enum MonitorCardDisplayMapper {
             return "warning"
         }
         return "success"
+    }
+
+    private struct SpecialCardFields {
+        let value: String
+        let unit: String
+        let status: String
+        let statusType: String
+        let time: String
+    }
+
+    /// 饮水 / 炎症仪 / 炎菌仪 / 鹰瞳的主内容、标签和日期。其它类型返回 nil。
+    private static func specialFields(for card: MonitorHealthCardVO) -> SpecialCardFields? {
+        switch card.cardType {
+        case 18: return waterFields(card)
+        case 16: return deviceFields(card, statusType: "success")
+        case 17: return deviceFields(card, statusType: "device")
+        case 15: return fundusFields(card)
+        default: return nil
+        }
+    }
+
+    /// 饮水：有 `waterAmount`（含 0）才展示单位、`result` 和日期；日期优先 `recordDay`。
+    private static func waterFields(_ card: MonitorHealthCardVO) -> SpecialCardFields {
+        let data = card.monitorData ?? [:]
+        guard let amount = string(in: data, keys: ["waterAmount"]) else {
+            return SpecialCardFields(value: "--", unit: "", status: "", statusType: "success", time: "")
+        }
+        let unit = string(in: data, keys: ["unit"]) ?? "mL"
+        let result = (card.result ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return SpecialCardFields(
+            value: amount,
+            unit: unit,
+            status: result,
+            statusType: statusType(for: card.resultType, result: result, hasValue: true),
+            time: recordDay(in: data) ?? formatTime(card.monitorTime)
+        )
+    }
+
+    /// 炎症仪 / 炎菌仪：仅数字 `status == 3` 为已完成。不展示右上角标签。
+    private static func deviceFields(_ card: MonitorHealthCardVO, statusType: String) -> SpecialCardFields {
+        let completed = integerStatus(in: card.monitorData) == 3
+        return SpecialCardFields(
+            value: completed ? "已完成检测" : "暂无检测记录",
+            unit: "",
+            status: "",
+            statusType: statusType,
+            time: completed ? formatTime(card.monitorTime) : ""
+        )
+    }
+
+    /// 鹰瞳：`status` 1 报告未出、2 报告已出；空状态和异常未完成都是「暂无检测记录」。不使用 `result`。
+    private static func fundusFields(_ card: MonitorHealthCardVO) -> SpecialCardFields {
+        let text: String
+        switch integerStatus(in: card.monitorData) {
+        case 1: text = "报告生成中"
+        case 2: text = "已完成检测"
+        default: text = "暂无检测记录"
+        }
+        let recognized = text != "暂无检测记录"
+        return SpecialCardFields(
+            value: text,
+            unit: "",
+            status: "",
+            statusType: "success",
+            time: recognized ? formatTime(card.monitorTime) : ""
+        )
+    }
+
+    private static func recordDay(in data: [String: HealthJSONValue]) -> String? {
+        string(in: data, keys: ["recordDay"])
+    }
+
+    /// `monitorData.status` 的整数。非整数或缺失返回 nil。
+    private static func integerStatus(in data: [String: HealthJSONValue]?) -> Int? {
+        guard let data, let value = number(in: data, keys: ["status"]), value.isFinite else { return nil }
+        let rounded = value.rounded()
+        guard abs(value - rounded) < 0.000_1, rounded >= Double(Int.min), rounded <= Double(Int.max) else { return nil }
+        return Int(rounded)
     }
 
     /// Hub 体征卡时间固定 `yyyy-MM-dd`，不带时分；场景文案不拼在时间后。

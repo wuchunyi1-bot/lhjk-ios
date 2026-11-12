@@ -294,28 +294,26 @@ final class HomeViewModel: ObservableObject {
         userManager.resolvedUserId
     }
 
+    /// 长辈模式只保留预约入口卡，明细卡片仍在普通模式展示。
+    func refreshSections() {
+        applySnapshot()
+    }
+
+    private var showsAppointmentCards: Bool {
+        !pendingAppointments.isEmpty && !UIFont.isSeniorMode
+    }
+
     private func applySnapshot() {
         var snap = NSDiffableDataSourceSnapshot<HomeSection, HomeItem>()
-        var sections: [HomeSection] = [.support]
+        var sections: [HomeSection] = []
+        if !banners.isEmpty { sections.append(.banner) }
+        if !quickActions.isEmpty { sections.append(.quickActions) }
+        sections.append(.support)
+        if showsAppointmentCards { sections.append(.appointments) }
+        if !membershipPackages.isEmpty { sections.append(.membership) }
+        if !teamMembers.isEmpty { sections.append(.team) }
         if !tasks.isEmpty { sections.append(.tasks) }
-        if !banners.isEmpty { sections.insert(.banner, at: 0) }
-        if !quickActions.isEmpty {
-            let index = sections.firstIndex(of: .support) ?? sections.count
-            sections.insert(.quickActions, at: index)
-        }
-        if !pendingAppointments.isEmpty {
-            let index = sections.firstIndex(of: .support).map { $0 + 1 } ?? sections.count
-            sections.insert(.appointments, at: index)
-        }
-        if !membershipPackages.isEmpty {
-            let anchor = sections.firstIndex(of: .appointments) ?? sections.firstIndex(of: .support)
-            let index = anchor.map { $0 + 1 } ?? sections.count
-            sections.insert(.membership, at: index)
-        }
-        if !teamMembers.isEmpty {
-            let index = sections.firstIndex(of: .tasks) ?? sections.count
-            sections.insert(.team, at: index)
-        }
+
         snap.appendSections(sections)
         if !banners.isEmpty {
             let bannerSig = banners.map(\.id).joined(separator: "|")
@@ -325,14 +323,14 @@ final class HomeViewModel: ObservableObject {
             let quickSig = quickActions.map(\.id).joined(separator: "|")
             snap.appendItems([.quickActions(quickSig)], toSection: .quickActions)
         }
+        snap.appendItems([.support], toSection: .support)
+        if showsAppointmentCards {
+            let signature = pendingAppointments.map { "\($0.id):\($0.hint)" }.joined(separator: "|")
+            snap.appendItems([.appointments(signature)], toSection: .appointments)
+        }
         if !membershipPackages.isEmpty {
             let membershipSig = membershipPackages.map(\.id).joined(separator: "|")
             snap.appendItems([.membership(membershipSig)], toSection: .membership)
-        }
-        snap.appendItems([.support], toSection: .support)
-        if !pendingAppointments.isEmpty {
-            let signature = pendingAppointments.map { "\($0.id):\($0.hint)" }.joined(separator: "|")
-            snap.appendItems([.appointments(signature)], toSection: .appointments)
         }
         if !teamMembers.isEmpty {
             snap.appendItems([.teamList], toSection: .team)

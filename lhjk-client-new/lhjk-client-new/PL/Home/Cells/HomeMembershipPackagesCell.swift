@@ -21,6 +21,7 @@ final class HomeMembershipPackagesCell: UITableViewCell {
     }
 
     var onPackageTapped: ((Package) -> Void)?
+    var onViewMore: (() -> Void)?
 
     private let cardView: UIView = {
         let v = UIView()
@@ -31,10 +32,28 @@ final class HomeMembershipPackagesCell: UITableViewCell {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.text = "推荐健康套餐"
+        l.text = "会员健康服务"
         l.font = .fdFont(ofSize: 18, weight: .medium)
         l.textColor = .fdText
         return l
+    }()
+
+    private let moreButton: UIButton = {
+        let b = UIButton(type: .system)
+        b.titleLabel?.font = .fdFont(ofSize: 14, weight: .regular)
+        b.setTitleColor(.fdSubtext, for: .normal)
+        b.setTitle("查看更多", for: .normal)
+        let chevron = UIImage(
+            systemName: "chevron.right",
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: 10, weight: .regular)
+        )
+        b.setImage(chevron, for: .normal)
+        b.tintColor = .fdSubtext
+        b.semanticContentAttribute = .forceRightToLeft
+        b.imageEdgeInsets = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: -2)
+        b.setContentCompressionResistancePriority(.required, for: .horizontal)
+        b.setContentHuggingPriority(.required, for: .horizontal)
+        return b
     }()
 
     private let listStack: UIStackView = {
@@ -56,7 +75,10 @@ final class HomeMembershipPackagesCell: UITableViewCell {
 
         contentView.addSubview(cardView)
         cardView.addSubview(titleLabel)
+        cardView.addSubview(moreButton)
         cardView.addSubview(listStack)
+
+        moreButton.addTarget(self, action: #selector(moreTapped), for: .touchUpInside)
 
         cardView.snp.makeConstraints {
             $0.top.equalToSuperview().offset(12)
@@ -64,7 +86,12 @@ final class HomeMembershipPackagesCell: UITableViewCell {
             $0.bottom.equalToSuperview()
         }
         titleLabel.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview().inset(16)
+            $0.top.leading.equalToSuperview().inset(16)
+            $0.trailing.lessThanOrEqualTo(moreButton.snp.leading).offset(-8)
+        }
+        moreButton.snp.makeConstraints {
+            $0.centerY.equalTo(titleLabel)
+            $0.trailing.equalToSuperview().inset(16)
         }
         listStack.snp.makeConstraints {
             $0.top.equalTo(titleLabel.snp.bottom).offset(12)
@@ -110,9 +137,14 @@ final class HomeMembershipPackagesCell: UITableViewCell {
         onPackageTapped?(package)
     }
 
+    @objc private func moreTapped() {
+        onViewMore?()
+    }
+
     override func prepareForReuse() {
         super.prepareForReuse()
         onPackageTapped = nil
+        onViewMore = nil
         packagesByTag.removeAll()
         listStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
     }

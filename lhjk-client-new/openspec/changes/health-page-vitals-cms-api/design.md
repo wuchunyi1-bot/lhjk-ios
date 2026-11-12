@@ -48,6 +48,10 @@
 | 5 | 体重 | `weight` |
 | 10 | 饮食运动 | `exercise` |
 | 14 | 血脂 | `blood-lipid` |
+| 15 | 鹰瞳眼底 | `fundus` |
+| 16 | 呼吸道炎症仪 | `respiratory-inflammation` |
+| 17 | 炎菌仪 | `gut-flora` |
+| 18 | 饮水 | `water-intake` |
 
 `monitorCardMeta` / 监测列表可含 `pageUrl`；合法时走 `FundePageURL`，否则跳转由 `cardType` 映射。`quickEntryList` 的 `pageUrl`（`FundeH5:` / `FundeApp:`）同样经 `FundePageURL`。
 
@@ -96,6 +100,17 @@ Hub 网格独立 2×2 布局（Figma 3543:3452）：标题 12 Regular `#717885`�
 徽标：`abnormalCount > 0` →「N项异常」；否则 `result`（缺省「正常」）。时间固定 `yyyy-MM-dd`，不带时分。
 
 无四项数据展示「去记录」。跳转优先 `pageUrl`（`FundeH5:/blood-lipid`）。
+
+### 4.3 饮水 / 设备检测 / 鹰瞳
+
+| cardType | 主内容 | 标签 | 日期 |
+|----------|--------|------|------|
+| 18 饮水 | `monitorData.waterAmount`，缺省 `--`；`0` 也展示。单位优先 `unit`，缺省 `mL` | 有饮水量且 `result` 非空才显示；不补「正常」 | 有饮水量时优先 `recordDay`，否则 `monitorTime` → `yyyy-MM-dd`。空态不显示日期 |
+| 16 炎症仪 | `status` 数字 `3` →「已完成检测」，否则「暂无检测记录」 | 不展示 | 仅检测成功且 `monitorTime` 有效 |
+| 17 炎菌仪 | 同炎症仪 | 不展示 | 同炎症仪 |
+| 15 鹰瞳 | `1` 报告生成中 / `2` 已完成检测；`3`、缺失或无法识别 →「暂无检测记录」。不用 `result` | 无 | 仅「报告生成中」「已完成检测」且 `monitorTime` 有效时展示 |
+
+结果标签（含血氧、体重等）有合法 `monitorData.color` 时，文字用该色、底用同色 10% 透明。「去记录」颜色固定，不读 `color`。没有合法色值时仍用原来的红 / 橙 / 绿。
 
 ### 5. 柔性解码
 

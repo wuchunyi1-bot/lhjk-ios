@@ -58,7 +58,7 @@ final class HomeTeamCardCell: UITableViewCell {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.text = "我的健康管家团队"
+        l.text = "我的富德健康管家团队"
         l.font = .fdFont(ofSize: 18, weight: .medium)
         l.textColor = .fdText
         return l
@@ -119,7 +119,7 @@ final class HomeTeamCardCell: UITableViewCell {
     func configure(members: [Member], serviceDaysLeft: Int? = nil) {
         if let days = serviceDaysLeft, days > 0 {
             remainLabel.isHidden = false
-            remainLabel.text = "服务剩余 \(days) 天"
+            remainLabel.text = "服务剩余\(days)天"
         } else {
             remainLabel.isHidden = true
             remainLabel.text = nil

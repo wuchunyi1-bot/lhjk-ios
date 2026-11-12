@@ -236,6 +236,7 @@ final class DictionaryCacheService {
         if raw.contains("心率") { return "/health/metrics/heart-rate/add" }
         if raw.contains("运动") { return "/exercise-food/check-in" }
         if raw.contains("饮食") { return "/health/metrics/exercise/home" }
+        if raw.contains("饮水") { return "FundeH5:/water-intake/add" }
         return nil
     }
 

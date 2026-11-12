@@ -21,4 +21,12 @@ extension UIColor {
         Scanner(string: hex).scanHexInt64(&int)
         self.init(hex: UInt(int))
     }
+
+    /// 体征卡 `monitorData.color`。只接受 6 位十六进制，非法值返回 nil。
+    static func fdMonitorBadgeColor(hexString: String?) -> UIColor? {
+        guard let hexString else { return nil }
+        let hex = hexString.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        guard hex.count == 6, let value = UInt64(hex, radix: 16) else { return nil }
+        return UIColor(hex: UInt(value))
+    }
 }

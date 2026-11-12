@@ -23,6 +23,8 @@ final class HomeBannerCarouselCell: UITableViewCell {
         s.isPagingEnabled = true
         s.showsHorizontalScrollIndicator = false
         s.bounces = false
+        s.layer.cornerRadius = 16
+        s.clipsToBounds = true
         return s
     }()
 
@@ -48,8 +50,9 @@ final class HomeBannerCarouselCell: UITableViewCell {
         contentView.addSubview(scrollView)
         contentView.addSubview(pageControl)
         scrollView.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-            heightConstraint = $0.height.equalTo(Self.fallbackHeight(for: UIScreen.main.bounds.width)).constraint
+            $0.top.equalToSuperview().offset(12)
+            $0.leading.trailing.equalToSuperview().inset(16)
+            heightConstraint = $0.height.equalTo(Self.fallbackHeight(for: UIScreen.main.bounds.width - 32)).constraint
             // 表格初次布局会临时套上 44pt 的 encapsulated height，底部用 999 让开。
             $0.bottom.equalToSuperview().priority(999)
         }
@@ -115,7 +118,7 @@ final class HomeBannerCarouselCell: UITableViewCell {
 
     private func bannerWidth() -> CGFloat {
         let width = scrollView.bounds.width
-        return width > 1 ? width : UIScreen.main.bounds.width
+        return width > 1 ? width : UIScreen.main.bounds.width - 32
     }
 
     private static func fallbackHeight(for width: CGFloat) -> CGFloat {

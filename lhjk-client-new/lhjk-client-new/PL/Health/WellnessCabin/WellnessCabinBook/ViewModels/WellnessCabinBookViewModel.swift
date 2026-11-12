@@ -74,6 +74,7 @@ final class WellnessCabinBookViewModel: ObservableObject {
         return nil
     }
 
+    /// 底栏金额单位。费用信息区块不使用。
     var feeUnitText: String {
         unitName ?? "次"
     }
@@ -126,6 +127,25 @@ final class WellnessCabinBookViewModel: ObservableObject {
         }
     }
 
+    /// 从预约记录等页面返回时，刷新当前日期的时段和次卡次数。
+    func reloadSelectedDate() {
+        guard didStart, !isLoading, !isMissing, !configId.isEmpty, let date = selectedDateId else { return }
+        slotRequest += 1
+        let token = slotRequest
+        let keptSlot = selectedSlotKey
+        let service = cabinService
+        let configId = configId
+        Task.detached {
+            do {
+                let detail = try await service.bookDetail(configId: configId, date: date)
+                await self.applyReturn(detail, date: date, keptSlot: keptSlot, token: token)
+            } catch {
+                let message = (error as? LocalizedError)?.errorDescription ?? "获取可预约时段失败"
+                await self.failReturn(message: message, token: token)
+            }
+        }
+    }
+
     func select(date id: String) {
         guard id != selectedDateId, !configId.isEmpty, !isLoadingSlots else { return }
         slotRequest += 1
@@ -149,6 +169,14 @@ final class WellnessCabinBookViewModel: ObservableObject {
     func select(slot: CabinSlotVO) {
         guard slot.isBookable else { return }
         selectedSlotKey = slot.key
+    }
+
+    /// 提交前校验名额和次数。非 0 时由页面弹窗并停止，不进入后续预约。
+    func checkBookLimit() async throws -> CabinBookLimitCheckVO {
+        guard let date = selectedDateId, !configId.isEmpty else {
+            throw CabinServiceError.requestFailed("请选择可预约时段")
+        }
+        return try await cabinService.bookLimitCheck(configId: configId, reserveDate: date)
     }
 
     /// 免费、次卡直接预约。付费或没有可用次数时创建预约订单，确认页支付成功后再预约。
@@ -208,16 +236,35 @@ final class WellnessCabinBookViewModel: ObservableObject {
         let returned = detail.date
         let selected = days.first { $0.id == returned }?.id ?? days.first?.id
         selectedDateId = selected
-        slots = detail.slots
-        selectedSlotKey = detail.slots.first { $0.isBookable }?.key
+        let visible = Self.visibleSlots(detail.slots, on: selected)
+        slots = visible
+        selectedSlotKey = visible.first { $0.isBookable }?.key
     }
 
     private func applySlots(_ slots: [CabinSlotVO], date: String, token: Int) {
         guard token == slotRequest else { return }
         isLoadingSlots = false
         selectedDateId = date
-        self.slots = slots
-        selectedSlotKey = slots.first { $0.isBookable }?.key
+        let visible = Self.visibleSlots(slots, on: date)
+        self.slots = visible
+        selectedSlotKey = visible.first { $0.isBookable }?.key
+    }
+
+    private func applyReturn(_ detail: CabinBookDetailVO, date: String, keptSlot: String?, token: Int) {
+        guard token == slotRequest, selectedDateId == date else { return }
+        self.detail = detail
+        let visible = Self.visibleSlots(detail.slots, on: date)
+        slots = visible
+        if let keptSlot, visible.contains(where: { $0.key == keptSlot && $0.isBookable }) {
+            selectedSlotKey = keptSlot
+        } else {
+            selectedSlotKey = visible.first { $0.isBookable }?.key
+        }
+    }
+
+    private func failReturn(message: String, token: Int) {
+        guard token == slotRequest else { return }
+        errorMessage = message
     }
 
     private func failSlots(previousDateId: String?, message: String, token: Int) {
@@ -225,6 +272,55 @@ final class WellnessCabinBookViewModel: ObservableObject {
         isLoadingSlots = false
         selectedDateId = previousDateId
         errorMessage = message
+    }
+
+    /// 选中今天时，结束时间早于或等于当前时刻的时段不再展示。正在进行的时段保留。
+    private static func visibleSlots(_ slots: [CabinSlotVO], on dateId: String?, now: Date = Date()) -> [CabinSlotVO] {
+        guard isToday(dateId, now: now) else { return slots }
+        let nowMinutes = clockMinutes(now)
+        return slots.filter { slot in
+            guard let end = clockMinutes(from: slot.endTime) else { return true }
+            return end > nowMinutes
+        }
+    }
+
+    private static func isToday(_ dateId: String?, now: Date) -> Bool {
+        guard let dateId else { return false }
+        let prefix = String(dateId.prefix(10))
+        return prefix == dayIdentifier(now)
+    }
+
+    private static func dayIdentifier(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = bookingCalendar
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = bookingCalendar.timeZone
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
+
+    /// `HH:mm` 或 `HH:mm:ss`。`24:00` 视为当天结束。
+    private static func clockMinutes(from time: String) -> Int? {
+        let parts = time.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: ":")
+        guard parts.count >= 2,
+              let hour = Int(parts[0]),
+              let minute = Int(parts[1].prefix(2)),
+              (0...59).contains(minute) else { return nil }
+        if hour == 24, minute == 0 { return 24 * 60 }
+        guard (0...23).contains(hour) else { return nil }
+        return hour * 60 + minute
+    }
+
+    private static func clockMinutes(_ date: Date) -> Int {
+        let hour = bookingCalendar.component(.hour, from: date)
+        let minute = bookingCalendar.component(.minute, from: date)
+        return hour * 60 + minute
+    }
+
+    private static var bookingCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        return calendar
     }
 
     private static func span(bookDaysAhead: Int?, returnedDate: String?, today: Date = Date()) -> Int {

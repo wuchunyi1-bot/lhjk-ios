@@ -7,35 +7,37 @@ final class MyActivityCell: UITableViewCell {
 
     private let cardView: UIView = {
         let view = UIView()
-        view.backgroundColor = .fdSurface
+        view.backgroundColor = .white
         view.layer.cornerRadius = 16
-        return view
-    }()
-
-    private let themeLabel: UILabel = {
-        let label = UILabel()
-        label.font = .fdBodyBold
-        label.textColor = .fdText
-        label.numberOfLines = 2
-        return label
-    }()
-
-    private let statusWrap: UIView = {
-        let view = UIView()
-        view.layer.cornerRadius = 4
         view.clipsToBounds = true
         return view
     }()
 
-    private let statusLabel: UILabel = {
+    private let backgroundImage = UIImageView()
+    private let statusImage = UIImageView()
+    private let timeIcon = UIImageView()
+    private let ownerIcon = UIImageView()
+
+    private let themeLabel: UILabel = {
         let label = UILabel()
-        label.font = .fdCaptionSemibold
-        label.textAlignment = .center
+        label.font = .fdFont(ofSize: 18, weight: .medium)
+        label.numberOfLines = 2
         return label
     }()
 
-    private let timeLabel = metaLabel()
-    private let ownerLabel = metaLabel()
+    private let timeLabel: UILabel = {
+        let label = UILabel()
+        label.font = .fdFont(ofSize: 16, weight: .regular)
+        label.numberOfLines = 1
+        return label
+    }()
+
+    private let ownerLabel: UILabel = {
+        let label = UILabel()
+        label.font = .fdFont(ofSize: 16, weight: .regular)
+        label.numberOfLines = 1
+        return label
+    }()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -50,79 +52,72 @@ final class MyActivityCell: UITableViewCell {
     }
 
     func configure(_ card: MyActivityCard) {
+        let ongoing = card.isOngoing
         themeLabel.text = card.theme
-        statusLabel.text = card.statusText
-        timeLabel.attributedText = metaText(symbol: "clock", text: "活动时间 \(card.timeText)")
-        ownerLabel.attributedText = metaText(symbol: "person", text: "活动负责人 \(card.owner)")
-        if card.isOngoing {
-            statusLabel.textColor = .fdSuccess
-            statusWrap.backgroundColor = .fdSuccessSoft
-        } else {
-            statusLabel.textColor = .fdSubtext
-            statusWrap.backgroundColor = .fdBg2
-        }
+        themeLabel.textColor = UIColor(hexString: ongoing ? "#522B0F" : "#303030")
+        let meta = UIColor(hexString: ongoing ? "#8C714F" : "#6E6E6E")
+        timeLabel.textColor = meta
+        ownerLabel.textColor = meta
+        timeLabel.text = "活动时间：\(card.timeText)"
+        ownerLabel.text = "活动负责人：\(card.owner)"
+        backgroundImage.image = UIImage(named: ongoing ? "event_live_bg" : "event_end_bg")
+        statusImage.image = UIImage(named: ongoing ? "event_live_status" : "event_end_status")
+        timeIcon.image = UIImage(named: ongoing ? "event_live_time" : "event_end_time")
+        ownerIcon.image = UIImage(named: ongoing ? "event_live_leader" : "event_end_leader")
         contentView.alpha = card.isTappable ? 1 : 0.45
         isUserInteractionEnabled = card.isTappable
     }
 
     private func setup() {
+        backgroundImage.contentMode = .scaleAspectFill
+        statusImage.contentMode = .scaleAspectFit
+        timeIcon.contentMode = .scaleAspectFit
+        ownerIcon.contentMode = .scaleAspectFit
+
         contentView.addSubview(cardView)
+        cardView.addSubview(backgroundImage)
         cardView.addSubview(themeLabel)
-        cardView.addSubview(statusWrap)
-        statusWrap.addSubview(statusLabel)
+        cardView.addSubview(timeIcon)
         cardView.addSubview(timeLabel)
+        cardView.addSubview(ownerIcon)
         cardView.addSubview(ownerLabel)
+        cardView.addSubview(statusImage)
 
         cardView.snp.makeConstraints { make in
             make.top.equalToSuperview()
             make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-10)
+            make.bottom.equalToSuperview().offset(-12)
         }
-        statusWrap.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(14)
-            make.trailing.equalToSuperview().offset(-16)
+        backgroundImage.snp.makeConstraints { $0.edges.equalToSuperview() }
+        statusImage.snp.makeConstraints { make in
+            make.top.trailing.equalToSuperview()
+            make.width.equalTo(80)
+            make.height.equalTo(40)
         }
-        statusLabel.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: 8, bottom: 2, right: 8))
-        }
-        statusWrap.setContentHuggingPriority(.required, for: .horizontal)
-        statusWrap.setContentCompressionResistancePriority(.required, for: .horizontal)
         themeLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(14)
+            make.top.equalToSuperview().offset(20)
             make.leading.equalToSuperview().offset(16)
-            make.trailing.lessThanOrEqualTo(statusWrap.snp.leading).offset(-8)
+            make.trailing.lessThanOrEqualTo(statusImage.snp.leading).offset(-8)
+        }
+        timeIcon.snp.makeConstraints { make in
+            make.leading.equalTo(themeLabel)
+            make.top.equalTo(themeLabel.snp.bottom).offset(8)
+            make.size.equalTo(16)
         }
         timeLabel.snp.makeConstraints { make in
-            make.top.equalTo(themeLabel.snp.bottom).offset(8)
-            make.leading.trailing.equalToSuperview().inset(16)
+            make.leading.equalTo(timeIcon.snp.trailing).offset(3)
+            make.centerY.equalTo(timeIcon)
+            make.trailing.lessThanOrEqualToSuperview().offset(-16)
+        }
+        ownerIcon.snp.makeConstraints { make in
+            make.leading.size.equalTo(timeIcon)
+            make.top.equalTo(timeIcon.snp.bottom).offset(10)
+            make.bottom.equalToSuperview().offset(-20)
         }
         ownerLabel.snp.makeConstraints { make in
-            make.top.equalTo(timeLabel.snp.bottom).offset(8)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-14)
+            make.leading.equalTo(ownerIcon.snp.trailing).offset(3)
+            make.centerY.equalTo(ownerIcon)
+            make.trailing.lessThanOrEqualToSuperview().offset(-16)
         }
-    }
-
-    private static func metaLabel() -> UILabel {
-        let label = UILabel()
-        label.numberOfLines = 0
-        return label
-    }
-
-    private func metaText(symbol: String, text: String) -> NSAttributedString {
-        let result = NSMutableAttributedString()
-        let attachment = NSTextAttachment()
-        let image = UIImage(systemName: symbol)?.withTintColor(.fdPrimary, renderingMode: .alwaysOriginal)
-        attachment.image = image
-        attachment.bounds = CGRect(x: 0, y: -3, width: 16, height: 16)
-        result.append(NSAttributedString(attachment: attachment))
-        result.append(NSAttributedString(
-            string: "  \(text)",
-            attributes: [
-                .font: UIFont.fdBody,
-                .foregroundColor: UIColor.fdText2
-            ]
-        ))
-        return result
     }
 }

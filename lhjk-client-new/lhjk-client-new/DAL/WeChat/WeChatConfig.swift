@@ -22,7 +22,7 @@ enum WeChatConfig {
     static var benefitClaimWebpageURL: String = "https://gateway-dev.lianhaojiankang.com/h5/benefit-claim"
 
     /// 我的活动「立即领取」打开的小程序页。C 端详情接口不返回 path，`{activityId}` 换成当前活动 id。
-    static var memberActivityDetailPathTemplate: String = "pages/activity/detail/index?activityId={activityId}"
+    static var memberActivityDetailPathTemplate: String = "pkg-mine/activities/detail?id={activityId}"
 
     static func memberActivityDetailPath(activityId: String) -> String {
         let id = activityId.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -1,5 +1,57 @@
 import Foundation
 
+/// 门店营业时段。`tradeStartTime` / `tradeEndTime` 组成 `09:00-19:00`。
+enum CabinHours {
+    static func range(start: String?, end: String?) -> String? {
+        guard let start = clock(start), let end = clock(end) else { return nil }
+        return "\(start)-\(end)"
+    }
+
+    /// 列表和门店详情：周几在时段前，例如 `周一至周五 09:00-19:00`。没有合法 `tradeWeek` 时只返回时段。
+    static func display(week: String?, start: String?, end: String?) -> String? {
+        guard let range = range(start: start, end: end) else { return nil }
+        guard let weekText = weekdays(week) else { return range }
+        return "\(weekText) \(range)"
+    }
+
+    /// `tradeWeek`：1–7 表示周一到周日，逗号分隔。连续天用「至」，断开用「、」。
+    static func weekdays(_ raw: String?) -> String? {
+        guard let raw else { return nil }
+        let days = Array(Set(raw.split { !$0.isNumber }.compactMap { Int($0) }.filter { (1...7).contains($0) })).sorted()
+        guard !days.isEmpty else { return nil }
+        let names = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+        var groups: [[Int]] = []
+        for day in days {
+            if let last = groups.last, last.last == day - 1 {
+                groups[groups.count - 1].append(day)
+            } else {
+                groups.append([day])
+            }
+        }
+        return groups.map { group in
+            let first = names[group[0] - 1]
+            guard group.count > 1, let end = group.last else { return first }
+            return "\(first)至\(names[end - 1])"
+        }.joined(separator: "、")
+    }
+
+    /// 已经是时段的旧文案可以展示。`yyyy-MM-dd` 开业日期不当成营业时间。
+    static func period(_ raw: String?) -> String? {
+        guard let text = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
+        if text.range(of: #"\d{4}-\d{2}-\d{2}"#, options: .regularExpression) != nil { return nil }
+        return text
+    }
+
+    private static func clock(_ raw: String?) -> String? {
+        guard let text = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
+        let parts = text.split(separator: ":").map(String.init)
+        guard parts.count >= 2,
+              parts[0].allSatisfy(\.isNumber),
+              parts[1].allSatisfy(\.isNumber) else { return nil }
+        return "\(parts[0]):\(parts[1])"
+    }
+}
+
 // MARK: - 康养小屋列表
 // Apifox: GET /v1/cabin/list
 // https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266269e0.md
@@ -58,10 +110,19 @@ struct CabinStoreVO: Decodable, Equatable {
     let recommended: Bool
     /// 1 启用，0 禁用。禁用不可进门店
     let status: Int?
+    /// 按营业周和营业时段判断，true 为休息中，不可进门店
+    let restFlag: Bool
     let todayAvailableCount: Int?
-    let distanceMeters: Int64?
-    /// 营业时间。接口字段 `openTime`
+    /// 与查询坐标的距离。接口未返回时，列表会用门店坐标补算。
+    var distanceMeters: Int64?
+    /// 开业日期。接口字段 `openTime`，形如 `2026-11-09 00:00:00`，不是营业时段。
     let openTime: String?
+    /// 营业星期，1–7 表示周一到周日，逗号分隔。
+    let tradeWeek: String?
+    /// 营业开始，`HH:mm`
+    let tradeStartTime: String?
+    /// 营业结束，`HH:mm`
+    let tradeEndTime: String?
     let mobile: String?
     let imgUrl: String?
     /// 门店轮播图，逗号分隔的图片地址
@@ -69,7 +130,7 @@ struct CabinStoreVO: Decodable, Equatable {
     let longitude: String?
     let latitude: String?
 
-    var isEnterable: Bool { status != 0 }
+    var isEnterable: Bool { status != 0 && !restFlag }
 
     var distanceLabel: String? {
         Self.formatDistance(meters: distanceMeters)
@@ -80,9 +141,14 @@ struct CabinStoreVO: Decodable, Equatable {
         Self.joinedAddress(province: province, city: city, area: area, address: address)
     }
 
+    /// 营业时段，例如 `周一至周五 09:00-19:00`。不用 `openTime`。
+    var businessHours: String? {
+        CabinHours.display(week: tradeWeek, start: tradeStartTime, end: tradeEndTime)
+    }
+
     var addressLine: String {
         let place = placeLine
-        guard let distanceLabel else { return place }
+        guard let distanceLabel, !place.contains("距离约") else { return place }
         if place.isEmpty { return "距离约\(distanceLabel)" }
         return "\(place) · 距离约\(distanceLabel)"
     }
@@ -101,6 +167,7 @@ struct CabinStoreVO: Decodable, Equatable {
     private enum CodingKeys: String, CodingKey {
         case id, name, province, city, area, address, serviceTags, internalOnly, status
         case todayAvailableCount, distanceMeters, openTime, mobile, imgUrl, banner, longitude, latitude
+        case tradeWeek, tradeStartTime, tradeEndTime, restFlag
         case recommended
     }
 
@@ -113,12 +180,16 @@ struct CabinStoreVO: Decodable, Equatable {
         area = Self.string(c, .area) ?? ""
         address = Self.string(c, .address) ?? ""
         serviceTags = (try? c.decodeIfPresent([String].self, forKey: .serviceTags)) ?? []
-        internalOnly = Self.int(c, .internalOnly) ?? 0
+        internalOnly = Self.flag(c, .internalOnly) ? 1 : 0
         recommended = Self.flag(c, .recommended)
         status = Self.int(c, .status)
+        restFlag = Self.flag(c, .restFlag)
         todayAvailableCount = Self.int(c, .todayAvailableCount)
         distanceMeters = Self.int64(c, .distanceMeters)
         openTime = Self.string(c, .openTime)
+        tradeWeek = Self.string(c, .tradeWeek)
+        tradeStartTime = Self.string(c, .tradeStartTime)
+        tradeEndTime = Self.string(c, .tradeEndTime)
         mobile = Self.string(c, .mobile)
         imgUrl = Self.string(c, .imgUrl)
         banner = Self.string(c, .banner)
@@ -140,9 +211,7 @@ struct CabinStoreVO: Decodable, Equatable {
     private static func formatDistance(meters: Int64?) -> String? {
         guard let meters, meters >= 0 else { return nil }
         if meters < 1000 { return "\(meters)m" }
-        let km = Double(meters) / 1000
-        if km < 10 { return String(format: "%.1fkm", km) }
-        return "\(Int(km.rounded()))km"
+        return String(format: "%.1fkm", Double(meters) / 1000)
     }
 
     private static func string(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> String? {
@@ -212,9 +281,10 @@ struct CabinConfigItemVO: Decodable, Equatable {
     let duration: Int?
     let unitName: String?
     let categoryName: String?
-    private let imgUrls: String?
+    /// 导航图。列表封面只用这张，不用介绍图 `imgUrls`。
+    private let navigateUrl: String?
 
-    var coverURL: URL? { CabinMedia.urls(from: imgUrls).first }
+    var coverURL: URL? { CabinMedia.urls(from: navigateUrl).first }
 
     var priceLabel: String? {
         if payType == 1 {
@@ -238,7 +308,7 @@ struct CabinConfigItemVO: Decodable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, price, payType, duration, unitName, categoryName, imgUrls
+        case id, name, price, payType, duration, unitName, categoryName, navigateUrl
     }
 
     init(from decoder: Decoder) throws {
@@ -250,7 +320,7 @@ struct CabinConfigItemVO: Decodable, Equatable {
         duration = CabinJSON.int(c, .duration)
         unitName = CabinJSON.string(c, .unitName)
         categoryName = CabinJSON.string(c, .categoryName)
-        imgUrls = CabinJSON.string(c, .imgUrls)
+        navigateUrl = CabinJSON.string(c, .navigateUrl)
     }
 
     private static func formatPrice(_ value: Double) -> String {
@@ -329,6 +399,49 @@ enum CabinJSON {
             }
         }
         return nil
+    }
+}
+
+// MARK: - 预约限流
+// GET /v1/cabin/bookLimitCheck
+
+struct CabinBookLimitCheckVO: Decodable, Equatable {
+    /// 0 可预约，1 当日名额已满，2 超每人每日，3 超每人每月。
+    let limitType: Int
+    let title: String?
+    let message: String?
+
+    var blocksBooking: Bool { limitType != 0 }
+
+    var alertTitle: String {
+        if let title, !title.isEmpty { return title }
+        switch limitType {
+        case 1: return "名额已经约满"
+        case 2: return "今天不能再约"
+        case 3: return "本月不能再约"
+        default: return "暂时不能预约"
+        }
+    }
+
+    var alertMessage: String {
+        if let message, !message.isEmpty { return message }
+        switch limitType {
+        case 1: return "这个服务的可预约名额已经用完，暂时不能再预约。"
+        case 2: return "您今天预约这个服务的次数已经用完，请明天再来。"
+        case 3: return "您本月预约这个服务的次数已经用完，请下个月再来。"
+        default: return "当前不可预约，请稍后再试。"
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case limitType, title, msg
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        limitType = CabinJSON.int(container, .limitType) ?? 0
+        title = CabinJSON.string(container, .title)
+        message = CabinJSON.string(container, .msg)
     }
 }
 
@@ -665,7 +778,11 @@ struct CabinReservationDetailVO: Decodable, Equatable {
     let hospitalName: String
     let address: String
     let mobile: String?
+    /// 开业日期，不是营业时段。
     let openTime: String?
+    let tradeWeek: String?
+    let tradeStartTime: String?
+    let tradeEndTime: String?
     let duration: Int?
     let reserveDate: String
     let startTime: String
@@ -735,6 +852,11 @@ struct CabinReservationDetailVO: Decodable, Equatable {
         return (longitude, latitude)
     }
 
+    /// 门店营业时段。预约详情若带回 `tradeStartTime` / `tradeEndTime` 则展示；日期形态的 `openTime` 不展示。
+    var businessHours: String? {
+        CabinHours.range(start: tradeStartTime, end: tradeEndTime) ?? CabinHours.period(openTime)
+    }
+
     var canCancel: Bool { status == 3 }
 
     var overdueNotice: String? {
@@ -754,6 +876,7 @@ struct CabinReservationDetailVO: Decodable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case id, name, status, hospitalId, hospitalName, address, mobile, openTime
+        case tradeWeek, tradeStartTime, tradeEndTime
         case duration, reserveDate, startTime, endTime, quantity, reservationNumber
         case cancellationCode, qrCode, description, parentName, notice, applicablePeople, restrictedPeople
         case cancelReason, cancelTime, verifyTime, finishTime, expireTime, createTime
@@ -771,6 +894,9 @@ struct CabinReservationDetailVO: Decodable, Equatable {
         address = CabinJSON.string(c, .address) ?? ""
         mobile = CabinJSON.string(c, .mobile)
         openTime = CabinJSON.string(c, .openTime)
+        tradeWeek = CabinJSON.string(c, .tradeWeek)
+        tradeStartTime = CabinJSON.string(c, .tradeStartTime)
+        tradeEndTime = CabinJSON.string(c, .tradeEndTime)
         duration = CabinJSON.int(c, .duration)
         reserveDate = CabinJSON.string(c, .reserveDate) ?? ""
         startTime = CabinJSON.string(c, .startTime) ?? ""

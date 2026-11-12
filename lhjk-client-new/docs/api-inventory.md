@@ -64,6 +64,7 @@ App端/
 │       ├── GET /v1/cabin/categoryList
 │       ├── GET /v1/cabin/configList
 │       ├── GET /v1/cabin/bookDetail
+│       ├── GET /v1/cabin/bookLimitCheck
 │       ├── POST /v1/cabin/book
 │       ├── GET /v1/cabin/appointments
 │       ├── GET /v1/cabin/reservationDetail
@@ -163,11 +164,12 @@ App端/
 > `#15` 客户端使用 `data.archiveComplete` 作为 `/onboarding` 唯一门禁；另解码 `sex` / `birthday` 等回填字段。Apifox 分享站 `OArchiveVO` 可能尚未同步这些字段（以联调 JSON 为准）。
 | 15b | GET | `/v1/archive/calculateArchiveCompletion` | `App端/机构/档案管理` | `UserService` | 文档暂无（Apifox OAS：`calculateArchiveCompletion`，Query `userId`；响应 `completionPercentage` 0–100） |
 | 16 | POST | `/v1/archive/saveArchiveHospital` | `App端/机构/档案管理` | `UserService` | [保存档案机构](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/491046480e0.md) |
-| 16b | GET | `/v1/cabin/list` | `App端/线下履约/康养小屋相关接口` | `CabinService`（康养小屋列表） | [机构分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266269e0.md)。Query：`keyword`、`longitude`、`latitude`（GCJ-02）、`pageNum`、`pageSize` |
+| 16b | GET | `/v1/cabin/list` | `App端/线下履约/康养小屋相关接口` | `CabinService`（康养小屋列表） | [机构分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266269e0.md)。Query：`keyword`、`pageNum`、`pageSize`。定位开启时另传 `longitude`、`latitude`（GCJ-02）；未开启时只传 `province`、`city`、`area` |
 | 16c | GET | `/v1/cabin/detail` | `App端/线下履约/康养小屋相关接口` | `CabinService`（门店详情） | [门店详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266267e0.md)。Query：`hospitalId` |
 | 16d | GET | `/v1/cabin/categoryList` | `App端/线下履约/康养小屋相关接口` | `CabinService`（服务分类） | [服务分类](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785605e0.md)。Query：`hospitalId` |
-| 16e | GET | `/v1/cabin/configList` | `App端/线下履约/康养小屋相关接口` | `CabinService`（分类下项目） | [项目列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266270e0.md)。Query：`hospitalId`、`parentId` |
+| 16e | GET | `/v1/cabin/configList` | `App端/线下履约/康养小屋相关接口` | `CabinService`（分类下项目） | [项目列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266270e0.md)。Query：`hospitalId`、`parentId`。列表封面用导航图 `navigateUrl`，不用介绍图 `imgUrls` |
 | 16f | GET | `/v1/cabin/bookDetail` | `App端/线下履约/康养小屋相关接口` | `CabinService`（项目预约页） | [预约页详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785607e0.md)。Query：`configId`，可选 `date`（`yyyy-MM-dd`）。付费项目返回 `price` |
+| 16n | GET | `/v1/cabin/bookLimitCheck` | `App端/线下履约/康养小屋相关接口` | `CabinService`（确定预约前） | [预约限流前置校验](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/534863042e0.md)。Query：`configId`、`reserveDate`。`limitType`：0 可预约，1 当日名额已满，2 超每人每日，3 超每人每月。非 0 用 `title`、`msg` 弹窗并停止 |
 | 16g | POST | `/v1/cabin/book` | `App端/线下履约/康养小屋相关接口` | `CabinService`（提交预约） | [小屋项目预约](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/530062590e0.md)。JSON：`configId`、`reserveDate`、`sourceType`、`startTime`、`endTime`、`quantity`；`sourceType=3` 时另传 `orderId` |
 | 16m | POST | `/v1/cabin/createReservationOrder` | `App端/线下履约/康养小屋相关接口` | `CabinService`（付费预约创建订单） | Apifox OAS：`createReservationOrder`。JSON 只有 `configId`。`data` 为订单 id。日期和时段不传，支付成功后再调用 `POST /v1/cabin/book` |
 | 16h | GET | `/v1/cabin/appointments` | `App端/线下履约/康养小屋相关接口` | `CabinService`（预约记录、首页我的预约） | [当前登录人的预约记录分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785606e0.md)。Query：可选 `status`（3 待服务 / 4 服务中 / 5 已完成 / 6 已取消 / 7 已过期，空为全部）、`pageNum`、`pageSize`。记录含 `configId`，用于再次预约。首页「我的预约」固定传 `status=3` |
@@ -281,7 +283,7 @@ App端/
 | # | Method | Path | Apifox 层级 | 调用位置 | Apifox（只读） |
 |---|--------|------|-------------|----------|----------------|
 | 58 | GET | `/v1/memberActivity/client/listMyActivitiesForClient` | `会员活动-用户端` | `MemberActivityService` | 文档暂无分享链接 / 以代码 path 为准。已签到且当天可见，无 query。`detailAccessible` 表示能否进入详情，结束满 2 小时为 false |
-| 59 | GET | `/v1/memberActivity/client/getDetailForClient` | `会员活动-用户端` | `MemberActivityService` | 文档暂无分享链接 / 以代码 path 为准。Query `activityId`。检测入口读 `clientDetectionItems`（`description`、`clientDetectionTypeCode` 15/16/17、`pageUrl`） |
+| 59 | GET | `/v1/memberActivity/client/getDetailForClient` | `会员活动-用户端` | `MemberActivityService` | 文档暂无分享链接 / 以代码 path 为准。Query `activityId`。检测入口读 `clientDetectionItems`（`description`、`clientDetectionTypeCode` 15/16/17、`pageUrl`、设备图 `imageUrl`/`iconUrl`/`imgUrl`） |
 
 规格：`openspec/specs/my-activities/`。
 

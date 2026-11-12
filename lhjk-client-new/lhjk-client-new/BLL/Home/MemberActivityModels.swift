@@ -72,11 +72,16 @@ struct MemberActivityClientDetectionItemVO: Decodable {
     let clientDetectionTypeCode: Int?
     let pageUrl: String
     let description: String
+    /// 设备图。接口未返回时为空，界面留白。
+    let imageUrl: String?
 
     enum CodingKeys: String, CodingKey {
         case clientDetectionTypeCode
         case pageUrl
         case description
+        case imageUrl
+        case iconUrl
+        case imgUrl
     }
 
     init(from decoder: Decoder) throws {
@@ -86,6 +91,16 @@ struct MemberActivityClientDetectionItemVO: Decodable {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         description = (try c.decodeIfPresent(String.self, forKey: .description) ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+        imageUrl = Self.firstImageURL(c)
+    }
+
+    private static func firstImageURL(_ c: KeyedDecodingContainer<CodingKeys>) -> String? {
+        for key in [CodingKeys.imageUrl, .iconUrl, .imgUrl] {
+            if let value = MemberActivityClientListVO.decodeFlexibleString(c, key: key) {
+                return value
+            }
+        }
+        return nil
     }
 }
 
@@ -200,7 +215,8 @@ struct MyActivityDeviceEntry: Hashable {
     let pageUrl: String
     /// `pageUrl` 打不开时的本地路由。
     let fallbackRoute: String?
-    let symbolName: String
+    /// 后端设备图。空则卡片右侧留白。
+    let imageUrl: String?
 
     init?(item: MemberActivityClientDetectionItemVO) {
         let known = Self.knownType(item.clientDetectionTypeCode)
@@ -210,17 +226,17 @@ struct MyActivityDeviceEntry: Hashable {
         self.name = name.isEmpty ? "设备检测" : name
         pageUrl = item.pageUrl
         fallbackRoute = known?.route
-        symbolName = known?.symbolName ?? "waveform.path.ecg"
+        imageUrl = item.imageUrl
     }
 
-    private static func knownType(_ code: Int?) -> (name: String, route: String, symbolName: String)? {
+    private static func knownType(_ code: Int?) -> (name: String, route: String)? {
         switch code {
         case 15:
-            return ("鹰瞳眼底检测", "/health/metrics/fundus", "eye")
+            return ("鹰瞳眼底检测", "/health/metrics/fundus")
         case 16:
-            return ("呼吸道炎症仪检测", "/health/metrics/respiratory-inflammation", "waveform.path.ecg")
+            return ("呼吸道炎症仪检测", "/health/metrics/respiratory-inflammation")
         case 17:
-            return ("消化道菌群失衡检测", "/health/metrics/gut-flora", "circle.hexagongrid")
+            return ("消化道菌群失衡检测", "/health/metrics/gut-flora")
         default:
             return nil
         }

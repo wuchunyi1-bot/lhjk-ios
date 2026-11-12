@@ -3,6 +3,11 @@ import Kingfisher
 import SnapKit
 import UIKit
 
+/// 门店详情分类条底色。选中态使用 App 主色。
+enum CabinAccent {
+    static let segment = UIColor(hexString: "#F5F7FA")
+}
+
 /// 康养小屋门店详情。列表点卡片或「去门店」进入，带 `hospitalId` 与距离。
 final class WellnessCabinDetailViewController: BaseViewController {
 
@@ -137,9 +142,9 @@ final class WellnessCabinDetailViewController: BaseViewController {
             distanceRow.isHidden = true
         }
 
-        if let openTime = store.openTime, !openTime.isEmpty {
+        if let hours = store.businessHours, !hours.isEmpty {
             hoursRow.isHidden = false
-            hoursLabel.text = openTime
+            hoursLabel.text = hours
         } else {
             hoursRow.isHidden = true
         }
@@ -163,7 +168,7 @@ final class WellnessCabinDetailViewController: BaseViewController {
     private func setupRecordsButton() {
         recordsButton.setTitle("预约记录", for: .normal)
         recordsButton.setTitleColor(.fdText, for: .normal)
-        recordsButton.titleLabel?.font = .fdFont(ofSize: 14, weight: .semibold)
+        recordsButton.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
         recordsButton.addTarget(self, action: #selector(recordsTapped), for: .touchUpInside)
     }
 
@@ -179,7 +184,7 @@ final class WellnessCabinDetailViewController: BaseViewController {
         servicesHeading.font = .fdFont(ofSize: 17, weight: .semibold)
         servicesHeading.textColor = .fdText
 
-        segment.backgroundColor = .fdBg2
+        segment.backgroundColor = CabinAccent.segment
         segment.layer.cornerRadius = 23
         segmentStack.axis = .horizontal
         segmentStack.spacing = 6
@@ -230,11 +235,7 @@ final class WellnessCabinDetailViewController: BaseViewController {
         recommendTag.clipsToBounds = true
         recommendTag.isHidden = true
 
-        let iconConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
-        switchButton.setImage(UIImage(systemName: "storefront", withConfiguration: iconConfig), for: .normal)
-        switchButton.tintColor = .fdSuccess
-        switchButton.backgroundColor = .fdSuccessSoft
-        switchButton.layer.cornerRadius = 14
+        switchButton.setImage(UIImage(named: "wellness_backToList")?.withRenderingMode(.alwaysOriginal), for: .normal)
         recommendTag.snp.makeConstraints {
             $0.height.equalTo(20)
             $0.width.greaterThanOrEqualTo(36)
@@ -248,8 +249,8 @@ final class WellnessCabinDetailViewController: BaseViewController {
         titleRow.spacing = 10
 
         distanceLabel.font = .fdFont(ofSize: 14, weight: .semibold)
-        distanceLabel.textColor = .fdInfo
-        distanceRow.addArrangedSubview(symbol("location.north.line", tint: .fdInfo))
+        distanceLabel.textColor = .fdPrimary
+        distanceRow.addArrangedSubview(assetIcon("wellness_distance"))
         distanceRow.addArrangedSubview(distanceLabel)
         distanceRow.axis = .horizontal
         distanceRow.alignment = .center
@@ -258,7 +259,7 @@ final class WellnessCabinDetailViewController: BaseViewController {
         hoursLabel.font = .fdFont(ofSize: 14, weight: .regular)
         hoursLabel.textColor = .fdSubtext
         hoursLabel.numberOfLines = 0
-        hoursRow.addArrangedSubview(symbol("clock", tint: .fdSubtext))
+        hoursRow.addArrangedSubview(assetIcon("wellness_time"))
         hoursRow.addArrangedSubview(hoursLabel)
         hoursRow.axis = .horizontal
         hoursRow.alignment = .center
@@ -267,16 +268,15 @@ final class WellnessCabinDetailViewController: BaseViewController {
         addressLabel.font = .fdFont(ofSize: 14, weight: .regular)
         addressLabel.textColor = .fdSubtext
         addressLabel.numberOfLines = 0
-        let pin = symbol("mappin.and.ellipse", tint: .fdSubtext)
-        addressRow.addArrangedSubview(pin)
+        addressRow.addArrangedSubview(assetIcon("wellness_address"))
         addressRow.addArrangedSubview(addressLabel)
         addressRow.axis = .horizontal
         addressRow.alignment = .top
         addressRow.spacing = 8
 
-        let navigateButton = actionButton(title: "导去门店", systemName: "location.north.line", filled: true)
+        let navigateButton = actionButton(title: "导去门店", imageName: "wellness_navigate", filled: true)
         navigateButton.addTarget(self, action: #selector(navigateTapped), for: .touchUpInside)
-        let phoneButton = actionButton(title: "电话咨询", systemName: "phone", filled: false)
+        let phoneButton = actionButton(title: "电话咨询", imageName: "wellness_phone", filled: false)
         phoneButton.addTarget(self, action: #selector(phoneTapped), for: .touchUpInside)
         let actions = UIStackView(arrangedSubviews: [navigateButton, phoneButton])
         actions.axis = .horizontal
@@ -297,9 +297,9 @@ final class WellnessCabinDetailViewController: BaseViewController {
 
         card.addSubview(stack)
         stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
-        switchButton.snp.makeConstraints { $0.size.equalTo(28) }
+        switchButton.snp.makeConstraints { $0.size.equalTo(26) }
         divider.snp.makeConstraints { $0.height.equalTo(1.0 / UIScreen.main.scale) }
-        navigateButton.snp.makeConstraints { $0.height.equalTo(34) }
+        navigateButton.snp.makeConstraints { $0.height.equalTo(32) }
     }
 
     private func setupTable() {
@@ -382,7 +382,7 @@ final class WellnessCabinDetailViewController: BaseViewController {
             )
             button.tintColor = selected ? .fdPrimary : .fdSubtext
             button.setTitleColor(selected ? .fdPrimary : .fdSubtext, for: .normal)
-            button.titleLabel?.font = .fdFont(ofSize: 13, weight: selected ? .semibold : .medium)
+            button.titleLabel?.font = .fdFont(ofSize: 14, weight: selected ? .semibold : .medium)
             button.titleLabel?.lineBreakMode = .byTruncatingTail
             button.backgroundColor = selected ? .fdSurface : .clear
             button.layer.cornerRadius = 18
@@ -436,23 +436,20 @@ final class WellnessCabinDetailViewController: BaseViewController {
         return "square.grid.2x2"
     }
 
-    private func symbol(_ name: String, tint: UIColor) -> UIImageView {
-        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .regular)
-        let view = UIImageView(image: UIImage(systemName: name, withConfiguration: config))
-        view.tintColor = tint
+    private func assetIcon(_ name: String) -> UIImageView {
+        let view = UIImageView(image: UIImage(named: name)?.withRenderingMode(.alwaysOriginal))
         view.contentMode = .scaleAspectFit
         view.setContentHuggingPriority(.required, for: .horizontal)
         view.snp.makeConstraints { $0.size.equalTo(16) }
         return view
     }
 
-    private func actionButton(title: String, systemName: String, filled: Bool) -> UIButton {
+    private func actionButton(title: String, imageName: String, filled: Bool) -> UIButton {
         let button = UIButton(type: .system)
         button.setTitle(title, for: .normal)
-        let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
-        button.setImage(UIImage(systemName: systemName, withConfiguration: config), for: .normal)
-        button.titleLabel?.font = .fdFont(ofSize: 13, weight: .medium)
-        button.layer.cornerRadius = 17
+        button.setImage(UIImage(named: imageName)?.withRenderingMode(.alwaysOriginal), for: .normal)
+        button.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
+        button.layer.cornerRadius = 16
         button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
         if filled {
             button.backgroundColor = .fdPrimary
@@ -460,10 +457,10 @@ final class WellnessCabinDetailViewController: BaseViewController {
             button.setTitleColor(.white, for: .normal)
         } else {
             button.backgroundColor = .fdSurface
-            button.tintColor = .fdText
-            button.setTitleColor(.fdText, for: .normal)
+            button.tintColor = .fdPrimary
+            button.setTitleColor(.fdPrimary, for: .normal)
             button.layer.borderWidth = 1
-            button.layer.borderColor = UIColor.fdBorder.cgColor
+            button.layer.borderColor = UIColor.fdPrimary.cgColor
         }
         return button
     }
@@ -592,7 +589,7 @@ private final class CabinGalleryView: UIView, UIScrollViewDelegate {
         scroll.bounces = false
         scroll.delegate = self
         pageControl.currentPageIndicatorTintColor = .fdPrimary
-        pageControl.pageIndicatorTintColor = .fdBorderStrong
+        pageControl.pageIndicatorTintColor = UIColor.fdPrimary.withAlphaComponent(0.25)
         pageControl.isUserInteractionEnabled = false
         pageControl.hidesForSinglePage = true
         addSubview(scroll)

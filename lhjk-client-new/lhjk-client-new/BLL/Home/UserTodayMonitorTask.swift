@@ -404,6 +404,7 @@ extension UserTodayMonitorTask {
         if raw.contains("心率") { return "heart-rate" }
         if raw.contains("饮食") { return "diet" }
         if raw.contains("运动") { return "exercise" }
+        if raw.contains("饮水") { return "water" }
         if raw.contains("睡眠") { return "sleep" }
         return nil
     }

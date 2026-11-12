@@ -1,3 +1,4 @@
+import AVFoundation
 import CoreLocation
 import Foundation
 import QuickLook
@@ -7,7 +8,7 @@ import Combine
 
 /// H5 ↔ App Bridge — 对齐《H5 宿主接入文档》
 ///
-/// - `FundeBridge`：套餐中间页、保存食谱、文档预览、单次定位、原生扫码（扁平 JSON）
+/// - `FundeBridge`：套餐中间页、保存食谱、文档预览、单次定位、原生扫码、相机权限（扁平 JSON）
 /// - `FundeNative`：体重 BLE（`{ action, params, callbackId }`）
 /// Native → H5: `window.__fundeBridge.respond|reject|emit`
 final class FundeNativeBridge: NSObject {
@@ -26,6 +27,7 @@ final class FundeNativeBridge: NSObject {
     private var locationRequestInFlight = false
     private var locationSettingsObserver: NSObjectProtocol?
     private var locationForegroundContinuation: CheckedContinuation<Void, Never>?
+    private var cameraPermissionInFlight = false
     /// Quick Look 不持有 dataSource，必须由 Bridge 强引用到关闭。
     private var documentPreviewSession: DocumentPreviewSession?
 
@@ -50,6 +52,7 @@ final class FundeNativeBridge: NSObject {
         documentPreviewSession = nil
         scanCodeViewController = nil
         locationRequestInFlight = false
+        cameraPermissionInFlight = false
         finishLocationSettingsWait()
         cancellables.removeAll()
         webView = nil
@@ -91,6 +94,8 @@ final class FundeNativeBridge: NSObject {
             handleGetLocation(body: body, params: params)
         case "scanCode":
             handleScanCode(body: body, params: params)
+        case "requestCameraPermission":
+            handleRequestCameraPermission(body: body)
         case "gotoBuy":
             openServicePackageList()
         case "navigateH5", "openH5", "openH5Page", "openPage":
@@ -120,6 +125,74 @@ final class FundeNativeBridge: NSObject {
         default:
             reject(callbackId, message: "未知 action: \(action)")
         }
+    }
+
+    /// 体检报告 / AI 饮食点「拍照」前申请相机权限。选图仍由 H5 的文件输入完成。
+    private func handleRequestCameraPermission(body: [String: Any]) {
+        let requestId = Self.stringValue(body["requestId"]) ?? ""
+        guard !requestId.isEmpty else {
+            replyCameraPermission(requestId: "", status: "error", message: "缺少 requestId")
+            return
+        }
+        guard !cameraPermissionInFlight else {
+            replyCameraPermission(requestId: requestId, status: "error", message: "正在处理相机权限")
+            return
+        }
+
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            replyCameraPermission(requestId: requestId, status: "granted")
+        case .notDetermined:
+            cameraPermissionInFlight = true
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.cameraPermissionInFlight = false
+                    self.replyCameraPermission(requestId: requestId, status: granted ? "granted" : "denied")
+                }
+            }
+        case .denied:
+            replyCameraPermission(requestId: requestId, status: "denied")
+            presentCameraSettingsAlert()
+        case .restricted:
+            replyCameraPermission(requestId: requestId, status: "restricted", message: "设备限制相机访问")
+            hostViewController?.showAlert(
+                title: "无法使用相机",
+                message: "设备限制相机访问",
+                actions: [UIAlertAction(title: "知道了", style: .default)]
+            )
+        @unknown default:
+            replyCameraPermission(requestId: requestId, status: "error", message: "无法获取相机权限")
+        }
+    }
+
+    private func presentCameraSettingsAlert() {
+        guard let host = hostViewController else { return }
+        let cancel = UIAlertAction(title: "取消", style: .cancel)
+        let settings = UIAlertAction(title: "去设置", style: .default) { _ in
+            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+            UIApplication.shared.open(url)
+        }
+        host.showAlert(
+            title: "无法使用相机",
+            message: "请在系统设置中允许访问相机",
+            actions: [cancel, settings]
+        )
+    }
+
+    private func replyCameraPermission(requestId: String, status: String, message: String? = nil) {
+        var payload: [String: Any] = [
+            "action": "requestCameraPermission",
+            "requestId": requestId,
+            "status": status,
+        ]
+        if let message, !message.isEmpty {
+            payload["message"] = message
+        }
+        guard let json = Self.jsonLiteral(payload) else { return }
+        evaluate(
+            "(function(){try{var cb=window.FundeCameraPermissionCallback;if(typeof cb==='function'){cb(\(json));}}catch(e){}})();"
+        )
     }
 
     private func handleRouteChanged(params: [String: Any]) {

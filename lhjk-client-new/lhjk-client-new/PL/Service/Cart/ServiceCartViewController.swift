@@ -129,19 +129,7 @@ final class ServiceCartViewController: BaseViewController {
     }
 
     @objc private func emptyActionTapped() {
-        guard let nav = navigationController else {
-            Router.shared.push("/services/list", params: ["code": ""])
-            return
-        }
-        var stack = nav.viewControllers.filter { !($0 is ServiceCartViewController) }
-        if let idx = stack.lastIndex(where: { $0 is ServiceListViewController }) {
-            nav.setViewControllers(Array(stack.prefix(through: idx)), animated: true)
-            return
-        }
-        let list = ServiceListViewController(productCode: "")
-        list.hidesBottomBarWhenPushed = true
-        stack.append(list)
-        nav.setViewControllers(stack, animated: true)
+        RootTabBarController.selectHomeShelf(.service)
     }
 
     private func checkout(line: CartLineDisplay) {

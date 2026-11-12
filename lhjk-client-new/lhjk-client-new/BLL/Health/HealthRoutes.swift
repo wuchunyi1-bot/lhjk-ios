@@ -46,9 +46,12 @@ enum HealthRoutes {
             )
         }
         r.register(path: "/wellness-cabins/activity") { params in
-            WellnessCabinServiceBookViewController(
+            let internalFlag = stringParam(params["internalOnly"])
+            let internalOnly: Bool? = internalFlag == "1" ? true : (internalFlag == "0" ? false : nil)
+            return WellnessCabinServiceBookViewController(
                 hospitalId: stringParam(params["hospitalId"]) ?? "",
                 configId: stringParam(params["configId"]) ?? "",
+                internalOnly: internalOnly,
                 presentsCommerce: false
             )
         }

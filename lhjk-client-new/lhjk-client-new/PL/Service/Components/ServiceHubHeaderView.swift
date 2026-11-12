@@ -133,6 +133,12 @@ final class ServiceCartBadgeButton: UIControl {
         }
     }
 
+    func applyTemplateIcon(_ image: UIImage?, tint: UIColor) {
+        iconView.image = image?.withRenderingMode(.alwaysTemplate)
+        iconView.tintColor = tint
+        iconView.contentMode = .scaleAspectFit
+    }
+
     func apply(count: Int) {
         if let text = ShoppingCartBadgeStore.displayText(for: count) {
             badgeView.isHidden = false
