@@ -200,7 +200,7 @@
 - **AND** 次卡说明使用固定文案「优先使用次卡，本次预约将扣减 1 次」，不依赖接口字段
 - **AND** 预约记录用 `configId` 回到原项目预约页
 - **AND** 预约详情使用 `GET /v1/cabin/reservationDetail`，取消使用 `POST /v1/cabin/cancel`
-- **AND** 待服务展示 `cancellationCode`；已取消展示 `cancelTime`、`cancelReason`；详情同时展示预约编号、创建时间、项目介绍、须知、适用人群、禁止人群、门店名称、地址、营业时间和电话。预约详情的营业时间不拼周几
+- **AND** 待服务展示 `cancellationCode`；已取消展示 `cancelTime`、`cancelReason`；详情同时展示预约编号、创建时间、项目介绍、须知、适用人群、禁止人群、门店名称、地址、营业时间和电话。预约详情的营业时间不拼周几。`reservationDetail` 没有 `tradeStartTime` 和 `tradeEndTime` 时，用 `GET /v1/cabin/detail` 的这两个字段补成 `开始-结束`
 
 #### Scenario: 产品明确不做
 
@@ -231,6 +231,7 @@
 - **AND** 底栏按钮高 40、圆角 20、16pt Medium。取消预约为 `#FF7A50` 描边，再次预约为同色填充
 - **AND** 项目介绍使用 `description` 富文本，介绍图在正文里，不另找图片字段
 - **AND** 待服务展示 `qrCode` 和 `cancellationCode`；服务中展示 `verifyTime`；已完成展示 `verifyTime` 和 `finishTime`；已取消展示 `cancelTime`；已过期展示 `expireTime`
+- **AND** 「预约信息」和「服务信息」里，相邻两项之间用 1px `fdBorder` 横线分隔。项目介绍的标题和正文算一项。最后一项下面不加线
 - **AND** 「预约信息」信息行下方展示固定提醒，左对齐、浅橙底圆角 8、16pt Regular 主色。待服务「请提前15分钟到店」；服务中「服务进行中，请留意设备使用时长」；已完成「已完成核销」；已取消「已按规则取消」；已过期「订单已过期，如需使用请重新预约。」。其它状态不展示
 - **AND** 当天已过时段仍由客户端判断，只展示超时说明。详情没有单独的超时时间字段
 - **AND** 响应带 `longitude`、`latitude` 时提供「导航到门店」；已安装高德才跳转，未安装提示「未安装高德地图」；还没返回坐标时不展示导航
