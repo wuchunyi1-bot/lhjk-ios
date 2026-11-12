@@ -200,7 +200,7 @@
 - **AND** 次卡说明使用固定文案「优先使用次卡，本次预约将扣减 1 次」，不依赖接口字段
 - **AND** 预约记录用 `configId` 回到原项目预约页
 - **AND** 预约详情使用 `GET /v1/cabin/reservationDetail`，取消使用 `POST /v1/cabin/cancel`
-- **AND** 待服务展示 `cancellationCode`；已取消展示 `cancelTime`、`cancelReason`；详情同时展示预约编号、创建时间、项目介绍、须知、适用人群、禁止人群、门店名称、地址、营业时间和电话。预约详情的营业时间不拼周几。`reservationDetail` 没有 `tradeStartTime` 和 `tradeEndTime` 时，用 `GET /v1/cabin/detail` 的这两个字段补成 `开始-结束`
+- **AND** 待服务展示 `cancellationCode`；已取消展示 `cancelTime`、`cancelReason`；详情同时展示预约编号、创建时间、项目介绍、须知、适用人群、禁止人群、门店名称、地址、营业时间和电话。预约详情门店营业时间只用 `reservationDetail` 的 `tradeWeek`、`tradeStartTime`、`tradeEndTime`，周几拼在时段前，不再请求 `GET /v1/cabin/detail`
 
 #### Scenario: 产品明确不做
 

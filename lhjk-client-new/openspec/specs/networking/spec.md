@@ -156,11 +156,23 @@
 ---
 
 ### Requirement: API Base Configuration
-系统 SHALL 支持多环境配置（开发、测试、生产），支持切换 API 的 Base URL。
+系统 SHALL 支持开发、预发、生产三套环境。接口网关与 H5 使用同一选择，未选择过时默认开发环境。登录页长按「富德联好健康」logo 从底部选择，当前环境显示对勾；切换后清除上一环境的登录凭证。
+
+| 环境 | 接口网关 | H5 |
+|---|---|---|
+| 开发 | `https://gateway-dev.lianhaojiankang.com` | `https://h5-dev.lianhaojiankang.com` |
+| 预发 | `https://gateway-pre.lianhaojiankang.com` | `https://h5-pre.lianhaojiankang.com` |
+| 生产 | `https://gateway.lianhaojiankang.com` | `https://h5.lianhaojiankang.com` |
+
+业务接口 Base URL 为网关地址加 `/mobile`。
 
 #### Scenario: 环境切换
-- **WHEN** 切换开发/测试/生产环境
-- **THEN** 网络客户端使用对应环境的 Base URL 和配置
+- **WHEN** 在登录页长按 logo 并选择另一环境
+- **THEN** 后续接口与 H5 使用对应地址，且不再携带上一环境的 Token
+
+#### Scenario: 默认环境
+- **WHEN** 本地没有已保存的环境
+- **THEN** 使用开发环境
 
 #### Scenario: 请求路径拼接
 - **WHEN** BLL 层传入 API 路径（如 `/user/profile`）

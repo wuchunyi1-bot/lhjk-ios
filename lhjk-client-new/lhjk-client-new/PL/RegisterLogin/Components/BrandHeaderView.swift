@@ -32,6 +32,8 @@ final class BrandHeaderView: UIView {
         return iv
     }()
 
+    var onLogoLongPress: (() -> Void)?
+
     private var logoSizeConstraint: Constraint?
     private var titleWidthConstraint: Constraint?
     private var titleHeightConstraint: Constraint?
@@ -57,6 +59,11 @@ final class BrandHeaderView: UIView {
         logoShadowHost.addSubview(logoImageView)
         addSubview(brandTitleImageView)
 
+        logoImageView.isUserInteractionEnabled = true
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(logoLongPressed(_:)))
+        longPress.minimumPressDuration = 0.5
+        logoImageView.addGestureRecognizer(longPress)
+
         // Figma 3209:361 — 72×72
         logoShadowHost.snp.makeConstraints { make in
             make.top.centerX.equalToSuperview()
@@ -74,5 +81,10 @@ final class BrandHeaderView: UIView {
             titleHeightConstraint = make.height.equalTo(56).constraint
             make.bottom.equalToSuperview()
         }
+    }
+
+    @objc private func logoLongPressed(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began else { return }
+        onLogoLongPress?()
     }
 }

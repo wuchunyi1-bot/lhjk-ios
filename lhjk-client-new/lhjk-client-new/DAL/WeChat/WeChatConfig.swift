@@ -33,7 +33,7 @@ enum WeChatConfig {
     static var benefitClaimMiniProgramType: WeChatMiniProgramType {
         switch APIManager.shared.environment {
         case .production: return .release
-        case .staging, .development: return .test
+        case .pre, .development: return .test
         }
     }
 
@@ -41,7 +41,7 @@ enum WeChatConfig {
     static var knowledgeShareMiniProgramType: WeChatMiniProgramType {
         switch APIManager.shared.environment {
         case .production: return .release
-        case .staging, .development: return .preview
+        case .pre, .development: return .preview
         }
     }
 

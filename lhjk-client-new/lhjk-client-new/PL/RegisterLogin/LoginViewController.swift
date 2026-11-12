@@ -533,6 +533,9 @@ final class LoginViewController: BaseViewController {
         resetInnerStack.spacing = LoginLayoutMetrics.forgotStackSpacing(compact: usesCompactLoginLayout)
 
         contentView.addSubview(brandHeader)
+        brandHeader.onLogoLongPress = { [weak self] in
+            self?.presentEnvironmentSheet()
+        }
         brandHeader.applyCompactLayout(usesCompactLoginLayout)
         brandHeader.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(
@@ -1397,6 +1400,12 @@ final class LoginViewController: BaseViewController {
 
     // MARK: - Toast
 
+    private func presentEnvironmentSheet() {
+        let sheet = EnvironmentSwitchSheet(current: APIManager.shared.environment)
+        sheet.onSelect = { APIManager.shared.environment = $0 }
+        present(sheet, animated: false)
+    }
+
     private func showToast(_ message: String) {
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
         present(alert, animated: true)
@@ -1429,5 +1438,112 @@ private final class LoginHeroFadeView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         gradientLayer.frame = bounds
+    }
+}
+
+/// 登录页长按 logo 后从底部选择接口和 H5 环境。当前项显示对勾。
+private final class EnvironmentSwitchSheet: UIViewController {
+
+    var onSelect: ((APIEnvironment) -> Void)?
+
+    private let current: APIEnvironment
+    private let dimView = UIView()
+    private let panel = UIView()
+
+    init(current: APIEnvironment) {
+        self.current = current
+        super.init(nibName: nil, bundle: nil)
+        modalPresentationStyle = .overFullScreen
+        modalTransitionStyle = .crossDissolve
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        dimView.backgroundColor = UIColor.black.withAlphaComponent(0.45)
+        dimView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(closeTapped)))
+        view.addSubview(dimView)
+        dimView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        panel.backgroundColor = .fdSurface
+        panel.layer.cornerRadius = 16
+        panel.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        panel.clipsToBounds = true
+        view.addSubview(panel)
+
+        let title = UILabel()
+        title.text = "切换环境"
+        title.font = .fdFont(ofSize: 18, weight: .medium)
+        title.textColor = .fdText
+        title.textAlignment = .center
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 0
+        for environment in [APIEnvironment.development, .pre, .production] {
+            stack.addArrangedSubview(row(for: environment))
+        }
+
+        panel.addSubview(title)
+        panel.addSubview(stack)
+        panel.snp.makeConstraints {
+            $0.leading.trailing.bottom.equalToSuperview()
+        }
+        title.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(16)
+            $0.leading.trailing.equalToSuperview().inset(16)
+        }
+        stack.snp.makeConstraints {
+            $0.top.equalTo(title.snp.bottom).offset(8)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(panel.safeAreaLayoutGuide).offset(-8)
+        }
+    }
+
+    private func row(for environment: APIEnvironment) -> UIControl {
+        let button = UIControl()
+        button.tag = [APIEnvironment.development, .pre, .production].firstIndex(of: environment) ?? 0
+        button.addTarget(self, action: #selector(rowTapped(_:)), for: .touchUpInside)
+
+        let label = UILabel()
+        label.text = environment.title
+        label.font = .fdFont(ofSize: 16, weight: .regular)
+        label.textColor = .fdText
+        label.isUserInteractionEnabled = false
+
+        let mark = UIImageView(image: UIImage(systemName: "checkmark"))
+        mark.tintColor = .fdPrimary
+        mark.contentMode = .scaleAspectFit
+        mark.isHidden = environment != current
+        mark.isUserInteractionEnabled = false
+
+        button.addSubview(label)
+        button.addSubview(mark)
+        button.snp.makeConstraints { $0.height.equalTo(52) }
+        label.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(20)
+            $0.centerY.equalToSuperview()
+        }
+        mark.snp.makeConstraints {
+            $0.trailing.equalToSuperview().offset(-20)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(18)
+        }
+        return button
+    }
+
+    @objc private func rowTapped(_ sender: UIControl) {
+        let options = [APIEnvironment.development, .pre, .production]
+        let selected = options[sender.tag]
+        let action = onSelect
+        dismiss(animated: false) {
+            guard selected != self.current else { return }
+            action?(selected)
+        }
+    }
+
+    @objc private func closeTapped() {
+        dismiss(animated: false)
     }
 }

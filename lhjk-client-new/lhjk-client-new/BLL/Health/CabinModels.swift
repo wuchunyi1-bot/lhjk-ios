@@ -852,9 +852,10 @@ struct CabinReservationDetailVO: Decodable, Equatable {
         return (longitude, latitude)
     }
 
-    /// 门店营业时段。预约详情若带回 `tradeStartTime` / `tradeEndTime` 则展示；日期形态的 `openTime` 不展示。
+    /// 门店营业时段。有 `tradeWeek` 时拼在时段前，例如 `周一至周五 09:00-19:00`。
     var businessHours: String? {
-        CabinHours.range(start: tradeStartTime, end: tradeEndTime) ?? CabinHours.period(openTime)
+        CabinHours.display(week: tradeWeek, start: tradeStartTime, end: tradeEndTime)
+            ?? CabinHours.period(openTime)
     }
 
     var canCancel: Bool { status == 3 }

@@ -9,18 +9,42 @@ import UIKit
 
 enum APIEnvironment: String {
     case development
-    case staging
+    case pre
     case production
+
+    private static let storageKey = "app_environment"
+
+    /// 未选择过时默认开发环境。
+    static var stored: APIEnvironment {
+        get {
+            guard let raw = UserDefaults.standard.string(forKey: storageKey),
+                  let value = APIEnvironment(rawValue: raw) else {
+                return .development
+            }
+            return value
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: storageKey)
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .development: return "开发环境"
+        case .pre: return "预发环境"
+        case .production: return "生产环境"
+        }
+    }
 
     /// 网关根地址（OAuth 等不走 /mobile 前缀的接口）
     var gatewayURL: URL {
         switch self {
         case .development:
             return URL(string: "https://gateway-dev.lianhaojiankang.com")!
-        case .staging:
-            return URL(string: "https://staging-api.lhjk.com")!
+        case .pre:
+            return URL(string: "https://gateway-pre.lianhaojiankang.com")!
         case .production:
-            return URL(string: "https://api.lhjk.com")!
+            return URL(string: "https://gateway.lianhaojiankang.com")!
         }
     }
 
@@ -46,8 +70,14 @@ final class APIManager {
 
     // MARK: - Properties
 
-    /// 当前 API 环境
-    var environment: APIEnvironment = .development
+    /// 当前 API 环境。更换后写入本地，并清掉上一环境的登录态。
+    var environment: APIEnvironment = APIEnvironment.stored {
+        didSet {
+            guard environment != oldValue else { return }
+            APIEnvironment.stored = environment
+            clearCredential()
+        }
+    }
 
     /// Alamofire Session（含 AuthenticationInterceptor，用于需认证的请求）
     var session: Session!

@@ -11,8 +11,6 @@ final class WellnessCabinAppointmentDetailViewModel: ObservableObject {
     let configId: String
 
     @Published private(set) var detail: CabinReservationDetailVO?
-    /// 预约详情没有营业时段时，用门店详情的开始和结束时间补上，不拼周几。
-    @Published private(set) var storeHours: String?
     @Published private(set) var isLoading = false
     @Published private(set) var isMissing = false
     @Published private(set) var isCancelling = false
@@ -75,20 +73,6 @@ final class WellnessCabinAppointmentDetailViewModel: ObservableObject {
         }
         isMissing = false
         self.detail = detail
-        storeHours = nil
-        guard detail.businessHours == nil, !detail.hospitalId.isEmpty else { return }
-        let hospitalId = detail.hospitalId
-        let service = cabinService
-        Task.detached {
-            let store = try? await service.storeDetail(hospitalId: hospitalId)
-            let hours = CabinHours.range(start: store?.tradeStartTime, end: store?.tradeEndTime)
-            await self.applyStoreHours(hours)
-        }
-    }
-
-    private func applyStoreHours(_ hours: String?) {
-        guard let hours, !hours.isEmpty else { return }
-        storeHours = hours
     }
 }
 
@@ -183,10 +167,6 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
 
     override func bindViewModel() {
         viewModel.$detail
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.render() }
-            .store(in: &cancellables)
-        viewModel.$storeHours
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.render() }
             .store(in: &cancellables)
@@ -607,7 +587,7 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
     }
 
     private func storeBlock(_ detail: CabinReservationDetailVO) -> UIView? {
-        let hours = (detail.businessHours ?? viewModel.storeHours)?
+        let hours = detail.businessHours?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let mobile = detail.mobile?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard !detail.hospitalName.isEmpty || !detail.address.isEmpty || !hours.isEmpty || !mobile.isEmpty || detail.coordinate != nil else {

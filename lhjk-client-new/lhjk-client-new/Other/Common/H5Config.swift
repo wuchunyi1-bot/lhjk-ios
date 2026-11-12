@@ -8,8 +8,14 @@ import Foundation
 /// 其它 WebView（协议页等）不在此扩展鉴权逻辑。
 enum H5Config {
 
-    /// 当前 H5 环境（可与 `APIManager.shared.environment` 同步切换）
-    static var environment: H5Environment = .development
+    /// 当前 H5 环境，与接口环境同一套选择。
+    static var environment: H5Environment {
+        switch APIManager.shared.environment {
+        case .development: return .development
+        case .pre: return .pre
+        case .production: return .production
+        }
+    }
 
     /// 体征监测指标 key 与导航栏标题（与 Hub / MetricsView 一致）
     static let metricKeys: [(key: String, title: String)] = [
@@ -400,18 +406,17 @@ enum H5Config {
 
 enum H5Environment: String {
     case development
-    case staging
+    case pre
     case production
 
     var baseURL: URL {
         switch self {
         case .development:
             return URL(string: "https://h5-dev.lianhaojiankang.com")!
-//            return URL(string: "http://192.168.15.86:5181")! //跟H5连调
-        case .staging:
-            return URL(string: "https://staging-h5.lhjk.com")!
+        case .pre:
+            return URL(string: "https://h5-pre.lianhaojiankang.com")!
         case .production:
-            return URL(string: "https://h5.lhjk.com")!
+            return URL(string: "https://h5.lianhaojiankang.com")!
         }
     }
 }
