@@ -8,7 +8,9 @@ final class SettingsViewController: BaseViewController {
     private let scrollView = UIScrollView()
     private let contentView = UIView()
     private var generalSection: SettingsSectionCard?
+    private var deviceSection: SettingsSectionCard?
     private var isClearingCache = false
+    private var isSyncingAppleHealth = false
 
     init(cacheCleanup: CacheCleanupService = AppContainer.shared.cacheCleanupService) {
         self.cacheCleanup = cacheCleanup
@@ -22,11 +24,16 @@ final class SettingsViewController: BaseViewController {
         static let cache = 1
     }
 
+    private enum DeviceRow {
+        static let appleHealth = 2
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
         refreshSeniorModeStatus()
         refreshCacheSize()
+        refreshAppleHealthStatus()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -70,7 +77,7 @@ final class SettingsViewController: BaseViewController {
             ]
         ))
 
-        stack.addArrangedSubview(makeSection(
+        let devices = makeSection(
             title: "地址与设备",
             icon: "settings_section_address",
             items: [
@@ -84,8 +91,16 @@ final class SettingsViewController: BaseViewController {
                     subtitle: "已绑定设备与添加设备",
                     action: { Router.shared.push("/me/devices") }
                 ),
+                .init(
+                    title: "Apple 健康",
+                    subtitle: "同步 iPhone 健康 App 数据",
+                    trailing: AppleHealthSyncService.shared.statusText,
+                    action: { [weak self] in self?.handleAppleHealth() }
+                ),
             ]
-        ))
+        )
+        deviceSection = devices
+        stack.addArrangedSubview(devices)
 
         stack.addArrangedSubview(makeSection(
             title: "消息提醒",
@@ -161,6 +176,23 @@ final class SettingsViewController: BaseViewController {
 
     private func refreshSeniorModeStatus() {
         generalSection?.updateTrailing(at: GeneralRow.senior, text: Self.seniorModeStatusText)
+    }
+
+    private func refreshAppleHealthStatus() {
+        deviceSection?.updateTrailing(at: DeviceRow.appleHealth, text: AppleHealthSyncService.shared.statusText)
+    }
+
+    private func handleAppleHealth() {
+        guard !isSyncingAppleHealth else { return }
+        isSyncingAppleHealth = true
+        Task { [weak self] in
+            let message = await AppleHealthSyncService.shared.connectAndSync()
+            await MainActor.run {
+                self?.isSyncingAppleHealth = false
+                self?.refreshAppleHealthStatus()
+                self?.showToast(message)
+            }
+        }
     }
 
     // MARK: - Cache

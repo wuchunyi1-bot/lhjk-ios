@@ -80,6 +80,7 @@ final class AppContainer {
     private(set) lazy var diningSchemeService: DiningSchemeService = .shared
     private(set) lazy var healthPageCacheService: HealthPageCacheService = .shared
     private(set) lazy var equipmentBindService: EquipmentBindService = .shared
+    private(set) lazy var appleHealthSyncService: AppleHealthSyncService = .shared
     // MARK: - 存储
 
     private(set) lazy var userDefaultsManager: UserDefaultsManager = .shared

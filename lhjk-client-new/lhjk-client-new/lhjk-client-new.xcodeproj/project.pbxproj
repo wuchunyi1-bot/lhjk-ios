@@ -351,6 +351,8 @@
 		A5BDA3A73035921300E306EB /* ScaleDeviceCardCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA39D3035921300E306EB /* ScaleDeviceCardCell.swift */; };
 		A5BDA3A93035AAF200E306EB /* ScaleDeviceBindViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA3A83035AAF200E306EB /* ScaleDeviceBindViewController.swift */; };
 		A5BDA3AB3035AB0100E306EB /* ScaleDeviceBindViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BDA3AA3035AB0100E306EB /* ScaleDeviceBindViewModel.swift */; };
+		A5BED6BD30A5C88400FF7AC8 /* AppleHealthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BED6BB30A5C88400FF7AC8 /* AppleHealthStore.swift */; };
+		A5BED6BF30A5C8C800FF7AC8 /* AppleHealthSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BED6BE30A5C8C800FF7AC8 /* AppleHealthSyncService.swift */; };
 		A5BFCA382FE38EF1008DA1DF /* UIFont+Funde.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */; };
 		A5C13254303D750B0047F06D /* MainTabBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C13253303D750B0047F06D /* MainTabBarView.swift */; };
 		A5C13257303D8CB70047F06D /* ActivateViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C13255303D8CB70047F06D /* ActivateViewController.swift */; };
@@ -805,6 +807,8 @@
 		A5BDA3A23035921300E306EB /* ScaleDeviceSelectViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleDeviceSelectViewController.swift; sourceTree = "<group>"; };
 		A5BDA3A83035AAF200E306EB /* ScaleDeviceBindViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleDeviceBindViewController.swift; sourceTree = "<group>"; };
 		A5BDA3AA3035AB0100E306EB /* ScaleDeviceBindViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleDeviceBindViewModel.swift; sourceTree = "<group>"; };
+		A5BED6BB30A5C88400FF7AC8 /* AppleHealthStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleHealthStore.swift; sourceTree = "<group>"; };
+		A5BED6BE30A5C8C800FF7AC8 /* AppleHealthSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppleHealthSyncService.swift; path = BLL/Health/AppleHealthSyncService.swift; sourceTree = "<group>"; };
 		A5BFCA362FE38EF1008DA1DF /* UIFont+Funde.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIFont+Funde.swift"; sourceTree = "<group>"; };
 		A5C13253303D750B0047F06D /* MainTabBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabBarView.swift; sourceTree = "<group>"; };
 		A5C13255303D8CB70047F06D /* ActivateViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivateViewController.swift; sourceTree = "<group>"; };
@@ -984,6 +988,7 @@
 		80323DB75D4CB2E15619DDBB /* DAL */ = {
 			isa = PBXGroup;
 			children = (
+				A5BED6BC30A5C88400FF7AC8 /* HealthKit */,
 				A5B56164304951B800B8259D /* Alipay */,
 				A5C7564A3025AF23004FA15B /* QRCode */,
 				A5C7564530259CED004FA15B /* WeChat */,
@@ -2569,6 +2574,15 @@
 			path = ScaleDevice;
 			sourceTree = "<group>";
 		};
+		A5BED6BC30A5C88400FF7AC8 /* HealthKit */ = {
+			isa = PBXGroup;
+			children = (
+				A5BED6BB30A5C88400FF7AC8 /* AppleHealthStore.swift */,
+			);
+			name = HealthKit;
+			path = DAL/HealthKit;
+			sourceTree = "<group>";
+		};
 		A5BFCA372FE38EF1008DA1DF /* UIFont */ = {
 			isa = PBXGroup;
 			children = (
@@ -2832,6 +2846,7 @@
 		B64D5D28AFB9110FDD54A8D6 /* Health */ = {
 			isa = PBXGroup;
 			children = (
+				A5BED6BE30A5C8C800FF7AC8 /* AppleHealthSyncService.swift */,
 				A5AF90FD3092EB73001C28AF /* CabinModels.swift */,
 				A5AF90FE3092EB73001C28AF /* CabinService.swift */,
 				A5B56159304916A600B8259D /* MedicalReportModels.swift */,
@@ -3227,6 +3242,7 @@
 				0D9CCCF8E6DF5482A9FACDF0 /* APIManager.swift in Sources */,
 				CC5AFA75E6FC57E098F3107B /* NetworkMonitor.swift in Sources */,
 				A56120A830106CC600505C32 /* CouponModels.swift in Sources */,
+				A5BED6BF30A5C8C800FF7AC8 /* AppleHealthSyncService.swift in Sources */,
 				A56120A930106CC600505C32 /* CouponService.swift in Sources */,
 				A5C7B73F303E9196008D89A5 /* DictionaryCacheService.swift in Sources */,
 				1406F12781B85941BC234E2B /* OAuthAuthenticator.swift in Sources */,
@@ -3365,6 +3381,7 @@
 				A590FCE42FEA91170056EF52 /* HomeViewController.swift in Sources */,
 				A5A6F51E2FFF7C700065C921 /* VoucherListViewController.swift in Sources */,
 				A5BDA3A93035AAF200E306EB /* ScaleDeviceBindViewController.swift in Sources */,
+				A5BED6BD30A5C88400FF7AC8 /* AppleHealthStore.swift in Sources */,
 				A590FCE52FEA91170056EF52 /* BodyFigureView.swift in Sources */,
 				A5CE1D0230331A4800A79706 /* RongEmoji.swift in Sources */,
 				A590FCE62FEA91170056EF52 /* BrandHeaderView.swift in Sources */,
