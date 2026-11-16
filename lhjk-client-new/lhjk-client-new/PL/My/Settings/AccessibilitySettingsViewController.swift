@@ -1,109 +1,100 @@
+import SnapKit
 import UIKit
 
-/// 长辈模式 — 即原来的老年模式（`UIFont.isSeniorMode`）
-///
-/// 开启后 `fd*` 字号放大，并通知已打开的页面刷新。
+/// 长辈模式。背景铺满 `settings_big_bg`，底部按钮按当前开关切换文案。
 final class AccessibilitySettingsViewController: BaseViewController {
 
-    private let scrollView = UIScrollView()
-    private let contentView = UIView()
-    private var seniorObserver: NSObjectProtocol?
-
-    deinit {
-        if let obs = seniorObserver {
-            NotificationCenter.default.removeObserver(obs)
-        }
-    }
+    private let backgroundView = UIImageView()
+    private let actionButton = UIButton(type: .custom)
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        applyTransparentNavigationBar()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        restoreNavigationBar()
     }
 
     override func setupUI() {
-        title = "长辈模式"
-        view.backgroundColor = .fdBg
+        title = ""
+        view.backgroundColor = .white
 
-        scrollView.showsVerticalScrollIndicator = false
-        view.addSubview(scrollView)
-        scrollView.snp.makeConstraints { $0.edges.equalToSuperview() }
-        scrollView.addSubview(contentView)
-        contentView.snp.makeConstraints { $0.edges.width.equalToSuperview() }
+        backgroundView.image = UIImage(named: "settings_big_bg")
+        backgroundView.contentMode = .scaleAspectFill
+        backgroundView.clipsToBounds = true
+        view.addSubview(backgroundView)
+        backgroundView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        buildContent()
-
-        seniorObserver = NotificationCenter.default.addObserver(
-            forName: UIFont.seniorModeDidChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.rebuildContent()
+        actionButton.setTitleColor(.white, for: .normal)
+        actionButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
+        actionButton.backgroundColor = .fdPrimary
+        actionButton.layer.cornerRadius = 24
+        actionButton.addTarget(self, action: #selector(toggleTapped), for: .touchUpInside)
+        view.addSubview(actionButton)
+        actionButton.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(32)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
+            $0.height.equalTo(48)
         }
+        applyButtonTitle()
     }
 
-    private func rebuildContent() {
-        contentView.subviews.forEach { $0.removeFromSuperview() }
-        buildContent()
+    override func refreshForSeniorMode() {
+        super.refreshForSeniorMode()
+        applyButtonTitle()
     }
 
-    private func buildContent() {
-        let heroCard = UIView()
-        heroCard.backgroundColor = UIColor(hexString: "#FFF3EE")
-        heroCard.layer.cornerRadius = 24
+    @objc private func toggleTapped() {
+        UIFont.isSeniorMode.toggle()
+        applyButtonTitle()
+    }
 
-        let heroTitle = UILabel()
-        heroTitle.text = "字更大，操作更简单"
-        heroTitle.font = .fdMyH3
-        heroTitle.textColor = .fdText
+    private func applyButtonTitle() {
+        let title = UIFont.isSeniorMode ? "关闭长辈模式" : "开启长辈模式"
+        actionButton.setTitle(title, for: .normal)
+    }
 
-        let heroDesc = UILabel()
-        heroDesc.text = "开启后，列表、按钮和关键数字会使用更大字号，方便阅读和点按。"
-        heroDesc.font = .fdMyBody
-        heroDesc.textColor = .fdSubtext
-        heroDesc.numberOfLines = 0
+    private func applyTransparentNavigationBar() {
+        guard let navigationController else { return }
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithTransparentBackground()
+        appearance.shadowColor = .clear
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.clear]
+        let backImage = UIImage.fdNavBack
+        appearance.setBackIndicatorImage(backImage, transitionMaskImage: backImage)
+        let backButtonAppearance = UIBarButtonItemAppearance()
+        backButtonAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.clear]
+        backButtonAppearance.highlighted.titleTextAttributes = [.foregroundColor: UIColor.clear]
+        appearance.backButtonAppearance = backButtonAppearance
+        navigationController.navigationBar.standardAppearance = appearance
+        navigationController.navigationBar.scrollEdgeAppearance = appearance
+        navigationController.navigationBar.compactAppearance = appearance
+        navigationController.navigationBar.isTranslucent = true
+    }
 
-        heroCard.addSubview(heroTitle)
-        heroCard.addSubview(heroDesc)
-        heroTitle.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview().inset(18)
-        }
-        heroDesc.snp.makeConstraints { make in
-            make.top.equalTo(heroTitle.snp.bottom).offset(8)
-            make.leading.trailing.bottom.equalToSuperview().inset(18)
-        }
-
-        let toggle = SettingsToggleCell(
-            model: SettingsToggleCell.Model(
-                title: "长辈模式",
-                subtitle: "字更大，操作更简单",
-                isOn: UIFont.isSeniorMode
-            ),
-            showDivider: false
-        )
-        toggle.onToggle = { isOn in
-            UIFont.isSeniorMode = isOn
-        }
-
-        let card = UIView()
-        card.backgroundColor = .fdSurface
-        card.layer.cornerRadius = 18
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 6
-        card.layer.shadowOpacity = 0.03
-        card.addSubview(toggle)
-        toggle.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-        contentView.addSubview(heroCard)
-        contentView.addSubview(card)
-        heroCard.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(16)
-            make.leading.trailing.equalToSuperview().inset(16)
-        }
-        card.snp.makeConstraints { make in
-            make.top.equalTo(heroCard.snp.bottom).offset(14)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-20)
-        }
+    private func restoreNavigationBar() {
+        guard let navigationController else { return }
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = .fdBg
+        appearance.shadowColor = .clear
+        appearance.titleTextAttributes = [
+            .foregroundColor: UIColor.fdText,
+            .font: UIFont.fdFont(ofSize: 20, weight: .medium)
+        ]
+        let backImage = UIImage.fdNavBack
+        appearance.setBackIndicatorImage(backImage, transitionMaskImage: backImage)
+        let backButtonAppearance = UIBarButtonItemAppearance()
+        backButtonAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.clear]
+        backButtonAppearance.highlighted.titleTextAttributes = [.foregroundColor: UIColor.clear]
+        appearance.backButtonAppearance = backButtonAppearance
+        navigationController.navigationBar.standardAppearance = appearance
+        navigationController.navigationBar.scrollEdgeAppearance = appearance
+        navigationController.navigationBar.compactAppearance = appearance
+        navigationController.navigationBar.tintColor = .fdText
+        navigationController.navigationBar.isTranslucent = false
     }
 }

@@ -26,6 +26,7 @@ final class MetricCardCell: UICollectionViewCell {
     private let dietRightStack = UIStackView()
 
     private var appliedLayoutScale: CGFloat = 1
+    private var valueUsesCompactFont = false
     private var isDietLayout = false
     private var isLipidLayout = false
     private var showsRecordButton = false
@@ -209,6 +210,7 @@ final class MetricCardCell: UICollectionViewCell {
         titleLabel.textColor = UIColor(hexString: "#717885")
 
         valueLabel.text = value
+        valueUsesCompactFont = value.trimmingCharacters(in: .whitespacesAndNewlines) == "暂无检测记录"
         unitLabel.text = unit
         timeLabel.text = time
         timeLabel.isHidden = time.isEmpty
@@ -271,7 +273,8 @@ final class MetricCardCell: UICollectionViewCell {
         badgeLabel.invalidateIntrinsicContentSize()
 
         titleLabel.font = .fdFont(ofSize: Design.titleFontSize * scale, weight: .regular)
-        valueLabel.font = .fdFont(ofSize: Design.valueFontSize * scale, weight: .medium)
+        let valueFontSize = valueUsesCompactFont ? Design.valueFontSize - 2 : Design.valueFontSize
+        valueLabel.font = .fdFont(ofSize: valueFontSize * scale, weight: .medium)
         unitLabel.font = .fdFont(ofSize: Design.unitFontSize * scale, weight: .regular)
         timeLabel.font = .fdFont(ofSize: Design.timeFontSize * scale, weight: .regular)
         recordButton.titleLabel?.font = .fdFont(ofSize: Design.badgeFontSize * scale, weight: .regular)
@@ -538,6 +541,7 @@ final class MetricCardCell: UICollectionViewCell {
         badgeLabel.text = nil
         badgeLabel.isHidden = true
         showsRecordButton = false
+        valueUsesCompactFont = false
         recordButton.isHidden = true
         isDietLayout = false
         isLipidLayout = false
@@ -583,6 +587,8 @@ private enum Design {
     static let dietValueFontSize: CGFloat = 12
     static let dietRingSize: CGFloat = 52
     static let dietRingLineWidth: CGFloat = 3
+    /// 圆环略上移，只避开底部日期。环内文案仍居中，与两侧热量对齐。
+    static let dietRingLift: CGFloat = 4
     static let dietRowTopGap: CGFloat = 8
     static let lipidCaptionFontSize: CGFloat = 12
     static let lipidValueFontSize: CGFloat = 12
@@ -613,6 +619,7 @@ private final class MetricBadgeLabel: UILabel {
 /// 饮食运动「还可摄入」圆环（文案画在环内，避免被轨道层挡住）
 private final class DietSportRingView: UIView {
     private var progress: CGFloat = 0
+    private var layoutScale: CGFloat = 1
     private let trackLayer = CAShapeLayer()
     private let progressLayer = CAShapeLayer()
     private let captionLabel = UILabel()
@@ -669,6 +676,7 @@ private final class DietSportRingView: UIView {
     }
 
     func applyScale(_ scale: CGFloat) {
+        layoutScale = scale
         captionLabel.font = .fdFont(ofSize: Design.dietCaptionFontSize * scale, weight: .regular)
         valueLabel.font = .fdFont(ofSize: Design.dietValueFontSize * scale, weight: .medium)
         setNeedsLayout()
@@ -677,7 +685,8 @@ private final class DietSportRingView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         let lineWidth = max(1, bounds.width * (Design.dietRingLineWidth / Design.dietRingSize))
-        let center = CGPoint(x: bounds.midX, y: bounds.midY)
+        let lift = Design.dietRingLift * layoutScale
+        let center = CGPoint(x: bounds.midX, y: bounds.midY - lift)
         let radius = max(0, (min(bounds.width, bounds.height) - lineWidth) / 2)
         let start: CGFloat = -.pi / 2
         // 12 点起沿逆时针增长（strokeEnd 沿 path 方向）

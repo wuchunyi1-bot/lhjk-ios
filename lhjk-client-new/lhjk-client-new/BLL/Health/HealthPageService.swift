@@ -861,16 +861,7 @@ enum MonitorCardDisplayMapper {
                 )
             }
             .sorted { $0.sortId < $1.sortId }
-        return parsed.isEmpty ? defaultQuickEntries() : parsed
-    }
-
-    static func defaultQuickEntries() -> [HealthQuickEntryDisplayItem] {
-        [
-            HealthQuickEntryDisplayItem(name: "健康档案", iconUrl: nil, pageUrl: "/health/record", sortId: 1),
-            HealthQuickEntryDisplayItem(name: "体征监测", iconUrl: nil, pageUrl: "/health/metrics", sortId: 2),
-            HealthQuickEntryDisplayItem(name: "六维评测", iconUrl: nil, pageUrl: "/health/assessment/six-dim", sortId: 3),
-            HealthQuickEntryDisplayItem(name: "我的报告", iconUrl: nil, pageUrl: "/health/report", sortId: 4),
-        ]
+        return parsed
     }
 
     // MARK: Private helpers

@@ -493,22 +493,14 @@ final class WellnessCabinDetailViewController: BaseViewController {
             showToastAlert("暂无门店位置")
             return
         }
-        guard AmapNavigation.isInstalled,
-              let url = AmapNavigation.driveURL(
-                longitude: coordinate.longitude,
-                latitude: coordinate.latitude,
-                name: store.name
-              ) else {
-            let alert = UIAlertController(
-                title: "未安装高德地图",
-                message: "请先安装高德地图后再导航到门店",
-                preferredStyle: .alert
-            )
-            alert.addAction(UIAlertAction(title: "知道了", style: .default))
-            present(alert, animated: true)
-            return
+        let opened = AppleMapsNavigation.openDriving(
+            longitude: coordinate.longitude,
+            latitude: coordinate.latitude,
+            name: store.name
+        )
+        if !opened {
+            showToastAlert("无法打开地图")
         }
-        UIApplication.shared.open(url)
     }
 
     @objc private func phoneTapped() {
