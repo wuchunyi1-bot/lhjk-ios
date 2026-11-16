@@ -1,6 +1,6 @@
 import CoreLocation
 import Foundation
-import UIKit
+import MapKit
 
 // MARK: - MapCoordinateConverter
 
@@ -59,6 +59,23 @@ enum MapCoordinateConverter {
         return CLLocationCoordinate2D(latitude: lat + dLat, longitude: lng + dLng)
     }
 
+    /// GCJ-02 → WGS-84。苹果地图使用 WGS-84。境外坐标不偏移。
+    /// 用正向变换迭代回推，消掉一次相减留下的偏差。
+    static func gcj02ToWgs84(_ coordinate: CLLocationCoordinate2D) -> CLLocationCoordinate2D {
+        let lat = coordinate.latitude
+        let lng = coordinate.longitude
+        guard isInChina(latitude: lat, longitude: lng) else { return coordinate }
+
+        var wgsLat = lat
+        var wgsLng = lng
+        for _ in 0..<6 {
+            let gcj = wgs84ToGcj02(CLLocationCoordinate2D(latitude: wgsLat, longitude: wgsLng))
+            wgsLat -= gcj.latitude - lat
+            wgsLng -= gcj.longitude - lng
+        }
+        return CLLocationCoordinate2D(latitude: wgsLat, longitude: wgsLng)
+    }
+
     /// 格式化为接口 Query 字符串（保留足够小数位）
     static func queryString(from coordinate: CLLocationCoordinate2D) -> (longitude: String, latitude: String) {
         (
@@ -88,26 +105,23 @@ enum MapCoordinateConverter {
     }
 }
 
-/// 用高德 App 打开驾车导航。坐标为高德 GCJ-02。
-enum AmapNavigation {
+/// 用 iPhone 地图打开驾车导航。入参为小屋接口的 GCJ-02，打开前转为 WGS-84。
+enum AppleMapsNavigation {
 
-    static var isInstalled: Bool {
-        guard let url = URL(string: "iosamap://") else { return false }
-        return UIApplication.shared.canOpenURL(url)
-    }
-
-    static func driveURL(longitude: String, latitude: String, name: String) -> URL? {
-        var components = URLComponents()
-        components.scheme = "iosamap"
-        components.host = "navi"
-        components.queryItems = [
-            URLQueryItem(name: "sourceApplication", value: "lhjk"),
-            URLQueryItem(name: "poiname", value: name),
-            URLQueryItem(name: "lat", value: latitude),
-            URLQueryItem(name: "lon", value: longitude),
-            URLQueryItem(name: "dev", value: "0"),
-            URLQueryItem(name: "style", value: "0"),
-        ]
-        return components.url
+    @discardableResult
+    static func openDriving(longitude: String, latitude: String, name: String) -> Bool {
+        guard let lng = Double(longitude), let lat = Double(latitude),
+              (-180.0...180.0).contains(lng), (-90.0...90.0).contains(lat) else {
+            return false
+        }
+        let wgs = MapCoordinateConverter.gcj02ToWgs84(
+            CLLocationCoordinate2D(latitude: lat, longitude: lng)
+        )
+        let item = MKMapItem(placemark: MKPlacemark(coordinate: wgs))
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        item.name = trimmed.isEmpty ? "门店" : trimmed
+        return item.openInMaps(launchOptions: [
+            MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving
+        ])
     }
 }

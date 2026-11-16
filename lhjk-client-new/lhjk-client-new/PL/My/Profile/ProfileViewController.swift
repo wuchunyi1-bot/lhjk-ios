@@ -678,15 +678,11 @@ final class ProfileViewController: BaseViewController, UIImagePickerControllerDe
         return "\(phone.prefix(3))****\(phone.suffix(4))"
     }
 
-    /// `1990-08-12` → `****-08-12`
+    /// `1990-08-12` → `****-**-**`
     private func maskedBirthday(_ raw: String) -> String {
-        let pattern = #"^(\d{4})-(\d{2}-\d{2})$"#
-        guard let regex = try? NSRegularExpression(pattern: pattern),
-              let match = regex.firstMatch(in: raw, range: NSRange(raw.startIndex..., in: raw)),
-              let monthDay = Range(match.range(at: 2), in: raw) else {
-            return raw
-        }
-        return "****-\(raw[monthDay])"
+        let pattern = #"^\d{4}-\d{2}-\d{2}$"#
+        guard raw.range(of: pattern, options: .regularExpression) != nil else { return raw }
+        return "****-**-**"
     }
 
     /// 账号保留首尾各一位，域名整段保留。1 位账号整段隐藏，2 位账号隐藏第二位。
