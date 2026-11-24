@@ -10,7 +10,7 @@
 
 - **WHEN** 首页出现且能解析到当前用户
 - **THEN** 调用 `GET /v1/cabin/appointments`（[Apifox](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785606e0.md)）
-- **AND** Query 传 `status = 3`、`pageNum = 1`、`pageSize = 20`
+- **AND** Query 传 `businessType = 1`、`status = 3`、`pageNum = 1`、`pageSize = 20`
 - **AND** 返回记录按预约日期和开始时间从早到晚排列
 
 #### Scenario: 没有记录

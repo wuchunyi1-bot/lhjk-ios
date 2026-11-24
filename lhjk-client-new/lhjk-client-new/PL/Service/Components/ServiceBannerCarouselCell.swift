@@ -360,6 +360,23 @@ final class ServiceHubBannerBar: UIView, UITableViewDataSource, UITableViewDeleg
     /// 嵌在首页内容页签时锁定 344×138。
     var usesHomeShelfRatio = false
     var displayedHeight: CGFloat { banners.isEmpty ? 0 : bannerHeight }
+    private var didResolveBanners = false
+
+    /// 引导量孔用。数据还没回来时，首页页签按 138/344 先占住高度。
+    var occupiedHeight: CGFloat {
+        if !banners.isEmpty, bannerHeight > 1 { return bannerHeight }
+        if usesHomeShelfRatio, !didResolveBanners {
+            return bannerHeight > 1 ? bannerHeight : fallbackHeight()
+        }
+        return 0
+    }
+
+    /// 嵌进首页前先撑开高度，避免引导孔先圈住轮播、数据回来后再缩上去。
+    func reserveHomeShelfPlaceholder() {
+        guard usesHomeShelfRatio, !didResolveBanners, bannerHeight < 1 else { return }
+        bannerHeight = fallbackHeight()
+        heightConstraint?.update(offset: bannerHeight)
+    }
 
     private var banners: [ServiceHubBanner] = []
     private var bannerHeight: CGFloat = 0
@@ -461,6 +478,7 @@ final class ServiceHubBannerBar: UIView, UITableViewDataSource, UITableViewDeleg
     }
 
     private func apply(_ banners: [ServiceHubBanner]) {
+        didResolveBanners = true
         self.banners = banners
         isHidden = banners.isEmpty
         if banners.isEmpty {

@@ -163,6 +163,8 @@ final class HealthMallViewController: BaseViewController {
                 $0.top.equalTo(headerBlock.snp.bottom)
                 $0.leading.trailing.bottom.equalToSuperview()
             }
+            shelfBannerBar.reserveHomeShelfPlaceholder()
+            applyEmbeddedBannerHeight(shelfBannerBar.occupiedHeight)
         } else {
             view.addSubview(categoryTabBar)
             categoryTabBar.snp.makeConstraints {
@@ -185,9 +187,14 @@ final class HealthMallViewController: BaseViewController {
     }
 
     func guideBannerFrame(in target: UIView) -> CGRect? {
-        guard embedsInHomeHub, shelfBannerBar.displayedHeight > 1 else { return nil }
+        guard embedsInHomeHub else { return nil }
+        let height = shelfBannerBar.occupiedHeight
+        guard height > 1 else { return nil }
         shelfBannerBar.layoutIfNeeded()
-        let frame = shelfBannerBar.convert(shelfBannerBar.bounds, to: target)
+        var frame = shelfBannerBar.convert(shelfBannerBar.bounds, to: target)
+        if frame.height < 1 {
+            frame.size.height = height
+        }
         return frame.height > 1 ? frame : nil
     }
 

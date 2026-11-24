@@ -48,7 +48,7 @@ final class MyAppointmentCell: UITableViewCell {
         }
     }
 
-    func configure(_ item: CabinAppointmentVO) {
+    func configure(_ item: CabinAppointmentVO, showsCabinActions: Bool = true) {
         nameLabel.text = item.name.isEmpty ? "预约项目" : item.name
         let title = item.statusTitle
         statusLabel.isHidden = title.isEmpty
@@ -76,14 +76,15 @@ final class MyAppointmentCell: UITableViewCell {
         addressLabel.isHidden = item.address.isEmpty
         storeRow.isHidden = item.hospitalName.isEmpty && item.address.isEmpty
 
-        configureActions(for: item)
+        configureActions(for: item, showsCabinActions: showsCabinActions)
     }
 
-    private func configureActions(for item: CabinAppointmentVO) {
+    private func configureActions(for item: CabinAppointmentVO, showsCabinActions: Bool) {
         actionsStack.arrangedSubviews.forEach {
             actionsStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
+        guard showsCabinActions else { return }
         switch item.status ?? 0 {
         case 3:
             applyOutline(cancelButton, title: "取消预约")
@@ -211,7 +212,7 @@ final class MyAppointmentCell: UITableViewCell {
 
     private func applyStatus(_ status: Int?) {
         switch status {
-        case 3, 4:
+        case 1, 2, 3, 4:
             statusLabel.textColor = UIColor(hexString: "#FF7A50")
             statusLabel.backgroundColor = UIColor(hexString: "#FFF3EE")
         case 5:

@@ -33,7 +33,7 @@ final class DatabaseManager {
     private let dbPath: String
 
     /// 当前数据库版本
-    private let currentVersion: Int = 1
+    private let currentVersion: Int = 3
 
     // MARK: - Initialization
 
@@ -77,12 +77,20 @@ final class DatabaseManager {
             if storedVersion < 1 {
                 migrateV1(db: db)
             }
+            var migrated = true
+            if storedVersion < 2 {
+                migrated = migrateV2(db: db)
+            }
+            if migrated && storedVersion < 3 {
+                migrated = migrateV3(db: db)
+            }
 
-            // 更新版本号
-            try? db.executeUpdate(
-                "INSERT INTO db_version (version) VALUES (?)",
-                values: [self.currentVersion]
-            )
+            if migrated && storedVersion < self.currentVersion {
+                try? db.executeUpdate(
+                    "INSERT INTO db_version (version) VALUES (?)",
+                    values: [self.currentVersion]
+                )
+            }
         }
     }
 
@@ -197,6 +205,63 @@ final class DatabaseManager {
         )
     }
 
+    /// V2：苹果健康待上传队列。不改动 health_record。建表失败时返回 false，版本号不前移。
+    @discardableResult
+    private func migrateV2(db: FMDatabase) -> Bool {
+        let sample = db.executeUpdate(
+            """
+            CREATE TABLE IF NOT EXISTS apple_health_sample (
+                user_id TEXT NOT NULL,
+                uuid TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                start_at REAL NOT NULL,
+                end_at REAL NOT NULL,
+                time_zone TEXT,
+                payload TEXT NOT NULL,
+                unit TEXT,
+                source_name TEXT,
+                source_bundle TEXT,
+                sync_state TEXT NOT NULL,
+                updated_at REAL NOT NULL,
+                PRIMARY KEY (user_id, uuid)
+            )
+            """,
+            withArgumentsIn: []
+        )
+        let index = db.executeUpdate(
+            "CREATE INDEX IF NOT EXISTS idx_apple_health_sample_state ON apple_health_sample(user_id, sync_state)",
+            withArgumentsIn: []
+        )
+        let anchor = db.executeUpdate(
+            """
+            CREATE TABLE IF NOT EXISTS apple_health_anchor (
+                user_id TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                anchor BLOB NOT NULL,
+                updated_at REAL NOT NULL,
+                PRIMARY KEY (user_id, kind)
+            )
+            """,
+            withArgumentsIn: []
+        )
+        return sample && index && anchor
+    }
+
+    /// V3：已经交给服务端的样本 uuid。样本行删除后仍留下主键，避免近 30 天回补把同一条再写成待上传。
+    @discardableResult
+    private func migrateV3(db: FMDatabase) -> Bool {
+        db.executeUpdate(
+            """
+            CREATE TABLE IF NOT EXISTS apple_health_sent (
+                user_id TEXT NOT NULL,
+                uuid TEXT NOT NULL,
+                PRIMARY KEY (user_id, uuid)
+            )
+            """,
+            withArgumentsIn: []
+        )
+    }
+
     // MARK: - Execute Update (增 / 删 / 改)
 
     /// 执行写操作（INSERT / UPDATE / DELETE）
@@ -262,6 +327,19 @@ final class DatabaseManager {
     }
 
     // MARK: - Transaction
+
+    /// 读取查询结果第一行第一列的二进制值
+    func dataForQuery(_ sql: String, values: [Any]? = nil) -> Data? {
+        var data: Data?
+        queue.inDatabase { db in
+            guard let rs = db.executeQuery(sql, withArgumentsIn: values ?? []) else { return }
+            if rs.next() {
+                data = rs.data(forColumnIndex: 0)
+            }
+            rs.close()
+        }
+        return data
+    }
 
     /// 在事务中执行自定义操作，失败自动回滚
     func inTransaction(_ block: @escaping (FMDatabase, UnsafeMutablePointer<ObjCBool>) -> Void) -> Bool {

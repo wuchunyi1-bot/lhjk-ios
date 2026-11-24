@@ -58,8 +58,9 @@ final class ServiceViewController: BaseViewController {
             bannerBar.onHeightChange = { [weak list] height in
                 list?.updateShelfBannerHeight(height)
             }
+            bannerBar.reserveHomeShelfPlaceholder()
             list.installShelfBanner(bannerBar)
-            list.updateShelfBannerHeight(bannerBar.displayedHeight)
+            list.updateShelfBannerHeight(bannerBar.occupiedHeight)
             return
         }
 

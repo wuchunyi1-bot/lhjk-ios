@@ -24,17 +24,23 @@ enum MyAppointmentTab: Int, CaseIterable {
         }
     }
 
-    /// 待安排、待确认只属于体检和就医协助，这两类没有预约记录接口。
-    var loadsCabin: Bool {
+    /// 待安排、待确认只有体检和就医协助。其余状态小屋、体检、就医协助都查。
+    var businessTypes: [Int] {
         switch self {
-        case .arranging, .confirming: return false
-        default: return true
+        case .arranging, .confirming:
+            return [ServiceItemService.examBusinessType, ServiceItemService.assistBusinessType]
+        default:
+            return [
+                CabinService.cabinBusinessType,
+                ServiceItemService.examBusinessType,
+                ServiceItemService.assistBusinessType,
+            ]
         }
     }
 
-    /// 全部不传 status。康养记录只有 3–7。
+    /// 全部不传 status。
     var statusQuery: String? {
-        loadsCabin && self != .all ? String(rawValue) : nil
+        self == .all ? nil : String(rawValue)
     }
 
     var emptyText: String {
@@ -133,9 +139,9 @@ final class MyAppointmentsViewModel: ObservableObject {
     @Published private(set) var errorMessage: String?
 
     private let pageSize = 20
-    private var currentPage = 1
     private var requestID = 0
     private var isCancelling = false
+    private var sources: [AppointmentPageSource] = []
     private let cabinService: CabinService
 
     init(cabinService: CabinService = AppContainer.shared.cabinService) {
@@ -147,27 +153,11 @@ final class MyAppointmentsViewModel: ObservableObject {
     func reload() {
         requestID += 1
         let token = requestID
-        currentPage = 1
-        hasMore = false
-        guard tab.loadsCabin else {
-            items = []
-            isLoading = false
-            isLoadingMore = false
-            return
-        }
+        sources = tab.businessTypes.map { AppointmentPageSource(businessType: $0) }
+        hasMore = !sources.isEmpty
         isLoading = true
-        let status = tab.statusQuery
-        let service = cabinService
-        let pageSize = pageSize
-        Task {
-            do {
-                let page = try await service.appointments(status: status, pageNum: 1, pageSize: pageSize)
-                apply(page, pageNum: 1, append: false, token: token)
-            } catch {
-                let message = (error as? LocalizedError)?.errorDescription ?? "获取预约失败"
-                fail(message, token: token, append: false)
-            }
-        }
+        isLoadingMore = false
+        fetch(append: false, token: token)
     }
 
     func select(_ tab: MyAppointmentTab) {
@@ -178,22 +168,9 @@ final class MyAppointmentsViewModel: ObservableObject {
     }
 
     func loadMore() {
-        guard tab.loadsCabin, hasMore, !isLoading, !isLoadingMore else { return }
+        guard hasMore, !isLoading, !isLoadingMore else { return }
         isLoadingMore = true
-        let token = requestID
-        let next = currentPage + 1
-        let status = tab.statusQuery
-        let service = cabinService
-        let pageSize = pageSize
-        Task {
-            do {
-                let page = try await service.appointments(status: status, pageNum: next, pageSize: pageSize)
-                apply(page, pageNum: next, append: true, token: token)
-            } catch {
-                let message = (error as? LocalizedError)?.errorDescription ?? "获取预约失败"
-                fail(message, token: token, append: true)
-            }
-        }
+        fetch(append: true, token: requestID)
     }
 
     func clearError() {
@@ -209,15 +186,75 @@ final class MyAppointmentsViewModel: ObservableObject {
         return true
     }
 
-    private func apply(_ page: PaginatedCabinAppointmentData, pageNum: Int, append: Bool, token: Int) {
+    private func fetch(append: Bool, token: Int) {
+        let pending = sources.enumerated().filter(\.element.hasMore)
+        guard !pending.isEmpty else {
+            isLoading = false
+            isLoadingMore = false
+            hasMore = false
+            return
+        }
+        let status = tab.statusQuery
+        let service = cabinService
+        let pageSize = pageSize
+        Task {
+            do {
+                var fetched: [(offset: Int, page: PaginatedCabinAppointmentData, pageNum: Int)] = []
+                try await withThrowingTaskGroup(
+                    of: (offset: Int, page: PaginatedCabinAppointmentData, pageNum: Int).self
+                ) { group in
+                    for (offset, source) in pending {
+                        let pageNum = source.nextPage
+                        let businessType = source.businessType
+                        group.addTask {
+                            let page = try await service.appointments(
+                                status: status,
+                                businessType: businessType,
+                                pageNum: pageNum,
+                                pageSize: pageSize
+                            )
+                            return (offset, page, pageNum)
+                        }
+                    }
+                    for try await item in group {
+                        fetched.append(item)
+                    }
+                }
+                apply(fetched, pageSize: pageSize, append: append, token: token)
+            } catch {
+                let message = (error as? LocalizedError)?.errorDescription ?? "获取预约失败"
+                fail(message, token: token, append: append)
+            }
+        }
+    }
+
+    private func apply(
+        _ fetched: [(offset: Int, page: PaginatedCabinAppointmentData, pageNum: Int)],
+        pageSize: Int,
+        append: Bool,
+        token: Int
+    ) {
         guard token == requestID else { return }
         isLoading = false
         isLoadingMore = false
-        let rows = page.records ?? []
+        var rows: [CabinAppointmentVO] = []
+        for item in fetched {
+            guard sources.indices.contains(item.offset) else { continue }
+            let records = (item.page.records ?? []).map { record -> CabinAppointmentVO in
+                var copy = record
+                copy.businessType = sources[item.offset].businessType
+                return copy
+            }
+            let total = item.page.totalRecords ?? records.count
+            sources[item.offset].nextPage = item.pageNum + 1
+            sources[item.offset].hasMore = !records.isEmpty && item.pageNum * pageSize < total
+            rows.append(contentsOf: records)
+        }
         items = append ? items + rows : rows
-        currentPage = pageNum
-        let total = page.totalRecords ?? items.count
-        hasMore = !rows.isEmpty && items.count < total
+        items.sort { lhs, rhs in
+            (lhs.reserveDate, lhs.startTime, lhs.id) > (rhs.reserveDate, rhs.startTime, rhs.id)
+        }
+        hasMore = sources.contains { $0.hasMore }
     }
 
     private func fail(_ message: String, token: Int, append: Bool) {
@@ -230,4 +267,10 @@ final class MyAppointmentsViewModel: ObservableObject {
         }
         errorMessage = message
     }
+}
+
+private struct AppointmentPageSource {
+    let businessType: Int
+    var nextPage = 1
+    var hasMore = true
 }

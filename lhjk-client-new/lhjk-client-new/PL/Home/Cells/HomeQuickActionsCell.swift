@@ -56,6 +56,12 @@ final class HomeQuickActionsCell: UITableViewCell {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    /// 快捷入口白卡。引导橙框贴着这张卡。
+    func guideCardFrame() -> CGRect {
+        layoutIfNeeded()
+        return cardView.convert(cardView.bounds, to: self)
+    }
+
     func configure(actions: [Action]) {
         rowsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         actionsByTag.removeAll()

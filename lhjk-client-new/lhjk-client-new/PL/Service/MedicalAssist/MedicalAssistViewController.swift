@@ -1,17 +1,27 @@
+import Combine
 import SnapKit
 import UIKit
 
 /// 就医协助落地页。`FundeApp:/services/medical-assist`
 ///
-/// 头图与卖点为页面固定文案。可预约 / 推荐套餐待接口，当前不展示假套餐。
+/// 头图与卖点为页面固定文案。套餐来自 `GET /v1/cabin/medicalConfigList?businessType=3`。
+/// 使用记录走预约列表并带 `businessType=3`。
 final class MedicalAssistViewController: BaseViewController {
 
-    private let scrollView = UIScrollView()
-    private let contentView = UIView()
+    private let viewModel = ExamAppointmentListViewModel(
+        businessType: ServiceItemService.assistBusinessType,
+        failureMessage: "获取就医协助套餐失败"
+    )
+    private var cancellables = Set<AnyCancellable>()
+
+    private let tableView = UITableView(frame: .zero, style: .plain)
+    private let spinner = UIActivityIndicatorView(style: .medium)
+    private let refresh = UIRefreshControl()
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        viewModel.reload()
     }
 
     override func setupUI() {
@@ -27,49 +37,144 @@ final class MedicalAssistViewController: BaseViewController {
         recordsItem.tintColor = .fdPrimary
         navigationItem.rightBarButtonItem = recordsItem
 
-        view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
-        scrollView.alwaysBounceVertical = true
-        scrollView.snp.makeConstraints { $0.edges.equalToSuperview() }
-        contentView.snp.makeConstraints {
-            $0.edges.equalTo(scrollView.contentLayoutGuide)
-            $0.width.equalTo(scrollView.frameLayoutGuide)
-        }
+        tableView.backgroundColor = .clear
+        tableView.separatorStyle = .none
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 88
+        tableView.register(ExamPackageCell.self, forCellReuseIdentifier: ExamPackageCell.reuseID)
+        refresh.addTarget(self, action: #selector(pullToRefresh), for: .valueChanged)
+        tableView.refreshControl = refresh
 
+        view.addSubview(tableView)
+        spinner.color = .fdPrimary
+        spinner.hidesWhenStopped = true
+        view.addSubview(spinner)
+        tableView.snp.makeConstraints { $0.edges.equalTo(view.safeAreaLayoutGuide) }
+        spinner.snp.makeConstraints { $0.center.equalTo(tableView) }
+        installHeroHeader()
+    }
+
+    override func bindViewModel() {
+        viewModel.$items
+            .combineLatest(viewModel.$isLoading, viewModel.$isLoadingMore)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _, _, _ in self?.render() }
+            .store(in: &cancellables)
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] message in
+                guard let message, !message.isEmpty else { return }
+                self?.showToastAlert(message)
+                self?.viewModel.clearError()
+            }
+            .store(in: &cancellables)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        resizeHeroHeaderIfNeeded()
+    }
+
+    override func refreshForSeniorMode() {
+        super.refreshForSeniorMode()
+        installHeroHeader()
+        tableView.reloadData()
+    }
+
+    private func render() {
+        if viewModel.isLoading, viewModel.items.isEmpty {
+            spinner.startAnimating()
+            tableView.tableFooterView = nil
+        } else {
+            spinner.stopAnimating()
+            tableView.tableFooterView = viewModel.items.isEmpty ? emptyFooter() : nil
+        }
+        if !viewModel.isLoading {
+            refresh.endRefreshing()
+        }
+        tableView.reloadData()
+    }
+
+    private func emptyFooter() -> UIView {
+        let footer = FDEmptyStateView(style: .page, message: "暂无就医协助套餐")
+        let width = tableView.bounds.width > 0 ? tableView.bounds.width : view.bounds.width
+        footer.frame = CGRect(x: 0, y: 0, width: width, height: 220)
+        return footer
+    }
+
+    private func installHeroHeader() {
         let hero = MedicalAssistHeroView()
-        let empty = FDEmptyStateView(
-            style: .page,
-            message: "暂无就医协助套餐",
-            subtitle: "可预约与推荐套餐待接口接入"
-        )
-        contentView.addSubview(hero)
-        contentView.addSubview(empty)
-        hero.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
+        let width = tableView.bounds.width > 0 ? tableView.bounds.width : view.bounds.width
+        hero.frame = CGRect(x: 0, y: 0, width: width, height: 1)
+        let height = hero.systemLayoutSizeFitting(
+            CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel
+        ).height
+        hero.frame.size.height = height
+        tableView.tableHeaderView = hero
+    }
+
+    private func resizeHeroHeaderIfNeeded() {
+        guard let hero = tableView.tableHeaderView else { return }
+        let width = tableView.bounds.width
+        guard width > 0, abs(hero.frame.width - width) > 0.5 else { return }
+        installHeroHeader()
+    }
+
+    private func openDetail(_ item: ServiceItemVO) {
+        var params: [String: Any] = ["configId": item.id]
+        if let price = item.plainPrice {
+            params["price"] = price
         }
-        empty.snp.makeConstraints {
-            $0.top.equalTo(hero.snp.bottom).offset(8)
-            $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalToSuperview()
-            $0.height.greaterThanOrEqualTo(220)
-        }
+        Router.shared.push("/appointments/exams/detail", params: params, from: self)
     }
 
     @objc private func openUsageRecords() {
         Router.shared.push("/services/medical-assist/usage-records", from: self)
     }
+
+    @objc private func pullToRefresh() {
+        viewModel.reload()
+    }
 }
 
-/// 使用记录。履约列表待接口。
-final class MedicalAssistUsageRecordsViewController: BaseViewController {
+extension MedicalAssistViewController: UITableViewDataSource, UITableViewDelegate {
 
-    override func setupUI() {
-        title = "使用记录"
-        view.backgroundColor = .fdBg
-        let empty = FDEmptyStateView(style: .page, message: "暂无使用记录")
-        view.addSubview(empty)
-        empty.snp.makeConstraints { $0.edges.equalToSuperview() }
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        viewModel.items.count
     }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: ExamPackageCell.reuseID, for: indexPath) as! ExamPackageCell
+        let item = viewModel.items[indexPath.row]
+        cell.configure(item, isFirst: indexPath.row == 0, isLast: indexPath.row == viewModel.items.count - 1)
+        cell.onBook = { [weak self] in self?.openDetail(item) }
+        return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        openDetail(viewModel.items[indexPath.row])
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let offset = scrollView.contentOffset.y
+        let height = scrollView.contentSize.height
+        let frame = scrollView.bounds.height
+        guard height > frame, offset > height - frame - 80 else { return }
+        viewModel.loadMore()
+    }
+}
+
+final class MedicalAssistUsageRecordsViewController: ServiceUsageRecordsViewController {
+
+    init() {
+        super.init(businessType: ServiceItemService.assistBusinessType)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
 // MARK: - Hero

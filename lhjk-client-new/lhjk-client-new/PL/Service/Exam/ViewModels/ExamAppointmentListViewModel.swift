@@ -13,9 +13,17 @@ final class ExamAppointmentListViewModel: ObservableObject {
     private let pageSize = 20
     private var currentPage = 1
     private var requestID = 0
+    private let businessType: Int
+    private let failureMessage: String
     private let service: ServiceItemService
 
-    init(service: ServiceItemService = AppContainer.shared.serviceItemService) {
+    init(
+        businessType: Int = ServiceItemService.examBusinessType,
+        failureMessage: String = "获取体检套餐失败",
+        service: ServiceItemService = AppContainer.shared.serviceItemService
+    ) {
+        self.businessType = businessType
+        self.failureMessage = failureMessage
         self.service = service
     }
 
@@ -30,13 +38,13 @@ final class ExamAppointmentListViewModel: ObservableObject {
         Task {
             do {
                 let page = try await service.list(
-                    businessType: ServiceItemService.examBusinessType,
+                    businessType: businessType,
                     pageNum: 1,
                     pageSize: pageSize
                 )
                 apply(page, pageNum: 1, append: false, token: token)
             } catch {
-                let message = (error as? LocalizedError)?.errorDescription ?? "获取体检套餐失败"
+                let message = (error as? LocalizedError)?.errorDescription ?? failureMessage
                 fail(message, token: token, append: false)
             }
         }
@@ -52,13 +60,13 @@ final class ExamAppointmentListViewModel: ObservableObject {
         Task {
             do {
                 let page = try await service.list(
-                    businessType: ServiceItemService.examBusinessType,
+                    businessType: businessType,
                     pageNum: next,
                     pageSize: pageSize
                 )
                 apply(page, pageNum: next, append: true, token: token)
             } catch {
-                let message = (error as? LocalizedError)?.errorDescription ?? "获取体检套餐失败"
+                let message = (error as? LocalizedError)?.errorDescription ?? failureMessage
                 fail(message, token: token, append: true)
             }
         }

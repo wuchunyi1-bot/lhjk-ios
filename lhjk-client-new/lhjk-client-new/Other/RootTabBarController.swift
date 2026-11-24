@@ -510,29 +510,37 @@ private final class NewUserGuideOverlay: UIView {
     private enum Phase { case prompt, steps }
 
     private let copies = [
-        "最常用的功能放在这一排。",
-        "这里可以看健康服务，帮您把健康管起来。",
-        "这里可以找健康产品，吃的用的都能找到。",
-        "这里可以看健康知识，帮您把身体养好。",
-        "这里可以记体征，帮您管好自己的健康。",
-        "完善健康档案，给您定制专属健康服务。",
+        "最常用的功能放在这一排 !",
+        "这里可以看健康服务，帮您把健康管起来",
+        "这里可以找健康产品，吃的用的都能找到",
+        "这里可以看健康知识，帮您把身体养好",
+        "这里可以记体征，帮您管好自己的健康",
+        "完善健康档案，给您定制专属健康服务",
     ]
 
     private weak var tab: RootTabBarController?
     private let dimLayer = CAShapeLayer()
+    private let holeStroke = CAShapeLayer()
+    private let connector = CAShapeLayer()
+    private let connectorDot = UIView()
     private struct GuideHole {
         enum Shape {
-            /// 内容区：圆角矩形，不描边
+            /// 内容区：圆角矩形
             case rounded
+            /// 顶部页签：椭圆，只包住文字
+            case capsule
             /// 底栏：iOS 26 及以上椭圆，更早系统圆角矩形。都不描边。
             case tabItem
         }
 
         var rect: CGRect
         var shape: Shape
+        /// 孔的下沿做一段模糊，设计稿里内容区底部是虚化的。
+        var fadesBottom = false
     }
 
     private var holeViews: [UIView] = []
+    private var fadeViews: [UIView] = []
     private var holes: [GuideHole] = []
     private var arrowTarget: CGRect = .zero
     private var phase: Phase = .prompt
@@ -541,7 +549,6 @@ private final class NewUserGuideOverlay: UIView {
 
     private let promptCard = NewUserGuidePromptCard()
     private let card = UIView()
-    private let stepLabel = UILabel()
     private let copyLabel = UILabel()
     private let nextButton = UIButton(type: .custom)
     private let skipButton = UIButton(type: .custom)
@@ -555,40 +562,50 @@ private final class NewUserGuideOverlay: UIView {
         dimLayer.fillRule = .evenOdd
         dimLayer.fillColor = UIColor(red: 23 / 255, green: 32 / 255, blue: 51 / 255, alpha: 0.55).cgColor
         layer.addSublayer(dimLayer)
+        holeStroke.fillColor = UIColor.clear.cgColor
+        holeStroke.strokeColor = UIColor.fdPrimary.cgColor
+        holeStroke.lineWidth = 1.5
+        layer.addSublayer(holeStroke)
+        connector.fillColor = UIColor.clear.cgColor
+        connector.strokeColor = UIColor.fdPrimary.cgColor
+        connector.lineWidth = 1.5
+        connector.lineCap = .round
+        layer.addSublayer(connector)
+        connectorDot.backgroundColor = .fdPrimary
+        connectorDot.isHidden = true
+        connectorDot.isUserInteractionEnabled = false
 
         promptCard.onEnable = { [weak self] in self?.enableSenior() }
         promptCard.onSkip = { [weak self] in self?.beginSteps(senior: false) }
         addSubview(promptCard)
 
-        card.backgroundColor = .white
-        card.layer.cornerRadius = 16
+        card.backgroundColor = UIColor(hexString: "#FFEAE3")
+        card.layer.cornerRadius = 8
         card.isHidden = true
+        addSubview(connectorDot)
         addSubview(arrow)
         addSubview(card)
 
-        stepLabel.font = .fdFont(ofSize: 13, weight: .regular)
-        stepLabel.textColor = .fdSubtext
-        copyLabel.font = .fdFont(ofSize: 16, weight: .medium)
-        copyLabel.textColor = .fdText
-        copyLabel.numberOfLines = 0
+        copyLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        copyLabel.textColor = .fdPrimary
+        copyLabel.numberOfLines = 2
         nextButton.backgroundColor = .fdPrimary
-        nextButton.layer.cornerRadius = 22
+        nextButton.layer.cornerRadius = 13
         nextButton.setTitleColor(.white, for: .normal)
-        nextButton.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
+        nextButton.titleLabel?.font = .fdFont(ofSize: 12, weight: .medium)
         nextButton.addTarget(self, action: #selector(tapNext), for: .touchUpInside)
-        card.addSubview(stepLabel)
         card.addSubview(copyLabel)
         card.addSubview(nextButton)
 
         skipButton.setTitle("跳过", for: .normal)
-        skipButton.setTitleColor(.white, for: .normal)
-        skipButton.titleLabel?.font = .fdFont(ofSize: 15, weight: .medium)
-        skipButton.backgroundColor = UIColor.black.withAlphaComponent(0.62)
-        skipButton.layer.cornerRadius = 16
-        skipButton.clipsToBounds = true
-        skipButton.isHidden = true
+        skipButton.setTitleColor(.fdPrimary, for: .normal)
+        skipButton.titleLabel?.font = .fdFont(ofSize: 12, weight: .medium)
+        skipButton.backgroundColor = .clear
+        skipButton.layer.cornerRadius = 13
+        skipButton.layer.borderWidth = 0.5
+        skipButton.layer.borderColor = UIColor.fdPrimary.cgColor
         skipButton.addTarget(self, action: #selector(tapSkip), for: .touchUpInside)
-        addSubview(skipButton)
+        card.addSubview(skipButton)
 
         toastLabel.font = .fdFont(ofSize: 14, weight: .medium)
         toastLabel.textColor = .white
@@ -614,11 +631,9 @@ private final class NewUserGuideOverlay: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         redrawDim()
-        let top = safeAreaInsets.top + 8
-        skipButton.frame = CGRect(x: bounds.width - 16 - 64, y: top, width: 64, height: 32)
         if phase == .prompt {
-            let width = min(340, bounds.width - 32)
-            let height: CGFloat = 196
+            let width = min(319, bounds.width - 32)
+            let height = width * (297.0 / 319.0)
             promptCard.frame = CGRect(x: (bounds.width - width) / 2, y: (bounds.height - height) / 2, width: width, height: height)
         }
     }
@@ -637,7 +652,6 @@ private final class NewUserGuideOverlay: UIView {
         step = 1
         promptCard.isHidden = true
         card.isHidden = false
-        skipButton.isHidden = false
         tab?.guideSelectTab(RootTabBarController.Tab.home)
         tab?.guideHomeController()?.guideShow(shelf: .home)
         applyStepCopy()
@@ -691,9 +705,8 @@ private final class NewUserGuideOverlay: UIView {
     }
 
     private func applyStepCopy() {
-        stepLabel.text = "第 \(step) 步，共 6 步"
         copyLabel.text = copies[step - 1]
-        nextButton.setTitle(step == 6 ? "去完善" : "下一步", for: .normal)
+        nextButton.setTitle(step == 6 ? "去完善（6/6）" : "下一步（\(step)/6）", for: .normal)
     }
 
     private func scheduleMeasure() {
@@ -715,10 +728,15 @@ private final class NewUserGuideOverlay: UIView {
         guard let tab else { return }
         var holes: [GuideHole] = []
         var focus = CGRect.zero
-        func addContent(_ rect: CGRect) {
+        func addContent(_ rect: CGRect, fadesBottom: Bool = false) {
             let frame = rect.intersection(bounds).integral
             guard frame.width > 2, frame.height > 2 else { return }
-            holes.append(GuideHole(rect: frame, shape: .rounded))
+            holes.append(GuideHole(rect: frame, shape: .rounded, fadesBottom: fadesBottom))
+        }
+        func addCapsule(_ rect: CGRect) {
+            let frame = rect.intersection(bounds).integral
+            guard frame.width > 2, frame.height > 2 else { return }
+            holes.append(GuideHole(rect: frame, shape: .capsule))
         }
         func addTab(_ rect: CGRect) {
             let frame = rect.intersection(bounds).integral
@@ -728,7 +746,7 @@ private final class NewUserGuideOverlay: UIView {
         switch step {
         case 1:
             if let shelf = tab.guideHomeController()?.guideShelfButtonFrame(.home, in: self) {
-                addContent(shelf.insetBy(dx: -6, dy: -4))
+                addCapsule(shelf)
             }
             if let quick = tab.guideHomeController()?.guideQuickActionsFrame(in: self) {
                 addContent(quick)
@@ -741,21 +759,32 @@ private final class NewUserGuideOverlay: UIView {
         case 2, 3, 4:
             let shelf: HomeShelf = step == 2 ? .service : (step == 3 ? .mall : .articles)
             if let button = tab.guideHomeController()?.guideShelfButtonFrame(shelf, in: self) {
-                addContent(button.insetBy(dx: -6, dy: -4))
+                addCapsule(button)
                 focus = button
             }
-            if let content = tab.guideHomeController()?.guideContentFrame(in: self) {
-                addContent(content)
+            if var content = tab.guideHomeController()?.guideContentFrame(in: self) {
+                let side: CGFloat = 8
+                if content.width > bounds.width - side * 2 {
+                    content.origin.x = side
+                    content.size.width = bounds.width - side * 2
+                }
+                let tabBarTop = tab.tabBar.convert(tab.tabBar.bounds, to: self).minY
+                if content.maxY > tabBarTop - 8 {
+                    content.size.height = max(40, tabBarTop - 8 - content.minY)
+                }
+                addContent(content, fadesBottom: true)
             }
             if let home = tab.guideTabItemFrame(at: RootTabBarController.Tab.home, in: self) {
                 addTab(home)
             }
         case 5:
             let tabBarTop = tab.tabBar.convert(tab.tabBar.bounds, to: self).minY
-            if let top = tab.guideHealthController()?.guideVitalsBodyTop(in: self), tabBarTop > top + 4 {
-                let hole = CGRect(x: 0, y: top, width: bounds.width, height: tabBarTop - top)
-                addContent(hole)
-                focus = CGRect(x: bounds.midX - 8, y: top, width: 16, height: 12)
+            if var card = tab.guideHealthController()?.guideVitalsCardFrame(in: self) {
+                if card.maxY > tabBarTop - 8 {
+                    card.size.height = max(40, tabBarTop - 8 - card.minY)
+                }
+                addContent(card, fadesBottom: true)
+                focus = card
             }
             if let health = tab.guideTabItemFrame(at: RootTabBarController.Tab.health, in: self) {
                 addTab(health)
@@ -781,53 +810,51 @@ private final class NewUserGuideOverlay: UIView {
         placeCard()
         redrawDim()
         rebuildRings()
+        rebuildFades()
+        bringSubviewToFront(connectorDot)
         bringSubviewToFront(arrow)
         bringSubviewToFront(card)
-        bringSubviewToFront(skipButton)
         bringSubviewToFront(toastLabel)
     }
 
     private func placeCard() {
         let rounded = holes.filter { $0.shape == .rounded }
         let contentHole = rounded.max { $0.rect.height < $1.rect.height }
-        let shelfHole = rounded.filter { $0.rect.height < 80 }.min { $0.rect.minY < $1.rect.minY }
+        let shelfHole = holes.filter { $0.shape == .capsule }.min { $0.rect.minX < $1.rect.minX }
 
         if (2...4).contains(step), let contentHole {
-            let ceiling = max(safeAreaInsets.top + 8, (shelfHole?.rect.maxY ?? safeAreaInsets.top + 44) + 10)
-            let floor = contentHole.rect.minY - 10
-            let placed = cardThatFits(ceiling: ceiling, floor: floor, pinToFloor: false)
-            let anchorX = shelfHole?.rect.midX ?? bounds.midX
-            layoutCard(placed, arrowOnTop: true, anchorX: anchorX)
-            return
-        }
-
-        if step == 5, let contentHole {
+            let ceiling = max(safeAreaInsets.top + 8, (shelfHole?.rect.maxY ?? safeAreaInsets.top + 44) + 16)
             let floor = contentHole.rect.minY - 14
-            let minTop = safeAreaInsets.top + 48
-            let placed = cardThatFits(ceiling: minTop, floor: floor, pinToFloor: true)
-            layoutCard(placed, arrowOnTop: false, anchorX: contentHole.rect.midX)
+            let anchorX = shelfHole?.rect.midX ?? bounds.midX
+            let placed = cardThatFits(ceiling: ceiling, floor: floor, pinToFloor: false, anchorX: anchorX)
+            layoutCard(placed, arrowOnTop: true, anchorX: anchorX, dotY: shelfHole?.rect.maxY ?? contentHole.rect.minY)
             return
         }
 
-        copyLabel.numberOfLines = 0
-        copyLabel.adjustsFontSizeToFitWidth = false
-        copyLabel.minimumScaleFactor = 1
-        copyLabel.lineBreakMode = .byWordWrapping
-        let cardWidth = min(300, bounds.width - 32)
-        let textHeight = copyLabel.sizeThatFits(CGSize(width: cardWidth - 32, height: 80)).height
-        let cardHeight = 16 + 18 + 8 + textHeight + 16 + 44 + 16
+        if step == 5 || step == 6, let contentHole {
+            let floor = contentHole.rect.minY - 16
+            let minTop = safeAreaInsets.top + (step == 5 ? 48 : 8)
+            let placed = cardThatFits(ceiling: minTop, floor: floor, pinToFloor: true, anchorX: contentHole.rect.midX)
+            layoutCard(placed, arrowOnTop: false, anchorX: contentHole.rect.midX, dotY: contentHole.rect.minY)
+            return
+        }
+
+        let metrics = cardMetrics(maxWidth: bounds.width - 24)
         let belowTop = arrowTarget.maxY + 18
         var top = belowTop
         var arrowOnTop = true
-        if belowTop + cardHeight > bounds.height - 24 {
-            top = max(safeAreaInsets.top + 52, arrowTarget.minY - 18 - cardHeight)
+        var dotY = arrowTarget.maxY
+        if belowTop + metrics.height > bounds.height - 24 {
+            top = max(safeAreaInsets.top + 52, arrowTarget.minY - 18 - metrics.height)
             arrowOnTop = false
+            dotY = arrowTarget.minY
         }
-        let left = min(max(16, arrowTarget.midX - cardWidth / 2), bounds.width - 16 - cardWidth)
+        let left = min(max(12, arrowTarget.midX - metrics.width / 2), bounds.width - 12 - metrics.width)
         layoutCard(
-            CardPlacement(left: left, top: top, width: cardWidth, textHeight: textHeight, height: cardHeight, compact: false),
+            CardPlacement(left: left, top: top, width: metrics.width, textHeight: metrics.textHeight, height: metrics.height, nextWidth: metrics.nextWidth, skipWidth: metrics.skipWidth),
             arrowOnTop: arrowOnTop,
-            anchorX: arrowTarget.midX
+            anchorX: arrowTarget.midX,
+            dotY: dotY
         )
     }
 
@@ -837,83 +864,123 @@ private final class NewUserGuideOverlay: UIView {
         var width: CGFloat
         var textHeight: CGFloat
         var height: CGFloat
-        var compact: Bool
+        var nextWidth: CGFloat
+        var skipWidth: CGFloat
     }
 
-    /// 说明卡放在 ceiling 和 floor 之间，底边不超过 floor。两行放不下时加宽，正文改成一行。
-    private func cardThatFits(ceiling: CGFloat, floor: CGFloat, pinToFloor: Bool) -> CardPlacement {
-        let gap = floor - ceiling
-        var width = min(320, bounds.width - 32)
-        var compact = false
-        var textHeight = fittedTextHeight(width: width, compact: false)
-        var height = cardHeight(textHeight: textHeight, compact: false)
-        if height > gap {
-            compact = true
-            width = bounds.width - 24
-            textHeight = fittedTextHeight(width: width, compact: true)
-            height = cardHeight(textHeight: textHeight, compact: true)
+    /// 说明卡放在 ceiling 和 floor 之间。水平位置跟着锚点，贴边时整张卡收回屏幕内。
+    private func cardThatFits(ceiling: CGFloat, floor: CGFloat, pinToFloor: Bool, anchorX: CGFloat) -> CardPlacement {
+        let gap = max(0, floor - ceiling)
+        var metrics = cardMetrics(maxWidth: min(bounds.width - 24, max(174, gap > 0 ? bounds.width - 24 : 174)))
+        if metrics.height > gap, gap > 0 {
+            metrics = cardMetrics(maxWidth: bounds.width - 24)
         }
-        var top = pinToFloor ? floor - height : ceiling + max(0, (gap - height) / 2)
-        if top < ceiling, ceiling + height <= floor {
+        var top = pinToFloor ? floor - metrics.height : ceiling
+        if top < ceiling, ceiling + metrics.height <= floor {
             top = ceiling
         }
-        if top + height > floor {
-            top = floor - height
+        if top + metrics.height > floor {
+            top = floor - metrics.height
         }
-        let left = max(12, (bounds.width - width) / 2)
-        return CardPlacement(left: left, top: top, width: width, textHeight: textHeight, height: height, compact: compact)
+        let left = min(max(12, anchorX - metrics.width / 2), bounds.width - 12 - metrics.width)
+        return CardPlacement(
+            left: left,
+            top: top,
+            width: metrics.width,
+            textHeight: metrics.textHeight,
+            height: metrics.height,
+            nextWidth: metrics.nextWidth,
+            skipWidth: metrics.skipWidth
+        )
     }
 
-    private func fittedTextHeight(width: CGFloat, compact: Bool) -> CGFloat {
-        copyLabel.numberOfLines = compact ? 1 : 0
-        copyLabel.lineBreakMode = compact ? .byTruncatingTail : .byWordWrapping
-        copyLabel.adjustsFontSizeToFitWidth = compact
-        copyLabel.minimumScaleFactor = compact ? 0.85 : 1
-        if compact { return ceil(copyLabel.font.lineHeight) }
-        return copyLabel.sizeThatFits(CGSize(width: width - 32, height: 80)).height
+    private func cardMetrics(maxWidth: CGFloat) -> (width: CGFloat, textHeight: CGFloat, height: CGFloat, nextWidth: CGFloat, skipWidth: CGFloat) {
+        copyLabel.font = .fdFont(ofSize: 14, weight: .medium)
+        copyLabel.numberOfLines = 2
+        copyLabel.lineBreakMode = .byTruncatingTail
+        nextButton.titleLabel?.font = .fdFont(ofSize: 12, weight: .medium)
+        skipButton.titleLabel?.font = .fdFont(ofSize: 12, weight: .medium)
+        let nextText = nextButton.titleLabel?.sizeThatFits(CGSize(width: 160, height: 26)).width ?? 76
+        let skipText = skipButton.titleLabel?.sizeThatFits(CGSize(width: 80, height: 26)).width ?? 24
+        let nextWidth = max(86, ceil(nextText) + 16)
+        let skipWidth = max(56, ceil(skipText) + 32)
+        let buttons = nextWidth + 12 + skipWidth
+        let textLimit = max(80, maxWidth - 20)
+        let textSize = copyLabel.sizeThatFits(CGSize(width: textLimit, height: 48))
+        let width = min(maxWidth, max(ceil(textSize.width), buttons) + 20)
+        let fitted = copyLabel.sizeThatFits(CGSize(width: width - 20, height: 48))
+        let textHeight = ceil(fitted.height)
+        let height = 10 + textHeight + 6 + 26 + 10
+        return (width, textHeight, height, nextWidth, skipWidth)
     }
 
-    private func cardHeight(textHeight: CGFloat, compact: Bool) -> CGFloat {
-        if compact { return 12 + 16 + 4 + textHeight + 8 + 36 + 12 }
-        return 16 + 18 + 8 + textHeight + 16 + 44 + 16
-    }
-
-    private func layoutCard(_ placed: CardPlacement, arrowOnTop: Bool, anchorX: CGFloat) {
-        let pad: CGFloat = placed.compact ? 14 : 16
-        let buttonHeight: CGFloat = placed.compact ? 36 : 44
+    private func layoutCard(_ placed: CardPlacement, arrowOnTop: Bool, anchorX: CGFloat, dotY: CGFloat) {
         card.frame = CGRect(x: placed.left, y: placed.top, width: placed.width, height: placed.height)
-        stepLabel.frame = CGRect(x: pad, y: placed.compact ? 12 : 16, width: placed.width - pad * 2, height: placed.compact ? 16 : 18)
-        let textY = stepLabel.frame.maxY + (placed.compact ? 4 : 8)
-        copyLabel.frame = CGRect(x: pad, y: textY, width: placed.width - pad * 2, height: placed.textHeight)
-        nextButton.layer.cornerRadius = buttonHeight / 2
-        nextButton.frame = CGRect(x: pad, y: placed.height - (placed.compact ? 12 : 16) - buttonHeight, width: placed.width - pad * 2, height: buttonHeight)
-        arrow.isHidden = arrowTarget == .zero
+        copyLabel.frame = CGRect(x: 10, y: 10, width: placed.width - 20, height: placed.textHeight)
+        let buttonY = placed.height - 10 - 26
+        nextButton.layer.cornerRadius = 13
+        skipButton.layer.cornerRadius = 13
+        nextButton.frame = CGRect(x: 10, y: buttonY, width: placed.nextWidth, height: 26)
+        skipButton.frame = CGRect(x: nextButton.frame.maxX + 12, y: buttonY, width: placed.skipWidth, height: 26)
+        let showArrow = arrowTarget != .zero
+        arrow.isHidden = !showArrow
+        connectorDot.isHidden = !showArrow
         arrow.pointsUp = arrowOnTop
-        let arrowX = min(max(card.frame.minX + 24, anchorX - 7), card.frame.maxX - 38)
+        let arrowX = min(max(card.frame.minX + 18, anchorX - 8), card.frame.maxX - 34)
         arrow.frame = arrowOnTop
-            ? CGRect(x: arrowX, y: card.frame.minY - 7, width: 14, height: 8)
-            : CGRect(x: arrowX, y: card.frame.maxY - 1, width: 14, height: 8)
+            ? CGRect(x: arrowX, y: card.frame.minY - 7, width: 16, height: 8)
+            : CGRect(x: arrowX, y: card.frame.maxY - 1, width: 16, height: 8)
+        guard showArrow else {
+            connector.path = nil
+            return
+        }
+        let dotSide: CGFloat = 8
+        connectorDot.layer.cornerRadius = dotSide / 2
+        connectorDot.frame = CGRect(x: anchorX - dotSide / 2, y: dotY - dotSide / 2, width: dotSide, height: dotSide)
+        let line = UIBezierPath()
+        if arrowOnTop {
+            line.move(to: CGPoint(x: anchorX, y: connectorDot.frame.maxY))
+            line.addLine(to: CGPoint(x: arrow.frame.midX, y: arrow.frame.minY))
+        } else {
+            line.move(to: CGPoint(x: arrow.frame.midX, y: arrow.frame.maxY))
+            line.addLine(to: CGPoint(x: anchorX, y: connectorDot.frame.minY))
+        }
+        connector.frame = bounds
+        connector.path = line.cgPath
+        bringSubviewToFront(connectorDot)
         bringSubviewToFront(arrow)
         bringSubviewToFront(card)
-        bringSubviewToFront(skipButton)
         bringSubviewToFront(toastLabel)
     }
 
     private func redrawDim() {
         let path = UIBezierPath(rect: bounds)
+        let stroke = UIBezierPath()
         if phase == .steps {
             for hole in holes where hole.rect.width > 2 && hole.rect.height > 2 {
-                path.append(holePath(hole))
+                let holePath = holePath(hole)
+                path.append(holePath)
+                if hole.shape == .rounded, hole.rect.height >= 60 {
+                    stroke.append(holePath)
+                }
             }
+        } else {
+            connector.path = nil
+            connectorDot.isHidden = true
         }
         dimLayer.frame = bounds
         dimLayer.path = path.cgPath
+        holeStroke.frame = bounds
+        holeStroke.path = stroke.cgPath
     }
 
     private func holePath(_ hole: GuideHole) -> UIBezierPath {
         switch hole.shape {
         case .rounded:
-            return UIBezierPath(roundedRect: hole.rect, cornerRadius: 12)
+            return UIBezierPath(roundedRect: hole.rect, cornerRadius: 16)
+        case .capsule:
+            let radius = min(hole.rect.width, hole.rect.height) / 2
+            return UIBezierPath(roundedRect: hole.rect, cornerRadius: radius)
         case .tabItem:
             if #available(iOS 26.0, *) {
                 let radius = min(hole.rect.width, hole.rect.height) / 2
@@ -926,6 +993,47 @@ private final class NewUserGuideOverlay: UIView {
     private func rebuildRings() {
         holeViews.forEach { $0.removeFromSuperview() }
         holeViews.removeAll()
+    }
+
+    /// 内容孔下沿虚化。模糊从透明过渡到实，只盖住孔内靠下的一段。
+    private func rebuildFades() {
+        fadeViews.forEach { $0.removeFromSuperview() }
+        fadeViews.removeAll()
+        guard phase == .steps else { return }
+        for hole in holes where hole.fadesBottom && hole.rect.height > 80 {
+            let blurHeight = min(96, max(64, hole.rect.height * 0.28))
+            let clip = UIView(frame: hole.rect.insetBy(dx: 2, dy: 2))
+            clip.isUserInteractionEnabled = false
+            clip.backgroundColor = .clear
+            clip.layer.cornerRadius = 14
+            clip.clipsToBounds = true
+
+            let effect = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterialLight))
+            effect.isUserInteractionEnabled = false
+            effect.frame = CGRect(
+                x: 0,
+                y: clip.bounds.height - blurHeight,
+                width: clip.bounds.width,
+                height: blurHeight
+            )
+            let mask = CAGradientLayer()
+            mask.frame = effect.bounds
+            mask.colors = [
+                UIColor.clear.cgColor,
+                UIColor.white.withAlphaComponent(0.95).cgColor,
+            ]
+            mask.locations = [0, 0.72]
+            mask.startPoint = CGPoint(x: 0.5, y: 0)
+            mask.endPoint = CGPoint(x: 0.5, y: 1)
+            effect.layer.mask = mask
+            clip.addSubview(effect)
+            insertSubview(clip, at: 0)
+            fadeViews.append(clip)
+        }
+        bringSubviewToFront(connectorDot)
+        bringSubviewToFront(arrow)
+        bringSubviewToFront(card)
+        bringSubviewToFront(toastLabel)
     }
 
     private func showToast(_ text: String) {
@@ -944,70 +1052,130 @@ private final class NewUserGuidePromptCard: UIView {
     var onEnable: (() -> Void)?
     var onSkip: (() -> Void)?
 
+    private let panel = UIView()
+    private let gradient = CAGradientLayer()
+    private let illustration = UIImageView(image: UIImage(named: "guide_logo"))
+    private let line1 = UILabel()
+    private let line2 = UILabel()
+    private let starLeft = GuideSparkleView()
+    private let starRight = GuideSparkleView()
+    private let later = UIButton(type: .custom)
+    private let enable = UIButton(type: .custom)
+
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = .white
-        layer.cornerRadius = 16
+        backgroundColor = .clear
+        panel.layer.cornerRadius = 16
+        panel.clipsToBounds = true
+        gradient.colors = [
+            UIColor(hexString: "#FFF9EB").cgColor,
+            UIColor.white.cgColor,
+        ]
+        gradient.locations = [0, 0.459]
+        gradient.startPoint = CGPoint(x: 0.5, y: 0)
+        gradient.endPoint = CGPoint(x: 0.5, y: 1)
+        panel.layer.addSublayer(gradient)
 
-        let preview = UILabel()
-        preview.numberOfLines = 0
-        preview.textAlignment = .center
-        preview.text = "富德联好健康\n首页  健康服务\n康养小屋  预约体检\n就医协助  激活兑换"
-        preview.font = .fdFont(ofSize: 11, weight: .regular)
-        preview.textColor = .fdText
-        preview.backgroundColor = UIColor(hexString: "#F7F4F2")
-        preview.layer.cornerRadius = 12
-        preview.clipsToBounds = true
+        illustration.contentMode = .scaleAspectFit
 
-        let line1 = makeLine("字大、图标大")
-        let line2 = makeLine("使用更简单")
-        let enable = UIButton(type: .custom)
-        enable.setTitle("开启长辈模式", for: .normal)
-        enable.setTitleColor(.white, for: .normal)
-        enable.titleLabel?.font = .fdFont(ofSize: 16, weight: .medium)
-        enable.backgroundColor = .fdPrimary
-        enable.layer.cornerRadius = 22
-        enable.addTarget(self, action: #selector(tapEnable), for: .touchUpInside)
-        let later = UIButton(type: .system)
+        let brown = UIColor(hexString: "#9E3A09")
+        for label in [line1, line2] {
+            label.font = .fdFont(ofSize: 16, weight: .medium)
+            label.textColor = brown
+            label.textAlignment = .center
+        }
+        line1.text = "字大、图标大"
+        line2.text = "使用更简单"
+
         later.setTitle("暂不开启", for: .normal)
-        later.setTitleColor(.fdSubtext, for: .normal)
-        later.titleLabel?.font = .fdFont(ofSize: 14, weight: .regular)
+        later.setTitleColor(.fdPrimary, for: .normal)
+        later.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
+        later.layer.cornerRadius = 20
+        later.layer.borderWidth = 1
+        later.layer.borderColor = UIColor.fdPrimary.cgColor
         later.addTarget(self, action: #selector(tapSkip), for: .touchUpInside)
 
-        addSubview(preview)
+        enable.setTitle("开启长辈模式", for: .normal)
+        enable.setTitleColor(.white, for: .normal)
+        enable.titleLabel?.font = .fdFont(ofSize: 14, weight: .medium)
+        enable.backgroundColor = .fdPrimary
+        enable.layer.cornerRadius = 20
+        enable.addTarget(self, action: #selector(tapEnable), for: .touchUpInside)
+
+        addSubview(panel)
+        addSubview(illustration)
+        addSubview(starLeft)
+        addSubview(starRight)
         addSubview(line1)
         addSubview(line2)
-        addSubview(enable)
         addSubview(later)
-        preview.frame = CGRect(x: 16, y: 20, width: 132, height: 156)
-        line1.frame = CGRect(x: 160, y: 28, width: 160, height: 22)
-        line2.frame = CGRect(x: 160, y: 54, width: 160, height: 22)
-        enable.frame = CGRect(x: 160, y: 92, width: 156, height: 44)
-        later.frame = CGRect(x: 160, y: 144, width: 156, height: 28)
+        addSubview(enable)
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        guard let enable = subviews.compactMap({ $0 as? UIButton }).first(where: { $0.currentTitle == "开启长辈模式" }) else { return }
-        let contentWidth = bounds.width - 160 - 16
-        enable.frame.size.width = contentWidth
-        for view in subviews where view !== enable && view.frame.minX > 140 {
-            view.frame.size.width = contentWidth
-        }
-    }
+        let scale = bounds.width / 319
+        let imageSide = 176 * scale
+        illustration.frame = CGRect(x: (bounds.width - imageSide) / 2, y: 0, width: imageSide, height: imageSide)
+        let panelTop = 56 * scale
+        panel.frame = CGRect(x: 0, y: panelTop, width: bounds.width, height: 241 * scale)
+        panel.layer.cornerRadius = 16 * scale
+        gradient.frame = panel.bounds
 
-    private func makeLine(_ text: String) -> UILabel {
-        let label = UILabel()
-        label.text = "●  " + text
-        label.font = .fdFont(ofSize: 15, weight: .medium)
-        label.textColor = .fdText
-        return label
+        line1.font = .fdFont(ofSize: 16 * scale, weight: .medium)
+        line2.font = .fdFont(ofSize: 16 * scale, weight: .medium)
+        let textWidth = line1.sizeThatFits(CGSize(width: bounds.width, height: 24 * scale)).width
+        let lineHeight = 24 * scale
+        let lineTop = panelTop + 107 * scale
+        line1.frame = CGRect(x: (bounds.width - textWidth) / 2, y: lineTop, width: textWidth, height: lineHeight)
+        line2.frame = CGRect(x: 16 * scale, y: line1.frame.maxY + scale, width: bounds.width - 32 * scale, height: lineHeight)
+        let starSide = 16 * scale
+        starLeft.frame = CGRect(x: line1.frame.minX - 4 * scale - starSide, y: lineTop + 4 * scale, width: starSide, height: starSide)
+        starRight.frame = CGRect(x: line1.frame.maxX + 4 * scale, y: starLeft.frame.minY, width: starSide, height: starSide)
+
+        let buttonTop = panelTop + 181 * scale
+        let inset = 16 * scale
+        let gap = 7 * scale
+        let buttonWidth = (bounds.width - inset * 2 - gap) / 2
+        let buttonHeight = 40 * scale
+        later.frame = CGRect(x: inset, y: buttonTop, width: buttonWidth, height: buttonHeight)
+        enable.frame = CGRect(x: later.frame.maxX + gap, y: buttonTop, width: buttonWidth, height: buttonHeight)
+        later.layer.cornerRadius = buttonHeight / 2
+        enable.layer.cornerRadius = buttonHeight / 2
+        later.titleLabel?.font = .fdFont(ofSize: 14 * scale, weight: .medium)
+        enable.titleLabel?.font = .fdFont(ofSize: 14 * scale, weight: .medium)
     }
 
     @objc private func tapEnable() { onEnable?() }
     @objc private func tapSkip() { onSkip?() }
+}
+
+private final class GuideSparkleView: UIView {
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .clear
+        isUserInteractionEnabled = false
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func draw(_ rect: CGRect) {
+        let path = UIBezierPath()
+        let center = CGPoint(x: bounds.midX, y: bounds.midY)
+        let outer = min(bounds.width, bounds.height) / 2
+        let inner = outer * 0.38
+        for index in 0..<8 {
+            let angle = CGFloat(index) * .pi / 4 - .pi / 2
+            let radius = index.isMultiple(of: 2) ? outer : inner
+            let point = CGPoint(x: center.x + cos(angle) * radius, y: center.y + sin(angle) * radius)
+            if index == 0 { path.move(to: point) } else { path.addLine(to: point) }
+        }
+        path.close()
+        UIColor.fdPrimary.setFill()
+        path.fill()
+    }
 }
 
 /// 说明卡尖角。工程里没有引导箭头切图，按原型画白三角。
@@ -1022,7 +1190,7 @@ private final class GuideArrowView: UIView {
         super.init(frame: frame)
         isUserInteractionEnabled = false
         backgroundColor = .clear
-        shape.fillColor = UIColor.white.cgColor
+        shape.fillColor = UIColor(hexString: "#FFEAE3").cgColor
         layer.addSublayer(shape)
     }
 

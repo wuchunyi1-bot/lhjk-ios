@@ -46,6 +46,21 @@ final class HomeShelfBar: UIView {
         return button.convert(button.bounds, to: self)
     }
 
+    /// 页签文字的胶囊范围，停在导航条内部，不把下面的内容算进去。
+    func frameOfTitleCapsule(for shelf: HomeShelf) -> CGRect? {
+        guard let button = buttons[shelf] else { return nil }
+        layoutIfNeeded()
+        button.layoutIfNeeded()
+        guard let title = button.titleLabel, title.bounds.width > 1, title.bounds.height > 1 else {
+            return frameOfButton(for: shelf)
+        }
+        var rect = title.convert(title.bounds, to: self).insetBy(dx: -12, dy: -5)
+        let limit = bounds.insetBy(dx: 0, dy: 4)
+        rect = rect.intersection(limit)
+        guard rect.width > 2, rect.height > 2 else { return nil }
+        return rect
+    }
+
     func setSelected(_ shelf: HomeShelf) {
         selectedShelf = shelf
         applyTabFonts()

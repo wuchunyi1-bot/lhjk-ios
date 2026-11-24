@@ -498,7 +498,7 @@ extension HomeViewController: UITableViewDelegate {
     }
 
     func guideShelfButtonFrame(_ shelf: HomeShelf, in target: UIView) -> CGRect? {
-        guard let local = shelfBar.frameOfButton(for: shelf) else { return nil }
+        guard let local = shelfBar.frameOfTitleCapsule(for: shelf) else { return nil }
         return shelfBar.convert(local, to: target)
     }
 
@@ -540,6 +540,13 @@ extension HomeViewController: UITableViewDelegate {
                 default: matches = false
                 }
                 guard matches, let indexPath = dataSource.indexPath(for: item) else { continue }
+                tableView.layoutIfNeeded()
+                if itemPrefix == "quickActions",
+                   let cell = tableView.cellForRow(at: indexPath) as? HomeQuickActionsCell {
+                    let card = cell.guideCardFrame()
+                    guard card.height > 4 else { return nil }
+                    return cell.convert(card, to: target)
+                }
                 let rect = tableView.rectForRow(at: indexPath)
                 guard rect.height > 4 else { return nil }
                 return tableView.convert(rect, to: target)

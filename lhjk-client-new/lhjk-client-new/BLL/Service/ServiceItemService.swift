@@ -2,10 +2,9 @@ import Foundation
 
 /// 体检 / 就医协助服务项目。
 ///
-/// - 列表：`GET /v1/serviceItem/list`，`businessType` 2 体检、3 就医协助
+/// - 列表：`GET /v1/cabin/medicalConfigList`，`businessType` 2 体检、3 就医协助
 /// - 详情：`GET /v1/serviceItem/detail`
 ///
-/// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/530062592e0
 /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/530062591e0
 final class ServiceItemService {
 
@@ -13,6 +12,8 @@ final class ServiceItemService {
 
     /// 预约体检
     static let examBusinessType = 2
+    /// 就医协助
+    static let assistBusinessType = 3
 
     private init() {}
 
@@ -22,7 +23,7 @@ final class ServiceItemService {
         pageSize: Int = 20
     ) async throws -> PaginatedServiceItemData {
         let response: APIResponse<PaginatedServiceItemData> = try await APIManager.shared.getAsync(
-            path: "/v1/serviceItem/list",
+            path: "/v1/cabin/medicalConfigList",
             parameters: [
                 "businessType": businessType,
                 "pageNum": pageNum,
@@ -125,10 +126,19 @@ struct ServiceItemVO: Decodable, Equatable {
     let name: String
     let price: Double?
     let projectId: String
+    let navigateUrl: String?
+    let descriptionHTML: String?
+    let imgUrls: String?
+    let payType: Int?
+    let packageId: String?
+    let duration: Int?
+    let notice: String?
+    let unitName: String?
+    let categoryName: String?
 
     var priceText: String? {
-        guard let price else { return nil }
-        return "¥\(Self.formatPrice(price))"
+        guard let plainPrice else { return nil }
+        return "¥\(plainPrice)"
     }
 
     var plainPrice: String? {
@@ -136,8 +146,22 @@ struct ServiceItemVO: Decodable, Equatable {
         return Self.formatPrice(price)
     }
 
+    /// 列表封面优先导航图，没有再用介绍图第一张。
+    var coverURL: URL? {
+        if let navigateUrl, let url = URL(string: navigateUrl) { return url }
+        return CabinMedia.urls(from: imgUrls).first
+    }
+
+    /// 列表简介。去掉 HTML 标签后的纯文本。
+    var introText: String? {
+        Self.plainText(descriptionHTML)
+    }
+
+    var needsPurchase: Bool { payType == 2 }
+
     private enum CodingKeys: String, CodingKey {
         case id, hospitalId, name, price, projectId, navigateUrl
+        case description, imgUrls, payType, packageId, duration, notice, unitName, categoryName
     }
 
     init(from decoder: Decoder) throws {
@@ -147,7 +171,31 @@ struct ServiceItemVO: Decodable, Equatable {
         name = CabinJSON.string(c, .name) ?? ""
         price = CabinJSON.double(c, .price)
         projectId = CabinJSON.string(c, .projectId) ?? ""
-        _ = CabinJSON.string(c, .navigateUrl)
+        navigateUrl = CabinJSON.string(c, .navigateUrl)
+        descriptionHTML = CabinJSON.string(c, .description)
+        imgUrls = CabinJSON.string(c, .imgUrls)
+        payType = CabinJSON.int(c, .payType)
+        packageId = CabinJSON.string(c, .packageId)
+        duration = CabinJSON.int(c, .duration)
+        notice = CabinJSON.string(c, .notice)
+        unitName = CabinJSON.string(c, .unitName)
+        categoryName = CabinJSON.string(c, .categoryName)
+    }
+
+    private static func plainText(_ html: String?) -> String? {
+        guard var text = html else { return nil }
+        text = text.replacingOccurrences(
+            of: "<br\\s*/?>",
+            with: " ",
+            options: .regularExpression
+        )
+        text = text.replacingOccurrences(of: "</p>", with: " ", options: .caseInsensitive)
+        text = text.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+        text = text.replacingOccurrences(of: "&nbsp;", with: " ")
+        text = text.replacingOccurrences(of: "&amp;", with: "&")
+        text = text.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     private static func formatPrice(_ value: Double) -> String {

@@ -1,6 +1,15 @@
 import UIKit
 import WebKit
 
+/// 底部铺到屏幕底，不再把 Home 指示条的安全区交给网页。
+private final class EdgeBottomWebView: WKWebView {
+    override var safeAreaInsets: UIEdgeInsets {
+        var insets = super.safeAreaInsets
+        insets.bottom = 0
+        return insets
+    }
+}
+
 /// 通用 WebView 页面 — 加载指定 URL，并注入 FundeBridge / FundeNative
 final class WebViewController: BaseViewController {
 
@@ -87,7 +96,7 @@ final class WebViewController: BaseViewController {
         let config = WKWebViewConfiguration()
         config.userContentController = userContent
         config.defaultWebpagePreferences.allowsContentJavaScript = true
-        let wv = WKWebView(frame: .zero, configuration: config)
+        let wv = EdgeBottomWebView(frame: .zero, configuration: config)
         wv.navigationDelegate = self
         wv.allowsBackForwardNavigationGestures = true
         wv.scrollView.contentInsetAdjustmentBehavior = .never
@@ -216,7 +225,8 @@ final class WebViewController: BaseViewController {
         view.addSubview(indicator)
 
         webView.snp.makeConstraints { make in
-            make.leading.trailing.bottom.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.equalTo(view.safeAreaLayoutGuide)
+            make.bottom.equalToSuperview()
             make.top.equalTo(view.safeAreaLayoutGuide).offset(topContentInset)
         }
         progressView.snp.makeConstraints { make in

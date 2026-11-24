@@ -9,6 +9,7 @@ final class HomeKnowledgeViewController: BaseViewController {
     private var articles: [HomeArticleCell.Article] = []
     private var banners: [ServiceHubBanner] = []
     private var bannerRowHeight: CGFloat = 0
+    private var didResolveBanners = false
     private var loadTask: Task<Void, Never>?
     private var heightUpdateScheduled = false
 
@@ -25,6 +26,8 @@ final class HomeKnowledgeViewController: BaseViewController {
     private let emptyView = FDEmptyStateView(style: .page, message: "暂无健康知识")
 
     private var showsBanner: Bool { !banners.isEmpty }
+    /// 轮播数据回来前先留一行，高度和最终的 138/344 一致，引导孔不用先圈住再挪开。
+    private var showsBannerRow: Bool { showsBanner || !didResolveBanners }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -45,7 +48,8 @@ final class HomeKnowledgeViewController: BaseViewController {
     }
 
     func guideBannerFrame(in target: UIView) -> CGRect? {
-        guard showsBanner, isViewLoaded, tableView.numberOfSections > 0, tableView.numberOfRows(inSection: 0) > 0 else {
+        guard isViewLoaded else { return nil }
+        guard showsBannerRow, tableView.numberOfSections > 0, tableView.numberOfRows(inSection: 0) > 0 else {
             return nil
         }
         tableView.layoutIfNeeded()
@@ -78,7 +82,8 @@ final class HomeKnowledgeViewController: BaseViewController {
     /// 轮播是文章表的一行。不要再套一层表当 tableHeaderView，否则行高在、图不画。
     private func applyBanners(_ next: [ServiceHubBanner]) {
         let same = banners.map(\.id) == next.map(\.id)
-        let hadBanner = showsBanner
+        let hadBanner = showsBannerRow
+        didResolveBanners = true
         banners = next
         if next.isEmpty {
             bannerRowHeight = 0
@@ -152,11 +157,11 @@ final class HomeKnowledgeViewController: BaseViewController {
 
 extension HomeKnowledgeViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        (showsBanner ? 1 : 0) + (articles.isEmpty ? 0 : 1)
+        (showsBannerRow ? 1 : 0) + (articles.isEmpty ? 0 : 1)
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if showsBanner, indexPath.row == 0 {
+        if showsBannerRow, indexPath.row == 0 {
             let cell = tableView.dequeueReusableCell(
                 withIdentifier: ServiceBannerCarouselCell.reuseID,
                 for: indexPath
@@ -193,12 +198,12 @@ extension HomeKnowledgeViewController: UITableViewDataSource, UITableViewDelegat
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        guard showsBanner, indexPath.row == 0 else { return UITableView.automaticDimension }
+        guard showsBannerRow, indexPath.row == 0 else { return UITableView.automaticDimension }
         return bannerRowHeight > 1 ? bannerRowHeight : fallbackBannerHeight()
     }
 
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-        guard showsBanner, indexPath.row == 0 else { return 200 }
+        guard showsBannerRow, indexPath.row == 0 else { return 200 }
         return bannerRowHeight > 1 ? bannerRowHeight : fallbackBannerHeight()
     }
 }

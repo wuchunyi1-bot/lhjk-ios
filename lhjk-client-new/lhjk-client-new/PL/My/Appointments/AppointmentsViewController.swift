@@ -2,9 +2,9 @@ import Combine
 import SnapKit
 import UIKit
 
-/// 我的预约。汇总入口，当前只接得到康养小屋预约记录。
+/// 我的预约。小屋、体检、就医协助分 `businessType` 拉取后按状态汇总。
 ///
-/// 体检预约、就医协助没有使用记录接口。待安排、待确认因此为空。
+/// 取消、再次预约和预约详情只用于小屋。体检和就医协助在这里只展示记录。
 final class AppointmentsViewController: BaseViewController {
 
     private let viewModel = MyAppointmentsViewModel()
@@ -134,7 +134,7 @@ extension AppointmentsViewController: UITableViewDataSource, UITableViewDelegate
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: MyAppointmentCell.reuseID, for: indexPath) as! MyAppointmentCell
         let item = viewModel.items[indexPath.row]
-        cell.configure(item)
+        cell.configure(item, showsCabinActions: item.isCabin)
         cell.onDetail = { [weak self] in
             self?.openDetail(item)
         }
@@ -148,12 +148,14 @@ extension AppointmentsViewController: UITableViewDataSource, UITableViewDelegate
     }
 
     private func openDetail(_ item: CabinAppointmentVO) {
+        guard item.isCabin else { return }
         var params: [String: Any] = ["id": item.id]
         if !item.configId.isEmpty { params["configId"] = item.configId }
         Router.shared.push("/wellness-cabins/appointments/detail", params: params, from: self)
     }
 
     private func confirmCancel(_ item: CabinAppointmentVO) {
+        guard item.isCabin else { return }
         let alert = UIAlertController(
             title: "确认取消本次预约？",
             message: "取消仅作废本次预约时段，您下次可直接重新选择服务项目预约。\n\n注：此处不会办理退款；如需退款，请前往「订单」办理退单/售后。",
@@ -184,6 +186,7 @@ extension AppointmentsViewController: UITableViewDataSource, UITableViewDelegate
     }
 
     private func bookAgain(_ item: CabinAppointmentVO) {
+        guard item.isCabin else { return }
         if !item.configId.isEmpty {
             var params: [String: Any] = ["configId": item.configId]
             if !item.hospitalId.isEmpty { params["hospitalId"] = item.hospitalId }

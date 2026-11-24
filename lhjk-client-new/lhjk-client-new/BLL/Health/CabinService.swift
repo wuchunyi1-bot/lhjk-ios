@@ -192,12 +192,17 @@ final class CabinService {
         return response.data?.value
     }
 
+    /// 小屋预约。体检和就医协助的使用记录不是这一类。
+    static let cabinBusinessType = 1
+
     /// 当前登录人的预约记录。`GET /v1/cabin/appointments`
     ///
     /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785606e0
-    /// `status` 空为全部：3 待服务，4 服务中，5 已完成，6 已取消，7 已过期。
+    /// `businessType`：1 小屋，2 体检，3 就医协助。不传时由服务端决定范围，客户端按页面分开传。
+    /// `status` 空为全部：1 待安排，2 待确认，3 待服务，4 服务中，5 已完成，6 已取消，7 已过期。
     func appointments(
         status: String? = nil,
+        businessType: Int? = nil,
         pageNum: Int = 1,
         pageSize: Int = 20
     ) async throws -> PaginatedCabinAppointmentData {
@@ -207,6 +212,9 @@ final class CabinService {
         ]
         if let status, !status.isEmpty {
             params["status"] = status
+        }
+        if let businessType {
+            params["businessType"] = String(businessType)
         }
         let response: APIResponse<PaginatedCabinAppointmentData> = try await APIManager.shared.getAsync(
             path: "/v1/cabin/appointments",

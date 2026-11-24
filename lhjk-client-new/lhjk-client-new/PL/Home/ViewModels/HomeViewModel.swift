@@ -255,7 +255,12 @@ final class HomeViewModel: ObservableObject {
             return
         }
         do {
-            let page = try await cabinService.appointments(status: "3", pageNum: 1, pageSize: 20)
+            let page = try await cabinService.appointments(
+                status: "3",
+                businessType: CabinService.cabinBusinessType,
+                pageNum: 1,
+                pageSize: 20
+            )
             guard !Task.isCancelled else { return }
             let records = (page.records ?? []).sorted {
                 ($0.reserveDate, $0.startTime) < ($1.reserveDate, $1.startTime)

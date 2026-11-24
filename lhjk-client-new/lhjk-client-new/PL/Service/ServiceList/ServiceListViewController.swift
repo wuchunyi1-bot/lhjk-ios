@@ -172,7 +172,10 @@ final class ServiceListViewController: BaseViewController {
     func guideShelfBannerFrame(in target: UIView) -> CGRect? {
         guard embedsInHomeShelf, shelfBannerHeight > 1 else { return nil }
         bannerSlot.layoutIfNeeded()
-        let frame = bannerSlot.convert(bannerSlot.bounds, to: target)
+        var frame = bannerSlot.convert(bannerSlot.bounds, to: target)
+        if frame.height < 1 {
+            frame.size.height = shelfBannerHeight
+        }
         return frame.height > 1 ? frame : nil
     }
 

@@ -269,6 +269,17 @@ final class HealthViewController: BaseViewController, UITableViewDataSource, UIT
         guideSectionFrame(.vitalMetrics, in: target)
     }
 
+    /// 体征监测白卡在窗口中的位置。卡比屏幕高时由引导层再裁到底栏上方。
+    func guideVitalsCardFrame(in target: UIView) -> CGRect? {
+        guard let section = activeSections.firstIndex(of: .vitalMetrics) else { return nil }
+        tableView.layoutIfNeeded()
+        let indexPath = IndexPath(row: 0, section: section)
+        if let cell = tableView.cellForRow(at: indexPath) as? HealthVitalMetricsCell {
+            return cell.convert(cell.guideCardFrame(), to: target)
+        }
+        return guideSectionFrame(.vitalMetrics, in: target)
+    }
+
     func guideArchiveItemFrame(in target: UIView) -> CGRect? {
         guard let section = activeSections.firstIndex(of: .quickEntries) else { return nil }
         let indexPath = IndexPath(row: 0, section: section)

@@ -63,7 +63,12 @@ final class WellnessCabinAppointmentListViewModel: ObservableObject {
         let pageSize = pageSize
         Task.detached {
             do {
-                let page = try await service.appointments(status: status, pageNum: 1, pageSize: pageSize)
+                let page = try await service.appointments(
+                    status: status,
+                    businessType: CabinService.cabinBusinessType,
+                    pageNum: 1,
+                    pageSize: pageSize
+                )
                 await self.apply(page, pageNum: 1, append: false, token: token)
             } catch {
                 let message = (error as? LocalizedError)?.errorDescription ?? "获取预约记录失败"
@@ -89,7 +94,12 @@ final class WellnessCabinAppointmentListViewModel: ObservableObject {
         let pageSize = pageSize
         Task.detached {
             do {
-                let page = try await service.appointments(status: status, pageNum: next, pageSize: pageSize)
+                let page = try await service.appointments(
+                    status: status,
+                    businessType: CabinService.cabinBusinessType,
+                    pageNum: next,
+                    pageSize: pageSize
+                )
                 await self.apply(page, pageNum: next, append: true, token: token)
             } catch {
                 let message = (error as? LocalizedError)?.errorDescription ?? "获取预约记录失败"

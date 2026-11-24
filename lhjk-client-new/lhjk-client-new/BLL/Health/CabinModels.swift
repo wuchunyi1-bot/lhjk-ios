@@ -700,11 +700,16 @@ struct CabinAppointmentVO: Decodable, Equatable {
     let reserveDate: String
     let startTime: String
     let endTime: String
-    /// 3 待服务，4 服务中，5 已完成，6 已取消，7 已过期
+    /// 1 待安排，2 待确认，3 待服务，4 服务中，5 已完成，6 已取消，7 已过期。
+    /// 待安排、待确认只出现在体检和就医协助。
     let status: Int?
+    /// 1 小屋，2 体检，3 就医协助。接口列表不回这个字段，由请求参数写回。
+    var businessType: Int
 
     var statusTitle: String {
         switch status {
+        case 1: return "待安排"
+        case 2: return "待确认"
         case 3: return "待服务"
         case 4: return "服务中"
         case 5: return "已完成"
@@ -713,6 +718,8 @@ struct CabinAppointmentVO: Decodable, Equatable {
         default: return ""
         }
     }
+
+    var isCabin: Bool { businessType == CabinService.cabinBusinessType }
 
     var durationText: String? {
         guard let duration, duration > 0 else { return nil }
@@ -766,6 +773,7 @@ struct CabinAppointmentVO: Decodable, Equatable {
         startTime = CabinJSON.string(c, .startTime) ?? ""
         endTime = CabinJSON.string(c, .endTime) ?? ""
         status = CabinJSON.int(c, .status)
+        businessType = CabinService.cabinBusinessType
     }
 }
 

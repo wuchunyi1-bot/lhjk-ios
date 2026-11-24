@@ -68,9 +68,9 @@ App端/
 │       ├── POST /v1/cabin/book
 │       ├── GET /v1/cabin/appointments
 │       ├── GET /v1/cabin/reservationDetail
-│       └── POST /v1/cabin/cancel
+│       ├── POST /v1/cabin/cancel
+│       └── GET /v1/cabin/medicalConfigList
 │   └── 服务项目相关接口
-│       ├── GET /v1/serviceItem/list
 │       └── GET /v1/serviceItem/detail
 ├── 商城/
 │   ├── 收货地址管理
@@ -172,10 +172,10 @@ App端/
 | 16n | GET | `/v1/cabin/bookLimitCheck` | `App端/线下履约/康养小屋相关接口` | `CabinService`（确定预约前） | [预约限流前置校验](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/534863042e0.md)。Query：`configId`、`reserveDate`。`limitType`：0 可预约，1 当日名额已满，2 超每人每日，3 超每人每月。非 0 用 `title`、`msg` 弹窗并停止 |
 | 16g | POST | `/v1/cabin/book` | `App端/线下履约/康养小屋相关接口` | `CabinService`（提交预约） | [小屋项目预约](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/530062590e0.md)。JSON：`configId`、`reserveDate`、`sourceType`、`startTime`、`endTime`、`quantity`；`sourceType=3` 时另传 `orderId` |
 | 16m | POST | `/v1/cabin/createReservationOrder` | `App端/线下履约/康养小屋相关接口` | `CabinService`（付费预约创建订单） | Apifox OAS：`createReservationOrder`。JSON 只有 `configId`。`data` 为订单 id。日期和时段不传，支付成功后再调用 `POST /v1/cabin/book` |
-| 16h | GET | `/v1/cabin/appointments` | `App端/线下履约/康养小屋相关接口` | `CabinService`（预约记录、首页我的预约） | [当前登录人的预约记录分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785606e0.md)。Query：可选 `status`（3 待服务 / 4 服务中 / 5 已完成 / 6 已取消 / 7 已过期，空为全部）、`pageNum`、`pageSize`。记录含 `configId`，用于再次预约。首页「我的预约」固定传 `status=3` |
+| 16h | GET | `/v1/cabin/appointments` | `App端/线下履约/康养小屋相关接口` | `CabinService`（小屋预约记录、首页我的预约、体检/就医协助使用记录、我的预约汇总） | [当前登录人的预约记录分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785606e0.md)。Query：可选 `businessType`（1 小屋 / 2 体检 / 3 就医协助）、`status`（1 待安排 / 2 待确认 / 3 待服务 / 4 服务中 / 5 已完成 / 6 已取消 / 7 已过期，空为全部）、`pageNum`、`pageSize`。小屋列表和首页待服务传 `businessType=1`。体检使用记录传 `2`，就医协助使用记录传 `3`。待安排、待确认只查 2 和 3 |
 | 16k | GET | `/v1/cabin/reservationDetail` | `App端/线下履约/康养小屋相关接口` | `CabinService`（预约详情） | [预约详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/531651137e0.md)。Query：`id`。分类 `parentName`，介绍为富文本 `description`，二维码 `qrCode`，时间字段 `verifyTime` / `finishTime` / `expireTime` / `cancelTime` / `createTime` |
 | 16l | POST | `/v1/cabin/cancel` | `App端/线下履约/康养小屋相关接口` | `CabinService`（取消预约） | [取消预约](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/531651134e0.md)。JSON：`id`，可选 `reason` |
-| 16i | GET | `/v1/serviceItem/list` | `App端/线下履约/服务项目相关接口` | `ServiceItemService`（预约体检列表） | [服务项目分页列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/530062592e0.md)。Query：`businessType`（2 体检 / 3 就医协助）、`pageNum`、`pageSize` |
+| 16i | GET | `/v1/cabin/medicalConfigList` | `App端/线下履约/康养小屋相关接口` | `ServiceItemService`（预约体检 `businessType=2`、就医协助首页 `businessType=3`） | 文档暂无分享链接 / 以代码 path 为准。Query：`businessType`（2 体检 / 3 就医协助）必填，`pageNum`、`pageSize` 可选。分页同时认 `list/totalCount/pageSize/totalPage/currPage` 与中文别名。列表项含 `name`、`price`、`navigateUrl`（封面）、`description`（HTML 简介）、`payType`（2 需购买）、`packageId` |
 | 16j | GET | `/v1/serviceItem/detail` | `App端/线下履约/服务项目相关接口` | `ServiceItemService`（体检项目预约详情） | [服务项目详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/530062591e0.md)。Query：`configId`。不含时段；价格沿用列表 |
 
 ### 2.4 App端 / 商城
@@ -271,6 +271,7 @@ App端/
 | 55 | POST | `/v1/monitor/saveOrUpdateMonitorData` | `监护/监测记录` | `EquipmentBindService` | [监测上报](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487304328e0.md) |
 | 56 | POST | `/v1/monitor/getWeightHomePageData` | `监护/监测记录` | `EquipmentBindService` | 文档暂无 / 以代码 path 为准 |
 | 57 | DELETE | `/v1/monitor/delMonitorDataByMonitorId` | `监护/监测记录` | `EquipmentBindService`；体重报告「重新测量」 | 文档暂无 / 以代码 path 为准 |
+| 57a | POST | `/v1/monitor/batchSavePlatformHealthData` | `监测/监测记录` | `AppleHealthSyncService` | 文档暂无分享链接 / 以代码 path 为准。批量保存苹果健康的体温、体重、血压、运动、血氧、饮水 |
 
 > 后端蓝牙流程图中新 path（如 `bindEquipmentByApp`、`saveHealthData`）**Apifox 暂无**；以 `EquipmentBindService` 已封装 path 为准。规格：`openspec/changes/weight-h5-scale-ble-status/specs/equipment-bind-api/`。
 
@@ -312,6 +313,7 @@ App端/
 | `BLL/My/DiningSchemeService.swift` | 1 | diningScheme/downloadDietPoster |
 | `BLL/Health/HealthPageService.swift` | 4 | healthPage/getCmsConfig、monitorHealth/getMonitorCardList、userMonitorCardConfig/* ×2 |
 | `BLL/Health/EquipmentBindService.swift` | 13 | users/getMyHeaderList、equipmentUser/* ×6、equipment/getEquipmenByApp、equipment/getCompatibleBluetoothList、firmware/getFirmwareUrlByParam、monitor/saveOrUpdateMonitorData、monitor/getWeightHomePageData、monitor/delMonitorDataByMonitorId |
+| `BLL/Health/AppleHealthSyncService.swift` | 1 | monitor/batchSavePlatformHealthData |
 | `BLL/Message/IMService.swift` | 2 | session/getGroup、session/getGroupMembers |
 | `DAL/IM/RongCloudManager.swift` | 1 | account/addRongImAccount |
 | `DAL/OSS/OSSManager.swift` | 1 | cos/getCosSign |
@@ -328,7 +330,7 @@ App端/
 | `GET /v1/coupon/getCouponList` | Apifox 有文档，**本 App 未调用** |
 | 订单绑定权益卡 | 确认订单选卡后刷新结算；抵扣金额读 `benefitsAmount`（详情 `couponAmount` 为券抵扣） |
 | `/auth/agreement/*` | 协议页路由，非 HTTP API |
-| `/v1/monitor/*`（除 `saveOrUpdateMonitorData`、`getWeightHomePageData`、`delMonitorDataByMonitorId`） | 其它体征录入 path 当前工程无 Swift 调用（多走 H5）；**已封装** `saveOrUpdateMonitorData`、`getWeightHomePageData`、`delMonitorDataByMonitorId` → `EquipmentBindService`；勿与 `/v1/monitorHealth/*` 混淆 |
+| `/v1/monitor/*`（除 `saveOrUpdateMonitorData`、`getWeightHomePageData`、`delMonitorDataByMonitorId`、`batchSavePlatformHealthData`） | 其它体征录入 path 当前工程无 Swift 调用（多走 H5）；**已封装** `saveOrUpdateMonitorData`、`getWeightHomePageData`、`delMonitorDataByMonitorId` → `EquipmentBindService`，`batchSavePlatformHealthData` → `AppleHealthSyncService`；勿与 `/v1/monitorHealth/*` 混淆 |
 
 ---
 
