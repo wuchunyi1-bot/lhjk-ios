@@ -366,6 +366,8 @@ enum OrderListCardAction: Equatable {
     case afterSale
     case renew
     case settle
+    /// 线下履约套餐进入我的权益
+    case benefits
     /// 退款审核通过后的退货处理
     case returnGoods
 
@@ -378,6 +380,7 @@ enum OrderListCardAction: Equatable {
         case .afterSale: return "退款/售后"
         case .renew: return "续费订单"
         case .settle: return "结算订单"
+        case .benefits: return "我的权益"
         case .returnGoods: return "去退货"
         }
     }
@@ -387,7 +390,7 @@ enum OrderListCardAction: Equatable {
         switch self {
         case .pay, .confirmShip, .confirmReceipt, .settle, .returnGoods:
             return true
-        case .cancel, .afterSale, .renew:
+        case .cancel, .afterSale, .renew, .benefits:
             return false
         }
     }
@@ -397,7 +400,7 @@ enum OrderListCardAction: Equatable {
         switch self {
         case .cancel, .afterSale:
             return true
-        case .pay, .confirmShip, .confirmReceipt, .renew, .settle, .returnGoods:
+        case .pay, .confirmShip, .confirmReceipt, .renew, .settle, .benefits, .returnGoods:
             return false
         }
     }
@@ -409,7 +412,8 @@ enum OrderListCardAction: Equatable {
             packageType: order.packageType,
             canApplyAfterSale: order.canShowAfterSaleAction,
             canRenew: order.canShowRenewAction,
-            canReturnGoods: order.canShowReturnGoodsAction
+            canReturnGoods: order.canShowReturnGoodsAction,
+            showsBenefits: order.canShowBenefitsAction
         )
     }
 
@@ -419,7 +423,8 @@ enum OrderListCardAction: Equatable {
             packageType: detail.packageType,
             canApplyAfterSale: detail.canShowAfterSaleAction,
             canRenew: detail.canShowRenewAction,
-            canReturnGoods: detail.canShowReturnGoodsAction
+            canReturnGoods: detail.canShowReturnGoodsAction,
+            showsBenefits: detail.canShowBenefitsAction
         )
     }
 
@@ -443,7 +448,7 @@ enum OrderListCardAction: Equatable {
         switch self {
         case .cancel, .afterSale:
             return true
-        case .pay, .confirmShip, .confirmReceipt, .renew, .settle, .returnGoods:
+        case .pay, .confirmShip, .confirmReceipt, .renew, .settle, .benefits, .returnGoods:
             return false
         }
     }
@@ -453,7 +458,8 @@ enum OrderListCardAction: Equatable {
         packageType: Int? = nil,
         canApplyAfterSale: Bool = false,
         canRenew: Bool = false,
-        canReturnGoods: Bool = false
+        canReturnGoods: Bool = false,
+        showsBenefits: Bool = false
     ) -> [OrderListCardAction] {
         guard let status else { return [] }
         var actions: [OrderListCardAction]
@@ -488,6 +494,9 @@ enum OrderListCardAction: Equatable {
             } else {
                 actions.append(.afterSale)
             }
+        }
+        if showsBenefits {
+            actions.insert(.benefits, at: 0)
         }
         return actions
     }

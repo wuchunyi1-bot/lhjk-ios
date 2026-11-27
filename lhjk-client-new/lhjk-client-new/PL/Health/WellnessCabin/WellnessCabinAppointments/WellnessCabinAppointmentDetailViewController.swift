@@ -22,12 +22,18 @@ final class WellnessCabinAppointmentDetailViewModel: ObservableObject {
     init(
         reservationId: String,
         configId: String = "",
+        preloaded: CabinReservationDetailVO? = nil,
         cabinService: CabinService = AppContainer.shared.cabinService
     ) {
         self.reservationId = reservationId.trimmingCharacters(in: .whitespacesAndNewlines)
         self.configId = configId.trimmingCharacters(in: .whitespacesAndNewlines)
         self.cabinService = cabinService
-        load()
+        if let preloaded {
+            detail = preloaded
+            didStart = true
+        } else {
+            load()
+        }
     }
 
     var canBookAgain: Bool {
@@ -94,10 +100,11 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
     private static let subtitleColor = UIColor(hexString: "#8591AB")
     private static let orange = UIColor(hexString: "#FF7A50")
 
-    init(reservationId: String = "", configId: String = "") {
+    init(reservationId: String = "", configId: String = "", preloaded: CabinReservationDetailVO? = nil) {
         viewModel = WellnessCabinAppointmentDetailViewModel(
             reservationId: reservationId,
-            configId: configId
+            configId: configId,
+            preloaded: preloaded
         )
         super.init(nibName: nil, bundle: nil)
     }
@@ -199,6 +206,14 @@ final class WellnessCabinAppointmentDetailViewController: BaseViewController {
         guard let detail = viewModel.detail else {
             scrollView.isHidden = true
             setBar(visible: false)
+            return
+        }
+        if ReservationDetailPresentation.redirect(
+            from: self,
+            detail: detail,
+            reservationId: viewModel.reservationId,
+            configId: viewModel.configId
+        ) {
             return
         }
         scrollView.isHidden = viewModel.isMissing
@@ -942,12 +957,22 @@ final class CabinHTMLBlockView: UIView, WKNavigationDelegate {
         webView.backgroundColor = .clear
         webView.scrollView.isScrollEnabled = false
         webView.scrollView.bounces = false
+        webView.scrollView.alwaysBounceHorizontal = false
+        webView.scrollView.showsHorizontalScrollIndicator = false
+        setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        setContentHuggingPriority(.defaultLow, for: .horizontal)
+        webView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         addSubview(webView)
         webView.snp.makeConstraints { $0.edges.equalToSuperview() }
         snp.makeConstraints { heightConstraint = $0.height.equalTo(1).constraint }
     }
 
     required init?(coder: NSCoder) { fatalError() }
+
+    /// 宽度跟着卡片走，不按未换行的正文把自己撑出屏幕。
+    override var intrinsicContentSize: CGSize {
+        CGSize(width: UIView.noIntrinsicMetric, height: UIView.noIntrinsicMetric)
+    }
 
     func setHTML(_ html: String) {
         let body = Self.prepare(html)
@@ -956,7 +981,9 @@ final class CabinHTMLBlockView: UIView, WKNavigationDelegate {
         <!doctype html><html><head>
         <meta name="viewport" content="width=device-width,initial-scale=1">
         <style>
-        body{margin:0;font:\(Int(bodySize))px -apple-system,PingFang SC;color:#1F2942;line-height:1.6;}
+        body{margin:0;max-width:100%;overflow-x:hidden;font:\(Int(bodySize))px -apple-system,PingFang SC;color:#1F2942;line-height:1.6;overflow-wrap:anywhere;word-break:break-word;}
+        *{max-width:100%;box-sizing:border-box;overflow-wrap:anywhere !important;word-break:break-word !important;}
+        p,div,span,li,a,strong,em{white-space:pre-wrap !important;}
         ol,ul{margin:0 0 8px;padding-left:1.4em;}
         li{margin:0 0 6px;}
         li[data-list="ordered"]{list-style-type:decimal;}
@@ -965,6 +992,8 @@ final class CabinHTMLBlockView: UIView, WKNavigationDelegate {
         strong{font-weight:600;}
         em{font-style:italic;}
         img{max-width:100%;height:auto;border-radius:8px;}
+        table{width:100%;table-layout:fixed;}
+        pre{white-space:pre-wrap;}
         p{margin:0 0 8px;}
         </style></head><body>\(body)</body></html>
         """

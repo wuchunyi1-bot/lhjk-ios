@@ -200,6 +200,8 @@ struct MOrder {
     let renewed: Int?
     /// 是否展示「续费订单」（`AppOrderListBO.renewable`）
     let renewable: Bool?
+    /// 线下履约套餐。为 true 时列表展示「我的权益」
+    let offlineFulfillmentFlag: Bool?
     /// 是否可去退货（`AppOrderListBO.canReturnGoods`）
     let canReturnGoods: Bool?
     /// 是否展示「退款/售后」（`canApplyAfterSale`）；客户端不做套餐类型/退款历史判断
@@ -247,6 +249,11 @@ struct MOrder {
     /// 是否展示「续费订单」：只认 `renewable`
     var canShowRenewAction: Bool {
         AppOrderRenewalRules.canShowRenew(renewable: renewable)
+    }
+
+    /// 是否展示「我的权益」：只认 `offlineFulfillmentFlag`
+    var canShowBenefitsAction: Bool {
+        offlineFulfillmentFlag == true
     }
 
     /// 列表侧：有有效退款单则视为已发生退款相关流程
@@ -301,7 +308,7 @@ extension MOrder: Decodable {
         case id, parentId, orderName, status, payable, settlementAmount, price, createTime
         case hospitalName, doctorName, introduction, packageDescription
         case packageType, packageImageUrl, beginTime, endTime, serviceTime
-        case packageId, hospitalId, categoryServiceId, renewed, renewable
+        case packageId, hospitalId, categoryServiceId, renewed, renewable, offlineFulfillmentFlag
         case canReturnGoods, canApplyAfterSale, refundId, refuseReasons
     }
 
@@ -329,6 +336,7 @@ extension MOrder: Decodable {
         categoryServiceId   = HospitalPackageID.decodeOptional(c, key: .categoryServiceId)
         renewed             = HospitalPackageInt.decodeIfPresent(c, key: .renewed)
         renewable    = Self.decodeFlexibleBool(c, key: .renewable)
+        offlineFulfillmentFlag = Self.decodeFlexibleBool(c, key: .offlineFulfillmentFlag)
         canReturnGoods      = Self.decodeFlexibleBool(c, key: .canReturnGoods)
         canApplyAfterSale   = Self.decodeFlexibleBool(c, key: .canApplyAfterSale)
         refundId            = Self.decodeFlexibleInt64(c, key: .refundId)

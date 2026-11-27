@@ -648,13 +648,27 @@ final class ServicePackageDetailViewController: BaseViewController {
         }
     }
 
-    /// `M0087`：已有未完成订单，弹「下单失败」；其余失败 Toast `msg`
+    /// `M0087`：已有未完成订单，弹「下单失败」。
+    /// `M0173`：套餐可见范围变更，弹「暂不可续费」，留在当前页。
     private func handleCartSubmitFailure(_ error: Error) {
         if case let ShoppingCartServiceError.incompleteExistingOrder(orderId, message) = error {
             presentIncompleteOrderAlert(orderId: orderId, message: message)
             return
         }
+        if case let ShoppingCartServiceError.packageScopeChanged(message) = error {
+            presentPackageScopeChangedAlert(message: message)
+            return
+        }
         showToast(error.localizedDescription)
+    }
+
+    /// FDAPP-1299：关闭弹窗后留在当前页，不进入确认订单。
+    private func presentPackageScopeChangedAlert(message: String) {
+        guard presentedViewController == nil else { return }
+        let alert = UIAlertController(title: "暂不可续费", message: message, preferredStyle: .alert)
+        alert.view.tintColor = .fdPrimary
+        alert.addAction(UIAlertAction(title: "我知道了", style: .default))
+        present(alert, animated: true)
     }
 
     private func presentIncompleteOrderAlert(orderId: Int64, message: String) {

@@ -1,8 +1,7 @@
 import Foundation
 
-/// 体检 / 就医协助服务项目。
+/// 服务项目详情。权益列表改走新接口，不再请求 `medicalConfigList`。
 ///
-/// - 列表：`GET /v1/cabin/medicalConfigList`，`businessType` 2 体检、3 就医协助
 /// - 详情：`GET /v1/serviceItem/detail`
 ///
 /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/530062591e0
@@ -16,26 +15,6 @@ final class ServiceItemService {
     static let assistBusinessType = 3
 
     private init() {}
-
-    func list(
-        businessType: Int,
-        pageNum: Int = 1,
-        pageSize: Int = 20
-    ) async throws -> PaginatedServiceItemData {
-        let response: APIResponse<PaginatedServiceItemData> = try await APIManager.shared.getAsync(
-            path: "/v1/cabin/medicalConfigList",
-            parameters: [
-                "businessType": businessType,
-                "pageNum": pageNum,
-                "pageSize": pageSize,
-            ],
-            responseType: APIResponse<PaginatedServiceItemData>.self
-        )
-        guard response.isSuccess else {
-            throw ServiceItemServiceError.requestFailed(response.msg ?? "获取服务项目失败")
-        }
-        return response.data ?? PaginatedServiceItemData.empty(pageNum: pageNum, pageSize: pageSize)
-    }
 
     func detail(configId: String) async throws -> ServiceItemDetailVO {
         let response: APIResponse<ServiceItemDetailVO> = try await APIManager.shared.getAsync(

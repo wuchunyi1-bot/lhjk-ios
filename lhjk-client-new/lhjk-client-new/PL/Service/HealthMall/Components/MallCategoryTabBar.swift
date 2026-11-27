@@ -1,7 +1,7 @@
 import UIKit
 import SnapKit
 
-/// 富德优选分类：选中橙色胶囊白字，未选中浅灰胶囊。
+/// 富德优选分类：选中橙色胶囊白字，未选中只留文字，不铺底框。
 final class MallCategoryTabBar: UIView {
 
     var onTabSelected: ((Int) -> Void)?
@@ -118,7 +118,7 @@ private final class TabItemView: UIView {
         titleLabel.text = title
         layer.cornerRadius = 16
         clipsToBounds = true
-        backgroundColor = UIColor(hexString: "#F2F3F5")
+        backgroundColor = .clear
         setupUI()
     }
 
@@ -142,7 +142,7 @@ private final class TabItemView: UIView {
         let updates = {
             self.titleLabel.font = .fdFont(ofSize: 14, weight: isSelected ? .medium : .regular)
             self.titleLabel.textColor = isSelected ? .white : UIColor(hexString: "#1F2942")
-            self.backgroundColor = isSelected ? .fdPrimary : UIColor(hexString: "#F2F3F5")
+            self.backgroundColor = isSelected ? .fdPrimary : .clear
         }
         if animated {
             UIView.animate(withDuration: 0.15, animations: updates)

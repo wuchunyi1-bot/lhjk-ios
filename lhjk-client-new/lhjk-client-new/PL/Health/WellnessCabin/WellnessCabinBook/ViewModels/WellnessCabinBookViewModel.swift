@@ -17,6 +17,9 @@ final class WellnessCabinBookViewModel: ObservableObject {
     let unitName: String?
     /// 活动页不展示金额、单位和次卡说明。
     let presentsCommerce: Bool
+    /// 从我的权益进入的体检或就医协助。不选日期和时段，确认后走消耗权益。
+    let consumesBenefit: Bool
+    let benefitBusinessType: Int?
 
     @Published private(set) var detail: CabinBookDetailVO?
     @Published private(set) var days: [CabinBookDay] = []
@@ -42,6 +45,8 @@ final class WellnessCabinBookViewModel: ObservableObject {
         unitName: String? = nil,
         internalOnly: Bool? = nil,
         presentsCommerce: Bool = true,
+        consumesBenefit: Bool = false,
+        benefitBusinessType: Int? = nil,
         cabinService: CabinService = AppContainer.shared.cabinService
     ) {
         self.hospitalId = hospitalId.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -51,10 +56,23 @@ final class WellnessCabinBookViewModel: ObservableObject {
         let unit = unitName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         self.unitName = unit.isEmpty ? nil : unit
         self.presentsCommerce = presentsCommerce
+        self.consumesBenefit = consumesBenefit
+        self.benefitBusinessType = benefitBusinessType
         self.knownInternalOnly = internalOnly
         self.isInternalStation = internalOnly == true
         self.cabinService = cabinService
         load()
+    }
+
+    /// 消耗权益成功后刷新详情里的次数。不改动康养小屋的日期和时段。
+    func reloadQuantity() {
+        guard consumesBenefit, !configId.isEmpty else { return }
+        let service = cabinService
+        let id = configId
+        Task {
+            guard let detail = try? await service.bookDetail(configId: id, date: nil), detail.hasContent else { return }
+            self.detail = detail
+        }
     }
 
     var selectedSlot: CabinSlotVO? {
@@ -66,6 +84,17 @@ final class WellnessCabinBookViewModel: ObservableObject {
     var billingSource: Int { detail?.billingSource ?? 1 }
 
     var showsBottomBar: Bool { presentsCommerce }
+
+    /// 体检、就医协助：没返回次数时允许预约，次数小于 1 时不可预约。
+    var canConsumeBenefit: Bool {
+        guard consumesBenefit else { return false }
+        guard let count = detail?.availableQuantity else { return true }
+        return count > 0
+    }
+
+    var benefitKindLabel: String {
+        benefitBusinessType == ServiceItemService.assistBusinessType ? "就医协助" : "体检"
+    }
 
     var feeAmountText: String? {
         guard presentsCommerce, billingSource == 3 else { return nil }

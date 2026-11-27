@@ -12,6 +12,8 @@ final class ServiceBannerCarouselCell: UITableViewCell {
     static let fallbackRatio: CGFloat = 180.0 / 344.0
     /// 首页内容页签固定画幅。不跟图片原始比例，避免轮播被压得太矮、引导说明卡没处放。
     static let homeShelfRatio: CGFloat = 138.0 / 344.0
+    /// 首页内容页签 Banner 与导航的间距，与「推荐」轮播顶部留白一致。
+    static let homeShelfTopGap: CGFloat = 12
     /// Figma 左右边距（375 稿宽 → 内容约 343~344）
     static let horizontalInset: CGFloat = 16
     static let cornerRadius: CGFloat = 16
@@ -21,8 +23,15 @@ final class ServiceBannerCarouselCell: UITableViewCell {
 
     var onBannerTap: ((ServiceHubBanner) -> Void)?
     var onHeightUpdated: (() -> Void)?
-    /// 首页「健康服务 / 富德优选 / 健康知识」为 true 时，高度固定为宽 × 138/344。
-    var usesHomeShelfRatio = false
+    /// 首页「健康服务 / 富德优选 / 健康知识」为 true 时，高度固定为宽 × 138/344，并在图上方留出与「推荐」相同的间距。
+    var usesHomeShelfRatio = false {
+        didSet {
+            guard usesHomeShelfRatio != oldValue else { return }
+            topGapConstraint?.update(offset: usesHomeShelfRatio ? Self.homeShelfTopGap : 0)
+        }
+    }
+
+    private var topGapConstraint: Constraint?
 
     private var banners: [ServiceHubBanner] = []
     private var heightConstraint: Constraint?
@@ -67,7 +76,8 @@ final class ServiceBannerCarouselCell: UITableViewCell {
         contentView.addSubview(pageControl)
         let initialWidth = UIScreen.main.bounds.width - Self.horizontalInset * 2
         collectionView.snp.makeConstraints {
-            $0.top.bottom.equalToSuperview()
+            topGapConstraint = $0.top.equalToSuperview().constraint
+            $0.bottom.equalToSuperview()
             $0.leading.equalToSuperview().offset(Self.horizontalInset)
             $0.trailing.equalToSuperview().offset(-Self.horizontalInset)
             heightConstraint = $0.height.equalTo(
@@ -514,12 +524,13 @@ final class ServiceHubBannerBar: UIView, UITableViewDataSource, UITableViewDeleg
 
     private func fallbackHeight() -> CGFloat {
         let width = bounds.width > 1 ? bounds.width : UIScreen.main.bounds.width
-        return BannerImageAspectLayout.height(
+        let imageHeight = BannerImageAspectLayout.height(
             width: max(0, width - ServiceBannerCarouselCell.horizontalInset * 2),
             imageSize: nil,
             fallbackRatio: usesHomeShelfRatio
                 ? ServiceBannerCarouselCell.homeShelfRatio
                 : ServiceBannerCarouselCell.fallbackRatio
         )
+        return imageHeight + (usesHomeShelfRatio ? ServiceBannerCarouselCell.homeShelfTopGap : 0)
     }
 }

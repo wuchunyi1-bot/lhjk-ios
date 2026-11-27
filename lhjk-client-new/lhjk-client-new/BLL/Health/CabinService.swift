@@ -3,7 +3,7 @@ import Foundation
 /// 康养小屋列表。`GET /v1/cabin/list`
 ///
 /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266269e0
-/// 开启定位时传高德 GCJ-02，服务端按距离排序。未开启定位时只传省市区，不传经纬度。
+/// 开启定位时传高德 GCJ-02，服务端按距离排序。未开启定位时只传省市区，不传经纬度。从我的权益进入时另传 `projectId`。
 final class CabinService {
 
     static let shared = CabinService()
@@ -17,6 +17,7 @@ final class CabinService {
         area: String? = nil,
         longitude: String? = nil,
         latitude: String? = nil,
+        projectId: String? = nil,
         pageNum: Int = 1,
         pageSize: Int = 20
     ) async throws -> PaginatedCabinListData {
@@ -34,6 +35,7 @@ final class CabinService {
             params["longitude"] = longitude
             params["latitude"] = latitude
         }
+        Self.put(projectId, for: "projectId", into: &params)
 
         let response: APIResponse<PaginatedCabinListData> = try await APIManager.shared.getAsync(
             path: "/v1/cabin/list",
@@ -192,13 +194,57 @@ final class CabinService {
         return response.data?.value
     }
 
+    /// 体检、就医协助确认消耗。`POST /v1/cabin/book`
+    ///
+    /// 只传 `configId`、`sourceType = 2`、`quantity = 1`。不传日期和时段。
+    /// 弹窗里的姓名、电话和二维码用本次返回。
+    func consumeBenefit(configId: String) async throws -> CabinConsumeContact {
+        guard let config = Int64(configId) else {
+            throw CabinServiceError.requestFailed("未找到该项目")
+        }
+        let body: [String: Any] = [
+            "configId": NSNumber(value: config),
+            "sourceType": 2,
+            "quantity": 1,
+        ]
+        let response: APIResponse<CabinConsumeContact> = try await APIManager.shared.postAsync(
+            path: "/v1/cabin/book",
+            parameters: body,
+            responseType: APIResponse<CabinConsumeContact>.self
+        )
+        guard response.isSuccess else {
+            throw CabinServiceError.requestFailed(response.msg ?? "预约失败，请重试")
+        }
+        return response.data ?? .empty
+    }
+}
+
+extension Notification.Name {
+    static let cabinBenefitConsumed = Notification.Name("lhjk.cabinBenefitConsumed")
+}
+
+extension CabinService {
+    /// 我的权益列表。`GET /v1/cabin/entitlementList`
+    ///
+    /// Apifox：`entitlementList`。无 Query。`data` 为权益数组。
+    func entitlements() async throws -> [CabinEntitlementVO] {
+        let response: APIResponse<[CabinEntitlementVO]> = try await APIManager.shared.getAsync(
+            path: "/v1/cabin/entitlementList",
+            responseType: APIResponse<[CabinEntitlementVO]>.self
+        )
+        guard response.isSuccess else {
+            throw CabinServiceError.requestFailed(response.msg ?? "获取权益失败")
+        }
+        return response.data ?? []
+    }
+
     /// 小屋预约。体检和就医协助的使用记录不是这一类。
     static let cabinBusinessType = 1
 
     /// 当前登录人的预约记录。`GET /v1/cabin/appointments`
     ///
     /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785606e0
-    /// `businessType`：1 小屋，2 体检，3 就医协助。不传时由服务端决定范围，客户端按页面分开传。
+    /// `businessType`：1 小屋，2 体检，3 就医协助。预约记录页不传。小屋列表和首页待服务传 1。
     /// `status` 空为全部：1 待安排，2 待确认，3 待服务，4 服务中，5 已完成，6 已取消，7 已过期。
     func appointments(
         status: String? = nil,
@@ -251,6 +297,23 @@ final class CabinService {
         return detail
     }
 
+    /// 用户确认预约。`POST /v1/cabin/confirm`
+    ///
+    /// 待确认详情点「确认安排」。只传预约 id。
+    func confirmReservation(id: String) async throws {
+        guard let reservationId = Int64(id) else {
+            throw CabinServiceError.requestFailed("未找到该预约")
+        }
+        let response: APIResponse<CabinIgnoredPayload> = try await APIManager.shared.postAsync(
+            path: "/v1/cabin/confirm",
+            parameters: ["id": NSNumber(value: reservationId)],
+            responseType: APIResponse<CabinIgnoredPayload>.self
+        )
+        guard response.isSuccess else {
+            throw CabinServiceError.requestFailed(response.msg ?? "确认失败，请重试")
+        }
+    }
+
     /// 用户取消预约。`POST /v1/cabin/cancel`
     ///
     /// Apifox: https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/531651134e0
@@ -274,11 +337,90 @@ final class CabinService {
     }
 }
 
-/// 预约接口 `data` 是预约单 id，可能是数字或字符串。
+/// 消耗权益后 `data` 里的工作人员信息。文档里的 `data` 也可能只是预约单 id。
+struct CabinConsumeContact: Decodable, Equatable {
+    let name: String?
+    let phone: String?
+    let qrCode: String?
+
+    static let empty = CabinConsumeContact(name: nil, phone: nil, qrCode: nil)
+
+    var qrURL: URL? {
+        guard let qrCode else { return nil }
+        return CabinMedia.urls(from: qrCode).first
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case chineseName, contactName, staffName, name
+        case mobile, contactPhone, phone
+        case qrCode, qrUrl, manualAccess
+    }
+
+    init(name: String?, phone: String?, qrCode: String?) {
+        self.name = name
+        self.phone = phone
+        self.qrCode = qrCode
+    }
+
+    init(from decoder: Decoder) throws {
+        guard let container = try? decoder.container(keyedBy: CodingKeys.self) else {
+            self = .empty
+            return
+        }
+        var manual: CabinManualAccessVO?
+        if let decoded = try? container.decodeIfPresent(CabinManualAccessVO.self, forKey: .manualAccess) {
+            manual = decoded
+        }
+        name = Self.first(
+            CabinJSON.string(container, .chineseName),
+            CabinJSON.string(container, .contactName),
+            CabinJSON.string(container, .staffName),
+            manual?.chineseName,
+            CabinJSON.string(container, .name)
+        )
+        phone = Self.first(
+            CabinJSON.string(container, .mobile),
+            CabinJSON.string(container, .contactPhone),
+            CabinJSON.string(container, .phone),
+            manual?.mobile
+        )
+        qrCode = Self.first(
+            CabinJSON.string(container, .qrCode),
+            CabinJSON.string(container, .qrUrl),
+            manual?.qrCode
+        )
+    }
+
+    private static func first(_ values: String?...) -> String? {
+        for value in values {
+            guard let value else { continue }
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty { return trimmed }
+        }
+        return nil
+    }
+}
+
+/// 确认预约的 `data` 不使用。数字、对象或空都能解码。
+private struct CabinIgnoredPayload: Decodable {
+    init(from decoder: Decoder) throws {}
+}
+
+/// 预约接口 `data` 可能是预约单 id，也可能是 `{ id, manualAccess }`。
 private struct CabinBookID: Decodable {
     let value: Int64
 
+    private enum CodingKeys: String, CodingKey {
+        case id
+    }
+
     init(from decoder: Decoder) throws {
+        if let container = try? decoder.container(keyedBy: CodingKeys.self),
+           let text = CabinJSON.string(container, .id),
+           let number = Int64(text) {
+            value = number
+            return
+        }
         let container = try decoder.singleValueContainer()
         if let number = try? container.decode(Int64.self) {
             value = number

@@ -7,6 +7,7 @@ final class HomeShelfBar: UIView {
     var onSelect: ((HomeShelf) -> Void)?
 
     private var buttons: [HomeShelf: ShelfTabButton] = [:]
+    private let tabRow = UIStackView()
     private let indicator = UIView()
     private var selectedShelf: HomeShelf = .home
 
@@ -15,25 +16,25 @@ final class HomeShelfBar: UIView {
         backgroundColor = .fdPrimary
         indicator.backgroundColor = .white
         indicator.layer.cornerRadius = 1
-        addSubview(indicator)
 
-        var previous: UIView?
+        tabRow.axis = .horizontal
+        tabRow.alignment = .fill
+        tabRow.distribution = .equalSpacing
+        addSubview(tabRow)
+        addSubview(indicator)
+        tabRow.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.leading.equalToSuperview().offset(16)
+            make.trailing.equalToSuperview().offset(-16)
+        }
+
         for shelf in HomeShelf.allCases {
             let button = ShelfTabButton(type: .system)
             button.setTitle(shelf.title, for: .normal)
             button.tag = HomeShelf.allCases.firstIndex(of: shelf) ?? 0
             button.addTarget(self, action: #selector(tapped(_:)), for: .touchUpInside)
-            addSubview(button)
+            tabRow.addArrangedSubview(button)
             buttons[shelf] = button
-            button.snp.makeConstraints { make in
-                make.top.bottom.equalToSuperview()
-                if let previous {
-                    make.leading.equalTo(previous.snp.trailing).offset(22)
-                } else {
-                    make.leading.equalToSuperview().offset(16)
-                }
-            }
-            previous = button
         }
         setSelected(.home)
     }
@@ -115,5 +116,6 @@ private final class ShelfTabButton: UIButton {
             return
         }
         titleLabel?.font = font
+        invalidateIntrinsicContentSize()
     }
 }

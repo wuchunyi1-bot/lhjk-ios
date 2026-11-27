@@ -125,11 +125,12 @@ final class HomeKnowledgeViewController: BaseViewController {
 
     private func fallbackBannerHeight() -> CGFloat {
         let width = tableView.bounds.width > 1 ? tableView.bounds.width : view.bounds.width
-        return BannerImageAspectLayout.height(
+        let imageHeight = BannerImageAspectLayout.height(
             width: max(0, width - ServiceBannerCarouselCell.horizontalInset * 2),
             imageSize: nil,
             fallbackRatio: ServiceBannerCarouselCell.homeShelfRatio
         )
+        return imageHeight + ServiceBannerCarouselCell.homeShelfTopGap
     }
 
     private func open(_ banner: ServiceHubBanner) {

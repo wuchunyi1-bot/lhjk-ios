@@ -83,39 +83,6 @@ final class AppleHealthStore {
         }
     }
 
-    /// 按天累计。同一天里手表和手机的重叠片段不会加两次。
-    func dailySums(
-        type: HKQuantityType,
-        unit: HKUnit,
-        start: Date,
-        end: Date
-    ) async throws -> [(start: Date, end: Date, value: Double)] {
-        let anchor = Calendar.current.startOfDay(for: start)
-        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
-        return try await withCheckedThrowingContinuation { continuation in
-            let query = HKStatisticsCollectionQuery(
-                quantityType: type,
-                quantitySamplePredicate: predicate,
-                options: .cumulativeSum,
-                anchorDate: anchor,
-                intervalComponents: DateComponents(day: 1)
-            )
-            query.initialResultsHandler = { _, collection, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                    return
-                }
-                var rows: [(start: Date, end: Date, value: Double)] = []
-                collection?.enumerateStatistics(from: start, to: end) { statistics, _ in
-                    guard let sum = statistics.sumQuantity()?.doubleValue(for: unit) else { return }
-                    rows.append((statistics.startDate, statistics.endDate, sum))
-                }
-                continuation.resume(returning: rows)
-            }
-            store.execute(query)
-        }
-    }
-
     /// 关掉此前打开的后台投递。当前同步不再注册监听。
     func disableBackgroundDelivery() async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in

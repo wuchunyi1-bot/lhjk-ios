@@ -534,6 +534,7 @@ final class LoginViewController: BaseViewController {
 
         contentView.addSubview(brandHeader)
         brandHeader.onLogoLongPress = { [weak self] in
+            guard APIManager.shared.environment != .production else { return }
             self?.presentEnvironmentSheet()
         }
         brandHeader.applyCompactLayout(usesCompactLoginLayout)

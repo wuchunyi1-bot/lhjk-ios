@@ -23,17 +23,6 @@ enum RouteSetup {
         ServiceRoutes.register()
         UserRoutes.register()
 
-        // WebView 页面
-        Router.shared.register(path: "/web/appointments") { _ in
-            WebViewController(urlString: "https://www.funde-life.com/appointments/exams", title: "预约体检")
-        }
-        // 首页金刚区 `FundeApp:/appointments/exams`
-        Router.shared.register(path: "/appointments/exams") { _ in
-            ExamAppointmentViewController()
-        }
-        Router.shared.register(path: "/appointments/exams/usage-records") { _ in
-            ExamUsageRecordsViewController()
-        }
         Router.shared.register(path: "/appointments/exams/detail") { params in
             ExamPackageDetailViewController(
                 configId: ServiceRoutes.stringParam(params["configId"]),

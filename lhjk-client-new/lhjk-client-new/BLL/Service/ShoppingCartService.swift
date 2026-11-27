@@ -25,8 +25,8 @@ final class ShoppingCartService {
         )
 
         guard response.isSuccess else {
+            let message = (response.msg ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             if response.code == ShoppingCartServiceError.incompleteExistingOrderCode {
-                let message = (response.msg ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                 throw ShoppingCartServiceError.incompleteExistingOrder(
                     orderId: response.data?.value ?? 0,
                     message: message.isEmpty
@@ -34,7 +34,14 @@ final class ShoppingCartService {
                         : message
                 )
             }
-            throw ShoppingCartServiceError.requestFailed(response.msg ?? "操作失败")
+            if response.code == ShoppingCartServiceError.packageScopeChangedCode {
+                throw ShoppingCartServiceError.packageScopeChanged(
+                    message: message.isEmpty
+                        ? "当前套餐展示范围已变更，暂不支持在此续费。"
+                        : message
+                )
+            }
+            throw ShoppingCartServiceError.requestFailed(message.isEmpty ? "操作失败" : message)
         }
         let orderId = response.data?.value
         print("[ShoppingCart] saveShoppingCartOrPurchase ✓ flag=\(request.flag) orderId=\(orderId?.description ?? "nil")")
@@ -148,6 +155,8 @@ final class ShoppingCartBadgeStore: ObservableObject {
 enum ShoppingCartServiceError: LocalizedError {
     /// `saveShoppingCartOrPurchase` 业务码：已有未完成订单，禁止重复下单
     static let incompleteExistingOrderCode = "M0087"
+    /// FDAPP-1299：历史订单套餐可见范围变更，不可续费
+    static let packageScopeChangedCode = "M0173"
 
     case invalidHospitalId
     case invalidPackageId
@@ -158,6 +167,8 @@ enum ShoppingCartServiceError: LocalizedError {
     case requestFailed(String)
     /// `code == M0087`：`orderId` 取响应 `data`，文案取 `msg`
     case incompleteExistingOrder(orderId: Int64, message: String)
+    /// `code == M0173`：套餐展示范围变更，文案取 `msg`
+    case packageScopeChanged(message: String)
 
     var errorDescription: String? {
         switch self {
@@ -169,6 +180,7 @@ enum ShoppingCartServiceError: LocalizedError {
         case .missingOrderId: return "未获取到订单号，请重试"
         case .requestFailed(let msg): return msg.isEmpty ? "操作失败" : msg
         case .incompleteExistingOrder(_, let message): return message
+        case .packageScopeChanged(let message): return message
         }
     }
 }

@@ -366,7 +366,7 @@ private final class MetricEditCardCell: UICollectionViewCell {
         contentView.layer.cornerRadius = 12
         contentView.clipsToBounds = true
 
-        iconBg.backgroundColor = UIColor(hexString: "#E9F6F2")
+        iconBg.backgroundColor = .fdPrimarySoft
         iconBg.layer.cornerRadius = 14
         iconView.contentMode = .scaleAspectFit
 
@@ -413,7 +413,7 @@ private final class MetricEditCardCell: UICollectionViewCell {
         } else {
             let key = MonitorCardDisplayMapper.metricKey(for: card.cardType)
             iconView.image = UIImage(systemName: MonitorCardDisplayMapper.iconSF(for: key))
-            iconView.tintColor = UIColor(hexString: "#52b96a")
+            iconView.tintColor = .fdPrimary
         }
         let symbol = mode == .minus ? "minus.circle.fill" : "plus.circle.fill"
         let color: UIColor = mode == .minus ? .fdPrimary : UIColor(hexString: "#52b96a")

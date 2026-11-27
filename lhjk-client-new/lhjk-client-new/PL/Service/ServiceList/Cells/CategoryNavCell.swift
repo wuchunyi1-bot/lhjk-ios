@@ -4,7 +4,11 @@ import SnapKit
 /// 套餐列表左栏类目 — Figma 3760:10575（选中白底 + 上下邻接 16pt 内凹圆弧）
 final class CategoryNavCell: UITableViewCell {
     static let reuseID = "CategoryNavCell"
-    static let rowHeight: CGFloat = 55
+    /// 每一行都按两行文字留高。类目原文不改，长辈模式字号变大后行高一起变。
+    static var rowHeight: CGFloat {
+        let font = UIFont.fdFont(ofSize: Design.titleFontSize, weight: .medium)
+        return ceil(font.lineHeight * 2 + 16)
+    }
 
     /// 未选中项与选中项相邻一侧的圆弧（露出底层白色形成内凹）
     enum AdjacentCorner {
@@ -40,6 +44,7 @@ final class CategoryNavCell: UITableViewCell {
         indicator.isHidden = true
 
         nameLbl.numberOfLines = 2
+        nameLbl.lineBreakMode = .byTruncatingTail
 
         contentView.addSubview(backgroundFill)
         contentView.addSubview(indicator)

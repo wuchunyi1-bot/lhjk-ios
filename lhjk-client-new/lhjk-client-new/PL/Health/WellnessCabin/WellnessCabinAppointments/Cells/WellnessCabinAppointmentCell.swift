@@ -122,15 +122,8 @@ final class WellnessCabinAppointmentCell: UITableViewCell {
             actionsStack.addArrangedSubview(detailButton)
         case 5, 6, 7:
             actionsRow.isHidden = false
-            if item.canBookAgain {
-                applyOutlineButton(detailButton, title: "查看详情")
-                applyPrimaryButton(bookButton, title: "再次预约")
-                actionsStack.addArrangedSubview(detailButton)
-                actionsStack.addArrangedSubview(bookButton)
-            } else {
-                applyOutlineButton(detailButton, title: "查看详情")
-                actionsStack.addArrangedSubview(detailButton)
-            }
+            applyOutlineButton(detailButton, title: "查看详情")
+            actionsStack.addArrangedSubview(detailButton)
         default:
             actionsRow.isHidden = true
         }

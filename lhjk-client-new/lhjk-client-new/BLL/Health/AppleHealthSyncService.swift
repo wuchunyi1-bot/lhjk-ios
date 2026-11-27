@@ -93,9 +93,6 @@ final class AppleHealthSyncService {
     }
 
     private func sync(_ kind: Kind, userId: String) async -> Bool {
-        if kind == .stepCount {
-            return await syncSteps(userId: userId)
-        }
         if kind == .workout {
             await refreshBodyMasses()
             guard await backfillWorkouts(userId: userId) else { return false }
@@ -158,42 +155,6 @@ final class AppleHealthSyncService {
         return true
     }
 
-    private func syncSteps(userId: String) async -> Bool {
-        let end = Date()
-        let start = Calendar.current.date(byAdding: .day, value: -Self.lookbackDays, to: Calendar.current.startOfDay(for: end)) ?? end
-        let rows: [(start: Date, end: Date, value: Double)]
-        do {
-            rows = try await health.dailySums(
-                type: HKQuantityType(.stepCount),
-                unit: .count(),
-                start: start,
-                end: end
-            )
-        } catch {
-            print("[AppleHealth] 步数 读取失败")
-            return false
-        }
-        let samples = rows.map { row in
-            AppleHealthQueuedSample(
-                uuid: "day:\(Self.dayKey(row.start))",
-                kind: Kind.stepCount.rawValue,
-                startAt: row.start.timeIntervalSince1970,
-                endAt: row.end.timeIntervalSince1970,
-                timeZone: TimeZone.current.identifier,
-                payload: Self.json(["value": Int(row.value.rounded())]),
-                unit: Kind.stepCount.unitName,
-                sourceName: "健康",
-                sourceBundle: "com.apple.Health"
-            )
-        }
-        guard outbox.saveSamples(userId: userId, samples: samples) else {
-            print("[AppleHealth] 步数 写入失败")
-            return false
-        }
-        print("[AppleHealth] 步数 近30天 \(samples.count) 天已写入")
-        return true
-    }
-
     private func backfillWorkouts(userId: String) async -> Bool {
         let workouts: [HKSample]
         do {
@@ -224,19 +185,8 @@ final class AppleHealthSyncService {
         bodyMasses.first { $0.date <= date && $0.kilograms > 0 }?.kilograms
     }
 
-    private static func dayKey(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: date)
-    }
-
     /// 同步结束后按体温、基础体温、体重、血压、运动、血氧、饮水的顺序上传。整批失败不删本地；单条新增或重复才删。
     private func uploadPending(userId: String) async -> Bool {
-        let fats = outbox.pendingSamples(userId: userId, kinds: [Kind.bodyFat.rawValue])
-        let bmis = outbox.pendingSamples(userId: userId, kinds: [Kind.bmi.rawValue])
-        var used = Set<String>()
         var acceptedAll = true
         for kind in Kind.uploadOrder {
             let pending = outbox.pendingSamples(userId: userId, kinds: [kind.rawValue])
@@ -244,7 +194,7 @@ final class AppleHealthSyncService {
             var pieces: [UploadPiece] = []
             var skipped = 0
             for record in pending {
-                if let piece = uploadPiece(for: record, fats: fats, bmis: bmis, used: &used) {
+                if let piece = uploadPiece(for: record) {
                     pieces.append(piece)
                 } else {
                     skipped += 1
@@ -334,12 +284,7 @@ final class AppleHealthSyncService {
         return .incomplete
     }
 
-    private func uploadPiece(
-        for record: AppleHealthStoredSample,
-        fats: [AppleHealthStoredSample],
-        bmis: [AppleHealthStoredSample],
-        used: inout Set<String>
-    ) -> UploadPiece? {
+    private func uploadPiece(for record: AppleHealthStoredSample) -> UploadPiece? {
         guard let kind = Kind(rawValue: record.kind) else { return nil }
         let payload = Self.object(record.payload)
         let recordTime = Self.milliseconds(record.startAt)
@@ -347,7 +292,6 @@ final class AppleHealthSyncService {
             "recordTime": recordTime,
             "dataSource": "5"
         ]
-        var extras: [(uuid: String, updatedAt: TimeInterval)] = []
         switch kind {
         case .temperature, .basalTemperature:
             guard let value = Self.number(payload, "value") else { return nil }
@@ -356,18 +300,6 @@ final class AppleHealthSyncService {
             guard let value = Self.number(payload, "value") else { return nil }
             data["weight"] = Self.uploaded(value)
             data["bodyFatScaleMonitor"] = 0
-            if let fat = nearest(fats, to: record.startAt, used: used),
-               let value = Self.number(Self.object(fat.payload), "value"), value > 0 {
-                data["bodyFat"] = Self.uploaded(value)
-                extras.append((fat.uuid, fat.updatedAt))
-                used.insert(fat.uuid)
-            }
-            if let index = nearest(bmis, to: record.startAt, used: used),
-               let value = Self.number(Self.object(index.payload), "value"), value > 0 {
-                data["bmi"] = Self.uploaded(value)
-                extras.append((index.uuid, index.updatedAt))
-                used.insert(index.uuid)
-            }
         case .bloodPressure:
             guard let high = Self.number(payload, "systolic"),
                   let low = Self.number(payload, "diastolic") else { return nil }
@@ -391,8 +323,6 @@ final class AppleHealthSyncService {
             if let calorie = Self.number(payload, "energyKcal") {
                 data["calorie"] = Self.uploaded(calorie)
             }
-        default:
-            return nil
         }
         let endTime = kind == .workout ? Self.milliseconds(record.endAt) : recordTime
         let body: [String: Any] = [
@@ -403,16 +333,7 @@ final class AppleHealthSyncService {
             "externalUuid": record.uuid,
             "monitorData": ["data": data]
         ]
-        return UploadPiece(uuid: record.uuid, updatedAt: record.updatedAt, body: body, extras: extras)
-    }
-
-    private func nearest(
-        _ rows: [AppleHealthStoredSample],
-        to start: TimeInterval,
-        used: Set<String>
-    ) -> AppleHealthStoredSample? {
-        rows.filter { !used.contains($0.uuid) && abs($0.startAt - start) <= 2 }
-            .min { abs($0.startAt - start) < abs($1.startAt - start) }
+        return UploadPiece(uuid: record.uuid, updatedAt: record.updatedAt, body: body, extras: [])
     }
 
     private static func milliseconds(_ seconds: TimeInterval) -> Int {
@@ -514,7 +435,7 @@ final class AppleHealthSyncService {
             object = body
         } else if let quantity = sample as? HKQuantitySample, let unit = kind.unit {
             var number = quantity.quantity.doubleValue(for: unit)
-            if kind == .oxygen || kind == .bodyFat {
+            if kind == .oxygen {
                 number *= 100
             }
             if kind == .temperature || kind == .basalTemperature {
@@ -644,71 +565,48 @@ private actor AppleHealthKindGate {
 extension AppleHealthSyncService {
 
     enum Kind: String, CaseIterable {
-        case bloodGlucose
         case bloodPressure
-        case heartRate
         case weight
-        case bodyFat
-        case bmi
         case oxygen
         case water
         case temperature
         case basalTemperature
         case workout
-        case stepCount
 
         var title: String {
             switch self {
-            case .bloodGlucose: return "血糖"
             case .bloodPressure: return "血压"
-            case .heartRate: return "心率"
             case .weight: return "体重"
-            case .bodyFat: return "体脂率"
-            case .bmi: return "身高体重指数"
             case .oxygen: return "血氧"
             case .water: return "饮水"
             case .temperature: return "体温"
             case .basalTemperature: return "基础体温"
             case .workout: return "体能训练"
-            case .stepCount: return "步数"
             }
         }
 
         var sampleType: HKSampleType {
             switch self {
-            case .bloodGlucose: return HKQuantityType(.bloodGlucose)
             case .bloodPressure: return HKCorrelationType(.bloodPressure)
-            case .heartRate: return HKQuantityType(.heartRate)
             case .weight: return HKQuantityType(.bodyMass)
-            case .bodyFat: return HKQuantityType(.bodyFatPercentage)
-            case .bmi: return HKQuantityType(.bodyMassIndex)
             case .oxygen: return HKQuantityType(.oxygenSaturation)
             case .water: return HKQuantityType(.dietaryWater)
             case .temperature: return HKQuantityType(.bodyTemperature)
             case .basalTemperature: return HKQuantityType(.basalBodyTemperature)
             case .workout: return HKWorkoutType.workoutType()
-            case .stepCount: return HKQuantityType(.stepCount)
             }
         }
 
         var unit: HKUnit? {
             switch self {
-            case .bloodGlucose:
-                return HKUnit.moleUnit(with: .milli, molarMass: HKUnitMolarMassBloodGlucose).unitDivided(by: .liter())
-            case .heartRate:
-                return HKUnit.count().unitDivided(by: .minute())
             case .weight:
                 return .gramUnit(with: .kilo)
-            case .bodyFat, .oxygen:
+            case .oxygen:
                 return .percent()
-            case .bmi:
-                return .count()
             case .water:
                 return .liter()
             case .temperature, .basalTemperature:
                 return .degreeCelsius()
-            case .stepCount:
-                return .count()
             case .bloodPressure, .workout:
                 return nil
             }
@@ -716,16 +614,12 @@ extension AppleHealthSyncService {
 
         var unitName: String {
             switch self {
-            case .bloodGlucose: return "mmol/L"
             case .bloodPressure: return "mmHg"
-            case .heartRate: return "次/分"
             case .weight: return "kg"
-            case .bodyFat, .oxygen: return "%"
+            case .oxygen: return "%"
             case .water: return "L"
             case .temperature, .basalTemperature: return "°C"
             case .workout: return "s"
-            case .stepCount: return "步"
-            case .bmi: return ""
             }
         }
 
@@ -737,7 +631,6 @@ extension AppleHealthSyncService {
             case .workout: return 8
             case .oxygen: return 17
             case .water: return 19
-            case .bloodGlucose, .heartRate, .bodyFat, .bmi, .stepCount: return 0
             }
         }
 

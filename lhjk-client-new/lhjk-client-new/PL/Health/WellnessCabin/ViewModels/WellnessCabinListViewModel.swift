@@ -72,11 +72,16 @@ final class WellnessCabinListViewModel: ObservableObject {
 
     private let cabinService: CabinService
     private let locationManager: LocationManager
+    /// 从我的权益进入时带上，只查配置了该项目的门店。首页金刚区为空。
+    private let projectId: String?
 
     init(
+        projectId: String? = nil,
         cabinService: CabinService = AppContainer.shared.cabinService,
         locationManager: LocationManager = AppContainer.shared.locationManager
     ) {
+        let trimmed = projectId?.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.projectId = (trimmed?.isEmpty == false) ? trimmed : nil
         self.cabinService = cabinService
         self.locationManager = locationManager
         keywordCancellable = $keyword
@@ -238,6 +243,7 @@ final class WellnessCabinListViewModel: ObservableObject {
                 area: located ? nil : anchor.district,
                 longitude: located ? anchor.longitude : nil,
                 latitude: located ? anchor.latitude : nil,
+                projectId: projectId,
                 pageNum: page,
                 pageSize: pageSize
             )

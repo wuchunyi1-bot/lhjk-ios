@@ -20,14 +20,6 @@ enum ServiceRoutes {
             ServiceRoutes.makePackageDetailViewController(params: params)
         }
 
-        // 就医协助 — `FundeApp:/services/medical-assist`
-        r.register(path: "/services/medical-assist") { _ in
-            MedicalAssistViewController()
-        }
-        r.register(path: "/services/medical-assist/usage-records") { _ in
-            MedicalAssistUsageRecordsViewController()
-        }
-
         // 会员专区（首页「查看更多」）
         r.register(path: "/services/membership") { _ in
             PlaceholderViewController(title: "会员专区")

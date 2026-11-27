@@ -16,17 +16,17 @@
 
 **Non-Goals:**
 
-- 不上传心率、血糖、步数。
+- 不读取、不授权血糖、心率、步数、体脂率、身高体重指数。
 - 不把队列当成图表数据源，不改健康首页。
 - 不把队列同步到另一台手机。
-- 不读取距离、活动能量。步数只存每天的合计，不存每一小段样本。
+- 不读取距离、活动能量。
 - 不写入苹果健康。
 
 ## Decisions
 
 ### 队列放在现有 SQLite
 
-样本用 `lhjk.db` 的新表，不新建库，不用 UserDefaults，不用 JSON 文件。心率在 30 天窗口里可以到上万条，并且要和 anchor 同事务提交。UserDefaults 做不到这点。
+样本用 `lhjk.db` 的新表，不新建库，不用 UserDefaults，不用 JSON 文件。样本要和 anchor 同事务提交。UserDefaults 做不到这点。
 
 `health_record` 保持原样，本流程不读写它。
 
@@ -41,7 +41,6 @@
 - 定量：`{"value": number}`
 - 血压：`{"systolic": number, "diastolic": number}`，缺侧不写该键
 - 体能训练：`{"activity": number, "duration": number, "energyKcal": number}`，没有消耗时省略 `energyKcal`
-- 步数：`{"value": 当天合计}`。主键里的 `uuid` 用 `day:yyyy-MM-dd`，因为日合计没有健康库样本标识。每次同步重算近 30 天并覆盖。手表和手机的重叠片段由 `HKStatisticsCollectionQuery` 的累计求和合并，与健康 App 的日步数一致
 
 每次同步体能训练时，先把近 30 天的每一条训练覆盖写入，再走该类型的 anchor。这样进度已经往前拨过、但队列里还没有的训练仍会补进本地库。没有苹果活动消耗时，用 MET 表和训练开始前最近的一次体重估算，结果写入 `energyKcal`，并带 `energyEstimated: true`。已有消耗、已停用类型（舞蹈启发训练、混合代谢有氧）和「其他」不估算。
 
@@ -73,7 +72,7 @@ UserDefaults 里已有的 anchor 不再读取。没有 SQLite anchor 就按上�
 
 同步全部写入本地之后，再按体温、基础体温、体重、血压、体能训练、血氧、饮水的顺序从本地读取并上传。`POST /v1/monitor/batchSavePlatformHealthData`，每批最多 80 条。体温和基础体温的 `businessId` 都是 6，其后为 4、2、8、17、19。基础体温读 `basalBodyTemperature`，上传字段仍是 `temperature`。`collectionType` 为 5，`dataSource` 为 `"5"`，`externalUuid` 用本地 `uuid`。`beginTime` 和 `endTime` 都是毫秒字符串，`monitorData.data.recordTime` 与 `beginTime` 是同一个毫秒数。体温、基础体温、体重、血压、血氧、饮水的 `endTime` 与 `beginTime` 相同；体能训练的 `endTime` 用样本结束时间。
 
-饮水本地是升，上传前乘 1000。体能训练把类型编号换成中文名，秒数换成分钟，已有的 `energyKcal` 放进 `calorie`。与体重开始时间相距不超过 2 秒的体脂、身高体重指数附在这条体重上。心率不放进血压，也不单独上传。
+饮水本地是升，上传前乘 1000。体能训练把类型编号换成中文名，秒数换成分钟，已有的 `energyKcal` 放进 `calorie`。体重只传 `weight` 和 `bodyFatScaleMonitor = 0`，不附带体脂、身高体重指数。血压不带心率。
 
 响应里 `INSERTED` 和 `DUPLICATE` 删除样本行，并把 `uuid` 写入 `apple_health_sent`。之后回补或增量再遇到这个 `uuid` 直接跳过。`SKIPPED`、`FAILED` 和整批失败都不删。`updated_at` 已经变过的行不删，留给下一次上传。
 

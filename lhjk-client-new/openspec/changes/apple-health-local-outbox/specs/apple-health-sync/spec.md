@@ -2,7 +2,7 @@
 
 ### Requirement: 苹果健康样本进入本机队列
 
-系统 SHALL 在用户开启苹果健康后，把血糖、血压、心率、体重、体脂率、身高体重指数、血氧、饮水、体温、基础体温、体能训练、步数写入 `lhjk.db` 的 `apple_health_sample`。步数按本地日合计写入，其余类型按样本写入。体温读 `bodyTemperature`，基础体温读 `basalBodyTemperature`，两者各自保存 anchor。系统 SHALL NOT 使用 `health_record`，SHALL NOT 把样本写入 UserDefaults。落库成功后，系统按「批量上传平台健康数据」上传体温、基础体温、体重、血压、体能训练、血氧、饮水。
+系统 SHALL 在用户开启苹果健康后，把血压、体重、血氧、饮水、体温、基础体温、体能训练写入 `lhjk.db` 的 `apple_health_sample`。这些类型按样本写入。体温读 `bodyTemperature`，基础体温读 `basalBodyTemperature`，两者各自保存 anchor。系统 SHALL NOT 读取或授权血糖、心率、步数、体脂率、身高体重指数，SHALL NOT 使用 `health_record`，SHALL NOT 把样本写入 UserDefaults。落库成功后，系统按「批量上传平台健康数据」上传体温、基础体温、体重、血压、体能训练、血氧、饮水。
 
 每行以 `(user_id, uuid)` 为主键。`uuid` 为健康库样本标识。定量载荷为 `{"value": number}`；血压为 `{"systolic": number, "diastolic": number}`，缺侧省略该键；体能训练为 `{"activity": number, "duration": number}`，有消耗时再加 `energyKcal`。行内同时保存起止时间、时区（有则存）、单位、来源名称和来源 bundle。新样本的 `sync_state` 为 `pending`。
 
@@ -37,13 +37,6 @@
 - **THEN** 这一页的样本和 anchor 都不保留
 - **AND** 该类型本轮停止
 - **AND** 下次从失败前已经提交的 anchor 继续；若从未提交过，则仍按近 30 天读取
-
-#### Scenario: 步数按天覆盖
-
-- **WHEN** 用户同步，且健康库近 30 天内某天有步数
-- **THEN** 系统用当天合计步数写入一行，`kind` 为 `stepCount`，`uuid` 为 `day:yyyy-MM-dd`，载荷为 `{"value": 整数}`，单位为「步」
-- **AND** 系统不把每一条步数样本相加
-- **AND** 同一天再次同步覆盖这一行
 
 #### Scenario: 体能训练逐条补齐
 
@@ -121,11 +114,9 @@
 
 ### Requirement: 批量上传平台健康数据
 
-本地队列全部写入完成后，系统 SHALL 再从本地读取并调用 `POST /v1/monitor/batchSavePlatformHealthData`。只上传 `sync_state` 为 `pending` 的行，顺序为体温、基础体温、体重、血压、体能训练、血氧、饮水。体温和基础体温的 `businessId` 都是 6，其后为 4、2、8、17、19。前一类传完再传下一类。心率、血糖、步数不上传。每批最多 80 条。`collectionType` 为 5，`externalUuid` 为该行 `uuid`。`beginTime` 与 `endTime` 都是毫秒字符串，`monitorData.data.recordTime` 与 `beginTime` 为同一毫秒数，`dataSource` 为 `"5"`。体温、基础体温、体重、血压、血氧、饮水的 `endTime` 与 `beginTime` 相同；体能训练的 `endTime` 用样本结束时间。
+本地队列全部写入完成后，系统 SHALL 再从本地读取并调用 `POST /v1/monitor/batchSavePlatformHealthData`。上传 `sync_state` 为 `pending` 的行，顺序为体温、基础体温、体重、血压、体能训练、血氧、饮水。体温和基础体温的 `businessId` 都是 6，其后为 4、2、8、17、19。前一类传完再传下一类。每批最多 80 条。`collectionType` 为 5，`externalUuid` 为该行 `uuid`。`beginTime` 与 `endTime` 都是毫秒字符串，`monitorData.data.recordTime` 与 `beginTime` 为同一毫秒数，`dataSource` 为 `"5"`。体温、基础体温、体重、血压、血氧、饮水的 `endTime` 与 `beginTime` 相同；体能训练的 `endTime` 用样本结束时间。
 
-测量字段都四舍五入到 2 位小数。体温和基础体温写 `temperature`；体重 `weight`，并带 `bodyFatScaleMonitor = 0`；血压 `highBloodPressure`、`lowBloodPressure`，不带心率；血氧 `oxygen`，`businessId` 为 17；饮水把升换成毫升后写入 `waterAmount`，不按 2000 毫升截断；体能训练写入中文 `name`、分钟 `quantity`、`type = 1`，有 `energyKcal` 时写入 `calorie`。时间、`businessId`、`type` 保持整数。
-
-与某条体重开始时间相距不超过 2 秒的体脂率、身高体重指数，SHALL 写入该体重记录的 `bodyFat`、`bmi`。没有配对的体脂和指数留在本地。
+测量字段都四舍五入到 2 位小数。体温和基础体温写 `temperature`；体重 `weight`，并带 `bodyFatScaleMonitor = 0`，不附带体脂和身高体重指数；血压 `highBloodPressure`、`lowBloodPressure`，不带心率；血氧 `oxygen`，`businessId` 为 17；饮水把升换成毫升后写入 `waterAmount`，不按 2000 毫升截断；体能训练写入中文 `name`、分钟 `quantity`、`type = 1`，有 `energyKcal` 时写入 `calorie`。时间、`businessId`、`type` 保持整数。
 
 整批请求失败时，系统 SHALL NOT 删除本地行。响应里 `itemStatus` 为 `INSERTED` 或 `DUPLICATE` 的行 SHALL 删除，并记下 `uuid`，之后同一 `uuid` 不再写回队列。`SKIPPED` 和 `FAILED` SHALL 留在本地。`pending_delete` 不在本接口上传。
 
@@ -135,7 +126,6 @@
 - **THEN** 系统按上面的字段调用批量保存接口
 - **AND** 基础体温与体温一样写入 `temperature`，`businessId` 为 6
 - **AND** 返回新增或 uuid 重复的行从本地删除
-- **AND** 心率、血糖、步数仍留在本地
 
 #### Scenario: 请求失败不删
 

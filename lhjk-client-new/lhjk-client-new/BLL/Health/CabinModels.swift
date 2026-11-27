@@ -703,7 +703,8 @@ struct CabinAppointmentVO: Decodable, Equatable {
     /// 1 待安排，2 待确认，3 待服务，4 服务中，5 已完成，6 已取消，7 已过期。
     /// 待安排、待确认只出现在体检和就医协助。
     let status: Int?
-    /// 1 小屋，2 体检，3 就医协助。接口列表不回这个字段，由请求参数写回。
+    /// 1 小屋，2 体检，3 就医协助。
+    /// 列表没返回该字段时：待安排、待确认按体检处理，其余按小屋处理。
     var businessType: Int
 
     var statusTitle: String {
@@ -756,7 +757,7 @@ struct CabinAppointmentVO: Decodable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case id, name, hospitalId, hospitalName, address, projectId, configId
-        case duration, reserveDate, startTime, endTime, status
+        case duration, reserveDate, startTime, endTime, status, businessType
     }
 
     init(from decoder: Decoder) throws {
@@ -773,7 +774,13 @@ struct CabinAppointmentVO: Decodable, Equatable {
         startTime = CabinJSON.string(c, .startTime) ?? ""
         endTime = CabinJSON.string(c, .endTime) ?? ""
         status = CabinJSON.int(c, .status)
-        businessType = CabinService.cabinBusinessType
+        if let type = CabinJSON.int(c, .businessType) {
+            businessType = type
+        } else if status == 1 || status == 2 {
+            businessType = 2
+        } else {
+            businessType = CabinService.cabinBusinessType
+        }
     }
 }
 
@@ -823,6 +830,14 @@ struct CabinReservationDetailVO: Decodable, Equatable {
     let latitude: String?
     let contactName: String?
     let contactPhone: String?
+    /// 科室。文档写明列暂未新增时返回空。
+    let department: String?
+    /// 医生。文档写明列暂未新增时返回空。
+    let doctor: String?
+    /// 就医医院 ID。文档写明列暂未新增时返回空。
+    let assistHospitalId: String?
+    /// 1 小屋，2 体检，3 就医协助。
+    let businessType: Int?
 
     var statusTitle: String {
         switch status {
@@ -890,7 +905,7 @@ struct CabinReservationDetailVO: Decodable, Equatable {
         case cancellationCode, qrCode, description, parentName, notice, applicablePeople, restrictedPeople
         case cancelReason, cancelTime, verifyTime, finishTime, expireTime, createTime
         case configId, longitude, latitude, contactName, contactPhone
-        case lng, lat
+        case department, doctor, hospital, businessType, lng, lat
     }
 
     init(from decoder: Decoder) throws {
@@ -930,5 +945,123 @@ struct CabinReservationDetailVO: Decodable, Equatable {
         latitude = CabinJSON.string(c, .latitude) ?? CabinJSON.string(c, .lat)
         contactName = CabinJSON.string(c, .contactName)
         contactPhone = CabinJSON.string(c, .contactPhone)
+        department = CabinJSON.string(c, .department)
+        doctor = CabinJSON.string(c, .doctor)
+        assistHospitalId = CabinJSON.string(c, .hospital)
+        businessType = CabinJSON.int(c, .businessType)
+    }
+}
+
+// MARK: - 我的权益列表
+// GET /v1/cabin/entitlementList
+
+struct CabinManualAccessVO: Decodable, Equatable {
+    let chineseName: String?
+    let mobile: String?
+    let qrCode: String?
+
+    var hasContent: Bool {
+        if let chineseName, !chineseName.isEmpty { return true }
+        if let mobile, !mobile.isEmpty { return true }
+        if let qrCode, !qrCode.isEmpty { return true }
+        return false
+    }
+
+    var qrURL: URL? {
+        guard let qrCode else { return nil }
+        return CabinMedia.urls(from: qrCode).first
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case chineseName, mobile, qrCode
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        chineseName = CabinJSON.string(c, .chineseName)
+        mobile = CabinJSON.string(c, .mobile)
+        qrCode = CabinJSON.string(c, .qrCode)
+    }
+}
+
+struct CabinEntitlementVO: Decodable, Equatable {
+    /// `f_user_service.id`
+    let id: String
+    /// 服务项目 ID。小屋列表筛选用这个值。
+    let projectId: String
+    /// 项目配置 ID。`GET /v1/cabin/bookDetail` 用这个值。
+    let configId: String
+    let name: String
+    let descriptionHTML: String?
+    let imgUrls: String?
+    /// 1 小屋，2 体检，3 就医协助
+    let businessType: Int?
+    /// 1 免费直接预约，2 需购买后预约
+    let payType: Int?
+    /// 1 免费预约，2 消耗卡，3 付费预约
+    let sourceType: Int?
+    /// 0 否，1 是
+    let requireManual: Int?
+    let remainingQuantity: Int?
+    let availableQuantity: Int?
+    let manualAccess: CabinManualAccessVO?
+
+    var coverURL: URL? { CabinMedia.urls(from: imgUrls).first }
+
+    var introText: String? { Self.plainText(descriptionHTML) }
+
+    var isCabin: Bool { businessType == 1 }
+
+    var needsManualAccess: Bool {
+        requireManual == 1 && manualAccess?.hasContent == true
+    }
+
+    /// 优先剩余次数。没有剩余次数时用可用次数。
+    var quantityText: String? {
+        guard let count = remainingQuantity ?? availableQuantity else { return nil }
+        return "剩余 \(count) 次"
+    }
+
+    var isExhausted: Bool {
+        guard let count = remainingQuantity ?? availableQuantity else { return false }
+        return count <= 0
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, projectId, configId, name, description, imgUrls, businessType, payType
+        case sourceType, requireManual, remainingQuantity, availableQuantity, manualAccess
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = CabinJSON.string(c, .id) ?? ""
+        projectId = CabinJSON.string(c, .projectId) ?? ""
+        configId = CabinJSON.string(c, .configId) ?? ""
+        name = CabinJSON.string(c, .name) ?? ""
+        descriptionHTML = CabinJSON.string(c, .description)
+        imgUrls = CabinJSON.string(c, .imgUrls)
+        businessType = CabinJSON.int(c, .businessType)
+        payType = CabinJSON.int(c, .payType)
+        sourceType = CabinJSON.int(c, .sourceType)
+        requireManual = CabinJSON.int(c, .requireManual)
+        remainingQuantity = CabinJSON.int(c, .remainingQuantity)
+        availableQuantity = CabinJSON.int(c, .availableQuantity)
+        manualAccess = try c.decodeIfPresent(CabinManualAccessVO.self, forKey: .manualAccess)
+    }
+
+    private static func plainText(_ html: String?) -> String? {
+        guard var text = html else { return nil }
+        text = text.replacingOccurrences(
+            of: "<br\\s*/?>",
+            with: " ",
+            options: .regularExpression
+        )
+        text = text.replacingOccurrences(of: "</p>", with: " ", options: .caseInsensitive)
+        text = text.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+        text = text.replacingOccurrences(of: "&nbsp;", with: " ")
+        text = text.replacingOccurrences(of: "&amp;", with: "&")
+        text = text.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }

@@ -199,6 +199,10 @@ final class OrderDetailViewController: BaseViewController {
             }
             return
         }
+        if action == .benefits {
+            Router.shared.push("/me/appointments", from: self)
+            return
+        }
         if action == .renew, let detail = viewModel.detail {
             OrderNavigationCoordinator.openPackageRenewal(from: self, detail: detail)
             return

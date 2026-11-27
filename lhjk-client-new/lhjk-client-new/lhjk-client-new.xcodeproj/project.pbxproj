@@ -175,9 +175,7 @@
 		A592F19E30806D660013B2E8 /* HomeTopBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A592F19B30806D660013B2E8 /* HomeTopBarView.swift */; };
 		A592F1A130806D740013B2E8 /* HomeKnowledgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A592F19F30806D740013B2E8 /* HomeKnowledgeViewController.swift */; };
 		A592F1A330806D850013B2E8 /* HomeSupportCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A592F1A230806D850013B2E8 /* HomeSupportCell.swift */; };
-		A5971E5530983F0B00525870 /* ExamAppointmentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5971E5330983F0B00525870 /* ExamAppointmentViewController.swift */; };
 		A5971E57309840F100525870 /* ServiceItemService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5971E56309840F100525870 /* ServiceItemService.swift */; };
-		A5971E603098410700525870 /* ExamAppointmentListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5971E5E3098410700525870 /* ExamAppointmentListViewModel.swift */; };
 		A5971E613098410700525870 /* ExamPackageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5971E583098410700525870 /* ExamPackageCell.swift */; };
 		A5971E623098410700525870 /* ExamPackageDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5971E5A3098410700525870 /* ExamPackageDetailViewModel.swift */; };
 		A5971E633098410700525870 /* ExamPackageDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5971E5C3098410700525870 /* ExamPackageDetailViewController.swift */; };
@@ -186,12 +184,14 @@
 		A5971E6C30987FF900525870 /* MyAppointmentCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5971E6630987FF900525870 /* MyAppointmentCell.swift */; };
 		A5971E6D30987FF900525870 /* MyAppointmentsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5971E6930987FF900525870 /* MyAppointmentsViewModel.swift */; };
 		A5971E6F309893CA00525870 /* WellnessCabinAppointmentDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5971E6E309893CA00525870 /* WellnessCabinAppointmentDetailViewController.swift */; };
-		A5999C93308B2F8C001D6E00 /* MedicalAssistViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5999C91308B2F8C001D6E00 /* MedicalAssistViewController.swift */; };
 		A599A51A3040370F00D943EA /* OrderBottomSheetKeyboardSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A599A5193040370F00D943EA /* OrderBottomSheetKeyboardSupport.swift */; };
 		A599A51D304039FA00D943EA /* CartItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A599A51B304039FA00D943EA /* CartItemCell.swift */; };
 		A599B60830204B9B0012086A /* MessageSegmentedControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A599B60630204B9B0012086A /* MessageSegmentedControl.swift */; };
+		A599F83030B68E10009D9241 /* MyBenefitsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A599F82F30B68E10009D9241 /* MyBenefitsViewController.swift */; };
 		A59C1E3A3099810900CAE697 /* HomeAppointmentsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59C1E393099810900CAE697 /* HomeAppointmentsCell.swift */; };
 		A5A1FCB83013053200A519EB /* OrderStatusActionFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A1FCB73013053200A519EB /* OrderStatusActionFlow.swift */; };
+		A5A2601230B7D46C005B6BE1 /* BenefitUsageDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A2601130B7D46C005B6BE1 /* BenefitUsageDetailViewModel.swift */; };
+		A5A2601430B7D47C005B6BE1 /* BenefitUsageDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A2601330B7D47C005B6BE1 /* BenefitUsageDetailViewController.swift */; };
 		A5A6F4B32FFF7A720065C921 /* OrderModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4AE2FFF7A720065C921 /* OrderModels.swift */; };
 		A5A6F4B42FFF7A720065C921 /* ServiceRecommendModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4B22FFF7A720065C921 /* ServiceRecommendModels.swift */; };
 		A5A6F4B52FFF7A720065C921 /* ColumnContentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A6F4AA2FFF7A720065C921 /* ColumnContentService.swift */; };
@@ -421,6 +421,8 @@
 		A5D600993057D7F8009ED753 /* AppVersionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D600973057D7F8009ED753 /* AppVersionService.swift */; };
 		A5D6009B3057D846009ED753 /* AppVersionCheckCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D6009A3057D846009ED753 /* AppVersionCheckCoordinator.swift */; };
 		A5D6009D3057F9E8009ED753 /* AppUpdateDialogViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D6009C3057F9E8009ED753 /* AppUpdateDialogViewController.swift */; };
+		A5D7A1E930B6BD3500D39E8D /* MyBenefitCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D7A1E830B6BD3500D39E8D /* MyBenefitCell.swift */; };
+		A5D7A1EB30B6BD4000D39E8D /* MyBenefitsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D7A1EA30B6BD4000D39E8D /* MyBenefitsViewModel.swift */; };
 		A5D8E1383062867A0037165F /* FDToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D8E1373062867A0037165F /* FDToast.swift */; };
 		A5E0891E3045511D00D610FF /* GroupMembersVO.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E0891D3045511D00D610FF /* GroupMembersVO.swift */; };
 		A5E08928304551E300D610FF /* GroupMembersViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E08924304551E300D610FF /* GroupMembersViewModel.swift */; };
@@ -624,23 +626,23 @@
 		A592F19F30806D740013B2E8 /* HomeKnowledgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeKnowledgeViewController.swift; sourceTree = "<group>"; };
 		A592F1A230806D850013B2E8 /* HomeSupportCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeSupportCell.swift; sourceTree = "<group>"; };
 		A594BE4E301C760600D43046 /* lhjk-client-new.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "lhjk-client-new.entitlements"; sourceTree = "<group>"; };
-		A5971E5330983F0B00525870 /* ExamAppointmentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExamAppointmentViewController.swift; sourceTree = "<group>"; };
 		A5971E56309840F100525870 /* ServiceItemService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ServiceItemService.swift; path = BLL/Service/ServiceItemService.swift; sourceTree = "<group>"; };
 		A5971E583098410700525870 /* ExamPackageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExamPackageCell.swift; sourceTree = "<group>"; };
 		A5971E5A3098410700525870 /* ExamPackageDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExamPackageDetailViewModel.swift; sourceTree = "<group>"; };
 		A5971E5C3098410700525870 /* ExamPackageDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExamPackageDetailViewController.swift; sourceTree = "<group>"; };
-		A5971E5E3098410700525870 /* ExamAppointmentListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExamAppointmentListViewModel.swift; sourceTree = "<group>"; };
 		A5971E643098751100525870 /* DeviceBindSuccessViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceBindSuccessViewController.swift; sourceTree = "<group>"; };
 		A5971E6630987FF900525870 /* MyAppointmentCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyAppointmentCell.swift; sourceTree = "<group>"; };
 		A5971E6830987FF900525870 /* MyAppointmentDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyAppointmentDetailViewController.swift; sourceTree = "<group>"; };
 		A5971E6930987FF900525870 /* MyAppointmentsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyAppointmentsViewModel.swift; sourceTree = "<group>"; };
 		A5971E6E309893CA00525870 /* WellnessCabinAppointmentDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessCabinAppointmentDetailViewController.swift; sourceTree = "<group>"; };
-		A5999C91308B2F8C001D6E00 /* MedicalAssistViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicalAssistViewController.swift; sourceTree = "<group>"; };
 		A599A5193040370F00D943EA /* OrderBottomSheetKeyboardSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderBottomSheetKeyboardSupport.swift; sourceTree = "<group>"; };
 		A599A51B304039FA00D943EA /* CartItemCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartItemCell.swift; sourceTree = "<group>"; };
 		A599B60630204B9B0012086A /* MessageSegmentedControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageSegmentedControl.swift; sourceTree = "<group>"; };
+		A599F82F30B68E10009D9241 /* MyBenefitsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyBenefitsViewController.swift; sourceTree = "<group>"; };
 		A59C1E393099810900CAE697 /* HomeAppointmentsCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeAppointmentsCell.swift; sourceTree = "<group>"; };
 		A5A1FCB73013053200A519EB /* OrderStatusActionFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderStatusActionFlow.swift; sourceTree = "<group>"; };
+		A5A2601130B7D46C005B6BE1 /* BenefitUsageDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenefitUsageDetailViewModel.swift; sourceTree = "<group>"; };
+		A5A2601330B7D47C005B6BE1 /* BenefitUsageDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenefitUsageDetailViewController.swift; sourceTree = "<group>"; };
 		A5A6F4A92FFF7A720065C921 /* ColumnContentModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ColumnContentModels.swift; path = BLL/Service/ColumnContentModels.swift; sourceTree = "<group>"; };
 		A5A6F4AA2FFF7A720065C921 /* ColumnContentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ColumnContentService.swift; path = BLL/Service/ColumnContentService.swift; sourceTree = "<group>"; };
 		A5A6F4AB2FFF7A720065C921 /* DictionaryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DictionaryModels.swift; path = BLL/Service/DictionaryModels.swift; sourceTree = "<group>"; };
@@ -878,6 +880,8 @@
 		A5D600973057D7F8009ED753 /* AppVersionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersionService.swift; sourceTree = "<group>"; };
 		A5D6009A3057D846009ED753 /* AppVersionCheckCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppVersionCheckCoordinator.swift; path = Other/Common/AppVersionCheckCoordinator.swift; sourceTree = "<group>"; };
 		A5D6009C3057F9E8009ED753 /* AppUpdateDialogViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateDialogViewController.swift; sourceTree = "<group>"; };
+		A5D7A1E830B6BD3500D39E8D /* MyBenefitCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyBenefitCell.swift; sourceTree = "<group>"; };
+		A5D7A1EA30B6BD4000D39E8D /* MyBenefitsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyBenefitsViewModel.swift; sourceTree = "<group>"; };
 		A5D8E1373062867A0037165F /* FDToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FDToast.swift; sourceTree = "<group>"; };
 		A5E0891D3045511D00D610FF /* GroupMembersVO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GroupMembersVO.swift; path = DAL/IM/GroupMembersVO.swift; sourceTree = "<group>"; };
 		A5E08922304551E300D610FF /* GroupMemberCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupMemberCell.swift; sourceTree = "<group>"; };
@@ -1397,6 +1401,8 @@
 		A590FC5A2FEA91170056EF52 /* Appointments */ = {
 			isa = PBXGroup;
 			children = (
+				A5A2601330B7D47C005B6BE1 /* BenefitUsageDetailViewController.swift */,
+				A599F82F30B68E10009D9241 /* MyBenefitsViewController.swift */,
 				A5971E6730987FF900525870 /* Cells */,
 				A5971E6830987FF900525870 /* MyAppointmentDetailViewController.swift */,
 				A5971E6A30987FF900525870 /* ViewModels */,
@@ -1755,7 +1761,6 @@
 			isa = PBXGroup;
 			children = (
 				A5971E5430983F0B00525870 /* Exam */,
-				A5999C92308B2F8C001D6E00 /* MedicalAssist */,
 				A5B1FB2B3009E3240039B16C /* InstitutionSelect */,
 				A54CBD4430049CD600D581AE /* Cart */,
 				A5ACE23F3000D5C200056C52 /* ServicePackageDetail */,
@@ -1872,8 +1877,6 @@
 			children = (
 				A5971E593098410700525870 /* Cells */,
 				A5971E5D3098410700525870 /* ExamPackageDetail */,
-				A5971E5F3098410700525870 /* ViewModels */,
-				A5971E5330983F0B00525870 /* ExamAppointmentViewController.swift */,
 			);
 			path = Exam;
 			sourceTree = "<group>";
@@ -1903,17 +1906,10 @@
 			path = ExamPackageDetail;
 			sourceTree = "<group>";
 		};
-		A5971E5F3098410700525870 /* ViewModels */ = {
-			isa = PBXGroup;
-			children = (
-				A5971E5E3098410700525870 /* ExamAppointmentListViewModel.swift */,
-			);
-			path = ViewModels;
-			sourceTree = "<group>";
-		};
 		A5971E6730987FF900525870 /* Cells */ = {
 			isa = PBXGroup;
 			children = (
+				A5D7A1E830B6BD3500D39E8D /* MyBenefitCell.swift */,
 				A5971E6630987FF900525870 /* MyAppointmentCell.swift */,
 			);
 			path = Cells;
@@ -1922,17 +1918,11 @@
 		A5971E6A30987FF900525870 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				A5A2601130B7D46C005B6BE1 /* BenefitUsageDetailViewModel.swift */,
+				A5D7A1EA30B6BD4000D39E8D /* MyBenefitsViewModel.swift */,
 				A5971E6930987FF900525870 /* MyAppointmentsViewModel.swift */,
 			);
 			path = ViewModels;
-			sourceTree = "<group>";
-		};
-		A5999C92308B2F8C001D6E00 /* MedicalAssist */ = {
-			isa = PBXGroup;
-			children = (
-				A5999C91308B2F8C001D6E00 /* MedicalAssistViewController.swift */,
-			);
-			path = MedicalAssist;
 			sourceTree = "<group>";
 		};
 		A599A51C304039FA00D943EA /* Cells */ = {
@@ -3218,6 +3208,7 @@
 				A5F6AF2630296D1A00D1BF74 /* SessionExpiryPresenter.swift in Sources */,
 				A5D8E1383062867A0037165F /* FDToast.swift in Sources */,
 				A5F6AF2730296D1A00D1BF74 /* SessionExpirySheet.swift in Sources */,
+				A5A2601230B7D46C005B6BE1 /* BenefitUsageDetailViewModel.swift in Sources */,
 				A5A6F4B72FFF7A720065C921 /* ServiceModels.swift in Sources */,
 				A5A6F4C62FFF7AA20065C921 /* AppContainer.swift in Sources */,
 				A5C2BBD6303C205F00E1FC31 /* VoicePlaybackLogger.swift in Sources */,
@@ -3245,6 +3236,7 @@
 				0D9CCCF8E6DF5482A9FACDF0 /* APIManager.swift in Sources */,
 				CC5AFA75E6FC57E098F3107B /* NetworkMonitor.swift in Sources */,
 				A56120A830106CC600505C32 /* CouponModels.swift in Sources */,
+				A5A2601430B7D47C005B6BE1 /* BenefitUsageDetailViewController.swift in Sources */,
 				A5BED6BF30A5C8C800FF7AC8 /* AppleHealthSyncService.swift in Sources */,
 				A56120A930106CC600505C32 /* CouponService.swift in Sources */,
 				A5C7B73F303E9196008D89A5 /* DictionaryCacheService.swift in Sources */,
@@ -3255,7 +3247,6 @@
 				A5C71AEC3018592B006EA79C /* BenefitCardCell.swift in Sources */,
 				A5C71AED3018592B006EA79C /* CouponCardCell.swift in Sources */,
 				A54CBD4530049CD600D581AE /* ServiceCartViewModel.swift in Sources */,
-				A5971E603098410700525870 /* ExamAppointmentListViewModel.swift in Sources */,
 				A5971E613098410700525870 /* ExamPackageCell.swift in Sources */,
 				A5971E623098410700525870 /* ExamPackageDetailViewModel.swift in Sources */,
 				A5971E633098410700525870 /* ExamPackageDetailViewController.swift in Sources */,
@@ -3321,6 +3312,7 @@
 				A5C2BBD8303C237900E1FC31 /* VoicePlaybackController.swift in Sources */,
 				A5A6F5772FFF8EAD0065C921 /* ServiceListModels.swift in Sources */,
 				A590FCCD2FEA91170056EF52 /* ConversationListViewController.swift in Sources */,
+				A5D7A1E930B6BD3500D39E8D /* MyBenefitCell.swift in Sources */,
 				A590FCCE2FEA91170056EF52 /* FuncRowView.swift in Sources */,
 				A590FCCF2FEA91170056EF52 /* AgreementCheckboxView.swift in Sources */,
 				A599A51D304039FA00D943EA /* CartItemCell.swift in Sources */,
@@ -3395,7 +3387,6 @@
 				A590FCE72FEA91170056EF52 /* AppointmentsViewController.swift in Sources */,
 				A590FCE92FEA91170056EF52 /* HomeTaskCardCell.swift in Sources */,
 				A5A6F5142FFF7BFE0065C921 /* AddressListViewModel.swift in Sources */,
-				A5999C93308B2F8C001D6E00 /* MedicalAssistViewController.swift in Sources */,
 				A5A6F57A2FFF8EE80065C921 /* SelfSizingCollectionView.swift in Sources */,
 				A580F4013004D8650014B443 /* PackageDetailCarouselView.swift in Sources */,
 				A580F4023004D8650014B443 /* PackageComboGroupView.swift in Sources */,
@@ -3424,6 +3415,7 @@
 				A5ADA8FA3094827600843CD1 /* WellnessCabinAppointmentCell.swift in Sources */,
 				A5ADA8FB3094827600843CD1 /* WellnessCabinAppointmentListViewController.swift in Sources */,
 				A599B60830204B9B0012086A /* MessageSegmentedControl.swift in Sources */,
+				A5D7A1EB30B6BD4000D39E8D /* MyBenefitsViewModel.swift in Sources */,
 				A5BDA39B30357D3C00E306EB /* EquipmentBindModels.swift in Sources */,
 				A5BDA39C30357D3C00E306EB /* EquipmentBindService.swift in Sources */,
 				A590FCEA2FEA91170056EF52 /* WeeklyReportCell.swift in Sources */,
@@ -3515,6 +3507,7 @@
 				A5C71B073018BAFC006EA79C /* HomeMembershipPackagesCell.swift in Sources */,
 				A5C71B083018BAFC006EA79C /* HomeBannerCarouselCell.swift in Sources */,
 				A5C71B093018BAFC006EA79C /* HomeBrandHeaderCell.swift in Sources */,
+				A599F83030B68E10009D9241 /* MyBenefitsViewController.swift in Sources */,
 				8E749A7845EBA8C07946E821 /* Router.swift in Sources */,
 				A5C8BB8B304A9BD000D6398E /* OrderPayResultHeroView.swift in Sources */,
 				A5C8BB8C304A9BD000D6398E /* OrderPayResultViewController.swift in Sources */,
@@ -3579,7 +3572,6 @@
 				A5ACE2463000F57B00056C52 /* ServicePackageDetailViewModel.swift in Sources */,
 				A53EF9D630088E2C00ED9E5A /* AddressEditViewModel.swift in Sources */,
 				A5A6F5352FFF7D5F0065C921 /* FileManager.swift in Sources */,
-				A5971E5530983F0B00525870 /* ExamAppointmentViewController.swift in Sources */,
 				A5A6F5432FFF7E720065C921 /* ConversationListViewModel.swift in Sources */,
 				A5A6F5002FFF7BBD0065C921 /* ImageBubbleCell.swift in Sources */,
 				A5ADA8F13094491000843CD1 /* WellnessCabinServiceBookViewController.swift in Sources */,

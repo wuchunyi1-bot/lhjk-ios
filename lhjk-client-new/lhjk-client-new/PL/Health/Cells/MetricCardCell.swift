@@ -153,6 +153,12 @@ final class MetricCardCell: UICollectionViewCell {
         "blood-lipid": UIColor(hexString: "#FFF8FA"),
     ]
 
+    /// 状态句不是指标读数，和「暂无检测记录」用同一档较小字号。
+    private static func usesCompactValueFont(_ value: String) -> Bool {
+        let text = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return text == "暂无检测记录" || text == "已完成检测" || text == "报告生成中"
+    }
+
     func configure(
         metricKey: String = "",
         icon: String,
@@ -210,7 +216,7 @@ final class MetricCardCell: UICollectionViewCell {
         titleLabel.textColor = UIColor(hexString: "#717885")
 
         valueLabel.text = value
-        valueUsesCompactFont = value.trimmingCharacters(in: .whitespacesAndNewlines) == "暂无检测记录"
+        valueUsesCompactFont = Self.usesCompactValueFont(value)
         unitLabel.text = unit
         timeLabel.text = time
         timeLabel.isHidden = time.isEmpty

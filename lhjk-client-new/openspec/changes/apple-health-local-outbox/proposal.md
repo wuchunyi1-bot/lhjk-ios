@@ -7,7 +7,8 @@
 - 把已读到的苹果健康样本和删除，按账号写入现有 SQLite 的待上传队列。
 - anchor 与同一批样本放在同一个事务里更新；写入失败则整批回滚，下次仍从旧 anchor 读取。
 - 样本以健康库 `uuid` 为身份。同一账号重复写入覆盖，不新插一行。
-- 落库后调用 `POST /v1/monitor/batchSavePlatformHealthData`。服务端确认新增或重复的行从本地删除，并记住 `uuid`。心率不上传。
+- 落库后调用 `POST /v1/monitor/batchSavePlatformHealthData`。服务端确认新增或重复的行从本地删除，并记住 `uuid`。
+- 不读取、不授权血糖、心率、步数、体脂率、身高体重指数。
 - 退出登录、换账号不清队列。另一台手机不拷贝这份库，各自维护自己的队列和 anchor。
 - 不使用现有 `health_record` 表，也不把样本放进 UserDefaults。
 
@@ -15,7 +16,7 @@
 
 ### New Capabilities
 
-- `apple-health-sync`: 从苹果健康增量读取血糖、血压、心率、体重、体脂率、身高体重指数、血氧、饮水、体温、体能训练，并按账号落入本机待上传队列。
+- `apple-health-sync`: 从苹果健康增量读取血压、体重、血氧、饮水、体温、基础体温、体能训练，并按账号落入本机待上传队列。
 
 ### Modified Capabilities
 

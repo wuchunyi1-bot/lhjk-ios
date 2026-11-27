@@ -1,7 +1,7 @@
 import SnapKit
 import UIKit
 
-/// 首页咨询客服条：暖米色渐变底 + 铃铛图标 +「咨询客服」+ 右侧小箭头
+/// 首页咨询客服条：暖米色渐变底 + 耳机图标 +「咨询客服」+ 右侧电话。
 final class HomeSupportCell: UITableViewCell {
 
     static let reuseID = "HomeSupportCell"
@@ -23,66 +23,78 @@ final class HomeSupportCell: UITableViewCell {
         contentView.backgroundColor = .clear
         selectionStyle = .none
 
-        card.backgroundColor = UIColor(hexString: "#FFFBF7")
-        card.layer.cornerRadius = 16
-        card.layer.borderWidth = 0.5
-        card.layer.borderColor = UIColor(hexString: "#FFEFE6").cgColor
+        card.backgroundColor = .clear
+        card.layer.cornerRadius = 18
+        card.clipsToBounds = true
         card.addTarget(self, action: #selector(tapped), for: .touchUpInside)
         contentView.addSubview(card)
 
-        bellIcon.image = UIImage(systemName: "bell.fill")
-        bellIcon.tintColor = UIColor(hexString: "#FF7A50")
+        let gradient = SupportGradientView()
+        gradient.isUserInteractionEnabled = false
+        card.addSubview(gradient)
+        gradient.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        let iconBox = UIView()
+        iconBox.backgroundColor = .fdPrimarySoft
+        iconBox.layer.cornerRadius = 12
+        iconBox.isUserInteractionEnabled = false
+        bellIcon.image = UIImage(systemName: "headphones")
+        bellIcon.tintColor = .fdPrimary
         bellIcon.contentMode = .scaleAspectFit
         bellIcon.isUserInteractionEnabled = false
+        iconBox.addSubview(bellIcon)
 
         titleLabel.text = "咨询客服"
-        titleLabel.font = .fdFont(ofSize: 15, weight: .semibold)
-        titleLabel.textColor = UIColor(hexString: "#FF7A50")
+        titleLabel.font = .fdFont(ofSize: 15, weight: .bold)
+        titleLabel.textColor = .fdText
         titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         titleLabel.isUserInteractionEnabled = false
 
-        chevronIcon.image = UIImage(systemName: "chevron.right", withConfiguration: UIImage.SymbolConfiguration(pointSize: 12, weight: .semibold))
-        chevronIcon.tintColor = UIColor(hexString: "#FFB89E")
+        chevronIcon.image = UIImage(
+            systemName: "phone.fill",
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+        )
+        chevronIcon.tintColor = .fdPrimary
         chevronIcon.contentMode = .scaleAspectFit
         chevronIcon.isUserInteractionEnabled = false
 
-        let leftStack = UIStackView(arrangedSubviews: [bellIcon, titleLabel])
-        leftStack.axis = .horizontal
-        leftStack.spacing = 8
-        leftStack.alignment = .center
-        leftStack.isUserInteractionEnabled = false
+        let phoneCircle = UIView()
+        phoneCircle.backgroundColor = .fdPrimarySoft
+        phoneCircle.layer.cornerRadius = 18
+        phoneCircle.isUserInteractionEnabled = false
+        phoneCircle.addSubview(chevronIcon)
+        chevronIcon.snp.makeConstraints { $0.center.equalToSuperview() }
 
-        let chevronCircle = UIView()
-        chevronCircle.backgroundColor = UIColor(hexString: "#FFF0E8")
-        chevronCircle.layer.cornerRadius = 12
-        chevronCircle.isUserInteractionEnabled = false
-        chevronCircle.addSubview(chevronIcon)
-        chevronIcon.snp.makeConstraints {
-            $0.center.equalToSuperview()
-        }
-
-        card.addSubview(leftStack)
-        card.addSubview(chevronCircle)
+        card.addSubview(iconBox)
+        card.addSubview(titleLabel)
+        card.addSubview(phoneCircle)
 
         card.snp.makeConstraints {
             $0.top.equalToSuperview().offset(12)
             $0.leading.trailing.equalToSuperview().inset(16)
             normalBottom = $0.bottom.equalToSuperview().constraint
-            $0.height.equalTo(48)
+            $0.height.equalTo(56)
         }
         buildSeniorRow()
         applyMode()
+        iconBox.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(14)
+            $0.centerY.equalToSuperview()
+            $0.size.equalTo(40)
+        }
         bellIcon.snp.makeConstraints {
-            $0.size.equalTo(18)
+            $0.center.equalToSuperview()
+            $0.size.equalTo(22)
         }
-        leftStack.snp.makeConstraints {
-            $0.leading.equalToSuperview().offset(16)
+        titleLabel.snp.makeConstraints {
+            $0.leading.equalTo(iconBox.snp.trailing).offset(12)
             $0.centerY.equalToSuperview()
+            $0.trailing.lessThanOrEqualTo(phoneCircle.snp.leading).offset(-8)
         }
-        chevronCircle.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(12)
+        phoneCircle.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(14)
             $0.centerY.equalToSuperview()
-            $0.size.equalTo(24)
+            $0.size.equalTo(36)
         }
     }
 
@@ -103,7 +115,7 @@ final class HomeSupportCell: UITableViewCell {
         seniorRow.distribution = .fillEqually
         seniorRow.addArrangedSubview(shortcutCard(
             imageName: "home_ reserve_card",
-            title: "我的预约",
+            title: "我的权益",
             color: UIColor(hexString: "#005294"),
             action: #selector(appointmentsTapped)
         ))
@@ -117,7 +129,6 @@ final class HomeSupportCell: UITableViewCell {
         seniorRow.snp.makeConstraints {
             $0.top.equalToSuperview().offset(12)
             $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(84)
             seniorBottom = $0.bottom.equalToSuperview().constraint
         }
         seniorBottom?.isActive = false
@@ -130,7 +141,7 @@ final class HomeSupportCell: UITableViewCell {
         control.addTarget(self, action: action, for: .touchUpInside)
 
         let imageView = UIImageView(image: UIImage(named: imageName))
-        imageView.contentMode = .scaleToFill
+        imageView.contentMode = .scaleAspectFit
         imageView.clipsToBounds = true
         imageView.isUserInteractionEnabled = false
 
@@ -142,7 +153,10 @@ final class HomeSupportCell: UITableViewCell {
 
         control.addSubview(imageView)
         control.addSubview(label)
-        imageView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        imageView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+            $0.height.equalTo(imageView.snp.width).multipliedBy(168.0 / 332.0)
+        }
         label.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(12)
             $0.top.equalToSuperview().offset(14)
@@ -154,6 +168,24 @@ final class HomeSupportCell: UITableViewCell {
     @objc private func tapped() { onTap?() }
 
     @objc private func appointmentsTapped() { onAppointments?() }
+}
+
+/// 咨询客服条背景。设计稿暖色渐变 `#FFEFE6` → `#FFF8F3`，135°。
+private final class SupportGradientView: UIView {
+    override class var layerClass: AnyClass { CAGradientLayer.self }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        guard let gradient = layer as? CAGradientLayer else { return }
+        gradient.colors = [
+            UIColor(hexString: "#FFEFE6").cgColor,
+            UIColor(hexString: "#FFF8F3").cgColor
+        ]
+        gradient.startPoint = CGPoint(x: 0, y: 0)
+        gradient.endPoint = CGPoint(x: 1, y: 1)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
 /// 客服电话底部弹层：展示号码并拨打。

@@ -48,7 +48,7 @@ final class MyAppointmentCell: UITableViewCell {
         }
     }
 
-    func configure(_ item: CabinAppointmentVO, showsCabinActions: Bool = true) {
+    func configure(_ item: CabinAppointmentVO) {
         nameLabel.text = item.name.isEmpty ? "预约项目" : item.name
         let title = item.statusTitle
         statusLabel.isHidden = title.isEmpty
@@ -76,25 +76,36 @@ final class MyAppointmentCell: UITableViewCell {
         addressLabel.isHidden = item.address.isEmpty
         storeRow.isHidden = item.hospitalName.isEmpty && item.address.isEmpty
 
-        configureActions(for: item, showsCabinActions: showsCabinActions)
+        configureActions(for: item)
     }
 
-    private func configureActions(for item: CabinAppointmentVO, showsCabinActions: Bool) {
+    private func configureActions(for item: CabinAppointmentVO) {
         actionsStack.arrangedSubviews.forEach {
             actionsStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
-        guard showsCabinActions else { return }
+        if item.isCabin {
+            configureCabinActions(for: item)
+            return
+        }
+        switch item.status {
+        case 1:
+            break
+        case 2:
+            applyOutline(detailButton, title: "去确定")
+            actionsStack.addArrangedSubview(detailButton)
+        default:
+            applyOutline(detailButton, title: "查看详情")
+            actionsStack.addArrangedSubview(detailButton)
+        }
+    }
+
+    private func configureCabinActions(for item: CabinAppointmentVO) {
         switch item.status ?? 0 {
         case 3:
             applyOutline(cancelButton, title: "取消预约")
             applyOutline(detailButton, title: "查看详情")
             actionsStack.addArrangedSubview(cancelButton)
-            actionsStack.addArrangedSubview(detailButton)
-        case 5, 6, 7 where item.canBookAgain:
-            applyFilled(bookButton, title: "再次预约")
-            applyOutline(detailButton, title: "查看详情")
-            actionsStack.addArrangedSubview(bookButton)
             actionsStack.addArrangedSubview(detailButton)
         default:
             applyOutline(detailButton, title: "查看详情")

@@ -22,7 +22,9 @@ enum HealthRoutes {
         r.register(path: "/health") { _ in HealthViewController() }
 
         // 康养小屋 — `FundeApp:/wellness-cabins`
-        r.register(path: "/wellness-cabins") { _ in WellnessCabinViewController() }
+        r.register(path: "/wellness-cabins") { params in
+            WellnessCabinViewController(projectId: stringParam(params["projectId"]))
+        }
         r.register(path: "/wellness-cabins/detail") { params in
             WellnessCabinDetailViewController(
                 hospitalId: stringParam(params["hospitalId"]) ?? stringParam(params["id"]) ?? "",
@@ -42,7 +44,9 @@ enum HealthRoutes {
                 configId: stringParam(params["configId"]) ?? "",
                 priceText: stringParam(params["price"]),
                 unitName: stringParam(params["unitName"]),
-                internalOnly: internalOnly
+                internalOnly: internalOnly,
+                consumesBenefit: Self.consumesBenefit(params["businessType"]),
+                benefitBusinessType: Int(stringParam(params["businessType"]) ?? "")
             )
         }
         r.register(path: "/wellness-cabins/activity") { params in
@@ -240,6 +244,11 @@ enum HealthRoutes {
             title: resolvedTitle,
             enablesWeightBle: enablesWeightBle
         )
+    }
+
+    private static func consumesBenefit(_ value: Any?) -> Bool {
+        guard let raw = stringParam(value), let type = Int(raw) else { return false }
+        return type == ServiceItemService.examBusinessType || type == ServiceItemService.assistBusinessType
     }
 
     private static func stringParam(_ value: Any?) -> String? {

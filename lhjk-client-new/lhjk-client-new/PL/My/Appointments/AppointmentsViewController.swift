@@ -2,9 +2,9 @@ import Combine
 import SnapKit
 import UIKit
 
-/// 我的预约。小屋、体检、就医协助分 `businessType` 拉取后按状态汇总。
+/// 预约记录。一次拉取当前登录人的记录，不按 `businessType` 拆开请求。
 ///
-/// 取消、再次预约和预约详情只用于小屋。体检和就医协助在这里只展示记录。
+/// 小屋仍走小屋详情、取消和再次预约。体检和就医协助：待安排无操作，待确认进确认页，其余状态由「查看详情」进入使用详情。点卡片只对小屋有效。
 final class AppointmentsViewController: BaseViewController {
 
     private let viewModel = MyAppointmentsViewModel()
@@ -36,7 +36,7 @@ final class AppointmentsViewController: BaseViewController {
     }
 
     override func setupUI() {
-        title = "我的预约"
+        title = "预约记录"
         view.backgroundColor = UIColor(hexString: "#FDF6F3")
         setupTabs()
         setupTable()
@@ -134,9 +134,13 @@ extension AppointmentsViewController: UITableViewDataSource, UITableViewDelegate
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: MyAppointmentCell.reuseID, for: indexPath) as! MyAppointmentCell
         let item = viewModel.items[indexPath.row]
-        cell.configure(item, showsCabinActions: item.isCabin)
+        cell.configure(item)
         cell.onDetail = { [weak self] in
-            self?.openDetail(item)
+            if item.isCabin {
+                self?.openDetail(item)
+            } else {
+                self?.openUsageDetail(item)
+            }
         }
         cell.onBookAgain = { [weak self] in
             self?.bookAgain(item)
@@ -152,6 +156,15 @@ extension AppointmentsViewController: UITableViewDataSource, UITableViewDelegate
         var params: [String: Any] = ["id": item.id]
         if !item.configId.isEmpty { params["configId"] = item.configId }
         Router.shared.push("/wellness-cabins/appointments/detail", params: params, from: self)
+    }
+
+    private func openUsageDetail(_ item: CabinAppointmentVO) {
+        guard item.status != 1 else { return }
+        Router.shared.push(
+            "/appointments/usage-records/confirm",
+            params: ["id": item.id],
+            from: self
+        )
     }
 
     private func confirmCancel(_ item: CabinAppointmentVO) {

@@ -247,6 +247,8 @@ final class OrderTabViewController: BaseViewController {
             }
         case .renew:
             OrderNavigationCoordinator.openPackageRenewal(from: self, order: order)
+        case .benefits:
+            Router.shared.push("/me/appointments", from: self)
         case .confirmShip:
             OrderStatusActionFlow.confirmShipment(from: self, order: order) { [weak self] in
                 self?.refresh()

@@ -54,7 +54,9 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
         priceText: String? = nil,
         unitName: String? = nil,
         internalOnly: Bool? = nil,
-        presentsCommerce: Bool = true
+        presentsCommerce: Bool = true,
+        consumesBenefit: Bool = false,
+        benefitBusinessType: Int? = nil
     ) {
         pageTitle = presentsCommerce ? "项目预约" : "活动详情"
         viewModel = WellnessCabinBookViewModel(
@@ -63,7 +65,9 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
             priceText: priceText,
             unitName: unitName,
             internalOnly: internalOnly,
-            presentsCommerce: presentsCommerce
+            presentsCommerce: presentsCommerce,
+            consumesBenefit: consumesBenefit,
+            benefitBusinessType: benefitBusinessType
         )
         super.init(nibName: nil, bundle: nil)
     }
@@ -75,7 +79,11 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
         navigationController?.setNavigationBarHidden(false, animated: animated)
         if didAppear {
             didProceed = false
-            viewModel.reloadSelectedDate()
+            if viewModel.consumesBenefit {
+                viewModel.reloadQuantity()
+            } else {
+                viewModel.reloadSelectedDate()
+            }
         }
         didAppear = true
     }
@@ -127,7 +135,17 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
                 self?.viewModel.clearError()
             }
             .store(in: &cancellables)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(benefitConsumed),
+            name: .cabinBenefitConsumed,
+            object: nil
+        )
         viewModel.load()
+    }
+
+    @objc private func benefitConsumed() {
+        viewModel.reloadQuantity()
     }
 
     override func refreshForSeniorMode() {
@@ -169,6 +187,8 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
             pageSpinner.stopAnimating()
         }
         guard let detail = viewModel.detail else { return }
+        dateCard.isHidden = viewModel.consumesBenefit
+        slotCard.isHidden = viewModel.consumesBenefit
 
         let urls = detail.galleryURLs
         let nextGalleryKey = urls.map(\.absoluteString).joined(separator: "|")
@@ -697,12 +717,36 @@ final class WellnessCabinServiceBookViewController: BaseViewController {
     }
 
     private func updateConfirmStyle(_ button: UIButton) {
-        let enabled = viewModel.selectedSlot != nil
+        let enabled = viewModel.consumesBenefit ? viewModel.canConsumeBenefit : viewModel.selectedSlot != nil
         button.backgroundColor = enabled ? .fdPrimary : UIColor.fdPrimary.withAlphaComponent(0.45)
     }
 
     @objc private func confirmButtonTapped() {
+        if viewModel.consumesBenefit {
+            confirmBenefitConsume()
+            return
+        }
         confirmTapped()
+    }
+
+    private func confirmBenefitConsume() {
+        guard viewModel.canConsumeBenefit else {
+            showToastAlert("剩余次数已用完")
+            return
+        }
+        BenefitConsumeFlow.start(
+            from: self,
+            kindLabel: viewModel.benefitKindLabel,
+            configId: viewModel.configId,
+            setLoading: { [weak self] loading in
+                self?.pageSpinner.isHidden = !loading
+                if loading {
+                    self?.pageSpinner.startAnimating()
+                } else {
+                    self?.pageSpinner.stopAnimating()
+                }
+            }
+        )
     }
 }
 

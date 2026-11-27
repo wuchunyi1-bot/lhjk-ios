@@ -5,8 +5,15 @@ import UIKit
 /// 康养小屋列表。未选省市区或 GPS 前不展示驿站，空态引导选择地区。
 final class WellnessCabinViewController: BaseViewController {
 
-    private let viewModel = WellnessCabinListViewModel()
+    private let viewModel: WellnessCabinListViewModel
     private var cancellables = Set<AnyCancellable>()
+
+    init(projectId: String? = nil) {
+        viewModel = WellnessCabinListViewModel(projectId: projectId)
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
 
     private let regionTitle = UILabel()
     private let regionField = UIControl()

@@ -68,8 +68,9 @@ App端/
 │       ├── POST /v1/cabin/book
 │       ├── GET /v1/cabin/appointments
 │       ├── GET /v1/cabin/reservationDetail
+│       ├── POST /v1/cabin/confirm
 │       ├── POST /v1/cabin/cancel
-│       └── GET /v1/cabin/medicalConfigList
+│       └── GET /v1/cabin/entitlementList
 │   └── 服务项目相关接口
 │       └── GET /v1/serviceItem/detail
 ├── 商城/
@@ -164,19 +165,20 @@ App端/
 > `#15` 客户端使用 `data.archiveComplete` 作为 `/onboarding` 唯一门禁；另解码 `sex` / `birthday` 等回填字段。Apifox 分享站 `OArchiveVO` 可能尚未同步这些字段（以联调 JSON 为准）。
 | 15b | GET | `/v1/archive/calculateArchiveCompletion` | `App端/机构/档案管理` | `UserService` | 文档暂无（Apifox OAS：`calculateArchiveCompletion`，Query `userId`；响应 `completionPercentage` 0–100） |
 | 16 | POST | `/v1/archive/saveArchiveHospital` | `App端/机构/档案管理` | `UserService` | [保存档案机构](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/491046480e0.md) |
-| 16b | GET | `/v1/cabin/list` | `App端/线下履约/康养小屋相关接口` | `CabinService`（康养小屋列表） | [机构分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266269e0.md)。Query：`keyword`、`pageNum`、`pageSize`。定位开启时另传 `longitude`、`latitude`（GCJ-02）；未开启时只传 `province`、`city`、`area` |
+| 16b | GET | `/v1/cabin/list` | `App端/线下履约/康养小屋相关接口` | `CabinService`（康养小屋列表） | [机构分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266269e0.md)。Query：`keyword`、`pageNum`、`pageSize`。定位开启时另传 `longitude`、`latitude`（GCJ-02）；未开启时只传 `province`、`city`、`area`。从我的权益进入时另传 `projectId`；首页金刚区不传 |
 | 16c | GET | `/v1/cabin/detail` | `App端/线下履约/康养小屋相关接口` | `CabinService`（门店详情） | [门店详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266267e0.md)。Query：`hospitalId` |
 | 16d | GET | `/v1/cabin/categoryList` | `App端/线下履约/康养小屋相关接口` | `CabinService`（服务分类） | [服务分类](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785605e0.md)。Query：`hospitalId` |
 | 16e | GET | `/v1/cabin/configList` | `App端/线下履约/康养小屋相关接口` | `CabinService`（分类下项目） | [项目列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529266270e0.md)。Query：`hospitalId`、`parentId`。列表封面用导航图 `navigateUrl`，不用介绍图 `imgUrls` |
-| 16f | GET | `/v1/cabin/bookDetail` | `App端/线下履约/康养小屋相关接口` | `CabinService`（项目预约页） | [预约页详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785607e0.md)。Query：`configId`，可选 `date`（`yyyy-MM-dd`）。付费项目返回 `price` |
+| 16f | GET | `/v1/cabin/bookDetail` | `App端/线下履约/康养小屋相关接口` | `CabinService`（项目预约页、我的权益卡片） | [预约页详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785607e0.md)。Query：`configId`，可选 `date`（`yyyy-MM-dd`）。付费项目返回 `price`。体检和就医协助的权益卡片带上上一页的 `businessType` 打开此页，不展示日期和时段；次数够时底部预约与列表「去预约」相同。小屋卡片进入小屋列表并传 `projectId`。消耗成功后刷新权益列表和本页次数 |
 | 16n | GET | `/v1/cabin/bookLimitCheck` | `App端/线下履约/康养小屋相关接口` | `CabinService`（确定预约前） | [预约限流前置校验](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/534863042e0.md)。Query：`configId`、`reserveDate`。`limitType`：0 可预约，1 当日名额已满，2 超每人每日，3 超每人每月。非 0 用 `title`、`msg` 弹窗并停止 |
-| 16g | POST | `/v1/cabin/book` | `App端/线下履约/康养小屋相关接口` | `CabinService`（提交预约） | [小屋项目预约](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/530062590e0.md)。JSON：`configId`、`reserveDate`、`sourceType`、`startTime`、`endTime`、`quantity`；`sourceType=3` 时另传 `orderId` |
+| 16g | POST | `/v1/cabin/book` | `App端/线下履约/康养小屋相关接口` | `CabinService`（提交预约、权益确认消耗） | [小屋项目预约](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/530062590e0.md)。小屋预约 JSON：`configId`、`reserveDate`、`sourceType`、`startTime`、`endTime`、`quantity`；`sourceType=3` 时另传 `orderId`。`data` 可以是预约单 id，也可以是 `{ id, manualAccess }`。体检和就医协助确认消耗只传 `configId`、`sourceType=2`、`quantity=1`，弹窗使用返回的姓名、电话和二维码 |
 | 16m | POST | `/v1/cabin/createReservationOrder` | `App端/线下履约/康养小屋相关接口` | `CabinService`（付费预约创建订单） | Apifox OAS：`createReservationOrder`。JSON 只有 `configId`。`data` 为订单 id。日期和时段不传，支付成功后再调用 `POST /v1/cabin/book` |
-| 16h | GET | `/v1/cabin/appointments` | `App端/线下履约/康养小屋相关接口` | `CabinService`（小屋预约记录、首页我的预约、体检/就医协助使用记录、我的预约汇总） | [当前登录人的预约记录分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785606e0.md)。Query：可选 `businessType`（1 小屋 / 2 体检 / 3 就医协助）、`status`（1 待安排 / 2 待确认 / 3 待服务 / 4 服务中 / 5 已完成 / 6 已取消 / 7 已过期，空为全部）、`pageNum`、`pageSize`。小屋列表和首页待服务传 `businessType=1`。体检使用记录传 `2`，就医协助使用记录传 `3`。待安排、待确认只查 2 和 3 |
-| 16k | GET | `/v1/cabin/reservationDetail` | `App端/线下履约/康养小屋相关接口` | `CabinService`（预约详情） | [预约详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/531651137e0.md)。Query：`id`。分类 `parentName`，介绍为富文本 `description`，二维码 `qrCode`，时间字段 `verifyTime` / `finishTime` / `expireTime` / `cancelTime` / `createTime` |
-| 16l | POST | `/v1/cabin/cancel` | `App端/线下履约/康养小屋相关接口` | `CabinService`（取消预约） | [取消预约](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/531651134e0.md)。JSON：`id`，可选 `reason` |
-| 16i | GET | `/v1/cabin/medicalConfigList` | `App端/线下履约/康养小屋相关接口` | `ServiceItemService`（预约体检 `businessType=2`、就医协助首页 `businessType=3`） | 文档暂无分享链接 / 以代码 path 为准。Query：`businessType`（2 体检 / 3 就医协助）必填，`pageNum`、`pageSize` 可选。分页同时认 `list/totalCount/pageSize/totalPage/currPage` 与中文别名。列表项含 `name`、`price`、`navigateUrl`（封面）、`description`（HTML 简介）、`payType`（2 需购买）、`packageId` |
-| 16j | GET | `/v1/serviceItem/detail` | `App端/线下履约/服务项目相关接口` | `ServiceItemService`（体检项目预约详情） | [服务项目详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/530062591e0.md)。Query：`configId`。不含时段；价格沿用列表 |
+| 16h | GET | `/v1/cabin/appointments` | `App端/线下履约/康养小屋相关接口` | `CabinService`（小屋预约记录、首页待服务轮播、预约记录） | [当前登录人的预约记录分页](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/529785606e0.md)。Query：可选 `businessType`（1 小屋 / 2 体检 / 3 就医协助）、`status`（1 待安排 / 2 待确认 / 3 待服务 / 4 服务中 / 5 已完成 / 6 已取消 / 7 已过期，空为全部）、`pageNum`、`pageSize`。小屋列表和首页待服务传 `businessType=1`。我的权益里的预约记录不传 `businessType`，只按 `status`、`pageNum`、`pageSize` 请求一次 |
+| 16k | GET | `/v1/cabin/reservationDetail` | `App端/线下履约/康养小屋相关接口` | `CabinService`（预约详情、体检和就医协助使用详情） | [预约详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/531651137e0.md)。Query：`id`。返回的 `businessType` 决定详情模板：1 康养小屋，2 体检，3 就医协助。使用详情另读名称、时间、`hospitalName`、`address`、经纬度、`contactName`、`contactPhone`、`description`、`department`、`doctor`，以及完成、取消、过期时间 |
+| 16p | POST | `/v1/cabin/confirm` | `App端/线下履约/康养小屋相关接口` | `CabinService`（待确认详情） | 用户确认预约。JSON：`id`。成功后回到预约记录并刷新 |
+| 16l | POST | `/v1/cabin/cancel` | `App端/线下履约/康养小屋相关接口` | `CabinService`（取消预约、待服务取消服务） | [取消预约](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/531651134e0.md)。JSON：`id`，可选 `reason`。体检和就医协助待服务详情用同一接口，确认文案说明安排不再保留且消耗本次权益 |
+| 16j | GET | `/v1/serviceItem/detail` | `App端/线下履约/服务项目相关接口` | `ServiceItemService`（封装保留，权益卡片不调用） | 后端无此接口。我的权益卡片的项目预约走 `GET /v1/cabin/bookDetail`，Query 为 `configId` |
+| 16o | GET | `/v1/cabin/entitlementList` | `App端/线下履约/康养小屋相关接口` | `CabinService`（我的权益） | Apifox OAS：`entitlementList`（我的权益列表）。无 Query。`data` 为数组：`id`（权益 ID）、`projectId`（服务项目 ID，小屋列表筛选）、`configId`（项目配置 ID，预约详情）、`name`、`description`、`imgUrls`、`businessType`（1 小屋 / 2 体检 / 3 就医协助）、`payType`、`sourceType`、`requireManual`、`remainingQuantity`、`availableQuantity`、`manualAccess`（`chineseName` / `mobile` / `qrCode`，仅体检或就医协助且需人工时返回） |
 
 ### 2.4 App端 / 商城
 
@@ -195,8 +197,8 @@ App端/
 | 25 | GET | `/v1/hospitalPackage/getCategoryServiceListByType` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | [业务类别](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/487882771e0.md) |
 | 25a | GET | `/v1/hospitalPackage/getEnabledHospitalPackageListByCategory` | `App端/商城/商城套餐相关接口` | `HospitalPackageService`（选择套餐一次性加载） | 文档暂无（Apifox 层级 `商城/商城套餐相关接口`） |
 | 26 | GET | `/v1/hospitalPackage/getHospitalPackageDetail` | `App端/商城/商城套餐相关接口` | `HospitalPackageService` | Query：`hospitalId`、`packageId` 必填；续费可选 `orderId`（返回 `commodityIdList`） |
-| 27 | GET | `/v1/order/getAppOrderList` | `App端/商城/商城订单相关接口` | `OrderService`；`renewable=true` 才展示「续费订单」 | [订单列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330738e0.md) |
-| 28 | GET | `/v1/order/getAppOrderDetail` | `App端/商城/商城订单相关接口` | `OrderService`；`renewable=true` 才展示「续费订单」；`canApplyAfterSale` 控制「退款/售后」按钮；`refundReasonType` 控制已完成订单退款原因展示类型（0-不显示，1-退款申请原因，2-退款拒绝原因）；`equipmentFlag=false` 隐藏自提信息、自提地址、物流信息与收货地址 | [订单详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330739e0.md) |
+| 27 | GET | `/v1/order/getAppOrderList` | `App端/商城/商城订单相关接口` | `OrderService`；`renewable=true` 才展示「续费订单」；`offlineFulfillmentFlag=true` 才展示「我的权益」 | [订单列表](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330738e0.md) |
+| 28 | GET | `/v1/order/getAppOrderDetail` | `App端/商城/商城订单相关接口` | `OrderService`；`renewable=true` 才展示「续费订单」；`offlineFulfillmentFlag=true` 才展示「我的权益」；明细 `offlineFulfillment` 为 0/1；`canApplyAfterSale` 控制「退款/售后」按钮；`refundReasonType` 控制已完成订单退款原因展示类型（0-不显示，1-退款申请原因，2-退款拒绝原因）；`equipmentFlag=false` 隐藏自提信息、自提地址、物流信息与收货地址 | [订单详情](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330739e0.md) |
 | 29 | GET | `/v1/order/getOrderSettlement` | `App端/商城/商城订单相关接口` | `OrderService`；`code=M0104` 套餐内容变化、`code=M0105` 套餐已下架，均走同一提示弹窗（FDAPP-938）；`addressId` 供切换快递地址时回传 `updateOrderDelivery`；`equipmentFlag=false` 隐藏确认订单/待支付的收货方式与自提地址 | [结算信息](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/490169537e0.md) |
 | 30 | POST | `/v1/order/insertOrEdit` | `App端/商城/商城订单相关接口` | `OrderService` | [新增编辑订单](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/472330734e0.md) |
 | 31 | POST | `/v1/order/updateOrderDelivery` | `App端/商城/商城订单相关接口` | `OrderService` | [改配送](https://s.apifox.cn/e82b600d-da6a-4580-88cb-5f0660f85f9b/490169536e0.md) |

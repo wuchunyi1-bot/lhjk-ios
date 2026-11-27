@@ -18,7 +18,13 @@ enum MyRoutes {
         r.register(path: "/me/health-report/detail") { params in
             healthReportDetailWebView(params: params)
         }
-        r.register(path: "/me/appointments")     { _ in AppointmentsViewController() }
+        r.register(path: "/me/appointments")     { _ in MyBenefitsViewController() }
+        r.register(path: "/me/appointments/records") { _ in AppointmentsViewController() }
+        r.register(path: "/appointments/usage-records/confirm") { params in
+            BenefitUsageDetailViewController(
+                reservationId: Self.stringParam(params["id"]) ?? ""
+            )
+        }
         r.register(path: "/me/appointments/detail") { params in
             MyAppointmentDetailViewController(routeParams: params)
         }

@@ -54,6 +54,8 @@ struct AppOrderDetailBO: Decodable {
     let renewed: Int?
     /// 是否展示「续费订单」（`AppOrderDetailBO.renewable`）
     let renewable: Bool?
+    /// 线下履约套餐。为 true 时详情展示「我的权益」
+    let offlineFulfillmentFlag: Bool?
     let parentId: Int64?
     /// 是否可去退货（与列表字段对齐；详情可能暂未下发）
     let canReturnGoods: Bool?
@@ -81,7 +83,7 @@ struct AppOrderDetailBO: Decodable {
         case shipmentTime, beginTime, endTime, serviceTime
         case shoppingCartPackageDetailList
         case refundId, refundReasons, refuseReasons, refundApplyTime, applyRefund, refundApplyChannel
-        case packageId, hospitalId, categoryServiceId, renewed, renewable
+        case packageId, hospitalId, categoryServiceId, renewed, renewable, offlineFulfillmentFlag
         case canReturnGoods, canApplyAfterSale
         case amountVersion, expectedPayableAmount, settlementVersion, settlementAmount
         case refundReasonType, equipmentFlag
@@ -131,6 +133,7 @@ struct AppOrderDetailBO: Decodable {
         categoryServiceId = HospitalPackageID.decodeOptional(c, key: .categoryServiceId)
         renewed = Self.decodeFlexibleInt(c, key: .renewed)
         renewable = Self.decodeFlexibleBool(c, key: .renewable)
+        offlineFulfillmentFlag = Self.decodeFlexibleBool(c, key: .offlineFulfillmentFlag)
         parentId = Self.decodeFlexibleInt64(c, key: .parentId)
         canReturnGoods = Self.decodeFlexibleBool(c, key: .canReturnGoods)
         canApplyAfterSale = Self.decodeFlexibleBool(c, key: .canApplyAfterSale)
@@ -155,6 +158,11 @@ struct AppOrderDetailBO: Decodable {
     /// 是否展示「续费订单」：只认 `renewable`
     var canShowRenewAction: Bool {
         AppOrderRenewalRules.canShowRenew(renewable: renewable)
+    }
+
+    /// 是否展示「我的权益」：只认 `offlineFulfillmentFlag`
+    var canShowBenefitsAction: Bool {
+        offlineFulfillmentFlag == true
     }
 
     /// 是否已发生退款（完成后隐藏再次申请）
@@ -478,10 +486,12 @@ struct OrderDetailPackageLineBO: Decodable {
     let presetDeliveryTime: String?
     /// 租售标识：1 租 / 2 售（仅出租展示标记）
     let saleFlag: Int?
+    /// 是否线下履约商品：1 是，0 否
+    let offlineFulfillment: Int?
 
     private enum CodingKeys: String, CodingKey {
         case id, packageName, commodityName, quantity, billingType, price
-        case shipmentStatus, presetDeliveryTime, saleFlag
+        case shipmentStatus, presetDeliveryTime, saleFlag, offlineFulfillment
     }
 
     init(from decoder: Decoder) throws {
@@ -495,6 +505,7 @@ struct OrderDetailPackageLineBO: Decodable {
         shipmentStatus = Self.decodeFlexibleInt(c, key: .shipmentStatus)
         presetDeliveryTime = try c.decodeIfPresent(String.self, forKey: .presetDeliveryTime)
         saleFlag = Self.decodeFlexibleInt(c, key: .saleFlag)
+        offlineFulfillment = Self.decodeFlexibleInt(c, key: .offlineFulfillment)
     }
 
     /// `saleFlag == 1` 出租；出售及其它值不展示标记

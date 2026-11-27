@@ -27,8 +27,10 @@ final class ServiceListViewController: BaseViewController {
     private var leftTopConstraint: Constraint?
     private var leftHeightConstraint: Constraint?
     private var rightHeightConstraint: Constraint?
+    private var rightPanelHeightConstraint: Constraint?
     private var shelfBannerHeight: CGFloat = 0
     private var appliedRightHeight: CGFloat = -1
+    private var appliedPanelHeight: CGFloat = -1
     private var appliedLeftTop: CGFloat = -1
     private var appliedLeftHeight: CGFloat = -1
     private let rightSafeAreaFill = UIView()
@@ -232,12 +234,15 @@ final class ServiceListViewController: BaseViewController {
         }
         rightTable.snp.makeConstraints {
             $0.top.equalTo(bannerSlot.snp.bottom)
-            $0.trailing.bottom.equalToSuperview()
+            $0.trailing.equalToSuperview()
             $0.leading.equalTo(leftTable.snp.trailing)
             rightHeightConstraint = $0.height.equalTo(1).constraint
         }
         rightPanelBackground.snp.makeConstraints {
-            $0.edges.equalTo(rightTable)
+            $0.top.equalTo(bannerSlot.snp.bottom)
+            $0.leading.equalTo(leftTable.snp.trailing)
+            $0.trailing.bottom.equalToSuperview()
+            rightPanelHeightConstraint = $0.height.equalTo(1).constraint
         }
         loadingIndicator.snp.makeConstraints {
             $0.center.equalTo(shelfScroll)
@@ -354,12 +359,30 @@ final class ServiceListViewController: BaseViewController {
             rightTable.tableFooterView = spacer
         }
         let height = fullRightContentHeight()
-        guard abs(height - appliedRightHeight) > 0.5 else {
+        let visibleBelowBanner = max(0, shelfScroll.bounds.height - shelfBannerHeight)
+        let panel = max(height, visibleBelowBanner)
+        let contentChanged = abs(height - appliedRightHeight) > 0.5
+        let panelChanged = abs(panel - appliedPanelHeight) > 0.5
+        guard contentChanged || panelChanged else {
             updateStickyLeftColumn()
             return
         }
-        appliedRightHeight = height
-        rightHeightConstraint?.update(offset: height)
+        if contentChanged {
+            appliedRightHeight = height
+            rightHeightConstraint?.update(offset: height)
+        }
+        if panelChanged {
+            appliedPanelHeight = panel
+            rightPanelHeightConstraint?.update(offset: panel)
+        }
+        updateStickyLeftColumn()
+    }
+
+    override func refreshForSeniorMode() {
+        super.refreshForSeniorMode()
+        guard embedsInHomeShelf else { return }
+        appliedLeftHeight = -1
+        view.layoutIfNeeded()
         updateStickyLeftColumn()
     }
 
